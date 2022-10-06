@@ -4,7 +4,7 @@
  */
 
 import { IOptionsService } from 'common/services/Services';
-import { IEvent, EventEmitter, initEvent } from 'common/EventEmitter';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 
 export class CharSizeService implements ICharSizeService {
@@ -16,7 +16,8 @@ export class CharSizeService implements ICharSizeService {
 
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
-  public readonly onCharSizeChange = initEvent<void>();
+  private readonly _onCharSizeChange = new EventEmitter<void>();
+  public readonly onCharSizeChange = this._onCharSizeChange.event;
 
   constructor(
     document: Document,
@@ -31,7 +32,7 @@ export class CharSizeService implements ICharSizeService {
     if (result.width !== this.width || result.height !== this.height) {
       this.width = result.width;
       this.height = result.height;
-      this.onCharSizeChange.fire();
+      this._onCharSizeChange.fire();
     }
   }
 }

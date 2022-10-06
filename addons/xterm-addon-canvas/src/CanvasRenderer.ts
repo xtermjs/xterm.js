@@ -3,20 +3,20 @@
  * @license MIT
  */
 
-import { TextRenderLayer } from './TextRenderLayer';
-import { SelectionRenderLayer } from './SelectionRenderLayer';
-import { CursorRenderLayer } from './CursorRenderLayer';
-import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { IRenderLayer } from './Types';
-import { LinkRenderLayer } from './LinkRenderLayer';
-import { Disposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifier2 } from 'browser/Types';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
-import { IBufferService, IOptionsService, IDecorationService, ICoreService } from 'common/services/Services';
-import { removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
+import { IColorSet, ILinkifier2 } from 'browser/Types';
+import { EventEmitter } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
-import { initEvent, EventEmitter, IEvent } from 'common/EventEmitter';
+import { removeTerminalFromCache } from './atlas/CharAtlasCache';
+import { CursorRenderLayer } from './CursorRenderLayer';
+import { LinkRenderLayer } from './LinkRenderLayer';
+import { SelectionRenderLayer } from './SelectionRenderLayer';
+import { TextRenderLayer } from './TextRenderLayer';
+import { IRenderLayer } from './Types';
 
 export class CanvasRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -24,8 +24,10 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = initEvent<IRequestRedrawEvent>();
-  public readonly onChangeTextureAtlas = initEvent<HTMLCanvasElement>();
+  private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  public readonly onRequestRedraw = this._onRequestRedraw.event;
+  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
 
   constructor(
     private readonly _terminal: Terminal,
@@ -46,7 +48,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
       new TextRenderLayer(this._terminal, this._screenElement, 0, this._colors, allowTransparency, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService),
       new SelectionRenderLayer(this._terminal, this._screenElement, 1, this._colors, this._bufferService, this._coreBrowserService, decorationService, this._optionsService),
       new LinkRenderLayer(this._terminal, this._screenElement, 2, this._colors, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService),
-      new CursorRenderLayer(this._terminal, this._screenElement, 3, this._colors, this.onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService)
+      new CursorRenderLayer(this._terminal, this._screenElement, 3, this._colors, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -130,7 +132,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     this._runOperation(l => l.onSelectionChanged(start, end, columnSelectMode));
     // Selection foreground requires a full re-render
     if (this._colors.selectionForeground) {
-      this.onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 });
+      this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 });
     }
   }
 
@@ -203,6 +205,6 @@ export class CanvasRenderer extends Disposable implements IRenderer {
   }
 
   private _requestRedrawViewport(): void {
-    this.onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 });
+    this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 });
   }
 }

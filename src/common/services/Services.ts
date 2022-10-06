@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IEvent, IEventEmitter, IEventWithEmitter } from 'common/EventEmitter';
+import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
@@ -318,5 +318,5 @@ export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
-  readonly onRender: IEventWithEmitter<HTMLElement>;
+  readonly onRenderEmitter: IEventEmitter<HTMLElement>;
 }

@@ -13,7 +13,7 @@ import { IColorSet, ITerminal } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { initEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
@@ -46,9 +46,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _isAttached: boolean;
   private _contextRestorationTimeout: number | undefined;
 
-  public readonly onChangeTextureAtlas = initEvent<HTMLCanvasElement>();
-  public readonly onRequestRedraw = initEvent<IRequestRedrawEvent>();
-  public readonly onContextLoss = initEvent<void>();
+  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+  private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  public readonly onRequestRedraw = this._onRequestRedraw.event;
+  private readonly _onContextLoss = new EventEmitter<void>();
+  public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(
     private _terminal: Terminal,
@@ -67,7 +70,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core, this._coreBrowserService),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this.onRequestRedraw, this._coreBrowserService, coreService)
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._onRequestRedraw, this._coreBrowserService, coreService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -107,7 +110,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._contextRestorationTimeout = setTimeout(() => {
         this._contextRestorationTimeout = undefined;
         console.warn('webgl context not restored; firing onContextLoss');
-        this.onContextLoss.fire(e);
+        this._onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
     this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
@@ -273,7 +276,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     const atlas = acquireTextureAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
     if (this._charAtlas !== atlas) {
-      this.onChangeTextureAtlas.fire(atlas.cacheCanvas);
+      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
@@ -412,9 +415,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
-          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
-          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
+            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
+            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
+            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
           continue;
         }
 
@@ -519,7 +522,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _requestRedrawViewport(): void {
-    this.onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 }
 

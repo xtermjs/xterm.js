@@ -4,7 +4,7 @@
  */
 
 import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
-import { IEvent, EventEmitter, initEvent } from 'common/EventEmitter';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
@@ -352,7 +352,7 @@ export class MockCoreBrowserService implements ICoreBrowserService {
 export class MockCharSizeService implements ICharSizeService {
   public serviceBrand: undefined;
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
-  public onCharSizeChange: IEvent<void> = initEvent<void>();
+  public onCharSizeChange: IEvent<void> = new EventEmitter<void>().event;
   constructor(public width: number, public height: number) {}
   public measure(): void {}
 }
@@ -370,10 +370,10 @@ export class MockMouseService implements IMouseService {
 
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
-  public onDimensionsChange: IEvent<IRenderDimensions> = initEvent<IRenderDimensions>();
-  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = initEvent<{ start: number, end: number }>();
-  public onRender: IEvent<{ start: number, end: number }, void> = initEvent<{ start: number, end: number }>();
-  public onRefreshRequest: IEvent<{ start: number, end: number}, void> = initEvent<{ start: number, end: number }>();
+  public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
+  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = {
     scaledCharWidth: 0,
     scaledCharHeight: 0,
@@ -457,10 +457,10 @@ export class MockSelectionService implements ISelectionService {
   public hasSelection: boolean = false;
   public selectionStart: [number, number] | undefined;
   public selectionEnd: [number, number] | undefined;
-  public onLinuxMouseSelection = initEvent<string>();
-  public onRequestRedraw = initEvent<ISelectionRedrawRequestEvent>();
-  public onRequestScrollLines = initEvent<ISelectionRequestScrollLinesEvent>();
-  public onSelectionChange = initEvent<void>();
+  public onLinuxMouseSelection = new EventEmitter<string>().event;
+  public onRequestRedraw = new EventEmitter<ISelectionRedrawRequestEvent>().event;
+  public onRequestScrollLines = new EventEmitter<ISelectionRequestScrollLinesEvent>().event;
+  public onSelectionChange = new EventEmitter<void>().event;
   public disable(): void {
     throw new Error('Method not implemented.');
   }
