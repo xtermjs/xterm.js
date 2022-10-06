@@ -24,7 +24,7 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { EventEmitter, forwardEvent, IEvent, initEvent } from 'common/EventEmitter';
+import { EventEmitter, forwardEvent, IEvent } from 'common/EventEmitter';
 import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
 import { IMarker, ITerminalOptions, ScrollSource } from 'common/Types';
 
@@ -32,11 +32,16 @@ export class Terminal extends CoreTerminal {
   // TODO: We should remove options once components adopt optionsService
   public get options(): Required<IInitializedTerminalOptions> { return this.optionsService.options; }
 
-  public readonly onBell = initEvent<void>();
-  public readonly onCursorMove = initEvent<void>();
-  public readonly onTitleChange = initEvent<string>();
-  public readonly onA11yChar = initEvent<string>();
-  public readonly onA11yTab = initEvent<number>();
+  private readonly _onBell = new EventEmitter<void>();
+  public readonly onBell = this._onBell.event;
+  private readonly _onCursorMove = new EventEmitter<void>();
+  public readonly onCursorMove = this._onCursorMove.event;
+  private readonly _onTitleChange = new EventEmitter<string>();
+  public readonly onTitleChange = this._onTitleChange.event;
+  private readonly _onA11yCharEmitter = new EventEmitter<string>();
+  public readonly onA11yChar = this._onA11yCharEmitter.event;
+  private readonly _onA11yTabEmitter = new EventEmitter<number>();
+  public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   /**
    * Creates a new `Terminal` object.
@@ -60,10 +65,10 @@ export class Terminal extends CoreTerminal {
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
-    this.register(forwardEvent(this._inputHandler.onCursorMove, this.onCursorMove));
-    this.register(forwardEvent(this._inputHandler.onTitleChange, this.onTitleChange));
-    this.register(forwardEvent(this._inputHandler.onA11yChar, this.onA11yChar));
-    this.register(forwardEvent(this._inputHandler.onA11yTab, this.onA11yTab));
+    this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
+    this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
+    this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
   }
 
   public dispose(): void {
@@ -106,7 +111,7 @@ export class Terminal extends CoreTerminal {
   }
 
   public bell(): void {
-    this.onBell.fire();
+    this._onBell.fire();
   }
 
   /**

@@ -6,7 +6,7 @@
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { EventEmitter, IEventEmitter, IEvent, initEvent } from 'common/EventEmitter';
+import { EventEmitter, IEventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
 
@@ -22,8 +22,10 @@ export class BufferService extends Disposable implements IBufferService {
   /** Whether the user is scrolling (locks the scroll position) */
   public isUserScrolling: boolean = false;
 
-  public readonly onResize = initEvent<{ cols: number, rows: number }>();
-  public readonly onScroll = initEvent<number>();
+  private readonly _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  public readonly onResize = this._onResize.event;
+  private readonly _onScroll = new EventEmitter<number>();
+  public readonly onScroll = this._onScroll.event;
 
   public get buffer(): IBuffer { return this.buffers.active; }
 
@@ -47,7 +49,7 @@ export class BufferService extends Disposable implements IBufferService {
     this.rows = rows;
     this.buffers.resize(cols, rows);
     this.buffers.setupTabStops(this.cols);
-    this.onResize.fire({ cols, rows });
+    this._onResize.fire({ cols, rows });
   }
 
   public reset(): void {
@@ -116,7 +118,7 @@ export class BufferService extends Disposable implements IBufferService {
       buffer.ydisp = buffer.ybase;
     }
 
-    this.onScroll.fire(buffer.ydisp);
+    this._onScroll.fire(buffer.ydisp);
   }
 
   /**
@@ -146,7 +148,7 @@ export class BufferService extends Disposable implements IBufferService {
     }
 
     if (!suppressScrollEvent) {
-      this.onScroll.fire(buffer.ydisp);
+      this._onScroll.fire(buffer.ydisp);
     }
   }
 

@@ -1071,7 +1071,7 @@ describe('Buffer', () => {
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
       assert.equal(marker.line, buffer.lines.length - 1);
-      buffer.lines.onTrim.fire(1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.line, buffer.lines.length - 2);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
@@ -1081,7 +1081,7 @@ describe('Buffer', () => {
       const marker = buffer.addMarker(0);
       assert.equal(marker.isDisposed, false);
       assert.equal(buffer.markers.length, 1);
-      buffer.lines.onTrim.fire(1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.isDisposed, true);
       assert.equal(buffer.markers.length, 0);
     });
@@ -1094,7 +1094,7 @@ describe('Buffer', () => {
       marker.onDispose(() => eventStack.push('disposed'));
       assert.equal(marker.isDisposed, false);
       assert.equal(buffer.markers.length, 1);
-      buffer.lines.onTrim.fire(1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.isDisposed, true);
       assert.equal(buffer.markers.length, 0);
       assert.deepEqual(eventStack, ['disposed']);

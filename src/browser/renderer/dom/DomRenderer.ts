@@ -10,7 +10,7 @@ import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
-import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
 
@@ -40,7 +40,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = initEvent<IRequestRedrawEvent>();
+  public readonly onRequestRedraw = new EventEmitter<IRequestRedrawEvent>().event;
 
   constructor(
     private _colors: IColorSet,

@@ -95,7 +95,7 @@ export class BufferDecorationRenderer extends Disposable {
       // outside of viewport
       if (decoration.element) {
         decoration.element.style.display = 'none';
-        decoration.onRender.fire(decoration.element);
+        decoration.onRenderEmitter.fire(decoration.element);
       }
     } else {
       let element = this._decorationElements.get(decoration);
@@ -108,7 +108,7 @@ export class BufferDecorationRenderer extends Disposable {
       }
       element.style.top = `${line * this._renderService.dimensions.actualCellHeight}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';
-      decoration.onRender.fire(element);
+      decoration.onRenderEmitter.fire(element);
     }
   }
 

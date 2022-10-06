@@ -4,9 +4,9 @@
  */
 
 import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/Services';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
 import { CursorStyle } from 'common/Types';
-import { initEvent } from 'common/EventEmitter';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
@@ -57,7 +57,8 @@ export class OptionsService implements IOptionsService {
   public readonly rawOptions: Required<ITerminalOptions>;
   public options: Required<ITerminalOptions>;
 
-  public readonly onOptionChange = initEvent<string>();
+  private readonly _onOptionChange = new EventEmitter<string>();
+  public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {
     // set the default value of each option
@@ -96,7 +97,7 @@ export class OptionsService implements IOptionsService {
       // Don't fire an option change event if they didn't change
       if (this.rawOptions[propName] !== value) {
         this.rawOptions[propName] = value;
-        this.onOptionChange.fire(propName);
+        this._onOptionChange.fire(propName);
       }
     };
 

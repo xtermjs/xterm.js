@@ -4,7 +4,7 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon, IBufferRange, IDecoration } from 'xterm';
-import { initEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -72,7 +72,8 @@ export class SearchAddon implements ITerminalAddon {
 
   private _resultIndex: number | undefined;
 
-  public readonly onDidChangeResults = initEvent<{ resultIndex: number, resultCount: number } | undefined>();
+  private readonly _onDidChangeResults = new EventEmitter<{ resultIndex: number, resultCount: number } | undefined>();
+  public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
@@ -88,7 +89,7 @@ export class SearchAddon implements ITerminalAddon {
       this._highlightTimeout = setTimeout(() => {
         this.findPrevious(this._cachedSearchTerm!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
         this._resultIndex = this._searchResults ? this._searchResults.size - 1 : -1;
-        this.onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size ?? -1 });
+        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size ?? -1 });
       }, 200);
     }
   }
@@ -324,9 +325,9 @@ export class SearchAddon implements ITerminalAddon {
   private _fireResults(term: string, found: boolean, searchOptions?: ISearchOptions): boolean {
     if (searchOptions?.decorations) {
       if (this._resultIndex !== undefined && this._searchResults?.size !== undefined) {
-        this.onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
+        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
       } else {
-        this.onDidChangeResults.fire(undefined);
+        this._onDidChangeResults.fire(undefined);
       }
     }
     this._cachedSearchTerm = term;

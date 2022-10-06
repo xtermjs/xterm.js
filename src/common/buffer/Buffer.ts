@@ -463,12 +463,12 @@ export class Buffer implements IBuffer {
       let insertCountEmitted = 0;
       for (let i = insertEvents.length - 1; i >= 0; i--) {
         insertEvents[i].index += insertCountEmitted;
-        this.lines.onInsert.fire(insertEvents[i]);
+        this.lines.onInsertEmitter.fire(insertEvents[i]);
         insertCountEmitted += insertEvents[i].amount;
       }
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
-        this.lines.onTrim.fire(amountToTrim);
+        this.lines.onTrimEmitter.fire(amountToTrim);
       }
     }
   }

@@ -4,7 +4,7 @@
  */
 
 import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
-import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IDecPrivateModes, IModes } from 'common/Types';
 import { clone } from 'common/Clone';
 import { Disposable } from 'common/Lifecycle';
@@ -34,9 +34,12 @@ export class CoreService extends Disposable implements ICoreService {
   // Circular dependency, this must be unset or memory will leak after Terminal.dispose
   private _scrollToBottom: (() => void) | undefined;
 
-  public readonly onData = this.register(initEvent<string>());
-  public readonly onUserInput = this.register(initEvent<void>());
-  public readonly onBinary = this.register(initEvent<string>());
+  private readonly _onData = this.register(new EventEmitter<string>());
+  public readonly onData = this._onData.event;
+  private readonly _onUserInput = this.register(new EventEmitter<void>());
+  public readonly onUserInput = this._onUserInput.event;
+  private readonly _onBinary = this.register(new EventEmitter<string>());
+  public readonly onBinary = this._onBinary.event;
 
   constructor(
     // TODO: Move this into a service
@@ -71,12 +74,12 @@ export class CoreService extends Disposable implements ICoreService {
 
     // Fire onUserInput so listeners can react as well (eg. clear selection)
     if (wasUserInput) {
-      this.onUserInput.fire();
+      this._onUserInput.fire();
     }
 
     // Fire onData API
     this._logService.debug(`sending data "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
-    this.onData.fire(data);
+    this._onData.fire(data);
   }
 
   public triggerBinaryEvent(data: string): void {
@@ -84,6 +87,6 @@ export class CoreService extends Disposable implements ICoreService {
       return;
     }
     this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
-    this.onBinary.fire(data);
+    this._onBinary.fire(data);
   }
 }

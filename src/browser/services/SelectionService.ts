@@ -9,7 +9,7 @@ import { IBufferLine, IDisposable } from 'common/Types';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { CellData } from 'common/buffer/CellData';
-import { EventEmitter, IEvent, initEvent } from 'common/EventEmitter';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IMouseService, ISelectionService, IRenderService, ICoreBrowserService } from 'browser/services/Services';
 import { IBufferRange, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
@@ -111,10 +111,14 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _oldSelectionStart: [number, number] | undefined = undefined;
   private _oldSelectionEnd: [number, number] | undefined = undefined;
 
-  public readonly onLinuxMouseSelection = this.register(initEvent<string>());
-  public readonly onRequestRedraw = this.register(initEvent<ISelectionRedrawRequestEvent>());
-  public readonly onSelectionChange = this.register(initEvent<void>());
-  public readonly onRequestScrollLines = this.register(initEvent<ISelectionRequestScrollLinesEvent>());
+  private readonly _onLinuxMouseSelection = this.register(new EventEmitter<string>());
+  public readonly onLinuxMouseSelection = this._onLinuxMouseSelection.event;
+  private readonly _onRedrawRequest = this.register(new EventEmitter<ISelectionRedrawRequestEvent>());
+  public readonly onRequestRedraw = this._onRedrawRequest.event;
+  private readonly _onSelectionChange = this.register(new EventEmitter<void>());
+  public readonly onSelectionChange = this._onSelectionChange.event;
+  private readonly _onRequestScrollLines = this.register(new EventEmitter<ISelectionRequestScrollLinesEvent>());
+  public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   constructor(
     private readonly _element: HTMLElement,
@@ -256,7 +260,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._model.clearSelection();
     this._removeMouseDownListeners();
     this.refresh();
-    this.onSelectionChange.fire();
+    this._onSelectionChange.fire();
   }
 
   /**
@@ -275,7 +279,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     if (Browser.isLinux && isLinuxMouseSelection) {
       const selectionText = this.selectionText;
       if (selectionText.length) {
-        this.onLinuxMouseSelection.fire(this.selectionText);
+        this._onLinuxMouseSelection.fire(this.selectionText);
       }
     }
   }
@@ -286,7 +290,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   private _refresh(): void {
     this._refreshAnimationFrame = undefined;
-    this.onRequestRedraw.fire({
+    this._onRedrawRequest.fire({
       start: this._model.finalSelectionStart,
       end: this._model.finalSelectionEnd,
       columnSelectMode: this._activeSelectionMode === SelectionMode.COLUMN
@@ -354,7 +358,7 @@ export class SelectionService extends Disposable implements ISelectionService {
   public selectAll(): void {
     this._model.isSelectAllActive = true;
     this.refresh();
-    this.onSelectionChange.fire();
+    this._onSelectionChange.fire();
   }
 
   public selectLines(start: number, end: number): void {
@@ -364,7 +368,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._model.selectionStart = [0, start];
     this._model.selectionEnd = [this._bufferService.cols, end];
     this.refresh();
-    this.onSelectionChange.fire();
+    this._onSelectionChange.fire();
   }
 
   /**
@@ -661,7 +665,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       return;
     }
     if (this._dragScrollAmount) {
-      this.onRequestScrollLines.fire({ amount: this._dragScrollAmount, suppressScrollEvent: false });
+      this._onRequestScrollLines.fire({ amount: this._dragScrollAmount, suppressScrollEvent: false });
       // Re-evaluate selection
       // If the cursor was above or below the viewport, make sure it's at the
       // start or end of the viewport respectively. This should only happen when
@@ -739,7 +743,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._oldSelectionStart = start;
     this._oldSelectionEnd = end;
     this._oldHasSelection = hasSelection;
-    this.onSelectionChange.fire();
+    this._onSelectionChange.fire();
   }
 
   private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
