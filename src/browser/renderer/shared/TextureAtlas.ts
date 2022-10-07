@@ -153,6 +153,7 @@ export class TextureAtlas implements ITextureAtlas {
     this._currentRow.height = 0;
     this._fixedRows.length = 0;
     this._didWarmUp = false;
+    this.hasCanvasChanged = true;
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph {

@@ -298,7 +298,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public clearTextureAtlas(): void {
     this._charAtlas?.clearTexture();
     this._clearModel(true);
-    this._updateModel(0, this._terminal.rows - 1);
     this._requestRedrawViewport();
   }
 
