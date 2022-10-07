@@ -23,6 +23,7 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   onFocus: IEvent<void>;
   onA11yChar: IEvent<string>;
   onA11yTab: IEvent<number>;
+  onWillOpen: IEvent<HTMLElement>;
 
   cancel(ev: Event, force?: boolean): boolean | void;
 }

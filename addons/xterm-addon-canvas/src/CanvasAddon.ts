@@ -18,21 +18,23 @@ export class CanvasAddon implements ITerminalAddon {
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
 
   public activate(terminal: Terminal): void {
+    const core = (terminal as any)._core;
     if (!terminal.element) {
-      throw new Error('Cannot activate CanvasAddon before Terminal.open');
+      core.onWillOpen(() => this.activate(terminal));
+      return;
     }
     this._terminal = terminal;
-    const bufferService: IBufferService = (terminal as any)._core._bufferService;
-    const renderService: IRenderService = (terminal as any)._core._renderService;
-    const characterJoinerService: ICharacterJoinerService = (terminal as any)._core._characterJoinerService;
-    const charSizeService: ICharSizeService = (terminal as any)._core._charSizeService;
-    const coreService: ICoreService = (terminal as any)._core.coreService;
-    const coreBrowserService: ICoreBrowserService = (terminal as any)._core._coreBrowserService;
-    const decorationService: IDecorationService = (terminal as any)._core._decorationService;
-    const optionsService: IOptionsService = (terminal as any)._core.optionsService;
-    const colors: IColorSet = (terminal as any)._core._colorManager.colors;
-    const screenElement: HTMLElement = (terminal as any)._core.screenElement;
-    const linkifier = (terminal as any)._core.linkifier2;
+    const bufferService: IBufferService = core._bufferService;
+    const renderService: IRenderService = core._renderService;
+    const characterJoinerService: ICharacterJoinerService = core._characterJoinerService;
+    const charSizeService: ICharSizeService = core._charSizeService;
+    const coreService: ICoreService = core.coreService;
+    const coreBrowserService: ICoreBrowserService = core._coreBrowserService;
+    const decorationService: IDecorationService = core._decorationService;
+    const optionsService: IOptionsService = core.optionsService;
+    const colors: IColorSet = core._colorManager.colors;
+    const screenElement: HTMLElement = core.screenElement;
+    const linkifier = core.linkifier2;
     this._renderer = new CanvasRenderer(terminal, colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
     forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas);
     renderService.setRenderer(this._renderer);

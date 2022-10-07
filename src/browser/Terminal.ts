@@ -135,14 +135,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private readonly _onBell = new EventEmitter<void>();
   public readonly onBell = this._onBell.event;
 
-  private readonly _onFocus = new EventEmitter<void>();
-  public readonly onFocus = this._onFocus.event;
-  private readonly _onBlur = new EventEmitter<void>();
-  public readonly onBlur = this._onBlur.event;
-  private readonly _onA11yCharEmitter = new EventEmitter<string>();
-  public readonly onA11yChar = this._onA11yCharEmitter.event;
-  private readonly _onA11yTabEmitter = new EventEmitter<number>();
-  public readonly onA11yTab = this._onA11yTabEmitter.event;
+  private _onFocus = new EventEmitter<void>();
+  public get onFocus(): IEvent<void> { return this._onFocus.event; }
+  private _onBlur = new EventEmitter<void>();
+  public get onBlur(): IEvent<void> { return this._onBlur.event; }
+  private _onA11yCharEmitter = new EventEmitter<string>();
+  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
+  private _onA11yTabEmitter = new EventEmitter<number>();
+  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  private _onWillOpen = new EventEmitter<HTMLElement>();
+  public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
 
   /**
    * Creates a new `Terminal` object.
@@ -509,8 +511,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._characterJoinerService = this._instantiationService.createInstance(CharacterJoinerService);
     this._instantiationService.setService(ICharacterJoinerService, this._characterJoinerService);
 
-    const renderer = this._createRenderer();
-    this._renderService = this.register(this._instantiationService.createInstance(RenderService, renderer, this.rows, this.screenElement));
+    this._renderService = this.register(this._instantiationService.createInstance(RenderService, this.rows, this.screenElement));
     this._instantiationService.setService(IRenderService, this._renderService);
     this.register(this._renderService.onRenderedViewportChange(e => this._onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
@@ -522,6 +523,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
+
+    this._onWillOpen.fire(this.element);
+    if (!this._renderService.hasRenderer()) {
+      this._renderService.setRenderer(this._createRenderer());
+    }
 
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
