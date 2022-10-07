@@ -8,10 +8,14 @@ import { IColorSet } from 'browser/Types';
 import { CanvasRenderer } from './CanvasRenderer';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 
 export class CanvasAddon implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: CanvasRenderer;
+
+  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
 
   public activate(terminal: Terminal): void {
     const core = (terminal as any)._core;
@@ -31,7 +35,8 @@ export class CanvasAddon implements ITerminalAddon {
     const colors: IColorSet = core._colorManager.colors;
     const screenElement: HTMLElement = core.screenElement;
     const linkifier = core.linkifier2;
-    this._renderer = new CanvasRenderer(colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
+    this._renderer = new CanvasRenderer(terminal, colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
+    forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas);
     renderService.setRenderer(this._renderer);
     renderService.onResize(bufferService.cols, bufferService.rows);
   }
@@ -45,5 +50,9 @@ export class CanvasAddon implements ITerminalAddon {
     renderService.onResize(this._terminal.cols, this._terminal.rows);
     this._renderer?.dispose();
     this._renderer = undefined;
+  }
+
+  public get textureAtlas(): HTMLCanvasElement | undefined {
+    return this._renderer?.textureAtlas;
   }
 }

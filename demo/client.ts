@@ -36,15 +36,15 @@ import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
-  Terminal?: typeof TerminalType;
-  AttachAddon?: typeof AttachAddon;
-  FitAddon?: typeof FitAddon;
-  SearchAddon?: typeof SearchAddon;
-  SerializeAddon?: typeof SerializeAddon;
-  WebLinksAddon?: typeof WebLinksAddon;
-  WebglAddon?: typeof WebglAddon;
-  Unicode11Addon?: typeof Unicode11Addon;
-  LigaturesAddon?: typeof LigaturesAddon;
+  Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
+  AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  WebglAddon?: typeof WebglAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
+  LigaturesAddon?: typeof LigaturesAddon; // eslint-disable-line @typescript-eslint/naming-convention
 }
 declare let window: IWindowWithTerminal;
 
@@ -59,27 +59,29 @@ type AddonType = 'attach' | 'canvas' | 'fit' | 'search' | 'serialize' | 'unicode
 interface IDemoAddon<T extends AddonType> {
   name: T;
   canChange: boolean;
-  ctor:
+  ctor: (
     T extends 'attach' ? typeof AttachAddon :
-    T extends 'canvas' ? typeof CanvasAddon :
-    T extends 'fit' ? typeof FitAddon :
-    T extends 'search' ? typeof SearchAddon :
-    T extends 'serialize' ? typeof SerializeAddon :
-    T extends 'web-links' ? typeof WebLinksAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    typeof WebglAddon;
-    instance?:
+      T extends 'canvas' ? typeof CanvasAddon :
+        T extends 'fit' ? typeof FitAddon :
+          T extends 'search' ? typeof SearchAddon :
+            T extends 'serialize' ? typeof SerializeAddon :
+              T extends 'web-links' ? typeof WebLinksAddon :
+                T extends 'unicode11' ? typeof Unicode11Addon :
+                  T extends 'ligatures' ? typeof LigaturesAddon :
+                    typeof WebglAddon
+  );
+  instance?: (
     T extends 'attach' ? AttachAddon :
-    T extends 'canvas' ? CanvasAddon :
-    T extends 'fit' ? FitAddon :
-    T extends 'search' ? SearchAddon :
-    T extends 'serialize' ? SerializeAddon :
-    T extends 'web-links' ? WebLinksAddon :
-    T extends 'webgl' ? WebglAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    never;
+      T extends 'canvas' ? CanvasAddon :
+        T extends 'fit' ? FitAddon :
+          T extends 'search' ? SearchAddon :
+            T extends 'serialize' ? SerializeAddon :
+              T extends 'web-links' ? WebLinksAddon :
+                T extends 'webgl' ? WebglAddon :
+                  T extends 'unicode11' ? typeof Unicode11Addon :
+                    T extends 'ligatures' ? typeof LigaturesAddon :
+                      never
+  );
 }
 
 const addons: { [T in AddonType]: IDemoAddon<T> } = {
@@ -96,12 +98,12 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
 
 let terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
-  find: <HTMLInputElement>document.querySelector('#find'),
-  findNext: <HTMLInputElement>document.querySelector('#find-next'),
-  findPrevious: <HTMLInputElement>document.querySelector('#find-previous'),
+  find: document.querySelector('#find') as HTMLInputElement,
+  findNext: document.querySelector('#find-next') as HTMLInputElement,
+  findPrevious: document.querySelector('#find-previous') as HTMLInputElement,
   findResults: document.querySelector('#find-results')
 };
-const paddingElement = <HTMLInputElement>document.getElementById('padding');
+const paddingElement = document.getElementById('padding') as HTMLInputElement;
 
 const xtermjsTheme = {
   foreground: '#F8F8F8',
@@ -146,7 +148,7 @@ function getSearchOptions(e: KeyboardEvent): ISearchOptions {
   };
 }
 
-const disposeRecreateButtonHandler = () => {
+const disposeRecreateButtonHandler: () => void = () => {
   // If the terminal exists dispose of it, otherwise recreate it
   if (term) {
     term.dispose();
@@ -169,7 +171,7 @@ const disposeRecreateButtonHandler = () => {
   }
 };
 
-const createNewWindowButtonHandler = () => {
+const createNewWindowButtonHandler: () => void = () => {
   if (term) {
     disposeRecreateButtonHandler();
   }
@@ -196,7 +198,7 @@ const createNewWindowButtonHandler = () => {
       }
     });
   }
-}
+};
 
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
@@ -220,6 +222,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
   document.getElementById('osc-hyperlinks').addEventListener('click', addAnsiHyperlink);
+  document.getElementById('sgr-test').addEventListener('click', sgrTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
 }
@@ -296,8 +299,8 @@ function createTerminal(): void {
   setTimeout(() => {
     initOptions(term);
     // TODO: Clean this up, opt-cols/rows doesn't exist anymore
-    (<HTMLInputElement>document.getElementById(`opt-cols`)).value = term.cols;
-    (<HTMLInputElement>document.getElementById(`opt-rows`)).value = term.rows;
+    (document.getElementById(`opt-cols`) as HTMLInputElement).value = term.cols;
+    (document.getElementById(`opt-rows`) as HTMLInputElement).value = term.rows;
     paddingElement.value = '0';
 
     // Set terminal size again to set the specific dimensions on the demo
@@ -423,14 +426,14 @@ function initOptions(term: TerminalType): void {
 
   // Attach listeners
   booleanOptions.forEach(o => {
-    const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
+    const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
     addDomListener(input, 'change', () => {
       console.log('change', o, input.checked);
       term.options[o] = input.checked;
     });
   });
   numberOptions.forEach(o => {
-    const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
+    const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       if (o === 'rows') {
@@ -452,7 +455,7 @@ function initOptions(term: TerminalType): void {
     });
   });
   Object.keys(stringOptions).forEach(o => {
-    const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
+    const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       let value: any = input.value;
@@ -485,7 +488,7 @@ function initOptions(term: TerminalType): void {
               magenta: '#b168df',
               red: '#da6771',
               white: '#efefef',
-              yellow: '#fff099',
+              yellow: '#fff099'
             };
             break;
           case 'light':
@@ -509,7 +512,7 @@ function initOptions(term: TerminalType): void {
               magenta: '#bc05bc',
               red: '#cd3131',
               white: '#555555',
-              yellow: '#949800',
+              yellow: '#949800'
             };
             break;
         }
@@ -541,7 +544,15 @@ function initAddons(term: TerminalType): void {
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
-            (addon.instance as WebglAddon).onChangeTextureAtlas(e => addTextureAtlas(e));
+            setTimeout(() => {
+              addTextureAtlas(addons.webgl.instance.textureAtlas);
+              addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+            }, 0);
+          } else if (name === 'canvas') {
+            setTimeout(() => {
+              addTextureAtlas(addons.canvas.instance.textureAtlas);
+              addons.canvas.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+            }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'search') {
@@ -555,7 +566,9 @@ function initAddons(term: TerminalType): void {
         }
       } else {
         if (name === 'webgl') {
-          (addon.instance as WebglAddon).textureAtlas.remove();
+          addons.webgl.instance.textureAtlas.remove();
+        } else if (name === 'canvas') {
+          addons.canvas.instance.textureAtlas.remove();
         } else if (name === 'unicode11') {
           term.unicode.activeVersion = '6';
         }
@@ -580,7 +593,7 @@ function initAddons(term: TerminalType): void {
   container.appendChild(fragment);
 }
 
-function updateFindResults(e: { resultIndex: number, resultCount: number } | undefined) {
+function updateFindResults(e: { resultIndex: number, resultCount: number } | undefined): void {
   let content: string;
   if (e === undefined) {
     content = 'undefined';
@@ -596,8 +609,8 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 }
 
 function updateTerminalSize(): void {
-  const cols = parseInt((<HTMLInputElement>document.getElementById(`opt-cols`)).value, 10);
-  const rows = parseInt((<HTMLInputElement>document.getElementById(`opt-rows`)).value, 10);
+  const cols = parseInt((document.getElementById(`opt-cols`) as HTMLInputElement).value, 10);
+  const rows = parseInt((document.getElementById(`opt-rows`) as HTMLInputElement).value, 10);
   const width = (cols * term._core._renderService.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
   const height = (rows * term._core._renderService.dimensions.actualCellHeight).toString() + 'px';
   terminalContainer.style.width = width;
@@ -621,21 +634,21 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById('htmlserialize-output').innerText = output;
 
   // Deprecated, but the most supported for now.
-  function listener(e: any) {
-    e.clipboardData.setData("text/html", output);
+  function listener(e: any): void {
+    e.clipboardData.setData('text/html', output);
     e.preventDefault();
   }
-  document.addEventListener("copy", listener);
-  document.execCommand("copy");
-  document.removeEventListener("copy", listener);
-  document.getElementById("htmlserialize-output-result").innerText = "Copied to clipboard";
+  document.addEventListener('copy', listener);
+  document.execCommand('copy');
+  document.removeEventListener('copy', listener);
+  document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
 }
 
-function addTextureAtlas(e: HTMLCanvasElement) {
+function addTextureAtlas(e: HTMLCanvasElement): void {
   document.querySelector('#texture-atlas').replaceChildren(e);
 }
 
-function writeCustomGlyphHandler() {
+function writeCustomGlyphHandler(): void {
   term.write('\n\r');
   term.write('\n\r');
   term.write('Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐\n\r');
@@ -680,7 +693,7 @@ function writeCustomGlyphHandler() {
   window.scrollTo(0, 0);
 }
 
-function loadTest() {
+function loadTest(): void {
   const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
   const testData = [];
   let byteCount = 0;
@@ -713,7 +726,7 @@ function loadTest() {
   });
 }
 
-function powerlineSymbolTest() {
+function powerlineSymbolTest(): void {
   function s(char: string): string {
     return `${char} \x1b[7m${char}\x1b[0m  `;
   }
@@ -787,7 +800,7 @@ function powerlineSymbolTest() {
   term.writeln('nf-mdi-github_face (\\uFbd9) \ufbd9');
 }
 
-function underlineTest() {
+function underlineTest(): void {
   function u(style: number): string {
     return `\x1b[4:${style}m`;
   }
@@ -797,7 +810,7 @@ function underlineTest() {
   term.write('\n\n\r');
   term.writeln('Underline styles:');
   term.writeln('');
-  function showSequence(id: number, name: string) {
+  function showSequence(id: number, name: string): string {
     let alphabet = '';
     for (let i = 97; i < 123; i++) {
       alphabet += String.fromCharCode(i);
@@ -844,7 +857,7 @@ function underlineTest() {
   term.write('\x1b[0m\n\r');
 }
 
-function ansiColorsTest() {
+function ansiColorsTest(): void {
   term.writeln(`\x1b[0m\n\n\rStandard colors:                        Bright colors:`);
   for (let i = 0; i < 16; i++) {
     term.write(`\x1b[48;5;${i}m ${i.toString().padEnd(2, ' ').padStart(3, ' ')} \x1b[0m`);
@@ -869,7 +882,66 @@ function ansiColorsTest() {
   }
 }
 
-function addAnsiHyperlink() {
+function writeTestString(): string {
+  let alphabet = '';
+  for (let i = 97; i < 123; i++) {
+    alphabet += String.fromCharCode(i);
+  }
+  let numbers = '';
+  for (let i = 0; i < 10; i++) {
+    numbers += i.toString();
+  }
+  return `${alphabet} ${numbers} 汉语 한국어 👽`;
+}
+const testString = writeTestString();
+
+function sgrTest(): void {
+  term.write('\n\n\r');
+  term.writeln(`Character Attributes (SGR, Select Graphic Rendition)`);
+  const entries: { ps: number, name: string }[] = [
+    { ps: 0, name: 'Normal' },
+    { ps: 1, name: 'Bold' },
+    { ps: 2, name: 'Faint/dim' },
+    { ps: 3, name: 'Italicized' },
+    { ps: 4, name: 'Underlined' },
+    { ps: 5, name: 'Blink' },
+    { ps: 7, name: 'Inverse' },
+    { ps: 8, name: 'Invisible' },
+    { ps: 9, name: 'Crossed-out characters' },
+    { ps: 21, name: 'Doubly-underlined' },
+    { ps: 22, name: 'Normal' },
+    { ps: 23, name: 'Not italicized' },
+    { ps: 24, name: 'Not underlined' },
+    { ps: 25, name: 'Steady (not blink)' },
+    { ps: 27, name: 'Positive (not inverse)' },
+    { ps: 28, name: 'Visible (not hidden)' },
+    { ps: 29, name: 'Not crossed-out' },
+    { ps: 30, name: 'Foreground Black' },
+    { ps: 31, name: 'Foreground Red' },
+    { ps: 32, name: 'Foreground Green' },
+    { ps: 33, name: 'Foreground Yellow' },
+    { ps: 34, name: 'Foreground Blue' },
+    { ps: 35, name: 'Foreground Magenta' },
+    { ps: 36, name: 'Foreground Cyan' },
+    { ps: 37, name: 'Foreground White' },
+    { ps: 39, name: 'Foreground default' },
+    { ps: 40, name: 'Background Black' },
+    { ps: 41, name: 'Background Red' },
+    { ps: 42, name: 'Background Green' },
+    { ps: 43, name: 'Background Yellow' },
+    { ps: 44, name: 'Background Blue' },
+    { ps: 45, name: 'Background Magenta' },
+    { ps: 46, name: 'Background Cyan' },
+    { ps: 47, name: 'Background White' },
+    { ps: 49, name: 'Background default' }
+  ];
+  const maxNameLength = entries.reduce<number>((p, c) => Math.max(c.name.length, p), 0);
+  for (const e of entries) {
+    term.writeln(`\x1b[0m\x1b[${e.ps}m ${e.ps.toString().padEnd(2, ' ')} ${e.name.padEnd(maxNameLength, ' ')} - ${testString}\x1b[0m`);
+  }
+}
+
+function addAnsiHyperlink(): void {
   term.write('\n\n\r');
   term.writeln(`Regular link with no id:`);
   term.writeln('\x1b]8;;https://github.com\x07GitHub\x1b]8;;\x07');
@@ -889,7 +961,7 @@ function addAnsiHyperlink() {
   term.write('\x1b[3A\x1b[1C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[5D');
 }
 
-function addDecoration() {
+function addDecoration(): void {
   term.options['overviewRulerWidth'] = 15;
   const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
@@ -904,7 +976,7 @@ function addDecoration() {
   });
 }
 
-function addOverviewRuler() {
+function addOverviewRuler(): void {
   term.options['overviewRulerWidth'] = 15;
   term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
   term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });

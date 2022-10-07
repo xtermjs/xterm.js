@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IBlockVector {
   x: number;

@@ -22,7 +22,7 @@
  */
 
 import { Disposable } from 'common/Lifecycle';
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, IDirtyRowService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
@@ -31,7 +31,6 @@ import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent, ScrollSource 
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
-import { DirtyRowService } from 'common/services/DirtyRowService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
 import { updateWindowsModeWrappedState } from 'common/WindowsMode';
@@ -49,7 +48,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _bufferService: IBufferService;
   protected readonly _logService: ILogService;
   protected readonly _charsetService: ICharsetService;
-  protected readonly _dirtyRowService: IDirtyRowService;
   protected readonly _oscLinkService: IOscLinkService;
 
   public readonly coreMouseService: ICoreMouseService;
@@ -61,22 +59,23 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
 
-  private _onBinary = new EventEmitter<string>();
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
-  private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
+  private readonly _onBinary = new EventEmitter<string>();
+  public readonly onBinary = this._onBinary.event;
+  private readonly _onData = new EventEmitter<string>();
+  public readonly onData = this._onData.event;
   protected _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
-  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  protected _onScroll = new EventEmitter<IScrollEvent, void>();
-  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
-  protected _onWriteParsed = new EventEmitter<void>();
+  public readonly onLineFeed = this._onLineFeed.event;
+  private readonly _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  public readonly onResize = this._onResize.event;
+  protected readonly _onWriteParsed = new EventEmitter<void>();
+  public readonly onWriteParsed = this._onWriteParsed.event;
+
   /**
    * Internally we track the source of the scroll but this is meaningless outside the library so
    * it's filtered out.
    */
   protected _onScrollApi?: EventEmitter<number, void>;
+  protected _onScroll = new EventEmitter<IScrollEvent, void>();
   public get onScroll(): IEvent<number, void> {
     if (!this._onScrollApi) {
       this._onScrollApi = new EventEmitter<number, void>();
@@ -114,8 +113,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(ICoreService, this.coreService);
     this.coreMouseService = this._instantiationService.createInstance(CoreMouseService);
     this._instantiationService.setService(ICoreMouseService, this.coreMouseService);
-    this._dirtyRowService = this._instantiationService.createInstance(DirtyRowService);
-    this._instantiationService.setService(IDirtyRowService, this._dirtyRowService);
     this.unicodeService = this._instantiationService.createInstance(UnicodeService);
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
@@ -124,7 +121,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IOscLinkService, this._oscLinkService);
 
     // Register input handler and handle/forward events
-    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._dirtyRowService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService);
+    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService);
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
     this.register(this._inputHandler);
 
@@ -132,14 +129,15 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._bufferService.onResize, this._onResize));
     this.register(forwardEvent(this.coreService.onData, this._onData));
     this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
+    this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
     this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
     this.register(this._bufferService.onScroll(event => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
-      this._dirtyRowService.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
+      this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
     }));
     this.register(this._inputHandler.onScroll(event => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
-      this._dirtyRowService.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
+      this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
     }));
 
     // Setup WriteBuffer

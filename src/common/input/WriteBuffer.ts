@@ -33,12 +33,6 @@ const WRITE_TIMEOUT_MS = 12;
  */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
-// queueMicrotask polyfill for nodejs < v11
-const qmt: (cb: () => void) => void = (typeof queueMicrotask === 'undefined')
-  ? (cb: () => void) => { Promise.resolve().then(cb); }
-  : queueMicrotask;
-
-
 export class WriteBuffer {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
@@ -46,10 +40,16 @@ export class WriteBuffer {
   private _bufferOffset = 0;
   private _isSyncWriting = false;
   private _syncCalls = 0;
-  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
-  private _onWriteParsed = new EventEmitter<void>();
+  private _didUserInput = false;
+
+  private readonly _onWriteParsed = new EventEmitter<void>();
+  public readonly onWriteParsed = this._onWriteParsed.event;
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
+
+  public handleUserInput(): void {
+    this._didUserInput = true;
+  }
 
   /**
    * @deprecated Unreliable, to be removed soon.
@@ -105,6 +105,19 @@ export class WriteBuffer {
     // schedule chunk processing for next event loop run
     if (!this._writeBuffer.length) {
       this._bufferOffset = 0;
+
+      // If this is the first write call after the user has done some input,
+      // parse it immediately to minimize input latency,
+      // otherwise schedule for the next event
+      if (this._didUserInput) {
+        this._didUserInput = false;
+        this._pendingData += data.length;
+        this._writeBuffer.push(data);
+        this._callbacks.push(callback);
+        this._innerWrite();
+        return;
+      }
+
       setTimeout(() => this._innerWrite());
     }
 
@@ -194,7 +207,7 @@ export class WriteBuffer {
         // 2. spawn a promise immediately resolving to `true`
         // (executed on the same queue, thus properly aligned before continuation happens)
         result.catch(err => {
-          qmt(() => {throw err;});
+          queueMicrotask(() => {throw err;});
           return Promise.resolve(false);
         }).then(continuation);
         return;

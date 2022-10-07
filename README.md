@@ -99,6 +99,26 @@ The full API for xterm.js is contained within the [TypeScript declaration file](
 
 Note that some APIs are marked *experimental*, these are added to enable experimentation with new ideas without committing to support it like a normal [semver](https://semver.org/) API. Note that these APIs can change radically between versions, so be sure to read release notes if you plan on using experimental APIs.
 
+## Releases
+
+Xterm.js follows a monthly release cycle roughly.
+
+All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), you can view the [high-level roadmap on the wiki](https://github.com/xtermjs/xterm.js/wiki/Roadmap) and see what we're working on now by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
+
+### Beta builds
+
+Our CI releases beta builds to npm for every change that goes into master. Install the latest beta build with:
+
+```bash
+npm install -S xterm@beta
+```
+
+These should generally be stable, but some bugs may slip in. We recommend using the beta build primarily to test out new features and to verify bug fixes.
+
+## Contributing
+
+You can read the [guide on the wiki](https://github.com/xtermjs/xterm.js/wiki/Contributing) to learn how to contribute and set up xterm.js for development.
+
 ## Real-world uses
 Xterm.js is used in several world-class applications to provide great terminal experiences.
 
@@ -197,30 +217,10 @@ Xterm.js is used in several world-class applications to provide great terminal e
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
 
-## Releases
-
-Xterm.js follows a monthly release cycle roughly.
-
-All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), you can view the [high-level roadmap on the wiki](https://github.com/xtermjs/xterm.js/wiki/Roadmap) and see what we're working on now by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
-
-### Beta builds
-
-Our CI releases beta builds to npm for every change that goes into master. Install the latest beta build with:
-
-```bash
-npm install -S xterm@beta
-```
-
-These should generally be stable, but some bugs may slip in. We recommend using the beta build primarily to test out new features and to verify bug fixes.
-
-## Contributing
-
-You can read the [guide on the wiki](https://github.com/xtermjs/xterm.js/wiki/Contributing) to learn how to contribute and set up xterm.js for development.
-
 ## License Agreement
 
 If you contribute code to this project, you implicitly allow your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
-Copyright (c) 2017-2019, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
+Copyright (c) 2017-2022, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
 Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)<br>
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)

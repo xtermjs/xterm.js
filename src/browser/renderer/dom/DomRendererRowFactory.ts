@@ -4,7 +4,7 @@
  */
 
 import { IBufferLine, ICellData, IColor } from 'common/Types';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -12,7 +12,7 @@ import { color, rgba } from 'common/Color';
 import { IColorSet } from 'browser/Types';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
-import { excludeFromContrastRatioDemands } from 'browser/renderer/RendererUtils';
+import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
 
 export const BOLD_CLASS = 'xterm-bold';
@@ -166,7 +166,7 @@ export class DomRendererRowFactory {
       if (cell.isUnderline()) {
         charElement.classList.add(`${UNDERLINE_CLASS}-${cell.extended.underlineStyle}`);
         if (charElement.textContent === ' ') {
-          charElement.innerHTML = '&nbsp;';
+          charElement.textContent = '\xa0'; // = &nbsp;
         }
         if (!cell.isUnderlineColorDefault()) {
           if (cell.isUnderlineColorRGB()) {

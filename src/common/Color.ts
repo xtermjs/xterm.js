@@ -11,6 +11,11 @@ let $g = 0;
 let $b = 0;
 let $a = 0;
 
+export const NULL_COLOR: IColor = {
+  css: '#00000000',
+  rgba: 0
+};
+
 /**
  * Helper functions where the source type is "channels" (individual color channels as numbers).
  */
@@ -129,7 +134,7 @@ export namespace css {
    */
   export function toColor(css: string): IColor {
     // Formats: #rgb[a] and #rrggbb[aa]
-    if (css.match(/#[0-9a-f]{3,8}/i)) {
+    if (css.match(/#[\da-f]{3,8}/i)) {
       switch (css.length) {
         case 4: { // #rgb
           $r = parseInt(css.slice(1, 2).repeat(2), 16);

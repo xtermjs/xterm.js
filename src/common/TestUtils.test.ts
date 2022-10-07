@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -98,16 +98,6 @@ export class MockCoreService implements ICoreService {
   public reset(): void { }
   public triggerDataEvent(data: string, wasUserInput?: boolean): void { }
   public triggerBinaryEvent(data: string): void { }
-}
-
-export class MockDirtyRowService implements IDirtyRowService {
-  public serviceBrand: any;
-  public start: number = 0;
-  public end: number = 0;
-  public clearRange(): void { }
-  public markDirty(y: number): void { }
-  public markRangeDirty(y1: number, y2: number): void { }
-  public markAllDirty(): void { }
 }
 
 export class MockLogService implements ILogService {

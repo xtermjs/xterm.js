@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
@@ -40,7 +40,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return new EventEmitter<IRequestRedrawEvent>().event; }
+  public readonly onRequestRedraw = new EventEmitter<IRequestRedrawEvent>().event;
 
   constructor(
     private _colors: IColorSet,
@@ -231,11 +231,11 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` background-color: ${this._colors.selectionInactiveBackgroundOpaque.css};` +
       `}`;
     // Colors
-    this._colors.ansi.forEach((c, i) => {
+    for (const [i, c] of this._colors.ansi.entries()) {
       styles +=
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
-    });
+    }
     styles +=
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(this._colors.background).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;

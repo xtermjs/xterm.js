@@ -12,6 +12,11 @@ declare module 'xterm-addon-canvas' {
   export class CanvasAddon implements ITerminalAddon {
     public textureAtlas?: HTMLCanvasElement;
 
+    /**
+     * An event that is fired when the texture atlas of the renderer changes.
+     */
+    public readonly onChangeTextureAtlas: IEvent<HTMLCanvasElement>;
+
     constructor();
 
     /**

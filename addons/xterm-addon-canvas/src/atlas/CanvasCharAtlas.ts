@@ -3,25 +3,20 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/Constants';
-import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
-import { BaseCharAtlas } from './BaseCharAtlas';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
+import { IGlyphIdentifier } from './Types';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from './LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'common/Types';
-import { throwIfFalsy } from 'browser/renderer/RendererUtils';
-import { color } from 'common/Color';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { color, NULL_COLOR } from 'common/Color';
+import { ICharAtlasConfig } from 'browser/renderer/shared/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
 const TEXTURE_WIDTH = 1024;
 const TEXTURE_HEIGHT = 1024;
-
-const TRANSPARENT_COLOR = {
-  css: 'rgba(0, 0, 0, 0)',
-  rgba: 0
-};
 
 // Drawing to the cache is expensive: If we have to draw more than this number of glyphs to the
 // cache in a single frame, give up on trying to cache anything else, and try to finish the current
@@ -56,14 +51,16 @@ export function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
   return glyph.code << 21 | glyph.bg << 12 | glyph.fg << 3 | (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
 }
 
-export class DynamicCharAtlas extends BaseCharAtlas {
+export class CanvasCharAtlas {
   // An ordered map that we're using to keep track of where each glyph is in the atlas texture.
   // It's ordered so that we can determine when to remove the old entries.
   private _cacheMap: LRUMap<IGlyphCacheValue>;
 
   // The texture that the atlas is drawn to
   private _cacheCanvas: HTMLCanvasElement;
+  public get cacheCanvas(): HTMLCanvasElement { return this._cacheCanvas; }
   private _cacheCtx: CanvasRenderingContext2D;
+  private _didWarmUp: boolean = false;
 
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
@@ -84,7 +81,6 @@ export class DynamicCharAtlas extends BaseCharAtlas {
   private _bitmap: ImageBitmap | null = null;
 
   constructor(document: Document, private _config: ICharAtlasConfig) {
-    super();
     this._cacheCanvas = document.createElement('canvas');
     this._cacheCanvas.width = TEXTURE_WIDTH;
     this._cacheCanvas.height = TEXTURE_HEIGHT;
@@ -96,7 +92,10 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     const tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = this._config.scaledCharWidth;
     tmpCanvas.height = this._config.scaledCharHeight;
-    this._tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d', { alpha: this._config.allowTransparency }));
+    this._tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d', {
+      alpha: this._config.allowTransparency,
+      willReadFrequently: true
+    }));
 
     this._width = Math.floor(TEXTURE_WIDTH / this._config.scaledCharWidth);
     this._height = Math.floor(TEXTURE_HEIGHT / this._config.scaledCharHeight);
@@ -114,6 +113,23 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       this._bitmapCommitTimeout = null;
     }
   }
+
+  /**
+   * Perform any work needed to warm the cache before it can be used. May be called multiple times.
+   * Implement _doWarmUp instead if you only want to get called once.
+   */
+  public warmUp(): void {
+    if (!this._didWarmUp) {
+      this._doWarmUp();
+      this._didWarmUp = true;
+    }
+  }
+
+  /**
+   * Perform any work needed to warm the cache before it can be used. Used by the default
+   * implementation of warmUp(), and will only be called once.
+   */
+  private _doWarmUp(): void { }
 
   public beginFrame(): void {
     this._drawToCacheCount = 0;
@@ -223,7 +239,7 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
-      return TRANSPARENT_COLOR;
+      return NULL_COLOR;
     }
     let result: IColor;
     if (glyph.bg === INVERTED_DEFAULT_COLOR) {
@@ -368,23 +384,6 @@ export class DynamicCharAtlas extends BaseCharAtlas {
       }
     });
     this._bitmapCommitTimeout = null;
-  }
-}
-
-// This is used for debugging the renderer, just swap out `new DynamicCharAtlas` with
-// `new NoneCharAtlas`.
-export class NoneCharAtlas extends BaseCharAtlas {
-  constructor(document: Document, config: ICharAtlasConfig) {
-    super();
-  }
-
-  public draw(
-    ctx: CanvasRenderingContext2D,
-    glyph: IGlyphIdentifier,
-    x: number,
-    y: number
-  ): boolean {
-    return false;
   }
 }
 
