@@ -62,6 +62,6 @@ export class WebglAddon implements ITerminalAddon {
   }
 
   public clearTextureAtlas(): void {
-    this._renderer?.clearCharAtlas();
+    this._renderer?.clearTextureAtlas();
   }
 }
