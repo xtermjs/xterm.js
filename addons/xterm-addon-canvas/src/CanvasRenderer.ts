@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
@@ -11,7 +12,6 @@ import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
-import { removeTerminalFromCache } from './atlas/CharAtlasCache';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
