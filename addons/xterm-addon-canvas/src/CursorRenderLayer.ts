@@ -12,6 +12,7 @@ import { IBufferService, IOptionsService, ICoreService, IDecorationService } fro
 import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { Terminal } from 'xterm';
+import { toDisposable } from 'common/Lifecycle';
 
 interface ICursorState {
   x: number;
@@ -57,14 +58,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
-  }
-
-  public dispose(): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.dispose();
+    this.register(toDisposable(() => {
+      this._cursorBlinkStateManager?.dispose();
       this._cursorBlinkStateManager = undefined;
-    }
-    super.dispose();
+    }));
   }
 
   public resize(dim: IRenderDimensions): void {

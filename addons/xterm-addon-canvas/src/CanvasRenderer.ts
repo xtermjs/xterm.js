@@ -24,9 +24,9 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
 
   constructor(

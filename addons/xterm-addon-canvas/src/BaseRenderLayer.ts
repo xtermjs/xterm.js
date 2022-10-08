@@ -19,8 +19,9 @@ import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
+import { Disposable } from 'common/Lifecycle';
 
-export abstract class BaseRenderLayer implements IRenderLayer {
+export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx!: CanvasRenderingContext2D;
   private _scaledCharWidth: number = 0;
@@ -51,6 +52,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     protected readonly _decorationService: IDecorationService,
     protected readonly _coreBrowserService: ICoreBrowserService
   ) {
+    super();
     this._cellColorResolver = new CellColorResolver(this._terminal, this._colors, this._selectionModel, this._decorationService, this._coreBrowserService);
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);

@@ -293,19 +293,4 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._characterOverlapCache[chars] = overlaps;
     return overlaps;
   }
-
-  /**
-   * Clear the charcater at the cell specified.
-   * @param x The column of the char.
-   * @param y The row of the char.
-   */
-  // private _clearChar(x: number, y: number): void {
-  //   let colsToClear = 1;
-  //   // Clear the adjacent character if it was wide
-  //   const state = this._state.cache[x][y];
-  //   if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
-  //     colsToClear = 2;
-  //   }
-  //   this.clearCells(x, y, colsToClear, 1);
-  // }
 }
