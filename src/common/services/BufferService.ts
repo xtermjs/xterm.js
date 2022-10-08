@@ -36,12 +36,7 @@ export class BufferService extends Disposable implements IBufferService {
     super();
     this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
     this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
-    this.buffers = new BufferSet(optionsService, this);
-  }
-
-  public dispose(): void {
-    super.dispose();
-    this.buffers.dispose();
+    this.buffers = this.register(new BufferSet(optionsService, this));
   }
 
   public resize(cols: number, rows: number): void {

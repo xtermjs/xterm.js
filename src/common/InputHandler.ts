@@ -382,10 +382,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerDcsHandler({ intermediates: '$', final: 'q' }, new DcsHandler((data, params) => this.requestStatusString(data, params)));
   }
 
-  public dispose(): void {
-    super.dispose();
-  }
-
   /**
    * Async parse support.
    */

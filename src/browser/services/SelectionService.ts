@@ -15,7 +15,7 @@ import { IBufferRange, ILinkifier2 } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getRangeLength } from 'common/buffer/BufferRange';
 
 /**
@@ -148,10 +148,10 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     this._model = new SelectionModel(this._bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
-  }
 
-  public dispose(): void {
-    this._removeMouseDownListeners();
+    this.register(toDisposable(() => {
+      this._removeMouseDownListeners();
+    }));
   }
 
   public reset(): void {

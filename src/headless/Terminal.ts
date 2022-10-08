@@ -71,14 +71,6 @@ export class Terminal extends CoreTerminal {
     this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
   }
 
-  public dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    super.dispose();
-    this.write = () => { };
-  }
-
   /**
    * Convenience property to active buffer.
    */

@@ -6,7 +6,7 @@
 import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
 // Helper objects to avoid excessive calculation and garbage collection during rendering. These are
@@ -68,6 +68,9 @@ export class OverviewRulerRenderer extends Disposable {
     this._registerDecorationListeners();
     this._registerBufferChangeListeners();
     this._registerDimensionChangeListeners();
+    this.register(toDisposable(() => {
+      this._canvas?.remove();
+    }));
   }
 
   /**
@@ -118,11 +121,6 @@ export class OverviewRulerRenderer extends Disposable {
     }));
     // set the canvas dimensions
     this._queueRefresh(true);
-  }
-
-  public override dispose(): void {
-    this._canvas?.remove();
-    super.dispose();
   }
 
   private _refreshDrawConstants(): void {

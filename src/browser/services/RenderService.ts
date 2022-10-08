@@ -169,10 +169,6 @@ export class RenderService extends Disposable implements IRenderService {
     this._onDimensionsChange.fire(this._renderer.dimensions);
   }
 
-  public dispose(): void {
-    super.dispose();
-  }
-
   public hasRenderer(): boolean {
     return !!this._renderer;
   }

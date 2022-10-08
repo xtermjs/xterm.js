@@ -56,6 +56,7 @@ import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
+import { toDisposable } from 'common/Lifecycle';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -184,6 +185,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Setup listeners
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
+
+    this.register(toDisposable(() => {
+      this._customKeyEventHandler = undefined;
+      this.element?.parentNode?.removeChild(this.element);
+    }));
   }
 
   /**
@@ -233,17 +239,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
     this._renderService?.setColors(this._colorManager.colors);
     this.viewport?.onThemeChange(this._colorManager.colors);
-  }
-
-  public dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    super.dispose();
-    this._renderService?.dispose();
-    this._customKeyEventHandler = undefined;
-    this.write = () => { };
-    this.element?.parentNode?.removeChild(this.element);
   }
 
   protected _setup(): void {

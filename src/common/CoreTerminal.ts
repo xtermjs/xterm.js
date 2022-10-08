@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
@@ -143,15 +143,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
-  }
 
-  public dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    super.dispose();
-    this._windowsMode?.dispose();
-    this._windowsMode = undefined;
+    this.register(toDisposable(() => {
+      this._windowsMode?.dispose();
+      this._windowsMode = undefined;
+    }));
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {

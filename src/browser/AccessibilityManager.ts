@@ -9,7 +9,7 @@ import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { IRenderService } from 'browser/services/Services';
 import { removeElementFromParent } from 'browser/Dom';
@@ -104,12 +104,10 @@ export class AccessibilityManager extends Disposable {
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
-  }
-
-  public dispose(): void {
-    super.dispose();
-    removeElementFromParent(this._accessibilityTreeRoot);
-    this._rowElements.length = 0;
+    this.register(toDisposable(() => {
+      removeElementFromParent(this._accessibilityTreeRoot);
+      this._rowElements.length = 0;
+    }));
   }
 
   private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
