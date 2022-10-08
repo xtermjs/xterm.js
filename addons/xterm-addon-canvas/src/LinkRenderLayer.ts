@@ -7,7 +7,7 @@ import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
+import { IColorSet, ILinkifierEvent, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
 import { Terminal } from 'xterm';
@@ -19,7 +19,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
+    colors: ReadonlyColorSet,
     linkifier2: ILinkifier2,
     bufferService: IBufferService,
     optionsService: IOptionsService,

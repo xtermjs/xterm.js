@@ -5,7 +5,7 @@
 
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { Terminal } from 'xterm';
@@ -24,7 +24,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
+    colors: ReadonlyColorSet,
     bufferService: IBufferService,
     coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,

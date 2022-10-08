@@ -9,7 +9,7 @@ import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content, UnderlineStyle } from 'common/buffer/Constants';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
@@ -35,7 +35,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
+    colors: ReadonlyColorSet,
     alpha: boolean,
     bufferService: IBufferService,
     optionsService: IOptionsService,

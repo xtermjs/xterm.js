@@ -7,7 +7,7 @@ import { removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache'
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet, ILinkifier2 } from 'browser/Types';
+import { IColorSet, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -31,7 +31,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   constructor(
     private readonly _terminal: Terminal,
-    private _colors: IColorSet,
+    private _colors: ReadonlyColorSet,
     private readonly _screenElement: HTMLElement,
     linkifier2: ILinkifier2,
     private readonly _bufferService: IBufferService,

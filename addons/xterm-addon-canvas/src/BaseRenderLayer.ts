@@ -11,7 +11,7 @@ import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -46,7 +46,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     id: string,
     zIndex: number,
     private _alpha: boolean,
-    protected _colors: IColorSet,
+    protected _colors: ReadonlyColorSet,
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
     protected readonly _decorationService: IDecorationService,
@@ -85,7 +85,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._selectionModel.update(this._terminal, start, end, columnSelectMode);
   }
 
-  public setColors(colorSet: IColorSet): void {
+  public setColors(colorSet: ReadonlyColorSet): void {
     this._refreshCharAtlas(colorSet);
   }
 
@@ -112,7 +112,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * Refreshes the char atlas, aquiring a new one if necessary.
    * @param colorSet The color set to use for the char atlas.
    */
-  private _refreshCharAtlas(colorSet: IColorSet): void {
+  private _refreshCharAtlas(colorSet: ReadonlyColorSet): void {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { CanvasRenderer } from './CanvasRenderer';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -38,11 +38,11 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     const coreBrowserService: ICoreBrowserService = core._coreBrowserService;
     const decorationService: IDecorationService = core._decorationService;
     const optionsService: IOptionsService = core.optionsService;
-    const colors: IColorSet = core._colorManager.colors;
+    const themeService: IThemeService = core._themeService;
     const screenElement: HTMLElement = core.screenElement;
     const linkifier = core.linkifier2;
 
-    this._renderer = new CanvasRenderer(terminal, colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
+    this._renderer = new CanvasRenderer(terminal, themeService.colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);
     renderService.handleResize(bufferService.cols, bufferService.rows);

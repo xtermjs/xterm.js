@@ -4,7 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
 
 // TODO: Use core interfaces
@@ -82,7 +82,7 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Called when the theme changes.
    */
-  setColors(colorSet: IColorSet): void;
+  setColors(colorSet: ReadonlyColorSet): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered

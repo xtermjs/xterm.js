@@ -7,7 +7,7 @@ import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService, IDecorationService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService } from 'browser/services/Services';
@@ -37,7 +37,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
+    colors: ReadonlyColorSet,
     private readonly _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
     bufferService: IBufferService,
     optionsService: IOptionsService,
