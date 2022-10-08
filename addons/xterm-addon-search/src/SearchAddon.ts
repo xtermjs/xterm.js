@@ -5,6 +5,7 @@
 
 import { Terminal, IDisposable, ITerminalAddon, IBufferRange, IDecoration } from 'xterm';
 import { EventEmitter } from 'common/EventEmitter';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -50,7 +51,7 @@ type LineCacheEntry = [
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
-export class SearchAddon implements ITerminalAddon {
+export class SearchAddon extends Disposable implements ITerminalAddon {
   private _terminal: Terminal | undefined;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
@@ -72,13 +73,18 @@ export class SearchAddon implements ITerminalAddon {
 
   private _resultIndex: number | undefined;
 
-  private readonly _onDidChangeResults = new EventEmitter<{ resultIndex: number, resultCount: number } | undefined>();
+  private readonly _onDidChangeResults = this.register(new EventEmitter<{ resultIndex: number, resultCount: number } | undefined>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._onDataDisposable = this._terminal.onWriteParsed(() => this._updateMatches());
-    this._onResizeDisposable = this._terminal.onResize(() => this._updateMatches());
+    this._onDataDisposable = this.register(this._terminal.onWriteParsed(() => this._updateMatches()));
+    this._onResizeDisposable = this.register(this._terminal.onResize(() => this._updateMatches()));
+    this.register(toDisposable(() => {
+      this.clearDecorations();
+      this._onDataDisposable?.dispose();
+      this._onResizeDisposable?.dispose();
+    }));
   }
 
   private _updateMatches(): void {
@@ -92,12 +98,6 @@ export class SearchAddon implements ITerminalAddon {
         this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size ?? -1 });
       }, 200);
     }
-  }
-
-  public dispose(): void {
-    this.clearDecorations();
-    this._onDataDisposable?.dispose();
-    this._onResizeDisposable?.dispose();
   }
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
