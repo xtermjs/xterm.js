@@ -77,6 +77,7 @@ describe('xterm-addon-serialize', () => {
     terminal = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
     terminal.loadAddon(serializeAddon);
 
+    // TODO: Fix color manager reference
     selectionService = new TestSelectionService((terminal as any)._core._bufferService);
     cm = new ColorManager();
     (terminal as any)._core._colorManager = cm;
