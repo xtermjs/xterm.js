@@ -87,8 +87,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
-    this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
+    this.register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
+    this.register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
 
     this.register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
@@ -376,11 +376,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
 
-  private _onLinkHover(e: ILinkifierEvent): void {
+  private _handleLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
   }
 
-  private _onLinkLeave(e: ILinkifierEvent): void {
+  private _handleLinkLeave(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, false);
   }
 

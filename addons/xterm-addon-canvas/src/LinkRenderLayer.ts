@@ -28,8 +28,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
   ) {
     super(terminal, container, 'link', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
 
-    this.register(linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e)));
-    this.register(linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e)));
+    this.register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
+    this.register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -54,7 +54,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _onShowLinkUnderline(e: ILinkifierEvent): void {
+  private _handleShowLinkUnderline(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
     } else if (e.fg && is256Color(e.fg)) {
@@ -78,7 +78,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     this._state = e;
   }
 
-  private _onHideLinkUnderline(e: ILinkifierEvent): void {
+  private _handleHideLinkUnderline(e: ILinkifierEvent): void {
     this._clearCurrentLink();
   }
 }

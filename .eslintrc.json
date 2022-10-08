@@ -101,6 +101,14 @@
         "regex": "^on[A-Z].+",
         "match": false
       } },
+      { "selector": "method", "modifiers": ["private"], "format": ["camelCase"], "leadingUnderscore": "require", "custom": {
+        "regex": "^on[A-Z].+",
+        "match": false
+      } },
+      { "selector": "method", "modifiers": ["protected"], "format": ["camelCase"], "leadingUnderscore": "require", "custom": {
+        "regex": "^on[A-Z].+",
+        "match": false
+      } },
       // typeLike
       { "selector": "typeLike", "format": ["PascalCase"] },
       { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] }

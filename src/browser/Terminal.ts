@@ -316,7 +316,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private _onTextAreaFocus(ev: KeyboardEvent): void {
+  private _handleTextAreaFocus(ev: KeyboardEvent): void {
     if (this.coreService.decPrivateModes.sendFocus) {
       this.coreService.triggerDataEvent(C0.ESC + '[I');
     }
@@ -337,7 +337,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   /**
    * Binds the desired blur behavior on a given terminal object.
    */
-  private _onTextAreaBlur(): void {
+  private _handleTextAreaBlur(): void {
     // Text can safely be removed on blur. Doing it earlier could interfere with
     // screen readers reading it out.
     this.textarea!.value = '';
@@ -488,8 +488,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._onTextAreaFocus(ev)));
-    this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
+    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._handleTextAreaFocus(ev)));
+    this.register(addDisposableDomListener(this.textarea, 'blur', () => this._handleTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
     this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea, this._document.defaultView ?? window);
