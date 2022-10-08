@@ -9,7 +9,7 @@ import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
@@ -35,7 +35,7 @@ export class DomRendererRowFactory {
 
   constructor(
     private readonly _document: Document,
-    private _colors: IColorSet,
+    private _colors: ReadonlyColorSet,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,

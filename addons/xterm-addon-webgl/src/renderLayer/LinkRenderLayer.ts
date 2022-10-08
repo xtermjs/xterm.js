@@ -6,7 +6,7 @@
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
+import { ITerminal, IColorSet, ILinkifierEvent, ReadonlyColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
@@ -18,7 +18,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   constructor(
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
+    colors: ReadonlyColorSet,
     terminal: ITerminal,
     coreBrowserService: ICoreBrowserService
   ) {

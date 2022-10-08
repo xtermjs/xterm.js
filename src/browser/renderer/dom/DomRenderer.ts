@@ -7,7 +7,7 @@ import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/rende
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
+import { IColorSet, ILinkifierEvent, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
@@ -43,7 +43,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
 
   constructor(
-    private _colors: IColorSet,
+    private _colors: ReadonlyColorSet,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,

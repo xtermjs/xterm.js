@@ -4,7 +4,7 @@
  */
 
 import { IDisposable, Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 export interface IRenderLayer extends IDisposable {
@@ -31,7 +31,7 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Called when the theme changes.
    */
-  setColors(terminal: Terminal, colorSet: IColorSet): void;
+  setColors(terminal: Terminal, colorSet: ReadonlyColorSet): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered

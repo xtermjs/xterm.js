@@ -126,6 +126,8 @@ export interface IColorSet {
   contrastCache: IColorContrastCache;
 }
 
+export type ReadonlyColorSet = Readonly<Omit<IColorSet, 'ansi'>> & { ansi: Readonly<Pick<IColorSet, 'ansi'>['ansi']> };
+
 export interface IColorContrastCache {
   clear(): void;
   setCss(bg: number, fg: number, value: string | null): void;
@@ -150,7 +152,7 @@ export interface IViewport extends IDisposable {
   handleWheel(ev: WheelEvent): boolean;
   handleTouchStart(ev: TouchEvent): void;
   handleTouchMove(ev: TouchEvent): boolean;
-  handleThemeChange(colors: IColorSet): void;
+  handleThemeChange(colors: ReadonlyColorSet): void;
 }
 
 export interface ILinkifierEvent {

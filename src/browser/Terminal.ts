@@ -39,9 +39,8 @@ import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseActio
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ICoreBrowserService, ICharacterJoinerService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ICoreBrowserService, ICharacterJoinerService, IThemeService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { IBuffer } from 'common/buffer/Types';
 import { MouseService } from 'browser/services/MouseService';
@@ -57,6 +56,7 @@ import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
 import { toDisposable } from 'common/Lifecycle';
+import { ThemeService } from 'browser/services/ThemeService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -86,6 +86,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _coreBrowserService: ICoreBrowserService | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
+  private _themeService: IThemeService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
   private _selectionService: ISelectionService | undefined;
 
@@ -120,8 +121,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: AccessibilityManager | undefined;
-  private _colorManager: ColorManager | undefined;
-  private _theme: ITheme | undefined;
 
   private readonly _onCursorMove = this.register(new EventEmitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
@@ -199,9 +198,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * while an event from OSC 10|110 | 11|111 | 12|112 always contains a single request.
    */
   private _handleColorEvent(event: IColorEvent): void {
-    if (!this._colorManager) return;
+    if (!this._themeService) return;
     for (const req of event) {
-      let acc: 'foreground' | 'background' | 'cursor' | 'ansi' | undefined = undefined;
+      let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
       let ident = '';
       switch (req.index) {
         case ColorIndex.FOREGROUND: // OSC 10 | 110
@@ -224,21 +223,26 @@ export class Terminal extends CoreTerminal implements ITerminal {
       switch (req.type) {
         case ColorRequestType.REPORT:
           const channels = color.toColorRGB(acc === 'ansi'
-            ? this._colorManager.colors.ansi[req.index]
-            : this._colorManager.colors[acc]);
+            ? this._themeService.colors.ansi[req.index]
+            : this._themeService.colors[acc]);
           this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1_ESCAPED.ST}`);
           break;
         case ColorRequestType.SET:
-          if (acc === 'ansi') this._colorManager.colors.ansi[req.index] = rgba.toColor(...req.color);
-          else this._colorManager.colors[acc] = rgba.toColor(...req.color);
+          if (acc === 'ansi') {
+            this._themeService.modifyColors(colors => colors.ansi[req.index] = rgba.toColor(...req.color));
+          } else {
+            const narrowedAcc = acc;
+            this._themeService.modifyColors(colors => colors[narrowedAcc] = rgba.toColor(...req.color));
+          }
           break;
         case ColorRequestType.RESTORE:
-          this._colorManager.restoreColor(req.index);
+          this._themeService.restoreColor(req.index);
           break;
       }
     }
-    this._renderService?.setColors(this._colorManager.colors);
-    this.viewport?.handleThemeChange(this._colorManager.colors);
+    // TODO: Have these listen to theme change
+    this._renderService?.setColors(this._themeService.colors);
+    this.viewport?.handleThemeChange(this._themeService.colors);
   }
 
   protected _setup(): void {
@@ -498,10 +502,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
 
-    this._theme = this.options.theme || this._theme;
-    this._colorManager = new ColorManager();
-    this.register(this.optionsService.onOptionChange(e => this._colorManager!.handleOptionsChange(e, this.optionsService.rawOptions[e])));
-    this._colorManager.setTheme(this._theme);
+    this._themeService = this._instantiationService.createInstance(ThemeService);
+    this._instantiationService.setService(IThemeService, this._themeService);
 
     this._characterJoinerService = this._instantiationService.createInstance(CharacterJoinerService);
     this._instantiationService.setService(ICharacterJoinerService, this._characterJoinerService);
@@ -533,7 +535,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._viewportScrollArea,
       this.element
     );
-    this.viewport.handleThemeChange(this._colorManager.colors);
+    // TODO: Listen to theme service event
+    this.viewport.handleThemeChange(this._themeService.colors);
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
@@ -610,7 +613,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    return this._instantiationService.createInstance(DomRenderer, this._colorManager!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
+    // TODO: Listen to theme service
+    return this._instantiationService.createInstance(DomRenderer, this._themeService!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
   }
 
   /**
@@ -618,10 +622,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * @param theme The theme to set.
    */
   private _setTheme(theme: ITheme): void {
-    this._theme = theme;
-    this._colorManager?.setTheme(theme);
-    this._renderService?.setColors(this._colorManager!.colors);
-    this.viewport?.handleThemeChange(this._colorManager!.colors);
+    // TODO: Listen to theme service events
+    this.viewport?.handleThemeChange(this._themeService!.colors);
   }
 
   /**

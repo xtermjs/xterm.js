@@ -6,7 +6,7 @@
 import { IRenderLayer } from './Types';
 import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
@@ -31,7 +31,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     id: string,
     zIndex: number,
     private _alpha: boolean,
-    protected _colors: IColorSet,
+    protected _colors: ReadonlyColorSet,
     protected readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
@@ -61,7 +61,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   public handleGridChanged(terminal: Terminal, startRow: number, endRow: number): void {}
   public handleSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
 
-  public setColors(terminal: Terminal, colorSet: IColorSet): void {
+  public setColors(terminal: Terminal, colorSet: ReadonlyColorSet): void {
     this._refreshCharAtlas(terminal, colorSet);
   }
 
@@ -89,7 +89,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param terminal The terminal.
    * @param colorSet The color set to use for the char atlas.
    */
-  private _refreshCharAtlas(terminal: Terminal, colorSet: IColorSet): void {
+  private _refreshCharAtlas(terminal: Terminal, colorSet: ReadonlyColorSet): void {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }

@@ -1,6 +1,6 @@
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { IDecorationService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
@@ -26,7 +26,7 @@ export class CellColorResolver {
 
   constructor(
     private readonly _terminal: Terminal,
-    private _colors: IColorSet,
+    private _colors: ReadonlyColorSet,
     private readonly _selectionRenderModel: ISelectionRenderModel,
     private readonly _decorationService: IDecorationService,
     private readonly _coreBrowserService: ICoreBrowserService

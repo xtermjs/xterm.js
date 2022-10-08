@@ -8,7 +8,7 @@ import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from '
 import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColor } from 'common/Types';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
@@ -84,7 +84,7 @@ export class RectangleRenderer extends Disposable {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet,
+    private _colors: ReadonlyColorSet,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {

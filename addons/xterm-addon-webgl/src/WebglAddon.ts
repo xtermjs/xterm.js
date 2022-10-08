@@ -5,7 +5,7 @@
 
 import { Terminal, ITerminalAddon, IEvent } from 'xterm';
 import { WebglRenderer } from './WebglRenderer';
-import { ICharacterJoinerService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { isSafari } from 'common/Platform';
@@ -42,8 +42,9 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     const coreBrowserService: ICoreBrowserService = core._coreBrowserService;
     const coreService: ICoreService = core.coreService;
     const decorationService: IDecorationService = core._decorationService;
-    const colors: IColorSet = core._colorManager.colors;
-    this._renderer = this.register(new WebglRenderer(terminal, colors, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer));
+    const themeService: IThemeService = core._themeService;
+    // TODO: Pass in theme service
+    this._renderer = this.register(new WebglRenderer(terminal, themeService.colors, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer));
     this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);

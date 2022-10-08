@@ -9,7 +9,7 @@ import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/s
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet, ITerminal } from 'browser/Types';
+import { IColorSet, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
@@ -55,7 +55,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet,
+    private _colors: ReadonlyColorSet,
     private readonly _characterJoinerService: ICharacterJoinerService,
     private readonly _coreBrowserService: ICoreBrowserService,
     coreService: ICoreService,
