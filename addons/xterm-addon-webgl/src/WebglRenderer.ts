@@ -8,8 +8,8 @@ import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet, ITerminal } from 'browser/Types';
+import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { IColorSet, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
@@ -55,7 +55,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet,
+    private readonly _themeService: IThemeService,
     private readonly _characterJoinerService: ICharacterJoinerService,
     private readonly _coreBrowserService: ICoreBrowserService,
     coreService: ICoreService,
@@ -64,13 +64,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._colors, this._model.selection, this._decorationService, this._coreBrowserService);
+    this.register(this._themeService.onChangeColors(() => this._handleColorChange()));
+
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
 
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._colors, this._core, this._coreBrowserService),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._colors, this._onRequestRedraw, this._coreBrowserService, coreService)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, this._themeService),
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, this._themeService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -145,17 +147,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return this._charAtlas?.cacheCanvas;
   }
 
-  public setColors(colors: IColorSet): void {
-    this._colors = colors;
-    // Clear layers and force a full render
-    for (const l of this._renderLayers) {
-      l.setColors(this._terminal, this._colors);
-      l.reset(this._terminal);
-    }
-
-    this._cellColorResolver.setColors(colors);
-    this._rectangleRenderer.setColors();
-
+  private _handleColorChange(): void {
     this._refreshCharAtlas();
 
     // Force a full refresh
@@ -254,7 +246,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer?.dispose();
     this._glyphRenderer?.dispose();
 
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions));
+    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService));
     this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions));
 
     // Update dimensions and acquire char atlas
@@ -273,7 +265,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    const atlas = acquireTextureAtlas(this._terminal, this._colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
+    const atlas = acquireTextureAtlas(this._terminal, this._themeService.colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
     if (this._charAtlas !== atlas) {
       this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
     }

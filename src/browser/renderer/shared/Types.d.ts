@@ -4,7 +4,7 @@
  */
 
 import { FontWeight, Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IDisposable } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 
@@ -61,7 +61,6 @@ export interface IRenderer extends IDisposable {
   readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
 
   dispose(): void;
-  setColors(colors: IColorSet): void;
   handleDevicePixelRatioChange(): void;
   handleResize(cols: number, rows: number): void;
   handleCharSizeChanged(): void;

@@ -6,8 +6,8 @@
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { IColorSet, ILinkifierEvent, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
 import { Terminal } from 'xterm';
@@ -19,14 +19,14 @@ export class LinkRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
     linkifier2: ILinkifier2,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     decorationService: IDecorationService,
-    coreBrowserService: ICoreBrowserService
+    coreBrowserService: ICoreBrowserService,
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'link', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'link', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
 
     this.register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
     this.register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));
@@ -56,12 +56,12 @@ export class LinkRenderLayer extends BaseRenderLayer {
 
   private _handleShowLinkUnderline(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
     } else if (e.fg && is256Color(e.fg)) {
       // 256 color support
-      this._ctx.fillStyle = this._colors.ansi[e.fg].css;
+      this._ctx.fillStyle = this._themeService.colors.ansi[e.fg].css;
     } else {
-      this._ctx.fillStyle = this._colors.foreground.css;
+      this._ctx.fillStyle = this._themeService.colors.foreground.css;
     }
 
     if (e.y1 === e.y2) {

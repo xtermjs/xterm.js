@@ -8,12 +8,13 @@ import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from '
 import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColor } from 'common/Types';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { DIM_OPACITY } from 'browser/renderer/shared/Constants';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { IThemeService } from 'browser/services/Services';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -84,9 +85,9 @@ export class RectangleRenderer extends Disposable {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
-    private _dimensions: IRenderDimensions
+    private _dimensions: IRenderDimensions,
+    private readonly _themeService: IThemeService
   ) {
     super();
 
@@ -133,7 +134,11 @@ export class RectangleRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.COLOR, 4, gl.FLOAT, false, BYTES_PER_RECTANGLE, 4 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.COLOR, 1);
 
-    this._updateCachedColors();
+    this._updateCachedColors(_themeService.colors);
+    this.register(this._themeService.onChangeColors(e => {
+      this._updateCachedColors(e);
+      this._updateViewportRectangle();
+    }));
   }
 
   public render(): void {
@@ -155,17 +160,12 @@ export class RectangleRenderer extends Disposable {
     this._updateViewportRectangle();
   }
 
-  public setColors(): void {
-    this._updateCachedColors();
-    this._updateViewportRectangle();
-  }
-
   public setDimensions(dimensions: IRenderDimensions): void {
     this._dimensions = dimensions;
   }
 
-  private _updateCachedColors(): void {
-    this._bgFloat = this._colorToFloat32Array(this._colors.background);
+  private _updateCachedColors(colors: ReadonlyColorSet): void {
+    this._bgFloat = this._colorToFloat32Array(colors.background);
   }
 
   private _updateViewportRectangle(): void {
@@ -236,27 +236,27 @@ export class RectangleRenderer extends Disposable {
       switch (fg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          $rgba = this._colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
+          $rgba = this._themeService.colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
           $rgba = (fg & Attributes.RGB_MASK) << 8;
           break;
         case Attributes.CM_DEFAULT:
         default:
-          $rgba = this._colors.foreground.rgba;
+          $rgba = this._themeService.colors.foreground.rgba;
       }
     } else {
       switch (bg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          $rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
+          $rgba = this._themeService.colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
           $rgba = (bg & Attributes.RGB_MASK) << 8;
           break;
         case Attributes.CM_DEFAULT:
         default:
-          $rgba = this._colors.background.rgba;
+          $rgba = this._themeService.colors.background.rgba;
           $isDefault = true;
       }
     }

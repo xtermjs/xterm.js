@@ -106,11 +106,6 @@ export interface IBrowser {
   isWindows: boolean;
 }
 
-export interface IColorManager {
-  colors: IColorSet;
-  handleOptionsChange(key: string, value: any): void;
-}
-
 export interface IColorSet {
   foreground: IColor;
   background: IColor;
@@ -125,6 +120,8 @@ export interface IColorSet {
   ansi: IColor[];
   contrastCache: IColorContrastCache;
 }
+
+export type ReadonlyColorSet = Readonly<Omit<IColorSet, 'ansi'>> & { ansi: Readonly<Pick<IColorSet, 'ansi'>['ansi']> };
 
 export interface IColorContrastCache {
   clear(): void;
@@ -150,7 +147,6 @@ export interface IViewport extends IDisposable {
   handleWheel(ev: WheelEvent): boolean;
   handleTouchStart(ev: TouchEvent): void;
   handleTouchMove(ev: TouchEvent): boolean;
-  handleThemeChange(colors: IColorSet): void;
 }
 
 export interface ILinkifierEvent {

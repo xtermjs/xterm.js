@@ -4,7 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
 
 // TODO: Use core interfaces
@@ -41,7 +41,6 @@ export interface IRenderer extends IDisposable {
    */
   readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
 
-  setColors(colors: IColorSet): void;
   handleDevicePixelRatioChange(): void;
   handleResize(cols: number, rows: number): void;
   handleCharSizeChanged(): void;
@@ -78,11 +77,6 @@ export interface IRenderLayer extends IDisposable {
    * Called when options change.
    */
   handleOptionsChanged(): void;
-
-  /**
-   * Called when the theme changes.
-   */
-  setColors(colorSet: IColorSet): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered

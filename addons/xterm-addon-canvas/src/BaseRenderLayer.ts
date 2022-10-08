@@ -10,8 +10,8 @@ import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
-import { ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet } from 'browser/Types';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -46,20 +46,24 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     id: string,
     zIndex: number,
     private _alpha: boolean,
-    protected _colors: IColorSet,
+    protected readonly _themeService: IThemeService,
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
     protected readonly _decorationService: IDecorationService,
     protected readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._colors, this._selectionModel, this._decorationService, this._coreBrowserService);
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService);
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
     this._container.appendChild(this._canvas);
-    this._refreshCharAtlas(this._colors);
+    this._refreshCharAtlas(this._themeService.colors);
+    this.register(this._themeService.onChangeColors(e => {
+      this._refreshCharAtlas(e);
+      this.reset();
+    }));
 
     this.register(toDisposable(() => {
       removeElementFromParent(this._canvas);
@@ -85,10 +89,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._selectionModel.update(this._terminal, start, end, columnSelectMode);
   }
 
-  public setColors(colorSet: IColorSet): void {
-    this._refreshCharAtlas(colorSet);
-  }
-
   protected _setTransparency(alpha: boolean): void {
     // Do nothing when alpha doesn't change
     if (alpha === this._alpha) {
@@ -104,7 +104,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._container.replaceChild(this._canvas, oldCanvas);
 
     // Regenerate char atlas and force a full redraw
-    this._refreshCharAtlas(this._colors);
+    this._refreshCharAtlas(this._themeService.colors);
     this.handleGridChanged(0, this._bufferService.rows - 1);
   }
 
@@ -112,7 +112,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * Refreshes the char atlas, aquiring a new one if necessary.
    * @param colorSet The color set to use for the char atlas.
    */
-  private _refreshCharAtlas(colorSet: IColorSet): void {
+  private _refreshCharAtlas(colorSet: ReadonlyColorSet): void {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
@@ -138,7 +138,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       this._clearAll();
     }
 
-    this._refreshCharAtlas(this._colors);
+    this._refreshCharAtlas(this._themeService.colors);
   }
 
   public abstract reset(): void;
@@ -294,7 +294,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
     }
   }
@@ -314,7 +314,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
         width * this._scaledCellWidth,
         height * this._scaledCellHeight);
     } else {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(
         x * this._scaledCellWidth,
         y * this._scaledCellHeight,

@@ -5,7 +5,7 @@
 
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { Terminal } from 'xterm';
-import { IColorSet, ITerminal } from 'browser/Types';
+import { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
 
@@ -27,7 +27,7 @@ const charAtlasCache: ITextureAtlasCacheEntry[] = [];
  */
 export function acquireTextureAtlas(
   terminal: Terminal,
-  colors: IColorSet,
+  colors: ReadonlyColorSet,
   scaledCellWidth: number,
   scaledCellHeight: number,
   scaledCharWidth: number,

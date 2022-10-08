@@ -9,10 +9,11 @@ import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, IRenderDebouncerWithCallback } from 'browser/Types';
+import { IColorSet, IRenderDebouncerWithCallback, ReadonlyColorSet } from 'browser/Types';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
-import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { DebouncedIdleTask } from 'common/TaskQueue';
+import { ThemeService } from 'browser/services/ThemeService';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -58,7 +59,8 @@ export class RenderService extends Disposable implements IRenderService {
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IDecorationService decorationService: IDecorationService,
     @IBufferService bufferService: IBufferService,
-    @ICoreBrowserService coreBrowserService: ICoreBrowserService
+    @ICoreBrowserService coreBrowserService: ICoreBrowserService,
+    @IThemeService themeService: IThemeService
   ) {
     super();
 
@@ -88,6 +90,8 @@ export class RenderService extends Disposable implements IRenderService {
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.handleDevicePixelRatioChange()));
+
+    this.register(themeService.onChangeColors(() => this._fullRefresh()));
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
@@ -201,14 +205,6 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     this._renderer.clearTextureAtlas?.();
-    this._fullRefresh();
-  }
-
-  public setColors(colors: IColorSet): void {
-    if (!this._renderer) {
-      return;
-    }
-    this._renderer.setColors(colors);
     this._fullRefresh();
   }
 

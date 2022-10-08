@@ -6,8 +6,8 @@
 import { removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
-import { IColorSet, ILinkifier2 } from 'browser/Types';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { IColorSet, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -31,7 +31,6 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   constructor(
     private readonly _terminal: Terminal,
-    private _colors: IColorSet,
     private readonly _screenElement: HTMLElement,
     linkifier2: ILinkifier2,
     private readonly _bufferService: IBufferService,
@@ -40,15 +39,16 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     characterJoinerService: ICharacterJoinerService,
     coreService: ICoreService,
     private readonly _coreBrowserService: ICoreBrowserService,
-    decorationService: IDecorationService
+    decorationService: IDecorationService,
+    private readonly _themeService: IThemeService
   ) {
     super();
     const allowTransparency = this._optionsService.rawOptions.allowTransparency;
     this._renderLayers = [
-      new TextRenderLayer(this._terminal, this._screenElement, 0, this._colors, allowTransparency, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService),
-      new SelectionRenderLayer(this._terminal, this._screenElement, 1, this._colors, this._bufferService, this._coreBrowserService, decorationService, this._optionsService),
-      new LinkRenderLayer(this._terminal, this._screenElement, 2, this._colors, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService),
-      new CursorRenderLayer(this._terminal, this._screenElement, 3, this._colors, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService)
+      new TextRenderLayer(this._terminal, this._screenElement, 0, allowTransparency, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService, _themeService),
+      new SelectionRenderLayer(this._terminal, this._screenElement, 1, this._bufferService, this._coreBrowserService, decorationService, this._optionsService, _themeService),
+      new LinkRenderLayer(this._terminal, this._screenElement, 2, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService, _themeService),
+      new CursorRenderLayer(this._terminal, this._screenElement, 3, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService, _themeService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -92,15 +92,6 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public setColors(colors: IColorSet): void {
-    this._colors = colors;
-    // Clear layers and force a full render
-    for (const l of this._renderLayers) {
-      l.setColors(this._colors);
-      l.reset();
-    }
-  }
-
   public handleResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions();
@@ -130,7 +121,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     this._runOperation(l => l.handleSelectionChanged(start, end, columnSelectMode));
     // Selection foreground requires a full re-render
-    if (this._colors.selectionForeground) {
+    if (this._themeService.colors.selectionForeground) {
       this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 });
     }
   }

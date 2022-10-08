@@ -5,9 +5,9 @@
 
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICoreBrowserService } from 'browser/services/Services';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Terminal } from 'xterm';
 
 interface ISelectionState {
@@ -24,13 +24,13 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
     bufferService: IBufferService,
     coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
-    optionsService: IOptionsService
+    optionsService: IOptionsService,
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'selection', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'selection', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._clearState();
   }
 
@@ -102,8 +102,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.fillStyle = (this._coreBrowserService.isFocused
-      ? this._colors.selectionBackgroundTransparent
-      : this._colors.selectionInactiveBackgroundTransparent).css;
+      ? this._themeService.colors.selectionBackgroundTransparent
+      : this._themeService.colors.selectionInactiveBackgroundTransparent).css;
 
     if (columnSelectMode) {
       const startCol = start[0];
