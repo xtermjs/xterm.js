@@ -16,8 +16,7 @@ export class Marker implements IMarker {
   private _id: number = Marker._nextId++;
   public get id(): number { return this._id; }
 
-
-  private readonly _onDispose = new EventEmitter<void>();
+  private readonly _onDispose = this.register(new EventEmitter<void>());
   public readonly onDispose = this._onDispose.event;
 
   constructor(
@@ -34,10 +33,11 @@ export class Marker implements IMarker {
     // Emit before super.dispose such that dispose listeners get a change to react
     this._onDispose.fire();
     disposeArray(this._disposables);
+    this._disposables.length = 0;
   }
 
-  public register(disposable: IDisposable): void {
+  public register<T extends IDisposable>(disposable: T): T {
     this._disposables.push(disposable);
-    this._disposables.length = 0;
+    return disposable;
   }
 }
