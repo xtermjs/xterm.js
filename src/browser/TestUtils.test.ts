@@ -5,11 +5,11 @@
 
 import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
+import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { Terminal } from 'browser/Terminal';
@@ -17,6 +17,7 @@ import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } fro
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
+import { css } from 'common/Color';
 
 export class TestTerminal extends Terminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -504,4 +505,39 @@ export class MockSelectionService implements ISelectionService {
   public isCellInSelection(x: number, y: number): boolean {
     return false;
   }
+}
+
+export class MockThemeService implements IThemeService{
+  public serviceBrand: undefined;
+  public onChangeColors = new EventEmitter<ReadonlyColorSet>().event;
+  public restoreColor(slot?: ColorIndex | undefined): void {
+    throw new Error('Method not implemented.');
+  }
+  public modifyColors(callback: (colors: IColorSet) => void): void {
+    throw new Error('Method not implemented.');
+  }
+  public colors: ReadonlyColorSet = {
+    background: css.toColor('#010101'),
+    foreground: css.toColor('#020202'),
+    ansi: [
+      // dark:
+      css.toColor('#2e3436'),
+      css.toColor('#cc0000'),
+      css.toColor('#4e9a06'),
+      css.toColor('#c4a000'),
+      css.toColor('#3465a4'),
+      css.toColor('#75507b'),
+      css.toColor('#06989a'),
+      css.toColor('#d3d7cf'),
+      // bright:
+      css.toColor('#555753'),
+      css.toColor('#ef2929'),
+      css.toColor('#8ae234'),
+      css.toColor('#fce94f'),
+      css.toColor('#729fcf'),
+      css.toColor('#ad7fa8'),
+      css.toColor('#34e2e2'),
+      css.toColor('#eeeeec')
+    ]
+  } as any;
 }

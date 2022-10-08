@@ -42,7 +42,7 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     const screenElement: HTMLElement = core.screenElement;
     const linkifier = core.linkifier2;
 
-    this._renderer = new CanvasRenderer(terminal, themeService.colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
+    this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);
     renderService.handleResize(bufferService.cols, bufferService.rows);

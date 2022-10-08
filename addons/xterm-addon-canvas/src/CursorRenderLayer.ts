@@ -10,7 +10,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService, IDecorationService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
-import { ICoreBrowserService } from 'browser/services/Services';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Terminal } from 'xterm';
 import { toDisposable } from 'common/Lifecycle';
 
@@ -37,15 +37,15 @@ export class CursorRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: ReadonlyColorSet,
     private readonly _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     private readonly _coreService: ICoreService,
     coreBrowserService: ICoreBrowserService,
-    decorationService: IDecorationService
+    decorationService: IDecorationService,
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'cursor', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'cursor', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = {
       x: 0,
       y: 0,
@@ -146,7 +146,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (!this._coreBrowserService.isFocused) {
       this._clearCursor();
       this._ctx.save();
-      this._ctx.fillStyle = this._colors.cursor.css;
+      this._ctx.fillStyle = this._themeService.colors.cursor.css;
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
       if (cursorStyle && cursorStyle !== 'block') {
         this._cursorRenderers[cursorStyle](cursorX, viewportRelativeCursorY, this._cell);
@@ -211,30 +211,30 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _renderBarCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor.css;
+    this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillLeftLineAtCell(x, y, this._optionsService.rawOptions.cursorWidth);
     this._ctx.restore();
   }
 
   private _renderBlockCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor.css;
+    this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillCells(x, y, cell.getWidth(), 1);
-    this._ctx.fillStyle = this._colors.cursorAccent.css;
+    this._ctx.fillStyle = this._themeService.colors.cursorAccent.css;
     this._fillCharTrueColor(cell, x, y);
     this._ctx.restore();
   }
 
   private _renderUnderlineCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor.css;
+    this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 
   private _renderBlurCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.strokeStyle = this._colors.cursor.css;
+    this._ctx.strokeStyle = this._themeService.colors.cursor.css;
     this._strokeRectAtCell(x, y, cell.getWidth(), 1);
     this._ctx.restore();
   }

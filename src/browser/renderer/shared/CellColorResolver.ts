@@ -1,5 +1,5 @@
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { ICoreBrowserService } from 'browser/services/Services';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { IDecorationService } from 'common/services/Services';
@@ -12,6 +12,7 @@ let $bg = 0;
 let $hasFg = false;
 let $hasBg = false;
 let $isSelected = false;
+let $colors: ReadonlyColorSet | undefined;
 
 export class CellColorResolver {
   /**
@@ -26,15 +27,11 @@ export class CellColorResolver {
 
   constructor(
     private readonly _terminal: Terminal,
-    private _colors: ReadonlyColorSet,
     private readonly _selectionRenderModel: ISelectionRenderModel,
     private readonly _decorationService: IDecorationService,
-    private readonly _coreBrowserService: ICoreBrowserService
+    private readonly _coreBrowserService: ICoreBrowserService,
+    private readonly _themeService: IThemeService
   ) {
-  }
-
-  public setColors(colors: IColorSet): void {
-    this._colors = colors;
   }
 
   /**
@@ -54,6 +51,7 @@ export class CellColorResolver {
     $hasBg = false;
     $hasFg = false;
     $isSelected = false;
+    $colors = this._themeService.colors;
 
     // Apply decorations on the bottom layer
     this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
@@ -70,10 +68,10 @@ export class CellColorResolver {
     // Apply the selection color if needed
     $isSelected = this._selectionRenderModel.isCellSelected(this._terminal, x, y);
     if ($isSelected) {
-      $bg = (this._coreBrowserService.isFocused ? this._colors.selectionBackgroundOpaque : this._colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+      $bg = (this._coreBrowserService.isFocused ? $colors.selectionBackgroundOpaque : $colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
       $hasBg = true;
-      if (this._colors.selectionForeground) {
-        $fg = this._colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+      if ($colors.selectionForeground) {
+        $fg = $colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
         $hasFg = true;
       }
     }
@@ -112,7 +110,7 @@ export class CellColorResolver {
       if ($hasBg && !$hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this.result.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $fg = (this.result.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | ((this._colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          $fg = (this.result.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | (($colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
           $fg = (this.result.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this.result.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
@@ -121,13 +119,16 @@ export class CellColorResolver {
       if (!$hasBg && $hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this.result.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $bg = (this.result.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | ((this._colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          $bg = (this.result.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | (($colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
           $bg = (this.result.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this.result.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
         $hasBg = true;
       }
     }
+
+    // Release object
+    $colors = undefined;
 
     // Use the override if it exists
     this.result.bg = $hasBg ? $bg : this.result.bg;

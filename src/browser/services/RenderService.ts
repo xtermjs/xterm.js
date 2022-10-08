@@ -91,7 +91,7 @@ export class RenderService extends Disposable implements IRenderService {
     // matchMedia query.
     this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.handleDevicePixelRatioChange()));
 
-    this.register(themeService.onChangeColors(e => this._handleChangeColors(e)));
+    this.register(themeService.onChangeColors(() => this._fullRefresh()));
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
@@ -205,14 +205,6 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     this._renderer.clearTextureAtlas?.();
-    this._fullRefresh();
-  }
-
-  private _handleChangeColors(colors: ReadonlyColorSet): void {
-    if (!this._renderer) {
-      return;
-    }
-    this._renderer.setColors(colors);
     this._fullRefresh();
   }
 

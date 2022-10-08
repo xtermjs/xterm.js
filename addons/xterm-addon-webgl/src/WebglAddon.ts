@@ -43,8 +43,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     const coreService: ICoreService = core.coreService;
     const decorationService: IDecorationService = core._decorationService;
     const themeService: IThemeService = core._themeService;
-    // TODO: Pass in theme service
-    this._renderer = this.register(new WebglRenderer(terminal, themeService.colors, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer));
+    this._renderer = this.register(new WebglRenderer(terminal, themeService, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer));
     this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);

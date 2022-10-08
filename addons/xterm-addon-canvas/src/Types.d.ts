@@ -80,11 +80,6 @@ export interface IRenderLayer extends IDisposable {
   handleOptionsChanged(): void;
 
   /**
-   * Called when the theme changes.
-   */
-  setColors(colorSet: ReadonlyColorSet): void;
-
-  /**
    * Called when the data in the grid has changed (or needs to be rendered
    * again).
    */

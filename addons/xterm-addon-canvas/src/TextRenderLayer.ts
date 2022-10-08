@@ -12,7 +12,7 @@ import { NULL_CELL_CODE, Content, UnderlineStyle } from 'common/buffer/Constants
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService, IBufferService, IDecorationService } from 'common/services/Services';
-import { ICharacterJoinerService, ICoreBrowserService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { color, css } from 'common/Color';
 import { Terminal } from 'xterm';
@@ -35,15 +35,15 @@ export class TextRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: ReadonlyColorSet,
     alpha: boolean,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     private readonly _characterJoinerService: ICharacterJoinerService,
     decorationService: IDecorationService,
-    coreBrowserService: ICoreBrowserService
+    coreBrowserService: ICoreBrowserService,
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'text', zIndex, alpha, colors, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'text', zIndex, alpha, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = new GridCache<CharData>();
   }
 
@@ -168,16 +168,16 @@ export class TextRenderLayer extends BaseRenderLayer {
 
       if (cell.isInverse()) {
         if (cell.isFgDefault()) {
-          nextFillStyle = this._colors.foreground.css;
+          nextFillStyle = this._themeService.colors.foreground.css;
         } else if (cell.isFgRGB()) {
           nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
         } else {
-          nextFillStyle = this._colors.ansi[cell.getFgColor()].css;
+          nextFillStyle = this._themeService.colors.ansi[cell.getFgColor()].css;
         }
       } else if (cell.isBgRGB()) {
         nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else if (cell.isBgPalette()) {
-        nextFillStyle = this._colors.ansi[cell.getBgColor()].css;
+        nextFillStyle = this._themeService.colors.ansi[cell.getBgColor()].css;
       }
 
       // Apply dim to the background, this is relatively slow as the CSS is re-parsed but dim is
