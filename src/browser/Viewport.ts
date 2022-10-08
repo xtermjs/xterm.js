@@ -5,8 +5,8 @@
 
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, IViewport } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { IColorSet, IViewport, ReadonlyColorSet } from 'browser/Types';
+import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
@@ -52,12 +52,12 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _scrollLines: (amount: number) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
-    private readonly _element: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IRenderService private readonly _renderService: IRenderService,
-    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
+    @IThemeService themeService: IThemeService
   ) {
     super();
 
@@ -73,11 +73,14 @@ export class Viewport extends Disposable implements IViewport {
     this._renderDimensions = this._renderService.dimensions;
     this.register(this._renderService.onDimensionsChange(e => this._renderDimensions = e));
 
+    this._handleThemeChange(themeService.colors);
+    this.register(themeService.onChangeColors(e => this._handleThemeChange(e)));
+
     // Perform this async to ensure the ICharSizeService is ready.
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
-  public handleThemeChange(colors: IColorSet): void {
+  private _handleThemeChange(colors: ReadonlyColorSet): void {
     this._viewportElement.style.backgroundColor = colors.background.css;
   }
 

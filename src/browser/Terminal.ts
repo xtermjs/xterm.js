@@ -240,8 +240,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
           break;
       }
     }
-    // TODO: Have these listen to theme change
-    this.viewport?.handleThemeChange(this._themeService.colors);
   }
 
   protected _setup(): void {
@@ -310,9 +308,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
-      case 'theme':
-        this._setTheme(this.optionsService.rawOptions.theme);
-        break;
     }
   }
 
@@ -531,11 +526,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.viewport = this._instantiationService.createInstance(Viewport,
       (amount: number) => this.scrollLines(amount, true, ScrollSource.VIEWPORT),
       this._viewportElement,
-      this._viewportScrollArea,
-      this.element
+      this._viewportScrollArea
     );
-    // TODO: Listen to theme service event
-    this.viewport.handleThemeChange(this._themeService.colors);
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
@@ -614,15 +606,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _createRenderer(): IRenderer {
     // TODO: Listen to theme service
     return this._instantiationService.createInstance(DomRenderer, this._themeService!.colors, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
-  }
-
-  /**
-   * Sets the theme on the renderer. The renderer must have been initialized.
-   * @param theme The theme to set.
-   */
-  private _setTheme(theme: ITheme): void {
-    // TODO: Listen to theme service events
-    this.viewport?.handleThemeChange(this._themeService!.colors);
   }
 
   /**

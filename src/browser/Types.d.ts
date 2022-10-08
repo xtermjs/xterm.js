@@ -152,7 +152,6 @@ export interface IViewport extends IDisposable {
   handleWheel(ev: WheelEvent): boolean;
   handleTouchStart(ev: TouchEvent): void;
   handleTouchMove(ev: TouchEvent): boolean;
-  handleThemeChange(colors: ReadonlyColorSet): void;
 }
 
 export interface ILinkifierEvent {
