@@ -76,7 +76,7 @@ let $glyph: IRasterizedGlyph | undefined = undefined;
 let $leftCellPadding = 0;
 let $clippedPixels = 0;
 
-export class GlyphRenderer  extends Disposable {
+export class GlyphRenderer extends Disposable {
   private _atlas: ITextureAtlas | undefined;
 
   private _program: WebGLProgram;
@@ -99,7 +99,6 @@ export class GlyphRenderer  extends Disposable {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
