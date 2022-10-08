@@ -4,10 +4,11 @@
  */
 
 import { IOptionsService } from 'common/services/Services';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
+import { Disposable } from 'common/Lifecycle';
 
-export class CharSizeService implements ICharSizeService {
+export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
 
   public width: number = 0;
@@ -24,6 +25,7 @@ export class CharSizeService implements ICharSizeService {
     parentElement: HTMLElement,
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
+    super();
     this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
   }
 
