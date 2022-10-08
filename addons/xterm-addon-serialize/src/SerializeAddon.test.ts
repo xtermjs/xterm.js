@@ -58,7 +58,6 @@ describe('xterm-addon-serialize', () => {
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
-    document = window.document;
 
     (window as any).HTMLCanvasElement.prototype.getContext = () => ({
       createLinearGradient(): any {
