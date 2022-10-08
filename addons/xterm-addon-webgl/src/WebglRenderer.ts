@@ -14,7 +14,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
@@ -131,15 +131,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._initializeWebGLState();
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
-  }
 
-  public dispose(): void {
-    for (const l of this._renderLayers) {
-      l.dispose();
-    }
-    this._canvas.parentElement?.removeChild(this._canvas);
-    removeTerminalFromCache(this._terminal);
-    super.dispose();
+    this.register(toDisposable(() => {
+      for (const l of this._renderLayers) {
+        l.dispose();
+      }
+      this._canvas.parentElement?.removeChild(this._canvas);
+      removeTerminalFromCache(this._terminal);
+    }));
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {

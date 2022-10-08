@@ -12,8 +12,9 @@ import { ICoreBrowserService } from 'browser/services/Services';
 import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { CellData } from 'common/buffer/CellData';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
-export abstract class BaseRenderLayer implements IRenderLayer {
+export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx!: CanvasRenderingContext2D;
   private _scaledCharWidth: number = 0;
@@ -33,18 +34,16 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     protected _colors: IColorSet,
     protected readonly _coreBrowserService: ICoreBrowserService
   ) {
+    super();
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
     this._container.appendChild(this._canvas);
-  }
-
-  public dispose(): void {
-    this._canvas.remove();
-    if (this._charAtlas) {
-      this._charAtlas.dispose();
-    }
+    this.register(toDisposable(() => {
+      this._canvas.remove();
+      this._charAtlas?.dispose();
+    }));
   }
 
   private _initCanvas(): void {
