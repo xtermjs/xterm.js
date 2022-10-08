@@ -8,7 +8,7 @@ import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { Terminal } from 'xterm';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { ICoreBrowserService } from 'browser/services/Services';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { CellData } from 'common/buffer/CellData';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
@@ -27,12 +27,13 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _charAtlas: ITextureAtlas | undefined;
 
   constructor(
+    terminal: Terminal,
     private _container: HTMLElement,
     id: string,
     zIndex: number,
     private _alpha: boolean,
-    protected _colors: ReadonlyColorSet,
-    protected readonly _coreBrowserService: ICoreBrowserService
+    protected readonly _coreBrowserService: ICoreBrowserService,
+    protected readonly _themeService: IThemeService
   ) {
     super();
     this._canvas = document.createElement('canvas');
@@ -40,6 +41,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
     this._container.appendChild(this._canvas);
+    this.register(this._themeService.onChangeColors(e => {
+      this._refreshCharAtlas(terminal, e);
+      this.reset(terminal);
+    }));
     this.register(toDisposable(() => {
       this._canvas.remove();
       this._charAtlas?.dispose();
@@ -61,10 +66,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   public handleGridChanged(terminal: Terminal, startRow: number, endRow: number): void {}
   public handleSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
 
-  public setColors(terminal: Terminal, colorSet: ReadonlyColorSet): void {
-    this._refreshCharAtlas(terminal, colorSet);
-  }
-
   protected _setTransparency(terminal: Terminal, alpha: boolean): void {
     // Do nothing when alpha doesn't change
     if (alpha === this._alpha) {
@@ -80,7 +81,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._container.replaceChild(this._canvas, oldCanvas);
 
     // Regenerate char atlas and force a full redraw
-    this._refreshCharAtlas(terminal, this._colors);
+    this._refreshCharAtlas(terminal, this._themeService.colors);
     this.handleGridChanged(terminal, 0, terminal.rows - 1);
   }
 
@@ -114,7 +115,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       this._clearAll();
     }
 
-    this._refreshCharAtlas(terminal, this._colors);
+    this._refreshCharAtlas(terminal, this._themeService.colors);
   }
 
   public abstract reset(terminal: Terminal): void;
@@ -184,7 +185,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
     }
   }
@@ -204,7 +205,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
         width * this._scaledCellWidth,
         height * this._scaledCellHeight);
     } else {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(
         x * this._scaledCellWidth,
         y * this._scaledCellHeight,

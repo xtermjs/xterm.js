@@ -280,9 +280,6 @@ export class MockRenderer implements IRenderer {
     throw new Error('Method not implemented.');
   }
   public dimensions!: IRenderDimensions;
-  public setColors(colors: IColorSet): void {
-    throw new Error('Method not implemented.');
-  }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
     throw new Error('Method not implemented.');
   }
@@ -406,9 +403,6 @@ export class MockRenderService implements IRenderService {
     throw new Error('Method not implemented.');
   }
   public setRenderer(renderer: IRenderer): void {
-    throw new Error('Method not implemented.');
-  }
-  public setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
   public handleDevicePixelRatioChange(): void {

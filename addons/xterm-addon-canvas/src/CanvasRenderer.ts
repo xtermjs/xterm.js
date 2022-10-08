@@ -92,13 +92,6 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public setColors(colors: IColorSet): void {
-    // Clear layers and force a full render
-    for (const l of this._renderLayers) {
-      l.reset();
-    }
-  }
-
   public handleResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions();

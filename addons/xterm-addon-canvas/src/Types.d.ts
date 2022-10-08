@@ -41,7 +41,6 @@ export interface IRenderer extends IDisposable {
    */
   readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
 
-  setColors(colors: IColorSet): void;
   handleDevicePixelRatioChange(): void;
   handleResize(cols: number, rows: number): void;
   handleCharSizeChanged(): void;

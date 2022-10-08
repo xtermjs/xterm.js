@@ -29,11 +29,6 @@ export interface IRenderLayer extends IDisposable {
   handleOptionsChanged(terminal: Terminal): void;
 
   /**
-   * Called when the theme changes.
-   */
-  setColors(terminal: Terminal, colorSet: ReadonlyColorSet): void;
-
-  /**
    * Called when the data in the grid has changed (or needs to be rendered
    * again).
    */

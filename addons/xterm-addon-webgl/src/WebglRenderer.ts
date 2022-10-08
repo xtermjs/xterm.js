@@ -64,15 +64,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
-    this.register(this._themeService.onChangeColors(e => this._handleColorChange(e)));
+    this.register(this._themeService.onChangeColors(() => this._handleColorChange()));
 
     this._cellColorResolver = new CellColorResolver(this._terminal, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
 
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._themeService.colors, this._core, this._coreBrowserService),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._themeService.colors, this._onRequestRedraw, this._coreBrowserService, coreService)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, this._themeService),
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, this._themeService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -147,15 +147,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return this._charAtlas?.cacheCanvas;
   }
 
-  private _handleColorChange(colors: ReadonlyColorSet): void {
-    // Clear layers and force a full render
-    for (const l of this._renderLayers) {
-      l.setColors(this._terminal, colors);
-      l.reset(this._terminal);
-    }
-
-    this._rectangleRenderer.setColors();
-
+  private _handleColorChange(): void {
     this._refreshCharAtlas();
 
     // Force a full refresh
@@ -254,7 +246,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer?.dispose();
     this._glyphRenderer?.dispose();
 
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._themeService.colors, this._gl, this.dimensions));
+    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService));
     this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions));
 
     // Update dimensions and acquire char atlas
