@@ -74,7 +74,6 @@ export interface IRenderService extends IDisposable {
   resize(cols: number, rows: number): void;
   hasRenderer(): boolean;
   setRenderer(renderer: IRenderer): void;
-  setColors(colors: ReadonlyColorSet): void;
   handleDevicePixelRatioChange(): void;
   handleResize(cols: number, rows: number): void;
   handleCharSizeChanged(): void;
@@ -128,7 +127,9 @@ export interface IThemeService {
   serviceBrand: undefined;
 
   readonly colors: ReadonlyColorSet;
-  setTheme(theme?: ITheme): void;
+
+  readonly onChangeColors: IEvent<ReadonlyColorSet>;
+
   restoreColor(slot?: ColorIndex): void;
   /**
    * Allows external modifying of colors in the theme, this is used instead of {@link colors} to

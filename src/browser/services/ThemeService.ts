@@ -6,6 +6,7 @@
 import { ColorManager } from 'browser/ColorManager';
 import { IThemeService } from 'browser/services/Services';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IOptionsService, ITheme } from 'common/services/Services';
 import { ColorIndex } from 'common/Types';
@@ -18,29 +19,35 @@ export class ThemeService extends Disposable implements IThemeService {
 
   public get colors(): ReadonlyColorSet { return this._colorManager.colors; }
 
+  private readonly _onChangeColors = this.register(new EventEmitter<ReadonlyColorSet>());
+  public readonly onChangeColors = this._onChangeColors.event;
+
   constructor(
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
     this.register(this._optionsService.onOptionChange(key => {
       if (key === 'theme') {
-        this.setTheme(this._optionsService.rawOptions.theme);
+        this._setTheme(this._optionsService.rawOptions.theme);
       }
       this._colorManager.handleOptionsChange(key, this._optionsService.rawOptions[key]);
     }));
     this._colorManager.setTheme(this._optionsService.rawOptions.theme);
   }
 
-  public setTheme(theme: ITheme = {}): void {
+  private _setTheme(theme: ITheme = {}): void {
     this._colorManager.setTheme(theme);
+    this._onChangeColors.fire(this.colors);
   }
 
   public restoreColor(slot?: ColorIndex): void {
     this._colorManager.restoreColor(slot);
+    this._onChangeColors.fire(this.colors);
   }
 
   public modifyColors(callback: (colors: IColorSet) => void): void {
     callback(this._colorManager.colors);
-    // TODO: Fire event
+    // Assume the change happened
+    this._onChangeColors.fire(this.colors);
   }
 }

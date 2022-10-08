@@ -241,7 +241,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
     }
     // TODO: Have these listen to theme change
-    this._renderService?.setColors(this._themeService.colors);
     this.viewport?.handleThemeChange(this._themeService.colors);
   }
 
