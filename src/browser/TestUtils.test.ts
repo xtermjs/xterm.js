@@ -7,7 +7,7 @@ import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } 
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -266,7 +266,6 @@ export class MockRenderer implements IRenderer {
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
-  public colorManager!: IColorManager;
   public on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
   }

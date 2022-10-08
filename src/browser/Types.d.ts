@@ -106,11 +106,6 @@ export interface IBrowser {
   isWindows: boolean;
 }
 
-export interface IColorManager {
-  colors: IColorSet;
-  handleOptionsChange(key: string, value: any): void;
-}
-
 export interface IColorSet {
   foreground: IColor;
   background: IColor;

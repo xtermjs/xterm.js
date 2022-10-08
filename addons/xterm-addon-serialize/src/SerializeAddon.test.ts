@@ -7,9 +7,10 @@ import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { SerializeAddon } from './SerializeAddon';
 import { Terminal } from 'browser/public/Terminal';
-import { ColorManager } from 'browser/ColorManager';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { IBufferService } from 'common/services/Services';
+import { OptionsService } from 'common/services/OptionsService';
+import { ThemeService } from 'browser/services/ThemeService';
 
 function sgr(...seq: string[]): string {
   return `\x1b[${seq.join(';')}m`;
@@ -44,14 +45,11 @@ class TestSelectionService {
 }
 
 describe('xterm-addon-serialize', () => {
-  let cm: ColorManager;
   let dom: jsdom.JSDOM;
-  let document: Document;
   let window: jsdom.DOMWindow;
 
   let serializeAddon: SerializeAddon;
   let terminal: Terminal;
-  let selectionService: any;
 
   before(() => {
     serializeAddon = new SerializeAddon();
@@ -77,11 +75,8 @@ describe('xterm-addon-serialize', () => {
     terminal = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
     terminal.loadAddon(serializeAddon);
 
-    // TODO: Fix color manager reference
-    selectionService = new TestSelectionService((terminal as any)._core._bufferService);
-    cm = new ColorManager();
-    (terminal as any)._core._colorManager = cm;
-    (terminal as any)._core._selectionService = selectionService;
+    (terminal as any)._core._themeService = new ThemeService(new OptionsService({}));
+    (terminal as any)._core._selectionService = new TestSelectionService((terminal as any)._core._bufferService);
   });
 
   describe('text', () => {

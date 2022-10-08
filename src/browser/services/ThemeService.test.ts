@@ -6,10 +6,9 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { ThemeService, DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
-import { MockOptionsService } from 'common/TestUtils.test';
 import { OptionsService } from 'common/services/OptionsService';
 
-describe.only('ThemeService', () => {
+describe('ThemeService', () => {
   let themeService: ThemeService;
   let dom: jsdom.JSDOM;
   let window: jsdom.DOMWindow;
