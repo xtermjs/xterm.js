@@ -69,7 +69,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
     this.register(observeDevicePixelDimensions(this._renderLayers[0].canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
-    this.onOptionsChanged();
+    this.handleOptionsChanged();
 
     this.register(toDisposable(() => {
       for (const l of this._renderLayers) {
@@ -83,12 +83,12 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     return this._renderLayers[0].cacheCanvas;
   }
 
-  public onDevicePixelRatioChange(): void {
+  public handleDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
     if (this._devicePixelRatio !== this._coreBrowserService.dpr) {
       this._devicePixelRatio = this._coreBrowserService.dpr;
-      this.onResize(this._bufferService.cols, this._bufferService.rows);
+      this.handleResize(this._bufferService.cols, this._bufferService.rows);
     }
   }
 
@@ -101,7 +101,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public onResize(cols: number, rows: number): void {
+  public handleResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions();
 
@@ -115,32 +115,32 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
-  public onCharSizeChanged(): void {
-    this.onResize(this._bufferService.cols, this._bufferService.rows);
+  public handleCharSizeChanged(): void {
+    this.handleResize(this._bufferService.cols, this._bufferService.rows);
   }
 
-  public onBlur(): void {
-    this._runOperation(l => l.onBlur());
+  public handleBlur(): void {
+    this._runOperation(l => l.handleBlur());
   }
 
-  public onFocus(): void {
-    this._runOperation(l => l.onFocus());
+  public handleFocus(): void {
+    this._runOperation(l => l.handleFocus());
   }
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
-    this._runOperation(l => l.onSelectionChanged(start, end, columnSelectMode));
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+    this._runOperation(l => l.handleSelectionChanged(start, end, columnSelectMode));
     // Selection foreground requires a full re-render
     if (this._colors.selectionForeground) {
       this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 });
     }
   }
 
-  public onCursorMove(): void {
-    this._runOperation(l => l.onCursorMove());
+  public handleCursorMove(): void {
+    this._runOperation(l => l.handleCursorMove());
   }
 
-  public onOptionsChanged(): void {
-    this._runOperation(l => l.onOptionsChanged());
+  public handleOptionsChanged(): void {
+    this._runOperation(l => l.handleOptionsChanged());
   }
 
   public clear(): void {
@@ -159,7 +159,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
    */
   public renderRows(start: number, end: number): void {
     for (const l of this._renderLayers) {
-      l.onGridChanged(start, end);
+      l.handleGridChanged(start, end);
     }
   }
 

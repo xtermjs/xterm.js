@@ -75,13 +75,13 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     }
   }
 
-  public onOptionsChanged(): void {}
-  public onBlur(): void {}
-  public onFocus(): void {}
-  public onCursorMove(): void {}
-  public onGridChanged(startRow: number, endRow: number): void {}
+  public handleOptionsChanged(): void {}
+  public handleBlur(): void {}
+  public handleFocus(): void {}
+  public handleCursorMove(): void {}
+  public handleGridChanged(startRow: number, endRow: number): void {}
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     this._selectionModel.update(this._terminal, start, end, columnSelectMode);
   }
 
@@ -105,7 +105,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
 
     // Regenerate char atlas and force a full redraw
     this._refreshCharAtlas(this._colors);
-    this.onGridChanged(0, this._bufferService.rows - 1);
+    this.handleGridChanged(0, this._bufferService.rows - 1);
   }
 
   /**

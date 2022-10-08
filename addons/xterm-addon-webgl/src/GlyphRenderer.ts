@@ -167,7 +167,7 @@ export class GlyphRenderer extends Disposable {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // Set viewport
-    this.onResize();
+    this.handleResize();
   }
 
   public beginFrame(): boolean {
@@ -263,7 +263,7 @@ export class GlyphRenderer extends Disposable {
     }
   }
 
-  public onResize(): void {
+  public handleResize(): void {
     const gl = this._gl;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     this.clear();

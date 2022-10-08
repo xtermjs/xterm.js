@@ -64,12 +64,12 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
       this._isMouseOut = true;
       this._clearCurrentLink();
     }));
-    this.register(addDisposableDomListener(this._element, 'mousemove', this._onMouseMove.bind(this)));
+    this.register(addDisposableDomListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
     this.register(addDisposableDomListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
     this.register(addDisposableDomListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
   }
 
-  private _onMouseMove(event: MouseEvent): void {
+  private _handleMouseMove(event: MouseEvent): void {
     this._lastMouseEvent = event;
 
     if (!this._element || !this._mouseService) {
@@ -97,12 +97,12 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     }
 
     if (!this._lastBufferCell || (position.x !== this._lastBufferCell.x || position.y !== this._lastBufferCell.y)) {
-      this._onHover(position);
+      this._handleHover(position);
       this._lastBufferCell = position;
     }
   }
 
-  private _onHover(position: IBufferCellPosition): void {
+  private _handleHover(position: IBufferCellPosition): void {
     // TODO: This currently does not cache link provider results across wrapped lines, activeLine should be something like `activeRange: {startY, endY}`
     // Check if we need to clear the link
     if (this._activeLine !== position.y) {

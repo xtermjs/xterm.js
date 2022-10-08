@@ -68,13 +68,13 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(this._renderDebouncer);
 
     this._screenDprMonitor = new ScreenDprMonitor(coreBrowserService.window);
-    this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
+    this._screenDprMonitor.setListener(() => this.handleDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer?.clear()));
     this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
-    this.register(this._charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
+    this.register(this._charSizeService.onCharSizeChange(() => this.handleCharSizeChanged()));
 
     // Do a full refresh whenever any decoration is added or removed. This may not actually result
     // in changes but since decorations should be used sparingly or added/removed all in the same
@@ -87,18 +87,18 @@ export class RenderService extends Disposable implements IRenderService {
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
-    this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.onDevicePixelRatioChange()));
+    this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.handleDevicePixelRatioChange()));
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
     if ('IntersectionObserver' in coreBrowserService.window) {
-      const observer = new coreBrowserService.window.IntersectionObserver(e => this._onIntersectionChange(e[e.length - 1]), { threshold: 0 });
+      const observer = new coreBrowserService.window.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
       observer.observe(screenElement);
       this.register({ dispose: () => observer.disconnect() });
     }
   }
 
-  private _onIntersectionChange(entry: IntersectionObserverEntry): void {
+  private _handleIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.isIntersecting === undefined ? (entry.intersectionRatio === 0) : !entry.isIntersecting;
 
     // Terminal was hidden on open
@@ -132,7 +132,7 @@ export class RenderService extends Disposable implements IRenderService {
 
     // Update selection if needed
     if (this._needsSelectionRefresh) {
-      this._renderer.onSelectionChanged(this._selectionState.start, this._selectionState.end, this._selectionState.columnSelectMode);
+      this._renderer.handleSelectionChanged(this._selectionState.start, this._selectionState.end, this._selectionState.columnSelectMode);
       this._needsSelectionRefresh = false;
     }
 
@@ -153,7 +153,7 @@ export class RenderService extends Disposable implements IRenderService {
     if (!this._renderer) {
       return;
     }
-    this._renderer.onOptionsChanged();
+    this._renderer.handleOptionsChanged();
     this.refreshRows(0, this._rowCount - 1);
     this._fireOnCanvasResize();
   }
@@ -212,7 +212,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._fullRefresh();
   }
 
-  public onDevicePixelRatioChange(): void {
+  public handleDevicePixelRatioChange(): void {
     // Force char size measurement as DomMeasureStrategy(getBoundingClientRect) is not stable
     // when devicePixelRatio changes
     this._charSizeService.measure();
@@ -220,44 +220,44 @@ export class RenderService extends Disposable implements IRenderService {
     if (!this._renderer) {
       return;
     }
-    this._renderer.onDevicePixelRatioChange();
+    this._renderer.handleDevicePixelRatioChange();
     this.refreshRows(0, this._rowCount - 1);
   }
 
-  public onResize(cols: number, rows: number): void {
+  public handleResize(cols: number, rows: number): void {
     if (!this._renderer) {
       return;
     }
     if (this._isPaused) {
-      this._pausedResizeTask.set(() => this._renderer!.onResize(cols, rows));
+      this._pausedResizeTask.set(() => this._renderer!.handleResize(cols, rows));
     } else {
-      this._renderer.onResize(cols, rows);
+      this._renderer.handleResize(cols, rows);
     }
     this._fullRefresh();
   }
 
   // TODO: Is this useful when we have onResize?
-  public onCharSizeChanged(): void {
-    this._renderer?.onCharSizeChanged();
+  public handleCharSizeChanged(): void {
+    this._renderer?.handleCharSizeChanged();
   }
 
-  public onBlur(): void {
-    this._renderer?.onBlur();
+  public handleBlur(): void {
+    this._renderer?.handleBlur();
   }
 
-  public onFocus(): void {
-    this._renderer?.onFocus();
+  public handleFocus(): void {
+    this._renderer?.handleFocus();
   }
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._selectionState.start = start;
     this._selectionState.end = end;
     this._selectionState.columnSelectMode = columnSelectMode;
-    this._renderer?.onSelectionChanged(start, end, columnSelectMode);
+    this._renderer?.handleSelectionChanged(start, end, columnSelectMode);
   }
 
-  public onCursorMove(): void {
-    this._renderer?.onCursorMove();
+  public handleCursorMove(): void {
+    this._renderer?.handleCursorMove();
   }
 
   public clear(): void {

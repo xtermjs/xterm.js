@@ -45,11 +45,11 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     this._renderer = new CanvasRenderer(terminal, colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);
-    renderService.onResize(bufferService.cols, bufferService.rows);
+    renderService.handleResize(bufferService.cols, bufferService.rows);
 
     this.register(toDisposable(() => {
       renderService.setRenderer((this._terminal as any)._core._createRenderer());
-      renderService.onResize(terminal.cols, terminal.rows);
+      renderService.handleResize(terminal.cols, terminal.rows);
       this._renderer?.dispose();
       this._renderer = undefined;
     }));

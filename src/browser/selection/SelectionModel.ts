@@ -120,7 +120,7 @@ export class SelectionModel {
    * @param amount The amount the buffer is being trimmed.
    * @return Whether a refresh is necessary.
    */
-  public onTrim(amount: number): boolean {
+  public handleTrim(amount: number): boolean {
     // Adjust the selection position based on the trimmed amount.
     if (this.selectionStart) {
       this.selectionStart[1] -= amount;

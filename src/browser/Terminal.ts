@@ -238,7 +238,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
     }
     this._renderService?.setColors(this._colorManager.colors);
-    this.viewport?.onThemeChange(this._colorManager.colors);
+    this.viewport?.handleThemeChange(this._colorManager.colors);
   }
 
   protected _setup(): void {
@@ -289,7 +289,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         // When the font changes the size of the cells may change which requires a renderer clear
         if (this._renderService) {
           this._renderService.clear();
-          this._renderService.onResize(this.cols, this.rows);
+          this._renderService.handleResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
         }
         break;
@@ -316,7 +316,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private _onTextAreaFocus(ev: KeyboardEvent): void {
+  private _handleTextAreaFocus(ev: KeyboardEvent): void {
     if (this.coreService.decPrivateModes.sendFocus) {
       this.coreService.triggerDataEvent(C0.ESC + '[I');
     }
@@ -337,7 +337,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   /**
    * Binds the desired blur behavior on a given terminal object.
    */
-  private _onTextAreaBlur(): void {
+  private _handleTextAreaBlur(): void {
     // Text can safely be removed on blur. Doing it earlier could interfere with
     // screen readers reading it out.
     this.textarea!.value = '';
@@ -488,8 +488,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._onTextAreaFocus(ev)));
-    this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
+    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._handleTextAreaFocus(ev)));
+    this.register(addDisposableDomListener(this.textarea, 'blur', () => this._handleTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
     this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea, this._document.defaultView ?? window);
@@ -500,7 +500,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._theme = this.options.theme || this._theme;
     this._colorManager = new ColorManager();
-    this.register(this.optionsService.onOptionChange(e => this._colorManager!.onOptionsChange(e, this.optionsService.rawOptions[e])));
+    this.register(this.optionsService.onOptionChange(e => this._colorManager!.handleOptionsChange(e, this.optionsService.rawOptions[e])));
     this._colorManager.setTheme(this._theme);
 
     this._characterJoinerService = this._instantiationService.createInstance(CharacterJoinerService);
@@ -533,17 +533,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._viewportScrollArea,
       this.element
     );
-    this.viewport.onThemeChange(this._colorManager.colors);
+    this.viewport.handleThemeChange(this._colorManager.colors);
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
     this.register(this.onCursorMove(() => {
-      this._renderService!.onCursorMove();
+      this._renderService!.handleCursorMove();
       this._syncTextArea();
     }));
-    this.register(this.onResize(() => this._renderService!.onResize(this.cols, this.rows)));
-    this.register(this.onBlur(() => this._renderService!.onBlur()));
-    this.register(this.onFocus(() => this._renderService!.onFocus()));
+    this.register(this.onResize(() => this._renderService!.handleResize(this.cols, this.rows)));
+    this.register(this.onBlur(() => this._renderService!.handleBlur()));
+    this.register(this.onFocus(() => this._renderService!.handleFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport!.syncScrollArea()));
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
@@ -554,7 +554,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
     this.register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
-    this.register(this._selectionService.onRequestRedraw(e => this._renderService!.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this._selectionService.onRequestRedraw(e => this._renderService!.handleSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this._selectionService.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
@@ -571,7 +571,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.onMouseDown(e)));
+    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
     if (this.coreMouseService.areMouseEventsActive) {
@@ -621,7 +621,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._theme = theme;
     this._colorManager?.setTheme(theme);
     this._renderService?.setColors(this._colorManager!.colors);
-    this.viewport?.onThemeChange(this._colorManager!.colors);
+    this.viewport?.handleThemeChange(this._colorManager!.colors);
   }
 
   /**
@@ -860,20 +860,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       // normal viewport scrolling
       // conditionally stop event, if the viewport still had rows to scroll within
-      if (this.viewport!.onWheel(ev)) {
+      if (this.viewport!.handleWheel(ev)) {
         return this.cancel(ev);
       }
     }, { passive: false }));
 
     this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
       if (this.coreMouseService.areMouseEventsActive) return;
-      this.viewport!.onTouchStart(ev);
+      this.viewport!.handleTouchStart(ev);
       return this.cancel(ev);
     }, { passive: true }));
 
     this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
       if (this.coreMouseService.areMouseEventsActive) return;
-      if (!this.viewport!.onTouchMove(ev)) {
+      if (!this.viewport!.handleTouchMove(ev)) {
         return this.cancel(ev);
       }
     }, { passive: false }));

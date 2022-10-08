@@ -62,14 +62,14 @@ export interface IRenderer extends IDisposable {
 
   dispose(): void;
   setColors(colors: IColorSet): void;
-  onDevicePixelRatioChange(): void;
-  onResize(cols: number, rows: number): void;
-  onCharSizeChanged(): void;
-  onBlur(): void;
-  onFocus(): void;
-  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
-  onCursorMove(): void;
-  onOptionsChanged(): void;
+  handleDevicePixelRatioChange(): void;
+  handleResize(cols: number, rows: number): void;
+  handleCharSizeChanged(): void;
+  handleBlur(): void;
+  handleFocus(): void;
+  handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  handleCursorMove(): void;
+  handleOptionsChanged(): void;
   clear(): void;
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;

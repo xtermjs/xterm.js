@@ -134,15 +134,15 @@ export class SelectionService extends Disposable implements ISelectionService {
     super();
 
     // Init listeners
-    this._mouseMoveListener = event => this._onMouseMove(event as MouseEvent);
-    this._mouseUpListener = event => this._onMouseUp(event as MouseEvent);
+    this._mouseMoveListener = event => this._handleMouseMove(event as MouseEvent);
+    this._mouseUpListener = event => this._handleMouseUp(event as MouseEvent);
     this._coreService.onUserInput(() => {
       if (this.hasSelection) {
         this.clearSelection();
       }
     });
-    this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._onTrim(amount));
-    this.register(this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e)));
+    this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._handleTrim(amount));
+    this.register(this._bufferService.buffers.onBufferActivate(e => this._handleBufferActivate(e)));
 
     this.enable();
 
@@ -375,8 +375,8 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Handle the buffer being trimmed, adjust the selection position.
    * @param amount The amount the buffer is being trimmed.
    */
-  private _onTrim(amount: number): void {
-    const needsRefresh = this._model.onTrim(amount);
+  private _handleTrim(amount: number): void {
+    const needsRefresh = this._model.handleTrim(amount);
     if (needsRefresh) {
       this.refresh();
     }
@@ -438,7 +438,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
-  public onMouseDown(event: MouseEvent): void {
+  public handleMouseDown(event: MouseEvent): void {
     this._mouseDownTimeStamp = event.timeStamp;
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
@@ -468,14 +468,14 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._dragScrollAmount = 0;
 
     if (this._enabled && event.shiftKey) {
-      this._onIncrementalClick(event);
+      this._handleIncrementalClick(event);
     } else {
       if (event.detail === 1) {
-        this._onSingleClick(event);
+        this._handleSingleClick(event);
       } else if (event.detail === 2) {
-        this._onDoubleClick(event);
+        this._handleDoubleClick(event);
       } else if (event.detail === 3) {
-        this._onTripleClick(event);
+        this._handleTripleClick(event);
       }
     }
 
@@ -512,7 +512,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * position.
    * @param event The mouse event.
    */
-  private _onIncrementalClick(event: MouseEvent): void {
+  private _handleIncrementalClick(event: MouseEvent): void {
     if (this._model.selectionStart) {
       this._model.selectionEnd = this._getMouseBufferCoords(event);
     }
@@ -523,7 +523,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * start position.
    * @param event The mouse event.
    */
-  private _onSingleClick(event: MouseEvent): void {
+  private _handleSingleClick(event: MouseEvent): void {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
     this._activeSelectionMode = this.shouldColumnSelect(event) ? SelectionMode.COLUMN : SelectionMode.NORMAL;
@@ -557,7 +557,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Performs a double click, selecting the current word.
    * @param event The mouse event.
    */
-  private _onDoubleClick(event: MouseEvent): void {
+  private _handleDoubleClick(event: MouseEvent): void {
     if (this._selectWordAtCursor(event, true)) {
       this._activeSelectionMode = SelectionMode.WORD;
     }
@@ -568,7 +568,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * select mode.
    * @param event The mouse event.
    */
-  private _onTripleClick(event: MouseEvent): void {
+  private _handleTripleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._activeSelectionMode = SelectionMode.LINE;
@@ -589,7 +589,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * end of the selection and refreshing the selection.
    * @param event The mousemove event.
    */
-  private _onMouseMove(event: MouseEvent): void {
+  private _handleMouseMove(event: MouseEvent): void {
     // If the mousemove listener is active it means that a selection is
     // currently being made, we should stop propagation to prevent mouse events
     // to be sent to the pty.
@@ -690,7 +690,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Handles the mouseup event, removing the mousedown listeners.
    * @param event The mouseup event.
    */
-  private _onMouseUp(event: MouseEvent): void {
+  private _handleMouseUp(event: MouseEvent): void {
     const timeElapsed = event.timeStamp - this._mouseDownTimeStamp;
 
     this._removeMouseDownListeners();
@@ -746,14 +746,14 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._onSelectionChange.fire();
   }
 
-  private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
+  private _handleBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
     this.clearSelection();
     // Only adjust the selection on trim, shiftElements is rarely used (only in
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
     this._trimListener.dispose();
-    this._trimListener = e.activeBuffer.lines.onTrim(amount => this._onTrim(amount));
+    this._trimListener = e.activeBuffer.lines.onTrim(amount => this._handleTrim(amount));
   }
 
   /**

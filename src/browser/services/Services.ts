@@ -74,14 +74,13 @@ export interface IRenderService extends IDisposable {
   hasRenderer(): boolean;
   setRenderer(renderer: IRenderer): void;
   setColors(colors: IColorSet): void;
-  onDevicePixelRatioChange(): void;
-  onResize(cols: number, rows: number): void;
-  // TODO: Is this useful when we have onResize?
-  onCharSizeChanged(): void;
-  onBlur(): void;
-  onFocus(): void;
-  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
-  onCursorMove(): void;
+  handleDevicePixelRatioChange(): void;
+  handleResize(cols: number, rows: number): void;
+  handleCharSizeChanged(): void;
+  handleBlur(): void;
+  handleFocus(): void;
+  handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  handleCursorMove(): void;
   clear(): void;
 }
 
@@ -110,7 +109,7 @@ export interface ISelectionService {
   shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean;
   shouldForceSelection(event: MouseEvent): boolean;
   refresh(isLinuxMouseSelection?: boolean): void;
-  onMouseDown(event: MouseEvent): void;
+  handleMouseDown(event: MouseEvent): void;
   isCellInSelection(x: number, y: number): boolean;
 }
 
