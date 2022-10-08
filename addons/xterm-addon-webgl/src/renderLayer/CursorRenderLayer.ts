@@ -12,6 +12,7 @@ import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/
 import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { ICoreService } from 'common/services/Services';
+import { toDisposable } from 'common/Lifecycle';
 
 interface ICursorState {
   x: number;
@@ -55,12 +56,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'underline': this._renderUnderlineCursor.bind(this)
     };
     this.onOptionsChanged(terminal);
-  }
-
-  public override dispose(): void {
-    this._cursorBlinkStateManager?.dispose();
-    this._cursorBlinkStateManager = undefined;
-    super.dispose();
+    this.register(toDisposable(() => {
+      this._cursorBlinkStateManager?.dispose();
+      this._cursorBlinkStateManager = undefined;
+    }));
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {

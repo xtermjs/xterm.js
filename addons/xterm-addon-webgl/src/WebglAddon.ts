@@ -10,28 +10,31 @@ import { IColorSet } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService } from 'common/services/Services';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
-export class WebglAddon implements ITerminalAddon {
+export class WebglAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
 
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLElement>();
+  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onContextLoss = new EventEmitter<void>();
+  private readonly _onContextLoss = this.register(new EventEmitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(
     private _preserveDrawingBuffer?: boolean
-  ) {}
+  ) {
+    super();
+  }
 
   public activate(terminal: Terminal): void {
-    const core = (terminal as any)._core;
-    if (!terminal.element) {
-      core.onWillOpen(() => this.activate(terminal));
-      return;
-    }
     if (isSafari) {
       throw new Error('Webgl is not currently supported on Safari');
+    }
+    const core = (terminal as any)._core;
+    if (!terminal.element) {
+      this.register(core.onWillOpen(() => this.activate(terminal)));
+      return;
     }
     this._terminal = terminal;
     const renderService: IRenderService = core._renderService;
@@ -40,21 +43,16 @@ export class WebglAddon implements ITerminalAddon {
     const coreService: ICoreService = core.coreService;
     const decorationService: IDecorationService = core._decorationService;
     const colors: IColorSet = core._colorManager.colors;
-    this._renderer = new WebglRenderer(terminal, colors, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer);
-    forwardEvent(this._renderer.onContextLoss, this._onContextLoss);
-    forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas);
+    this._renderer = this.register(new WebglRenderer(terminal, colors, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer));
+    this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
+    this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);
-  }
 
-  public dispose(): void {
-    if (!this._terminal) {
-      throw new Error('Cannot dispose WebglAddon because it is activated');
-    }
-    const renderService: IRenderService = (this._terminal as any)._core._renderService;
-    renderService.setRenderer((this._terminal as any)._core._createRenderer());
-    renderService.onResize(this._terminal.cols, this._terminal.rows);
-    this._renderer?.dispose();
-    this._renderer = undefined;
+    this.register(toDisposable(() => {
+      const renderService: IRenderService = (this._terminal as any)._core._renderService;
+      renderService.setRenderer((this._terminal as any)._core._createRenderer());
+      renderService.onResize(terminal.cols, terminal.rows);
+    }));
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {

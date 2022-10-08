@@ -6,7 +6,6 @@ import { IUnicodeService, IUnicodeVersionProvider } from 'common/services/Servic
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 
-
 export class UnicodeService implements IUnicodeService {
   public serviceBrand: any;
 
@@ -22,6 +21,10 @@ export class UnicodeService implements IUnicodeService {
     this.register(defaultProvider);
     this._active = defaultProvider.version;
     this._activeProvider = defaultProvider;
+  }
+
+  public dispose(): void {
+    this._onChange.dispose();
   }
 
   public get versions(): string[] {

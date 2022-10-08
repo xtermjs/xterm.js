@@ -10,6 +10,7 @@ import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService } from 'browser/services/Services';
 import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
+import { toDisposable } from 'common/Lifecycle';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
@@ -23,8 +24,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
   ) {
     super(container, 'link', zIndex, true, colors, coreBrowserService);
 
-    terminal.linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
-    terminal.linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
+    this.register(terminal.linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e)));
+    this.register(terminal.linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e)));
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {

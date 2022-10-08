@@ -28,8 +28,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
   ) {
     super(terminal, container, 'link', zIndex, true, colors, bufferService, optionsService, decorationService, coreBrowserService);
 
-    linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
-    linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
+    this.register(linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e)));
+    this.register(linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e)));
   }
 
   public resize(dim: IRenderDimensions): void {

@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { Disposable } from 'common/Lifecycle';
 import { ILogService, IOptionsService, LogLevelEnum } from 'common/services/Services';
 
 type LogType = (message?: any, ...optionalParams: any[]) => void;
@@ -29,7 +30,7 @@ const optionsKeyToLogLevel: { [key: string]: LogLevelEnum } = {
 
 const LOG_PREFIX = 'xterm.js: ';
 
-export class LogService implements ILogService {
+export class LogService extends Disposable implements ILogService {
   public serviceBrand: any;
 
   public logLevel: LogLevelEnum = LogLevelEnum.OFF;
@@ -37,12 +38,13 @@ export class LogService implements ILogService {
   constructor(
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
+    super();
     this._updateLogLevel();
-    this._optionsService.onOptionChange(key => {
+    this.register(this._optionsService.onOptionChange(key => {
       if (key === 'logLevel') {
         this._updateLogLevel();
       }
-    });
+    }));
   }
 
   private _updateLogLevel(): void {

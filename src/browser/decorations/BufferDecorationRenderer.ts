@@ -5,7 +5,7 @@
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IRenderService } from 'browser/services/Services';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration } from 'common/services/Services';
 
 export class BufferDecorationRenderer extends Disposable {
@@ -39,12 +39,10 @@ export class BufferDecorationRenderer extends Disposable {
     }));
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh()));
     this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
-  }
-
-  public override dispose(): void {
-    this._container.remove();
-    this._decorationElements.clear();
-    super.dispose();
+    this.register(toDisposable(() => {
+      this._container.remove();
+      this._decorationElements.clear();
+    }));
   }
 
   private _queueRefresh(): void {

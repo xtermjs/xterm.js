@@ -3,25 +3,25 @@
  * @license MIT
  */
 
-import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
-import { IMarker } from 'common/Types';
+import { EventEmitter } from 'common/EventEmitter';
+import { disposeArray } from 'common/Lifecycle';
+import { IDisposable, IMarker } from 'common/Types';
 
-export class Marker extends Disposable implements IMarker {
+export class Marker implements IMarker {
   private static _nextId = 1;
 
-  private _id: number = Marker._nextId++;
   public isDisposed: boolean = false;
+  private _disposables: IDisposable[] = [];
 
+  private _id: number = Marker._nextId++;
   public get id(): number { return this._id; }
 
-  private readonly _onDispose = new EventEmitter<void>();
+  private readonly _onDispose = this.register(new EventEmitter<void>());
   public readonly onDispose = this._onDispose.event;
 
   constructor(
     public line: number
   ) {
-    super();
   }
 
   public dispose(): void {
@@ -32,6 +32,12 @@ export class Marker extends Disposable implements IMarker {
     this.line = -1;
     // Emit before super.dispose such that dispose listeners get a change to react
     this._onDispose.fire();
-    super.dispose();
+    disposeArray(this._disposables);
+    this._disposables.length = 0;
+  }
+
+  public register<T extends IDisposable>(disposable: T): T {
+    this._disposables.push(disposable);
+    return disposable;
   }
 }

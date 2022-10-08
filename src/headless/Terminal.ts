@@ -32,15 +32,15 @@ export class Terminal extends CoreTerminal {
   // TODO: We should remove options once components adopt optionsService
   public get options(): Required<IInitializedTerminalOptions> { return this.optionsService.options; }
 
-  private readonly _onBell = new EventEmitter<void>();
+  private readonly _onBell = this.register(new EventEmitter<void>());
   public readonly onBell = this._onBell.event;
-  private readonly _onCursorMove = new EventEmitter<void>();
+  private readonly _onCursorMove = this.register(new EventEmitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onTitleChange = new EventEmitter<string>();
+  private readonly _onTitleChange = this.register(new EventEmitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onA11yCharEmitter = new EventEmitter<string>();
+  private readonly _onA11yCharEmitter = this.register(new EventEmitter<string>());
   public readonly onA11yChar = this._onA11yCharEmitter.event;
-  private readonly _onA11yTabEmitter = new EventEmitter<number>();
+  private readonly _onA11yTabEmitter = this.register(new EventEmitter<number>());
   public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   /**
@@ -69,14 +69,6 @@ export class Terminal extends CoreTerminal {
     this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
     this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
     this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
-  }
-
-  public dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    super.dispose();
-    this.write = () => { };
   }
 
   /**

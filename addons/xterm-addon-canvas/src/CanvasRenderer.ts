@@ -9,7 +9,7 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/rende
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IColorSet, ILinkifier2 } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
 import { CursorRenderLayer } from './CursorRenderLayer';
@@ -24,9 +24,9 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
 
   constructor(
@@ -70,14 +70,13 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     this.register(observeDevicePixelDimensions(this._renderLayers[0].canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this.onOptionsChanged();
-  }
 
-  public dispose(): void {
-    for (const l of this._renderLayers) {
-      l.dispose();
-    }
-    super.dispose();
-    removeTerminalFromCache(this._terminal);
+    this.register(toDisposable(() => {
+      for (const l of this._renderLayers) {
+        l.dispose();
+      }
+      removeTerminalFromCache(this._terminal);
+    }));
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {

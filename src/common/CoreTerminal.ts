@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
@@ -59,15 +59,15 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _writeBuffer: WriteBuffer;
   private _windowsMode: IDisposable | undefined;
 
-  private readonly _onBinary = new EventEmitter<string>();
+  private readonly _onBinary = this.register(new EventEmitter<string>());
   public readonly onBinary = this._onBinary.event;
-  private readonly _onData = new EventEmitter<string>();
+  private readonly _onData = this.register(new EventEmitter<string>());
   public readonly onData = this._onData.event;
-  protected _onLineFeed = new EventEmitter<void>();
+  protected _onLineFeed = this.register(new EventEmitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
-  private readonly _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  private readonly _onResize = this.register(new EventEmitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
-  protected readonly _onWriteParsed = new EventEmitter<void>();
+  protected readonly _onWriteParsed = this.register(new EventEmitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
   /**
@@ -75,13 +75,13 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * it's filtered out.
    */
   protected _onScrollApi?: EventEmitter<number, void>;
-  protected _onScroll = new EventEmitter<IScrollEvent, void>();
+  protected _onScroll = this.register(new EventEmitter<IScrollEvent, void>());
   public get onScroll(): IEvent<number, void> {
     if (!this._onScrollApi) {
-      this._onScrollApi = new EventEmitter<number, void>();
-      this.register(this._onScroll.event(ev => {
+      this._onScrollApi = this.register(new EventEmitter<number, void>());
+      this._onScroll.event(ev => {
         this._onScrollApi?.fire(ev.position);
-      }));
+      });
     }
     return this._onScrollApi.event;
   }
@@ -103,17 +103,17 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Setup and initialize services
     this._instantiationService = new InstantiationService();
-    this.optionsService = new OptionsService(options);
+    this.optionsService = this.register(new OptionsService(options));
     this._instantiationService.setService(IOptionsService, this.optionsService);
     this._bufferService = this.register(this._instantiationService.createInstance(BufferService));
     this._instantiationService.setService(IBufferService, this._bufferService);
-    this._logService = this._instantiationService.createInstance(LogService);
+    this._logService = this.register(this._instantiationService.createInstance(LogService));
     this._instantiationService.setService(ILogService, this._logService);
     this.coreService = this.register(this._instantiationService.createInstance(CoreService, () => this.scrollToBottom()));
     this._instantiationService.setService(ICoreService, this.coreService);
-    this.coreMouseService = this._instantiationService.createInstance(CoreMouseService);
+    this.coreMouseService = this.register(this._instantiationService.createInstance(CoreMouseService));
     this._instantiationService.setService(ICoreMouseService, this.coreMouseService);
-    this.unicodeService = this._instantiationService.createInstance(UnicodeService);
+    this.unicodeService = this.register(this._instantiationService.createInstance(UnicodeService));
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
@@ -121,7 +121,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IOscLinkService, this._oscLinkService);
 
     // Register input handler and handle/forward events
-    this._inputHandler = new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService);
+    this._inputHandler = this.register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
     this.register(this._inputHandler);
 
@@ -141,17 +141,13 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     }));
 
     // Setup WriteBuffer
-    this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
+    this._writeBuffer = this.register(new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult)));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
-  }
 
-  public dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    super.dispose();
-    this._windowsMode?.dispose();
-    this._windowsMode = undefined;
+    this.register(toDisposable(() => {
+      this._windowsMode?.dispose();
+      this._windowsMode = undefined;
+    }));
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {

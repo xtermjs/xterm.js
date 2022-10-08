@@ -14,7 +14,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
@@ -46,11 +46,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _isAttached: boolean;
   private _contextRestorationTimeout: number | undefined;
 
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onRequestRedraw = new EventEmitter<IRequestRedrawEvent>();
+  private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
-  private readonly _onContextLoss = new EventEmitter<void>();
+  private readonly _onContextLoss = this.register(new EventEmitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(
@@ -131,15 +131,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._initializeWebGLState();
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
-  }
 
-  public dispose(): void {
-    for (const l of this._renderLayers) {
-      l.dispose();
-    }
-    this._canvas.parentElement?.removeChild(this._canvas);
-    removeTerminalFromCache(this._terminal);
-    super.dispose();
+    this.register(toDisposable(() => {
+      for (const l of this._renderLayers) {
+        l.dispose();
+      }
+      this._canvas.parentElement?.removeChild(this._canvas);
+      removeTerminalFromCache(this._terminal);
+    }));
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
@@ -255,8 +254,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer?.dispose();
     this._glyphRenderer?.dispose();
 
-    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
-    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions));
+    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions));
 
     // Update dimensions and acquire char atlas
     this.onCharSizeChanged();

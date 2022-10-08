@@ -6,7 +6,7 @@
 import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
 import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
@@ -40,7 +40,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = new EventEmitter<IRequestRedrawEvent>().event;
+  public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
 
   constructor(
     private _colors: IColorSet,
@@ -89,16 +89,14 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
     this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
-  }
 
-  public dispose(): void {
-    this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
+    this.register(toDisposable(() => {
+      this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
 
-    // Outside influences such as React unmounts may manipulate the DOM before our disposal.
-    // https://github.com/xtermjs/xterm.js/issues/2960
-    removeElementFromParent(this._rowContainer, this._selectionContainer, this._themeStyleElement, this._dimensionsStyleElement);
-
-    super.dispose();
+      // Outside influences such as React unmounts may manipulate the DOM before our disposal.
+      // https://github.com/xtermjs/xterm.js/issues/2960
+      removeElementFromParent(this._rowContainer, this._selectionContainer, this._themeStyleElement, this._dimensionsStyleElement);
+    }));
   }
 
   private _updateDimensions(): void {

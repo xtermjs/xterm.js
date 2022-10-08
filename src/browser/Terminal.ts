@@ -56,6 +56,7 @@ import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
+import { toDisposable } from 'common/Lifecycle';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -122,28 +123,28 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _colorManager: ColorManager | undefined;
   private _theme: ITheme | undefined;
 
-  private readonly _onCursorMove = new EventEmitter<void>();
+  private readonly _onCursorMove = this.register(new EventEmitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
+  private readonly _onKey = this.register(new EventEmitter<{ key: string, domEvent: KeyboardEvent }>());
   public readonly onKey = this._onKey.event;
-  private readonly _onRender = new EventEmitter<{ start: number, end: number }>();
+  private readonly _onRender = this.register(new EventEmitter<{ start: number, end: number }>());
   public readonly onRender = this._onRender.event;
-  private readonly _onSelectionChange = new EventEmitter<void>();
+  private readonly _onSelectionChange = this.register(new EventEmitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
-  private readonly _onTitleChange = new EventEmitter<string>();
+  private readonly _onTitleChange = this.register(new EventEmitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onBell = new EventEmitter<void>();
+  private readonly _onBell = this.register(new EventEmitter<void>());
   public readonly onBell = this._onBell.event;
 
-  private _onFocus = new EventEmitter<void>();
+  private _onFocus = this.register(new EventEmitter<void>());
   public get onFocus(): IEvent<void> { return this._onFocus.event; }
-  private _onBlur = new EventEmitter<void>();
+  private _onBlur = this.register(new EventEmitter<void>());
   public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  private _onA11yCharEmitter = new EventEmitter<string>();
+  private _onA11yCharEmitter = this.register(new EventEmitter<string>());
   public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
-  private _onA11yTabEmitter = new EventEmitter<number>();
+  private _onA11yTabEmitter = this.register(new EventEmitter<number>());
   public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
-  private _onWillOpen = new EventEmitter<HTMLElement>();
+  private _onWillOpen = this.register(new EventEmitter<HTMLElement>());
   public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
 
   /**
@@ -184,6 +185,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Setup listeners
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
+
+    this.register(toDisposable(() => {
+      this._customKeyEventHandler = undefined;
+      this.element?.parentNode?.removeChild(this.element);
+    }));
   }
 
   /**
@@ -233,17 +239,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
     this._renderService?.setColors(this._colorManager.colors);
     this.viewport?.onThemeChange(this._colorManager.colors);
-  }
-
-  public dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    super.dispose();
-    this._renderService?.dispose();
-    this._customKeyEventHandler = undefined;
-    this.write = () => { };
-    this.element?.parentNode?.removeChild(this.element);
   }
 
   protected _setup(): void {

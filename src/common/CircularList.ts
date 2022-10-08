@@ -5,6 +5,7 @@
 
 import { ICircularList } from 'common/Types';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 
 export interface IInsertEvent {
   index: number;
@@ -20,21 +21,22 @@ export interface IDeleteEvent {
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
  * overriding values at the start of the list.
  */
-export class CircularList<T> implements ICircularList<T> {
+export class CircularList<T> extends Disposable implements ICircularList<T> {
   protected _array: (T | undefined)[];
   private _startIndex: number;
   private _length: number;
 
-  public readonly onDeleteEmitter = new EventEmitter<IDeleteEvent>();
+  public readonly onDeleteEmitter = this.register(new EventEmitter<IDeleteEvent>());
   public readonly onDelete = this.onDeleteEmitter.event;
-  public readonly onInsertEmitter = new EventEmitter<IInsertEvent>();
+  public readonly onInsertEmitter = this.register(new EventEmitter<IInsertEvent>());
   public readonly onInsert = this.onInsertEmitter.event;
-  public readonly onTrimEmitter = new EventEmitter<number>();
+  public readonly onTrimEmitter = this.register(new EventEmitter<number>());
   public readonly onTrim = this.onTrimEmitter.event;
 
   constructor(
     private _maxLength: number
   ) {
+    super();
     this._array = new Array<T>(this._maxLength);
     this._startIndex = 0;
     this._length = 0;

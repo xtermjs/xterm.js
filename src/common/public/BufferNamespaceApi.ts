@@ -5,7 +5,7 @@
 
 import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from 'xterm';
 import { BufferApiView } from 'common/public/BufferApiView';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { ICoreTerminal } from 'common/Types';
 
 export class BufferNamespaceApi implements IBufferNamespaceApi {

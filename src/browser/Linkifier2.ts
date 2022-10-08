@@ -8,7 +8,7 @@ import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { Disposable, getDisposeArrayDisposable, disposeArray } from 'common/Lifecycle';
+import { Disposable, getDisposeArrayDisposable, disposeArray, toDisposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 
 export class Linkifier2 extends Disposable implements ILinkifier2 {
@@ -36,11 +36,9 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   ) {
     super();
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
-  }
-
-  public dispose(): void {
-    super.dispose();
-    this._lastMouseEvent = undefined;
+    this.register(toDisposable(() => {
+      this._lastMouseEvent = undefined;
+    }));
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {

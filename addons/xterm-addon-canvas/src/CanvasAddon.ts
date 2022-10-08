@@ -9,20 +9,26 @@ import { CanvasRenderer } from './CanvasRenderer';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
-export class CanvasAddon implements ITerminalAddon {
+export class CanvasAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: CanvasRenderer;
 
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLCanvasElement>();
+  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+
+  public get textureAtlas(): HTMLCanvasElement | undefined {
+    return this._renderer?.textureAtlas;
+  }
 
   public activate(terminal: Terminal): void {
     const core = (terminal as any)._core;
     if (!terminal.element) {
-      core.onWillOpen(() => this.activate(terminal));
+      this.register(core.onWillOpen(() => this.activate(terminal)));
       return;
     }
+
     this._terminal = terminal;
     const bufferService: IBufferService = core._bufferService;
     const renderService: IRenderService = core._renderService;
@@ -35,24 +41,17 @@ export class CanvasAddon implements ITerminalAddon {
     const colors: IColorSet = core._colorManager.colors;
     const screenElement: HTMLElement = core.screenElement;
     const linkifier = core.linkifier2;
+
     this._renderer = new CanvasRenderer(terminal, colors, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService);
-    forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas);
+    this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);
     renderService.onResize(bufferService.cols, bufferService.rows);
-  }
 
-  public dispose(): void {
-    if (!this._terminal) {
-      throw new Error('Cannot dispose CanvasAddon because it is activated');
-    }
-    const renderService: IRenderService = (this._terminal as any)._core._renderService;
-    renderService.setRenderer((this._terminal as any)._core._createRenderer());
-    renderService.onResize(this._terminal.cols, this._terminal.rows);
-    this._renderer?.dispose();
-    this._renderer = undefined;
-  }
-
-  public get textureAtlas(): HTMLCanvasElement | undefined {
-    return this._renderer?.textureAtlas;
+    this.register(toDisposable(() => {
+      renderService.setRenderer((this._terminal as any)._core._createRenderer());
+      renderService.onResize(terminal.cols, terminal.rows);
+      this._renderer?.dispose();
+      this._renderer = undefined;
+    }));
   }
 }
