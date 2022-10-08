@@ -19,7 +19,7 @@ import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -60,11 +60,11 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._initCanvas();
     this._container.appendChild(this._canvas);
     this._refreshCharAtlas(this._colors);
-  }
 
-  public dispose(): void {
-    removeElementFromParent(this._canvas);
-    this._charAtlas?.dispose();
+    this.register(toDisposable(() => {
+      removeElementFromParent(this._canvas);
+      this._charAtlas?.dispose();
+    }));
   }
 
   private _initCanvas(): void {
