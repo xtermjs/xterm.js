@@ -357,10 +357,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * the character atlas to reduce draw time.
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
-    if (this._charAtlas.hasCanvasChanged) {
-      this._bitmapGenerator?.refresh();
-      this._charAtlas.hasCanvasChanged = false;
-    }
     const chars = cell.getChars();
     this._cellColorResolver.resolve(cell, x, y);
     let glyph: IRasterizedGlyph;
@@ -372,6 +368,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
+    if (this._charAtlas.hasCanvasChanged) {
+      this._bitmapGenerator?.refresh();
+      this._charAtlas.hasCanvasChanged = false;
+    }
     this._ctx.drawImage(
       this._bitmapGenerator?.bitmap || this._charAtlas!.cacheCanvas,
       glyph.texturePosition.x,
