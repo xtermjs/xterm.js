@@ -16,9 +16,9 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
 
-  private readonly _onChangeTextureAtlas = new EventEmitter<HTMLElement>();
+  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onContextLoss = new EventEmitter<void>();
+  private readonly _onContextLoss = this.register(new EventEmitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(

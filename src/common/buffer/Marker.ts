@@ -13,10 +13,10 @@ export class Marker extends Disposable implements IMarker {
   private _id: number = Marker._nextId++;
   public get id(): number { return this._id; }
 
-  private readonly _onDispose = new EventEmitter<void>();
+  private readonly _onDispose = this.register(new EventEmitter<void>());
   public readonly onDispose = this._onDispose.event;
 
-  public get isDisposed(): boolean { return this._isDisposed; };
+  public get isDisposed(): boolean { return this._isDisposed; }
 
   constructor(
     public line: number

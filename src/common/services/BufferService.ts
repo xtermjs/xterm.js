@@ -22,9 +22,9 @@ export class BufferService extends Disposable implements IBufferService {
   /** Whether the user is scrolling (locks the scroll position) */
   public isUserScrolling: boolean = false;
 
-  private readonly _onResize = new EventEmitter<{ cols: number, rows: number }>();
+  private readonly _onResize = this.register(new EventEmitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
-  private readonly _onScroll = new EventEmitter<number>();
+  private readonly _onScroll = this.register(new EventEmitter<number>());
   public readonly onScroll = this._onScroll.event;
 
   public get buffer(): IBuffer { return this.buffers.active; }

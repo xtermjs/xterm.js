@@ -5,19 +5,21 @@
 import { IUnicodeService, IUnicodeVersionProvider } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
+import { Disposable } from 'common/Lifecycle';
 
 
-export class UnicodeService implements IUnicodeService {
+export class UnicodeService extends Disposable implements IUnicodeService {
   public serviceBrand: any;
 
   private _providers: {[key: string]: IUnicodeVersionProvider} = Object.create(null);
   private _active: string = '';
   private _activeProvider: IUnicodeVersionProvider;
 
-  private readonly _onChange = new EventEmitter<string>();
+  private readonly _onChange = super.register(new EventEmitter<string>();
   public readonly onChange = this._onChange.event;
 
   constructor() {
+    super();
     const defaultProvider = new UnicodeV6();
     this.register(defaultProvider);
     this._active = defaultProvider.version;

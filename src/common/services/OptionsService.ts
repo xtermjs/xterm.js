@@ -7,6 +7,7 @@ import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/S
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
 import { CursorStyle } from 'common/Types';
+import { Disposable } from 'common/Lifecycle';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
@@ -51,16 +52,17 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
 
-export class OptionsService implements IOptionsService {
+export class OptionsService extends Disposable implements IOptionsService {
   public serviceBrand: any;
 
   public readonly rawOptions: Required<ITerminalOptions>;
   public options: Required<ITerminalOptions>;
 
-  private readonly _onOptionChange = new EventEmitter<string>();
+  private readonly _onOptionChange = this.register(new EventEmitter<string>());
   public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {
+    super();
     // set the default value of each option
     const defaultOptions = { ...DEFAULT_OPTIONS };
     for (const key in options) {

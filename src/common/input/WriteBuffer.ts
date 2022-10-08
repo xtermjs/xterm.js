@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
@@ -33,7 +34,7 @@ const WRITE_TIMEOUT_MS = 12;
  */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
-export class WriteBuffer {
+export class WriteBuffer extends Disposable {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
   private _pendingData = 0;
@@ -42,10 +43,12 @@ export class WriteBuffer {
   private _syncCalls = 0;
   private _didUserInput = false;
 
-  private readonly _onWriteParsed = new EventEmitter<void>();
+  private readonly _onWriteParsed = this.register(new EventEmitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
-  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
+  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) {
+    super();
+  }
 
   public handleUserInput(): void {
     this._didUserInput = true;

@@ -5,6 +5,7 @@
 import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
+import { Disposable } from 'common/Lifecycle';
 
 /**
  * Supported default protocols.
@@ -165,20 +166,21 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
  * a tracking report to the backend based on protocol and encoding limitations.
  * To send a mouse event call `triggerMouseEvent`.
  */
-export class CoreMouseService implements ICoreMouseService {
+export class CoreMouseService extends Disposable implements ICoreMouseService {
   private _protocols: { [name: string]: ICoreMouseProtocol } = {};
   private _encodings: { [name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
   private _lastEvent: ICoreMouseEvent | null = null;
 
-  private readonly _onProtocolChange = new EventEmitter<CoreMouseEventType>();
+  private readonly _onProtocolChange = this.register(new EventEmitter<CoreMouseEventType>());
   public readonly onProtocolChange =  this._onProtocolChange.event;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService
   ) {
+    super();
     // register default protocols and encodings
     for (const name of Object.keys(DEFAULT_PROTOCOLS)) this.addProtocol(name, DEFAULT_PROTOCOLS[name]);
     for (const name of Object.keys(DEFAULT_ENCODINGS)) this.addEncoding(name, DEFAULT_ENCODINGS[name]);

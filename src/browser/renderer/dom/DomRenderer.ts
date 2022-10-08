@@ -40,7 +40,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = new EventEmitter<IRequestRedrawEvent>().event;
+  public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
 
   constructor(
     private _colors: IColorSet,
