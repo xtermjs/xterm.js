@@ -102,7 +102,7 @@ export class ColorManager implements IColorManager {
     this._updateRestoreColors();
   }
 
-  public onOptionsChange(key: string, value: any): void {
+  public handleOptionsChange(key: string, value: any): void {
     switch (key) {
       case 'minimumContrastRatio':
         this._contrastCache.clear();

@@ -376,7 +376,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param amount The amount the buffer is being trimmed.
    */
   private _onTrim(amount: number): void {
-    const needsRefresh = this._model.onTrim(amount);
+    const needsRefresh = this._model.handleTrim(amount);
     if (needsRefresh) {
       this.refresh();
     }
@@ -438,7 +438,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
-  public onMouseDown(event: MouseEvent): void {
+  public handleMouseDown(event: MouseEvent): void {
     this._mouseDownTimeStamp = event.timeStamp;
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.

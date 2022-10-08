@@ -299,7 +299,7 @@ describe('DomRendererRowFactory', () => {
       it('should force selected cells with content to be rendered above the background', () => {
         lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
-        rowFactory.onSelectionChanged([1, 0], [2, 0], false);
+        rowFactory.handleSelectionChanged([1, 0], [2, 0], false);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span>a</span><span class="xterm-decoration-top">b</span>'
@@ -307,7 +307,7 @@ describe('DomRendererRowFactory', () => {
       });
       it('should force whitespace cells to be rendered above the background', () => {
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
-        rowFactory.onSelectionChanged([0, 0], [2, 0], false);
+        rowFactory.handleSelectionChanged([0, 0], [2, 0], false);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-decoration-top"> </span><span class="xterm-decoration-top">a</span>'

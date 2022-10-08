@@ -241,7 +241,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._themeStyleElement.textContent = styles;
   }
 
-  public onDevicePixelRatioChange(): void {
+  public handleDevicePixelRatioChange(): void {
     this._updateDimensions();
   }
 
@@ -258,30 +258,30 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public onResize(cols: number, rows: number): void {
+  public handleResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
   }
 
-  public onCharSizeChanged(): void {
+  public handleCharSizeChanged(): void {
     this._updateDimensions();
   }
 
-  public onBlur(): void {
+  public handleBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
   }
 
-  public onFocus(): void {
+  public handleFocus(): void {
     this._rowContainer.classList.add(FOCUS_CLASS);
   }
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Remove all selections
     while (this._selectionContainer.children.length) {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
     }
 
-    this._rowFactory.onSelectionChanged(start, end, columnSelectMode);
+    this._rowFactory.handleSelectionChanged(start, end, columnSelectMode);
     this.renderRows(0, this._bufferService.rows - 1);
 
     // Selection does not exist
@@ -341,11 +341,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     return element;
   }
 
-  public onCursorMove(): void {
+  public handleCursorMove(): void {
     // No-op, the cursor is drawn when rows are drawn
   }
 
-  public onOptionsChanged(): void {
+  public handleOptionsChanged(): void {
     // Force a refresh
     this._updateDimensions();
     this._injectCss();

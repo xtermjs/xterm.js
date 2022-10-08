@@ -55,7 +55,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
-    this.onOptionsChanged(terminal);
+    this.handleOptionsChanged(terminal);
     this.register(toDisposable(() => {
       this._cursorBlinkStateManager?.dispose();
       this._cursorBlinkStateManager = undefined;
@@ -77,20 +77,20 @@ export class CursorRenderLayer extends BaseRenderLayer {
   public reset(terminal: Terminal): void {
     this._clearCursor();
     this._cursorBlinkStateManager?.restartBlinkAnimation(terminal);
-    this.onOptionsChanged(terminal);
+    this.handleOptionsChanged(terminal);
   }
 
-  public onBlur(terminal: Terminal): void {
+  public handleBlur(terminal: Terminal): void {
     this._cursorBlinkStateManager?.pause();
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
-  public onFocus(terminal: Terminal): void {
+  public handleFocus(terminal: Terminal): void {
     this._cursorBlinkStateManager?.resume(terminal);
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
-  public onOptionsChanged(terminal: Terminal): void {
+  public handleOptionsChanged(terminal: Terminal): void {
     if (terminal.options.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(() => {
@@ -106,11 +106,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
-  public onCursorMove(terminal: Terminal): void {
+  public handleCursorMove(terminal: Terminal): void {
     this._cursorBlinkStateManager?.restartBlinkAnimation(terminal);
   }
 
-  public onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {
+  public handleGridChanged(terminal: Terminal, startRow: number, endRow: number): void {
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(terminal, false);
     } else {

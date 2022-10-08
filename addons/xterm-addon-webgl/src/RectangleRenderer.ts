@@ -151,7 +151,7 @@ export class RectangleRenderer extends Disposable {
     gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._vertices.count);
   }
 
-  public onResize(): void {
+  public handleResize(): void {
     this._updateViewportRectangle();
   }
 

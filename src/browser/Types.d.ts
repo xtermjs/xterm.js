@@ -108,7 +108,7 @@ export interface IBrowser {
 
 export interface IColorManager {
   colors: IColorSet;
-  onOptionsChange(key: string, value: any): void;
+  handleOptionsChange(key: string, value: any): void;
 }
 
 export interface IColorSet {
@@ -147,10 +147,10 @@ export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(immediate?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
-  onWheel(ev: WheelEvent): boolean;
-  onTouchStart(ev: TouchEvent): void;
-  onTouchMove(ev: TouchEvent): boolean;
-  onThemeChange(colors: IColorSet): void;
+  handleWheel(ev: WheelEvent): boolean;
+  handleTouchStart(ev: TouchEvent): void;
+  handleTouchMove(ev: TouchEvent): boolean;
+  handleThemeChange(colors: IColorSet): void;
 }
 
 export interface ILinkifierEvent {

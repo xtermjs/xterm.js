@@ -236,7 +236,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._forEachCell(firstRow, lastRow, (cell, x, y) => this._drawChars(cell, x, y));
   }
 
-  public onGridChanged(firstRow: number, lastRow: number): void {
+  public handleGridChanged(firstRow: number, lastRow: number): void {
     // Resize has not been called yet
     if (this._state.cache.length === 0) {
       return;
@@ -251,7 +251,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._drawForeground(firstRow, lastRow);
   }
 
-  public onOptionsChanged(): void {
+  public handleOptionsChanged(): void {
     this._setTransparency(this._optionsService.rawOptions.allowTransparency);
   }
 

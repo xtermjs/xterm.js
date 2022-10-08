@@ -77,7 +77,7 @@ export class Viewport extends Disposable implements IViewport {
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
-  public onThemeChange(colors: IColorSet): void {
+  public handleThemeChange(colors: IColorSet): void {
     this._viewportElement.style.backgroundColor = colors.background.css;
   }
 
@@ -234,7 +234,7 @@ export class Viewport extends Disposable implements IViewport {
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent): boolean {
+  public handleWheel(ev: WheelEvent): boolean {
     const amount = this._getPixelsScrolled(ev);
     if (amount === 0) {
       return false;
@@ -315,7 +315,7 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchstart event, recording the touch occurred.
    * @param ev The touch event.
    */
-  public onTouchStart(ev: TouchEvent): void {
+  public handleTouchStart(ev: TouchEvent): void {
     this._lastTouchY = ev.touches[0].pageY;
   }
 
@@ -323,7 +323,7 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent): boolean {
+  public handleTouchMove(ev: TouchEvent): boolean {
     const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {

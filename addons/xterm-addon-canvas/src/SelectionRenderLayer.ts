@@ -59,18 +59,18 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
   }
 
-  public onBlur(): void {
+  public handleBlur(): void {
     this.reset();
     this._redrawSelection(this._selectionModel.selectionStart, this._selectionModel.selectionEnd, this._selectionModel.columnSelectMode);
   }
 
-  public onFocus(): void {
+  public handleFocus(): void {
     this.reset();
     this._redrawSelection(this._selectionModel.selectionStart, this._selectionModel.selectionEnd, this._selectionModel.columnSelectMode);
   }
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
-    super.onSelectionChanged(start, end, columnSelectMode);
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    super.handleSelectionChanged(start, end, columnSelectMode);
     this._redrawSelection(start, end, columnSelectMode);
   }
 

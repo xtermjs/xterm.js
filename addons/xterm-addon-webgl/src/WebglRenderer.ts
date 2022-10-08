@@ -162,16 +162,16 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._clearModel(true);
   }
 
-  public onDevicePixelRatioChange(): void {
+  public handleDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
     if (this._devicePixelRatio !== this._coreBrowserService.dpr) {
       this._devicePixelRatio = this._coreBrowserService.dpr;
-      this.onResize(this._terminal.cols, this._terminal.rows);
+      this.handleResize(this._terminal.cols, this._terminal.rows);
     }
   }
 
-  public onResize(cols: number, rows: number): void {
+  public handleResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions();
 
@@ -193,9 +193,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
 
     this._rectangleRenderer.setDimensions(this.dimensions);
-    this._rectangleRenderer.onResize();
+    this._rectangleRenderer.handleResize();
     this._glyphRenderer.setDimensions(this.dimensions);
-    this._glyphRenderer.onResize();
+    this._glyphRenderer.handleResize();
 
     this._refreshCharAtlas();
 
@@ -204,43 +204,43 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._clearModel(false);
   }
 
-  public onCharSizeChanged(): void {
-    this.onResize(this._terminal.cols, this._terminal.rows);
+  public handleCharSizeChanged(): void {
+    this.handleResize(this._terminal.cols, this._terminal.rows);
   }
 
-  public onBlur(): void {
+  public handleBlur(): void {
     for (const l of this._renderLayers) {
-      l.onBlur(this._terminal);
+      l.handleBlur(this._terminal);
     }
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
 
-  public onFocus(): void {
+  public handleFocus(): void {
     for (const l of this._renderLayers) {
-      l.onFocus(this._terminal);
+      l.handleFocus(this._terminal);
     }
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     for (const l of this._renderLayers) {
-      l.onSelectionChanged(this._terminal, start, end, columnSelectMode);
+      l.handleSelectionChanged(this._terminal, start, end, columnSelectMode);
     }
     this._model.selection.update(this._terminal, start, end, columnSelectMode);
     this._requestRedrawViewport();
   }
 
-  public onCursorMove(): void {
+  public handleCursorMove(): void {
     for (const l of this._renderLayers) {
-      l.onCursorMove(this._terminal);
+      l.handleCursorMove(this._terminal);
     }
   }
 
-  public onOptionsChanged(): void {
+  public handleOptionsChanged(): void {
     for (const l of this._renderLayers) {
-      l.onOptionsChanged(this._terminal);
+      l.handleOptionsChanged(this._terminal);
     }
     this._updateDimensions();
     this._refreshCharAtlas();
@@ -258,7 +258,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions));
 
     // Update dimensions and acquire char atlas
-    this.onCharSizeChanged();
+    this.handleCharSizeChanged();
   }
 
   /**
@@ -328,7 +328,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Update render layers
     for (const l of this._renderLayers) {
-      l.onGridChanged(this._terminal, start, end);
+      l.handleGridChanged(this._terminal, start, end);
     }
 
     // Tell renderer the frame is beginning

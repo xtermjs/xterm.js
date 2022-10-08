@@ -285,14 +285,14 @@ export class MockRenderer implements IRenderer {
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
     throw new Error('Method not implemented.');
   }
-  public onResize(cols: number, rows: number): void { }
-  public onCharSizeChanged(): void { }
-  public onBlur(): void { }
-  public onFocus(): void { }
-  public onSelectionChanged(start: [number, number], end: [number, number]): void { }
-  public onCursorMove(): void { }
-  public onOptionsChanged(): void { }
-  public onDevicePixelRatioChange(): void { }
+  public handleResize(cols: number, rows: number): void { }
+  public handleCharSizeChanged(): void { }
+  public handleBlur(): void { }
+  public handleFocus(): void { }
+  public handleSelectionChanged(start: [number, number], end: [number, number]): void { }
+  public handleCursorMove(): void { }
+  public handleOptionsChanged(): void { }
+  public handleDevicePixelRatioChange(): void { }
   public clear(): void { }
   public renderRows(start: number, end: number): void { }
 }
@@ -302,16 +302,16 @@ export class MockViewport implements IViewport {
     throw new Error('Method not implemented.');
   }
   public scrollBarWidth: number = 0;
-  public onThemeChange(colors: IColorSet): void {
+  public handleThemeChange(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
-  public onWheel(ev: WheelEvent): boolean {
+  public handleWheel(ev: WheelEvent): boolean {
     throw new Error('Method not implemented.');
   }
-  public onTouchStart(ev: TouchEvent): void {
+  public handleTouchStart(ev: TouchEvent): void {
     throw new Error('Method not implemented.');
   }
-  public onTouchMove(ev: TouchEvent): boolean {
+  public handleTouchMove(ev: TouchEvent): boolean {
     throw new Error('Method not implemented.');
   }
   public syncScrollArea(): void { }
@@ -410,25 +410,25 @@ export class MockRenderService implements IRenderService {
   public setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
-  public onDevicePixelRatioChange(): void {
+  public handleDevicePixelRatioChange(): void {
     throw new Error('Method not implemented.');
   }
-  public onResize(cols: number, rows: number): void {
+  public handleResize(cols: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
-  public onCharSizeChanged(): void {
+  public handleCharSizeChanged(): void {
     throw new Error('Method not implemented.');
   }
-  public onBlur(): void {
+  public handleBlur(): void {
     throw new Error('Method not implemented.');
   }
-  public onFocus(): void {
+  public handleFocus(): void {
     throw new Error('Method not implemented.');
   }
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  public handleSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     throw new Error('Method not implemented.');
   }
-  public onCursorMove(): void {
+  public handleCursorMove(): void {
     throw new Error('Method not implemented.');
   }
   public clear(): void {
@@ -498,7 +498,7 @@ export class MockSelectionService implements ISelectionService {
   public refresh(isLinuxMouseSelection?: boolean): void {
     throw new Error('Method not implemented.');
   }
-  public onMouseDown(event: MouseEvent): void {
+  public handleMouseDown(event: MouseEvent): void {
     throw new Error('Method not implemented.');
   }
   public isCellInSelection(x: number, y: number): boolean {

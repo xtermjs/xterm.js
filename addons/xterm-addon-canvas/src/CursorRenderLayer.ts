@@ -79,20 +79,20 @@ export class CursorRenderLayer extends BaseRenderLayer {
   public reset(): void {
     this._clearCursor();
     this._cursorBlinkStateManager?.restartBlinkAnimation();
-    this.onOptionsChanged();
+    this.handleOptionsChanged();
   }
 
-  public onBlur(): void {
+  public handleBlur(): void {
     this._cursorBlinkStateManager?.pause();
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
-  public onFocus(): void {
+  public handleFocus(): void {
     this._cursorBlinkStateManager?.resume();
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
-  public onOptionsChanged(): void {
+  public handleOptionsChanged(): void {
     if (this._optionsService.rawOptions.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(this._coreBrowserService.isFocused, () => {
@@ -108,11 +108,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
-  public onCursorMove(): void {
+  public handleCursorMove(): void {
     this._cursorBlinkStateManager?.restartBlinkAnimation();
   }
 
-  public onGridChanged(startRow: number, endRow: number): void {
+  public handleGridChanged(startRow: number, endRow: number): void {
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(false);
     } else {

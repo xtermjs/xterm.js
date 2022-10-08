@@ -48,7 +48,7 @@ export class DomRendererRowFactory {
     this._colors = colors;
   }
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._selectionStart = start;
     this._selectionEnd = end;
     this._columnSelectMode = columnSelectMode;

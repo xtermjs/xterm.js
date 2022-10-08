@@ -51,7 +51,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     this.register(toDisposable(() => {
       const renderService: IRenderService = (this._terminal as any)._core._renderService;
       renderService.setRenderer((this._terminal as any)._core._createRenderer());
-      renderService.onResize(terminal.cols, terminal.rows);
+      renderService.handleResize(terminal.cols, terminal.rows);
     }));
   }
 
