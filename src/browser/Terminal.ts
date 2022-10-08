@@ -604,7 +604,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    // TODO: Listen to theme service
     return this._instantiationService.createInstance(DomRenderer, this.element!, this.screenElement!, this._viewportElement!, this.linkifier2);
   }
 
