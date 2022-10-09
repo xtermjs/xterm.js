@@ -515,7 +515,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this._onWillOpen.fire(this.element);
+    try {
+      this._onWillOpen.fire(this.element);
+    }
+    catch { /* fails to load addon for some reason */ }
     if (!this._renderService.hasRenderer()) {
       this._renderService.setRenderer(this._createRenderer());
     }

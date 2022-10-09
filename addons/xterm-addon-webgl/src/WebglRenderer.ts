@@ -103,9 +103,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
 
-    // TODO: Remove me.
-    throw new Error('WebGL2 not supported ' + this._gl);
-
     this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => {
       console.log('webglcontextlost event received');
       // Prevent the default behavior in order to enable WebGL context restoration.
