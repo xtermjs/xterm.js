@@ -33,7 +33,9 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     }
     const core = (terminal as any)._core;
     if (!terminal.element) {
-      this.register(core.onWillOpen(() => this.activate(terminal)));
+      this.register(toDisposable(() => {
+        core.onWillOpen(() => this.activate(terminal));
+      }));
       return;
     }
     this._terminal = terminal;

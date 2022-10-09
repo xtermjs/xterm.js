@@ -271,11 +271,16 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   addons.fit.instance!.fit();
-  typedTerm.loadAddon(addons.webgl.instance);
-  setTimeout(() => {
-    addTextureAtlas(addons.webgl.instance.textureAtlas);
-    addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
-  }, 0);
+  try { // try-catch to allow the demo to load if webgl is not supported
+    typedTerm.loadAddon(addons.webgl.instance);
+    setTimeout(() => {
+      addTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+    }, 0);
+  }
+  catch {
+    addons.webgl.instance = undefined;
+  }
 
   term.open(terminalContainer);
   term.focus();
