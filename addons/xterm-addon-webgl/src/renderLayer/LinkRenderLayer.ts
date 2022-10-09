@@ -3,13 +3,13 @@
  * @license MIT
  */
 
+import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ILinkifier2, ILinkifierEvent } from 'browser/Types';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
-import { is256Color } from '../atlas/CharAtlasUtils';
-import { ITerminal, IColorSet, ILinkifierEvent } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
-import { ICoreBrowserService } from 'browser/services/Services';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
@@ -17,14 +17,15 @@ export class LinkRenderLayer extends BaseRenderLayer {
   constructor(
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
-    terminal: ITerminal,
-    coreBrowserService: ICoreBrowserService
+    terminal: Terminal,
+    linkifier2: ILinkifier2,
+    coreBrowserService: ICoreBrowserService,
+    themeService: IThemeService
   ) {
-    super(container, 'link', zIndex, true, colors, coreBrowserService);
+    super(terminal, container, 'link', zIndex, true, coreBrowserService, themeService);
 
-    terminal.linkifier2.onShowLinkUnderline(e => this._onShowLinkUnderline(e));
-    terminal.linkifier2.onHideLinkUnderline(e => this._onHideLinkUnderline(e));
+    this.register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
+    this.register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
@@ -49,14 +50,14 @@ export class LinkRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _onShowLinkUnderline(e: ILinkifierEvent): void {
+  private _handleShowLinkUnderline(e: ILinkifierEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
     } else if (e.fg !== undefined && is256Color(e.fg)) {
       // 256 color support
-      this._ctx.fillStyle = this._colors.ansi[e.fg!].css;
+      this._ctx.fillStyle = this._themeService.colors.ansi[e.fg!].css;
     } else {
-      this._ctx.fillStyle = this._colors.foreground.css;
+      this._ctx.fillStyle = this._themeService.colors.foreground.css;
     }
 
     if (e.y1 === e.y2) {
@@ -73,7 +74,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     this._state = e;
   }
 
-  private _onHideLinkUnderline(e: ILinkifierEvent): void {
+  private _handleHideLinkUnderline(e: ILinkifierEvent): void {
     this._clearCurrentLink();
   }
 }

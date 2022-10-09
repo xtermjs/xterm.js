@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
@@ -33,17 +34,25 @@ const WRITE_TIMEOUT_MS = 12;
  */
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
-export class WriteBuffer {
+export class WriteBuffer extends Disposable {
   private _writeBuffer: (string | Uint8Array)[] = [];
   private _callbacks: ((() => void) | undefined)[] = [];
   private _pendingData = 0;
   private _bufferOffset = 0;
   private _isSyncWriting = false;
   private _syncCalls = 0;
-  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
-  private _onWriteParsed = new EventEmitter<void>();
+  private _didUserInput = false;
 
-  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) { }
+  private readonly _onWriteParsed = this.register(new EventEmitter<void>());
+  public readonly onWriteParsed = this._onWriteParsed.event;
+
+  constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) {
+    super();
+  }
+
+  public handleUserInput(): void {
+    this._didUserInput = true;
+  }
 
   /**
    * @deprecated Unreliable, to be removed soon.
@@ -99,7 +108,20 @@ export class WriteBuffer {
     // schedule chunk processing for next event loop run
     if (!this._writeBuffer.length) {
       this._bufferOffset = 0;
-      queueMicrotask(() => this._innerWrite());
+
+      // If this is the first write call after the user has done some input,
+      // parse it immediately to minimize input latency,
+      // otherwise schedule for the next event
+      if (this._didUserInput) {
+        this._didUserInput = false;
+        this._pendingData += data.length;
+        this._writeBuffer.push(data);
+        this._callbacks.push(callback);
+        this._innerWrite();
+        return;
+      }
+
+      setTimeout(() => this._innerWrite());
     }
 
     this._pendingData += data.length;

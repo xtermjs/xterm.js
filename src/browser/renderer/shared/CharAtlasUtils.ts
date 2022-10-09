@@ -5,16 +5,11 @@
 
 import { ICharAtlasConfig } from './Types';
 import { Attributes } from 'common/buffer/Constants';
-import { Terminal, FontWeight } from 'xterm';
-import { IColorSet } from 'browser/Types';
-import { IColor } from 'common/Types';
+import { Terminal } from 'xterm';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { NULL_COLOR } from 'common/Color';
 
-const NULL_COLOR: IColor = {
-  css: '',
-  rgba: 0
-};
-
-export function generateConfig(scaledCellWidth: number, scaledCellHeight: number, scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet, devicePixelRatio: number): ICharAtlasConfig {
+export function generateConfig(scaledCellWidth: number, scaledCellHeight: number, scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: ReadonlyColorSet, devicePixelRatio: number): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -70,8 +65,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.scaledCharHeight === b.scaledCharHeight &&
       a.drawBoldTextInBrightColors === b.drawBoldTextInBrightColors &&
       a.minimumContrastRatio === b.minimumContrastRatio &&
-      a.colors.foreground === b.colors.foreground &&
-      a.colors.background === b.colors.background;
+      a.colors.foreground.rgba === b.colors.foreground.rgba &&
+      a.colors.background.rgba === b.colors.background.rgba;
 }
 
 export function is256Color(colorCode: number): boolean {

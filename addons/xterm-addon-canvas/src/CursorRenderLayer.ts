@@ -3,14 +3,16 @@
  * @license MIT
  */
 
-import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IOptionsService, ICoreService, IDecorationService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
-import { ICoreBrowserService } from 'browser/services/Services';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { Terminal } from 'xterm';
+import { toDisposable } from 'common/Lifecycle';
 
 interface ICursorState {
   x: number;
@@ -32,18 +34,18 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _cell: ICellData = new CellData();
 
   constructor(
+    terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    colors: IColorSet,
-    rendererId: number,
     private readonly _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     private readonly _coreService: ICoreService,
     coreBrowserService: ICoreBrowserService,
-    decorationService: IDecorationService
+    decorationService: IDecorationService,
+    themeService: IThemeService
   ) {
-    super(container, 'cursor', zIndex, true, colors, rendererId, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'cursor', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = {
       x: 0,
       y: 0,
@@ -56,14 +58,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
-  }
-
-  public dispose(): void {
-    if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.dispose();
+    this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this.register(toDisposable(() => {
+      this._cursorBlinkStateManager?.dispose();
       this._cursorBlinkStateManager = undefined;
-    }
-    super.dispose();
+    }));
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -81,20 +80,20 @@ export class CursorRenderLayer extends BaseRenderLayer {
   public reset(): void {
     this._clearCursor();
     this._cursorBlinkStateManager?.restartBlinkAnimation();
-    this.onOptionsChanged();
+    this._handleOptionsChanged();
   }
 
-  public onBlur(): void {
+  public handleBlur(): void {
     this._cursorBlinkStateManager?.pause();
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
-  public onFocus(): void {
+  public handleFocus(): void {
     this._cursorBlinkStateManager?.resume();
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
-  public onOptionsChanged(): void {
+  private _handleOptionsChanged(): void {
     if (this._optionsService.rawOptions.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(this._coreBrowserService.isFocused, () => {
@@ -110,11 +109,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
-  public onCursorMove(): void {
+  public handleCursorMove(): void {
     this._cursorBlinkStateManager?.restartBlinkAnimation();
   }
 
-  public onGridChanged(startRow: number, endRow: number): void {
+  public handleGridChanged(startRow: number, endRow: number): void {
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(false);
     } else {
@@ -148,7 +147,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (!this._coreBrowserService.isFocused) {
       this._clearCursor();
       this._ctx.save();
-      this._ctx.fillStyle = this._colors.cursor.css;
+      this._ctx.fillStyle = this._themeService.colors.cursor.css;
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
       if (cursorStyle && cursorStyle !== 'block') {
         this._cursorRenderers[cursorStyle](cursorX, viewportRelativeCursorY, this._cell);
@@ -213,30 +212,30 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _renderBarCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor.css;
+    this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillLeftLineAtCell(x, y, this._optionsService.rawOptions.cursorWidth);
     this._ctx.restore();
   }
 
   private _renderBlockCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor.css;
+    this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillCells(x, y, cell.getWidth(), 1);
-    this._ctx.fillStyle = this._colors.cursorAccent.css;
+    this._ctx.fillStyle = this._themeService.colors.cursorAccent.css;
     this._fillCharTrueColor(cell, x, y);
     this._ctx.restore();
   }
 
   private _renderUnderlineCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor.css;
+    this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 
   private _renderBlurCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
-    this._ctx.strokeStyle = this._colors.cursor.css;
+    this._ctx.strokeStyle = this._themeService.colors.cursor.css;
     this._strokeRectAtCell(x, y, cell.getWidth(), 1);
     this._ctx.restore();
   }

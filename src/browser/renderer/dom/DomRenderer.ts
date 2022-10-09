@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/Types';
+import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/Constants';
-import { Disposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifierEvent, ILinkifier2 } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService } from 'browser/services/Services';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
+import { Disposable, toDisposable } from 'common/Lifecycle';
+import { IColorSet, ILinkifierEvent, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
+import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'common/Color';
@@ -40,10 +40,9 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public get onRequestRedraw(): IEvent<IRequestRedrawEvent> { return new EventEmitter<IRequestRedrawEvent>().event; }
+  public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
 
   constructor(
-    private _colors: IColorSet,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
@@ -52,7 +51,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService,
-    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
+    @IThemeService themeService: IThemeService
   ) {
     super();
     this._rowContainer = document.createElement('div');
@@ -79,26 +79,27 @@ export class DomRenderer extends Disposable implements IRenderer {
       actualCellHeight: 0
     };
     this._updateDimensions();
-    this._injectCss();
+    this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
-    this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document, this._colors);
+    this.register(themeService.onChangeColors(e => this._injectCss(e)));
+    this._injectCss(themeService.colors);
+
+    this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document);
 
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this.register(this._linkifier2.onShowLinkUnderline(e => this._onLinkHover(e)));
-    this.register(this._linkifier2.onHideLinkUnderline(e => this._onLinkLeave(e)));
-  }
+    this.register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
+    this.register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
 
-  public dispose(): void {
-    this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
+    this.register(toDisposable(() => {
+      this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
 
-    // Outside influences such as React unmounts may manipulate the DOM before our disposal.
-    // https://github.com/xtermjs/xterm.js/issues/2960
-    removeElementFromParent(this._rowContainer, this._selectionContainer, this._themeStyleElement, this._dimensionsStyleElement);
-
-    super.dispose();
+      // Outside influences such as React unmounts may manipulate the DOM before our disposal.
+      // https://github.com/xtermjs/xterm.js/issues/2960
+      removeElementFromParent(this._rowContainer, this._selectionContainer, this._themeStyleElement, this._dimensionsStyleElement);
+    }));
   }
 
   private _updateDimensions(): void {
@@ -144,12 +145,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
-  public setColors(colors: IColorSet): void {
-    this._colors = colors;
-    this._injectCss();
-  }
-
-  private _injectCss(): void {
+  private _injectCss(colors: ReadonlyColorSet): void {
     if (!this._themeStyleElement) {
       this._themeStyleElement = document.createElement('style');
       this._screenElement.appendChild(this._themeStyleElement);
@@ -158,7 +154,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Base CSS
     let styles =
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
-      ` color: ${this._colors.foreground.css};` +
+      ` color: ${colors.foreground.css};` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
       `}`;
@@ -183,18 +179,18 @@ export class DomRenderer extends Disposable implements IRenderer {
     styles +=
       `@keyframes blink_block` + `_` + this._terminalClass + ` {` +
       ` 0% {` +
-      `  background-color: ${this._colors.cursor.css};` +
-      `  color: ${this._colors.cursorAccent.css};` +
+      `  background-color: ${colors.cursor.css};` +
+      `  color: ${colors.cursorAccent.css};` +
       ` }` +
       ` 50% {` +
-      `  background-color: ${this._colors.cursorAccent.css};` +
-      `  color: ${this._colors.cursor.css};` +
+      `  background-color: ${colors.cursorAccent.css};` +
+      `  color: ${colors.cursor.css};` +
       ` }` +
       `}`;
     // Cursor
     styles +=
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-      ` outline: 1px solid ${this._colors.cursor.css};` +
+      ` outline: 1px solid ${colors.cursor.css};` +
       ` outline-offset: -1px;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
@@ -204,14 +200,14 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-      ` background-color: ${this._colors.cursor.css};` +
-      ` color: ${this._colors.cursorAccent.css};` +
+      ` background-color: ${colors.cursor.css};` +
+      ` color: ${colors.cursorAccent.css};` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-      ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${this._colors.cursor.css} inset;` +
+      ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${colors.cursor.css} inset;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
-      ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
+      ` box-shadow: 0 -1px 0 ${colors.cursor.css} inset;` +
       `}`;
     // Selection
     styles +=
@@ -224,26 +220,26 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector}.focus .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selectionBackgroundOpaque.css};` +
+      ` background-color: ${colors.selectionBackgroundOpaque.css};` +
       `}` +
       `${this._terminalSelector} .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
-      ` background-color: ${this._colors.selectionInactiveBackgroundOpaque.css};` +
+      ` background-color: ${colors.selectionInactiveBackgroundOpaque.css};` +
       `}`;
     // Colors
-    this._colors.ansi.forEach((c, i) => {
+    for (const [i, c] of colors.ansi.entries()) {
       styles +=
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
-    });
+    }
     styles +=
-      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(this._colors.background).css}; }` +
-      `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(colors.background).css}; }` +
+      `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
 
     this._themeStyleElement.textContent = styles;
   }
 
-  public onDevicePixelRatioChange(): void {
+  public handleDevicePixelRatioChange(): void {
     this._updateDimensions();
   }
 
@@ -260,30 +256,30 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public onResize(cols: number, rows: number): void {
+  public handleResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
   }
 
-  public onCharSizeChanged(): void {
+  public handleCharSizeChanged(): void {
     this._updateDimensions();
   }
 
-  public onBlur(): void {
+  public handleBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
   }
 
-  public onFocus(): void {
+  public handleFocus(): void {
     this._rowContainer.classList.add(FOCUS_CLASS);
   }
 
-  public onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Remove all selections
     while (this._selectionContainer.children.length) {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
     }
 
-    this._rowFactory.onSelectionChanged(start, end, columnSelectMode);
+    this._rowFactory.handleSelectionChanged(start, end, columnSelectMode);
     this.renderRows(0, this._bufferService.rows - 1);
 
     // Selection does not exist
@@ -343,14 +339,13 @@ export class DomRenderer extends Disposable implements IRenderer {
     return element;
   }
 
-  public onCursorMove(): void {
+  public handleCursorMove(): void {
     // No-op, the cursor is drawn when rows are drawn
   }
 
-  public onOptionsChanged(): void {
+  private _handleOptionsChanged(): void {
     // Force a refresh
     this._updateDimensions();
-    this._injectCss();
   }
 
   public clear(): void {
@@ -378,11 +373,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
 
-  private _onLinkHover(e: ILinkifierEvent): void {
+  private _handleLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
   }
 
-  private _onLinkLeave(e: ILinkifierEvent): void {
+  private _handleLinkLeave(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, false);
   }
 

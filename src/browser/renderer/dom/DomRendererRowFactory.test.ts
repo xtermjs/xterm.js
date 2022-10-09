@@ -12,7 +12,7 @@ import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
 import { css } from 'common/Color';
-import { MockCharacterJoinerService, MockCoreBrowserService } from 'browser/TestUtils.test';
+import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -23,35 +23,12 @@ describe('DomRendererRowFactory', () => {
     dom = new jsdom.JSDOM('');
     rowFactory = new DomRendererRowFactory(
       dom.window.document,
-      {
-        background: css.toColor('#010101'),
-        foreground: css.toColor('#020202'),
-        ansi: [
-          // dark:
-          css.toColor('#2e3436'),
-          css.toColor('#cc0000'),
-          css.toColor('#4e9a06'),
-          css.toColor('#c4a000'),
-          css.toColor('#3465a4'),
-          css.toColor('#75507b'),
-          css.toColor('#06989a'),
-          css.toColor('#d3d7cf'),
-          // bright:
-          css.toColor('#555753'),
-          css.toColor('#ef2929'),
-          css.toColor('#8ae234'),
-          css.toColor('#fce94f'),
-          css.toColor('#729fcf'),
-          css.toColor('#ad7fa8'),
-          css.toColor('#34e2e2'),
-          css.toColor('#eeeeec')
-        ]
-      } as any,
       new MockCharacterJoinerService(),
       new MockOptionsService({ drawBoldTextInBrightColors: true }),
       new MockCoreBrowserService(),
       new MockCoreService(),
-      new MockDecorationService()
+      new MockDecorationService(),
+      new MockThemeService()
     );
     lineData = createEmptyLineData(2);
   });
@@ -299,7 +276,7 @@ describe('DomRendererRowFactory', () => {
       it('should force selected cells with content to be rendered above the background', () => {
         lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
-        rowFactory.onSelectionChanged([1, 0], [2, 0], false);
+        rowFactory.handleSelectionChanged([1, 0], [2, 0], false);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span>a</span><span class="xterm-decoration-top">b</span>'
@@ -307,7 +284,7 @@ describe('DomRendererRowFactory', () => {
       });
       it('should force whitespace cells to be rendered above the background', () => {
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
-        rowFactory.onSelectionChanged([0, 0], [2, 0], false);
+        rowFactory.handleSelectionChanged([0, 0], [2, 0], false);
         const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-decoration-top"> </span><span class="xterm-decoration-top">a</span>'

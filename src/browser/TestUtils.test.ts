@@ -5,11 +5,11 @@
 
 import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/Types';
-import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, IColorManager, ICompositionHelper, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
+import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet } from 'browser/Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { Terminal } from 'browser/Terminal';
@@ -17,6 +17,7 @@ import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } fro
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
+import { css } from 'common/Color';
 
 export class TestTerminal extends Terminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -41,6 +42,7 @@ export class MockTerminal implements ITerminal {
   public onTitleChange!: IEvent<string>;
   public onBell!: IEvent<void>;
   public onScroll!: IEvent<number>;
+  public onWillOpen!: IEvent<HTMLElement>;
   public onKey!: IEvent<{ key: string, domEvent: KeyboardEvent }>;
   public onRender!: IEvent<{ start: number, end: number }>;
   public onResize!: IEvent<{ cols: number, rows: number }>;
@@ -264,7 +266,6 @@ export class MockRenderer implements IRenderer {
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
-  public colorManager!: IColorManager;
   public on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
   }
@@ -278,20 +279,17 @@ export class MockRenderer implements IRenderer {
     throw new Error('Method not implemented.');
   }
   public dimensions!: IRenderDimensions;
-  public setColors(colors: IColorSet): void {
-    throw new Error('Method not implemented.');
-  }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration {
     throw new Error('Method not implemented.');
   }
-  public onResize(cols: number, rows: number): void { }
-  public onCharSizeChanged(): void { }
-  public onBlur(): void { }
-  public onFocus(): void { }
-  public onSelectionChanged(start: [number, number], end: [number, number]): void { }
-  public onCursorMove(): void { }
-  public onOptionsChanged(): void { }
-  public onDevicePixelRatioChange(): void { }
+  public handleResize(cols: number, rows: number): void { }
+  public handleCharSizeChanged(): void { }
+  public handleBlur(): void { }
+  public handleFocus(): void { }
+  public handleSelectionChanged(start: [number, number], end: [number, number]): void { }
+  public handleCursorMove(): void { }
+  public handleOptionsChanged(): void { }
+  public handleDevicePixelRatioChange(): void { }
   public clear(): void { }
   public renderRows(start: number, end: number): void { }
 }
@@ -301,16 +299,16 @@ export class MockViewport implements IViewport {
     throw new Error('Method not implemented.');
   }
   public scrollBarWidth: number = 0;
-  public onThemeChange(colors: IColorSet): void {
+  public handleThemeChange(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
-  public onWheel(ev: WheelEvent): boolean {
+  public handleWheel(ev: WheelEvent): boolean {
     throw new Error('Method not implemented.');
   }
-  public onTouchStart(ev: TouchEvent): void {
+  public handleTouchStart(ev: TouchEvent): void {
     throw new Error('Method not implemented.');
   }
-  public onTouchMove(ev: TouchEvent): boolean {
+  public handleTouchMove(ev: TouchEvent): boolean {
     throw new Error('Method not implemented.');
   }
   public syncScrollArea(): void { }
@@ -400,31 +398,31 @@ export class MockRenderService implements IRenderService {
   public resize(cols: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
+  public hasRenderer(): boolean {
+    throw new Error('Method not implemented.');
+  }
   public setRenderer(renderer: IRenderer): void {
     throw new Error('Method not implemented.');
   }
-  public setColors(colors: IColorSet): void {
+  public handleDevicePixelRatioChange(): void {
     throw new Error('Method not implemented.');
   }
-  public onDevicePixelRatioChange(): void {
+  public handleResize(cols: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
-  public onResize(cols: number, rows: number): void {
+  public handleCharSizeChanged(): void {
     throw new Error('Method not implemented.');
   }
-  public onCharSizeChanged(): void {
+  public handleBlur(): void {
     throw new Error('Method not implemented.');
   }
-  public onBlur(): void {
+  public handleFocus(): void {
     throw new Error('Method not implemented.');
   }
-  public onFocus(): void {
+  public handleSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     throw new Error('Method not implemented.');
   }
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
-    throw new Error('Method not implemented.');
-  }
-  public onCursorMove(): void {
+  public handleCursorMove(): void {
     throw new Error('Method not implemented.');
   }
   public clear(): void {
@@ -494,10 +492,45 @@ export class MockSelectionService implements ISelectionService {
   public refresh(isLinuxMouseSelection?: boolean): void {
     throw new Error('Method not implemented.');
   }
-  public onMouseDown(event: MouseEvent): void {
+  public handleMouseDown(event: MouseEvent): void {
     throw new Error('Method not implemented.');
   }
   public isCellInSelection(x: number, y: number): boolean {
     return false;
   }
+}
+
+export class MockThemeService implements IThemeService{
+  public serviceBrand: undefined;
+  public onChangeColors = new EventEmitter<ReadonlyColorSet>().event;
+  public restoreColor(slot?: ColorIndex | undefined): void {
+    throw new Error('Method not implemented.');
+  }
+  public modifyColors(callback: (colors: IColorSet) => void): void {
+    throw new Error('Method not implemented.');
+  }
+  public colors: ReadonlyColorSet = {
+    background: css.toColor('#010101'),
+    foreground: css.toColor('#020202'),
+    ansi: [
+      // dark:
+      css.toColor('#2e3436'),
+      css.toColor('#cc0000'),
+      css.toColor('#4e9a06'),
+      css.toColor('#c4a000'),
+      css.toColor('#3465a4'),
+      css.toColor('#75507b'),
+      css.toColor('#06989a'),
+      css.toColor('#d3d7cf'),
+      // bright:
+      css.toColor('#555753'),
+      css.toColor('#ef2929'),
+      css.toColor('#8ae234'),
+      css.toColor('#fce94f'),
+      css.toColor('#729fcf'),
+      css.toColor('#ad7fa8'),
+      css.toColor('#34e2e2'),
+      css.toColor('#eeeeec')
+    ]
+  } as any;
 }

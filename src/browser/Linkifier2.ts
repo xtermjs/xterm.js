@@ -8,7 +8,7 @@ import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { Disposable, getDisposeArrayDisposable, disposeArray } from 'common/Lifecycle';
+import { Disposable, getDisposeArrayDisposable, disposeArray, toDisposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 
 export class Linkifier2 extends Disposable implements ILinkifier2 {
@@ -26,21 +26,19 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
 
-  private _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
-  private _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
+  private readonly _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  public readonly onShowLinkUnderline = this._onShowLinkUnderline.event;
+  private readonly _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  public readonly onHideLinkUnderline = this._onHideLinkUnderline.event;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
-  }
-
-  public dispose(): void {
-    super.dispose();
-    this._lastMouseEvent = undefined;
+    this.register(toDisposable(() => {
+      this._lastMouseEvent = undefined;
+    }));
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
@@ -66,12 +64,12 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
       this._isMouseOut = true;
       this._clearCurrentLink();
     }));
-    this.register(addDisposableDomListener(this._element, 'mousemove', this._onMouseMove.bind(this)));
+    this.register(addDisposableDomListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
     this.register(addDisposableDomListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
     this.register(addDisposableDomListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
   }
 
-  private _onMouseMove(event: MouseEvent): void {
+  private _handleMouseMove(event: MouseEvent): void {
     this._lastMouseEvent = event;
 
     if (!this._element || !this._mouseService) {
@@ -99,12 +97,12 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     }
 
     if (!this._lastBufferCell || (position.x !== this._lastBufferCell.x || position.y !== this._lastBufferCell.y)) {
-      this._onHover(position);
+      this._handleHover(position);
       this._lastBufferCell = position;
     }
   }
 
-  private _onHover(position: IBufferCellPosition): void {
+  private _handleHover(position: IBufferCellPosition): void {
     // TODO: This currently does not cache link provider results across wrapped lines, activeLine should be something like `activeRange: {startY, endY}`
     // Check if we need to clear the link
     if (this._activeLine !== position.y) {

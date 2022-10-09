@@ -23,6 +23,7 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   onFocus: IEvent<void>;
   onA11yChar: IEvent<string>;
   onA11yTab: IEvent<number>;
+  onWillOpen: IEvent<HTMLElement>;
 
   cancel(ev: Event, force?: boolean): boolean | void;
 }
@@ -105,11 +106,6 @@ export interface IBrowser {
   isWindows: boolean;
 }
 
-export interface IColorManager {
-  colors: IColorSet;
-  onOptionsChange(key: string, value: any): void;
-}
-
 export interface IColorSet {
   foreground: IColor;
   background: IColor;
@@ -124,6 +120,8 @@ export interface IColorSet {
   ansi: IColor[];
   contrastCache: IColorContrastCache;
 }
+
+export type ReadonlyColorSet = Readonly<Omit<IColorSet, 'ansi'>> & { ansi: Readonly<Pick<IColorSet, 'ansi'>['ansi']> };
 
 export interface IColorContrastCache {
   clear(): void;
@@ -146,10 +144,9 @@ export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(immediate?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
-  onWheel(ev: WheelEvent): boolean;
-  onTouchStart(ev: TouchEvent): void;
-  onTouchMove(ev: TouchEvent): boolean;
-  onThemeChange(colors: IColorSet): void;
+  handleWheel(ev: WheelEvent): boolean;
+  handleTouchStart(ev: TouchEvent): void;
+  handleTouchMove(ev: TouchEvent): boolean;
 }
 
 export interface ILinkifierEvent {

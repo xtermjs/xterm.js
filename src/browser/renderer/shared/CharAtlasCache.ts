@@ -3,21 +3,21 @@
  * @license MIT
  */
 
-import { generateConfig, configEquals } from './CharAtlasUtils';
-import { WebglCharAtlas } from './WebglCharAtlas';
-import { ICharAtlasConfig } from './Types';
+import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { Terminal } from 'xterm';
-import { IColorSet, ITerminal } from 'browser/Types';
+import { ITerminal, ReadonlyColorSet } from 'browser/Types';
+import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
 
-interface ICharAtlasCacheEntry {
-  atlas: WebglCharAtlas;
+interface ITextureAtlasCacheEntry {
+  atlas: ITextureAtlas;
   config: ICharAtlasConfig;
   // N.B. This implementation potentially holds onto copies of the terminal forever, so
   // this may cause memory leaks.
   ownedBy: Terminal[];
 }
 
-const charAtlasCache: ICharAtlasCacheEntry[] = [];
+const charAtlasCache: ITextureAtlasCacheEntry[] = [];
 
 /**
  * Acquires a char atlas, either generating a new one or returning an existing
@@ -25,15 +25,15 @@ const charAtlasCache: ICharAtlasCacheEntry[] = [];
  * @param terminal The terminal.
  * @param colors The colors to use.
  */
-export function acquireCharAtlas(
+export function acquireTextureAtlas(
   terminal: Terminal,
-  colors: IColorSet,
+  colors: ReadonlyColorSet,
   scaledCellWidth: number,
   scaledCellHeight: number,
   scaledCharWidth: number,
   scaledCharHeight: number,
   devicePixelRatio: number
-): WebglCharAtlas {
+): ITextureAtlas {
   const newConfig = generateConfig(scaledCellWidth, scaledCellHeight, scaledCharWidth, scaledCharHeight, terminal, colors, devicePixelRatio);
 
   // Check to see if the terminal already owns this config
@@ -66,8 +66,8 @@ export function acquireCharAtlas(
   }
 
   const core: ITerminal = (terminal as any)._core;
-  const newEntry: ICharAtlasCacheEntry = {
-    atlas: new WebglCharAtlas(document, newConfig, core.unicodeService),
+  const newEntry: ITextureAtlasCacheEntry = {
+    atlas: new TextureAtlas(document, newConfig, core.unicodeService),
     config: newConfig,
     ownedBy: [terminal]
   };

@@ -4,17 +4,17 @@
  */
 
 import { IRenderLayer } from './Types';
-import { acquireCharAtlas } from '../atlas/CharAtlasCache';
+import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
-import { TEXT_BASELINE } from 'browser/renderer/Constants';
-import { ICoreBrowserService } from 'browser/services/Services';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { CellData } from 'common/buffer/CellData';
-import { WebglCharAtlas } from 'atlas/WebglCharAtlas';
-import { throwIfFalsy } from '../WebglUtils';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
-export abstract class BaseRenderLayer implements IRenderLayer {
+export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx!: CanvasRenderingContext2D;
   private _scaledCharWidth: number = 0;
@@ -24,28 +24,31 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  protected _charAtlas: WebglCharAtlas | undefined;
+  protected _charAtlas: ITextureAtlas | undefined;
 
   constructor(
+    terminal: Terminal,
     private _container: HTMLElement,
     id: string,
     zIndex: number,
     private _alpha: boolean,
-    protected _colors: IColorSet,
-    protected readonly _coreBrowserService: ICoreBrowserService
+    protected readonly _coreBrowserService: ICoreBrowserService,
+    protected readonly _themeService: IThemeService
   ) {
+    super();
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
     this._container.appendChild(this._canvas);
-  }
-
-  public dispose(): void {
-    this._canvas.remove();
-    if (this._charAtlas) {
-      this._charAtlas.dispose();
-    }
+    this.register(this._themeService.onChangeColors(e => {
+      this._refreshCharAtlas(terminal, e);
+      this.reset(terminal);
+    }));
+    this.register(toDisposable(() => {
+      this._canvas.remove();
+      this._charAtlas?.dispose();
+    }));
   }
 
   private _initCanvas(): void {
@@ -56,16 +59,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public onOptionsChanged(terminal: Terminal): void {}
-  public onBlur(terminal: Terminal): void {}
-  public onFocus(terminal: Terminal): void {}
-  public onCursorMove(terminal: Terminal): void {}
-  public onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {}
-  public onSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
-
-  public setColors(terminal: Terminal, colorSet: IColorSet): void {
-    this._refreshCharAtlas(terminal, colorSet);
-  }
+  public handleBlur(terminal: Terminal): void {}
+  public handleFocus(terminal: Terminal): void {}
+  public handleCursorMove(terminal: Terminal): void {}
+  public handleGridChanged(terminal: Terminal, startRow: number, endRow: number): void {}
+  public handleSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
 
   protected _setTransparency(terminal: Terminal, alpha: boolean): void {
     // Do nothing when alpha doesn't change
@@ -82,8 +80,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._container.replaceChild(this._canvas, oldCanvas);
 
     // Regenerate char atlas and force a full redraw
-    this._refreshCharAtlas(terminal, this._colors);
-    this.onGridChanged(terminal, 0, terminal.rows - 1);
+    this._refreshCharAtlas(terminal, this._themeService.colors);
+    this.handleGridChanged(terminal, 0, terminal.rows - 1);
   }
 
   /**
@@ -91,11 +89,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param terminal The terminal.
    * @param colorSet The color set to use for the char atlas.
    */
-  private _refreshCharAtlas(terminal: Terminal, colorSet: IColorSet): void {
+  private _refreshCharAtlas(terminal: Terminal, colorSet: ReadonlyColorSet): void {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 
@@ -116,7 +114,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._clearAll();
     }
 
-    this._refreshCharAtlas(terminal, this._colors);
+    this._refreshCharAtlas(terminal, this._themeService.colors);
   }
 
   public abstract reset(terminal: Terminal): void;
@@ -186,7 +184,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
     }
   }
@@ -206,7 +204,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         width * this._scaledCellWidth,
         height * this._scaledCellHeight);
     } else {
-      this._ctx.fillStyle = this._colors.background.css;
+      this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(
         x * this._scaledCellWidth,
         y * this._scaledCellHeight,

@@ -221,6 +221,6 @@ Do you use xterm.js in your application as well? Please [open a Pull Request](ht
 
 If you contribute code to this project, you implicitly allow your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
-Copyright (c) 2017-2019, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
+Copyright (c) 2017-2022, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
 Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)<br>
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)

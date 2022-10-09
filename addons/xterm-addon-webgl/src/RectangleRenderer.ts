@@ -3,16 +3,18 @@
  * @license MIT
  */
 
-import { createProgram, expandFloat32Array, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
+import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from './Types';
 import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColor } from 'common/Types';
-import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { DIM_OPACITY } from 'browser/renderer/Constants';
+import { DIM_OPACITY } from 'browser/renderer/shared/Constants';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { IThemeService } from 'browser/services/Services';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -58,17 +60,15 @@ const BYTES_PER_RECTANGLE = INDICES_PER_RECTANGLE * Float32Array.BYTES_PER_ELEME
 
 const INITIAL_BUFFER_RECTANGLE_CAPACITY = 20 * INDICES_PER_RECTANGLE;
 
-/** Work variables to avoid garbage collection. */
-const w: { rgba: number, isDefault: boolean, x1: number, y1: number, r: number, g: number, b: number, a: number } = {
-  rgba: 0,
-  isDefault: false,
-  x1: 0,
-  y1: 0,
-  r: 0,
-  g: 0,
-  b: 0,
-  a: 0
-};
+// Work variables to avoid garbage collection
+let $rgba = 0;
+let $isDefault = false;
+let $x1 = 0;
+let $y1 = 0;
+let $r = 0;
+let $g = 0;
+let $b = 0;
+let $a = 0;
 
 export class RectangleRenderer extends Disposable {
 
@@ -85,9 +85,9 @@ export class RectangleRenderer extends Disposable {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
-    private _dimensions: IRenderDimensions
+    private _dimensions: IRenderDimensions,
+    private readonly _themeService: IThemeService
   ) {
     super();
 
@@ -134,7 +134,11 @@ export class RectangleRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.COLOR, 4, gl.FLOAT, false, BYTES_PER_RECTANGLE, 4 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.COLOR, 1);
 
-    this._updateCachedColors();
+    this._updateCachedColors(_themeService.colors);
+    this.register(this._themeService.onChangeColors(e => {
+      this._updateCachedColors(e);
+      this._updateViewportRectangle();
+    }));
   }
 
   public render(): void {
@@ -152,12 +156,7 @@ export class RectangleRenderer extends Disposable {
     gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._vertices.count);
   }
 
-  public onResize(): void {
-    this._updateViewportRectangle();
-  }
-
-  public setColors(): void {
-    this._updateCachedColors();
+  public handleResize(): void {
     this._updateViewportRectangle();
   }
 
@@ -165,8 +164,8 @@ export class RectangleRenderer extends Disposable {
     this._dimensions = dimensions;
   }
 
-  private _updateCachedColors(): void {
-    this._bgFloat = this._colorToFloat32Array(this._colors.background);
+  private _updateCachedColors(colors: ReadonlyColorSet): void {
+    this._bgFloat = this._colorToFloat32Array(colors.background);
   }
 
   private _updateViewportRectangle(): void {
@@ -232,47 +231,47 @@ export class RectangleRenderer extends Disposable {
   }
 
   private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
-    w.isDefault = false;
+    $isDefault = false;
     if (fg & FgFlags.INVERSE) {
       switch (fg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          w.rgba = this._colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
+          $rgba = this._themeService.colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
-          w.rgba = (fg & Attributes.RGB_MASK) << 8;
+          $rgba = (fg & Attributes.RGB_MASK) << 8;
           break;
         case Attributes.CM_DEFAULT:
         default:
-          w.rgba = this._colors.foreground.rgba;
+          $rgba = this._themeService.colors.foreground.rgba;
       }
     } else {
       switch (bg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
-          w.rgba = this._colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
+          $rgba = this._themeService.colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
-          w.rgba = (bg & Attributes.RGB_MASK) << 8;
+          $rgba = (bg & Attributes.RGB_MASK) << 8;
           break;
         case Attributes.CM_DEFAULT:
         default:
-          w.rgba = this._colors.background.rgba;
-          w.isDefault = true;
+          $rgba = this._themeService.colors.background.rgba;
+          $isDefault = true;
       }
     }
 
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
     }
-    w.x1 = startX * this._dimensions.scaledCellWidth;
-    w.y1 = y * this._dimensions.scaledCellHeight;
-    w.r = ((w.rgba >> 24) & 0xFF) / 255;
-    w.g = ((w.rgba >> 16) & 0xFF) / 255;
-    w.b = ((w.rgba >> 8 ) & 0xFF) / 255;
-    w.a = (!w.isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
+    $x1 = startX * this._dimensions.scaledCellWidth;
+    $y1 = y * this._dimensions.scaledCellHeight;
+    $r = (($rgba >> 24) & 0xFF) / 255;
+    $g = (($rgba >> 16) & 0xFF) / 255;
+    $b = (($rgba >> 8 ) & 0xFF) / 255;
+    $a = (!$isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
 
-    this._addRectangle(vertices.attributes, offset, w.x1, w.y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, w.r, w.g, w.b, w.a);
+    this._addRectangle(vertices.attributes, offset, $x1, $y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, $r, $g, $b, $a);
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {

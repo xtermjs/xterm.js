@@ -1378,7 +1378,6 @@ describe('Terminal', () => {
       assert.deepEqual(disposeStack, [markers[0], markers[1]]);
       // trimmed marker objs should be disposed
       assert.deepEqual(disposeStack.map(el => el.isDisposed), [true, true]);
-      assert.deepEqual(disposeStack.map(el => (el as any)._isDisposed), [true, true]);
       // trimmed markers should contain line -1
       assert.deepEqual(disposeStack.map(el => el.line), [-1, -1]);
     });

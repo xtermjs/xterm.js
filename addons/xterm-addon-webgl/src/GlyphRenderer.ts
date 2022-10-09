@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
-import { WebglCharAtlas } from './atlas/WebglCharAtlas';
-import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
+import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
+import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel } from './Types';
 import { fill } from 'common/TypedArrayUtils';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IVertices {
   attributes: Float32Array;
@@ -70,16 +70,14 @@ const INDICES_PER_CELL = 10;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
 
-/** Work variables to avoid garbage collection. */
-const w: { i: number, glyph: IRasterizedGlyph | undefined, leftCellPadding: number, clippedPixels: number } = {
-  i: 0,
-  glyph: undefined,
-  leftCellPadding: 0,
-  clippedPixels: 0
-};
+// Work variables to avoid garbage collection
+let $i = 0;
+let $glyph: IRasterizedGlyph | undefined = undefined;
+let $leftCellPadding = 0;
+let $clippedPixels = 0;
 
-export class GlyphRenderer  extends Disposable {
-  private _atlas: WebglCharAtlas | undefined;
+export class GlyphRenderer extends Disposable {
+  private _atlas: ITextureAtlas | undefined;
 
   private _program: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
@@ -101,7 +99,6 @@ export class GlyphRenderer  extends Disposable {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
@@ -170,7 +167,7 @@ export class GlyphRenderer  extends Disposable {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // Set viewport
-    this.onResize();
+    this.handleResize();
   }
 
   public beginFrame(): boolean {
@@ -186,12 +183,12 @@ export class GlyphRenderer  extends Disposable {
   }
 
   private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
-    w.i = (y * this._terminal.cols + x) * INDICES_PER_CELL;
+    $i = (y * this._terminal.cols + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null character, allow space character to continue as it may have
     // underline/strikethrough styles
     if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
-      fill(array, 0, w.i, w.i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
+      fill(array, 0, $i, $i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
       return;
     }
 
@@ -201,39 +198,39 @@ export class GlyphRenderer  extends Disposable {
 
     // Get the glyph
     if (chars && chars.length > 1) {
-      w.glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
+      $glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
     } else {
-      w.glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
+      $glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
     }
 
-    w.leftCellPadding = Math.floor((this._dimensions.scaledCellWidth - this._dimensions.scaledCharWidth) / 2);
-    if (bg !== lastBg && w.glyph.offset.x > w.leftCellPadding) {
-      w.clippedPixels = w.glyph.offset.x - w.leftCellPadding;
+    $leftCellPadding = Math.floor((this._dimensions.scaledCellWidth - this._dimensions.scaledCharWidth) / 2);
+    if (bg !== lastBg && $glyph.offset.x > $leftCellPadding) {
+      $clippedPixels = $glyph.offset.x - $leftCellPadding;
       // a_origin
-      array[w.i    ] = -(w.glyph.offset.x - w.clippedPixels) + this._dimensions.scaledCharLeft;
-      array[w.i + 1] = -w.glyph.offset.y + this._dimensions.scaledCharTop;
+      array[$i    ] = -($glyph.offset.x - $clippedPixels) + this._dimensions.scaledCharLeft;
+      array[$i + 1] = -$glyph.offset.y + this._dimensions.scaledCharTop;
       // a_size
-      array[w.i + 2] = (w.glyph.size.x - w.clippedPixels) / this._dimensions.scaledCanvasWidth;
-      array[w.i + 3] = w.glyph.size.y / this._dimensions.scaledCanvasHeight;
+      array[$i + 2] = ($glyph.size.x - $clippedPixels) / this._dimensions.scaledCanvasWidth;
+      array[$i + 3] = $glyph.size.y / this._dimensions.scaledCanvasHeight;
       // a_texcoord
-      array[w.i + 4] = w.glyph.texturePositionClipSpace.x + w.clippedPixels / this._atlas.cacheCanvas.width;
-      array[w.i + 5] = w.glyph.texturePositionClipSpace.y;
+      array[$i + 4] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.cacheCanvas.width;
+      array[$i + 5] = $glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[w.i + 6] = w.glyph.sizeClipSpace.x - w.clippedPixels / this._atlas.cacheCanvas.width;
-      array[w.i + 7] = w.glyph.sizeClipSpace.y;
+      array[$i + 6] = $glyph.sizeClipSpace.x - $clippedPixels / this._atlas.cacheCanvas.width;
+      array[$i + 7] = $glyph.sizeClipSpace.y;
     } else {
       // a_origin
-      array[w.i    ] = -w.glyph.offset.x + this._dimensions.scaledCharLeft;
-      array[w.i + 1] = -w.glyph.offset.y + this._dimensions.scaledCharTop;
+      array[$i    ] = -$glyph.offset.x + this._dimensions.scaledCharLeft;
+      array[$i + 1] = -$glyph.offset.y + this._dimensions.scaledCharTop;
       // a_size
-      array[w.i + 2] = w.glyph.size.x / this._dimensions.scaledCanvasWidth;
-      array[w.i + 3] = w.glyph.size.y / this._dimensions.scaledCanvasHeight;
+      array[$i + 2] = $glyph.size.x / this._dimensions.scaledCanvasWidth;
+      array[$i + 3] = $glyph.size.y / this._dimensions.scaledCanvasHeight;
       // a_texcoord
-      array[w.i + 4] = w.glyph.texturePositionClipSpace.x;
-      array[w.i + 5] = w.glyph.texturePositionClipSpace.y;
+      array[$i + 4] = $glyph.texturePositionClipSpace.x;
+      array[$i + 5] = $glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[w.i + 6] = w.glyph.sizeClipSpace.x;
-      array[w.i + 7] = w.glyph.sizeClipSpace.y;
+      array[$i + 6] = $glyph.sizeClipSpace.x;
+      array[$i + 7] = $glyph.sizeClipSpace.y;
     }
     // a_cellpos only changes on resize
   }
@@ -266,7 +263,7 @@ export class GlyphRenderer  extends Disposable {
     }
   }
 
-  public onResize(): void {
+  public handleResize(): void {
     const gl = this._gl;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     this.clear();
@@ -323,7 +320,7 @@ export class GlyphRenderer  extends Disposable {
     gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
   }
 
-  public setAtlas(atlas: WebglCharAtlas): void {
+  public setAtlas(atlas: ITextureAtlas): void {
     const gl = this._gl;
     this._atlas = atlas;
 

@@ -5,7 +5,7 @@
 
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 import { fill } from 'common/TypedArrayUtils';
 import { Params } from 'common/parser/Params';
@@ -242,8 +242,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _executeHandlers: { [flag: number]: ExecuteHandlerType };
   protected _csiHandlers: IHandlerCollection<CsiHandlerType>;
   protected _escHandlers: IHandlerCollection<EscHandlerType>;
-  protected _oscParser: IOscParser;
-  protected _dcsParser: IDcsParser;
+  protected readonly _oscParser: IOscParser;
+  protected readonly _dcsParser: IDcsParser;
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
@@ -284,8 +284,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlers = Object.create(null);
     this._csiHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
-    this._oscParser = new OscParser();
-    this._dcsParser = new DcsParser();
+    this.register(toDisposable(() => {
+      this._csiHandlers = Object.create(null);
+      this._executeHandlers = Object.create(null);
+      this._escHandlers = Object.create(null);
+    }));
+    this._oscParser = this.register(new OscParser());
+    this._dcsParser = this.register(new DcsParser());
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)
@@ -336,14 +341,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       ident >>= 8;
     }
     return res.reverse().join('');
-  }
-
-  public dispose(): void {
-    this._csiHandlers = Object.create(null);
-    this._executeHandlers = Object.create(null);
-    this._escHandlers = Object.create(null);
-    this._oscParser.dispose();
-    this._dcsParser.dispose();
   }
 
   public setPrintHandler(handler: PrintHandlerType): void {

@@ -9,7 +9,7 @@ import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { IRenderService } from 'browser/services/Services';
 import { removeElementFromParent } from 'browser/Dom';
@@ -65,8 +65,8 @@ export class AccessibilityManager extends Disposable {
       this._rowContainer.appendChild(this._rowElements[i]);
     }
 
-    this._topBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.TOP);
-    this._bottomBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.BOTTOM);
+    this._topBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.TOP);
+    this._bottomBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.BOTTOM);
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
@@ -87,14 +87,14 @@ export class AccessibilityManager extends Disposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this.register(this._renderRowsDebouncer);
-    this.register(this._terminal.onResize(e => this._onResize(e.rows)));
+    this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this.register(this._terminal.onA11yChar(char => this._onChar(char)));
-    this.register(this._terminal.onLineFeed(() => this._onChar('\n')));
-    this.register(this._terminal.onA11yTab(spaceCount => this._onTab(spaceCount)));
-    this.register(this._terminal.onKey(e => this._onKey(e.key)));
+    this.register(this._terminal.onA11yChar(char => this._handleChar(char)));
+    this.register(this._terminal.onLineFeed(() => this._handleChar('\n')));
+    this.register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
+    this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
 
@@ -104,15 +104,13 @@ export class AccessibilityManager extends Disposable {
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+    this.register(toDisposable(() => {
+      removeElementFromParent(this._accessibilityTreeRoot);
+      this._rowElements.length = 0;
+    }));
   }
 
-  public dispose(): void {
-    super.dispose();
-    removeElementFromParent(this._accessibilityTreeRoot);
-    this._rowElements.length = 0;
-  }
-
-  private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
+  private _handleBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
     const boundaryElement = e.target as HTMLElement;
     const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.TOP ? 1 : this._rowElements.length - 2];
 
@@ -172,7 +170,7 @@ export class AccessibilityManager extends Disposable {
     e.stopImmediatePropagation();
   }
 
-  private _onResize(rows: number): void {
+  private _handleResize(rows: number): void {
     // Remove bottom boundary listener
     this._rowElements[this._rowElements.length - 1].removeEventListener('focus', this._bottomBoundaryFocusListener);
 
@@ -200,13 +198,13 @@ export class AccessibilityManager extends Disposable {
     return element;
   }
 
-  private _onTab(spaceCount: number): void {
+  private _handleTab(spaceCount: number): void {
     for (let i = 0; i < spaceCount; i++) {
-      this._onChar(' ');
+      this._handleChar(' ');
     }
   }
 
-  private _onChar(char: string): void {
+  private _handleChar(char: string): void {
     if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
       if (this._charsToConsume.length > 0) {
         // Have the screen reader ignore the char if it was just input
@@ -246,7 +244,7 @@ export class AccessibilityManager extends Disposable {
     }
   }
 
-  private _onKey(keyChar: string): void {
+  private _handleKey(keyChar: string): void {
     this._clearLiveRegion();
     this._charsToConsume.push(keyChar);
   }
@@ -280,7 +278,7 @@ export class AccessibilityManager extends Disposable {
       return;
     }
     if (this._rowElements.length !== this._terminal.rows) {
-      this._onResize(this._terminal.rows);
+      this._handleResize(this._terminal.rows);
     }
     for (let i = 0; i < this._terminal.rows; i++) {
       this._refreshRowDimensions(this._rowElements[i]);

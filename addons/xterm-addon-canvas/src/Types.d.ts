@@ -4,7 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
 
 // TODO: Use core interfaces
@@ -41,16 +41,14 @@ export interface IRenderer extends IDisposable {
    */
   readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
 
-  dispose(): void;
-  setColors(colors: IColorSet): void;
-  onDevicePixelRatioChange(): void;
-  onResize(cols: number, rows: number): void;
-  onCharSizeChanged(): void;
-  onBlur(): void;
-  onFocus(): void;
-  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
-  onCursorMove(): void;
-  onOptionsChanged(): void;
+  handleDevicePixelRatioChange(): void;
+  handleResize(cols: number, rows: number): void;
+  handleCharSizeChanged(): void;
+  handleBlur(): void;
+  handleFocus(): void;
+  handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  handleCursorMove(): void;
+  handleOptionsChanged(): void;
   clear(): void;
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;
@@ -58,42 +56,33 @@ export interface IRenderer extends IDisposable {
 
 export interface IRenderLayer extends IDisposable {
   readonly canvas: HTMLCanvasElement;
+  readonly cacheCanvas: HTMLCanvasElement;
 
   /**
    * Called when the terminal loses focus.
    */
-  onBlur(): void;
+  handleBlur(): void;
 
   /**
    * * Called when the terminal gets focus.
    */
-  onFocus(): void;
+  handleFocus(): void;
 
   /**
    * Called when the cursor is moved.
    */
-  onCursorMove(): void;
-
-  /**
-   * Called when options change.
-   */
-  onOptionsChanged(): void;
-
-  /**
-   * Called when the theme changes.
-   */
-  setColors(colorSet: IColorSet): void;
+  handleCursorMove(): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered
    * again).
    */
-  onGridChanged(startRow: number, endRow: number): void;
+  handleGridChanged(startRow: number, endRow: number): void;
 
   /**
    * Calls when the selection changes.
    */
-  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
 
   /**
    * Resize the render layer.

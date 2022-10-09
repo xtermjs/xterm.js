@@ -168,6 +168,7 @@ export class Buffer implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
+          // +boolean for fast 0 or 1 conversion
           needsCleanup |= +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
@@ -247,6 +248,7 @@ export class Buffer implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
+          // +boolean for fast 0 or 1 conversion
           needsCleanup |= +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }

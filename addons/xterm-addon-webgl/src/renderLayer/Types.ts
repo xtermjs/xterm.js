@@ -4,45 +4,34 @@
  */
 
 import { IDisposable, Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 export interface IRenderLayer extends IDisposable {
   /**
    * Called when the terminal loses focus.
    */
-  onBlur(terminal: Terminal): void;
+  handleBlur(terminal: Terminal): void;
 
   /**
    * * Called when the terminal gets focus.
    */
-  onFocus(terminal: Terminal): void;
+  handleFocus(terminal: Terminal): void;
 
   /**
    * Called when the cursor is moved.
    */
-  onCursorMove(terminal: Terminal): void;
-
-  /**
-   * Called when options change.
-   */
-  onOptionsChanged(terminal: Terminal): void;
-
-  /**
-   * Called when the theme changes.
-   */
-  setColors(terminal: Terminal, colorSet: IColorSet): void;
+  handleCursorMove(terminal: Terminal): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered
    * again).
    */
-  onGridChanged(terminal: Terminal, startRow: number, endRow: number): void;
+  handleGridChanged(terminal: Terminal, startRow: number, endRow: number): void;
 
   /**
    * Calls when the selection changes.
    */
-  onSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  handleSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
 
   /**
    * Registers a handler to join characters to render as a group

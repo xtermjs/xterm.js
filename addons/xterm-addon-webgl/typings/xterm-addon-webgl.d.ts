@@ -15,12 +15,12 @@ declare module 'xterm-addon-webgl' {
     /**
      * An event that is fired when the renderer loses its canvas context.
      */
-     public get onContextLoss(): IEvent<void>;
+    public readonly onContextLoss: IEvent<void>;
 
     /**
      * An event that is fired when the texture atlas of the renderer changes.
      */
-    public get onChangeTextureAtlas(): IEvent<HTMLCanvasElement>;
+    public readonly onChangeTextureAtlas: IEvent<HTMLCanvasElement>;
 
     constructor(preserveDrawingBuffer?: boolean);
 

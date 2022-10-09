@@ -5,6 +5,7 @@
 
 import { assert } from 'chai';
 import { OptionsService, DEFAULT_OPTIONS } from 'common/services/OptionsService';
+import { IDisposable } from 'common/Types';
 
 describe('OptionsService', () => {
   describe('constructor', () => {
@@ -59,7 +60,7 @@ describe('OptionsService', () => {
     });
     it('normalizes invalid fontWeight option values', () => {
       service.options.fontWeight = 350;
-      assert.doesNotThrow(() => service.options.fontWeight = 10000), 'fontWeight should be normalized instead of throwing';
+      assert.doesNotThrow(() => service.options.fontWeight = 10000, 'fontWeight should be normalized instead of throwing');
       assert.equal(service.options.fontWeight, DEFAULT_OPTIONS.fontWeight, 'Values greater than 1000 should be reset to default');
 
       service.options.fontWeight = 350;
@@ -69,6 +70,81 @@ describe('OptionsService', () => {
       service.options.fontWeight = 350;
       service.options.fontWeight = 'bold700' as any;
       assert.equal(service.options.fontWeight, DEFAULT_OPTIONS.fontWeight, 'Wrong string literals should be reset to default');
+    });
+  });
+  describe('onOptionChange', () => {
+    let service: OptionsService;
+    beforeEach(() => {
+      service = new OptionsService({});
+    });
+    it('should fire on any option change', async () => {
+      let disposable: IDisposable;
+      await new Promise<void>(r => {
+        disposable = service.onOptionChange(e => {
+          assert.strictEqual(e, 'cursorWidth');
+          r();
+        });
+        service.options.cursorWidth = 10;
+      });
+      disposable!.dispose();
+      await new Promise<void>(r => {
+        service.onOptionChange(e => {
+          assert.strictEqual(e, 'scrollback');
+          r();
+        });
+        service.options.scrollback = 20;
+      });
+    });
+  });
+  describe('onSpecificOptionChange', () => {
+    let service: OptionsService;
+    beforeEach(() => {
+      service = new OptionsService({});
+    });
+    it('should fire only on a specific option change', async () => {
+      await new Promise<void>(r => {
+        service.onSpecificOptionChange('scrollback', e => {
+          assert.strictEqual(e, 20);
+          r();
+        });
+        service.options.cursorWidth = 10;
+        service.options.scrollback = 20;
+      });
+    });
+  });
+  describe('onSpecificOptionChange', () => {
+    let service: OptionsService;
+    beforeEach(() => {
+      service = new OptionsService({});
+    });
+    it('should fire only on a specific option change', async () => {
+      await new Promise<void>(r => {
+        service.onSpecificOptionChange('scrollback', e => {
+          assert.strictEqual(e, 20);
+          r();
+        });
+        service.options.cursorWidth = 10;
+        service.options.scrollback = 20;
+      });
+    });
+  });
+  describe('onMultipleOptionChange', () => {
+    let service: OptionsService;
+    beforeEach(() => {
+      service = new OptionsService({});
+    });
+    it('should fire only for specific options', async () => {
+      await new Promise<void>(r => {
+        let called = false;
+        service.onMultipleOptionChange(['scrollback'], () => {
+          called = true;
+        });
+        service.options.cursorWidth = 10;
+        assert.notOk(called);
+        service.options.scrollback = 20;
+        assert.ok(called);
+        r();
+      });
     });
   });
 });

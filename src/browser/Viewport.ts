@@ -5,11 +5,11 @@
 
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, IViewport } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { IColorSet, IViewport, ReadonlyColorSet } from 'browser/Types';
+import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -52,12 +52,12 @@ export class Viewport extends Disposable implements IViewport {
     private readonly _scrollLines: (amount: number) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
-    private readonly _element: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IRenderService private readonly _renderService: IRenderService,
-    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
+    @IThemeService themeService: IThemeService
   ) {
     super();
 
@@ -65,7 +65,7 @@ export class Viewport extends Disposable implements IViewport {
     // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
     // therefore we account for a standard amount to make it visible
     this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
-    this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._onScroll.bind(this)));
+    this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._handleScroll.bind(this)));
 
     // Track properties used in performance critical code manually to avoid using slow getters
     this._activeBuffer = this._bufferService.buffer;
@@ -73,11 +73,15 @@ export class Viewport extends Disposable implements IViewport {
     this._renderDimensions = this._renderService.dimensions;
     this.register(this._renderService.onDimensionsChange(e => this._renderDimensions = e));
 
+    this._handleThemeChange(themeService.colors);
+    this.register(themeService.onChangeColors(e => this._handleThemeChange(e)));
+    this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.syncScrollArea()));
+
     // Perform this async to ensure the ICharSizeService is ready.
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
-  public onThemeChange(colors: IColorSet): void {
+  private _handleThemeChange(colors: ReadonlyColorSet): void {
     this._viewportElement.style.backgroundColor = colors.background.css;
   }
 
@@ -157,7 +161,7 @@ export class Viewport extends Disposable implements IViewport {
    * terminal to scroll to it.
    * @param ev The scroll event.
    */
-  private _onScroll(ev: Event): void {
+  private _handleScroll(ev: Event): void {
     // Record current scroll top position
     this._lastScrollTop = this._viewportElement.scrollTop;
 
@@ -234,7 +238,7 @@ export class Viewport extends Disposable implements IViewport {
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent): boolean {
+  public handleWheel(ev: WheelEvent): boolean {
     const amount = this._getPixelsScrolled(ev);
     if (amount === 0) {
       return false;
@@ -315,7 +319,7 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchstart event, recording the touch occurred.
    * @param ev The touch event.
    */
-  public onTouchStart(ev: TouchEvent): void {
+  public handleTouchStart(ev: TouchEvent): void {
     this._lastTouchY = ev.touches[0].pageY;
   }
 
@@ -323,7 +327,7 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent): boolean {
+  public handleTouchMove(ev: TouchEvent): boolean {
     const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {
