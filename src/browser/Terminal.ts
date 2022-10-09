@@ -264,6 +264,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
   }
 
+  private _handleScreenReaderModeOptionChange(value: boolean): void {
+    if (value) {
+      if (!this._accessibilityManager && this._renderService) {
+        this._accessibilityManager = new AccessibilityManager(this, this._renderService);
+      }
+    } else {
+      this._accessibilityManager?.dispose();
+      this._accessibilityManager = undefined;
+    }
+  }
+
   protected _updateOptions(key: string): void {
     // TODO: These listeners should be owned by individual components
     switch (key) {
@@ -285,24 +296,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
       case 'fontWeight':
       case 'fontWeightBold':
       case 'minimumContrastRatio':
+        // TODO: move to render service
         // When the font changes the size of the cells may change which requires a renderer clear
         if (this._renderService) {
           this._renderService.clear();
           this._renderService.handleResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
-        }
-        break;
-      case 'scrollback':
-        this.viewport?.syncScrollArea();
-        break;
-      case 'screenReaderMode':
-        if (this.optionsService.rawOptions.screenReaderMode) {
-          if (!this._accessibilityManager && this._renderService) {
-            this._accessibilityManager = new AccessibilityManager(this, this._renderService);
-          }
-        } else {
-          this._accessibilityManager?.dispose();
-          this._accessibilityManager = undefined;
         }
         break;
     }
@@ -577,6 +576,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // ensure the correct order of the dprchange event
       this._accessibilityManager = new AccessibilityManager(this, this._renderService);
     }
+    this.register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 
     if (this.options.overviewRulerWidth) {
       this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));

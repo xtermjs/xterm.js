@@ -261,7 +261,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.coreMouseService.reset();
   }
 
-  private _handleWindowsModeOptionChange(value: boolean | undefined): void {
+  private _handleWindowsModeOptionChange(value: boolean): void {
     if (value) {
       this._enableWindowsMode();
     } else {

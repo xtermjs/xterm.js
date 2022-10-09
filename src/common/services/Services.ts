@@ -200,7 +200,7 @@ export interface IOptionsService {
    * preferred over {@link onOptionChange} when only a single option is being listened to.
    */
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (arg1: ITerminalOptions[T]) => any): IDisposable;
+  onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (arg1: Required<ITerminalOptions>[T]) => any): IDisposable;
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
