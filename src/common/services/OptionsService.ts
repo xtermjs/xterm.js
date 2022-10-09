@@ -91,6 +91,15 @@ export class OptionsService extends Disposable implements IOptionsService {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (keys.indexOf(eventKey) !== -1) {
+        listener();
+      }
+    });
+  }
+
   private _setupOptions(): void {
     const getter = (propName: string): any => {
       if (!(propName in DEFAULT_OPTIONS)) {

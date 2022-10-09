@@ -27,6 +27,8 @@ export class CharSizeService extends Disposable implements ICharSizeService {
   ) {
     super();
     this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
+    // TODO: ...
+    // this.register(this._optionsService.onSpecificOptionChange(
   }
 
   public measure(): void {

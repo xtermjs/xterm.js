@@ -112,4 +112,39 @@ describe('OptionsService', () => {
       });
     });
   });
+  describe('onSpecificOptionChange', () => {
+    let service: OptionsService;
+    beforeEach(() => {
+      service = new OptionsService({});
+    });
+    it('should fire only on a specific option change', async () => {
+      await new Promise<void>(r => {
+        service.onSpecificOptionChange('scrollback', e => {
+          assert.strictEqual(e, 20);
+          r();
+        });
+        service.options.cursorWidth = 10;
+        service.options.scrollback = 20;
+      });
+    });
+  });
+  describe('onMultipleOptionChange', () => {
+    let service: OptionsService;
+    beforeEach(() => {
+      service = new OptionsService({});
+    });
+    it('should fire only for specific options', async () => {
+      await new Promise<void>(r => {
+        let called = false;
+        service.onMultipleOptionChange(['scrollback'], () => {
+          called = true;
+        });
+        service.options.cursorWidth = 10;
+        assert.notOk(called);
+        service.options.scrollback = 20;
+        assert.ok(called);
+        r();
+      });
+    });
+  });
 });

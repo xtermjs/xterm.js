@@ -129,6 +129,14 @@ export class MockOptionsService implements IOptionsService {
       }
     });
   }
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (keys.indexOf(eventKey) !== -1) {
+        listener();
+      }
+    });
+  }
   public setOptions(options: ITerminalOptions): void {
     for (const key of Object.keys(options)) {
       this.options[key] = options[key];
