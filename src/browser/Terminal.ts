@@ -265,8 +265,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   protected _updateOptions(key: string): void {
-    super._updateOptions(key);
-
     // TODO: These listeners should be owned by individual components
     switch (key) {
       case 'fontFamily':
@@ -307,7 +305,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
           this._accessibilityManager = undefined;
         }
         break;
-      case 'tabStopWidth': this.buffers.setupTabStops(); break;
     }
   }
 
@@ -584,8 +581,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this.options.overviewRulerWidth) {
       this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
     }
-    this.optionsService.onOptionChange(() => {
-      if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
+    this.optionsService.onSpecificOptionChange('overviewRulerWidth', value => {
+      if (!this._overviewRulerRenderer && value && this._viewportElement && this.screenElement) {
         this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
       }
     });

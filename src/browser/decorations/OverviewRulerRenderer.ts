@@ -110,15 +110,9 @@ export class OverviewRulerRenderer extends Disposable {
       }
     }));
     // overview ruler width changed
-    this.register(this._optionsService.onOptionChange(o => {
-      if (o === 'overviewRulerWidth') {
-        this._queueRefresh(true);
-      }
-    }));
+    this.register(this._optionsService.onSpecificOptionChange('overviewRulerWidth', () => this._queueRefresh(true)));
     // device pixel ratio changed
-    this.register(addDisposableDomListener(this._coreBrowseService.window, 'resize', () => {
-      this._queueRefresh(true);
-    }));
+    this.register(addDisposableDomListener(this._coreBrowseService.window, 'resize', () => this._queueRefresh(true)));
     // set the canvas dimensions
     this._queueRefresh(true);
   }
