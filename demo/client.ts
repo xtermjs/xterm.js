@@ -61,26 +61,26 @@ interface IDemoAddon<T extends AddonType> {
   canChange: boolean;
   ctor: (
     T extends 'attach' ? typeof AttachAddon :
-    T extends 'canvas' ? typeof CanvasAddon :
-    T extends 'fit' ? typeof FitAddon :
-    T extends 'search' ? typeof SearchAddon :
-    T extends 'serialize' ? typeof SerializeAddon :
-    T extends 'web-links' ? typeof WebLinksAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    typeof WebglAddon
+      T extends 'canvas' ? typeof CanvasAddon :
+        T extends 'fit' ? typeof FitAddon :
+          T extends 'search' ? typeof SearchAddon :
+            T extends 'serialize' ? typeof SerializeAddon :
+              T extends 'web-links' ? typeof WebLinksAddon :
+                T extends 'unicode11' ? typeof Unicode11Addon :
+                  T extends 'ligatures' ? typeof LigaturesAddon :
+                    typeof WebglAddon
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
-    T extends 'canvas' ? CanvasAddon :
-    T extends 'fit' ? FitAddon :
-    T extends 'search' ? SearchAddon :
-    T extends 'serialize' ? SerializeAddon :
-    T extends 'web-links' ? WebLinksAddon :
-    T extends 'webgl' ? WebglAddon :
-    T extends 'unicode11' ? typeof Unicode11Addon :
-    T extends 'ligatures' ? typeof LigaturesAddon :
-    never
+      T extends 'canvas' ? CanvasAddon :
+        T extends 'fit' ? FitAddon :
+          T extends 'search' ? SearchAddon :
+            T extends 'serialize' ? SerializeAddon :
+              T extends 'web-links' ? WebLinksAddon :
+                T extends 'webgl' ? WebglAddon :
+                  T extends 'unicode11' ? typeof Unicode11Addon :
+                    T extends 'ligatures' ? typeof LigaturesAddon :
+                      never
   );
 }
 
