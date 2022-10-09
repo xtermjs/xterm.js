@@ -111,16 +111,8 @@ export class ThemeService extends Disposable implements IThemeService {
     this._updateRestoreColors();
     this._setTheme(this._optionsService.rawOptions.theme);
 
-    this.register(this._optionsService.onOptionChange(key => {
-      switch (key) {
-        case 'minimumContrastRatio':
-          this._contrastCache.clear();
-          break;
-        case 'theme':
-          this._setTheme(this._optionsService.rawOptions.theme);
-          break;
-      }
-    }));
+    this.register(this._optionsService.onSpecificOptionChange('minimumContrastRatio', () => this._contrastCache.clear()));
+    this.register(this._optionsService.onSpecificOptionChange('theme', () => this._setTheme(this._optionsService.rawOptions.theme)));
   }
 
   /**

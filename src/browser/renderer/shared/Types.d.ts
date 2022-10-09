@@ -68,7 +68,6 @@ export interface IRenderer extends IDisposable {
   handleFocus(): void;
   handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   handleCursorMove(): void;
-  handleOptionsChanged(): void;
   clear(): void;
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;

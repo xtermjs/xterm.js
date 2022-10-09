@@ -130,7 +130,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this.coreService.onData, this._onData));
     this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
     this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
-    this.register(this.optionsService.onOptionChange(key => this._updateOptions(key)));
+    this.register(this.optionsService.onSpecificOptionChange('windowsMode', e => this._handleWindowsModeOptionChange(e)));
     this.register(this._bufferService.onScroll(event => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
       this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
@@ -261,20 +261,12 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.coreMouseService.reset();
   }
 
-  protected _updateOptions(key: string): void {
-    // TODO: These listeners should be owned by individual components
-    switch (key) {
-      case 'scrollback':
-        this.buffers.resize(this.cols, this.rows);
-        break;
-      case 'windowsMode':
-        if (this.optionsService.rawOptions.windowsMode) {
-          this._enableWindowsMode();
-        } else {
-          this._windowsMode?.dispose();
-          this._windowsMode = undefined;
-        }
-        break;
+  private _handleWindowsModeOptionChange(value: boolean): void {
+    if (value) {
+      this._enableWindowsMode();
+    } else {
+      this._windowsMode?.dispose();
+      this._windowsMode = undefined;
     }
   }
 

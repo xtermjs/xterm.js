@@ -6,7 +6,7 @@
 import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
-import { CursorStyle } from 'common/Types';
+import { CursorStyle, IDisposable } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
@@ -58,7 +58,7 @@ export class OptionsService extends Disposable implements IOptionsService {
   public readonly rawOptions: Required<ITerminalOptions>;
   public options: Required<ITerminalOptions>;
 
-  private readonly _onOptionChange = this.register(new EventEmitter<string>());
+  private readonly _onOptionChange = this.register(new EventEmitter<keyof ITerminalOptions>());
   public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {
@@ -80,6 +80,24 @@ export class OptionsService extends Disposable implements IOptionsService {
     this.rawOptions = defaultOptions;
     this.options = { ... defaultOptions };
     this._setupOptions();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (value: ITerminalOptions[T]) => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (eventKey === key) {
+        listener(this.rawOptions[key]);
+      }
+    });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (keys.indexOf(eventKey) !== -1) {
+        listener();
+      }
+    });
   }
 
   private _setupOptions(): void {

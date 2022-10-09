@@ -32,6 +32,8 @@ export class BufferSet extends Disposable implements IBufferSet {
   ) {
     super();
     this.reset();
+    this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.resize(this._bufferService.cols, this._bufferService.rows)));
+    this.register(this._optionsService.onSpecificOptionChange('tabStopWidth', () => this.setupTabStops()));
   }
 
   public reset(): void {
@@ -119,6 +121,7 @@ export class BufferSet extends Disposable implements IBufferSet {
   public resize(newCols: number, newRows: number): void {
     this._normal.resize(newCols, newRows);
     this._alt.resize(newCols, newRows);
+    this.setupTabStops(newCols);
   }
 
   /**

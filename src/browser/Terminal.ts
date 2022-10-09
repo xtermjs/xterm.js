@@ -264,50 +264,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  protected _updateOptions(key: string): void {
-    super._updateOptions(key);
-
-    // TODO: These listeners should be owned by individual components
-    switch (key) {
-      case 'fontFamily':
-      case 'fontSize':
-        // When the font changes the size of the cells may change which requires a renderer clear
-        this._renderService?.clear();
-        this._charSizeService?.measure();
-        break;
-      case 'cursorBlink':
-      case 'cursorStyle':
-        // The DOM renderer needs a row refresh to update the cursor styles
-        this.refresh(this.buffer.y, this.buffer.y);
-        break;
-      case 'customGlyphs':
-      case 'drawBoldTextInBrightColors':
-      case 'letterSpacing':
-      case 'lineHeight':
-      case 'fontWeight':
-      case 'fontWeightBold':
-      case 'minimumContrastRatio':
-        // When the font changes the size of the cells may change which requires a renderer clear
-        if (this._renderService) {
-          this._renderService.clear();
-          this._renderService.handleResize(this.cols, this.rows);
-          this.refresh(0, this.rows - 1);
-        }
-        break;
-      case 'scrollback':
-        this.viewport?.syncScrollArea();
-        break;
-      case 'screenReaderMode':
-        if (this.optionsService.rawOptions.screenReaderMode) {
-          if (!this._accessibilityManager && this._renderService) {
-            this._accessibilityManager = new AccessibilityManager(this, this._renderService);
-          }
-        } else {
-          this._accessibilityManager?.dispose();
-          this._accessibilityManager = undefined;
-        }
-        break;
-      case 'tabStopWidth': this.buffers.setupTabStops(); break;
+  private _handleScreenReaderModeOptionChange(value: boolean): void {
+    if (value) {
+      if (!this._accessibilityManager && this._renderService) {
+        this._accessibilityManager = new AccessibilityManager(this, this._renderService);
+      }
+    } else {
+      this._accessibilityManager?.dispose();
+      this._accessibilityManager = undefined;
     }
   }
 
@@ -583,12 +547,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // ensure the correct order of the dprchange event
       this._accessibilityManager = new AccessibilityManager(this, this._renderService);
     }
+    this.register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 
     if (this.options.overviewRulerWidth) {
       this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
     }
-    this.optionsService.onOptionChange(() => {
-      if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
+    this.optionsService.onSpecificOptionChange('overviewRulerWidth', value => {
+      if (!this._overviewRulerRenderer && value && this._viewportElement && this.screenElement) {
         this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
       }
     });
