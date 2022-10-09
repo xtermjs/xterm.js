@@ -177,7 +177,6 @@ export class RenderService extends Disposable implements IRenderService {
     if (!this._renderer) {
       return;
     }
-    this._renderer.handleOptionsChanged();
     this.refreshRows(0, this._rowCount - 1);
     this._fireOnCanvasResize();
   }

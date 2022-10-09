@@ -15,7 +15,7 @@ import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { ICoreService, IDecorationService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -58,6 +58,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _themeService: IThemeService,
     private readonly _characterJoinerService: ICharacterJoinerService,
     private readonly _coreBrowserService: ICoreBrowserService,
+    optionsService: IOptionsService,
     coreService: ICoreService,
     private readonly _decorationService: IDecorationService,
     preserveDrawingBuffer?: boolean
@@ -90,6 +91,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     };
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
+    this.register(optionsService.onOptionChange(() => this.handleOptionsChanged()));
 
     this._canvas = document.createElement('canvas');
 

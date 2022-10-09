@@ -70,6 +70,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     this.register(observeDevicePixelDimensions(this._renderLayers[0].canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
 
     this.handleOptionsChanged();
+    this.register(this._optionsService.onOptionChange(() => this.handleOptionsChanged()));
 
     this.register(toDisposable(() => {
       for (const l of this._renderLayers) {

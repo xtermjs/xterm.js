@@ -79,6 +79,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       actualCellHeight: 0
     };
     this._updateDimensions();
+    this.register(this._optionsService.onOptionChange(() => this.handleOptionsChanged()));
 
     this.register(themeService.onChangeColors(e => this._injectCss(e)));
     this._injectCss(themeService.colors);
