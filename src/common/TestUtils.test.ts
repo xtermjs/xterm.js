@@ -9,7 +9,7 @@ import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from 'xterm';
 
@@ -113,13 +113,21 @@ export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
   public readonly rawOptions: Required<ITerminalOptions> = clone(DEFAULT_OPTIONS);
   public options: Required<ITerminalOptions> = this.rawOptions;
-  public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
+  public onOptionChange: IEvent<keyof ITerminalOptions> = new EventEmitter<keyof ITerminalOptions>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
         this.rawOptions[key] = testOptions[key];
       }
     }
+  }
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (arg1: ITerminalOptions[T]) => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (eventKey === key) {
+        listener(this.rawOptions[key]);
+      }
+    });
   }
   public setOptions(options: ITerminalOptions): void {
     for (const key of Object.keys(options)) {

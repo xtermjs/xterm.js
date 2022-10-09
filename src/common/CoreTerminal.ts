@@ -261,7 +261,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.coreMouseService.reset();
   }
 
-  protected _updateOptions(key: string): void {
+  protected _updateOptions(key: keyof ITerminalOptions): void {
     // TODO: These listeners should be owned by individual components
     switch (key) {
       case 'scrollback':
