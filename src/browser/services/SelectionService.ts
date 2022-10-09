@@ -427,6 +427,10 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   public shouldForceSelection(event: MouseEvent): boolean {
+    if (!this._optionsService.rawOptions.allowMouseReporting) {
+      return true;
+    }
+
     if (Browser.isMac) {
       return event.altKey && this._optionsService.rawOptions.macOptionClickForcesSelection;
     }

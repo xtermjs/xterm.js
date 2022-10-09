@@ -32,6 +32,12 @@ declare module 'xterm-headless' {
     allowTransparency?: boolean;
 
     /**
+     * If enabled, mouse events will be forwarded to the program running
+     * inside the terminal. The default is true.
+     */
+    allowMouseReporting?: boolean;
+
+    /**
      * If enabled, alt + click will move the prompt cursor to position
      * underneath the mouse. The default is true.
      */
