@@ -275,38 +275,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  protected _updateOptions(key: string): void {
-    // TODO: These listeners should be owned by individual components
-    switch (key) {
-      case 'fontFamily':
-      case 'fontSize':
-        // When the font changes the size of the cells may change which requires a renderer clear
-        this._renderService?.clear();
-        this._charSizeService?.measure();
-        break;
-      case 'cursorBlink':
-      case 'cursorStyle':
-        // The DOM renderer needs a row refresh to update the cursor styles
-        this.refresh(this.buffer.y, this.buffer.y);
-        break;
-      case 'customGlyphs':
-      case 'drawBoldTextInBrightColors':
-      case 'letterSpacing':
-      case 'lineHeight':
-      case 'fontWeight':
-      case 'fontWeightBold':
-      case 'minimumContrastRatio':
-        // TODO: move to render service
-        // When the font changes the size of the cells may change which requires a renderer clear
-        if (this._renderService) {
-          this._renderService.clear();
-          this._renderService.handleResize(this.cols, this.rows);
-          this.refresh(0, this.rows - 1);
-        }
-        break;
-    }
-  }
-
   /**
    * Binds the desired focus behavior on a given terminal object.
    */

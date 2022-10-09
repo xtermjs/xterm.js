@@ -84,8 +84,28 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
     this.register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
 
-    // No need to register this as renderer is explicitly disposed in RenderService.dispose
-    // this._renderer.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
+    // Clear the renderer when the a change that could affect glyphs occurs
+    this.register(optionsService.onMultipleOptionChange([
+      'customGlyphs',
+      'drawBoldTextInBrightColors',
+      'letterSpacing',
+      'lineHeight',
+      'fontFamily',
+      'fontSize',
+      'fontWeight',
+      'fontWeightBold',
+      'minimumContrastRatio'
+    ], () => {
+      this.clear();
+      this.handleResize(bufferService.cols, bufferService.rows);
+      this._fullRefresh();
+    }));
+
+    // Refresh the cursor line when the cursor changes
+    this.register(optionsService.onMultipleOptionChange([
+      'cursorBlink',
+      'cursorStyle'
+    ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, true)));
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
