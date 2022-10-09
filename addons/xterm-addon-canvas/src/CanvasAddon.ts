@@ -25,9 +25,7 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     const core = (terminal as any)._core;
     if (!terminal.element) {
-      this.register(toDisposable(() => {
-        core.onWillOpen(() => this.activate(terminal));
-      }));
+      this.register(core.onWillOpen(() => this.activate(terminal)));
       return;
     }
 
