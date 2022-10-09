@@ -7,7 +7,8 @@
 
 import { Terminal, ITerminalAddon, IBuffer, IBufferCell, IBufferRange } from 'xterm';
 import { IColorSet } from 'browser/Types';
-import { IAttributeData } from 'common/Types';
+import { IAttributeData, IColor } from 'common/Types';
+import { DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -534,7 +535,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
   private _htmlContent = '';
 
-  private _colors: IColorSet;
+  private _ansiColors: Readonly<IColor[]>;
 
   constructor(
     buffer: IBuffer,
@@ -543,8 +544,13 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   ) {
     super(buffer);
 
-    // https://github.com/xtermjs/xterm.js/issues/3601
-    this._colors = (_terminal as any)._core._themeService.colors;
+    // For xterm headless: fallback to ansi colors
+    if ((_terminal as any)._core._themeService) {
+      this._ansiColors = (_terminal as any)._core._themeService.colors.ansi;
+    }
+    else {
+      this._ansiColors = DEFAULT_ANSI_COLORS;
+    }
   }
 
   private _padStart(target: string, targetLength: number, padString: string): string {
@@ -600,7 +606,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
       return rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
     }
     if (isFg ? cell.isFgPalette() : cell.isBgPalette()) {
-      return this._colors.ansi[color].css;
+      return this._ansiColors[color].css;
     }
     return undefined;
   }
