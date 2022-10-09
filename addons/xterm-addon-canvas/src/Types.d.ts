@@ -74,11 +74,6 @@ export interface IRenderLayer extends IDisposable {
   handleCursorMove(): void;
 
   /**
-   * Called when options change.
-   */
-  handleOptionsChanged(): void;
-
-  /**
    * Called when the data in the grid has changed (or needs to be rendered
    * again).
    */

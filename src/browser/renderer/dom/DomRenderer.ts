@@ -79,7 +79,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       actualCellHeight: 0
     };
     this._updateDimensions();
-    this.register(this._optionsService.onOptionChange(() => this.handleOptionsChanged()));
+    this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
     this.register(themeService.onChangeColors(e => this._injectCss(e)));
     this._injectCss(themeService.colors);
@@ -343,7 +343,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     // No-op, the cursor is drawn when rows are drawn
   }
 
-  public handleOptionsChanged(): void {
+  private _handleOptionsChanged(): void {
     // Force a refresh
     this._updateDimensions();
   }

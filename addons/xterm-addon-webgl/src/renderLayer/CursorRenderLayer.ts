@@ -11,7 +11,7 @@ import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ICoreService } from 'common/services/Services';
+import { ICoreService, IOptionsService } from 'common/services/Services';
 import { toDisposable } from 'common/Lifecycle';
 
 interface ICursorState {
@@ -40,7 +40,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
     private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>,
     coreBrowserService: ICoreBrowserService,
     private readonly _coreService: ICoreService,
-    themeService: IThemeService
+    themeService: IThemeService,
+    optionsService: IOptionsService
   ) {
     super(terminal, container, 'cursor', zIndex, true, coreBrowserService, themeService);
     this._state = {
@@ -55,7 +56,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
-    this.handleOptionsChanged(terminal);
+    this._handleOptionsChanged(terminal);
+    this.register(optionsService.onOptionChange(() => this._handleOptionsChanged(terminal)));
     this.register(toDisposable(() => {
       this._cursorBlinkStateManager?.dispose();
       this._cursorBlinkStateManager = undefined;
@@ -77,7 +79,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   public reset(terminal: Terminal): void {
     this._clearCursor();
     this._cursorBlinkStateManager?.restartBlinkAnimation(terminal);
-    this.handleOptionsChanged(terminal);
+    this._handleOptionsChanged(terminal);
   }
 
   public handleBlur(terminal: Terminal): void {
@@ -90,7 +92,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.active.cursorY, end: terminal.buffer.active.cursorY });
   }
 
-  public handleOptionsChanged(terminal: Terminal): void {
+  private _handleOptionsChanged(terminal: Terminal): void {
     if (terminal.options.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(() => {

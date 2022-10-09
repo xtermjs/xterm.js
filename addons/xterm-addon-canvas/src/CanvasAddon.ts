@@ -24,7 +24,6 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     const core = (terminal as any)._core as ITerminal;
-    const unsafeCore = core as any;
     if (!terminal.element) {
       this.register(core.onWillOpen(() => this.activate(terminal)));
       return;
@@ -36,6 +35,7 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     const screenElement = core.screenElement!;
     const linkifier = core.linkifier2;
 
+    const unsafeCore = core as any;
     const bufferService: IBufferService = unsafeCore._bufferService;
     const renderService: IRenderService = unsafeCore._renderService;
     const characterJoinerService: ICharacterJoinerService = unsafeCore._characterJoinerService;

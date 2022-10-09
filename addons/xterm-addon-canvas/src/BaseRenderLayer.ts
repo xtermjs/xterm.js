@@ -79,7 +79,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     }
   }
 
-  public handleOptionsChanged(): void {}
   public handleBlur(): void {}
   public handleFocus(): void {}
   public handleCursorMove(): void {}

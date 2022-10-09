@@ -73,7 +73,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._renderLayers = [
       new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, this._themeService),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, this._themeService)
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, this._themeService, optionsService)
     ];
     this.dimensions = {
       scaledCharWidth: 0,
@@ -91,7 +91,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     };
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
-    this.register(optionsService.onOptionChange(() => this.handleOptionsChanged()));
+    this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
     this._canvas = document.createElement('canvas');
 
@@ -232,10 +232,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public handleOptionsChanged(): void {
-    for (const l of this._renderLayers) {
-      l.handleOptionsChanged(this._terminal);
-    }
+  private _handleOptionsChanged(): void {
     this._updateDimensions();
     this._refreshCharAtlas();
   }

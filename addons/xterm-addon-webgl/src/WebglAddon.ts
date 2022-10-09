@@ -34,9 +34,8 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     }
 
     const core = (terminal as any)._core as ITerminal;
-    const unsafeCore = core as any;
     if (!terminal.element) {
-      this.register(unsafeCore.onWillOpen(() => this.activate(terminal)));
+      this.register(core.onWillOpen(() => this.activate(terminal)));
       return;
     }
 
@@ -44,6 +43,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     const coreService: ICoreService = core.coreService;
     const optionsService: IOptionsService = core.optionsService;
 
+    const unsafeCore = core as any;
     const renderService: IRenderService = unsafeCore._renderService;
     const characterJoinerService: ICharacterJoinerService = unsafeCore._characterJoinerService;
     const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
