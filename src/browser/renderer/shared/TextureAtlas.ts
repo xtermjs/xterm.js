@@ -770,20 +770,24 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _clipImageData(imageData: ImageData, boundingBox: IBoundingBox): ImageData {
+    // Operate on pixels instead of channels to reduce the amount of work
+    const originalData = new Uint32Array(imageData.data.buffer);
+
+    // Create a new view on the same buffer for the clipped data. The clipping operation is done in
+    // place to avoid allocating another buffer
     const width = boundingBox.right - boundingBox.left + 1;
     const height = boundingBox.bottom - boundingBox.top + 1;
-    const clippedData = new Uint8ClampedArray(width * height * 4);
-    for (let y = boundingBox.top; y <= boundingBox.bottom; y++) {
-      for (let x = boundingBox.left; x <= boundingBox.right; x++) {
-        const oldOffset = y * this._tmpCanvas.width * 4 + x * 4;
-        const newOffset = (y - boundingBox.top) * width * 4 + (x - boundingBox.left) * 4;
-        clippedData[newOffset] = imageData.data[oldOffset];
-        clippedData[newOffset + 1] = imageData.data[oldOffset + 1];
-        clippedData[newOffset + 2] = imageData.data[oldOffset + 2];
-        clippedData[newOffset + 3] = imageData.data[oldOffset + 3];
+    const clippedData = new Uint32Array(imageData.data.buffer, 0, width * height);
+
+    // Perform clipping and return the result
+    let x = 0;
+    let y = 0;
+    for (y = boundingBox.top; y <= boundingBox.bottom; y++) {
+      for (x = boundingBox.left; x <= boundingBox.right; x++) {
+        clippedData[(y - boundingBox.top) * width + (x - boundingBox.left)] = originalData[y * imageData.width + x];
       }
     }
-    return new ImageData(clippedData, width, height);
+    return new ImageData(new Uint8ClampedArray(clippedData.buffer, clippedData.byteOffset, clippedData.byteLength), width, height);
   }
 }
 
