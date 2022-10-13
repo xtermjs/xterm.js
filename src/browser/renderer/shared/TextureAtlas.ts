@@ -612,7 +612,6 @@ export class TextureAtlas implements ITextureAtlas {
     }
 
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
-    const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Find the best atlas row to use
     let activeRow: ICharAtlasActiveRow;
@@ -676,7 +675,15 @@ export class TextureAtlas implements ITextureAtlas {
     activeRow.x += rasterizedGlyph.size.x;
 
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
-    this._cacheCtx.putImageData(clippedImageData, rasterizedGlyph.texturePosition.x, rasterizedGlyph.texturePosition.y);
+    this._cacheCtx.putImageData(
+      imageData,
+      rasterizedGlyph.texturePosition.x - this._workBoundingBox.left,
+      rasterizedGlyph.texturePosition.y - this._workBoundingBox.top,
+      this._workBoundingBox.left,
+      this._workBoundingBox.top,
+      rasterizedGlyph.size.x,
+      rasterizedGlyph.size.y
+    );
 
     return rasterizedGlyph;
   }
@@ -767,27 +774,6 @@ export class TextureAtlas implements ITextureAtlas {
         y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
       }
     };
-  }
-
-  private _clipImageData(imageData: ImageData, boundingBox: IBoundingBox): ImageData {
-    // Operate on pixels instead of channels to reduce the amount of work
-    const originalData = new Uint32Array(imageData.data.buffer);
-
-    // Create a new view on the same buffer for the clipped data. The clipping operation is done in
-    // place to avoid allocating another buffer
-    const width = boundingBox.right - boundingBox.left + 1;
-    const height = boundingBox.bottom - boundingBox.top + 1;
-    const clippedData = new Uint32Array(imageData.data.buffer, 0, width * height);
-
-    // Perform clipping and return the result
-    let x = 0;
-    let y = 0;
-    for (y = boundingBox.top; y <= boundingBox.bottom; y++) {
-      for (x = boundingBox.left; x <= boundingBox.right; x++) {
-        clippedData[(y - boundingBox.top) * width + (x - boundingBox.left)] = originalData[y * imageData.width + x];
-      }
-    }
-    return new ImageData(new Uint8ClampedArray(clippedData.buffer, clippedData.byteOffset, clippedData.byteLength), width, height);
   }
 }
 
