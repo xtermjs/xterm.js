@@ -612,7 +612,6 @@ export class TextureAtlas implements ITextureAtlas {
     }
 
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
-    const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
 
     // Find the best atlas row to use
     let activeRow: ICharAtlasActiveRow;
@@ -676,7 +675,15 @@ export class TextureAtlas implements ITextureAtlas {
     activeRow.x += rasterizedGlyph.size.x;
 
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
-    this._cacheCtx.putImageData(clippedImageData, rasterizedGlyph.texturePosition.x, rasterizedGlyph.texturePosition.y);
+    this._cacheCtx.putImageData(
+      imageData,
+      rasterizedGlyph.texturePosition.x - this._workBoundingBox.left,
+      rasterizedGlyph.texturePosition.y - this._workBoundingBox.top,
+      this._workBoundingBox.left,
+      this._workBoundingBox.top,
+      rasterizedGlyph.size.x,
+      rasterizedGlyph.size.y
+    );
 
     return rasterizedGlyph;
   }
@@ -767,23 +774,6 @@ export class TextureAtlas implements ITextureAtlas {
         y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
       }
     };
-  }
-
-  private _clipImageData(imageData: ImageData, boundingBox: IBoundingBox): ImageData {
-    const width = boundingBox.right - boundingBox.left + 1;
-    const height = boundingBox.bottom - boundingBox.top + 1;
-    const clippedData = new Uint8ClampedArray(width * height * 4);
-    for (let y = boundingBox.top; y <= boundingBox.bottom; y++) {
-      for (let x = boundingBox.left; x <= boundingBox.right; x++) {
-        const oldOffset = y * this._tmpCanvas.width * 4 + x * 4;
-        const newOffset = (y - boundingBox.top) * width * 4 + (x - boundingBox.left) * 4;
-        clippedData[newOffset] = imageData.data[oldOffset];
-        clippedData[newOffset + 1] = imageData.data[oldOffset + 1];
-        clippedData[newOffset + 2] = imageData.data[oldOffset + 2];
-        clippedData[newOffset + 3] = imageData.data[oldOffset + 3];
-      }
-    }
-    return new ImageData(clippedData, width, height);
   }
 }
 
