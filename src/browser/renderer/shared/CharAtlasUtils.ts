@@ -9,7 +9,7 @@ import { Terminal } from 'xterm';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { NULL_COLOR } from 'common/Color';
 
-export function generateConfig(scaledCellWidth: number, scaledCellHeight: number, scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: ReadonlyColorSet, devicePixelRatio: number): ICharAtlasConfig {
+export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, terminal: Terminal, colors: ReadonlyColorSet, devicePixelRatio: number): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -31,10 +31,10 @@ export function generateConfig(scaledCellWidth: number, scaledCellHeight: number
     devicePixelRatio,
     letterSpacing: terminal.options.letterSpacing,
     lineHeight: terminal.options.lineHeight,
-    scaledCellWidth,
-    scaledCellHeight,
-    scaledCharWidth,
-    scaledCharHeight,
+    deviceCellWidth: deviceCellWidth,
+    deviceCellHeight: deviceCellHeight,
+    deviceCharWidth: deviceCharWidth,
+    deviceCharHeight: deviceCharHeight,
     fontFamily: terminal.options.fontFamily,
     fontSize: terminal.options.fontSize,
     fontWeight: terminal.options.fontWeight,
@@ -61,8 +61,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.fontWeight === b.fontWeight &&
       a.fontWeightBold === b.fontWeightBold &&
       a.allowTransparency === b.allowTransparency &&
-      a.scaledCharWidth === b.scaledCharWidth &&
-      a.scaledCharHeight === b.scaledCharHeight &&
+      a.deviceCharWidth === b.deviceCharWidth &&
+      a.deviceCharHeight === b.deviceCharHeight &&
       a.drawBoldTextInBrightColors === b.drawBoldTextInBrightColors &&
       a.minimumContrastRatio === b.minimumContrastRatio &&
       a.colors.foreground.rgba === b.colors.foreground.rgba &&

@@ -98,8 +98,8 @@ export class TextureAtlas implements ITextureAtlas {
     this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
 
     this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.scaledCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCanvas.height = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.width = this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._tmpCanvas.height = this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {
       alpha: this._config.allowTransparency,
       willReadFrequently: true
@@ -345,12 +345,12 @@ export class TextureAtlas implements ITextureAtlas {
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = this._config.scaledCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
+    const allowedWidth = this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
     }
     // Include line height when drawing glyphs
-    const allowedHeight = this._config.scaledCellHeight + TMP_CANVAS_GLYPH_PADDING * 4;
+    const allowedHeight = this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 4;
     if (this._tmpCanvas.height < allowedHeight) {
       this._tmpCanvas.height = allowedHeight;
     }
@@ -411,7 +411,7 @@ export class TextureAtlas implements ITextureAtlas {
     // Draw custom characters if applicable
     let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight, this._config.fontSize, this._config.devicePixelRatio);
+      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.fontSize, this._config.devicePixelRatio);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
@@ -452,15 +452,15 @@ export class TextureAtlas implements ITextureAtlas {
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const yTop = Math.ceil(padding + this._config.scaledCharHeight) - yOffset;
-      const yMid = padding + this._config.scaledCharHeight + lineWidth - yOffset;
-      const yBot = Math.ceil(padding + this._config.scaledCharHeight + lineWidth * 2) - yOffset;
+      const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset;
+      const yMid = padding + this._config.deviceCharHeight + lineWidth - yOffset;
+      const yBot = Math.ceil(padding + this._config.deviceCharHeight + lineWidth * 2) - yOffset;
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
-        const xChLeft = xLeft + i * this._config.scaledCellWidth;
-        const xChRight = xLeft + (i + 1) * this._config.scaledCellWidth;
-        const xChMid = xChLeft + this._config.scaledCellWidth / 2;
+        const xChLeft = xLeft + i * this._config.deviceCellWidth;
+        const xChRight = xLeft + (i + 1) * this._config.deviceCellWidth;
+        const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
             this._tmpCtx.moveTo(xChLeft, yTop);
@@ -471,18 +471,18 @@ export class TextureAtlas implements ITextureAtlas {
           case UnderlineStyle.CURLY:
             // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
             // made taller when the line width is  as otherwise it's not very clear otherwise.
-            const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.scaledCharHeight - lineWidth / 2) - yOffset;
-            const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.scaledCharHeight + lineWidth / 2) - yOffset;
+            const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.deviceCharHeight - lineWidth / 2) - yOffset;
+            const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.deviceCharHeight + lineWidth / 2) - yOffset;
             // Clip the left and right edges of the underline such that it can be drawn just outside
             // the edge of the cell to ensure a continuous stroke when there are multiple underlined
             // glyphs adjacent to one another.
             const clipRegion = new Path2D();
-            clipRegion.rect(xChLeft, yTop, this._config.scaledCellWidth, yBot - yTop);
+            clipRegion.rect(xChLeft, yTop, this._config.deviceCellWidth, yBot - yTop);
             this._tmpCtx.clip(clipRegion);
             // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
-            this._tmpCtx.moveTo(xChLeft - this._config.scaledCellWidth / 2, yMid);
+            this._tmpCtx.moveTo(xChLeft - this._config.deviceCellWidth / 2, yMid);
             this._tmpCtx.bezierCurveTo(
-              xChLeft - this._config.scaledCellWidth / 2, yCurlyTop,
+              xChLeft - this._config.deviceCellWidth / 2, yCurlyTop,
               xChLeft, yCurlyTop,
               xChLeft, yMid
             );
@@ -498,8 +498,8 @@ export class TextureAtlas implements ITextureAtlas {
             );
             this._tmpCtx.bezierCurveTo(
               xChRight, yCurlyBot,
-              xChRight + this._config.scaledCellWidth / 2, yCurlyBot,
-              xChRight + this._config.scaledCellWidth / 2, yMid
+              xChRight + this._config.deviceCellWidth / 2, yCurlyBot,
+              xChRight + this._config.deviceCellWidth / 2, yMid
             );
             break;
           case UnderlineStyle.DOTTED:
@@ -543,11 +543,11 @@ export class TextureAtlas implements ITextureAtlas {
             // outline around the whole glyph, as well as additional pixels in the glyph at the top
             // which would increase GPU memory demands
             const clipRegion = new Path2D();
-            clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.scaledCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
+            clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.deviceCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
             this._tmpCtx.clip(clipRegion);
             this._tmpCtx.lineWidth = this._config.devicePixelRatio * 3;
             this._tmpCtx.strokeStyle = backgroundColor.css;
-            this._tmpCtx.strokeText(chars, padding, padding + this._config.scaledCharHeight);
+            this._tmpCtx.strokeText(chars, padding, padding + this._config.deviceCharHeight);
             this._tmpCtx.restore();
           }
         }
@@ -556,21 +556,21 @@ export class TextureAtlas implements ITextureAtlas {
 
     // Draw the character
     if (!customGlyph) {
-      this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight);
+      this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight);
     }
 
     // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible
     // even on the bottom row, try for a maximum of 5 pixels.
     if (chars === '_' && !this._config.allowTransparency) {
-      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
+      let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
       if (isBeyondCellBounds) {
         for (let offset = 1; offset <= 5; offset++) {
           this._tmpCtx.save();
           this._tmpCtx.fillStyle = backgroundColor.css;
           this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
           this._tmpCtx.restore();
-          this._tmpCtx.fillText(chars, padding, padding + this._config.scaledCharHeight - offset);
-          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.scaledCellWidth, this._config.scaledCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
+          this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight - offset);
+          isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
           if (!isBeyondCellBounds) {
             break;
           }
@@ -585,8 +585,8 @@ export class TextureAtlas implements ITextureAtlas {
       this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
-      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
-      this._tmpCtx.lineTo(padding + this._config.scaledCharWidth * chWidth, padding + Math.floor(this._config.scaledCharHeight / 2) - yOffset);
+      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.deviceCharHeight / 2) - yOffset);
+      this._tmpCtx.lineTo(padding + this._config.deviceCharWidth * chWidth, padding + Math.floor(this._config.deviceCharHeight / 2) - yOffset);
       this._tmpCtx.stroke();
     }
 
@@ -697,8 +697,8 @@ export class TextureAtlas implements ITextureAtlas {
    */
   private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number): IRasterizedGlyph {
     boundingBox.top = 0;
-    const height = restrictedGlyph ? this._config.scaledCellHeight : this._tmpCanvas.height;
-    const width = restrictedGlyph ? this._config.scaledCellWidth : allowedWidth;
+    const height = restrictedGlyph ? this._config.deviceCellHeight : this._tmpCanvas.height;
+    const width = restrictedGlyph ? this._config.deviceCellWidth : allowedWidth;
     let found = false;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -770,8 +770,8 @@ export class TextureAtlas implements ITextureAtlas {
         y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
       },
       offset: {
-        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.scaledCellWidth - this._config.scaledCharWidth) / 2) : 0),
-        y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
+        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2) : 0),
+        y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.deviceCellHeight - this._config.deviceCharHeight) / 2) : 0)
       }
     };
   }

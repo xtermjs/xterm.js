@@ -381,32 +381,32 @@ export function tryDrawCustomChar(
   c: string,
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
   fontSize: number,
   devicePixelRatio: number
 ): boolean {
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
-    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
   const patternDefinition = patternCharacterDefinitions[c];
   if (patternDefinition) {
-    drawPatternChar(ctx, patternDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    drawPatternChar(ctx, patternDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
-    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, devicePixelRatio);
+    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
     return true;
   }
 
   const powerlineDefinition = powerlineDefinitions[c];
   if (powerlineDefinition) {
-    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, fontSize, devicePixelRatio);
+    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
     return true;
   }
 
@@ -418,13 +418,13 @@ function drawBlockElementChar(
   charDefinition: IBlockVector[],
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number
+  deviceCellWidth: number,
+  deviceCellHeight: number
 ): void {
   for (let i = 0; i < charDefinition.length; i++) {
     const box = charDefinition[i];
-    const xEighth = scaledCellWidth / 8;
-    const yEighth = scaledCellHeight / 8;
+    const xEighth = deviceCellWidth / 8;
+    const yEighth = deviceCellHeight / 8;
     ctx.fillRect(
       xOffset + box.x * xEighth,
       yOffset + box.y * yEighth,
@@ -441,8 +441,8 @@ function drawPatternChar(
   charDefinition: number[][],
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number
+  deviceCellWidth: number,
+  deviceCellHeight: number
 ): void {
   let patternSet = cachedPatterns.get(charDefinition);
   if (!patternSet) {
@@ -492,7 +492,7 @@ function drawPatternChar(
     patternSet.set(fillStyle, pattern);
   }
   ctx.fillStyle = pattern;
-  ctx.fillRect(xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+  ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
 }
 
 /**
@@ -540,8 +540,8 @@ function drawBoxDrawingChar(
   charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
   devicePixelRatio: number
 ): void {
   ctx.strokeStyle = ctx.fillStyle;
@@ -551,7 +551,7 @@ function drawBoxDrawingChar(
     let actualInstructions: string;
     if (typeof instructions === 'function') {
       const xp = .15;
-      const yp = .15 / scaledCellHeight * scaledCellWidth;
+      const yp = .15 / deviceCellHeight * deviceCellWidth;
       actualInstructions = instructions(xp, yp);
     } else {
       actualInstructions = instructions;
@@ -567,7 +567,7 @@ function drawBoxDrawingChar(
       if (!args[0] || !args[1]) {
         continue;
       }
-      f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, true, devicePixelRatio));
+      f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
     }
     ctx.stroke();
     ctx.closePath();
@@ -579,8 +579,8 @@ function drawPowerlineChar(
   charDefinition: IVectorShape,
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
   fontSize: number,
   devicePixelRatio: number
 ): void {
@@ -601,8 +601,8 @@ function drawPowerlineChar(
     }
     f(ctx, translateArgs(
       args,
-      scaledCellWidth,
-      scaledCellHeight,
+      deviceCellWidth,
+      deviceCellHeight,
       xOffset,
       yOffset,
       false,

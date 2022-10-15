@@ -4,7 +4,7 @@
  */
 
 import { FontWeight, Terminal } from 'xterm';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet } from 'browser/Types';
 import { IDisposable } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 
@@ -17,10 +17,10 @@ export interface ICharAtlasConfig {
   fontFamily: string;
   fontWeight: FontWeight;
   fontWeightBold: FontWeight;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharWidth: number;
-  scaledCharHeight: number;
+  deviceCellWidth: number;
+  deviceCellHeight: number;
+  deviceCharWidth: number;
+  deviceCharHeight: number;
   allowTransparency: boolean;
   drawBoldTextInBrightColors: boolean;
   minimumContrastRatio: number;
