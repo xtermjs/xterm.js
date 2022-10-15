@@ -273,11 +273,18 @@ function createTerminal(): void {
   addons.fit.instance!.fit();
   typedTerm.loadAddon(addons.webgl.instance);
   setTimeout(() => {
-    addTextureAtlas(addons.webgl.instance.textureAtlas);
-    addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+    if (addons.webgl.instance !== undefined) {
+      addTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+    }
   }, 0);
 
-  term.open(terminalContainer);
+  try { // try-catch to allow the demo to load if webgl is not supported
+    term.open(terminalContainer);
+  }
+  catch {
+    addons.webgl.instance = undefined;
+  }
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);

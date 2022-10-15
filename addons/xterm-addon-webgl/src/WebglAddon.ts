@@ -3,14 +3,15 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IEvent } from 'xterm';
-import { WebglRenderer } from './WebglRenderer';
 import { ICharacterJoinerService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { IColorSet } from 'browser/Types';
+import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { isSafari } from 'common/Platform';
-import { ICoreService, IDecorationService } from 'common/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { isSafari } from 'common/Platform';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreTerminal } from 'common/Types';
+import { ITerminalAddon, Terminal } from 'xterm';
+import { WebglRenderer } from './WebglRenderer';
 
 export class WebglAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -31,19 +32,25 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     if (isSafari) {
       throw new Error('Webgl is not currently supported on Safari');
     }
-    const core = (terminal as any)._core;
+
+    const core = (terminal as any)._core as ITerminal;
     if (!terminal.element) {
       this.register(core.onWillOpen(() => this.activate(terminal)));
       return;
     }
+
     this._terminal = terminal;
-    const renderService: IRenderService = core._renderService;
-    const characterJoinerService: ICharacterJoinerService = core._characterJoinerService;
-    const coreBrowserService: ICoreBrowserService = core._coreBrowserService;
     const coreService: ICoreService = core.coreService;
-    const decorationService: IDecorationService = core._decorationService;
-    const themeService: IThemeService = core._themeService;
-    this._renderer = this.register(new WebglRenderer(terminal, themeService, characterJoinerService, coreBrowserService, coreService, decorationService, this._preserveDrawingBuffer));
+    const optionsService: IOptionsService = core.optionsService;
+
+    const unsafeCore = core as any;
+    const renderService: IRenderService = unsafeCore._renderService;
+    const characterJoinerService: ICharacterJoinerService = unsafeCore._characterJoinerService;
+    const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
+    const decorationService: IDecorationService = unsafeCore._decorationService;
+    const themeService: IThemeService = unsafeCore._themeService;
+
+    this._renderer = this.register(new WebglRenderer(terminal, themeService, characterJoinerService, coreBrowserService, optionsService, coreService, decorationService, this._preserveDrawingBuffer));
     this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);

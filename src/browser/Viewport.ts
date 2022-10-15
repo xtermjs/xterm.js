@@ -75,6 +75,7 @@ export class Viewport extends Disposable implements IViewport {
 
     this._handleThemeChange(themeService.colors);
     this.register(themeService.onChangeColors(e => this._handleThemeChange(e)));
+    this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.syncScrollArea()));
 
     // Perform this async to ensure the ICharSizeService is ready.
     setTimeout(() => this.syncScrollArea(), 0);

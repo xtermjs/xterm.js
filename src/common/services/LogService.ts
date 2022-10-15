@@ -40,11 +40,7 @@ export class LogService extends Disposable implements ILogService {
   ) {
     super();
     this._updateLogLevel();
-    this.register(this._optionsService.onOptionChange(key => {
-      if (key === 'logLevel') {
-        this._updateLogLevel();
-      }
-    }));
+    this.register(this._optionsService.onSpecificOptionChange('logLevel', () => this._updateLogLevel()));
   }
 
   private _updateLogLevel(): void {

@@ -182,9 +182,33 @@ export interface IOptionsService {
    * internally.
    */
   readonly rawOptions: Required<ITerminalOptions>;
+
+  /**
+   * Options as exposed through the public API, this property uses getters and setters with
+   * validation which makes it safer but slower. {@link rawOptions} should be used for pretty much
+   * all internal usage for performance reasons.
+   */
   readonly options: Required<ITerminalOptions>;
 
-  readonly onOptionChange: IEvent<string>;
+  /**
+   * Adds an event listener for when any option changes.
+   */
+  readonly onOptionChange: IEvent<keyof ITerminalOptions>;
+
+  /**
+   * Adds an event listener for when a specific option changes, this is a convenience method that is
+   * preferred over {@link onOptionChange} when only a single option is being listened to.
+   */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (arg1: Required<ITerminalOptions>[T]) => any): IDisposable;
+
+  /**
+   * Adds an event listener for when a set of specific options change, this is a convenience method
+   * that is preferred over {@link onOptionChange} when multiple options are being listened to and
+   * handled the same way.
+   */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable;
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;

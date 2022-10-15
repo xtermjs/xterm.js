@@ -45,6 +45,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   ) {
     super(terminal, container, 'text', zIndex, alpha, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = new GridCache<CharData>();
+    this.register(optionsService.onSpecificOptionChange('allowTransparency', value => this._setTransparency(value)));
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -249,10 +250,6 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._clearCells(0, firstRow, this._bufferService.cols, lastRow - firstRow + 1);
     this._drawBackground(firstRow, lastRow);
     this._drawForeground(firstRow, lastRow);
-  }
-
-  public handleOptionsChanged(): void {
-    this._setTransparency(this._optionsService.rawOptions.allowTransparency);
   }
 
   /**
