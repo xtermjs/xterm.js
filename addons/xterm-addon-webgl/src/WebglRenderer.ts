@@ -7,6 +7,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { IColorSet, ITerminal, ReadonlyColorSet } from 'browser/Types';
@@ -75,20 +76,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, this._themeService),
       new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, this._themeService, optionsService)
     ];
-    this.dimensions = {
-      scaledCharWidth: 0,
-      scaledCharHeight: 0,
-      scaledCellWidth: 0,
-      scaledCellHeight: 0,
-      scaledCharLeft: 0,
-      scaledCharTop: 0,
-      scaledCanvasWidth: 0,
-      scaledCanvasHeight: 0,
-      canvasWidth: 0,
-      canvasHeight: 0,
-      actualCellWidth: 0,
-      actualCellHeight: 0
-    };
+    this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
     this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));

@@ -27,19 +27,39 @@ export interface ICharAtlasConfig {
   colors: IColorSet;
 }
 
+export interface IDimensions {
+  width: number;
+  height: number;
+}
+
+export interface IOffset {
+  top: number;
+  left: number;
+}
+
 export interface IRenderDimensions {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharLeft: number;
-  scaledCharTop: number;
-  scaledCanvasWidth: number;
-  scaledCanvasHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  actualCellWidth: number;
-  actualCellHeight: number;
+  css: {
+    canvas: IDimensions;
+    cell: IDimensions;
+  };
+  device: {
+    canvas: IDimensions;
+    cell: IDimensions;
+    char: IDimensions & IOffset;
+  };
+
+  /** @deprecated */ scaledCharWidth: number;
+  /** @deprecated */ scaledCharHeight: number;
+  /** @deprecated */ scaledCellWidth: number;
+  /** @deprecated */ scaledCellHeight: number;
+  /** @deprecated */ scaledCharLeft: number;
+  /** @deprecated */ scaledCharTop: number;
+  /** @deprecated */ scaledCanvasWidth: number;
+  /** @deprecated */ scaledCanvasHeight: number;
+  /** @deprecated */ canvasWidth: number;
+  /** @deprecated */ canvasHeight: number;
+  /** @deprecated */ actualCellWidth: number;
+  /** @deprecated */ actualCellHeight: number;
 }
 
 export interface IRequestRedrawEvent {

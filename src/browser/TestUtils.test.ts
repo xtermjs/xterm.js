@@ -18,6 +18,7 @@ import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { css } from 'common/Color';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 export class TestTerminal extends Terminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -372,20 +373,7 @@ export class MockRenderService implements IRenderService {
   public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
-  public dimensions: IRenderDimensions = {
-    scaledCharWidth: 0,
-    scaledCharHeight: 0,
-    scaledCellWidth: 0,
-    scaledCellHeight: 0,
-    scaledCharLeft: 0,
-    scaledCharTop: 0,
-    scaledCanvasWidth: 0,
-    scaledCanvasHeight: 0,
-    canvasWidth: 0,
-    canvasHeight: 0,
-    actualCellWidth: 0,
-    actualCellHeight: 0
-  };
+  public dimensions: IRenderDimensions = createRenderDimensions();
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }

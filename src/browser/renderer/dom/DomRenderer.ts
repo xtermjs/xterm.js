@@ -13,6 +13,7 @@ import { IOptionsService, IBufferService, IInstantiationService } from 'common/s
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -64,20 +65,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._selectionContainer.classList.add(SELECTION_CLASS);
     this._selectionContainer.setAttribute('aria-hidden', 'true');
 
-    this.dimensions = {
-      scaledCharWidth: 0,
-      scaledCharHeight: 0,
-      scaledCellWidth: 0,
-      scaledCellHeight: 0,
-      scaledCharLeft: 0,
-      scaledCharTop: 0,
-      scaledCanvasWidth: 0,
-      scaledCanvasHeight: 0,
-      canvasWidth: 0,
-      canvasHeight: 0,
-      actualCellWidth: 0,
-      actualCellHeight: 0
-    };
+    this.dimensions = createRenderDimensions();
     this._updateDimensions();
     this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
