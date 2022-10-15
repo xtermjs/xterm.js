@@ -17,12 +17,12 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx!: CanvasRenderingContext2D;
-  private _scaledCharWidth: number = 0;
-  private _scaledCharHeight: number = 0;
-  private _scaledCellWidth: number = 0;
-  private _scaledCellHeight: number = 0;
-  private _scaledCharLeft: number = 0;
-  private _scaledCharTop: number = 0;
+  private _deviceCharWidth: number = 0;
+  private _deviceCharHeight: number = 0;
+  private _deviceCellWidth: number = 0;
+  private _deviceCellHeight: number = 0;
+  private _deviceCharLeft: number = 0;
+  private _deviceCharTop: number = 0;
 
   protected _charAtlas: ITextureAtlas | undefined;
 
@@ -90,24 +90,24 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param colorSet The color set to use for the char atlas.
    */
   private _refreshCharAtlas(terminal: Terminal, colorSet: ReadonlyColorSet): void {
-    if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
+    if (this._deviceCharWidth <= 0 && this._deviceCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireTextureAtlas(terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
-    this._scaledCellWidth = dim.scaledCellWidth;
-    this._scaledCellHeight = dim.scaledCellHeight;
-    this._scaledCharWidth = dim.scaledCharWidth;
-    this._scaledCharHeight = dim.scaledCharHeight;
-    this._scaledCharLeft = dim.scaledCharLeft;
-    this._scaledCharTop = dim.scaledCharTop;
-    this._canvas.width = dim.scaledCanvasWidth;
-    this._canvas.height = dim.scaledCanvasHeight;
-    this._canvas.style.width = `${dim.canvasWidth}px`;
-    this._canvas.style.height = `${dim.canvasHeight}px`;
+    this._deviceCellWidth = dim.device.cell.width;
+    this._deviceCellHeight = dim.device.cell.height;
+    this._deviceCharWidth = dim.device.char.width;
+    this._deviceCharHeight = dim.device.char.height;
+    this._deviceCharLeft = dim.device.char.left;
+    this._deviceCharTop = dim.device.char.top;
+    this._canvas.width = dim.device.canvas.width;
+    this._canvas.height = dim.device.canvas.height;
+    this._canvas.style.width = `${dim.css.canvas.width}px`;
+    this._canvas.style.height = `${dim.css.canvas.height}px`;
 
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
@@ -128,10 +128,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _fillCells(x: number, y: number, width: number, height: number): void {
     this._ctx.fillRect(
-      x * this._scaledCellWidth,
-      y * this._scaledCellHeight,
-      width * this._scaledCellWidth,
-      height * this._scaledCellHeight);
+      x * this._deviceCellWidth,
+      y * this._deviceCellHeight,
+      width * this._deviceCellWidth,
+      height * this._deviceCellHeight);
   }
 
   /**
@@ -142,9 +142,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
     this._ctx.fillRect(
-      x * this._scaledCellWidth,
-      (y + 1) * this._scaledCellHeight - this._coreBrowserService.dpr - 1 /* Ensure it's drawn within the cell */,
-      width * this._scaledCellWidth,
+      x * this._deviceCellWidth,
+      (y + 1) * this._deviceCellHeight - this._coreBrowserService.dpr - 1 /* Ensure it's drawn within the cell */,
+      width * this._deviceCellWidth,
       this._coreBrowserService.dpr);
   }
 
@@ -156,10 +156,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _fillLeftLineAtCell(x: number, y: number, width: number): void {
     this._ctx.fillRect(
-      x * this._scaledCellWidth,
-      y * this._scaledCellHeight,
+      x * this._deviceCellWidth,
+      y * this._deviceCellHeight,
       this._coreBrowserService.dpr * width,
-      this._scaledCellHeight);
+      this._deviceCellHeight);
   }
 
   /**
@@ -171,10 +171,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _strokeRectAtCell(x: number, y: number, width: number, height: number): void {
     this._ctx.lineWidth = this._coreBrowserService.dpr;
     this._ctx.strokeRect(
-      x * this._scaledCellWidth + this._coreBrowserService.dpr / 2,
-      y * this._scaledCellHeight + (this._coreBrowserService.dpr / 2),
-      width * this._scaledCellWidth - this._coreBrowserService.dpr,
-      (height * this._scaledCellHeight) - this._coreBrowserService.dpr);
+      x * this._deviceCellWidth + this._coreBrowserService.dpr / 2,
+      y * this._deviceCellHeight + (this._coreBrowserService.dpr / 2),
+      width * this._deviceCellWidth - this._coreBrowserService.dpr,
+      (height * this._deviceCellHeight) - this._coreBrowserService.dpr);
   }
 
   /**
@@ -199,17 +199,17 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _clearCells(x: number, y: number, width: number, height: number): void {
     if (this._alpha) {
       this._ctx.clearRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        width * this._scaledCellWidth,
-        height * this._scaledCellHeight);
+        x * this._deviceCellWidth,
+        y * this._deviceCellHeight,
+        width * this._deviceCellWidth,
+        height * this._deviceCellHeight);
     } else {
       this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        width * this._scaledCellWidth,
-        height * this._scaledCellHeight);
+        x * this._deviceCellWidth,
+        y * this._deviceCellHeight,
+        width * this._deviceCellWidth,
+        height * this._deviceCellHeight);
     }
   }
 
@@ -228,8 +228,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._clipCell(x, y, cell.getWidth());
     this._ctx.fillText(
       cell.getChars(),
-      x * this._scaledCellWidth + this._scaledCharLeft,
-      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+      x * this._deviceCellWidth + this._deviceCharLeft,
+      y * this._deviceCellHeight + this._deviceCharTop + this._deviceCharHeight);
   }
 
   /**
@@ -241,10 +241,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   private _clipCell(x: number, y: number, width: number): void {
     this._ctx.beginPath();
     this._ctx.rect(
-      x * this._scaledCellWidth,
-      y * this._scaledCellHeight,
-      width * this._scaledCellWidth,
-      this._scaledCellHeight);
+      x * this._deviceCellWidth,
+      y * this._deviceCellHeight,
+      width * this._deviceCellWidth,
+      this._deviceCellHeight);
     this._ctx.clip();
   }
 

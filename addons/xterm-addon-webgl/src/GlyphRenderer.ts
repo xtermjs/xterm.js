@@ -204,15 +204,15 @@ export class GlyphRenderer extends Disposable {
       $glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
     }
 
-    $leftCellPadding = Math.floor((this._dimensions.scaledCellWidth - this._dimensions.scaledCharWidth) / 2);
+    $leftCellPadding = Math.floor((this._dimensions.device.cell.width - this._dimensions.device.char.width) / 2);
     if (bg !== lastBg && $glyph.offset.x > $leftCellPadding) {
       $clippedPixels = $glyph.offset.x - $leftCellPadding;
       // a_origin
-      array[$i    ] = -($glyph.offset.x - $clippedPixels) + this._dimensions.scaledCharLeft;
-      array[$i + 1] = -$glyph.offset.y + this._dimensions.scaledCharTop;
+      array[$i    ] = -($glyph.offset.x - $clippedPixels) + this._dimensions.device.char.left;
+      array[$i + 1] = -$glyph.offset.y + this._dimensions.device.char.top;
       // a_size
-      array[$i + 2] = ($glyph.size.x - $clippedPixels) / this._dimensions.scaledCanvasWidth;
-      array[$i + 3] = $glyph.size.y / this._dimensions.scaledCanvasHeight;
+      array[$i + 2] = ($glyph.size.x - $clippedPixels) / this._dimensions.device.canvas.width;
+      array[$i + 3] = $glyph.size.y / this._dimensions.device.canvas.height;
       // a_texcoord
       array[$i + 4] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.cacheCanvas.width;
       array[$i + 5] = $glyph.texturePositionClipSpace.y;
@@ -221,11 +221,11 @@ export class GlyphRenderer extends Disposable {
       array[$i + 7] = $glyph.sizeClipSpace.y;
     } else {
       // a_origin
-      array[$i    ] = -$glyph.offset.x + this._dimensions.scaledCharLeft;
-      array[$i + 1] = -$glyph.offset.y + this._dimensions.scaledCharTop;
+      array[$i    ] = -$glyph.offset.x + this._dimensions.device.char.left;
+      array[$i + 1] = -$glyph.offset.y + this._dimensions.device.char.top;
       // a_size
-      array[$i + 2] = $glyph.size.x / this._dimensions.scaledCanvasWidth;
-      array[$i + 3] = $glyph.size.y / this._dimensions.scaledCanvasHeight;
+      array[$i + 2] = $glyph.size.x / this._dimensions.device.canvas.width;
+      array[$i + 3] = $glyph.size.y / this._dimensions.device.canvas.height;
       // a_texcoord
       array[$i + 4] = $glyph.texturePositionClipSpace.x;
       array[$i + 5] = $glyph.texturePositionClipSpace.y;

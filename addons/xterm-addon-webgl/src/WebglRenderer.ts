@@ -447,20 +447,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    // Calculate the scaled character width. Width is floored as it must be drawn to an integer grid
+    // Calculate the device character width. Width is floored as it must be drawn to an integer grid
     // in order for the char atlas glyphs to not be blurry.
     this.dimensions.scaledCharWidth = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
     this.dimensions.device.char.width = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
 
-    // Calculate the scaled character height. Height is ceiled in case devicePixelRatio is a
+    // Calculate the device character height. Height is ceiled in case devicePixelRatio is a
     // floating point number in order to ensure there is enough space to draw the character to the
     // cell.
     this.dimensions.scaledCharHeight = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
     this.dimensions.device.char.height = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
 
-    // Calculate the scaled cell height, if lineHeight is _not_ 1, the resulting value will be
-    // floored since lineHeight can never be lower then 1, this guarentees the scaled cell height
-    // will always be larger than scaled char height.
+    // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
+    // floored since lineHeight can never be lower then 1, this guarentees the device cell height
+    // will always be larger than device char height.
     this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
     this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._terminal.options.lineHeight);
 
@@ -469,7 +469,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
     this.dimensions.device.char.top = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
 
-    // Calculate the scaled cell width, taking the letterSpacing into account.
+    // Calculate the device cell width, taking the letterSpacing into account.
     this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._terminal.options.letterSpacing);
 
@@ -478,7 +478,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
     this.dimensions.device.char.left = Math.floor(this._terminal.options.letterSpacing / 2);
 
-    // Recalculate the canvas dimensions, the scaled dimensions define the actual number of pixel in
+    // Recalculate the canvas dimensions, the device dimensions define the actual number of pixel in
     // the canvas
     this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
     this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
@@ -509,7 +509,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (this._canvas.width === width && this._canvas.height === height) {
       return;
     }
-    // While the actual canvas size has changed, keep scaledCanvasWidth/Height as the value before
+    // While the actual canvas size has changed, keep device canvas dimensions as the value before
     // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;
