@@ -39,7 +39,8 @@
     "**/*.js"
   ],
   "plugins": [
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "jsdoc"
   ],
   "rules": {
     "no-extra-semi": "error",
@@ -141,6 +142,9 @@
       "warn",
       "always"
     ],
+    "jsdoc/check-alignment": 1,
+    "jsdoc/check-param-names": 1,
+    "jsdoc/no-multi-asterisks": 1,
     "keyword-spacing": "warn",
     "new-parens": "warn",
     "no-duplicate-imports": "warn",

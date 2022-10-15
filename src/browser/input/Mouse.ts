@@ -18,15 +18,19 @@ export function getCoordsRelativeToElement(window: Pick<Window, 'getComputedStyl
  * Gets coordinates within the terminal for a particular mouse event. The result
  * is returned as an array in the form [x, y] instead of an object as it's a
  * little faster and this function is used in some low level code.
+ * @param window The window object the element belongs to.
  * @param event The mouse event.
  * @param element The terminal's container element.
  * @param colCount The number of columns in the terminal.
  * @param rowCount The number of rows n the terminal.
+ * @param hasValidCharSize Whether there is a valid character size available.
+ * @param actualCellWidth The cell width device pixel render dimensions.
+ * @param actualCellHeight The cell height device pixel render dimensions.
  * @param isSelection Whether the request is for the selection or not. This will
  * apply an offset to the x value such that the left half of the cell will
  * select that cell and the right half will select the next cell.
  */
-export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, actualCellWidth: number, actualCellHeight: number, isSelection?: boolean): [number, number] | undefined {
+export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<MouseEvent, 'clientX' | 'clientY'>, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, actualCellWidth: number, actualCellHeight: number, isSelection?: boolean): [number, number] | undefined {
   // Coordinates cannot be measured if there are no valid
   if (!hasValidCharSize) {
     return undefined;

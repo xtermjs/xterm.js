@@ -39,8 +39,6 @@ export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionServ
 
 /**
  * Redirect the clipboard's data to the terminal's input handler.
- * @param ev The original paste event to be handled
- * @param term The terminal on which to apply the handled paste event
  */
 export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, coreService: ICoreService): void {
   ev.stopPropagation();
@@ -81,10 +79,6 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
 
 /**
  * Bind to right-click event and allow right-click copy and paste.
- * @param ev The original right click event to be handled.
- * @param textarea The terminal's textarea.
- * @param selectionService The terminal's selection manager.
- * @param shouldSelectWord If true and there is no selection the current word will be selected
  */
 export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, screenElement: HTMLElement, selectionService: ISelectionService, shouldSelectWord: boolean): void {
   moveTextAreaUnderMouseCursor(ev, textarea, screenElement);

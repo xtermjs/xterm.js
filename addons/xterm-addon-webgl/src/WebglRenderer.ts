@@ -254,8 +254,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   /**
    * Refreshes the char atlas, aquiring a new one if necessary.
-   * @param terminal The terminal.
-   * @param colorSet The color set to use for the char atlas.
    */
   private _refreshCharAtlas(): void {
     if (this.dimensions.scaledCharWidth <= 0 && this.dimensions.scaledCharHeight <= 0) {

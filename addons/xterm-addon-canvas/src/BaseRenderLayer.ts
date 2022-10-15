@@ -11,7 +11,7 @@ import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -162,11 +162,11 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   }
 
   /**
-     * Fills a 1px line (2px on HDPI) at the middle of the cell. This uses the
-     * existing fillStyle on the context.
-     * @param x The column to fill.
-     * @param y The row to fill.
-     */
+   * Fills a 1px line (2px on HDPI) at the middle of the cell. This uses the
+   * existing fillStyle on the context.
+   * @param x The column to fill.
+   * @param y The row to fill.
+   */
   protected _fillMiddleLineAtCells(x: number, y: number, width: number = 1): void {
     const cellOffset = Math.ceil(this._scaledCellHeight * 0.5);
     this._ctx.fillRect(
@@ -329,7 +329,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param cell The cell data for the character to draw.
    * @param x The column to draw at.
    * @param y The row to draw at.
-   * @param color The color of the character.
    */
   protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(false, false);

@@ -68,7 +68,7 @@ function resetStartingRow(startX: number, startY: number, targetX: number, targe
   }
   return repeat(bufferLine(
     startX, startY, startX,
-    startY - wrappedRowsForRow(bufferService, startY), false, bufferService
+    startY - wrappedRowsForRow(startY, bufferService), false, bufferService
   ).length, sequence(Direction.LEFT, applicationCursor));
 }
 
@@ -77,8 +77,8 @@ function resetStartingRow(startX: number, startY: number, targetX: number, targe
  * ignoring wrapped rows
  */
 function moveToRequestedRow(startY: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
-  const startRow = startY - wrappedRowsForRow(bufferService, startY);
-  const endRow = targetY - wrappedRowsForRow(bufferService, targetY);
+  const startRow = startY - wrappedRowsForRow(startY, bufferService);
+  const endRow = targetY - wrappedRowsForRow(targetY, bufferService);
 
   const rowsToMove = Math.abs(startRow - endRow) - wrappedRowsCount(startY, targetY, bufferService);
 
@@ -91,7 +91,7 @@ function moveToRequestedRow(startY: number, targetY: number, bufferService: IBuf
 function moveToRequestedCol(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
   let startRow;
   if (moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length > 0) {
-    startRow = targetY - wrappedRowsForRow(bufferService, targetY);
+    startRow = targetY - wrappedRowsForRow(targetY, bufferService);
   } else {
     startRow = startY;
   }
@@ -115,8 +115,8 @@ function moveToRequestedCol(startX: number, startY: number, targetX: number, tar
  */
 function wrappedRowsCount(startY: number, targetY: number, bufferService: IBufferService): number {
   let wrappedRows = 0;
-  const startRow = startY - wrappedRowsForRow(bufferService, startY);
-  const endRow = targetY - wrappedRowsForRow(bufferService, targetY);
+  const startRow = startY - wrappedRowsForRow(startY, bufferService);
+  const endRow = targetY - wrappedRowsForRow(targetY, bufferService);
 
   for (let i = 0; i < Math.abs(startRow - endRow); i++) {
     const direction = verticalDirection(startY, targetY) === Direction.UP ? -1 : 1;
@@ -133,7 +133,7 @@ function wrappedRowsCount(startY: number, targetY: number, bufferService: IBuffe
  * Calculates the number of wrapped rows that make up a given row.
  * @param currentRow The row to determine how many wrapped rows make it up
  */
-function wrappedRowsForRow(bufferService: IBufferService, currentRow: number): number {
+function wrappedRowsForRow(currentRow: number, bufferService: IBufferService): number {
   let rowCount = 0;
   let line = bufferService.buffer.lines.get(currentRow);
   let lineWraps = line?.isWrapped;
@@ -157,7 +157,7 @@ function wrappedRowsForRow(bufferService: IBufferService, currentRow: number): n
 function horizontalDirection(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): Direction {
   let startRow;
   if (moveToRequestedRow(targetX, targetY, bufferService, applicationCursor).length > 0) {
-    startRow = targetY - wrappedRowsForRow(bufferService, targetY);
+    startRow = targetY - wrappedRowsForRow(targetY, bufferService);
   } else {
     startRow = startY;
   }
@@ -237,7 +237,7 @@ function sequence(direction: Direction, applicationCursor: boolean): string {
  * Returns a string repeated a given number of times
  * Polyfill from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/repeat
  * @param count The number of times to repeat the string
- * @param string The string that is to be repeated
+ * @param str The string that is to be repeated
  */
 function repeat(count: number, str: string): string {
   count = Math.floor(count);

@@ -68,6 +68,7 @@
     "cross-env": "^7.0.3",
     "deep-equal": "^2.0.5",
     "eslint": "^8.1.0",
+    "eslint-plugin-jsdoc": "^39.3.6",
     "express": "^4.17.1",
     "express-ws": "^5.0.2",
     "glob": "^7.2.0",
