@@ -17,8 +17,8 @@ function startServer() {
   expressWs(app);
 
   var terminals = {},
-      unsentOutput = {},
-      temporaryDisposable = {};
+    unsentOutput = {},
+    temporaryDisposable = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => {
@@ -81,7 +81,7 @@ function startServer() {
     temporaryDisposable[term.pid].dispose();
     delete temporaryDisposable[term.pid];
     ws.send(unsentOutput[term.pid]);
-
+    delete unsentOutput[term.pid];
 
     // unbuffered delivery after user input
     let userInput = false;
@@ -157,8 +157,6 @@ function startServer() {
       console.log('Closed terminal ' + term.pid);
       // Clean things up
       delete terminals[term.pid];
-      delete unsentOutput[term.pid];
-      delete temporaryDisposable[term.pid];
     });
   });
 
