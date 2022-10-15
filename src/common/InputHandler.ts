@@ -11,7 +11,7 @@ import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -1116,10 +1116,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Helper method to erase cells in a terminal row.
    * The cell gets replaced with the eraseChar of the terminal.
-   * @param y row index
-   * @param start first cell index to be erased
-   * @param end   end - 1 is last erased cell
-   * @param cleanWrap clear the isWrapped flag
+   * @param y The row index relative to the viewport.
+   * @param start The start x index of the range to be erased.
+   * @param end The end x index of the range to be erased (exclusive).
+   * @param clearWrap clear the isWrapped flag
+   * @param respectProtect Whether to respect the protection attribute (DECSCA).
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;

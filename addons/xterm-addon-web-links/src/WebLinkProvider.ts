@@ -105,9 +105,8 @@ export class LinkComputer {
 
   /**
    * Gets the entire line for the buffer line
-   * @param line The line being translated.
+   * @param lineIndex The index of the line being translated.
    * @param trimRight Whether to trim whitespace to the right.
-   * @param terminal The terminal
    */
   private static _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean, terminal: Terminal): [string, number] {
     let lineString = '';

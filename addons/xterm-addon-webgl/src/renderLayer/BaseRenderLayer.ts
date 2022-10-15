@@ -221,7 +221,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param cell The cell data for the character to draw.
    * @param x The column to draw at.
    * @param y The row to draw at.
-   * @param color The color of the character.
    */
   protected _fillCharTrueColor(terminal: Terminal, cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(terminal, false, false);
