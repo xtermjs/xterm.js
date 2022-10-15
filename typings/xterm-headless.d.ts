@@ -1080,7 +1080,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addCsiHandler or setCsiHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
@@ -1099,7 +1099,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addDcsHandler or setDcsHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
@@ -1112,7 +1112,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
@@ -1130,7 +1130,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addOscHandler or setOscHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }

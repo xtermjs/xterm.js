@@ -126,7 +126,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
-   * @return Whether a result was found.
+   * @returns Whether a result was found.
    */
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
@@ -307,7 +307,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
-   * @return Whether a result was found.
+   * @returns Whether a result was found.
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
@@ -480,7 +480,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * @param searchPosition The position to start the search.
    * @param searchOptions Search options.
    * @param isReverseSearch Whether the search should start from the right side of the terminal and search to the left.
-   * @return The search result if it was found.
+   * @returns The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
     const terminal = this._terminal!;
@@ -662,7 +662,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   /**
    * Selects and scrolls to a result.
    * @param result The result to select.
-   * @return Whether a result was selected.
+   * @returns Whether a result was selected.
    */
   private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
     const terminal = this._terminal!;

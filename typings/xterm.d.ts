@@ -905,7 +905,7 @@ declare module 'xterm' {
      * with a string of text that is eligible for joining and returns an array
      * where each entry is an array containing the start (inclusive) and end
      * (exclusive) indexes of ranges that should be rendered as a single unit.
-     * @return The ID of the new joiner, this can be used to deregister
+     * @returns The ID of the new joiner, this can be used to deregister
      */
     registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
 
@@ -1558,7 +1558,7 @@ declare module 'xterm' {
      * array will contain subarrays with their numercial values.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
@@ -1576,7 +1576,7 @@ declare module 'xterm' {
      * The function gets the payload and numerical parameters as arguments.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
@@ -1588,7 +1588,7 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
 
@@ -1605,7 +1605,7 @@ declare module 'xterm' {
      * The callback is called with OSC data string.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }
