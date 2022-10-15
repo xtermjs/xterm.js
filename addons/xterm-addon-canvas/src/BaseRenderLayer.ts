@@ -162,11 +162,11 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   }
 
   /**
-     * Fills a 1px line (2px on HDPI) at the middle of the cell. This uses the
-     * existing fillStyle on the context.
-     * @param x The column to fill.
-     * @param y The row to fill.
-     */
+   * Fills a 1px line (2px on HDPI) at the middle of the cell. This uses the
+   * existing fillStyle on the context.
+   * @param x The column to fill.
+   * @param y The row to fill.
+   */
   protected _fillMiddleLineAtCells(x: number, y: number, width: number = 1): void {
     const cellOffset = Math.ceil(this._scaledCellHeight * 0.5);
     this._ctx.fillRect(

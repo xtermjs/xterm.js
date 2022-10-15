@@ -142,8 +142,8 @@ export type PrintFallbackHandlerType = PrintHandlerType;
 
 
 /**
-* EscapeSequenceParser interface.
-*/
+ * EscapeSequenceParser interface.
+ */
 export interface IEscapeSequenceParser extends IDisposable {
   /**
    * Preceding codepoint to get REP working correctly.
