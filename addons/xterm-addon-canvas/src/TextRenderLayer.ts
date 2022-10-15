@@ -53,8 +53,8 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     // Clear the character width cache if the font or width has changed
     const terminalFont = this._getFont(false, false);
-    if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
-      this._characterWidth = dim.scaledCharWidth;
+    if (this._characterWidth !== dim.device.char.width || this._characterFont !== terminalFont) {
+      this._characterWidth = dim.device.char.width;
       this._characterFont = terminalFont;
       this._characterOverlapCache = {};
     }
