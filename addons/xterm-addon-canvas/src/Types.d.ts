@@ -64,7 +64,7 @@ export interface IRenderLayer extends IDisposable {
   handleBlur(): void;
 
   /**
-   * * Called when the terminal gets focus.
+   * Called when the terminal gets focus.
    */
   handleFocus(): void;
 
