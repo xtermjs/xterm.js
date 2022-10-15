@@ -16,7 +16,9 @@ function startServer() {
   var app = express();
   expressWs(app);
 
-  var terminals = {};
+  var terminals = {},
+    unsentOutput = {},
+    temporaryDisposable = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => {
@@ -54,6 +56,10 @@ function startServer() {
 
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
+    unsentOutput[term.pid] = '';
+    temporaryDisposable[term.pid] = term.onData(function(data) {
+      unsentOutput[term.pid] += data;
+    });
     res.send(term.pid.toString());
     res.end();
   });
@@ -72,6 +78,10 @@ function startServer() {
   app.ws('/terminals/:pid', function (ws, req) {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
+    temporaryDisposable[term.pid].dispose();
+    delete temporaryDisposable[term.pid];
+    ws.send(unsentOutput[term.pid]);
+    delete unsentOutput[term.pid];
 
     // unbuffered delivery after user input
     let userInput = false;
@@ -131,8 +141,12 @@ function startServer() {
     // WARNING: This is a naive implementation that will not throttle the flow of data. This means
     // it could flood the communication channel and make the terminal unresponsive. Learn more about
     // the problem and how to implement flow control at https://xtermjs.org/docs/guides/flowcontrol/
-    term.on('data', function(data) {
-      send(data);
+    term.onData(function(data) {
+      try {
+        send(data);
+      } catch (ex) {
+        // The WebSocket is not open, ignore
+      }
     });
     ws.on('message', function(msg) {
       term.write(msg);
