@@ -38,10 +38,16 @@ export interface IOffset {
 }
 
 export interface IRenderDimensions {
+  /**
+   * Dimensions measured in CSS pixels (ie. device pixels / device pixel ratio).
+   */
   css: {
     canvas: IDimensions;
     cell: IDimensions;
   };
+  /**
+   * Dimensions measured in actual pixels as rendered to the device.
+   */
   device: {
     canvas: IDimensions;
     cell: IDimensions;
