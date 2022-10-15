@@ -4,24 +4,8 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
-
-// TODO: Use core interfaces
-export interface IRenderDimensions {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharLeft: number;
-  scaledCharTop: number;
-  scaledCanvasWidth: number;
-  scaledCanvasHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  actualCellWidth: number;
-  actualCellHeight: number;
-}
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 export interface IRequestRedrawEvent {
   start: number;
