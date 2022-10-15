@@ -127,8 +127,9 @@ export class GlyphRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.UNIT_QUAD, 2, this._gl.FLOAT, false, 0, 0);
 
     // Setup the unit quad element array buffer, this points to indices in
-    // unitQuadVertices to allow is to draw 2 triangles from the vertices
-    const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
+    // unitQuadVertices to allow is to draw 2 triangles from the vertices via a
+    // triangle strip
+    const unitQuadElementIndices = new Uint8Array([0, 1, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
     this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
@@ -317,7 +318,7 @@ export class GlyphRenderer extends Disposable {
     gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Draw the viewport
-    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
+    gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
   }
 
   public setAtlas(atlas: ITextureAtlas): void {

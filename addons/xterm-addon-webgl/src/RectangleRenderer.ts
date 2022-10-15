@@ -113,8 +113,9 @@ export class RectangleRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.UNIT_QUAD, 2, this._gl.FLOAT, false, 0, 0);
 
     // Setup the unit quad element array buffer, this points to indices in
-    // unitQuadVertices to allow is to draw 2 triangles from the vertices
-    const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
+    // unitQuadVertices to allow is to draw 2 triangles from the vertices via a
+    // triangle strip
+    const unitQuadElementIndices = new Uint8Array([0, 1, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
     this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
@@ -153,7 +154,7 @@ export class RectangleRenderer extends Disposable {
     // Bind attributes buffer and draw
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this._vertices.attributes, gl.DYNAMIC_DRAW);
-    gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._vertices.count);
+    gl.drawElementsInstanced(this._gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, this._vertices.count);
   }
 
   public handleResize(): void {
