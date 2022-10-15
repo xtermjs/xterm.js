@@ -35,7 +35,7 @@ describe('API Integration Tests', function(): void {
     await openTerminal(page, { allowProposedApi: false });
     await page.evaluate(`
       try {
-        window.term.buffer;
+        window.term.markers;
       } catch (e) {
         window.throwMessage = e.message;
       }
