@@ -408,7 +408,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = getCoordsRelativeToElement(this._coreBrowserService.window, event, this._screenElement)[1];
-    const terminalHeight = this._renderService.dimensions.canvasHeight;
+    const terminalHeight = this._renderService.dimensions.css.canvas.height;
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }

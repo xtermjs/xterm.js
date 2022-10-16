@@ -53,19 +53,6 @@ export interface IRenderDimensions {
     cell: IDimensions;
     char: IDimensions & IOffset;
   };
-
-  /** @deprecated */ scaledCharWidth: number;
-  /** @deprecated */ scaledCharHeight: number;
-  /** @deprecated */ scaledCellWidth: number;
-  /** @deprecated */ scaledCellHeight: number;
-  /** @deprecated */ scaledCharLeft: number;
-  /** @deprecated */ scaledCharTop: number;
-  /** @deprecated */ scaledCanvasWidth: number;
-  /** @deprecated */ scaledCanvasHeight: number;
-  /** @deprecated */ canvasWidth: number;
-  /** @deprecated */ canvasHeight: number;
-  /** @deprecated */ actualCellWidth: number;
-  /** @deprecated */ actualCellHeight: number;
 }
 
 export interface IRequestRedrawEvent {

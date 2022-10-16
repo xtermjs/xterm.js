@@ -186,7 +186,7 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     // Don't fire the event if the dimensions haven't changed
-    if (this._renderer.dimensions.canvasWidth === this._canvasWidth && this._renderer.dimensions.canvasHeight === this._canvasHeight) {
+    if (this._renderer.dimensions.css.canvas.width === this._canvasWidth && this._renderer.dimensions.css.canvas.height === this._canvasHeight) {
       return;
     }
     this._onDimensionsChange.fire(this._renderer.dimensions);

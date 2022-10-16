@@ -92,29 +92,17 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   private _updateDimensions(): void {
     const dpr = this._coreBrowserService.dpr;
-    this.dimensions.scaledCharWidth = this._charSizeService.width * dpr;
     this.dimensions.device.char.width = this._charSizeService.width * dpr;
-    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * dpr);
     this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * dpr);
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
     this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
-    this.dimensions.scaledCharLeft = 0;
     this.dimensions.device.char.left = 0;
-    this.dimensions.scaledCharTop = 0;
     this.dimensions.device.char.top = 0;
-    this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._bufferService.cols;
     this.dimensions.device.canvas.width = this.dimensions.device.cell.width * this._bufferService.cols;
-    this.dimensions.scaledCanvasHeight = this.dimensions.scaledCellHeight * this._bufferService.rows;
     this.dimensions.device.canvas.height = this.dimensions.device.cell.height * this._bufferService.rows;
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / dpr);
     this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / dpr);
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / dpr);
     this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / dpr);
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
     this.dimensions.css.cell.width = this.dimensions.css.canvas.width / this._bufferService.cols;
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
     this.dimensions.css.cell.height = this.dimensions.css.canvas.height / this._bufferService.rows;
 
     for (const element of this._rowElements) {

@@ -87,8 +87,8 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     }
 
     // Resize the screen
-    this._screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
+    this._screenElement.style.height = `${this.dimensions.css.canvas.height}px`;
   }
 
   public handleCharSizeChanged(): void {
@@ -151,29 +151,17 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
     // See the WebGL renderer for an explanation of this section.
     const dpr = this._coreBrowserService.dpr;
-    this.dimensions.scaledCharWidth = Math.floor(this._charSizeService.width * dpr);
     this.dimensions.device.char.width = Math.floor(this._charSizeService.width * dpr);
-    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * dpr);
     this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * dpr);
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
     this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
-    this.dimensions.scaledCharTop = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
     this.dimensions.device.char.top = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
-    this.dimensions.scaledCharLeft = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
     this.dimensions.device.char.left = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
-    this.dimensions.scaledCanvasHeight = this._bufferService.rows * this.dimensions.scaledCellHeight;
     this.dimensions.device.canvas.height = this._bufferService.rows * this.dimensions.device.cell.height;
-    this.dimensions.scaledCanvasWidth = this._bufferService.cols * this.dimensions.scaledCellWidth;
     this.dimensions.device.canvas.width = this._bufferService.cols * this.dimensions.device.cell.width;
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / dpr);
     this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / dpr);
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / dpr);
     this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / dpr);
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
     this.dimensions.css.cell.height = this.dimensions.css.canvas.height / this._bufferService.rows;
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
     this.dimensions.css.cell.width = this.dimensions.css.canvas.width / this._bufferService.cols;
   }
 

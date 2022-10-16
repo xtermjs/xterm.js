@@ -721,7 +721,7 @@ describe('API Integration Tests', function(): void {
     await page.evaluate(`window.term = new Terminal()`);
     await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
     await page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
-    await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
+    await pollFor(page, `window.term._core._renderService.dimensions.css.cell.width > 0`, true);
   });
 
   describe('registerDecoration', () => {
