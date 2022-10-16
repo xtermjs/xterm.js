@@ -9,7 +9,7 @@ import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/s
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
@@ -56,12 +56,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: Terminal,
-    private readonly _themeService: IThemeService,
     private readonly _characterJoinerService: ICharacterJoinerService,
+    private readonly _charSizeService: ICharSizeService,
     private readonly _coreBrowserService: ICoreBrowserService,
-    optionsService: IOptionsService,
     coreService: ICoreService,
     private readonly _decorationService: IDecorationService,
+    optionsService: IOptionsService,
+    private readonly _themeService: IThemeService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -302,7 +303,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
+      if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;
@@ -440,21 +441,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Recalculates the character and canvas dimensions.
    */
   private _updateDimensions(): void {
-    // TODO: Acquire CharSizeService properly
-
     // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!(this._core as any)._charSizeService.width || !(this._core as any)._charSizeService.height) {
+    if (!this._charSizeService.width || !this._charSizeService.height) {
       return;
     }
 
     // Calculate the device character width. Width is floored as it must be drawn to an integer grid
     // in order for the char atlas glyphs to not be blurry.
-    this.dimensions.device.char.width = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
+    this.dimensions.device.char.width = Math.floor(this._charSizeService.width * this._devicePixelRatio);
 
     // Calculate the device character height. Height is ceiled in case devicePixelRatio is a
     // floating point number in order to ensure there is enough space to draw the character to the
     // cell.
-    this.dimensions.device.char.height = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
+    this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * this._devicePixelRatio);
 
     // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
     // floored since lineHeight can never be lower then 1, this guarentees the device cell height
