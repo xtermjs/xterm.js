@@ -24,13 +24,13 @@ export function getCoordsRelativeToElement(window: Pick<Window, 'getComputedStyl
  * @param colCount The number of columns in the terminal.
  * @param rowCount The number of rows n the terminal.
  * @param hasValidCharSize Whether there is a valid character size available.
- * @param actualCellWidth The cell width device pixel render dimensions.
- * @param actualCellHeight The cell height device pixel render dimensions.
+ * @param cssCellWidth The cell width device pixel render dimensions.
+ * @param cssCellHeight The cell height device pixel render dimensions.
  * @param isSelection Whether the request is for the selection or not. This will
  * apply an offset to the x value such that the left half of the cell will
  * select that cell and the right half will select the next cell.
  */
-export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<MouseEvent, 'clientX' | 'clientY'>, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, actualCellWidth: number, actualCellHeight: number, isSelection?: boolean): [number, number] | undefined {
+export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<MouseEvent, 'clientX' | 'clientY'>, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, cssCellWidth: number, cssCellHeight: number, isSelection?: boolean): [number, number] | undefined {
   // Coordinates cannot be measured if there are no valid
   if (!hasValidCharSize) {
     return undefined;
@@ -41,8 +41,8 @@ export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<
     return undefined;
   }
 
-  coords[0] = Math.ceil((coords[0] + (isSelection ? actualCellWidth / 2 : 0)) / actualCellWidth);
-  coords[1] = Math.ceil(coords[1] / actualCellHeight);
+  coords[0] = Math.ceil((coords[0] + (isSelection ? cssCellWidth / 2 : 0)) / cssCellWidth);
+  coords[1] = Math.ceil(coords[1] / cssCellHeight);
 
   // Ensure coordinates are within the terminal viewport. Note that selections
   // need an addition point of precision to cover the end point (as characters

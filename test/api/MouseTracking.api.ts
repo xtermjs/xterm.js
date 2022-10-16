@@ -48,7 +48,7 @@ async function cellPos(col: number, row: number): Promise<number[]> {
     (function() {
       const rect = window.term.element.getBoundingClientRect();
       const dim = term._core._renderService.dimensions;
-      return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right, width: dim.actualCellWidth, height: dim.actualCellHeight};
+      return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right, width: dim.css.cell.width, height: dim.css.cell.height};
     })();
   `);
   return [col * coords.width + coords.left + 2, row * coords.height + coords.top + 2];

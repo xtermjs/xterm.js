@@ -3,16 +3,17 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IColorSet, ILinkifierEvent, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IOptionsService, IBufferService, IInstantiationService } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { color } from 'common/Color';
 import { removeElementFromParent } from 'browser/Dom';
+import { BOLD_CLASS, CURSOR_BLINK_CLASS, CURSOR_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory, ITALIC_CLASS } from 'browser/renderer/dom/DomRendererRowFactory';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
+import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ILinkifier2, ILinkifierEvent, ReadonlyColorSet } from 'browser/Types';
+import { color } from 'common/Color';
+import { EventEmitter } from 'common/EventEmitter';
+import { Disposable, toDisposable } from 'common/Lifecycle';
+import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -64,20 +65,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._selectionContainer.classList.add(SELECTION_CLASS);
     this._selectionContainer.setAttribute('aria-hidden', 'true');
 
-    this.dimensions = {
-      scaledCharWidth: 0,
-      scaledCharHeight: 0,
-      scaledCellWidth: 0,
-      scaledCellHeight: 0,
-      scaledCharLeft: 0,
-      scaledCharTop: 0,
-      scaledCanvasWidth: 0,
-      scaledCanvasHeight: 0,
-      canvasWidth: 0,
-      canvasHeight: 0,
-      actualCellWidth: 0,
-      actualCellHeight: 0
-    };
+    this.dimensions = createRenderDimensions();
     this._updateDimensions();
     this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
@@ -104,23 +92,23 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   private _updateDimensions(): void {
     const dpr = this._coreBrowserService.dpr;
-    this.dimensions.scaledCharWidth = this._charSizeService.width * dpr;
-    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * dpr);
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
-    this.dimensions.scaledCharLeft = 0;
-    this.dimensions.scaledCharTop = 0;
-    this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._bufferService.cols;
-    this.dimensions.scaledCanvasHeight = this.dimensions.scaledCellHeight * this._bufferService.rows;
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / dpr);
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / dpr);
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
+    this.dimensions.device.char.width = this._charSizeService.width * dpr;
+    this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * dpr);
+    this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
+    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
+    this.dimensions.device.char.left = 0;
+    this.dimensions.device.char.top = 0;
+    this.dimensions.device.canvas.width = this.dimensions.device.cell.width * this._bufferService.cols;
+    this.dimensions.device.canvas.height = this.dimensions.device.cell.height * this._bufferService.rows;
+    this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / dpr);
+    this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / dpr);
+    this.dimensions.css.cell.width = this.dimensions.css.canvas.width / this._bufferService.cols;
+    this.dimensions.css.cell.height = this.dimensions.css.canvas.height / this._bufferService.rows;
 
     for (const element of this._rowElements) {
-      element.style.width = `${this.dimensions.canvasWidth}px`;
-      element.style.height = `${this.dimensions.actualCellHeight}px`;
-      element.style.lineHeight = `${this.dimensions.actualCellHeight}px`;
+      element.style.width = `${this.dimensions.css.canvas.width}px`;
+      element.style.height = `${this.dimensions.css.cell.height}px`;
+      element.style.lineHeight = `${this.dimensions.css.cell.height}px`;
       // Make sure rows don't overflow onto following row
       element.style.overflow = 'hidden';
     }
@@ -135,14 +123,14 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` display: inline-block;` +
       ` height: 100%;` +
       ` vertical-align: top;` +
-      ` width: ${this.dimensions.actualCellWidth}px` +
+      ` width: ${this.dimensions.css.cell.width}px` +
       `}`;
 
     this._dimensionsStyleElement.textContent = styles;
 
     this._selectionContainer.style.height = this._viewportElement.style.height;
-    this._screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
+    this._screenElement.style.height = `${this.dimensions.css.canvas.height}px`;
   }
 
   private _injectCss(colors: ReadonlyColorSet): void {
@@ -332,10 +320,10 @@ export class DomRenderer extends Disposable implements IRenderer {
    */
   private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
     const element = document.createElement('div');
-    element.style.height = `${rowCount * this.dimensions.actualCellHeight}px`;
-    element.style.top = `${row * this.dimensions.actualCellHeight}px`;
-    element.style.left = `${colStart * this.dimensions.actualCellWidth}px`;
-    element.style.width = `${this.dimensions.actualCellWidth * (colEnd - colStart)}px`;
+    element.style.height = `${rowCount * this.dimensions.css.cell.height}px`;
+    element.style.top = `${row * this.dimensions.css.cell.height}px`;
+    element.style.left = `${colStart * this.dimensions.css.cell.width}px`;
+    element.style.width = `${this.dimensions.css.cell.width * (colEnd - colStart)}px`;
     return element;
   }
 
@@ -365,7 +353,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, this._bufferService.cols));
+      rowElement.appendChild(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols));
     }
   }
 

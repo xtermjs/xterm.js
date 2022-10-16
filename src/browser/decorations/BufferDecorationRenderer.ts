@@ -72,10 +72,10 @@ export class BufferDecorationRenderer extends Disposable {
   private _createElement(decoration: IInternalDecoration): HTMLElement {
     const element = document.createElement('div');
     element.classList.add('xterm-decoration');
-    element.style.width = `${Math.round((decoration.options.width || 1) * this._renderService.dimensions.actualCellWidth)}px`;
-    element.style.height = `${(decoration.options.height || 1) * this._renderService.dimensions.actualCellHeight}px`;
-    element.style.top = `${(decoration.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.actualCellHeight}px`;
-    element.style.lineHeight = `${this._renderService.dimensions.actualCellHeight}px`;
+    element.style.width = `${Math.round((decoration.options.width || 1) * this._renderService.dimensions.css.cell.width)}px`;
+    element.style.height = `${(decoration.options.height || 1) * this._renderService.dimensions.css.cell.height}px`;
+    element.style.top = `${(decoration.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.css.cell.height}px`;
+    element.style.lineHeight = `${this._renderService.dimensions.css.cell.height}px`;
 
     const x = decoration.options.x ?? 0;
     if (x && x > this._bufferService.cols) {
@@ -104,7 +104,7 @@ export class BufferDecorationRenderer extends Disposable {
         this._decorationElements.set(decoration, element);
         this._container.appendChild(element);
       }
-      element.style.top = `${line * this._renderService.dimensions.actualCellHeight}px`;
+      element.style.top = `${line * this._renderService.dimensions.css.cell.height}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';
       decoration.onRenderEmitter.fire(element);
     }
@@ -116,9 +116,9 @@ export class BufferDecorationRenderer extends Disposable {
     }
     const x = decoration.options.x ?? 0;
     if ((decoration.options.anchor || 'left') === 'right') {
-      element.style.right = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
+      element.style.right = x ? `${x * this._renderService.dimensions.css.cell.width}px` : '';
     } else {
-      element.style.left = x ? `${x * this._renderService.dimensions.actualCellWidth}px` : '';
+      element.style.left = x ? `${x * this._renderService.dimensions.css.cell.width}px` : '';
     }
   }
 

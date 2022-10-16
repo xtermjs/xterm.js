@@ -4,6 +4,7 @@
  */
 
 import { Terminal, ITerminalAddon } from 'xterm';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 interface ITerminalDimensions {
   /**
@@ -58,8 +59,9 @@ export class FitAddon implements ITerminalAddon {
 
     // TODO: Remove reliance on private API
     const core = (this._terminal as any)._core;
+    const dims: IRenderDimensions = core._renderService.dimensions;
 
-    if (core._renderService.dimensions.actualCellWidth === 0 || core._renderService.dimensions.actualCellHeight === 0) {
+    if (dims.css.cell.width === 0 || dims.css.cell.height === 0) {
       return undefined;
     }
 
@@ -81,8 +83,8 @@ export class FitAddon implements ITerminalAddon {
     const availableHeight = parentElementHeight - elementPaddingVer;
     const availableWidth = parentElementWidth - elementPaddingHor - scrollbarWidth;
     const geometry = {
-      cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / core._renderService.dimensions.actualCellWidth)),
-      rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / core._renderService.dimensions.actualCellHeight))
+      cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / dims.css.cell.width)),
+      rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / dims.css.cell.height))
     };
     return geometry;
   }

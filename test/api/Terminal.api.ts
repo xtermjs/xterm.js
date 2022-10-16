@@ -7,6 +7,7 @@ import { assert } from 'chai';
 import { pollFor, timeout, writeSync, openTerminal, launchBrowser } from './TestUtils';
 import { Browser, Page } from 'playwright';
 import { fail } from 'assert';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 const APP = 'http://127.0.0.1:3001/test';
 
@@ -720,7 +721,7 @@ describe('API Integration Tests', function(): void {
     await page.evaluate(`window.term = new Terminal()`);
     await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
     await page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
-    await pollFor(page, `window.term._core._renderService.dimensions.actualCellWidth > 0`, true);
+    await pollFor(page, `window.term._core._renderService.dimensions.css.cell.width > 0`, true);
   });
 
   describe('registerDecoration', () => {
@@ -1032,21 +1033,6 @@ interface IDimensions {
   renderDimensions: IRenderDimensions;
 }
 
-interface IRenderDimensions {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharLeft: number;
-  scaledCharTop: number;
-  scaledCanvasWidth: number;
-  scaledCanvasHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  actualCellWidth: number;
-  actualCellHeight: number;
-}
-
 async function getDimensions(): Promise<IDimensions> {
   return await page.evaluate(`
     (function() {
@@ -1062,8 +1048,8 @@ async function getDimensions(): Promise<IDimensions> {
 
 async function getCellCoordinates(dimensions: IDimensions, col: number, row: number): Promise<{ x: number, y: number }> {
   return {
-    x: dimensions.left + dimensions.renderDimensions.scaledCellWidth * (col - 0.5),
-    y: dimensions.top + dimensions.renderDimensions.scaledCellHeight * (row - 0.5)
+    x: dimensions.left + dimensions.renderDimensions.device.cell.width * (col - 0.5),
+    y: dimensions.top + dimensions.renderDimensions.device.cell.height * (row - 0.5)
   };
 }
 
