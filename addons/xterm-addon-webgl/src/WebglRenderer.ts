@@ -254,7 +254,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._terminal,
       this._themeService.colors,
       this.dimensions.device.cell.width,
-      this.dimensions.device.cell.width,
+      this.dimensions.device.cell.height,
       this.dimensions.device.char.width,
       this.dimensions.device.char.height,
       this._coreBrowserService.dpr
