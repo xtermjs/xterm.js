@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharacterJoinerService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
@@ -46,11 +46,22 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     const unsafeCore = core as any;
     const renderService: IRenderService = unsafeCore._renderService;
     const characterJoinerService: ICharacterJoinerService = unsafeCore._characterJoinerService;
+    const charSizeService: ICharSizeService = unsafeCore._charSizeService;
     const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
     const decorationService: IDecorationService = unsafeCore._decorationService;
     const themeService: IThemeService = unsafeCore._themeService;
 
-    this._renderer = this.register(new WebglRenderer(terminal, themeService, characterJoinerService, coreBrowserService, optionsService, coreService, decorationService, this._preserveDrawingBuffer));
+    this._renderer = this.register(new WebglRenderer(
+      terminal,
+      characterJoinerService,
+      charSizeService,
+      coreBrowserService,
+      coreService,
+      decorationService,
+      optionsService,
+      themeService,
+      this._preserveDrawingBuffer
+    ));
     this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     renderService.setRenderer(this._renderer);

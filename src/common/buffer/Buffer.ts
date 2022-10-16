@@ -32,8 +32,7 @@ export class Buffer implements IBuffer {
   public x: number = 0;
   public scrollBottom: number;
   public scrollTop: number;
-  // TODO: Type me
-  public tabs: any;
+  public tabs: { [column: number]: boolean | undefined } = {};
   public savedY: number = 0;
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();

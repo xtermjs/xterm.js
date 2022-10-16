@@ -190,8 +190,6 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _renderColorZone(zone: IColorZone): void {
-    // TODO: Is _decorationElements needed?
-
     this._ctx.fillStyle = zone.color;
     this._ctx.fillRect(
       /* x */ drawX[zone.position || 'full'],
