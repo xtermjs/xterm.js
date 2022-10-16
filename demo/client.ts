@@ -248,8 +248,7 @@ function createTerminal(): void {
   addons.fit.instance = new FitAddon();
   addons.unicode11.instance = new Unicode11Addon();
   addons.webgl.instance = new WebglAddon();
-  // TODO: Remove arguments when link provider API is the default
-  addons['web-links'].instance = new WebLinksAddon(undefined, undefined, true);
+  addons['web-links'].instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
