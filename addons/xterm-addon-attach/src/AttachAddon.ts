@@ -47,16 +47,14 @@ export class AttachAddon implements ITerminalAddon {
   }
 
   private _sendData(data: string): void {
-    // TODO: do something better than just swallowing
-    // the data if the socket is not in a working condition
-    if (this._socket.readyState !== 1) {
+    if (!this._checkOpenSocket()) {
       return;
     }
     this._socket.send(data);
   }
 
   private _sendBinary(data: string): void {
-    if (this._socket.readyState !== 1) {
+    if (!this._checkOpenSocket()) {
       return;
     }
     const buffer = new Uint8Array(data.length);
@@ -64,6 +62,22 @@ export class AttachAddon implements ITerminalAddon {
       buffer[i] = data.charCodeAt(i) & 255;
     }
     this._socket.send(buffer);
+  }
+
+  private _checkOpenSocket(): boolean {
+    switch (this._socket.readyState) {
+      case WebSocket.OPEN:
+        return true;
+      case WebSocket.CONNECTING:
+        throw new Error('Attach addon was loaded before socket was open');
+      case WebSocket.CLOSING:
+        console.warn('Attach addon socket is closing');
+        return false;
+      case WebSocket.CLOSED:
+        throw new Error('Attach addon socket is closed');
+      default:
+        throw new Error('Unexpected socket state');
+    }
   }
 }
 
