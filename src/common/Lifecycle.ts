@@ -25,7 +25,7 @@ export abstract class Disposable implements IDisposable {
       d.dispose();
     }
     this._disposables.length = 0;
-   }
+  }
 
   /**
    * Registers a disposable object.
