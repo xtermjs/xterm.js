@@ -5,7 +5,7 @@
 
 import { css } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
@@ -32,16 +32,6 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
 
-  constructor() {
-    super();
-
-    this.register(toDisposable(() => {
-      for (const d of this._decorations.values()) {
-        this._onDecorationRemoved.fire(d);
-      }
-      this.reset();
-    }));
-  }
   public registerDecoration(options: IDecorationOptions): IDecoration | undefined {
     if (options.marker.isDisposed) {
       return undefined;
@@ -91,18 +81,24 @@ export class DecorationService extends Disposable implements IDecorationService 
       }
     });
   }
+
+  public dispose(): void {
+    for (const d of this._decorations.values()) {
+      this._onDecorationRemoved.fire(d);
+    }
+    this.reset();
+  }
 }
 
 class Decoration extends Disposable implements IInternalDecoration {
   public readonly marker: IMarker;
   public element: HTMLElement | undefined;
+  public isDisposed: boolean = false;
 
   public readonly onRenderEmitter = this.register(new EventEmitter<HTMLElement>());
   public readonly onRender = this.onRenderEmitter.event;
   private readonly _onDispose = this.register(new EventEmitter<void>());
   public readonly onDispose = this._onDispose.event;
-
-  public get isDisposed(): boolean { return this._isDisposed; }
 
   private _cachedBg: IColor | undefined | null = null;
   public get backgroundColorRGB(): IColor | undefined {
@@ -136,12 +132,14 @@ class Decoration extends Disposable implements IInternalDecoration {
     if (this.options.overviewRulerOptions && !this.options.overviewRulerOptions.position) {
       this.options.overviewRulerOptions.position = 'full';
     }
+  }
 
-    this.register(toDisposable(() => {
-      if (this._isDisposed) {
-        return;
-      }
-      this._onDispose.fire();
-    }));
+  public override dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    this._onDispose.fire();
+    super.dispose();
   }
 }
