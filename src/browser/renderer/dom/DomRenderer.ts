@@ -338,7 +338,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public clear(): void {
     for (const e of this._rowElements) {
-      e.innerText = '';
+      e.innerHTML = '';
     }
   }
 
@@ -349,7 +349,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
-      rowElement.innerText = '';
+      rowElement.innerHTML = '';
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
