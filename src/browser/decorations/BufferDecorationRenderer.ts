@@ -98,7 +98,6 @@ export class BufferDecorationRenderer extends Disposable {
     } else {
       let element = this._decorationElements.get(decoration);
       if (!element) {
-        decoration.onDispose(() => this._removeDecoration(decoration));
         element = this._createElement(decoration);
         decoration.element = element;
         this._decorationElements.set(decoration, element);
@@ -125,5 +124,6 @@ export class BufferDecorationRenderer extends Disposable {
   private _removeDecoration(decoration: IInternalDecoration): void {
     this._decorationElements.get(decoration)?.remove();
     this._decorationElements.delete(decoration);
+    decoration.dispose();
   }
 }
