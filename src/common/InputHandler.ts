@@ -121,7 +121,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
-  private _currentLinkId?: number;
   private _dirtyRowTracker: IDirtyRowTracker;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
@@ -406,6 +405,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  private _getCurrentLinkId(): number {
+    return this._curAttrData.extended.urlId;
+  }
+
   /**
    * Parse call with async handler support.
    *
@@ -533,8 +536,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-      if (this._currentLinkId !== undefined) {
-        this._oscLinkService.addLineToLink(this._currentLinkId, this._activeBuffer.ybase + this._activeBuffer.y);
+      if (this._getCurrentLinkId()) {
+        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // insert combining char at last cursor position
@@ -2440,6 +2443,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (params.length === 1 && params.params[0] === 0) {
       this._curAttrData.fg = DEFAULT_ATTR_DATA.fg;
       this._curAttrData.bg = DEFAULT_ATTR_DATA.bg;
+      this._curAttrData.extended = DEFAULT_ATTR_DATA.extended.clone();
       return true;
     }
 
@@ -2469,6 +2473,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         // default
         attr.fg = DEFAULT_ATTR_DATA.fg;
         attr.bg = DEFAULT_ATTR_DATA.bg;
+        attr.extended = DEFAULT_ATTR_DATA.extended.clone();
       } else if (p === 1) {
         // bold text
         attr.fg |= FgFlags.BOLD;
@@ -2935,7 +2940,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _createHyperlink(params: string, uri: string): boolean {
     // It's legal to open a new hyperlink without explicitly finishing the previous one
-    if (this._currentLinkId !== undefined) {
+    if (this._getCurrentLinkId()) {
       this._finishHyperlink();
     }
     const parsedParams = params.split(':');
@@ -2945,8 +2950,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       id = parsedParams[idParamIndex].slice(3) || undefined;
     }
     this._curAttrData.extended = this._curAttrData.extended.clone();
-    this._currentLinkId = this._oscLinkService.registerLink({ id, uri });
-    this._curAttrData.extended.urlId = this._currentLinkId;
+    this._curAttrData.extended.urlId = this._oscLinkService.registerLink({ id, uri });
     this._curAttrData.updateExtended();
     return true;
   }
@@ -2955,7 +2959,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 0;
     this._curAttrData.updateExtended();
-    this._currentLinkId = undefined;
     return true;
   }
 
