@@ -338,7 +338,14 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public clear(): void {
     for (const e of this._rowElements) {
-      e.innerText = '';
+      /**
+       * NOTE: This used to be `e.innerText = '';` but that doesn't work when using `jsdom` and `@testing-library/react`
+       *
+       * references:
+       * - https://github.com/testing-library/react-testing-library/issues/1146
+       * - https://github.com/jsdom/jsdom/issues/1245
+       */
+      e.replaceChildren();
     }
   }
 
@@ -349,11 +356,10 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
-      rowElement.innerText = '';
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols));
+      rowElement.replaceChildren(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols));
     }
   }
 
