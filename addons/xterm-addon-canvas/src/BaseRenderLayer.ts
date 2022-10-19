@@ -20,6 +20,7 @@ import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { isSafari } from 'common/Platform';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -434,6 +435,10 @@ class BitmapGenerator {
   public refresh(): void {
     // Clear the bitmap immediately as it's stale
     this._bitmap = undefined;
+    // Disable ImageBitmaps on Safari because of https://bugs.webkit.org/show_bug.cgi?id=149990
+    if (isSafari) {
+      return;
+    }
     if (this._commitTimeout === undefined) {
       this._commitTimeout = window.setTimeout(() => this._generate(), GLYPH_BITMAP_COMMIT_DELAY);
     }
