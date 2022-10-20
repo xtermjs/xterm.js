@@ -1689,8 +1689,8 @@ describe('InputHandler', () => {
     });
   });
 
-  describe.only('Reset text attributes (SGR 0)', () => {
-    it('resets every attributes if there is no url', async () => {
+  describe('reset text attributes (SGR 0)', () => {
+    it('resets all attributes if there is no url', async () => {
       await inputHandler.parseP('\x1b[30m\x1b[40m\x1b[4m');
       assert.notEqual(inputHandler.curAttrData.fg, 0);
       assert.notEqual(inputHandler.curAttrData.bg, 0);
@@ -1702,7 +1702,7 @@ describe('InputHandler', () => {
       assert.isTrue(inputHandler.curAttrData.extended.isEmpty());
     });
 
-    it('resets every attributes except for the url', async () => {
+    it('resets all attributes except for the url', async () => {
       await inputHandler.parseP('\x1b[30m\x1b[40m\x1b[4m');
       await inputHandler.parseP('\x1b]8;;http://example.com\x1b\\');
       assert.notEqual(inputHandler.curAttrData.fg, 0);
