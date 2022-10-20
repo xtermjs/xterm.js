@@ -2356,6 +2356,22 @@ export class InputHandler extends Disposable implements IInputHandler {
     attr.updateExtended();
   }
 
+  private _processSGR0(attr: IAttributeData): void {
+    attr.fg = DEFAULT_ATTR_DATA.fg;
+    attr.bg = DEFAULT_ATTR_DATA.bg;
+
+    if (!attr.extended.isEmpty()) {
+      // Treat extended attrs as immutable, thus always clone from old one.
+      // This is needed since the buffer only holds references to it.
+      attr.extended = attr.extended.clone();
+      attr.extended.ext = 0;
+
+      if (attr.extended.urlId) {
+        attr.bg |= BgFlags.HAS_EXTENDED;
+      }
+    }
+  }
+
   /**
    * CSI Pm m  Character Attributes (SGR).
    *
@@ -2441,9 +2457,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
     if (params.length === 1 && params.params[0] === 0) {
-      this._curAttrData.fg = DEFAULT_ATTR_DATA.fg;
-      this._curAttrData.bg = DEFAULT_ATTR_DATA.bg;
-      this._curAttrData.extended = DEFAULT_ATTR_DATA.extended.clone();
+      this._processSGR0(this._curAttrData);
       return true;
     }
 
@@ -2471,9 +2485,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.bg |= Attributes.CM_P16 | (p - 100) | 8;
       } else if (p === 0) {
         // default
-        attr.fg = DEFAULT_ATTR_DATA.fg;
-        attr.bg = DEFAULT_ATTR_DATA.bg;
-        attr.extended = DEFAULT_ATTR_DATA.extended.clone();
+        this._processSGR0(attr);
       } else if (p === 1) {
         // bold text
         attr.fg |= FgFlags.BOLD;
