@@ -2360,14 +2360,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     attr.fg = DEFAULT_ATTR_DATA.fg;
     attr.bg = DEFAULT_ATTR_DATA.bg;
 
+    // Reset `extended` except for the `urlId`.
     if (!attr.extended.isEmpty()) {
-      // Treat extended attrs as immutable, thus always clone from old one.
-      // This is needed since the buffer only holds references to it.
-      attr.extended = attr.extended.clone();
-      attr.extended.ext = 0;
+      const urlId = attr.extended.urlId;
+      attr.extended = DEFAULT_ATTR_DATA.extended.clone();
 
-      if (attr.extended.urlId) {
-        attr.bg |= BgFlags.HAS_EXTENDED;
+      if (urlId) {
+        attr.extended.urlId = urlId;
+        attr.updateExtended();
       }
     }
   }

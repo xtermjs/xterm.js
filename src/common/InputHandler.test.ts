@@ -9,7 +9,7 @@ import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType 
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService, MockUnicodeService, MockOscLinkService } from 'common/TestUtils.test';
 import { IBufferService, ICoreService } from 'common/services/Services';
@@ -1714,12 +1714,9 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[m');
       assert.equal(inputHandler.curAttrData.fg, 0);
       assert.equal(inputHandler.curAttrData.bg, BgFlags.HAS_EXTENDED);
-      assert.equal(inputHandler.curAttrData.extended.urlId, urlId);
-      // Check that `extended._ext === 0`. Note that `extended.ext` does not
-      // equal `extended._ext` because it is affected by the url.
-      const extended = inputHandler.curAttrData.extended.clone();
-      extended.urlId = 0;
-      assert.equal(extended.ext, 0);
+      const expectedExtended = new ExtendedAttrs();
+      expectedExtended.urlId = urlId;
+      assert.deepEqual(inputHandler.curAttrData.extended, expectedExtended);
     });
   });
 
