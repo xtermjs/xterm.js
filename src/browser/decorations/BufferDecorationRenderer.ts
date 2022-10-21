@@ -28,7 +28,7 @@ export class BufferDecorationRenderer extends Disposable {
     this._container.classList.add('xterm-decoration-container');
     this._screenElement.appendChild(this._container);
 
-    this.register(this._renderService.onRenderedViewportChange(() => this._queueRefresh()));
+    this.register(this._renderService.onRenderedViewportChange(() => this._doRefreshDecorations()));
     this.register(this._renderService.onDimensionsChange(() => {
       this._dimensionsChanged = true;
       this._queueRefresh();
@@ -50,12 +50,12 @@ export class BufferDecorationRenderer extends Disposable {
       return;
     }
     this._animationFrame = this._renderService.addRefreshCallback(() => {
-      this.refreshDecorations();
+      this._doRefreshDecorations();
       this._animationFrame = undefined;
     });
   }
 
-  public refreshDecorations(): void {
+  private _doRefreshDecorations(): void {
     for (const decoration of this._decorationService.decorations) {
       this._renderDecoration(decoration);
     }
