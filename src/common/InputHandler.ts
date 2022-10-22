@@ -2359,17 +2359,12 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _processSGR0(attr: IAttributeData): void {
     attr.fg = DEFAULT_ATTR_DATA.fg;
     attr.bg = DEFAULT_ATTR_DATA.bg;
-
-    // Reset `extended` except for the `urlId`.
-    if (!attr.extended.isEmpty()) {
-      const urlId = attr.extended.urlId;
-      attr.extended = DEFAULT_ATTR_DATA.extended.clone();
-
-      if (urlId) {
-        attr.extended.urlId = urlId;
-        attr.updateExtended();
-      }
-    }
+    attr.extended = attr.extended.clone();
+    // Reset underline style and color. Note that we don't want to reset other
+    // fields such as the url id.
+    attr.extended.underlineStyle = UnderlineStyle.NONE;
+    attr.extended.underlineColor &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+    attr.updateExtended();
   }
 
   /**
