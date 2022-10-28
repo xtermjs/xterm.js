@@ -715,7 +715,7 @@ export class TextureAtlas implements ITextureAtlas {
     }
     boundingBox.left = 0;
     found = false;
-    for (let x = 0; x < width; x++) {
+    for (let x = 0; x < padding + width; x++) {
       for (let y = 0; y < height; y++) {
         const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
@@ -730,7 +730,7 @@ export class TextureAtlas implements ITextureAtlas {
     }
     boundingBox.right = width;
     found = false;
-    for (let x = width - 1; x >= 0; x--) {
+    for (let x = padding + width - 1; x >= padding; x--) {
       for (let y = 0; y < height; y++) {
         const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
