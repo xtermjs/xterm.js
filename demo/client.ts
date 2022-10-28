@@ -302,7 +302,7 @@ function createTerminal(): void {
   });
 
   // fit is called within a setTimeout, cols and rows need this.
-  setTimeout(() => {
+  setTimeout(async () => {
     initOptions(term);
     // TODO: Clean this up, opt-cols/rows doesn't exist anymore
     (document.getElementById(`opt-cols`) as HTMLInputElement).value = term.cols;
@@ -312,16 +312,14 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' }).then((res) => {
-      res.text().then((processId) => {
-        pid = processId;
-        socketURL += processId;
-        socket = new WebSocket(socketURL);
-        socket.onopen = runRealTerminal;
-        socket.onclose = runFakeTerminal;
-        socket.onerror = runFakeTerminal;
-      });
-    });
+    const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+    const processId = await res.text();
+    pid = processId;
+    socketURL += processId;
+    socket = new WebSocket(socketURL);
+    socket.onopen = runRealTerminal;
+    socket.onclose = runFakeTerminal;
+    socket.onerror = runFakeTerminal;
   }, 0);
 }
 
