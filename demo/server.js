@@ -111,27 +111,30 @@ function startServer() {
     }
     // binary message buffering
     function bufferUtf8(socket, timeout, maxSize) {
-      let buffer = [];
+      const dataBuffer = new Uint8Array(maxSize);
       let sender = null;
       let length = 0;
       return (data) => {
-        buffer.push(data);
-        length += data.length;
-        if (length > maxSize || userInput) {
-          userInput = false;
-          socket.send(Buffer.concat(buffer, length));
-          buffer = [];
+        function flush() {
+          socket.send(Buffer.from(dataBuffer.buffer, 0, length));
           length = 0;
           if (sender) {
             clearTimeout(sender);
             sender = null;
           }
+        }
+        if (length + data.length > maxSize) {
+          flush();
+        }
+        dataBuffer.set(data, length);
+        length += data.length;
+        if (length > maxSize || userInput) {
+          userInput = false;
+          flush();
         } else if (!sender) {
           sender = setTimeout(() => {
-            socket.send(Buffer.concat(buffer, length));
-            buffer = [];
             sender = null;
-            length = 0;
+            flush();
           }, timeout);
         }
       };
