@@ -232,10 +232,10 @@ export class GlyphRenderer extends Disposable {
       // a_texpage
       array[$i + 4] = $glyph.texturePage;
       // a_texcoord
-      array[$i + 5] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.pages[0].canvas.width;
+      array[$i + 5] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.pages[$glyph.texturePage].canvas.width;
       array[$i + 6] = $glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[$i + 7] = $glyph.sizeClipSpace.x - $clippedPixels / this._atlas.pages[0].canvas.width;
+      array[$i + 7] = $glyph.sizeClipSpace.x - $clippedPixels / this._atlas.pages[$glyph.texturePage].canvas.width;
       array[$i + 8] = $glyph.sizeClipSpace.y;
     } else {
       // a_origin
