@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax */
 /**
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
@@ -650,10 +651,16 @@ function htmlSerializeButtonHandler(): void {
 }
 
 function setTextureAtlas(e: HTMLCanvasElement): void {
+  styleAtlasPage(e);
   document.querySelector('#texture-atlas').replaceChildren(e);
 }
 function appendTextureAtlas(e: HTMLCanvasElement): void {
+  styleAtlasPage(e);
   document.querySelector('#texture-atlas').appendChild(e);
+}
+function styleAtlasPage(e: HTMLCanvasElement): void {
+  e.style.width = `${e.width / window.devicePixelRatio}px`;
+  e.style.height = `${e.height / window.devicePixelRatio}px`;
 }
 
 function writeCustomGlyphHandler(): void {
