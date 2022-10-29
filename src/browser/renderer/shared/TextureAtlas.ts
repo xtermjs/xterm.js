@@ -56,10 +56,10 @@ export class TextureAtlas implements ITextureAtlas {
   private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
 
   // The texture that the atlas is drawn to
-  public cacheCanvas: HTMLCanvasElement;
-  public cacheCanvas1: HTMLCanvasElement | undefined;
-  private _cacheCtx: CanvasRenderingContext2D;
-  private _cacheCtx1: CanvasRenderingContext2D | undefined;
+  private _pages: AtlasPage[] = [];
+  public get pages(): HTMLCanvasElement[] { return this._pages.map(e => e.canvas); }
+
+  public get cacheCanvas(): HTMLCanvasElement { return this._pages[0].canvas; }
 
   private _tmpCanvas: HTMLCanvasElement;
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
@@ -92,18 +92,9 @@ export class TextureAtlas implements ITextureAtlas {
     private readonly _config: ICharAtlasConfig,
     private readonly _unicodeService: IUnicodeService
   ) {
-    this.cacheCanvas = this._createCanvas(TEXTURE_WIDTH, TEXTURE_HEIGHT);
-    // The canvas needs alpha because we use clearColor to convert the background color to alpha.
-    // It might also contain some characters with transparent backgrounds if allowTransparency is
-    // set.
-    this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
-
-    this.cacheCanvas1 = this._createCanvas(TEXTURE_WIDTH, TEXTURE_HEIGHT);
-    this._cacheCtx1 = throwIfFalsy(this.cacheCanvas1.getContext('2d', { alpha: true }));
-    this._cacheCtx1.fillStyle = 'rgb(255, 255, 0)';
-    this._cacheCtx1.fillRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-
-    this._tmpCanvas = this._createCanvas(
+    this._pages.push(new AtlasPage(document));
+    this._tmpCanvas = createCanvas(
+      document,
       this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2,
       this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 2
     );
@@ -111,13 +102,6 @@ export class TextureAtlas implements ITextureAtlas {
       alpha: this._config.allowTransparency,
       willReadFrequently: true
     }));
-  }
-
-  private _createCanvas(width: number, height: number): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    return canvas;
   }
 
   public dispose(): void {
@@ -159,7 +143,9 @@ export class TextureAtlas implements ITextureAtlas {
     if (this._currentRow.x === 0 && this._currentRow.y === 0) {
       return;
     }
-    this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    for (const page of this._pages) {
+      page.clear();
+    }
     this._cacheMap.clear();
     this._cacheMapCombined.clear();
     this._currentRow.x = 0;
@@ -689,7 +675,7 @@ export class TextureAtlas implements ITextureAtlas {
     activeRow.x += rasterizedGlyph.size.x;
 
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
-    this._cacheCtx.putImageData(
+    this._pages[0].ctx.putImageData(
       imageData,
       rasterizedGlyph.texturePosition.x - this._workBoundingBox.left,
       rasterizedGlyph.texturePosition.y - this._workBoundingBox.top,
@@ -792,6 +778,23 @@ export class TextureAtlas implements ITextureAtlas {
   }
 }
 
+class AtlasPage {
+  public readonly canvas: HTMLCanvasElement;
+  public readonly ctx: CanvasRenderingContext2D;
+
+  constructor(document: Document) {
+    this.canvas = createCanvas(document, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    // The canvas needs alpha because we use clearColor to convert the background color to alpha.
+    // It might also contain some characters with transparent backgrounds if allowTransparency is
+    // set.
+    this.ctx = throwIfFalsy(this.canvas.getContext('2d', { alpha: true }));
+  }
+
+  public clear(): void {
+    this.ctx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+  }
+}
+
 /**
  * Makes a particular rgb color and colors that are nearly the same in an ImageData completely
  * transparent.
@@ -845,4 +848,11 @@ function checkCompletelyTransparent(imageData: ImageData): boolean {
     }
   }
   return true;
+}
+
+function createCanvas(document: Document, width: number, height: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
 }

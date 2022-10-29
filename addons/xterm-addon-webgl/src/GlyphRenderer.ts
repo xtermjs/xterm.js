@@ -77,6 +77,7 @@ void main() {
 const INDICES_PER_CELL = 11;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
+const MAX_ATLAS_PAGES = 8;
 
 // Work variables to avoid garbage collection
 let $i = 0;
@@ -90,8 +91,7 @@ export class GlyphRenderer extends Disposable {
   private readonly _projectionLocation: WebGLUniformLocation;
   private readonly _resolutionLocation: WebGLUniformLocation;
   private readonly _textureLocation: WebGLUniformLocation;
-  private readonly _atlasTexture: WebGLTexture;
-  private readonly _atlasTexture1: WebGLTexture;
+  private readonly _atlasTextures: WebGLTexture[];
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
@@ -166,22 +166,18 @@ export class GlyphRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, BYTES_PER_CELL, 9 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.CELL_POSITION, 1);
 
-    // Setup empty texture atlas
-    this._atlasTexture = throwIfFalsy(gl.createTexture());
-    this.register(toDisposable(() => gl.deleteTexture(this._atlasTexture)));
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
-
-    this._atlasTexture1 = throwIfFalsy(gl.createTexture());
-    this.register(toDisposable(() => gl.deleteTexture(this._atlasTexture1)));
-    gl.activeTexture(gl.TEXTURE0 + 1);
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture1);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
+    // Setup empty textures for all potential atlas pages
+    this._atlasTextures = [];
+    for (let i = 0; i < MAX_ATLAS_PAGES; i++) {
+      const texture = throwIfFalsy(gl.createTexture());
+      this.register(toDisposable(() => gl.deleteTexture(texture)));
+      gl.activeTexture(gl.TEXTURE0 + i);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
+      this._atlasTextures[i] = texture;
+    }
 
     // Allow drawing of transparent texture
     gl.enable(gl.BLEND);
@@ -334,15 +330,17 @@ export class GlyphRenderer extends Disposable {
       const layerTextureUnits = new Int32Array([0, 1]);
       gl.uniform1iv(this._textureLocation, layerTextureUnits);
       gl.activeTexture(gl.TEXTURE0 + 0);
-      gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
+      gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[0]);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas);
       gl.generateMipmap(gl.TEXTURE_2D);
 
-      // TODO: Check if the particular texture page changed
-      gl.activeTexture(gl.TEXTURE0 + 1);
-      gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture1);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas1!);
-      gl.generateMipmap(gl.TEXTURE_2D);
+      if (this._atlas.pages.length > 1) {
+        // TODO: Check if the particular texture page changed
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[1]);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[1]);
+        gl.generateMipmap(gl.TEXTURE_2D);
+      }
     }
 
 
@@ -359,18 +357,20 @@ export class GlyphRenderer extends Disposable {
     this._atlas = atlas;
 
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
+    gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[0]);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.cacheCanvas);
     gl.generateMipmap(gl.TEXTURE_2D);
 
-    gl.activeTexture(gl.TEXTURE0 + 1);
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture1);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.cacheCanvas1!);
-    gl.generateMipmap(gl.TEXTURE_2D);
+    if (atlas.pages.length > 1) {
+      gl.activeTexture(gl.TEXTURE0 + 1);
+      gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[1]);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[1]);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    }
   }
 
   public setDimensions(dimensions: IRenderDimensions): void {

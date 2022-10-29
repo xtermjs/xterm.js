@@ -87,8 +87,10 @@ export interface IRenderer extends IDisposable {
 }
 
 export interface ITextureAtlas extends IDisposable {
+  /** @deprecated */
   readonly cacheCanvas: HTMLCanvasElement;
-  readonly cacheCanvas1: HTMLCanvasElement | undefined;
+
+  readonly pages: HTMLCanvasElement[];
 
   hasCanvasChanged: boolean;
 
