@@ -88,6 +88,8 @@ export interface IRenderer extends IDisposable {
 
 export interface ITextureAtlas extends IDisposable {
   readonly cacheCanvas: HTMLCanvasElement;
+  readonly cacheCanvas1: HTMLCanvasElement | undefined;
+
   hasCanvasChanged: boolean;
 
   /**
@@ -120,6 +122,10 @@ export interface IRasterizedGlyph {
    * in pixels.
    */
   offset: IVector;
+  /**
+   * The index of the texture page that the glyph is on.
+   */
+  texturePage: number;
   /**
    * the x and y position of the glyph in the texture in pixels.
    */

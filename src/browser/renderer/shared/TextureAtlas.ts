@@ -30,9 +30,10 @@ const TEXTURE_CAPACITY = Math.floor(TEXTURE_HEIGHT * 0.8);
  * A shared object which is used to draw nothing for a particular cell.
  */
 const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
-  offset: { x: 0, y: 0 },
+  texturePage: 0,
   texturePosition: { x: 0, y: 0 },
   texturePositionClipSpace: { x: 0, y: 0 },
+  offset: { x: 0, y: 0 },
   size: { x: 0, y: 0 },
   sizeClipSpace: { x: 0, y: 0 }
 };
@@ -56,7 +57,9 @@ export class TextureAtlas implements ITextureAtlas {
 
   // The texture that the atlas is drawn to
   public cacheCanvas: HTMLCanvasElement;
+  public cacheCanvas1: HTMLCanvasElement | undefined;
   private _cacheCtx: CanvasRenderingContext2D;
+  private _cacheCtx1: CanvasRenderingContext2D | undefined;
 
   private _tmpCanvas: HTMLCanvasElement;
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
@@ -89,21 +92,32 @@ export class TextureAtlas implements ITextureAtlas {
     private readonly _config: ICharAtlasConfig,
     private readonly _unicodeService: IUnicodeService
   ) {
-    this.cacheCanvas = document.createElement('canvas');
-    this.cacheCanvas.width = TEXTURE_WIDTH;
-    this.cacheCanvas.height = TEXTURE_HEIGHT;
+    this.cacheCanvas = this._createCanvas(TEXTURE_WIDTH, TEXTURE_HEIGHT);
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
     this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
 
-    this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCanvas.height = this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    this.cacheCanvas1 = this._createCanvas(TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    this._cacheCtx1 = throwIfFalsy(this.cacheCanvas1.getContext('2d', { alpha: true }));
+    this._cacheCtx1.fillStyle = 'rgb(255, 255, 0)';
+    this._cacheCtx1.fillRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+
+    this._tmpCanvas = this._createCanvas(
+      this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2,
+      this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 2
+    );
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {
       alpha: this._config.allowTransparency,
       willReadFrequently: true
     }));
+  }
+
+  private _createCanvas(width: number, height: number): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
   }
 
   public dispose(): void {
@@ -759,6 +773,7 @@ export class TextureAtlas implements ITextureAtlas {
       }
     }
     return {
+      texturePage: 1,
       texturePosition: { x: 0, y: 0 },
       texturePositionClipSpace: { x: 0, y: 0 },
       size: {

@@ -85,18 +85,17 @@ let $leftCellPadding = 0;
 let $clippedPixels = 0;
 
 export class GlyphRenderer extends Disposable {
+  private readonly _program: WebGLProgram;
+  private readonly _vertexArrayObject: IWebGLVertexArrayObject;
+  private readonly _projectionLocation: WebGLUniformLocation;
+  private readonly _resolutionLocation: WebGLUniformLocation;
+  private readonly _textureLocation: WebGLUniformLocation;
+  private readonly _atlasTexture: WebGLTexture;
+  private readonly _atlasTexture1: WebGLTexture;
+  private readonly _attributesBuffer: WebGLBuffer;
+
   private _atlas: ITextureAtlas | undefined;
-
-  private _program: WebGLProgram;
-  private _vertexArrayObject: IWebGLVertexArrayObject;
-  private _projectionLocation: WebGLUniformLocation;
-  private _resolutionLocation: WebGLUniformLocation;
-  private _textureLocation: WebGLUniformLocation;
-  private readonly _nullTexture: WebGLTexture;
-  private _atlasTexture: WebGLTexture;
-  private _attributesBuffer: WebGLBuffer;
   private _activeBuffer: number = 0;
-
   private _vertices: IVertices = {
     count: 0,
     attributes: new Float32Array(0),
@@ -172,16 +171,17 @@ export class GlyphRenderer extends Disposable {
     this.register(toDisposable(() => gl.deleteTexture(this._atlasTexture)));
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    this._nullTexture = throwIfFalsy(gl.createTexture());
+    this._atlasTexture1 = throwIfFalsy(gl.createTexture());
+    this.register(toDisposable(() => gl.deleteTexture(this._atlasTexture1)));
     gl.activeTexture(gl.TEXTURE0 + 1);
-    gl.bindTexture(gl.TEXTURE_2D, this._nullTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
+    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture1);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
 
     // Allow drawing of transparent texture
     gl.enable(gl.BLEND);
@@ -234,7 +234,7 @@ export class GlyphRenderer extends Disposable {
       array[$i + 2] = ($glyph.size.x - $clippedPixels) / this._dimensions.device.canvas.width;
       array[$i + 3] = $glyph.size.y / this._dimensions.device.canvas.height;
       // a_texpage
-      array[$i + 4] = 0;
+      array[$i + 4] = $glyph.texturePage;
       // a_texcoord
       array[$i + 5] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.cacheCanvas.width;
       array[$i + 6] = $glyph.texturePositionClipSpace.y;
@@ -249,7 +249,7 @@ export class GlyphRenderer extends Disposable {
       array[$i + 2] = $glyph.size.x / this._dimensions.device.canvas.width;
       array[$i + 3] = $glyph.size.y / this._dimensions.device.canvas.height;
       // a_texpage
-      array[$i + 4] = 0;
+      array[$i + 4] = $glyph.texturePage;
       // a_texcoord
       array[$i + 5] = $glyph.texturePositionClipSpace.x;
       array[$i + 6] = $glyph.texturePositionClipSpace.y;
@@ -333,16 +333,18 @@ export class GlyphRenderer extends Disposable {
       // TODO: Make nicer
       const layerTextureUnits = new Int32Array([0, 1]);
       gl.uniform1iv(this._textureLocation, layerTextureUnits);
-      gl.uniform1i(this._textureLocation, 0);
       gl.activeTexture(gl.TEXTURE0 + 0);
       gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas);
-      // TODO: Why is mipmap here?
+      gl.generateMipmap(gl.TEXTURE_2D);
+
+      // TODO: Check if the particular texture page changed
+      gl.activeTexture(gl.TEXTURE0 + 1);
+      gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas1!);
       gl.generateMipmap(gl.TEXTURE_2D);
     }
 
-    gl.activeTexture(gl.TEXTURE0 + 1);
-    gl.bindTexture(gl.TEXTURE_2D, this._nullTexture);
 
     // Set uniforms
     gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
@@ -356,8 +358,18 @@ export class GlyphRenderer extends Disposable {
     const gl = this._gl;
     this._atlas = atlas;
 
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.cacheCanvas);
+    gl.generateMipmap(gl.TEXTURE_2D);
+
+    gl.activeTexture(gl.TEXTURE0 + 1);
+    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture1);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.cacheCanvas1!);
     gl.generateMipmap(gl.TEXTURE_2D);
   }
 
