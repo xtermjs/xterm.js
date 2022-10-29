@@ -178,7 +178,13 @@ export class GlyphRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, BYTES_PER_CELL, 9 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.CELL_POSITION, 1);
 
-    // Setup empty textures for all potential atlas pages
+    // Setup static uniforms
+    gl.useProgram(this._program);
+    gl.uniform1iv(this._textureLocation, new Int32Array([0, 1, 2, 3, 4, 5, 6, 7]));
+    gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
+
+    // Setup 1x1 red pixel textures for all potential atlas pages, if one of these invalid textures
+    // is ever drawn it will show characters as red rectangles.
     this._atlasTextures = [];
     for (let i = 0; i < MAX_ATLAS_PAGES; i++) {
       const texture = throwIfFalsy(gl.createTexture());
@@ -299,6 +305,7 @@ export class GlyphRenderer extends Disposable {
   public handleResize(): void {
     const gl = this._gl;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
     this.clear();
   }
 
@@ -335,10 +342,6 @@ export class GlyphRenderer extends Disposable {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(0, bufferLength), gl.STREAM_DRAW);
 
-    // TODO: Only do this once
-    const layerTextureUnits = new Int32Array([0, 1, 2, 3, 4, 5, 6, 7]);
-    gl.uniform1iv(this._textureLocation, layerTextureUnits);
-
     // Bind the atlas page texture if they have changed
     for (let i = 0; i < this._atlas.pages.length; i++) {
       if (this._atlas.pages[i].hasCanvasChanged) {
@@ -349,10 +352,6 @@ export class GlyphRenderer extends Disposable {
         gl.generateMipmap(gl.TEXTURE_2D);
       }
     }
-
-    // Set uniforms
-    gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
-    gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Draw the viewport
     gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
