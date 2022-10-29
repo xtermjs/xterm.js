@@ -90,16 +90,14 @@ pre {
     overflow-y: auto;
 }
 
+#texture-atlas-zoom:checked + label + #texture-atlas canvas {
+    /* Zoom atlas to the width of the container*/
+    width: 100% !important;
+    height: auto !important;
+}
 #texture-atlas {
     width: 100%;
-    height: 600px;
-    overflow: scroll;
 }
 #texture-atlas canvas {
     image-rendering: pixelated;
-}
-#texture-atlas canvas:hover {
-    /* zoom to 4x on hover */
-    width: 4096px;
-    height: 4096px;
 }

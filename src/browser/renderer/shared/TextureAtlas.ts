@@ -109,6 +109,7 @@ export class TextureAtlas implements ITextureAtlas {
     const page = this._pages[this._pages.length - 1];
     // TODO: Fill the page completely
     if (page.currentRow.y > Math.floor(page.canvas.height * 0.8)) {
+      // TODO: Clear all pages and restart if the maximum page count is reached
       // TODO: Support drawing to multiple pages at once
       console.log(`Add page #${this._pages.length + 1}`);
       const newPage = new AtlasPage(this._document, this._config.devicePixelRatio);
