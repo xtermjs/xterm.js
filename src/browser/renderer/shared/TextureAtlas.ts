@@ -16,16 +16,6 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
 
-// For debugging purposes, it can be useful to set this to a really tiny value.
-const TEXTURE_WIDTH = 512;
-const TEXTURE_HEIGHT = 512;
-
-/**
- * The amount of the texture to be filled before throwing it away and starting
- * again. Since the throw away and individual glyph draws don't cost too much,
- * this prevent juggling multiple textures in the GL context.
- */
-const TEXTURE_CAPACITY = Math.floor(TEXTURE_HEIGHT * 0.8);
 /**
  * A shared object which is used to draw nothing for a particular cell.
  */
@@ -77,7 +67,7 @@ export class TextureAtlas implements ITextureAtlas {
     private readonly _config: ICharAtlasConfig,
     private readonly _unicodeService: IUnicodeService
   ) {
-    this._pages.push(new AtlasPage(_document));
+    this._pages.push(new AtlasPage(_document, _config.devicePixelRatio));
     this._tmpCanvas = createCanvas(
       _document,
       this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2,
@@ -116,10 +106,12 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public beginFrame(): boolean {
-    if (this._pages[this._pages.length - 1].currentRow.y > TEXTURE_CAPACITY) {
+    const page = this._pages[this._pages.length - 1];
+    // TODO: Fill the page completely
+    if (page.currentRow.y > Math.floor(page.canvas.height * 0.8)) {
       // TODO: Support drawing to multiple pages at once
       console.log(`Add page #${this._pages.length + 1}`);
-      const newPage = new AtlasPage(this._document);
+      const newPage = new AtlasPage(this._document, this._config.devicePixelRatio);
       this._pages.push(newPage);
       this._onAddTextureAtlasCanvas.fire(newPage.canvas);
       return true;
@@ -595,11 +587,11 @@ export class TextureAtlas implements ITextureAtlas {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
+    const page = this._pages[this._pages.length - 1];
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding, page.canvas.width, page.canvas.height);
 
     // Find the best atlas row to use
     let activeRow: ICharAtlasActiveRow;
-    const page = this._pages[this._pages.length - 1];
     while (true) {
       // Select the ideal existing row, preferring fixed rows over the current row
       activeRow = page.currentRow;
@@ -634,7 +626,7 @@ export class TextureAtlas implements ITextureAtlas {
       }
 
       // Exit the loop if there is enough room in the row
-      if (activeRow.x + rasterizedGlyph.size.x <= TEXTURE_WIDTH) {
+      if (activeRow.x + rasterizedGlyph.size.x <= page.canvas.width) {
         break;
       }
 
@@ -652,8 +644,8 @@ export class TextureAtlas implements ITextureAtlas {
     rasterizedGlyph.texturePage = this._pages.length - 1;
     rasterizedGlyph.texturePosition.x = activeRow.x;
     rasterizedGlyph.texturePosition.y = activeRow.y;
-    rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / TEXTURE_WIDTH;
-    rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / TEXTURE_HEIGHT;
+    rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / page.canvas.width;
+    rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / page.canvas.height;
 
     // Update atlas current row, for fixed rows the glyph height will never be larger than the row
     // height
@@ -681,7 +673,7 @@ export class TextureAtlas implements ITextureAtlas {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number, pageWidth: number, pageHeight: number): IRasterizedGlyph {
     boundingBox.top = 0;
     const height = restrictedGlyph ? this._config.deviceCellHeight : this._tmpCanvas.height;
     const width = restrictedGlyph ? this._config.deviceCellWidth : allowedWidth;
@@ -753,8 +745,8 @@ export class TextureAtlas implements ITextureAtlas {
         y: boundingBox.bottom - boundingBox.top + 1
       },
       sizeClipSpace: {
-        x: (boundingBox.right - boundingBox.left + 1) / TEXTURE_WIDTH,
-        y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
+        x: (boundingBox.right - boundingBox.left + 1) / pageWidth,
+        y: (boundingBox.bottom - boundingBox.top + 1) / pageHeight
       },
       offset: {
         x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2) : 0),
@@ -785,8 +777,12 @@ class AtlasPage {
   };
   public readonly fixedRows: ICharAtlasActiveRow[] = [];
 
-  constructor(document: Document) {
-    this.canvas = createCanvas(document, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+  constructor(
+    document: Document,
+    dpr: number
+  ) {
+    const size = Math.pow(2, 8 + Math.max(1, dpr));
+    this.canvas = createCanvas(document, size, size);
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
@@ -794,7 +790,7 @@ class AtlasPage {
   }
 
   public clear(): void {
-    this.ctx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.currentRow.x = 0;
     this.currentRow.y = 0;
     this.currentRow.height = 0;
