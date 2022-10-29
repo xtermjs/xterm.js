@@ -57,9 +57,7 @@ export class TextureAtlas implements ITextureAtlas {
 
   // The texture that the atlas is drawn to
   private _pages: AtlasPage[] = [];
-  public get pages(): HTMLCanvasElement[] { return this._pages.map(e => e.canvas); }
-
-  public get cacheCanvas(): HTMLCanvasElement { return this._pages[0].canvas; }
+  public get pages(): { canvas: HTMLCanvasElement }[] { return this._pages; }
 
   private _tmpCanvas: HTMLCanvasElement;
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
@@ -105,8 +103,8 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public dispose(): void {
-    if (this.cacheCanvas.parentElement) {
-      this.cacheCanvas.parentElement.removeChild(this.cacheCanvas);
+    for (const page of this.pages) {
+      page.canvas.remove();
     }
   }
 

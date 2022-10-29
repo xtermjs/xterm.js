@@ -232,10 +232,10 @@ export class GlyphRenderer extends Disposable {
       // a_texpage
       array[$i + 4] = $glyph.texturePage;
       // a_texcoord
-      array[$i + 5] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.cacheCanvas.width;
+      array[$i + 5] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.pages[0].canvas.width;
       array[$i + 6] = $glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[$i + 7] = $glyph.sizeClipSpace.x - $clippedPixels / this._atlas.cacheCanvas.width;
+      array[$i + 7] = $glyph.sizeClipSpace.x - $clippedPixels / this._atlas.pages[0].canvas.width;
       array[$i + 8] = $glyph.sizeClipSpace.y;
     } else {
       // a_origin
@@ -331,14 +331,14 @@ export class GlyphRenderer extends Disposable {
       gl.uniform1iv(this._textureLocation, layerTextureUnits);
       gl.activeTexture(gl.TEXTURE0 + 0);
       gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[0]);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[0].canvas);
       gl.generateMipmap(gl.TEXTURE_2D);
 
       if (this._atlas.pages.length > 1) {
         // TODO: Check if the particular texture page changed
         gl.activeTexture(gl.TEXTURE0 + 1);
         gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[1]);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[1]);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[1].canvas);
         gl.generateMipmap(gl.TEXTURE_2D);
       }
     }
@@ -360,7 +360,7 @@ export class GlyphRenderer extends Disposable {
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[0]);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.cacheCanvas);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[0].canvas);
     gl.generateMipmap(gl.TEXTURE_2D);
 
     if (atlas.pages.length > 1) {
@@ -368,7 +368,7 @@ export class GlyphRenderer extends Disposable {
       gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[1]);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[1]);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[1].canvas);
       gl.generateMipmap(gl.TEXTURE_2D);
     }
   }

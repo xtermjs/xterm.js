@@ -39,7 +39,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _charAtlas!: ITextureAtlas;
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
-  public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.cacheCanvas!; }
+  // TODO: Support multiple pages
+  public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.pages[0].canvas!; }
 
   constructor(
     private readonly _terminal: Terminal,
@@ -118,7 +119,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     }
     this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
-    this._bitmapGenerator = new BitmapGenerator(this._charAtlas.cacheCanvas);
+    this._bitmapGenerator = new BitmapGenerator(this._charAtlas.pages[0].canvas);
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -372,7 +373,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       this._charAtlas.hasCanvasChanged = false;
     }
     this._ctx.drawImage(
-      this._bitmapGenerator?.bitmap || this._charAtlas!.cacheCanvas,
+      this._bitmapGenerator?.bitmap || this._charAtlas!.pages[0].canvas,
       glyph.texturePosition.x,
       glyph.texturePosition.y,
       glyph.size.x,

@@ -135,7 +135,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
-    return this._charAtlas?.cacheCanvas;
+    return this._charAtlas?.pages[0].canvas;
   }
 
   private _handleColorChange(): void {
@@ -261,7 +261,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._coreBrowserService.dpr
     );
     if (this._charAtlas !== atlas) {
-      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
+      this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
