@@ -273,8 +273,9 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.webgl.instance);
   setTimeout(() => {
     if (addons.webgl.instance !== undefined) {
-      addTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+      setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
     }
   }, 0);
 
@@ -551,13 +552,13 @@ function initAddons(term: TerminalType): void {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
             setTimeout(() => {
-              addTextureAtlas(addons.webgl.instance.textureAtlas);
-              addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+              setTextureAtlas(addons.webgl.instance.textureAtlas);
+              addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
             }, 0);
           } else if (name === 'canvas') {
             setTimeout(() => {
-              addTextureAtlas(addons.canvas.instance.textureAtlas);
-              addons.canvas.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+              setTextureAtlas(addons.canvas.instance.textureAtlas);
+              addons.canvas.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
             }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
@@ -648,8 +649,11 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
 }
 
-function addTextureAtlas(e: HTMLCanvasElement): void {
+function setTextureAtlas(e: HTMLCanvasElement): void {
   document.querySelector('#texture-atlas').replaceChildren(e);
+}
+function appendTextureAtlas(e: HTMLCanvasElement): void {
+  document.querySelector('#texture-atlas').appendChild(e);
 }
 
 function writeCustomGlyphHandler(): void {

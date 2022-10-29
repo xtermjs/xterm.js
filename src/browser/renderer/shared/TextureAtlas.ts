@@ -14,6 +14,7 @@ import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { EventEmitter } from 'common/EventEmitter';
 
 // For debugging purposes, it can be useful to set this to a really tiny value.
 const TEXTURE_WIDTH = 512;
@@ -67,6 +68,10 @@ export class TextureAtlas implements ITextureAtlas {
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
   private _workAttributeData: AttributeData = new AttributeData();
 
+  // TODO: Register
+  private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+
   constructor(
     private readonly _document: Document,
     private readonly _config: ICharAtlasConfig,
@@ -114,7 +119,9 @@ export class TextureAtlas implements ITextureAtlas {
     if (this._pages[this._pages.length - 1].currentRow.y > TEXTURE_CAPACITY) {
       // TODO: Support drawing to multiple pages at once
       console.log(`Add page #${this._pages.length + 1}`);
-      this._pages.push(new AtlasPage(this._document));
+      const newPage = new AtlasPage(this._document);
+      this._pages.push(newPage);
+      this._onAddTextureAtlasCanvas.fire(newPage.canvas);
       return true;
     }
     return false;

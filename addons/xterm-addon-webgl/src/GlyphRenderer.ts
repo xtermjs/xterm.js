@@ -62,7 +62,7 @@ precision lowp float;
 in vec2 v_texcoord;
 flat in int v_texpage;
 
-uniform sampler2D u_texture[2];
+uniform sampler2D u_texture[8];
 
 out vec4 outColor;
 
@@ -71,6 +71,18 @@ void main() {
     outColor = texture(u_texture[0], v_texcoord);
   } else if (v_texpage == 1) {
     outColor = texture(u_texture[1], v_texcoord);
+  } else if (v_texpage == 2) {
+    outColor = texture(u_texture[2], v_texcoord);
+  } else if (v_texpage == 3) {
+    outColor = texture(u_texture[3], v_texcoord);
+  } else if (v_texpage == 4) {
+    outColor = texture(u_texture[4], v_texcoord);
+  } else if (v_texpage == 5) {
+    outColor = texture(u_texture[5], v_texcoord);
+  } else if (v_texpage == 6) {
+    outColor = texture(u_texture[6], v_texcoord);
+  } else if (v_texpage == 7) {
+    outColor = texture(u_texture[7], v_texcoord);
   }
 }`;
 
@@ -327,22 +339,16 @@ export class GlyphRenderer extends Disposable {
     if (this._atlas.hasCanvasChanged) {
       this._atlas.hasCanvasChanged = false;
       // TODO: Make nicer
-      const layerTextureUnits = new Int32Array([0, 1]);
+      const layerTextureUnits = new Int32Array([0, 1, 2, 3, 4, 5, 6, 7]);
       gl.uniform1iv(this._textureLocation, layerTextureUnits);
-      gl.activeTexture(gl.TEXTURE0 + 0);
-      gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[0]);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[0].canvas);
-      gl.generateMipmap(gl.TEXTURE_2D);
-
-      if (this._atlas.pages.length > 1) {
-        // TODO: Check if the particular texture page changed
-        gl.activeTexture(gl.TEXTURE0 + 1);
-        gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[1]);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[1].canvas);
+      // TODO: Only upload the texture(s) that changed
+      for (let i = 0; i < this._atlas.pages.length; i++) {
+        gl.activeTexture(gl.TEXTURE0 + i);
+        gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[i].canvas);
         gl.generateMipmap(gl.TEXTURE_2D);
       }
     }
-
 
     // Set uniforms
     gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
@@ -356,19 +362,13 @@ export class GlyphRenderer extends Disposable {
     const gl = this._gl;
     this._atlas = atlas;
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[0]);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[0].canvas);
-    gl.generateMipmap(gl.TEXTURE_2D);
-
-    if (atlas.pages.length > 1) {
-      gl.activeTexture(gl.TEXTURE0 + 1);
-      gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[1]);
+    // TODO: Share code
+    for (let i = 0; i < this._atlas.pages.length; i++) {
+      gl.activeTexture(gl.TEXTURE0 + i);
+      gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[1].canvas);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[i].canvas);
       gl.generateMipmap(gl.TEXTURE_2D);
     }
   }
