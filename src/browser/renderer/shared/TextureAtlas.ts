@@ -47,13 +47,11 @@ export class TextureAtlas implements ITextureAtlas {
 
   // The texture that the atlas is drawn to
   private _pages: AtlasPage[] = [];
-  public get pages(): { canvas: HTMLCanvasElement }[] { return this._pages; }
+  public get pages(): { canvas: HTMLCanvasElement, hasCanvasChanged: boolean }[] { return this._pages; }
 
   private _tmpCanvas: HTMLCanvasElement;
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
-
-  public hasCanvasChanged = false;
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
   private _workAttributeData: AttributeData = new AttributeData();
@@ -130,7 +128,6 @@ export class TextureAtlas implements ITextureAtlas {
     this._cacheMap.clear();
     this._cacheMapCombined.clear();
     this._didWarmUp = false;
-    this.hasCanvasChanged = true;
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph {
@@ -316,8 +313,6 @@ export class TextureAtlas implements ITextureAtlas {
 
     // Uncomment for debugging
     // console.log(`draw to cache "${chars}"`, bg, fg, ext);
-
-    this.hasCanvasChanged = true;
 
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
@@ -589,6 +584,8 @@ export class TextureAtlas implements ITextureAtlas {
     }
 
     const page = this._pages[this._pages.length - 1];
+    page.hasCanvasChanged = true;
+
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding, page.canvas.width, page.canvas.height);
 
     // Find the best atlas row to use
@@ -761,6 +758,12 @@ class AtlasPage {
   public readonly canvas: HTMLCanvasElement;
   public readonly ctx: CanvasRenderingContext2D;
 
+  /**
+   * Whether the canvas of the atlas page has changed, this is only set to true by the atlas, the
+   * user of the boolean is required to reset its value to false.
+   */
+  public hasCanvasChanged = false;
+
   // Texture atlas current positioning data. The texture packing strategy used is to fill from
   // left-to-right and top-to-bottom. When the glyph being written is less than half of the current
   // row's height, the following happens:
@@ -796,6 +799,7 @@ class AtlasPage {
     this.currentRow.y = 0;
     this.currentRow.height = 0;
     this.fixedRows.length = 0;
+    this.hasCanvasChanged = true;
   }
 }
 

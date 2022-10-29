@@ -368,9 +368,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
-    if (this._charAtlas.hasCanvasChanged) {
+    if (this._charAtlas.pages[0].hasCanvasChanged) {
       this._bitmapGenerator?.refresh();
-      this._charAtlas.hasCanvasChanged = false;
+      this._charAtlas.pages[0].hasCanvasChanged = false;
     }
     this._ctx.drawImage(
       this._bitmapGenerator?.bitmap || this._charAtlas!.pages[0].canvas,

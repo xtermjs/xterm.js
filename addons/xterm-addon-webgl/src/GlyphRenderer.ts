@@ -335,14 +335,14 @@ export class GlyphRenderer extends Disposable {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(0, bufferLength), gl.STREAM_DRAW);
 
-    // Bind the texture atlas if it's changed
-    if (this._atlas.hasCanvasChanged) {
-      this._atlas.hasCanvasChanged = false;
-      // TODO: Make nicer
-      const layerTextureUnits = new Int32Array([0, 1, 2, 3, 4, 5, 6, 7]);
-      gl.uniform1iv(this._textureLocation, layerTextureUnits);
-      // TODO: Only upload the texture(s) that changed
-      for (let i = 0; i < this._atlas.pages.length; i++) {
+    // TODO: Only do this once
+    const layerTextureUnits = new Int32Array([0, 1, 2, 3, 4, 5, 6, 7]);
+    gl.uniform1iv(this._textureLocation, layerTextureUnits);
+
+    // Bind the atlas page texture if they have changed
+    for (let i = 0; i < this._atlas.pages.length; i++) {
+      if (this._atlas.pages[i].hasCanvasChanged) {
+        this._atlas.pages[i].hasCanvasChanged = false;
         gl.activeTexture(gl.TEXTURE0 + i);
         gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[i].canvas);
