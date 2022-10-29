@@ -108,7 +108,7 @@ export class GlyphRenderer extends Disposable {
 
   private _atlas: ITextureAtlas | undefined;
   private _activeBuffer: number = 0;
-  private _vertices: IVertices = {
+  private readonly _vertices: IVertices = {
     count: 0,
     attributes: new Float32Array(0),
     attributesBuffers: [
@@ -346,10 +346,7 @@ export class GlyphRenderer extends Disposable {
     for (let i = 0; i < this._atlas.pages.length; i++) {
       if (this._atlas.pages[i].hasCanvasChanged) {
         this._atlas.pages[i].hasCanvasChanged = false;
-        gl.activeTexture(gl.TEXTURE0 + i);
-        gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[i].canvas);
-        gl.generateMipmap(gl.TEXTURE_2D);
+        this._bindAtlasPageTexture(gl, this._atlas, i);
       }
     }
 
@@ -363,13 +360,17 @@ export class GlyphRenderer extends Disposable {
 
     // TODO: Share code
     for (let i = 0; i < this._atlas.pages.length; i++) {
-      gl.activeTexture(gl.TEXTURE0 + i);
-      gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.pages[i].canvas);
-      gl.generateMipmap(gl.TEXTURE_2D);
+      this._bindAtlasPageTexture(gl, atlas, i);
     }
+  }
+
+  private _bindAtlasPageTexture(gl: IWebGL2RenderingContext, atlas: ITextureAtlas, i: number): void {
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[i].canvas);
+    gl.generateMipmap(gl.TEXTURE_2D);
   }
 
   public setDimensions(dimensions: IRenderDimensions): void {
