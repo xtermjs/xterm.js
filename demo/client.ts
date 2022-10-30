@@ -976,6 +976,16 @@ function addAnsiHyperlink(): void {
   term.write('\x1b[3A\x1b[1C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[5D');
 }
 
+/**
+ * Prints the 20977 characters from the CJK Unified Ideographs unicode block.
+ */
+function addCjk(): void {
+  term.write('\n\n\r');
+  for (let i = 0x4E00; i < 0x9FCC; i++) {
+    term.write(String.fromCharCode(i));
+  }
+}
+
 function addDecoration(): void {
   term.options['overviewRulerWidth'] = 15;
   const marker = term.registerMarker(1);
