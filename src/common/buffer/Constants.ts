@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-export const DEFAULT_COLOR = 256;
+export const DEFAULT_COLOR = 0;
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const DEFAULT_EXT = 0;
 

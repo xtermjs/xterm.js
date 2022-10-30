@@ -122,6 +122,7 @@ export class GlyphRenderer extends Disposable {
     if (GlyphRenderer._maxAtlasPages === undefined) {
       GlyphRenderer._maxAtlasPages = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number | null);
     }
+
     this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(GlyphRenderer._maxAtlasPages)));
     this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
@@ -285,7 +286,8 @@ export class GlyphRenderer extends Disposable {
     } else {
       this._vertices.attributes.fill(0);
     }
-    for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
+    let i = 0;
+    for (; i < this._vertices.attributesBuffers.length; i++) {
       if (this._vertices.count !== newCount) {
         this._vertices.attributesBuffers[i] = new Float32Array(newCount);
       } else {
@@ -293,7 +295,7 @@ export class GlyphRenderer extends Disposable {
       }
     }
     this._vertices.count = newCount;
-    let i = 0;
+    i = 0;
     for (let y = 0; y < terminal.rows; y++) {
       for (let x = 0; x < terminal.cols; x++) {
         this._vertices.attributes[i + 9] = x / terminal.cols;

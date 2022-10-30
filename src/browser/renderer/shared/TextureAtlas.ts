@@ -67,6 +67,19 @@ export class TextureAtlas implements ITextureAtlas {
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
   private _workAttributeData: AttributeData = new AttributeData();
 
+  private _textureSize: number = 512;
+
+  /**
+   * Doubles the texture size of new atlas pages if allowed.
+   */
+  private _increaseTextureSize(): void {
+    // 4096 is the minimum texture size in WebGL, but we still want the texture to be reasonably fast
+    // to upload. We could loosen this limit if it ever becomes a problem.
+    if (this._textureSize < 2048) {
+      this._textureSize *= 2;
+    }
+  }
+
   private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
@@ -75,7 +88,7 @@ export class TextureAtlas implements ITextureAtlas {
     private readonly _config: ICharAtlasConfig,
     private readonly _unicodeService: IUnicodeService
   ) {
-    const page = new AtlasPage(_document, _config.devicePixelRatio);
+    const page = new AtlasPage(_document, this._textureSize);
     this._pages.push(page);
     this._activePages.push(page);
     this._tmpCanvas = createCanvas(
@@ -121,8 +134,11 @@ export class TextureAtlas implements ITextureAtlas {
     // TODO: Revisit when a new page gets added, this is only really needed now when there is no
     // room for a new row
     if (page.currentRow.y > Math.floor(page.canvas.height * 0.8)) {
+      if (this._pages.length === 4 || this._pages.length === 7) {
+        this._increaseTextureSize();
+      }
       // TODO: Clear all pages and restart if the maximum page count is reached
-      const newPage = new AtlasPage(this._document, this._config.devicePixelRatio);
+      const newPage = new AtlasPage(this._document, this._textureSize);
       this._pages.push(newPage);
       this._activePages.push(newPage);
       this._onAddTextureAtlasCanvas.fire(newPage.canvas);
@@ -597,7 +613,7 @@ export class TextureAtlas implements ITextureAtlas {
     }
 
     // TODO: Ideally this wouldn't pull dimensions off the first canvas
-    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding, this._pages[0].canvas.width, this._pages[0].canvas.height);
+    const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
 
     // Find the best atlas row to use
     let activePage: AtlasPage;
@@ -646,7 +662,10 @@ export class TextureAtlas implements ITextureAtlas {
           if (candidatePage === undefined) {
             // Creating a new page if there is no room
             // TODO: Share atlas page creation code
-            const newPage = new AtlasPage(this._document, this._config.devicePixelRatio);
+            if (this._pages.length === 4 || this._pages.length === 7) {
+              this._increaseTextureSize();
+            }
+            const newPage = new AtlasPage(this._document, this._textureSize);
             this._pages.push(newPage);
             this._activePages.push(newPage);
             this._onAddTextureAtlasCanvas.fire(newPage.canvas);
@@ -720,6 +739,10 @@ export class TextureAtlas implements ITextureAtlas {
     rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / activePage.canvas.width;
     rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / activePage.canvas.height;
 
+    // Fix the clipspace position as pages may be of differing size
+    rasterizedGlyph.sizeClipSpace.x /= activePage.canvas.width;
+    rasterizedGlyph.sizeClipSpace.y /= activePage.canvas.height;
+
     // Update atlas current row, for fixed rows the glyph height will never be larger than the row
     // height
     activeRow.height = Math.max(activeRow.height, rasterizedGlyph.size.y);
@@ -747,7 +770,7 @@ export class TextureAtlas implements ITextureAtlas {
    * @param imageData The image data to read.
    * @param boundingBox An IBoundingBox to put the clipped bounding box values.
    */
-  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number, pageWidth: number, pageHeight: number): IRasterizedGlyph {
+  private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox, allowedWidth: number, restrictedGlyph: boolean, customGlyph: boolean, padding: number): IRasterizedGlyph {
     boundingBox.top = 0;
     const height = restrictedGlyph ? this._config.deviceCellHeight : this._tmpCanvas.height;
     const width = restrictedGlyph ? this._config.deviceCellWidth : allowedWidth;
@@ -819,8 +842,8 @@ export class TextureAtlas implements ITextureAtlas {
         y: boundingBox.bottom - boundingBox.top + 1
       },
       sizeClipSpace: {
-        x: (boundingBox.right - boundingBox.left + 1) / pageWidth,
-        y: (boundingBox.bottom - boundingBox.top + 1) / pageHeight
+        x: (boundingBox.right - boundingBox.left + 1),
+        y: (boundingBox.bottom - boundingBox.top + 1)
       },
       offset: {
         x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2) : 0),
@@ -859,10 +882,8 @@ class AtlasPage {
 
   constructor(
     document: Document,
-    dpr: number
+    size: number
   ) {
-    // TODO: Enforce a maximum texture size
-    const size = Math.pow(2, 8 + Math.max(1, dpr));
     this.canvas = createCanvas(document, size, size);
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
