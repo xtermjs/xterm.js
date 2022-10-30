@@ -117,13 +117,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public beginFrame(): boolean {
-    const page = this._pages[this._pages.length - 1];
-    // TODO: Revisit when a new page gets added, this is only really needed now when there is no
-    // room for a new row
-    if (page.currentRow.y > Math.floor(page.canvas.height * 0.8)) {
-      this._createNewPage();
-      return true;
-    }
+    // TODO: Something should happen to prevent reaching capacity
     return false;
   }
 
