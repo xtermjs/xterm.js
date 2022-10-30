@@ -646,6 +646,7 @@ export class TextureAtlas implements ITextureAtlas {
       if (activeRow.y + rasterizedGlyph.size.y >= activePage.canvas.height || activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
         // Create the new fixed height row, creating a new page if there isn't enough room on the
         // current page
+        let wasNewPageCreated = false;
         if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
           // Find the first page with room to create the new row on
           let candidatePage: AtlasPage | undefined;
@@ -655,34 +656,18 @@ export class TextureAtlas implements ITextureAtlas {
               break;
             }
           }
-          if (candidatePage === undefined) {
-            // Creating a new page if there is no room
+          if (candidatePage) {
+            activePage = candidatePage;
+          } else {
+            // Create a new page if there is no room
             const newPage = this._createNewPage();
             activePage = newPage;
             activeRow = newPage.currentRow;
             activeRow.height = rasterizedGlyph.size.y;
-          } else {
-            // TODO: Simplify this and share code with below
-            activePage = candidatePage;
-            // Fix the current row as the new row is being added below
-            if (activePage.currentRow.height > 0) {
-              activePage.fixedRows.push(activePage.currentRow);
-            }
-            activeRow = {
-              x: 0,
-              y: activePage.currentRow.y + activePage.currentRow.height,
-              height: rasterizedGlyph.size.y
-            };
-            activePage.fixedRows.push(activeRow);
-
-            // Create the new current row below the new fixed height row
-            activePage.currentRow = {
-              x: 0,
-              y: activeRow.y + activeRow.height,
-              height: 0
-            };
+            wasNewPageCreated = true;
           }
-        } else {
+        }
+        if (!wasNewPageCreated) {
           // Fix the current row as the new row is being added below
           if (activePage.currentRow.height > 0) {
             activePage.fixedRows.push(activePage.currentRow);
@@ -701,8 +686,7 @@ export class TextureAtlas implements ITextureAtlas {
             height: 0
           };
         }
-        // TODO: Remove pages when all rows are filled
-
+        // TODO: Remove pages from _activePages when all rows are filled
       }
 
       // Exit the loop if there is enough room in the row
