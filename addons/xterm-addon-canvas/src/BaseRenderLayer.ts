@@ -377,6 +377,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
     if (this._charAtlas.pages[glyph.texturePage].hasCanvasChanged) {
+      if (!this._bitmapGenerator[glyph.texturePage]) {
+        this._bitmapGenerator[glyph.texturePage] = new BitmapGenerator(this._charAtlas.pages[glyph.texturePage].canvas);
+      }
       this._bitmapGenerator[glyph.texturePage]?.refresh();
       this._charAtlas.pages[glyph.texturePage].hasCanvasChanged = false;
     }
