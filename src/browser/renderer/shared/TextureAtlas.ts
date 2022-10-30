@@ -69,17 +69,6 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _textureSize: number = 512;
 
-  /**
-   * Doubles the texture size of new atlas pages if allowed.
-   */
-  private _increaseTextureSize(): void {
-    // 4096 is the minimum texture size in WebGL, but we still want the texture to be reasonably fast
-    // to upload. We could loosen this limit if it ever becomes a problem.
-    if (this._textureSize < 2048) {
-      this._textureSize *= 2;
-    }
-  }
-
   private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
@@ -88,9 +77,7 @@ export class TextureAtlas implements ITextureAtlas {
     private readonly _config: ICharAtlasConfig,
     private readonly _unicodeService: IUnicodeService
   ) {
-    const page = new AtlasPage(_document, this._textureSize);
-    this._pages.push(page);
-    this._activePages.push(page);
+    this._createNewPage();
     this._tmpCanvas = createCanvas(
       _document,
       this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2,
@@ -134,14 +121,7 @@ export class TextureAtlas implements ITextureAtlas {
     // TODO: Revisit when a new page gets added, this is only really needed now when there is no
     // room for a new row
     if (page.currentRow.y > Math.floor(page.canvas.height * 0.8)) {
-      if (this._pages.length === 4 || this._pages.length === 7) {
-        this._increaseTextureSize();
-      }
-      // TODO: Clear all pages and restart if the maximum page count is reached
-      const newPage = new AtlasPage(this._document, this._textureSize);
-      this._pages.push(newPage);
-      this._activePages.push(newPage);
-      this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+      this._createNewPage();
       return true;
     }
     return false;
@@ -157,6 +137,29 @@ export class TextureAtlas implements ITextureAtlas {
     this._cacheMap.clear();
     this._cacheMapCombined.clear();
     this._didWarmUp = false;
+  }
+
+  private _createNewPage(): AtlasPage {
+    if (this._pages.length === 4 || this._pages.length === 7) {
+      this._increaseTextureSize();
+    }
+    // TODO: Clear all pages and restart if the maximum page count is reached
+    const newPage = new AtlasPage(this._document, this._textureSize);
+    this._pages.push(newPage);
+    this._activePages.push(newPage);
+    this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+    return newPage;
+  }
+
+  /**
+   * Doubles the texture size of new atlas pages if allowed.
+   */
+  private _increaseTextureSize(): void {
+    // 4096 is the minimum texture size in WebGL, but we still want the texture to be reasonably fast
+    // to upload. We could loosen this limit if it ever becomes a problem.
+    if (this._textureSize < 2048) {
+      this._textureSize *= 2;
+    }
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph {
@@ -612,7 +615,6 @@ export class TextureAtlas implements ITextureAtlas {
       return NULL_RASTERIZED_GLYPH;
     }
 
-    // TODO: Ideally this wouldn't pull dimensions off the first canvas
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
 
     // Find the best atlas row to use
@@ -661,15 +663,7 @@ export class TextureAtlas implements ITextureAtlas {
           }
           if (candidatePage === undefined) {
             // Creating a new page if there is no room
-            // TODO: Share atlas page creation code
-            if (this._pages.length === 4 || this._pages.length === 7) {
-              this._increaseTextureSize();
-            }
-            const newPage = new AtlasPage(this._document, this._textureSize);
-            this._pages.push(newPage);
-            this._activePages.push(newPage);
-            this._onAddTextureAtlasCanvas.fire(newPage.canvas);
-
+            const newPage = this._createNewPage();
             activePage = newPage;
             activeRow = newPage.currentRow;
             activeRow.height = rasterizedGlyph.size.y;
