@@ -100,4 +100,5 @@ pre {
 }
 #texture-atlas canvas {
     image-rendering: pixelated;
+    border: 1px solid #ccc;
 }
