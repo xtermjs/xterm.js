@@ -30,6 +30,14 @@ const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
 
 const TMP_CANVAS_GLYPH_PADDING = 2;
 
+const enum Constants {
+  /**
+   * The amount of pixel padding to allow in each row. Setting this to zero would make the atlas
+   * page pack as tightly as possible, but more pages would end up being created as a result.
+   */
+  ROW_PIXEL_THRESHOLD = 2
+}
+
 interface ICharAtlasActiveRow {
   x: number;
   y: number;
@@ -617,32 +625,78 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
-      // Create a new one if vertical space would be wasted, fixing the previously active row in the
-      // process as it now has a fixed height
-      if (activeRow.height > rasterizedGlyph.size.y * 2) {
-        // Fix the current row as the new row is being added below
-        if (activePage.currentRow.height > 0) {
-          activePage.fixedRows.push(activePage.currentRow);
+      // Create a new one if too much vertical space would be wasted, fixing the previously active
+      // row in the process as it now has a fixed height
+      if (activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
+        // Create the new fixed height row, creating a new page if there isn't enough room on the
+        // current page
+        if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y > activePage.canvas.height) {
+          // Find the first page with room to create the new row on
+          let candidatePage: AtlasPage | undefined;
+          for (const p of this._activePages) {
+            if (p.currentRow.y + p.currentRow.height + rasterizedGlyph.size.y <= p.canvas.height) {
+              candidatePage = p;
+              break;
+            }
+          }
+          if (candidatePage === undefined) {
+            // Creating a new page if there is no room
+            // TODO: Share atlas page creation code
+            const newPage = new AtlasPage(this._document, this._config.devicePixelRatio);
+            this._pages.push(newPage);
+            this._activePages.push(newPage);
+            this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+
+            activePage = newPage;
+            activeRow = newPage.currentRow;
+            activeRow.height = rasterizedGlyph.size.y;
+          } else {
+            // TODO: Simplify this and share code with below
+            activePage = candidatePage;
+            // Fix the current row as the new row is being added below
+            if (activePage.currentRow.height > 0) {
+              activePage.fixedRows.push(activePage.currentRow);
+            }
+            activeRow = {
+              x: 0,
+              y: activePage.currentRow.y + activePage.currentRow.height,
+              height: rasterizedGlyph.size.y
+            };
+            activePage.fixedRows.push(activeRow);
+
+            // Create the new current row below the new fixed height row
+            activePage.currentRow = {
+              x: 0,
+              y: activeRow.y + activeRow.height,
+              height: 0
+            };
+          }
+        } else {
+          // Fix the current row as the new row is being added below
+          if (activePage.currentRow.height > 0) {
+            activePage.fixedRows.push(activePage.currentRow);
+          }
+          activeRow = {
+            x: 0,
+            y: activePage.currentRow.y + activePage.currentRow.height,
+            height: rasterizedGlyph.size.y
+          };
+          activePage.fixedRows.push(activeRow);
+
+          // Create the new current row below the new fixed height row
+          activePage.currentRow = {
+            x: 0,
+            y: activeRow.y + activeRow.height,
+            height: 0
+          };
         }
+        // TODO: Remove pages when all rows are filled
 
-        // Create the new fixed height row
-        activeRow = {
-          x: 0,
-          y: activePage.currentRow.y + activePage.currentRow.height,
-          height: rasterizedGlyph.size.y
-        };
-        activePage.fixedRows.push(activeRow);
-
-        // Create the new current row below the new fixed height row
-        activePage.currentRow = {
-          x: 0,
-          y: activeRow.y + activeRow.height,
-          height: 0
-        };
       }
 
       // Exit the loop if there is enough room in the row
       if (activeRow.x + rasterizedGlyph.size.x <= activePage.canvas.width) {
+        console.log(`draw "${chars}" to row ${activeRow} on page ${this._pages.indexOf(activePage)}`);
         break;
       }
 
