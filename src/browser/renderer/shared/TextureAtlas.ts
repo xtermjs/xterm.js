@@ -596,13 +596,21 @@ export class TextureAtlas implements ITextureAtlas {
     let activePage: AtlasPage;
     let activeRow: ICharAtlasActiveRow;
     while (true) {
+      // Get the best current row from all active pages
       activePage = this._activePages[this._activePages.length - 1];
       activeRow = activePage.currentRow;
       for (const p of this._activePages) {
-        // Select the ideal existing row, preferring fixed rows over the current row
-        // activeRow = p.currentRow;
+        if (rasterizedGlyph.size.y <= p.currentRow.height) {
+          activePage = p;
+          activeRow = p.currentRow;
+        }
+      }
+
+      // Replace the best current row with a fixed row if there is one at least as good as the
+      // current row
+      for (const p of this._activePages) {
         for (const row of p.fixedRows) {
-          if ((activeRow === p.currentRow || row.height < activeRow.height) && rasterizedGlyph.size.y <= row.height) {
+          if (row.height <= activeRow.height && rasterizedGlyph.size.y <= row.height) {
             activePage = p;
             activeRow = row;
           }
