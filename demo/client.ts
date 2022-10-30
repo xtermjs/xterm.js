@@ -556,11 +556,13 @@ function initAddons(term: TerminalType): void {
             setTimeout(() => {
               setTextureAtlas(addons.webgl.instance.textureAtlas);
               addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+              addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
           } else if (name === 'canvas') {
             setTimeout(() => {
               setTextureAtlas(addons.canvas.instance.textureAtlas);
               addons.canvas.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+              addons.canvas.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';

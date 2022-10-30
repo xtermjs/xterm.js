@@ -21,6 +21,7 @@ import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isSafari } from 'common/Platform';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -34,13 +35,16 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
 
   protected _selectionModel: ISelectionRenderModel = createSelectionRenderModel();
   private _cellColorResolver: CellColorResolver;
-  private _bitmapGenerator?: BitmapGenerator;
+  private _bitmapGenerator: (BitmapGenerator | undefined)[] = [];
 
   protected _charAtlas!: ITextureAtlas;
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
   // TODO: Support multiple pages
   public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.pages[0].canvas!; }
+
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   constructor(
     private readonly _terminal: Terminal,
@@ -118,8 +122,12 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       return;
     }
     this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
+    // TODO: Dispose this when there's a new atlas
+    forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
-    this._bitmapGenerator = new BitmapGenerator(this._charAtlas.pages[0].canvas);
+    for (let i = 0; i < this._charAtlas.pages.length; i++) {
+      this._bitmapGenerator[i] = new BitmapGenerator(this._charAtlas.pages[i].canvas);
+    }
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -368,12 +376,13 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
-    if (this._charAtlas.pages[0].hasCanvasChanged) {
-      this._bitmapGenerator?.refresh();
-      this._charAtlas.pages[0].hasCanvasChanged = false;
+    if (this._charAtlas.pages[glyph.texturePage].hasCanvasChanged) {
+      this._bitmapGenerator[glyph.texturePage]?.refresh();
+      this._charAtlas.pages[glyph.texturePage].hasCanvasChanged = false;
     }
+    // TODO: Create generator if there's a new page
     this._ctx.drawImage(
-      this._bitmapGenerator?.bitmap || this._charAtlas!.pages[0].canvas,
+      this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
       glyph.texturePosition.x,
       glyph.texturePosition.y,
       glyph.size.x,

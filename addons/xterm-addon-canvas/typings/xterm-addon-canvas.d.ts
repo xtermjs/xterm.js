@@ -17,6 +17,9 @@ declare module 'xterm-addon-canvas' {
      */
     public readonly onChangeTextureAtlas: IEvent<HTMLCanvasElement>;
 
+    // TODO: Doc
+    public readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+
     constructor();
 
     /**
