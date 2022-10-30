@@ -614,27 +614,32 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
+      // TODO: This algorithm could be simplified:
+      // - Search for the page with ROW_PIXEL_THRESHOLD in mind
+      // - Keep track of current/fixed rows in a Map
+
       // Replace the best current row with a fixed row if there is one at least as good as the
-      // current row
-      for (const p of this._activePages) {
-        for (const row of p.fixedRows) {
+      // current row. Search in reverse to prioritize filling in older pages.
+      for (let i = this._activePages.length - 1; i >= 0; i--) {
+        for (const row of this._activePages[i].fixedRows) {
           if (row.height <= activeRow.height && rasterizedGlyph.size.y <= row.height) {
-            activePage = p;
+            activePage = this._activePages[i];
             activeRow = row;
           }
         }
       }
 
-      // Create a new one if too much vertical space would be wasted, fixing the previously active
-      // row in the process as it now has a fixed height
-      if (activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
+      // Create a new one if too much vertical space would be wasted or there is not enough room
+      // left in the page. The previous active row will become fixed in the process as it now has a
+      // fixed height
+      if (activeRow.y + rasterizedGlyph.size.y >= activePage.canvas.height || activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
         // Create the new fixed height row, creating a new page if there isn't enough room on the
         // current page
-        if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y > activePage.canvas.height) {
+        if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
           // Find the first page with room to create the new row on
           let candidatePage: AtlasPage | undefined;
           for (const p of this._activePages) {
-            if (p.currentRow.y + p.currentRow.height + rasterizedGlyph.size.y <= p.canvas.height) {
+            if (p.currentRow.y + p.currentRow.height + rasterizedGlyph.size.y < p.canvas.height) {
               candidatePage = p;
               break;
             }
