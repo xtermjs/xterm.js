@@ -219,6 +219,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('print-cjk').addEventListener('click', addCjk);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);

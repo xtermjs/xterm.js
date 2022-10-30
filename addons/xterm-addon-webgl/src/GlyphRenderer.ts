@@ -56,40 +56,31 @@ void main() {
   v_texcoord = a_texcoord + a_unitquad * a_texsize;
 }`;
 
-const fragmentShaderSource = `#version 300 es
+function createFragmentShaderSource(maxFragmentShaderTextureUnits: number): string {
+  let textureConditionals = '';
+  for (let i = 1; i < maxFragmentShaderTextureUnits; i++) {
+    textureConditionals += ` else if (v_texpage == ${i}) { outColor = texture(u_texture[${i}], v_texcoord); }`;
+  }
+  return (`#version 300 es
 precision lowp float;
 
 in vec2 v_texcoord;
 flat in int v_texpage;
 
-uniform sampler2D u_texture[8];
+uniform sampler2D u_texture[${maxFragmentShaderTextureUnits}];
 
 out vec4 outColor;
 
 void main() {
   if (v_texpage == 0) {
     outColor = texture(u_texture[0], v_texcoord);
-  } else if (v_texpage == 1) {
-    outColor = texture(u_texture[1], v_texcoord);
-  } else if (v_texpage == 2) {
-    outColor = texture(u_texture[2], v_texcoord);
-  } else if (v_texpage == 3) {
-    outColor = texture(u_texture[3], v_texcoord);
-  } else if (v_texpage == 4) {
-    outColor = texture(u_texture[4], v_texcoord);
-  } else if (v_texpage == 5) {
-    outColor = texture(u_texture[5], v_texcoord);
-  } else if (v_texpage == 6) {
-    outColor = texture(u_texture[6], v_texcoord);
-  } else if (v_texpage == 7) {
-    outColor = texture(u_texture[7], v_texcoord);
-  }
-}`;
+  } ${textureConditionals}
+}`);
+}
 
 const INDICES_PER_CELL = 11;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
-const MAX_ATLAS_PAGES = 8;
 
 // Work variables to avoid garbage collection
 let $i = 0;
@@ -117,15 +108,21 @@ export class GlyphRenderer extends Disposable {
     ]
   };
 
+  private static _maxAtlasPages: number | undefined;
+
   constructor(
-    private _terminal: Terminal,
-    private _gl: IWebGL2RenderingContext,
+    private readonly _terminal: Terminal,
+    private readonly _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
     super();
 
     const gl = this._gl;
-    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+
+    if (GlyphRenderer._maxAtlasPages === undefined) {
+      GlyphRenderer._maxAtlasPages = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number | null);
+    }
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(GlyphRenderer._maxAtlasPages)));
     this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
@@ -180,13 +177,17 @@ export class GlyphRenderer extends Disposable {
 
     // Setup static uniforms
     gl.useProgram(this._program);
-    gl.uniform1iv(this._textureLocation, new Int32Array([0, 1, 2, 3, 4, 5, 6, 7]));
+    const textureUnits = new Int32Array(GlyphRenderer._maxAtlasPages);
+    for (let i = 0; i < GlyphRenderer._maxAtlasPages; i++) {
+      textureUnits[i] = i;
+    }
+    gl.uniform1iv(this._textureLocation, textureUnits);
     gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
 
     // Setup 1x1 red pixel textures for all potential atlas pages, if one of these invalid textures
     // is ever drawn it will show characters as red rectangles.
     this._atlasTextures = [];
-    for (let i = 0; i < MAX_ATLAS_PAGES; i++) {
+    for (let i = 0; i < GlyphRenderer._maxAtlasPages; i++) {
       const texture = throwIfFalsy(gl.createTexture());
       this.register(toDisposable(() => gl.deleteTexture(texture)));
       gl.activeTexture(gl.TEXTURE0 + i);

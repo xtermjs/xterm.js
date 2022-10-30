@@ -122,7 +122,6 @@ export class TextureAtlas implements ITextureAtlas {
     // room for a new row
     if (page.currentRow.y > Math.floor(page.canvas.height * 0.8)) {
       // TODO: Clear all pages and restart if the maximum page count is reached
-      console.log(`Add page #${this._pages.length + 1}`);
       const newPage = new AtlasPage(this._document, this._config.devicePixelRatio);
       this._pages.push(newPage);
       this._activePages.push(newPage);
@@ -701,7 +700,6 @@ export class TextureAtlas implements ITextureAtlas {
 
       // Exit the loop if there is enough room in the row
       if (activeRow.x + rasterizedGlyph.size.x <= activePage.canvas.width) {
-        console.log(`draw "${chars}" to row ${activeRow} on page ${this._pages.indexOf(activePage)}`);
         break;
       }
 
