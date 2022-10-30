@@ -355,12 +355,9 @@ export class GlyphRenderer extends Disposable {
   }
 
   public setAtlas(atlas: ITextureAtlas): void {
-    const gl = this._gl;
     this._atlas = atlas;
-
-    // TODO: Share code
-    for (let i = 0; i < this._atlas.pages.length; i++) {
-      this._bindAtlasPageTexture(gl, atlas, i);
+    for (let i = 0; i < atlas.pages.length; i++) {
+      this._bindAtlasPageTexture(this._gl, atlas, i);
     }
   }
 

@@ -56,7 +56,6 @@ export class TextureAtlas implements ITextureAtlas {
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
   private _workAttributeData: AttributeData = new AttributeData();
 
-  // TODO: Register
   private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
@@ -81,6 +80,7 @@ export class TextureAtlas implements ITextureAtlas {
     for (const page of this.pages) {
       page.canvas.remove();
     }
+    this._onAddTextureAtlasCanvas.dispose();
   }
 
   public warmUp(): void {
