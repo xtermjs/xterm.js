@@ -19,7 +19,7 @@ import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
-import { Terminal } from 'xterm';
+import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
@@ -30,6 +30,7 @@ import { IWebGL2RenderingContext } from './Types';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
+  private _charAtlasDisposable: IDisposable | undefined;
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
 
@@ -264,9 +265,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._coreBrowserService.dpr
     );
     if (this._charAtlas !== atlas) {
+
+      this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
-      // TODO: Dispose this when there's a new atlas
-      forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+      this._charAtlasDisposable = forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();

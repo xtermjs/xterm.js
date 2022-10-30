@@ -15,7 +15,7 @@ import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICellData } from 'common/Types';
+import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
@@ -38,9 +38,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   private _bitmapGenerator: (BitmapGenerator | undefined)[] = [];
 
   protected _charAtlas!: ITextureAtlas;
+  private _charAtlasDisposable?: IDisposable;
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
-  // TODO: Support multiple pages
   public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.pages[0].canvas!; }
 
   private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
@@ -121,9 +121,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     if (this._deviceCharWidth <= 0 && this._deviceCharHeight <= 0) {
       return;
     }
+    this._charAtlasDisposable?.dispose();
     this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
-    // TODO: Dispose this when there's a new atlas
-    forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+    this._charAtlasDisposable = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
     for (let i = 0; i < this._charAtlas.pages.length; i++) {
       this._bitmapGenerator[i] = new BitmapGenerator(this._charAtlas.pages[i].canvas);
@@ -383,7 +383,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       this._bitmapGenerator[glyph.texturePage]?.refresh();
       this._charAtlas.pages[glyph.texturePage].hasCanvasChanged = false;
     }
-    // TODO: Create generator if there's a new page
     this._ctx.drawImage(
       this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
       glyph.texturePosition.x,
