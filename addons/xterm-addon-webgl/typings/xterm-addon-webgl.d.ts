@@ -22,7 +22,9 @@ declare module 'xterm-addon-webgl' {
      */
     public readonly onChangeTextureAtlas: IEvent<HTMLCanvasElement>;
 
-    // TODO: Doc
+    /**
+     * An event that is fired when the a new page is added to the texture atlas.
+     */
     public readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
     constructor(preserveDrawingBuffer?: boolean);

@@ -137,7 +137,7 @@ export class TextureAtlas implements ITextureAtlas {
     if (this._pages.length === 4 || this._pages.length === 7) {
       this._increaseTextureSize();
     }
-    // TODO: Clear all pages and restart if the maximum page count is reached
+    // TODO: Ensure pages aren't created beyond the maximum supported
     const newPage = new AtlasPage(this._document, this._textureSize);
     this._pages.push(newPage);
     this._activePages.push(newPage);
