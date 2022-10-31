@@ -87,8 +87,9 @@ export interface IRenderer extends IDisposable {
 }
 
 export interface ITextureAtlas extends IDisposable {
-  readonly cacheCanvas: HTMLCanvasElement;
-  hasCanvasChanged: boolean;
+  readonly pages: { canvas: HTMLCanvasElement, hasCanvasChanged: boolean }[];
+
+  onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
   /**
    * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.
@@ -120,6 +121,10 @@ export interface IRasterizedGlyph {
    * in pixels.
    */
   offset: IVector;
+  /**
+   * The index of the texture page that the glyph is on.
+   */
+  texturePage: number;
   /**
    * the x and y position of the glyph in the texture in pixels.
    */

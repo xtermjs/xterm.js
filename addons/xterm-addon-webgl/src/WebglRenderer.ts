@@ -7,18 +7,19 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
-import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { createRenderDimensions, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { EventEmitter } from 'common/EventEmitter';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
-import { Terminal } from 'xterm';
+import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
@@ -29,6 +30,7 @@ import { IWebGL2RenderingContext } from './Types';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
+  private _charAtlasDisposable: IDisposable | undefined;
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
 
@@ -49,6 +51,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
   private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
   private readonly _onContextLoss = this.register(new EventEmitter<void>());
@@ -135,7 +139,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
-    return this._charAtlas?.cacheCanvas;
+    return this._charAtlas?.pages[0].canvas;
   }
 
   private _handleColorChange(): void {
@@ -261,7 +265,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._coreBrowserService.dpr
     );
     if (this._charAtlas !== atlas) {
-      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
+
+      this._charAtlasDisposable?.dispose();
+      this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
+      this._charAtlasDisposable = forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();

@@ -8,7 +8,6 @@ import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel } from '
 import { fill } from 'common/TypedArrayUtils';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
 import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
@@ -30,8 +29,9 @@ const enum VertexAttribLocations {
   CELL_POSITION = 1,
   OFFSET = 2,
   SIZE = 3,
-  TEXCOORD = 4,
-  TEXSIZE = 5
+  TEXPAGE = 4,
+  TEXCOORD = 5,
+  TEXSIZE = 6
 }
 
 const vertexShaderSource = `#version 300 es
@@ -39,6 +39,7 @@ layout (location = ${VertexAttribLocations.UNIT_QUAD}) in vec2 a_unitquad;
 layout (location = ${VertexAttribLocations.CELL_POSITION}) in vec2 a_cellpos;
 layout (location = ${VertexAttribLocations.OFFSET}) in vec2 a_offset;
 layout (location = ${VertexAttribLocations.SIZE}) in vec2 a_size;
+layout (location = ${VertexAttribLocations.TEXPAGE}) in float a_texpage;
 layout (location = ${VertexAttribLocations.TEXCOORD}) in vec2 a_texcoord;
 layout (location = ${VertexAttribLocations.TEXSIZE}) in vec2 a_texsize;
 
@@ -46,27 +47,38 @@ uniform mat4 u_projection;
 uniform vec2 u_resolution;
 
 out vec2 v_texcoord;
+flat out int v_texpage;
 
 void main() {
   vec2 zeroToOne = (a_offset / u_resolution) + a_cellpos + (a_unitquad * a_size);
   gl_Position = u_projection * vec4(zeroToOne, 0.0, 1.0);
+  v_texpage = int(a_texpage);
   v_texcoord = a_texcoord + a_unitquad * a_texsize;
 }`;
 
-const fragmentShaderSource = `#version 300 es
+function createFragmentShaderSource(maxFragmentShaderTextureUnits: number): string {
+  let textureConditionals = '';
+  for (let i = 1; i < maxFragmentShaderTextureUnits; i++) {
+    textureConditionals += ` else if (v_texpage == ${i}) { outColor = texture(u_texture[${i}], v_texcoord); }`;
+  }
+  return (`#version 300 es
 precision lowp float;
 
 in vec2 v_texcoord;
+flat in int v_texpage;
 
-uniform sampler2D u_texture;
+uniform sampler2D u_texture[${maxFragmentShaderTextureUnits}];
 
 out vec4 outColor;
 
 void main() {
-  outColor = texture(u_texture, v_texcoord);
-}`;
+  if (v_texpage == 0) {
+    outColor = texture(u_texture[0], v_texcoord);
+  } ${textureConditionals}
+}`);
+}
 
-const INDICES_PER_CELL = 10;
+const INDICES_PER_CELL = 11;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
 
@@ -77,18 +89,17 @@ let $leftCellPadding = 0;
 let $clippedPixels = 0;
 
 export class GlyphRenderer extends Disposable {
+  private readonly _program: WebGLProgram;
+  private readonly _vertexArrayObject: IWebGLVertexArrayObject;
+  private readonly _projectionLocation: WebGLUniformLocation;
+  private readonly _resolutionLocation: WebGLUniformLocation;
+  private readonly _textureLocation: WebGLUniformLocation;
+  private readonly _atlasTextures: WebGLTexture[];
+  private readonly _attributesBuffer: WebGLBuffer;
+
   private _atlas: ITextureAtlas | undefined;
-
-  private _program: WebGLProgram;
-  private _vertexArrayObject: IWebGLVertexArrayObject;
-  private _projectionLocation: WebGLUniformLocation;
-  private _resolutionLocation: WebGLUniformLocation;
-  private _textureLocation: WebGLUniformLocation;
-  private _atlasTexture: WebGLTexture;
-  private _attributesBuffer: WebGLBuffer;
   private _activeBuffer: number = 0;
-
-  private _vertices: IVertices = {
+  private readonly _vertices: IVertices = {
     count: 0,
     attributes: new Float32Array(0),
     attributesBuffers: [
@@ -97,15 +108,22 @@ export class GlyphRenderer extends Disposable {
     ]
   };
 
+  private static _maxAtlasPages: number | undefined;
+
   constructor(
-    private _terminal: Terminal,
-    private _gl: IWebGL2RenderingContext,
+    private readonly _terminal: Terminal,
+    private readonly _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
     super();
 
     const gl = this._gl;
-    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+
+    if (GlyphRenderer._maxAtlasPages === undefined) {
+      GlyphRenderer._maxAtlasPages = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number | null);
+    }
+
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(GlyphRenderer._maxAtlasPages)));
     this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
@@ -145,23 +163,41 @@ export class GlyphRenderer extends Disposable {
     gl.enableVertexAttribArray(VertexAttribLocations.SIZE);
     gl.vertexAttribPointer(VertexAttribLocations.SIZE, 2, gl.FLOAT, false, BYTES_PER_CELL, 2 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.SIZE, 1);
+    gl.enableVertexAttribArray(VertexAttribLocations.TEXPAGE);
+    gl.vertexAttribPointer(VertexAttribLocations.TEXPAGE, 1, gl.FLOAT, false, BYTES_PER_CELL, 4 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribDivisor(VertexAttribLocations.TEXPAGE, 1);
     gl.enableVertexAttribArray(VertexAttribLocations.TEXCOORD);
-    gl.vertexAttribPointer(VertexAttribLocations.TEXCOORD, 2, gl.FLOAT, false, BYTES_PER_CELL, 4 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribPointer(VertexAttribLocations.TEXCOORD, 2, gl.FLOAT, false, BYTES_PER_CELL, 5 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.TEXCOORD, 1);
     gl.enableVertexAttribArray(VertexAttribLocations.TEXSIZE);
-    gl.vertexAttribPointer(VertexAttribLocations.TEXSIZE, 2, gl.FLOAT, false, BYTES_PER_CELL, 6 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribPointer(VertexAttribLocations.TEXSIZE, 2, gl.FLOAT, false, BYTES_PER_CELL, 7 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.TEXSIZE, 1);
     gl.enableVertexAttribArray(VertexAttribLocations.CELL_POSITION);
-    gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, BYTES_PER_CELL, 8 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, BYTES_PER_CELL, 9 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.CELL_POSITION, 1);
 
-    // Setup empty texture atlas
-    this._atlasTexture = throwIfFalsy(gl.createTexture());
-    this.register(toDisposable(() => gl.deleteTexture(this._atlasTexture)));
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    // Setup static uniforms
+    gl.useProgram(this._program);
+    const textureUnits = new Int32Array(GlyphRenderer._maxAtlasPages);
+    for (let i = 0; i < GlyphRenderer._maxAtlasPages; i++) {
+      textureUnits[i] = i;
+    }
+    gl.uniform1iv(this._textureLocation, textureUnits);
+    gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
+
+    // Setup 1x1 red pixel textures for all potential atlas pages, if one of these invalid textures
+    // is ever drawn it will show characters as red rectangles.
+    this._atlasTextures = [];
+    for (let i = 0; i < GlyphRenderer._maxAtlasPages; i++) {
+      const texture = throwIfFalsy(gl.createTexture());
+      this.register(toDisposable(() => gl.deleteTexture(texture)));
+      gl.activeTexture(gl.TEXTURE0 + i);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
+      this._atlasTextures[i] = texture;
+    }
 
     // Allow drawing of transparent texture
     gl.enable(gl.BLEND);
@@ -213,12 +249,14 @@ export class GlyphRenderer extends Disposable {
       // a_size
       array[$i + 2] = ($glyph.size.x - $clippedPixels) / this._dimensions.device.canvas.width;
       array[$i + 3] = $glyph.size.y / this._dimensions.device.canvas.height;
+      // a_texpage
+      array[$i + 4] = $glyph.texturePage;
       // a_texcoord
-      array[$i + 4] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.cacheCanvas.width;
-      array[$i + 5] = $glyph.texturePositionClipSpace.y;
+      array[$i + 5] = $glyph.texturePositionClipSpace.x + $clippedPixels / this._atlas.pages[$glyph.texturePage].canvas.width;
+      array[$i + 6] = $glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[$i + 6] = $glyph.sizeClipSpace.x - $clippedPixels / this._atlas.cacheCanvas.width;
-      array[$i + 7] = $glyph.sizeClipSpace.y;
+      array[$i + 7] = $glyph.sizeClipSpace.x - $clippedPixels / this._atlas.pages[$glyph.texturePage].canvas.width;
+      array[$i + 8] = $glyph.sizeClipSpace.y;
     } else {
       // a_origin
       array[$i    ] = -$glyph.offset.x + this._dimensions.device.char.left;
@@ -226,12 +264,14 @@ export class GlyphRenderer extends Disposable {
       // a_size
       array[$i + 2] = $glyph.size.x / this._dimensions.device.canvas.width;
       array[$i + 3] = $glyph.size.y / this._dimensions.device.canvas.height;
+      // a_texpage
+      array[$i + 4] = $glyph.texturePage;
       // a_texcoord
-      array[$i + 4] = $glyph.texturePositionClipSpace.x;
-      array[$i + 5] = $glyph.texturePositionClipSpace.y;
+      array[$i + 5] = $glyph.texturePositionClipSpace.x;
+      array[$i + 6] = $glyph.texturePositionClipSpace.y;
       // a_texsize
-      array[$i + 6] = $glyph.sizeClipSpace.x;
-      array[$i + 7] = $glyph.sizeClipSpace.y;
+      array[$i + 7] = $glyph.sizeClipSpace.x;
+      array[$i + 8] = $glyph.sizeClipSpace.y;
     }
     // a_cellpos only changes on resize
   }
@@ -246,7 +286,8 @@ export class GlyphRenderer extends Disposable {
     } else {
       this._vertices.attributes.fill(0);
     }
-    for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
+    let i = 0;
+    for (; i < this._vertices.attributesBuffers.length; i++) {
       if (this._vertices.count !== newCount) {
         this._vertices.attributesBuffers[i] = new Float32Array(newCount);
       } else {
@@ -254,11 +295,11 @@ export class GlyphRenderer extends Disposable {
       }
     }
     this._vertices.count = newCount;
-    let i = 0;
+    i = 0;
     for (let y = 0; y < terminal.rows; y++) {
       for (let x = 0; x < terminal.cols; x++) {
-        this._vertices.attributes[i + 8] = x / terminal.cols;
-        this._vertices.attributes[i + 9] = y / terminal.rows;
+        this._vertices.attributes[i + 9] = x / terminal.cols;
+        this._vertices.attributes[i + 10] = y / terminal.rows;
         i += INDICES_PER_CELL;
       }
     }
@@ -267,6 +308,7 @@ export class GlyphRenderer extends Disposable {
   public handleResize(): void {
     const gl = this._gl;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
     this.clear();
   }
 
@@ -303,30 +345,31 @@ export class GlyphRenderer extends Disposable {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(0, bufferLength), gl.STREAM_DRAW);
 
-    // Bind the texture atlas if it's changed
-    if (this._atlas.hasCanvasChanged) {
-      this._atlas.hasCanvasChanged = false;
-      gl.uniform1i(this._textureLocation, 0);
-      gl.activeTexture(gl.TEXTURE0 + 0);
-      gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas);
-      gl.generateMipmap(gl.TEXTURE_2D);
+    // Bind the atlas page texture if they have changed
+    for (let i = 0; i < this._atlas.pages.length; i++) {
+      if (this._atlas.pages[i].hasCanvasChanged) {
+        this._atlas.pages[i].hasCanvasChanged = false;
+        this._bindAtlasPageTexture(gl, this._atlas, i);
+      }
     }
-
-    // Set uniforms
-    gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
-    gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Draw the viewport
     gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
   }
 
   public setAtlas(atlas: ITextureAtlas): void {
-    const gl = this._gl;
     this._atlas = atlas;
+    for (let i = 0; i < atlas.pages.length; i++) {
+      this._bindAtlasPageTexture(this._gl, atlas, i);
+    }
+  }
 
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.cacheCanvas);
+  private _bindAtlasPageTexture(gl: IWebGL2RenderingContext, atlas: ITextureAtlas, i: number): void {
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[i].canvas);
     gl.generateMipmap(gl.TEXTURE_2D);
   }
 

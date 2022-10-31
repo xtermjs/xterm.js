@@ -42,6 +42,7 @@ export interface IRenderLayer extends IDisposable {
   readonly canvas: HTMLCanvasElement;
   readonly cacheCanvas: HTMLCanvasElement;
 
+  readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
   /**
    * Called when the terminal loses focus.
    */

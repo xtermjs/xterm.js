@@ -15,12 +15,13 @@ import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICellData } from 'common/Types';
+import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isSafari } from 'common/Platform';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -34,12 +35,16 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
 
   protected _selectionModel: ISelectionRenderModel = createSelectionRenderModel();
   private _cellColorResolver: CellColorResolver;
-  private _bitmapGenerator?: BitmapGenerator;
+  private _bitmapGenerator: (BitmapGenerator | undefined)[] = [];
 
   protected _charAtlas!: ITextureAtlas;
+  private _charAtlasDisposable?: IDisposable;
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
-  public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.cacheCanvas!; }
+  public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.pages[0].canvas!; }
+
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   constructor(
     private readonly _terminal: Terminal,
@@ -116,9 +121,13 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     if (this._deviceCharWidth <= 0 && this._deviceCharHeight <= 0) {
       return;
     }
+    this._charAtlasDisposable?.dispose();
     this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
+    this._charAtlasDisposable = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
-    this._bitmapGenerator = new BitmapGenerator(this._charAtlas.cacheCanvas);
+    for (let i = 0; i < this._charAtlas.pages.length; i++) {
+      this._bitmapGenerator[i] = new BitmapGenerator(this._charAtlas.pages[i].canvas);
+    }
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -367,12 +376,15 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
-    if (this._charAtlas.hasCanvasChanged) {
-      this._bitmapGenerator?.refresh();
-      this._charAtlas.hasCanvasChanged = false;
+    if (this._charAtlas.pages[glyph.texturePage].hasCanvasChanged) {
+      if (!this._bitmapGenerator[glyph.texturePage]) {
+        this._bitmapGenerator[glyph.texturePage] = new BitmapGenerator(this._charAtlas.pages[glyph.texturePage].canvas);
+      }
+      this._bitmapGenerator[glyph.texturePage]?.refresh();
+      this._charAtlas.pages[glyph.texturePage].hasCanvasChanged = false;
     }
     this._ctx.drawImage(
-      this._bitmapGenerator?.bitmap || this._charAtlas!.cacheCanvas,
+      this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
       glyph.texturePosition.x,
       glyph.texturePosition.y,
       glyph.size.x,

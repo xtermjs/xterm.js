@@ -14,30 +14,29 @@ import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { EventEmitter } from 'common/EventEmitter';
 
-// For debugging purposes, it can be useful to set this to a really tiny value,
-// to verify that LRU eviction works.
-const TEXTURE_WIDTH = 1024;
-const TEXTURE_HEIGHT = 1024;
-
-/**
- * The amount of the texture to be filled before throwing it away and starting
- * again. Since the throw away and individual glyph draws don't cost too much,
- * this prevent juggling multiple textures in the GL context.
- */
-const TEXTURE_CAPACITY = Math.floor(TEXTURE_HEIGHT * 0.8);
 /**
  * A shared object which is used to draw nothing for a particular cell.
  */
 const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
-  offset: { x: 0, y: 0 },
+  texturePage: 0,
   texturePosition: { x: 0, y: 0 },
   texturePositionClipSpace: { x: 0, y: 0 },
+  offset: { x: 0, y: 0 },
   size: { x: 0, y: 0 },
   sizeClipSpace: { x: 0, y: 0 }
 };
 
 const TMP_CANVAS_GLYPH_PADDING = 2;
+
+const enum Constants {
+  /**
+   * The amount of pixel padding to allow in each row. Setting this to zero would make the atlas
+   * page pack as tightly as possible, but more pages would end up being created as a result.
+   */
+  ROW_PIXEL_THRESHOLD = 2
+}
 
 interface ICharAtlasActiveRow {
   x: number;
@@ -55,51 +54,35 @@ export class TextureAtlas implements ITextureAtlas {
   private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
 
   // The texture that the atlas is drawn to
-  public cacheCanvas: HTMLCanvasElement;
-  private _cacheCtx: CanvasRenderingContext2D;
+  private _pages: AtlasPage[] = [];
+  public get pages(): { canvas: HTMLCanvasElement, hasCanvasChanged: boolean }[] { return this._pages; }
+
+  // The set of atlas pages that can be written to
+  private _activePages: AtlasPage[] = [];
 
   private _tmpCanvas: HTMLCanvasElement;
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
 
-  // Texture atlas current positioning data. The texture packing strategy used is to fill from
-  // left-to-right and top-to-bottom. When the glyph being written is less than half of the current
-  // row's height, the following happens:
-  //
-  // - The current row becomes the fixed height row A
-  // - A new fixed height row B the exact size of the glyph is created below the current row
-  // - A new dynamic height current row is created below B
-  //
-  // This strategy does a good job preventing space being wasted for very short glyphs such as
-  // underscores, hyphens etc. or those with underlines rendered.
-  private _currentRow: ICharAtlasActiveRow = {
-    x: 0,
-    y: 0,
-    height: 0
-  };
-  private readonly _fixedRows: ICharAtlasActiveRow[] = [];
-
-  public hasCanvasChanged = false;
-
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
   private _workAttributeData: AttributeData = new AttributeData();
 
+  private _textureSize: number = 512;
+
+  private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+
   constructor(
-    document: Document,
+    private readonly _document: Document,
     private readonly _config: ICharAtlasConfig,
     private readonly _unicodeService: IUnicodeService
   ) {
-    this.cacheCanvas = document.createElement('canvas');
-    this.cacheCanvas.width = TEXTURE_WIDTH;
-    this.cacheCanvas.height = TEXTURE_HEIGHT;
-    // The canvas needs alpha because we use clearColor to convert the background color to alpha.
-    // It might also contain some characters with transparent backgrounds if allowTransparency is
-    // set.
-    this._cacheCtx = throwIfFalsy(this.cacheCanvas.getContext('2d', { alpha: true }));
-
-    this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2;
-    this._tmpCanvas.height = this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 2;
+    this._createNewPage();
+    this._tmpCanvas = createCanvas(
+      _document,
+      this._config.deviceCellWidth * 4 + TMP_CANVAS_GLYPH_PADDING * 2,
+      this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 2
+    );
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {
       alpha: this._config.allowTransparency,
       willReadFrequently: true
@@ -107,9 +90,10 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public dispose(): void {
-    if (this.cacheCanvas.parentElement) {
-      this.cacheCanvas.parentElement.removeChild(this.cacheCanvas);
+    for (const page of this.pages) {
+      page.canvas.remove();
     }
+    this._onAddTextureAtlasCanvas.dispose();
   }
 
   public warmUp(): void {
@@ -133,27 +117,43 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public beginFrame(): boolean {
-    if (this._currentRow.y > TEXTURE_CAPACITY) {
-      this.clearTexture();
-      this.warmUp();
-      return true;
-    }
+    // TODO: Something should happen to prevent reaching capacity
     return false;
   }
 
   public clearTexture(): void {
-    if (this._currentRow.x === 0 && this._currentRow.y === 0) {
+    if (this._pages[0].currentRow.x === 0 && this._pages[0].currentRow.y === 0) {
       return;
     }
-    this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    for (const page of this._pages) {
+      page.clear();
+    }
     this._cacheMap.clear();
     this._cacheMapCombined.clear();
-    this._currentRow.x = 0;
-    this._currentRow.y = 0;
-    this._currentRow.height = 0;
-    this._fixedRows.length = 0;
     this._didWarmUp = false;
-    this.hasCanvasChanged = true;
+  }
+
+  private _createNewPage(): AtlasPage {
+    if (this._pages.length === 4 || this._pages.length === 7) {
+      this._increaseTextureSize();
+    }
+    // TODO: Ensure pages aren't created beyond the maximum supported
+    const newPage = new AtlasPage(this._document, this._textureSize);
+    this._pages.push(newPage);
+    this._activePages.push(newPage);
+    this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+    return newPage;
+  }
+
+  /**
+   * Doubles the texture size of new atlas pages if allowed.
+   */
+  private _increaseTextureSize(): void {
+    // 4096 is the minimum texture size in WebGL, but we still want the texture to be reasonably fast
+    // to upload. We could loosen this limit if it ever becomes a problem.
+    if (this._textureSize < 2048) {
+      this._textureSize *= 2;
+    }
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph {
@@ -339,8 +339,6 @@ export class TextureAtlas implements ITextureAtlas {
 
     // Uncomment for debugging
     // console.log(`draw to cache "${chars}"`, bg, fg, ext);
-
-    this.hasCanvasChanged = true;
 
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
@@ -614,60 +612,108 @@ export class TextureAtlas implements ITextureAtlas {
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
 
     // Find the best atlas row to use
+    let activePage: AtlasPage;
     let activeRow: ICharAtlasActiveRow;
     while (true) {
-      // Select the ideal existing row, preferring fixed rows over the current row
-      activeRow = this._currentRow;
-      for (const row of this._fixedRows) {
-        if ((activeRow === this._currentRow || row.height < activeRow.height) && rasterizedGlyph.size.y <= row.height) {
-          activeRow = row;
+      // Get the best current row from all active pages
+      activePage = this._activePages[this._activePages.length - 1];
+      activeRow = activePage.currentRow;
+      for (const p of this._activePages) {
+        if (rasterizedGlyph.size.y <= p.currentRow.height) {
+          activePage = p;
+          activeRow = p.currentRow;
         }
       }
 
-      // Create a new one if vertical space would be wasted, fixing the previously active row in the
-      // process as it now has a fixed height
-      if (activeRow.height > rasterizedGlyph.size.y * 2) {
-        // Fix the current row as the new row is being added below
-        if (this._currentRow.height > 0) {
-          this._fixedRows.push(this._currentRow);
+      // TODO: This algorithm could be simplified:
+      // - Search for the page with ROW_PIXEL_THRESHOLD in mind
+      // - Keep track of current/fixed rows in a Map
+
+      // Replace the best current row with a fixed row if there is one at least as good as the
+      // current row. Search in reverse to prioritize filling in older pages.
+      for (let i = this._activePages.length - 1; i >= 0; i--) {
+        for (const row of this._activePages[i].fixedRows) {
+          if (row.height <= activeRow.height && rasterizedGlyph.size.y <= row.height) {
+            activePage = this._activePages[i];
+            activeRow = row;
+          }
         }
+      }
 
-        // Create the new fixed height row
-        activeRow = {
-          x: 0,
-          y: this._currentRow.y + this._currentRow.height,
-          height: rasterizedGlyph.size.y
-        };
-        this._fixedRows.push(activeRow);
+      // Create a new one if too much vertical space would be wasted or there is not enough room
+      // left in the page. The previous active row will become fixed in the process as it now has a
+      // fixed height
+      if (activeRow.y + rasterizedGlyph.size.y >= activePage.canvas.height || activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
+        // Create the new fixed height row, creating a new page if there isn't enough room on the
+        // current page
+        let wasNewPageCreated = false;
+        if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
+          // Find the first page with room to create the new row on
+          let candidatePage: AtlasPage | undefined;
+          for (const p of this._activePages) {
+            if (p.currentRow.y + p.currentRow.height + rasterizedGlyph.size.y < p.canvas.height) {
+              candidatePage = p;
+              break;
+            }
+          }
+          if (candidatePage) {
+            activePage = candidatePage;
+          } else {
+            // Create a new page if there is no room
+            const newPage = this._createNewPage();
+            activePage = newPage;
+            activeRow = newPage.currentRow;
+            activeRow.height = rasterizedGlyph.size.y;
+            wasNewPageCreated = true;
+          }
+        }
+        if (!wasNewPageCreated) {
+          // Fix the current row as the new row is being added below
+          if (activePage.currentRow.height > 0) {
+            activePage.fixedRows.push(activePage.currentRow);
+          }
+          activeRow = {
+            x: 0,
+            y: activePage.currentRow.y + activePage.currentRow.height,
+            height: rasterizedGlyph.size.y
+          };
+          activePage.fixedRows.push(activeRow);
 
-        // Create the new current row below the new fixed height row
-        this._currentRow = {
-          x: 0,
-          y: activeRow.y + activeRow.height,
-          height: 0
-        };
+          // Create the new current row below the new fixed height row
+          activePage.currentRow = {
+            x: 0,
+            y: activeRow.y + activeRow.height,
+            height: 0
+          };
+        }
+        // TODO: Remove pages from _activePages when all rows are filled
       }
 
       // Exit the loop if there is enough room in the row
-      if (activeRow.x + rasterizedGlyph.size.x <= TEXTURE_WIDTH) {
+      if (activeRow.x + rasterizedGlyph.size.x <= activePage.canvas.width) {
         break;
       }
 
-      // If there is enough room in the current row, finish it and try again
-      if (activeRow === this._currentRow) {
+      // If there is not enough room in the current row, finish it and try again
+      if (activeRow === activePage.currentRow) {
         activeRow.x = 0;
         activeRow.y += activeRow.height;
         activeRow.height = 0;
       } else {
-        this._fixedRows.splice(this._fixedRows.indexOf(activeRow), 1);
+        activePage.fixedRows.splice(activePage.fixedRows.indexOf(activeRow), 1);
       }
     }
 
     // Record texture position
+    rasterizedGlyph.texturePage = this._pages.indexOf(activePage);
     rasterizedGlyph.texturePosition.x = activeRow.x;
     rasterizedGlyph.texturePosition.y = activeRow.y;
-    rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / TEXTURE_WIDTH;
-    rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / TEXTURE_HEIGHT;
+    rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / activePage.canvas.width;
+    rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / activePage.canvas.height;
+
+    // Fix the clipspace position as pages may be of differing size
+    rasterizedGlyph.sizeClipSpace.x /= activePage.canvas.width;
+    rasterizedGlyph.sizeClipSpace.y /= activePage.canvas.height;
 
     // Update atlas current row, for fixed rows the glyph height will never be larger than the row
     // height
@@ -675,7 +721,7 @@ export class TextureAtlas implements ITextureAtlas {
     activeRow.x += rasterizedGlyph.size.x;
 
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
-    this._cacheCtx.putImageData(
+    activePage.ctx.putImageData(
       imageData,
       rasterizedGlyph.texturePosition.x - this._workBoundingBox.left,
       rasterizedGlyph.texturePosition.y - this._workBoundingBox.top,
@@ -684,6 +730,7 @@ export class TextureAtlas implements ITextureAtlas {
       rasterizedGlyph.size.x,
       rasterizedGlyph.size.y
     );
+    activePage.hasCanvasChanged = true;
 
     return rasterizedGlyph;
   }
@@ -759,6 +806,7 @@ export class TextureAtlas implements ITextureAtlas {
       }
     }
     return {
+      texturePage: 0,
       texturePosition: { x: 0, y: 0 },
       texturePositionClipSpace: { x: 0, y: 0 },
       size: {
@@ -766,14 +814,62 @@ export class TextureAtlas implements ITextureAtlas {
         y: boundingBox.bottom - boundingBox.top + 1
       },
       sizeClipSpace: {
-        x: (boundingBox.right - boundingBox.left + 1) / TEXTURE_WIDTH,
-        y: (boundingBox.bottom - boundingBox.top + 1) / TEXTURE_HEIGHT
+        x: (boundingBox.right - boundingBox.left + 1),
+        y: (boundingBox.bottom - boundingBox.top + 1)
       },
       offset: {
         x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2) : 0),
         y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.deviceCellHeight - this._config.deviceCharHeight) / 2) : 0)
       }
     };
+  }
+}
+
+class AtlasPage {
+  public readonly canvas: HTMLCanvasElement;
+  public readonly ctx: CanvasRenderingContext2D;
+
+  /**
+   * Whether the canvas of the atlas page has changed, this is only set to true by the atlas, the
+   * user of the boolean is required to reset its value to false.
+   */
+  public hasCanvasChanged = false;
+
+  // Texture atlas current positioning data. The texture packing strategy used is to fill from
+  // left-to-right and top-to-bottom. When the glyph being written is less than half of the current
+  // row's height, the following happens:
+  //
+  // - The current row becomes the fixed height row A
+  // - A new fixed height row B the exact size of the glyph is created below the current row
+  // - A new dynamic height current row is created below B
+  //
+  // This strategy does a good job preventing space being wasted for very short glyphs such as
+  // underscores, hyphens etc. or those with underlines rendered.
+  public currentRow: ICharAtlasActiveRow = {
+    x: 0,
+    y: 0,
+    height: 0
+  };
+  public readonly fixedRows: ICharAtlasActiveRow[] = [];
+
+  constructor(
+    document: Document,
+    size: number
+  ) {
+    this.canvas = createCanvas(document, size, size);
+    // The canvas needs alpha because we use clearColor to convert the background color to alpha.
+    // It might also contain some characters with transparent backgrounds if allowTransparency is
+    // set.
+    this.ctx = throwIfFalsy(this.canvas.getContext('2d', { alpha: true }));
+  }
+
+  public clear(): void {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.currentRow.x = 0;
+    this.currentRow.y = 0;
+    this.currentRow.height = 0;
+    this.fixedRows.length = 0;
+    this.hasCanvasChanged = true;
   }
 }
 
@@ -830,4 +926,11 @@ function checkCompletelyTransparent(imageData: ImageData): boolean {
     }
   }
   return true;
+}
+
+function createCanvas(document: Document, width: number, height: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
 }

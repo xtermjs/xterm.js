@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax */
 /**
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
@@ -218,6 +219,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('print-cjk').addEventListener('click', addCjk);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
@@ -273,8 +275,9 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.webgl.instance);
   setTimeout(() => {
     if (addons.webgl.instance !== undefined) {
-      addTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+      setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
     }
   }, 0);
 
@@ -551,13 +554,15 @@ function initAddons(term: TerminalType): void {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
             setTimeout(() => {
-              addTextureAtlas(addons.webgl.instance.textureAtlas);
-              addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+              setTextureAtlas(addons.webgl.instance.textureAtlas);
+              addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+              addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
           } else if (name === 'canvas') {
             setTimeout(() => {
-              addTextureAtlas(addons.canvas.instance.textureAtlas);
-              addons.canvas.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+              setTextureAtlas(addons.canvas.instance.textureAtlas);
+              addons.canvas.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+              addons.canvas.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
@@ -648,8 +653,17 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
 }
 
-function addTextureAtlas(e: HTMLCanvasElement): void {
+function setTextureAtlas(e: HTMLCanvasElement): void {
+  styleAtlasPage(e);
   document.querySelector('#texture-atlas').replaceChildren(e);
+}
+function appendTextureAtlas(e: HTMLCanvasElement): void {
+  styleAtlasPage(e);
+  document.querySelector('#texture-atlas').appendChild(e);
+}
+function styleAtlasPage(e: HTMLCanvasElement): void {
+  e.style.width = `${e.width / window.devicePixelRatio}px`;
+  e.style.height = `${e.height / window.devicePixelRatio}px`;
 }
 
 function writeCustomGlyphHandler(): void {
@@ -963,6 +977,16 @@ function addAnsiHyperlink(): void {
   term.writeln('║    ║');
   term.writeln('╚════╝');
   term.write('\x1b[3A\x1b[1C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[5D');
+}
+
+/**
+ * Prints the 20977 characters from the CJK Unified Ideographs unicode block.
+ */
+function addCjk(): void {
+  term.write('\n\n\r');
+  for (let i = 0x4E00; i < 0x9FCC; i++) {
+    term.write(String.fromCharCode(i));
+  }
 }
 
 function addDecoration(): void {
