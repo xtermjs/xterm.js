@@ -7,7 +7,6 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
-import { fill } from 'common/TypedArrayUtils';
 import { Params } from 'common/parser/Params';
 import { OscParser } from 'common/parser/OscParser';
 import { DcsParser } from 'common/parser/DcsParser';
@@ -39,7 +38,7 @@ export class TransitionTable {
    * @param next default next state
    */
   public setDefault(action: ParserAction, next: ParserState): void {
-    fill(this.table, action << TableAccess.TRANSITION_ACTION_SHIFT | next);
+    this.table.fill(action << TableAccess.TRANSITION_ACTION_SHIFT | next);
   }
 
   /**
