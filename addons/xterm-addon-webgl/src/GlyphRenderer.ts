@@ -11,6 +11,7 @@ import { Terminal } from 'xterm';
 import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 
 interface IVertices {
   attributes: Float32Array;
@@ -108,8 +109,6 @@ export class GlyphRenderer extends Disposable {
     ]
   };
 
-  private static _maxAtlasPages: number | undefined;
-
   constructor(
     private readonly _terminal: Terminal,
     private readonly _gl: IWebGL2RenderingContext,
@@ -119,11 +118,11 @@ export class GlyphRenderer extends Disposable {
 
     const gl = this._gl;
 
-    if (GlyphRenderer._maxAtlasPages === undefined) {
-      GlyphRenderer._maxAtlasPages = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number | null);
+    if (TextureAtlas.maxAtlasPages === undefined) {
+      TextureAtlas.maxAtlasPages = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number | null);
     }
 
-    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(GlyphRenderer._maxAtlasPages)));
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(TextureAtlas.maxAtlasPages)));
     this.register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
@@ -178,8 +177,8 @@ export class GlyphRenderer extends Disposable {
 
     // Setup static uniforms
     gl.useProgram(this._program);
-    const textureUnits = new Int32Array(GlyphRenderer._maxAtlasPages);
-    for (let i = 0; i < GlyphRenderer._maxAtlasPages; i++) {
+    const textureUnits = new Int32Array(TextureAtlas.maxAtlasPages);
+    for (let i = 0; i < TextureAtlas.maxAtlasPages; i++) {
       textureUnits[i] = i;
     }
     gl.uniform1iv(this._textureLocation, textureUnits);
@@ -188,7 +187,7 @@ export class GlyphRenderer extends Disposable {
     // Setup 1x1 red pixel textures for all potential atlas pages, if one of these invalid textures
     // is ever drawn it will show characters as red rectangles.
     this._atlasTextures = [];
-    for (let i = 0; i < GlyphRenderer._maxAtlasPages; i++) {
+    for (let i = 0; i < TextureAtlas.maxAtlasPages; i++) {
       const texture = throwIfFalsy(gl.createTexture());
       this.register(toDisposable(() => gl.deleteTexture(texture)));
       gl.activeTexture(gl.TEXTURE0 + i);

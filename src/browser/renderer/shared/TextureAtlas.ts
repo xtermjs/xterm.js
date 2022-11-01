@@ -69,6 +69,8 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _textureSize: number = 512;
 
+  public static maxAtlasPages: number | undefined;
+
   private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
@@ -140,7 +142,7 @@ export class TextureAtlas implements ITextureAtlas {
     //   this._increaseTextureSize();
     // }
 
-    if (!this._hasMerged && this._pages.length === 6) {
+    if (!this._hasMerged && this._pages.length === TextureAtlas.maxAtlasPages) {
       this._hasMerged = true;
       console.log('try merge');
       console.time('merge');
@@ -172,22 +174,7 @@ export class TextureAtlas implements ITextureAtlas {
 
       // TODO: Splice other 3 pages, shifting all other texture page props
       for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
-        // TODO: Optimize, this is slow
-        const mergingPageIndex = sortedMergingPagesIndexes[i];
-
-        console.log('splice', mergingPageIndex);
-        this._pages.splice(mergingPageIndex, 1);
-        for (let j = mergingPageIndex; j < this._pages.length; j++) {
-          const adjustingPage = this._pages[j];
-          console.log('adjust', j);
-          // if (mergingPages.includes(adjustingPage)) {
-          //   continue;
-          // }
-          for (const g of adjustingPage.glyphs) {
-            g.texturePage--;
-          }
-          adjustingPage.hasCanvasChanged = true;
-        }
+        this._deletePage(sortedMergingPagesIndexes[i]);
       }
 
       this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
@@ -237,6 +224,17 @@ export class TextureAtlas implements ITextureAtlas {
       }
     }
     return mergedPage;
+  }
+
+  private _deletePage(pageIndex: number): void {
+    this._pages.splice(pageIndex, 1);
+    for (let j = pageIndex; j < this._pages.length; j++) {
+      const adjustingPage = this._pages[j];
+      for (const g of adjustingPage.glyphs) {
+        g.texturePage--;
+      }
+      adjustingPage.hasCanvasChanged = true;
+    }
   }
 
   /**
