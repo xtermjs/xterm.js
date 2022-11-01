@@ -142,7 +142,7 @@ export class TextureAtlas implements ITextureAtlas {
     //   this._increaseTextureSize();
     // }
 
-    if (!this._hasMerged && this._pages.length === TextureAtlas.maxAtlasPages) {
+    if (this._pages.length === TextureAtlas.maxAtlasPages) {
       this._hasMerged = true;
       console.log('try merge');
       console.time('merge');
@@ -153,15 +153,22 @@ export class TextureAtlas implements ITextureAtlas {
 
       // Get the 4 most used pages
       // TODO: This is slow, need to sort after slice so _pages doesn't get sorted
-      const mergingPages = this._pages.slice().sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1).slice(0, 4);
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort();
+      const mergingPages = this._pages.filter(e => e.canvas.width === this._textureSize).sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1).slice(0, 4);
+      console.log({ mergingPages });
+      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
       // TODO: Pull texture page index in a nicer way
       const mergedPageIndex = sortedMergingPagesIndexes[0];
+
+      console.log({ mergedPageIndex, sortedMergingPagesIndexes: [...sortedMergingPagesIndexes] });
+      if (mergedPageIndex === -1) {
+        debugger;
+      }
+
       const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
 
       console.timeEnd('merge');
 
-      (console as any).image(mergedPage.canvas);
+      // (console as any).image(mergedPage.canvas);
 
       mergedPage.hasCanvasChanged = true;
       // this._pages[0] = mergedPage;
@@ -169,8 +176,6 @@ export class TextureAtlas implements ITextureAtlas {
       this._pages[mergedPageIndex] = mergedPage;
 
       console.log('before adjust', this._pages);
-
-      console.log({ mergedPageIndex });
 
       // TODO: Splice other 3 pages, shifting all other texture page props
       for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
@@ -214,8 +219,8 @@ export class TextureAtlas implements ITextureAtlas {
         g.texturePositionClipSpace.y = g.texturePosition.y / mergedSize;
       }
 
-      p.ctx.clearRect(0, 0, p.canvas.width, p.canvas.height);
-      p.ctx.fillText('merged', 100, 100);
+      p.ctx.fillStyle = 'green';
+      p.ctx.fillRect(0, 0, p.canvas.width, p.canvas.height);
 
       // Remove the merging page from active pages if it was there
       const index = this._activePages.indexOf(p);
