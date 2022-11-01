@@ -133,16 +133,110 @@ export class TextureAtlas implements ITextureAtlas {
     this._didWarmUp = false;
   }
 
+  private _hasMerged = false;
+
   private _createNewPage(): AtlasPage {
-    if (this._pages.length === 4 || this._pages.length === 7) {
-      this._increaseTextureSize();
+    // if (this._pages.length === 4 || this._pages.length === 7) {
+    //   this._increaseTextureSize();
+    // }
+
+    if (!this._hasMerged && this._pages.length === 6) {
+      this._hasMerged = true;
+      console.log('try merge');
+      console.time('merge');
+
+      // TODO: Track the most filled pages (pixels used of total) and use them?
+
+      // Migrate over 1 page at a time due to the time it takes to iterate over glyphs
+
+      // Get the 4 most used pages
+      // TODO: This is slow, need to sort after slice so _pages doesn't get sorted
+      const mergingPages = this._pages.slice().sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1).slice(0, 4);
+      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort();
+      // TODO: Pull texture page index in a nicer way
+      const mergedPageIndex = sortedMergingPagesIndexes[0];
+      const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
+
+      console.timeEnd('merge');
+
+      (console as any).image(mergedPage.canvas);
+
+      mergedPage.hasCanvasChanged = true;
+      // this._pages[0] = mergedPage;
+      // Replace an old merging page with the merged
+      this._pages[mergedPageIndex] = mergedPage;
+
+      console.log('before adjust', this._pages);
+
+      console.log({ mergedPageIndex });
+
+      // TODO: Splice other 3 pages, shifting all other texture page props
+      for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
+        // TODO: Optimize, this is slow
+        const mergingPageIndex = sortedMergingPagesIndexes[i];
+
+        console.log('splice', mergingPageIndex);
+        this._pages.splice(mergingPageIndex, 1);
+        for (let j = mergingPageIndex; j < this._pages.length; j++) {
+          const adjustingPage = this._pages[j];
+          console.log('adjust', j);
+          // if (mergingPages.includes(adjustingPage)) {
+          //   continue;
+          // }
+          for (const g of adjustingPage.glyphs) {
+            g.texturePage--;
+          }
+          adjustingPage.hasCanvasChanged = true;
+        }
+      }
+
+      this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
+
+      // TODO: Force a refresh because atlas pages changed?
+
+      // Continue with creating the new page as a glyph may be getting drawn
+
+      // mergedPage.ctx.drawImage(this._pages[1].canvas, this._textureSize, 0);
+      // mergedPage.ctx.drawImage(this._pages[2].canvas, 0, this._textureSize);
+      // mergedPage.ctx.drawImage(this._pages[3].canvas, this._textureSize, this._textureSize);
     }
+
     // TODO: Ensure pages aren't created beyond the maximum supported
     const newPage = new AtlasPage(this._document, this._textureSize);
     this._pages.push(newPage);
+    console.log('pages', this._pages);
     this._activePages.push(newPage);
     this._onAddTextureAtlasCanvas.fire(newPage.canvas);
     return newPage;
+  }
+
+  private _mergePages(mergingPages: AtlasPage[], mergedPageIndex: number): AtlasPage {
+    const mergedSize = this._textureSize * 2;
+    const mergedPage = new AtlasPage(this._document, mergedSize, mergingPages);
+    for (const [i, p] of mergingPages.entries()) {
+      const xOffset = i * p.canvas.width % mergedSize;
+      const yOffset = Math.floor(i / 2) * p.canvas.height;
+      mergedPage.ctx.drawImage(p.canvas, xOffset, yOffset);
+      for (const g of p.glyphs) {
+        g.texturePage = mergedPageIndex;
+        g.sizeClipSpace.x = g.size.x / mergedSize;
+        g.sizeClipSpace.y = g.size.y / mergedSize;
+        g.texturePosition.x += xOffset;
+        g.texturePosition.y += yOffset;
+        g.texturePositionClipSpace.x = g.texturePosition.x / mergedSize;
+        g.texturePositionClipSpace.y = g.texturePosition.y / mergedSize;
+      }
+
+      p.ctx.clearRect(0, 0, p.canvas.width, p.canvas.height);
+      p.ctx.fillText('merged', 100, 100);
+
+      // Remove the merging page from active pages if it was there
+      const index = this._activePages.indexOf(p);
+      if (index !== -1) {
+        this._activePages.splice(index, 1);
+      }
+    }
+    return mergedPage;
   }
 
   /**
@@ -730,6 +824,7 @@ export class TextureAtlas implements ITextureAtlas {
       rasterizedGlyph.size.x,
       rasterizedGlyph.size.y
     );
+    activePage.addGlyph(rasterizedGlyph);
     activePage.hasCanvasChanged = true;
 
     return rasterizedGlyph;
@@ -829,6 +924,16 @@ class AtlasPage {
   public readonly canvas: HTMLCanvasElement;
   public readonly ctx: CanvasRenderingContext2D;
 
+  private _usedPixels: number = 0;
+  public get percentageUsed(): number { return this._usedPixels / (this.canvas.width * this.canvas.height); }
+
+  private readonly _glyphs: IRasterizedGlyph[] = [];
+  public get glyphs(): ReadonlyArray<IRasterizedGlyph> { return this._glyphs; }
+  public addGlyph(glyph: IRasterizedGlyph): void {
+    this._glyphs.push(glyph);
+    this._usedPixels += glyph.size.x * glyph.size.y;
+  }
+
   /**
    * Whether the canvas of the atlas page has changed, this is only set to true by the atlas, the
    * user of the boolean is required to reset its value to false.
@@ -854,8 +959,15 @@ class AtlasPage {
 
   constructor(
     document: Document,
-    size: number
+    size: number,
+    sourcePages?: AtlasPage[]
   ) {
+    if (sourcePages) {
+      for (const p of sourcePages) {
+        this._glyphs.push(...p.glyphs);
+        this._usedPixels += p._usedPixels;
+      }
+    }
     this.canvas = createCanvas(document, size, size);
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
