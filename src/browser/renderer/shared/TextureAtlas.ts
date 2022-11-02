@@ -13,7 +13,7 @@ import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlin
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
 
 /**
@@ -35,7 +35,12 @@ const enum Constants {
    * The amount of pixel padding to allow in each row. Setting this to zero would make the atlas
    * page pack as tightly as possible, but more pages would end up being created as a result.
    */
-  ROW_PIXEL_THRESHOLD = 2
+  ROW_PIXEL_THRESHOLD = 2,
+  /**
+   * The maximum texture size regardless of what the actual hardware maximum turns out to be. This
+   * is enforced to ensure uploading the texture still finishes in a reasonable amount of time.
+   */
+  FORCED_MAX_TEXTURE_SIZE = 4096
 }
 
 interface ICharAtlasActiveRow {
@@ -70,7 +75,10 @@ export class TextureAtlas implements ITextureAtlas {
   private _textureSize: number = 512;
 
   public static maxAtlasPages: number | undefined;
+  public static maxTextureSize: number | undefined;
 
+  private readonly _onRequestRedrawViewport = new EventEmitter<void>();
+  public readonly onRequestRedrawViewport = this._onRequestRedrawViewport.event;
   private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
@@ -95,6 +103,7 @@ export class TextureAtlas implements ITextureAtlas {
     for (const page of this.pages) {
       page.canvas.remove();
     }
+    this._onRequestRedrawViewport.dispose();
     this._onAddTextureAtlasCanvas.dispose();
   }
 
@@ -118,9 +127,9 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
+  private _requestClearModel = false;
   public beginFrame(): boolean {
-    // TODO: Something should happen to prevent reaching capacity
-    return false;
+    return this._requestClearModel;
   }
 
   public clearTexture(): void {
@@ -136,81 +145,80 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _createNewPage(): AtlasPage {
-    // if (this._pages.length === 4 || this._pages.length === 7) {
-    //   this._increaseTextureSize();
-    // }
 
-    if (this._pages.length === TextureAtlas.maxAtlasPages) {
-      console.time('merge');
+    // Try merge the set of the 4 most used pages of the largest size. This is is deferred to a
+    // microtask to ensure it does not interrupt textures that will be rendered in the current
+    // animation frame which would result in blank rendered areas. This is actually not that
+    // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
+    if (TextureAtlas.maxAtlasPages && this._pages.length === TextureAtlas.maxAtlasPages - 1) {
+      queueMicrotask(() => {
+        console.time('merge');
 
-      // TODO: Track the most filled pages (pixels used of total) and use them?
+        // TODO: Track the most filled pages (pixels used of total) and use them?
 
-      // Migrate over 1 page at a time due to the time it takes to iterate over glyphs
+        // Migrate over 1 page at a time due to the time it takes to iterate over glyphs
 
-      // Find the set of the largest 4 images with the highest percentages used the 4 most used pages
-      const pagesBySize = this._pages.slice().sort((a, b) => {
-        if (b.canvas.width !== a.canvas.width) {
-          return b.canvas.width - a.canvas.width;
+        // Find the set of the largest 4 images below the maximum size with the highest percentages used the 4 most used pages
+        const pagesBySize = this._pages.filter(e => {
+          return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
+        }).sort((a, b) => {
+          if (b.canvas.width !== a.canvas.width) {
+            return b.canvas.width - a.canvas.width;
+          }
+          return b.percentageUsed - a.percentageUsed;
+        });
+        let sameSizeI = -1;
+        let size = 0;
+        for (let i = 0; i < pagesBySize.length; i++) {
+          if (pagesBySize[i].canvas.width !== size) {
+            sameSizeI = i;
+            size = pagesBySize[i].canvas.width;
+          } else if (i - sameSizeI === 3) {
+            break;
+          }
         }
-        return b.percentageUsed - a.percentageUsed;
+
+        console.log(`4 at ${sameSizeI} of size ${size}`);
+
+
+        // TODO: This is slow, need to sort after slice so _pages doesn't get sorted
+
+        const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4); // .sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1);
+        console.log({ mergingPages });
+        const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
+        // TODO: Pull texture page index in a nicer way
+        const mergedPageIndex = sortedMergingPagesIndexes[0];
+
+        console.log({ mergedPageIndex, sortedMergingPagesIndexes: [...sortedMergingPagesIndexes] });
+
+        const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
+
+        console.timeEnd('merge');
+
+        // (console as any).image(mergedPage.canvas);
+
+        mergedPage.hasCanvasChanged = true;
+        // this._pages[0] = mergedPage;
+        // Replace an old merging page with the merged
+        this._pages[mergedPageIndex] = mergedPage;
+
+        console.log('before adjust', this._pages);
+
+        // TODO: Splice other 3 pages, shifting all other texture page props
+        for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
+          this._deletePage(sortedMergingPagesIndexes[i]);
+        }
+
+        // Request the model to be cleared to refresh all texture pages.
+        this._requestClearModel = true;
+
+        this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
       });
-      let sameSizeI = -1;
-      let size = 0;
-      for (let i = 0; i < pagesBySize.length; i++) {
-        if (pagesBySize[i].canvas.width !== size) {
-          sameSizeI = i;
-          size = pagesBySize[i].canvas.width;
-        } else if (i - sameSizeI === 3) {
-          break;
-        }
-      }
-
-      console.log(`4 at ${sameSizeI} of size ${size}`);
-
-
-      // TODO: This is slow, need to sort after slice so _pages doesn't get sorted
-
-      const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4); // .sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1);
-      console.log({ mergingPages });
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
-      // TODO: Pull texture page index in a nicer way
-      const mergedPageIndex = sortedMergingPagesIndexes[0];
-
-      console.log({ mergedPageIndex, sortedMergingPagesIndexes: [...sortedMergingPagesIndexes] });
-
-      const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-
-      console.timeEnd('merge');
-
-      // (console as any).image(mergedPage.canvas);
-
-      mergedPage.hasCanvasChanged = true;
-      // this._pages[0] = mergedPage;
-      // Replace an old merging page with the merged
-      this._pages[mergedPageIndex] = mergedPage;
-
-      console.log('before adjust', this._pages);
-
-      // TODO: Splice other 3 pages, shifting all other texture page props
-      for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
-        this._deletePage(sortedMergingPagesIndexes[i]);
-      }
-
-      this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
-
-      // TODO: Force a refresh because atlas pages changed?
-
-      // Continue with creating the new page as a glyph may be getting drawn
-
-      // mergedPage.ctx.drawImage(this._pages[1].canvas, this._textureSize, 0);
-      // mergedPage.ctx.drawImage(this._pages[2].canvas, 0, this._textureSize);
-      // mergedPage.ctx.drawImage(this._pages[3].canvas, this._textureSize, this._textureSize);
     }
 
-    // TODO: Ensure pages aren't created beyond the maximum supported
+    // All new atlas pages are created small as they are highly dynamic
     const newPage = new AtlasPage(this._document, this._textureSize);
     this._pages.push(newPage);
-    console.log('pages', this._pages);
     this._activePages.push(newPage);
     this._onAddTextureAtlasCanvas.fire(newPage.canvas);
     return newPage;

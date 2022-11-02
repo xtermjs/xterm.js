@@ -16,7 +16,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { IDisposable, Terminal } from 'xterm';
@@ -268,7 +268,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
       this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
-      this._charAtlasDisposable = forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+      this._charAtlasDisposable = getDisposeArrayDisposable([
+        atlas.onRequestRedrawViewport(() => this._requestRedrawViewport()),
+        forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas)
+      ]);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
@@ -327,7 +330,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._clearModel(true);
-      this._model.selection.clear();
     }
 
     // Update model to reflect what's drawn

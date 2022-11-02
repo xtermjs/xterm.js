@@ -120,6 +120,7 @@ export class GlyphRenderer extends Disposable {
 
     if (TextureAtlas.maxAtlasPages === undefined) {
       TextureAtlas.maxAtlasPages = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number | null);
+      TextureAtlas.maxTextureSize = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_SIZE) as number | null);
     }
 
     this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(TextureAtlas.maxAtlasPages)));
