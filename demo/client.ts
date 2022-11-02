@@ -279,6 +279,7 @@ function createTerminal(): void {
       setTextureAtlas(addons.webgl.instance.textureAtlas);
       addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
       addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+      addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
     }
   }, 0);
 
@@ -661,6 +662,9 @@ function setTextureAtlas(e: HTMLCanvasElement): void {
 function appendTextureAtlas(e: HTMLCanvasElement): void {
   styleAtlasPage(e);
   document.querySelector('#texture-atlas').appendChild(e);
+}
+function removeTextureAtlas(e: HTMLCanvasElement): void {
+  e.remove();
 }
 function styleAtlasPage(e: HTMLCanvasElement): void {
   e.style.width = `${e.width / window.devicePixelRatio}px`;

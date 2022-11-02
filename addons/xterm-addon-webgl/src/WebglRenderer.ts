@@ -53,6 +53,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
   private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+  private readonly _onRemoveTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
   private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
   private readonly _onContextLoss = this.register(new EventEmitter<void>());
@@ -270,7 +272,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
       this._charAtlasDisposable = getDisposeArrayDisposable([
         atlas.onRequestRedrawViewport(() => this._requestRedrawViewport()),
-        forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas)
+        forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
+        forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
       ]);
     }
     this._charAtlas = atlas;

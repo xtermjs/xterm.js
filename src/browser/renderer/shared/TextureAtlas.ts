@@ -38,7 +38,8 @@ const enum Constants {
   ROW_PIXEL_THRESHOLD = 2,
   /**
    * The maximum texture size regardless of what the actual hardware maximum turns out to be. This
-   * is enforced to ensure uploading the texture still finishes in a reasonable amount of time.
+   * is enforced to ensure uploading the texture still finishes in a reasonable amount of time. A
+   * 4096 squared image takes up 16MB of GPU memory.
    */
   FORCED_MAX_TEXTURE_SIZE = 4096
 }
@@ -81,6 +82,8 @@ export class TextureAtlas implements ITextureAtlas {
   public readonly onRequestRedrawViewport = this._onRequestRedrawViewport.event;
   private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+  private readonly _onRemoveTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
+  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
 
   constructor(
     private readonly _document: Document,
@@ -145,17 +148,14 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _createNewPage(): AtlasPage {
-
     // Try merge the set of the 4 most used pages of the largest size. This is is deferred to a
     // microtask to ensure it does not interrupt textures that will be rendered in the current
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
     if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages / 2)) {
-      // TODO: If the viewport has enough glyphs to fill the new page, there will be a webgl error
       queueMicrotask(() => {
-        // Migrate over 1 page at a time due to the time it takes to iterate over glyphs
-
-        // Find the set of the largest 4 images below the maximum size with the highest percentages used the 4 most used pages
+        // Find the set of the largest 4 images, below the maximum size, with the highest
+        // percentages used
         const pagesBySize = this._pages.filter(e => {
           return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
         }).sort((a, b) => {
@@ -175,30 +175,25 @@ export class TextureAtlas implements ITextureAtlas {
           }
         }
 
-        // TODO: This is slow, need to sort after slice so _pages doesn't get sorted
-
-        const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4); // .sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1);
+        // Gather details of the merge
+        const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
         const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
-        // TODO: Pull texture page index in a nicer way
         const mergedPageIndex = sortedMergingPagesIndexes[0];
 
+        // Merge into the new page
         const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-
-        // (console as any).image(mergedPage.canvas);
-
         mergedPage.hasCanvasChanged = true;
-        // this._pages[0] = mergedPage;
-        // Replace an old merging page with the merged
+
+        // Replace the first _merging_ page with the _merged_ page
         this._pages[mergedPageIndex] = mergedPage;
 
-        // TODO: Splice other 3 pages, shifting all other texture page props
+        // Delete the other 3 pages, shifting glyph texture pages as needed
         for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
           this._deletePage(sortedMergingPagesIndexes[i]);
         }
 
         // Request the model to be cleared to refresh all texture pages.
         this._requestClearModel = true;
-
         this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
       });
     }
@@ -228,8 +223,7 @@ export class TextureAtlas implements ITextureAtlas {
         g.texturePositionClipSpace.y = g.texturePosition.y / mergedSize;
       }
 
-      p.ctx.fillStyle = 'green';
-      p.ctx.fillRect(0, 0, p.canvas.width, p.canvas.height);
+      this._onRemoveTextureAtlasCanvas.fire(p.canvas);
 
       // Remove the merging page from active pages if it was there
       const index = this._activePages.indexOf(p);

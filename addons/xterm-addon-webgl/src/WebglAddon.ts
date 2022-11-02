@@ -21,6 +21,8 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
   private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+  private readonly _onRemoveTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
   private readonly _onContextLoss = this.register(new EventEmitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
 
@@ -67,6 +69,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
+    this.register(forwardEvent(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
 
     this.register(toDisposable(() => {

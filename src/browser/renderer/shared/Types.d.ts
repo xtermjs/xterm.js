@@ -91,6 +91,7 @@ export interface ITextureAtlas extends IDisposable {
 
   onRequestRedrawViewport: IEvent<void>;
   onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
   /**
    * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.
