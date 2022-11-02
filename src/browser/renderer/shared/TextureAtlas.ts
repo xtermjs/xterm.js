@@ -135,34 +135,48 @@ export class TextureAtlas implements ITextureAtlas {
     this._didWarmUp = false;
   }
 
-  private _hasMerged = false;
-
   private _createNewPage(): AtlasPage {
     // if (this._pages.length === 4 || this._pages.length === 7) {
     //   this._increaseTextureSize();
     // }
 
     if (this._pages.length === TextureAtlas.maxAtlasPages) {
-      this._hasMerged = true;
-      console.log('try merge');
       console.time('merge');
 
       // TODO: Track the most filled pages (pixels used of total) and use them?
 
       // Migrate over 1 page at a time due to the time it takes to iterate over glyphs
 
-      // Get the 4 most used pages
+      // Find the set of the largest 4 images with the highest percentages used the 4 most used pages
+      const pagesBySize = this._pages.slice().sort((a, b) => {
+        if (b.canvas.width !== a.canvas.width) {
+          return b.canvas.width - a.canvas.width;
+        }
+        return b.percentageUsed - a.percentageUsed;
+      });
+      let sameSizeI = -1;
+      let size = 0;
+      for (let i = 0; i < pagesBySize.length; i++) {
+        if (pagesBySize[i].canvas.width !== size) {
+          sameSizeI = i;
+          size = pagesBySize[i].canvas.width;
+        } else if (i - sameSizeI === 3) {
+          break;
+        }
+      }
+
+      console.log(`4 at ${sameSizeI} of size ${size}`);
+
+
       // TODO: This is slow, need to sort after slice so _pages doesn't get sorted
-      const mergingPages = this._pages.filter(e => e.canvas.width === this._textureSize).sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1).slice(0, 4);
+
+      const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4); // .sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1);
       console.log({ mergingPages });
       const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
       // TODO: Pull texture page index in a nicer way
       const mergedPageIndex = sortedMergingPagesIndexes[0];
 
       console.log({ mergedPageIndex, sortedMergingPagesIndexes: [...sortedMergingPagesIndexes] });
-      if (mergedPageIndex === -1) {
-        debugger;
-      }
 
       const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
 
@@ -203,7 +217,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _mergePages(mergingPages: AtlasPage[], mergedPageIndex: number): AtlasPage {
-    const mergedSize = this._textureSize * 2;
+    const mergedSize = mergingPages[0].canvas.width * 2;
     const mergedPage = new AtlasPage(this._document, mergedSize, mergingPages);
     for (const [i, p] of mergingPages.entries()) {
       const xOffset = i * p.canvas.width % mergedSize;
@@ -239,17 +253,6 @@ export class TextureAtlas implements ITextureAtlas {
         g.texturePage--;
       }
       adjustingPage.hasCanvasChanged = true;
-    }
-  }
-
-  /**
-   * Doubles the texture size of new atlas pages if allowed.
-   */
-  private _increaseTextureSize(): void {
-    // 4096 is the minimum texture size in WebGL, but we still want the texture to be reasonably fast
-    // to upload. We could loosen this limit if it ever becomes a problem.
-    if (this._textureSize < 2048) {
-      this._textureSize *= 2;
     }
   }
 
