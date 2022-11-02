@@ -150,12 +150,9 @@ export class TextureAtlas implements ITextureAtlas {
     // microtask to ensure it does not interrupt textures that will be rendered in the current
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
-    if (TextureAtlas.maxAtlasPages && this._pages.length === TextureAtlas.maxAtlasPages - 1) {
+    if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages / 2)) {
+      // TODO: If the viewport has enough glyphs to fill the new page, there will be a webgl error
       queueMicrotask(() => {
-        console.time('merge');
-
-        // TODO: Track the most filled pages (pixels used of total) and use them?
-
         // Migrate over 1 page at a time due to the time it takes to iterate over glyphs
 
         // Find the set of the largest 4 images below the maximum size with the highest percentages used the 4 most used pages
@@ -178,22 +175,14 @@ export class TextureAtlas implements ITextureAtlas {
           }
         }
 
-        console.log(`4 at ${sameSizeI} of size ${size}`);
-
-
         // TODO: This is slow, need to sort after slice so _pages doesn't get sorted
 
         const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4); // .sort((a, b) => a.percentageUsed < b.percentageUsed ? 1 : -1);
-        console.log({ mergingPages });
         const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
         // TODO: Pull texture page index in a nicer way
         const mergedPageIndex = sortedMergingPagesIndexes[0];
 
-        console.log({ mergedPageIndex, sortedMergingPagesIndexes: [...sortedMergingPagesIndexes] });
-
         const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-
-        console.timeEnd('merge');
 
         // (console as any).image(mergedPage.canvas);
 
@@ -201,8 +190,6 @@ export class TextureAtlas implements ITextureAtlas {
         // this._pages[0] = mergedPage;
         // Replace an old merging page with the merged
         this._pages[mergedPageIndex] = mergedPage;
-
-        console.log('before adjust', this._pages);
 
         // TODO: Splice other 3 pages, shifting all other texture page props
         for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
@@ -723,6 +710,15 @@ export class TextureAtlas implements ITextureAtlas {
     let activePage: AtlasPage;
     let activeRow: ICharAtlasActiveRow;
     while (true) {
+      // If there are no active pages (the last smallest 4 were merged), create a new one
+      if (this._activePages.length === 0) {
+        const newPage = this._createNewPage();
+        activePage = newPage;
+        activeRow = newPage.currentRow;
+        activeRow.height = rasterizedGlyph.size.y;
+        break;
+      }
+
       // Get the best current row from all active pages
       activePage = this._activePages[this._activePages.length - 1];
       activeRow = activePage.currentRow;

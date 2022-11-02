@@ -119,7 +119,9 @@ export class GlyphRenderer extends Disposable {
     const gl = this._gl;
 
     if (TextureAtlas.maxAtlasPages === undefined) {
+      // Typically 8 or 16
       TextureAtlas.maxAtlasPages = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number | null);
+      // Almost all clients will support >= 4096
       TextureAtlas.maxTextureSize = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_SIZE) as number | null);
     }
 
