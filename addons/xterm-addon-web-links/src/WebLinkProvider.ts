@@ -47,6 +47,12 @@ export class LinkComputer {
 
     const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(y - 1, false, terminal);
 
+    // Don't try if the wrapped line if excessively large as the regex matching will block the main
+    // thread.
+    if (line.length > 1024) {
+      return [];
+    }
+
     let match;
     let stringIndex = -1;
     const result: ILink[] = [];
