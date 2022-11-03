@@ -78,8 +78,6 @@ export class TextureAtlas implements ITextureAtlas {
   public static maxAtlasPages: number | undefined;
   public static maxTextureSize: number | undefined;
 
-  private readonly _onRequestRedrawViewport = new EventEmitter<void>();
-  public readonly onRequestRedrawViewport = this._onRequestRedrawViewport.event;
   private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
   private readonly _onRemoveTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
@@ -106,7 +104,6 @@ export class TextureAtlas implements ITextureAtlas {
     for (const page of this.pages) {
       page.canvas.remove();
     }
-    this._onRequestRedrawViewport.dispose();
     this._onAddTextureAtlasCanvas.dispose();
   }
 

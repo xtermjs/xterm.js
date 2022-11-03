@@ -271,7 +271,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
       this._charAtlasDisposable = getDisposeArrayDisposable([
-        atlas.onRequestRedrawViewport(() => this._requestRedrawViewport()),
         forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
         forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
       ]);
