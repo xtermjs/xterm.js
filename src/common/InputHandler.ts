@@ -2440,6 +2440,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (params.length === 1 && params.params[0] === 0) {
       this._curAttrData.fg = DEFAULT_ATTR_DATA.fg;
       this._curAttrData.bg = DEFAULT_ATTR_DATA.bg;
+      this._curAttrData.extended = this._eraseAttrData().extended.clone();
+      this._curAttrData.updateExtended();
       return true;
     }
 
