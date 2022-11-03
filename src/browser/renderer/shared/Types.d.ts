@@ -90,6 +90,7 @@ export interface ITextureAtlas extends IDisposable {
   readonly pages: { canvas: HTMLCanvasElement, hasCanvasChanged: boolean }[];
 
   onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
   /**
    * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.

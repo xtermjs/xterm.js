@@ -16,7 +16,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { IDisposable, Terminal } from 'xterm';
@@ -53,6 +53,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
   private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+  private readonly _onRemoveTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
   private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
   private readonly _onContextLoss = this.register(new EventEmitter<void>());
@@ -268,7 +270,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
       this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
-      this._charAtlasDisposable = forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+      this._charAtlasDisposable = getDisposeArrayDisposable([
+        forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
+        forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
+      ]);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
@@ -327,7 +332,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._clearModel(true);
-      this._model.selection.clear();
     }
 
     // Update model to reflect what's drawn

@@ -220,6 +220,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('print-cjk').addEventListener('click', addCjk);
+  document.getElementById('print-cjk-sgr').addEventListener('click', addCjkRandomSgr);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
@@ -278,6 +279,7 @@ function createTerminal(): void {
       setTextureAtlas(addons.webgl.instance.textureAtlas);
       addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
       addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+      addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
     }
   }, 0);
 
@@ -661,6 +663,9 @@ function appendTextureAtlas(e: HTMLCanvasElement): void {
   styleAtlasPage(e);
   document.querySelector('#texture-atlas').appendChild(e);
 }
+function removeTextureAtlas(e: HTMLCanvasElement): void {
+  e.remove();
+}
 function styleAtlasPage(e: HTMLCanvasElement): void {
   e.style.width = `${e.width / window.devicePixelRatio}px`;
   e.style.height = `${e.height / window.devicePixelRatio}px`;
@@ -987,6 +992,25 @@ function addCjk(): void {
   for (let i = 0x4E00; i < 0x9FCC; i++) {
     term.write(String.fromCharCode(i));
   }
+}
+
+/**
+ * Prints the 20977 characters from the CJK Unified Ideographs unicode block with randomized styles.
+ */
+function addCjkRandomSgr(): void {
+  term.write('\n\n\r');
+  for (let i = 0x4E00; i < 0x9FCC; i++) {
+    term.write(`\x1b[${getRandomSgr()}m${String.fromCharCode(i)}\x1b[0m`);
+  }
+}
+const randomSgrAttributes = [
+  '1', '2', '3', '4', '5', '6', '7', '9',
+  '21', '22', '23', '24', '25', '26', '27', '28', '29',
+  '30', '31', '32', '33', '34', '35', '36', '37', '38', '39',
+  '40', '41', '42', '43', '44', '45', '46', '47', '48', '49'
+];
+function getRandomSgr(): string {
+  return randomSgrAttributes[Math.floor(Math.random() * randomSgrAttributes.length)];
 }
 
 function addDecoration(): void {
