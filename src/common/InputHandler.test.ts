@@ -8,8 +8,8 @@ import { InputHandler } from 'common/InputHandler';
 import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, UnderlineStyle } from 'common/buffer/Constants';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
+import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService, MockUnicodeService, MockOscLinkService } from 'common/TestUtils.test';
 import { IBufferService, ICoreService } from 'common/services/Services';
@@ -1686,6 +1686,37 @@ describe('InputHandler', () => {
         assert.deepEqual(getLines(bufferService, 2), ['    ', '  ']);
         assert.equal(bufferService.buffer.x, 0);
       });
+    });
+  });
+
+  describe('reset text attributes (SGR 0)', () => {
+    it('resets all attributes if there is no url', async () => {
+      await inputHandler.parseP('\x1b[30m\x1b[40m\x1b[4m');
+      assert.notEqual(inputHandler.curAttrData.fg, 0);
+      assert.notEqual(inputHandler.curAttrData.bg, 0);
+      assert.isFalse(inputHandler.curAttrData.extended.isEmpty());
+
+      await inputHandler.parseP('\x1b[m');
+      assert.equal(inputHandler.curAttrData.fg, 0);
+      assert.equal(inputHandler.curAttrData.bg, 0);
+      assert.isTrue(inputHandler.curAttrData.extended.isEmpty());
+    });
+
+    it('resets all attributes except for the url', async () => {
+      await inputHandler.parseP('\x1b[30m\x1b[40m\x1b[4m');
+      await inputHandler.parseP('\x1b]8;;http://example.com\x1b\\');
+      assert.notEqual(inputHandler.curAttrData.fg, 0);
+      assert.notEqual(inputHandler.curAttrData.bg, 0);
+      assert.notEqual(inputHandler.curAttrData.extended.ext, 0);
+      const urlId = inputHandler.curAttrData.extended.urlId;
+      assert.notEqual(urlId, 0);
+
+      await inputHandler.parseP('\x1b[m');
+      assert.equal(inputHandler.curAttrData.fg, 0);
+      assert.equal(inputHandler.curAttrData.bg, BgFlags.HAS_EXTENDED);
+      const expectedExtended = new ExtendedAttrs();
+      expectedExtended.urlId = urlId;
+      assert.deepEqual(inputHandler.curAttrData.extended, expectedExtended);
     });
   });
 
