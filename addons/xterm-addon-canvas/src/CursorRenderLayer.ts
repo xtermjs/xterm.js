@@ -58,6 +58,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
+    this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
     this.register(toDisposable(() => {
       this._cursorBlinkStateManager?.dispose();
       this._cursorBlinkStateManager = undefined;
@@ -79,7 +80,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   public reset(): void {
     this._clearCursor();
     this._cursorBlinkStateManager?.restartBlinkAnimation();
-    this.handleOptionsChanged();
+    this._handleOptionsChanged();
   }
 
   public handleBlur(): void {
@@ -92,7 +93,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
-  public handleOptionsChanged(): void {
+  private _handleOptionsChanged(): void {
     if (this._optionsService.rawOptions.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(this._coreBrowserService.isFocused, () => {

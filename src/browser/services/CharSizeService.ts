@@ -7,6 +7,7 @@ import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
+import { ITerminalOptions } from 'common/Types';
 
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
@@ -27,6 +28,7 @@ export class CharSizeService extends Disposable implements ICharSizeService {
   ) {
     super();
     this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
+    this.register(this._optionsService.onMultipleOptionChange(['fontFamily', 'fontSize'], () => this.measure()));
   }
 
   public measure(): void {

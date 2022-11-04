@@ -82,7 +82,7 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * Note that for performance reasons there is no bounds checking here, the index reference is
    * circular so this should always return a value and never throw.
    * @param index The index of the value to get.
-   * @return The value corresponding to the index.
+   * @returns The value corresponding to the index.
    */
   public get(index: number): T | undefined {
     return this._array[this._getCyclicIndex(index)];
@@ -138,7 +138,7 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
 
   /**
    * Removes and returns the last value on the list.
-   * @return The popped value.
+   * @returns The popped value.
    */
   public pop(): T | undefined {
     return this._array[this._getCyclicIndex(this._length-- - 1)];

@@ -992,8 +992,8 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
     window.result = new Uint8Array(4);
     window.d = window.term._core._renderService.dimensions;
     window.gl.readPixels(
-      Math.floor((${col - 0.5}) * window.d.scaledCellWidth),
-      Math.floor(window.gl.drawingBufferHeight - 1 - (${row - 0.5}) * window.d.scaledCellHeight),
+      Math.floor((${col - 0.5}) * window.d.device.cell.width),
+      Math.floor(window.gl.drawingBufferHeight - 1 - (${row - 0.5}) * window.d.device.cell.height),
       1, 1, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
     );
   `);
@@ -1003,12 +1003,12 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 async function getCellPixels(col: number, row: number): Promise<number[]> {
   await page.evaluate(`
     window.gl = window.term._core._renderService._renderer._gl;
-    window.result = new Uint8Array(window.d.scaledCellWidth * window.d.scaledCellHeight * 4);
+    window.result = new Uint8Array(window.d.device.cell.width * window.d.device.cell.height * 4);
     window.d = window.term._core._renderService.dimensions;
     window.gl.readPixels(
-      Math.floor(${col - 1} * window.d.scaledCellWidth),
-      Math.floor(window.gl.drawingBufferHeight - ${row} * window.d.scaledCellHeight),
-      window.d.scaledCellWidth, window.d.scaledCellHeight, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
+      Math.floor(${col - 1} * window.d.device.cell.width),
+      Math.floor(window.gl.drawingBufferHeight - ${row} * window.d.device.cell.height),
+      window.d.device.cell.width, window.d.device.cell.height, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
     );
   `);
   return await page.evaluate(`Array.from(window.result)`);

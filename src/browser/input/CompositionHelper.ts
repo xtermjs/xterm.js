@@ -89,7 +89,7 @@ export class CompositionHelper {
   /**
    * Handles the keydown event, routing any necessary events to the CompositionHelper functions.
    * @param ev The keydown event.
-   * @return Whether the Terminal should continue processing the keydown event.
+   * @returns Whether the Terminal should continue processing the keydown event.
    */
   public keydown(ev: KeyboardEvent): boolean {
     if (this._isComposing || this._isSendingComposition) {
@@ -218,9 +218,9 @@ export class CompositionHelper {
     if (this._bufferService.buffer.isCursorInViewport) {
       const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
 
-      const cellHeight = this._renderService.dimensions.actualCellHeight;
-      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.actualCellHeight;
-      const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
+      const cellHeight = this._renderService.dimensions.css.cell.height;
+      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.css.cell.height;
+      const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';

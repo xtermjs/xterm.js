@@ -28,13 +28,13 @@ const charAtlasCache: ITextureAtlasCacheEntry[] = [];
 export function acquireTextureAtlas(
   terminal: Terminal,
   colors: ReadonlyColorSet,
-  scaledCellWidth: number,
-  scaledCellHeight: number,
-  scaledCharWidth: number,
-  scaledCharHeight: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
+  deviceCharWidth: number,
+  deviceCharHeight: number,
   devicePixelRatio: number
 ): ITextureAtlas {
-  const newConfig = generateConfig(scaledCellWidth, scaledCellHeight, scaledCharWidth, scaledCharHeight, terminal, colors, devicePixelRatio);
+  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, terminal, colors, devicePixelRatio);
 
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {

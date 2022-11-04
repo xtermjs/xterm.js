@@ -9,6 +9,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockUnicodeService } from 'common/TestUtils.test';
 import { IMarker } from 'common/Types';
+import { ICoreService } from 'common/services/Services';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -47,11 +48,10 @@ describe('Terminal', () => {
   });
 
   describe('events', () => {
-    // TODO: Add an onData test back
-    // it('should fire the onData evnet', (done) => {
-    //   term.onData(() => done());
-    //   term.handler('fake');
-    // });
+    it('should fire the onData evnet', (done) => {
+      term.onData(() => done());
+      term.coreService.triggerDataEvent('fake');
+    });
     it('should fire the onCursorMove event', () => {
       return new Promise<void>(async r => {
         term.onCursorMove(() => r());

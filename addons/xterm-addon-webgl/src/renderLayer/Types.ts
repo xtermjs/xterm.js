@@ -4,7 +4,6 @@
  */
 
 import { IDisposable, Terminal } from 'xterm';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 export interface IRenderLayer extends IDisposable {
@@ -14,7 +13,7 @@ export interface IRenderLayer extends IDisposable {
   handleBlur(terminal: Terminal): void;
 
   /**
-   * * Called when the terminal gets focus.
+   * Called when the terminal gets focus.
    */
   handleFocus(terminal: Terminal): void;
 
@@ -22,11 +21,6 @@ export interface IRenderLayer extends IDisposable {
    * Called when the cursor is moved.
    */
   handleCursorMove(terminal: Terminal): void;
-
-  /**
-   * Called when options change.
-   */
-  handleOptionsChanged(terminal: Terminal): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered

@@ -78,15 +78,6 @@ export class Terminal extends CoreTerminal {
     return this.buffers.active;
   }
 
-  protected _updateOptions(key: string): void {
-    super._updateOptions(key);
-
-    // TODO: These listeners should be owned by individual components
-    switch (key) {
-      case 'tabStopWidth': this.buffers.setupTabStops(); break;
-    }
-  }
-
   // TODO: Support paste here?
 
   public get markers(): IMarker[] {

@@ -601,9 +601,9 @@ async function getCursor(): Promise<{ col: number, row: number }> {
 async function getDimensions(): Promise<any> {
   const dim: IRenderDimensions = await page.evaluate(`term._core._renderService.dimensions`);
   return {
-    cellWidth: dim.actualCellWidth.toFixed(0),
-    cellHeight: dim.actualCellHeight.toFixed(0),
-    width: dim.canvasWidth.toFixed(0),
-    height: dim.canvasHeight.toFixed(0)
+    cellWidth: dim.css.cell.width.toFixed(0),
+    cellHeight: dim.css.cell.height.toFixed(0),
+    width: dim.css.canvas.width.toFixed(0),
+    height: dim.css.canvas.height.toFixed(0)
   };
 }

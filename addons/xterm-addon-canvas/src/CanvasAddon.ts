@@ -4,7 +4,7 @@
  */
 
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ITerminal } from 'browser/Types';
 import { CanvasRenderer } from './CanvasRenderer';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
@@ -17,33 +17,38 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
 
   private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
     return this._renderer?.textureAtlas;
   }
 
   public activate(terminal: Terminal): void {
-    const core = (terminal as any)._core;
+    const core = (terminal as any)._core as ITerminal;
     if (!terminal.element) {
       this.register(core.onWillOpen(() => this.activate(terminal)));
       return;
     }
 
     this._terminal = terminal;
-    const bufferService: IBufferService = core._bufferService;
-    const renderService: IRenderService = core._renderService;
-    const characterJoinerService: ICharacterJoinerService = core._characterJoinerService;
-    const charSizeService: ICharSizeService = core._charSizeService;
-    const coreService: ICoreService = core.coreService;
-    const coreBrowserService: ICoreBrowserService = core._coreBrowserService;
-    const decorationService: IDecorationService = core._decorationService;
-    const optionsService: IOptionsService = core.optionsService;
-    const themeService: IThemeService = core._themeService;
-    const screenElement: HTMLElement = core.screenElement;
+    const coreService = core.coreService;
+    const optionsService = core.optionsService;
+    const screenElement = core.screenElement!;
     const linkifier = core.linkifier2;
+
+    const unsafeCore = core as any;
+    const bufferService: IBufferService = unsafeCore._bufferService;
+    const renderService: IRenderService = unsafeCore._renderService;
+    const characterJoinerService: ICharacterJoinerService = unsafeCore._characterJoinerService;
+    const charSizeService: ICharSizeService = unsafeCore._charSizeService;
+    const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
+    const decorationService: IDecorationService = unsafeCore._decorationService;
+    const themeService: IThemeService = unsafeCore._themeService;
 
     this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
     renderService.handleResize(bufferService.cols, bufferService.rows);
 

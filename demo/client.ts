@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax */
 /**
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
@@ -218,6 +219,8 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('print-cjk').addEventListener('click', addCjk);
+  document.getElementById('print-cjk-sgr').addEventListener('click', addCjkRandomSgr);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
@@ -248,8 +251,7 @@ function createTerminal(): void {
   addons.fit.instance = new FitAddon();
   addons.unicode11.instance = new Unicode11Addon();
   addons.webgl.instance = new WebglAddon();
-  // TODO: Remove arguments when link provider API is the default
-  addons['web-links'].instance = new WebLinksAddon(undefined, undefined, true);
+  addons['web-links'].instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
@@ -274,8 +276,10 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.webgl.instance);
   setTimeout(() => {
     if (addons.webgl.instance !== undefined) {
-      addTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+      setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+      addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
     }
   }, 0);
 
@@ -303,7 +307,7 @@ function createTerminal(): void {
   });
 
   // fit is called within a setTimeout, cols and rows need this.
-  setTimeout(() => {
+  setTimeout(async () => {
     initOptions(term);
     // TODO: Clean this up, opt-cols/rows doesn't exist anymore
     (document.getElementById(`opt-cols`) as HTMLInputElement).value = term.cols;
@@ -313,16 +317,14 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' }).then((res) => {
-      res.text().then((processId) => {
-        pid = processId;
-        socketURL += processId;
-        socket = new WebSocket(socketURL);
-        socket.onopen = runRealTerminal;
-        socket.onclose = runFakeTerminal;
-        socket.onerror = runFakeTerminal;
-      });
-    });
+    const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+    const processId = await res.text();
+    pid = processId;
+    socketURL += processId;
+    socket = new WebSocket(socketURL);
+    socket.onopen = runRealTerminal;
+    socket.onclose = runFakeTerminal;
+    socket.onerror = runFakeTerminal;
   }, 0);
 }
 
@@ -552,13 +554,15 @@ function initAddons(term: TerminalType): void {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
             setTimeout(() => {
-              addTextureAtlas(addons.webgl.instance.textureAtlas);
-              addons.webgl.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+              setTextureAtlas(addons.webgl.instance.textureAtlas);
+              addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+              addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
           } else if (name === 'canvas') {
             setTimeout(() => {
-              addTextureAtlas(addons.canvas.instance.textureAtlas);
-              addons.canvas.instance.onChangeTextureAtlas(e => addTextureAtlas(e));
+              setTextureAtlas(addons.canvas.instance.textureAtlas);
+              addons.canvas.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+              addons.canvas.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
@@ -616,10 +620,8 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 }
 
 function updateTerminalSize(): void {
-  const cols = parseInt((document.getElementById(`opt-cols`) as HTMLInputElement).value, 10);
-  const rows = parseInt((document.getElementById(`opt-rows`) as HTMLInputElement).value, 10);
-  const width = (cols * term._core._renderService.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
-  const height = (rows * term._core._renderService.dimensions.actualCellHeight).toString() + 'px';
+  const width = (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
+  const height = (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   addons.fit.instance.fit();
@@ -651,8 +653,20 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
 }
 
-function addTextureAtlas(e: HTMLCanvasElement): void {
+function setTextureAtlas(e: HTMLCanvasElement): void {
+  styleAtlasPage(e);
   document.querySelector('#texture-atlas').replaceChildren(e);
+}
+function appendTextureAtlas(e: HTMLCanvasElement): void {
+  styleAtlasPage(e);
+  document.querySelector('#texture-atlas').appendChild(e);
+}
+function removeTextureAtlas(e: HTMLCanvasElement): void {
+  e.remove();
+}
+function styleAtlasPage(e: HTMLCanvasElement): void {
+  e.style.width = `${e.width / window.devicePixelRatio}px`;
+  e.style.height = `${e.height / window.devicePixelRatio}px`;
 }
 
 function writeCustomGlyphHandler(): void {
@@ -697,6 +711,7 @@ function writeCustomGlyphHandler(): void {
   term.write('  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\n\r');
   term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
   term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
+  term.write('\x1b[0m');
   window.scrollTo(0, 0);
 }
 
@@ -968,6 +983,35 @@ function addAnsiHyperlink(): void {
   term.write('\x1b[3A\x1b[1C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[5D');
 }
 
+/**
+ * Prints the 20977 characters from the CJK Unified Ideographs unicode block.
+ */
+function addCjk(): void {
+  term.write('\n\n\r');
+  for (let i = 0x4E00; i < 0x9FCC; i++) {
+    term.write(String.fromCharCode(i));
+  }
+}
+
+/**
+ * Prints the 20977 characters from the CJK Unified Ideographs unicode block with randomized styles.
+ */
+function addCjkRandomSgr(): void {
+  term.write('\n\n\r');
+  for (let i = 0x4E00; i < 0x9FCC; i++) {
+    term.write(`\x1b[${getRandomSgr()}m${String.fromCharCode(i)}\x1b[0m`);
+  }
+}
+const randomSgrAttributes = [
+  '1', '2', '3', '4', '5', '6', '7', '9',
+  '21', '22', '23', '24', '25', '26', '27', '28', '29',
+  '30', '31', '32', '33', '34', '35', '36', '37', '38', '39',
+  '40', '41', '42', '43', '44', '45', '46', '47', '48', '49'
+];
+function getRandomSgr(): string {
+  return randomSgrAttributes[Math.floor(Math.random() * randomSgrAttributes.length)];
+}
+
 function addDecoration(): void {
   term.options['overviewRulerWidth'] = 15;
   const marker = term.registerMarker(1);
@@ -995,3 +1039,33 @@ function addOverviewRuler(): void {
   term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
 }
 
+(console as any).image = (source: ImageData | HTMLCanvasElement, scale: number = 1) => {
+  function getBox(width: number, height: number): any {
+    return {
+      string: '+',
+      style: 'font-size: 1px; padding: ' + Math.floor(height/2) + 'px ' + Math.floor(width/2) + 'px; line-height: ' + height + 'px;'
+    };
+  }
+  if (source instanceof HTMLCanvasElement) {
+    source = source.getContext('2d')?.getImageData(0, 0, source.width, source.height)!;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = source.width;
+  canvas.height = source.height;
+  const ctx = canvas.getContext('2d')!;
+  ctx.putImageData(source, 0, 0);
+
+  const sw = source.width * scale;
+  const sh = source.height * scale;
+  const dim = getBox(sw, sh);
+  console.log(
+    `Image: ${source.width} x ${source.height}\n%c${dim.string}`,
+    `${dim.style}background: url(${canvas.toDataURL()}); background-size: ${sw}px ${sh}px; background-repeat: no-repeat; color: transparent;`
+  );
+  console.groupCollapsed('Zoomed');
+  console.log(
+    `%c${dim.string}`,
+    `${getBox(sw * 10, sh * 10).style}background: url(${canvas.toDataURL()}); background-size: ${sw * 10}px ${sh * 10}px; background-repeat: no-repeat; color: transparent; image-rendering: pixelated;-ms-interpolation-mode: nearest-neighbor;`
+  );
+  console.groupEnd();
+};

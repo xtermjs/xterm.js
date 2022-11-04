@@ -45,6 +45,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   ) {
     super(terminal, container, 'text', zIndex, alpha, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = new GridCache<CharData>();
+    this.register(optionsService.onSpecificOptionChange('allowTransparency', value => this._setTransparency(value)));
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -52,8 +53,8 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     // Clear the character width cache if the font or width has changed
     const terminalFont = this._getFont(false, false);
-    if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
-      this._characterWidth = dim.scaledCharWidth;
+    if (this._characterWidth !== dim.device.char.width || this._characterFont !== terminalFont) {
+      this._characterWidth = dim.device.char.width;
       this._characterFont = terminalFont;
       this._characterOverlapCache = {};
     }
@@ -249,10 +250,6 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._clearCells(0, firstRow, this._bufferService.cols, lastRow - firstRow + 1);
     this._drawBackground(firstRow, lastRow);
     this._drawForeground(firstRow, lastRow);
-  }
-
-  public handleOptionsChanged(): void {
-    this._setTransparency(this._optionsService.rawOptions.allowTransparency);
   }
 
   /**

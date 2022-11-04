@@ -32,8 +32,7 @@ export class Buffer implements IBuffer {
   public x: number = 0;
   public scrollBottom: number;
   public scrollTop: number;
-  // TODO: Type me
-  public tabs: any;
+  public tabs: { [column: number]: boolean | undefined } = {};
   public savedY: number = 0;
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
@@ -486,7 +485,7 @@ export class Buffer implements IBuffer {
    * TODO: respect trim flag after fixing #1685
    * @param lineIndex line index the string was retrieved from
    * @param stringIndex index within the string
-   * @param startCol column offset the string was retrieved from
+   * @param trimRight Whether to trim whitespace to the right.
    */
   public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
     while (stringIndex) {
@@ -515,7 +514,7 @@ export class Buffer implements IBuffer {
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
    * position.
-   * @param line The line being translated.
+   * @param lineIndex The absolute index of the line being translated.
    * @param trimRight Whether to trim whitespace to the right.
    * @param startCol The column to start at.
    * @param endCol The column to end at.

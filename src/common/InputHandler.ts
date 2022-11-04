@@ -11,7 +11,7 @@ import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -121,7 +121,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
-  private _currentLinkId?: number;
   private _dirtyRowTracker: IDirtyRowTracker;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
@@ -406,6 +405,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
+  private _getCurrentLinkId(): number {
+    return this._curAttrData.extended.urlId;
+  }
+
   /**
    * Parse call with async handler support.
    *
@@ -533,8 +536,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-      if (this._currentLinkId !== undefined) {
-        this._oscLinkService.addLineToLink(this._currentLinkId, this._activeBuffer.ybase + this._activeBuffer.y);
+      if (this._getCurrentLinkId()) {
+        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // insert combining char at last cursor position
@@ -1116,10 +1119,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Helper method to erase cells in a terminal row.
    * The cell gets replaced with the eraseChar of the terminal.
-   * @param y row index
-   * @param start first cell index to be erased
-   * @param end   end - 1 is last erased cell
-   * @param cleanWrap clear the isWrapped flag
+   * @param y The row index relative to the viewport.
+   * @param start The start x index of the range to be erased.
+   * @param end The end x index of the range to be erased (exclusive).
+   * @param clearWrap clear the isWrapped flag
+   * @param respectProtect Whether to respect the protection attribute (DECSCA).
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
@@ -2352,6 +2356,17 @@ export class InputHandler extends Disposable implements IInputHandler {
     attr.updateExtended();
   }
 
+  private _processSGR0(attr: IAttributeData): void {
+    attr.fg = DEFAULT_ATTR_DATA.fg;
+    attr.bg = DEFAULT_ATTR_DATA.bg;
+    attr.extended = attr.extended.clone();
+    // Reset underline style and color. Note that we don't want to reset other
+    // fields such as the url id.
+    attr.extended.underlineStyle = UnderlineStyle.NONE;
+    attr.extended.underlineColor &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+    attr.updateExtended();
+  }
+
   /**
    * CSI Pm m  Character Attributes (SGR).
    *
@@ -2437,8 +2452,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
     if (params.length === 1 && params.params[0] === 0) {
-      this._curAttrData.fg = DEFAULT_ATTR_DATA.fg;
-      this._curAttrData.bg = DEFAULT_ATTR_DATA.bg;
+      this._processSGR0(this._curAttrData);
       return true;
     }
 
@@ -2466,8 +2480,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.bg |= Attributes.CM_P16 | (p - 100) | 8;
       } else if (p === 0) {
         // default
-        attr.fg = DEFAULT_ATTR_DATA.fg;
-        attr.bg = DEFAULT_ATTR_DATA.bg;
+        this._processSGR0(attr);
       } else if (p === 1) {
         // bold text
         attr.fg |= FgFlags.BOLD;
@@ -2934,7 +2947,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _createHyperlink(params: string, uri: string): boolean {
     // It's legal to open a new hyperlink without explicitly finishing the previous one
-    if (this._currentLinkId !== undefined) {
+    if (this._getCurrentLinkId()) {
       this._finishHyperlink();
     }
     const parsedParams = params.split(':');
@@ -2944,8 +2957,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       id = parsedParams[idParamIndex].slice(3) || undefined;
     }
     this._curAttrData.extended = this._curAttrData.extended.clone();
-    this._currentLinkId = this._oscLinkService.registerLink({ id, uri });
-    this._curAttrData.extended.urlId = this._currentLinkId;
+    this._curAttrData.extended.urlId = this._oscLinkService.registerLink({ id, uri });
     this._curAttrData.updateExtended();
     return true;
   }
@@ -2954,7 +2966,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._curAttrData.extended = this._curAttrData.extended.clone();
     this._curAttrData.extended.urlId = 0;
     this._curAttrData.updateExtended();
-    this._currentLinkId = undefined;
     return true;
   }
 

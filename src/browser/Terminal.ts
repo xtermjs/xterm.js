@@ -264,50 +264,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  protected _updateOptions(key: string): void {
-    super._updateOptions(key);
-
-    // TODO: These listeners should be owned by individual components
-    switch (key) {
-      case 'fontFamily':
-      case 'fontSize':
-        // When the font changes the size of the cells may change which requires a renderer clear
-        this._renderService?.clear();
-        this._charSizeService?.measure();
-        break;
-      case 'cursorBlink':
-      case 'cursorStyle':
-        // The DOM renderer needs a row refresh to update the cursor styles
-        this.refresh(this.buffer.y, this.buffer.y);
-        break;
-      case 'customGlyphs':
-      case 'drawBoldTextInBrightColors':
-      case 'letterSpacing':
-      case 'lineHeight':
-      case 'fontWeight':
-      case 'fontWeightBold':
-      case 'minimumContrastRatio':
-        // When the font changes the size of the cells may change which requires a renderer clear
-        if (this._renderService) {
-          this._renderService.clear();
-          this._renderService.handleResize(this.cols, this.rows);
-          this.refresh(0, this.rows - 1);
-        }
-        break;
-      case 'scrollback':
-        this.viewport?.syncScrollArea();
-        break;
-      case 'screenReaderMode':
-        if (this.optionsService.rawOptions.screenReaderMode) {
-          if (!this._accessibilityManager && this._renderService) {
-            this._accessibilityManager = new AccessibilityManager(this, this._renderService);
-          }
-        } else {
-          this._accessibilityManager?.dispose();
-          this._accessibilityManager = undefined;
-        }
-        break;
-      case 'tabStopWidth': this.buffers.setupTabStops(); break;
+  private _handleScreenReaderModeOptionChange(value: boolean): void {
+    if (value) {
+      if (!this._accessibilityManager && this._renderService) {
+        this._accessibilityManager = new AccessibilityManager(this, this._renderService);
+      }
+    } else {
+      this._accessibilityManager?.dispose();
+      this._accessibilityManager = undefined;
     }
   }
 
@@ -357,11 +321,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return;
     }
     const cursorX = Math.min(this.buffer.x, this.cols - 1);
-    const cellHeight = this._renderService.dimensions.actualCellHeight;
+    const cellHeight = this._renderService.dimensions.css.cell.height;
     const width = bufferLine.getWidth(cursorX);
-    const cellWidth = this._renderService.dimensions.actualCellWidth * width;
-    const cursorTop = this.buffer.y * this._renderService.dimensions.actualCellHeight;
-    const cursorLeft = cursorX * this._renderService.dimensions.actualCellWidth;
+    const cellWidth = this._renderService.dimensions.css.cell.width * width;
+    const cursorTop = this.buffer.y * this._renderService.dimensions.css.cell.height;
+    const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
 
     // Sync the textarea to the exact position of the composition view so the IME knows where the
     // text is.
@@ -583,12 +547,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // ensure the correct order of the dprchange event
       this._accessibilityManager = new AccessibilityManager(this, this._renderService);
     }
+    this.register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 
     if (this.options.overviewRulerWidth) {
       this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
     }
-    this.optionsService.onOptionChange(() => {
-      if (!this._overviewRulerRenderer && this.options.overviewRulerWidth && this._viewportElement && this.screenElement) {
+    this.optionsService.onSpecificOptionChange('overviewRulerWidth', value => {
+      if (!this._overviewRulerRenderer && value && this._viewportElement && this.screenElement) {
         this._overviewRulerRenderer = this.register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
       }
     });
@@ -1014,10 +979,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   /**
-   * Handle a keydown event
-   * Key Resources:
-   *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
-   * @param ev The keydown event to be handled.
+   * Handle a keydown [KeyboardEvent].
+   *
+   * [KeyboardEvent]: https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    */
   protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
@@ -1309,13 +1273,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     switch (type) {
       case WindowsOptionsReportType.GET_WIN_SIZE_PIXELS:
-        const canvasWidth = this._renderService.dimensions.canvasWidth.toFixed(0);
-        const canvasHeight = this._renderService.dimensions.canvasHeight.toFixed(0);
+        const canvasWidth = this._renderService.dimensions.css.canvas.width.toFixed(0);
+        const canvasHeight = this._renderService.dimensions.css.canvas.height.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[4;${canvasHeight};${canvasWidth}t`);
         break;
       case WindowsOptionsReportType.GET_CELL_SIZE_PIXELS:
-        const cellWidth = this._renderService.dimensions.actualCellWidth.toFixed(0);
-        const cellHeight = this._renderService.dimensions.actualCellHeight.toFixed(0);
+        const cellWidth = this._renderService.dimensions.css.cell.width.toFixed(0);
+        const cellHeight = this._renderService.dimensions.css.cell.height.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[6;${cellHeight};${cellWidth}t`);
         break;
     }

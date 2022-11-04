@@ -26,7 +26,7 @@ interface ISmoothScrollState {
 export class Viewport extends Disposable implements IViewport {
   public scrollBarWidth: number = 0;
   private _currentRowHeight: number = 0;
-  private _currentScaledCellHeight: number = 0;
+  private _currentDeviceCellHeight: number = 0;
   private _lastRecordedBufferLength: number = 0;
   private _lastRecordedViewportHeight: number = 0;
   private _lastRecordedBufferHeight: number = 0;
@@ -75,6 +75,7 @@ export class Viewport extends Disposable implements IViewport {
 
     this._handleThemeChange(themeService.colors);
     this.register(themeService.onChangeColors(e => this._handleThemeChange(e)));
+    this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.syncScrollArea()));
 
     // Perform this async to ensure the ICharSizeService is ready.
     setTimeout(() => this.syncScrollArea(), 0);
@@ -103,10 +104,10 @@ export class Viewport extends Disposable implements IViewport {
 
   private _innerRefresh(): void {
     if (this._charSizeService.height > 0) {
-      this._currentRowHeight = this._renderService.dimensions.scaledCellHeight / this._coreBrowserService.dpr;
-      this._currentScaledCellHeight = this._renderService.dimensions.scaledCellHeight;
+      this._currentRowHeight = this._renderService.dimensions.device.cell.height / this._coreBrowserService.dpr;
+      this._currentDeviceCellHeight = this._renderService.dimensions.device.cell.height;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
-      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderService.dimensions.canvasHeight);
+      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderService.dimensions.css.canvas.height);
       if (this._lastRecordedBufferHeight !== newBufferHeight) {
         this._lastRecordedBufferHeight = newBufferHeight;
         this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
@@ -137,7 +138,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // If viewport height changed
-    if (this._lastRecordedViewportHeight !== this._renderService.dimensions.canvasHeight) {
+    if (this._lastRecordedViewportHeight !== this._renderService.dimensions.css.canvas.height) {
       this._refresh(immediate);
       return;
     }
@@ -149,7 +150,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // If row height changed
-    if (this._renderDimensions.scaledCellHeight !== this._currentScaledCellHeight) {
+    if (this._renderDimensions.device.cell.height !== this._currentDeviceCellHeight) {
       this._refresh(immediate);
       return;
     }

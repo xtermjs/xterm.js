@@ -4,7 +4,6 @@
  */
 
 import { IRenderModel } from './Types';
-import { fill } from 'common/TypedArrayUtils';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 
@@ -35,7 +34,7 @@ export class RenderModel implements IRenderModel {
   }
 
   public clear(): void {
-    fill(this.cells, 0, 0);
-    fill(this.lineLengths, 0, 0);
+    this.cells.fill(0, 0);
+    this.lineLengths.fill(0, 0);
   }
 }

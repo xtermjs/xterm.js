@@ -4,7 +4,7 @@
  */
 
 import { FontWeight, Terminal } from 'xterm';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet } from 'browser/Types';
 import { IDisposable } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 
@@ -17,29 +17,42 @@ export interface ICharAtlasConfig {
   fontFamily: string;
   fontWeight: FontWeight;
   fontWeightBold: FontWeight;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharWidth: number;
-  scaledCharHeight: number;
+  deviceCellWidth: number;
+  deviceCellHeight: number;
+  deviceCharWidth: number;
+  deviceCharHeight: number;
   allowTransparency: boolean;
   drawBoldTextInBrightColors: boolean;
   minimumContrastRatio: number;
   colors: IColorSet;
 }
 
+export interface IDimensions {
+  width: number;
+  height: number;
+}
+
+export interface IOffset {
+  top: number;
+  left: number;
+}
+
 export interface IRenderDimensions {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharLeft: number;
-  scaledCharTop: number;
-  scaledCanvasWidth: number;
-  scaledCanvasHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  actualCellWidth: number;
-  actualCellHeight: number;
+  /**
+   * Dimensions measured in CSS pixels (ie. device pixels / device pixel ratio).
+   */
+  css: {
+    canvas: IDimensions;
+    cell: IDimensions;
+  };
+  /**
+   * Dimensions measured in actual pixels as rendered to the device.
+   */
+  device: {
+    canvas: IDimensions;
+    cell: IDimensions;
+    char: IDimensions & IOffset;
+  };
 }
 
 export interface IRequestRedrawEvent {
@@ -68,15 +81,16 @@ export interface IRenderer extends IDisposable {
   handleFocus(): void;
   handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   handleCursorMove(): void;
-  handleOptionsChanged(): void;
   clear(): void;
   renderRows(start: number, end: number): void;
   clearTextureAtlas?(): void;
 }
 
 export interface ITextureAtlas extends IDisposable {
-  readonly cacheCanvas: HTMLCanvasElement;
-  hasCanvasChanged: boolean;
+  readonly pages: { canvas: HTMLCanvasElement, hasCanvasChanged: boolean }[];
+
+  onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
   /**
    * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.
@@ -108,6 +122,10 @@ export interface IRasterizedGlyph {
    * in pixels.
    */
   offset: IVector;
+  /**
+   * The index of the texture page that the glyph is on.
+   */
+  texturePage: number;
   /**
    * the x and y position of the glyph in the texture in pixels.
    */

@@ -110,15 +110,9 @@ export class OverviewRulerRenderer extends Disposable {
       }
     }));
     // overview ruler width changed
-    this.register(this._optionsService.onOptionChange(o => {
-      if (o === 'overviewRulerWidth') {
-        this._queueRefresh(true);
-      }
-    }));
+    this.register(this._optionsService.onSpecificOptionChange('overviewRulerWidth', () => this._queueRefresh(true)));
     // device pixel ratio changed
-    this.register(addDisposableDomListener(this._coreBrowseService.window, 'resize', () => {
-      this._queueRefresh(true);
-    }));
+    this.register(addDisposableDomListener(this._coreBrowseService.window, 'resize', () => this._queueRefresh(true)));
     // set the canvas dimensions
     this._queueRefresh(true);
   }
@@ -196,8 +190,6 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _renderColorZone(zone: IColorZone): void {
-    // TODO: Is _decorationElements needed?
-
     this._ctx.fillStyle = zone.color;
     this._ctx.fillRect(
       /* x */ drawX[zone.position || 'full'],
