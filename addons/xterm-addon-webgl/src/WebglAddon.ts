@@ -7,7 +7,7 @@ import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRender
 import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { isSafari } from 'common/Platform';
+import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICoreTerminal } from 'common/Types';
 import { ITerminalAddon, Terminal } from 'xterm';
@@ -33,8 +33,8 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
   }
 
   public activate(terminal: Terminal): void {
-    if (isSafari) {
-      throw new Error('Webgl is not currently supported on Safari');
+    if (isSafari && getSafariVersion() < 16) {
+      throw new Error('Webgl2 is only supported on Safari 16 and above');
     }
 
     const core = (terminal as any)._core as ITerminal;
