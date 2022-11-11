@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkProvider, ILink, Terminal, IViewportRange } from 'xterm';
+import { ILinkProvider, ILink, Terminal, IViewportRange, IBufferLine } from 'xterm';
 
 export interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
@@ -41,23 +41,33 @@ export class WebLinkProvider implements ILinkProvider {
   }
 }
 
+export interface MatchRange {
+  start: number,
+  end: number,
+  text: string,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+}
+
 export class LinkComputer {
   public static computeLink(y: number, regex: RegExp, terminal: Terminal, activate: (event: MouseEvent, uri: string) => void): ILink[] {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
-    const [line, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(y - 1, false, terminal);
+    const [lines, lineText, startLineIndex] = LinkComputer._translateBufferLineToStringWithWrap(y - 1, false, terminal);
 
     // Don't try if the wrapped line if excessively large as the regex matching will block the main
     // thread.
-    if (line.length > 1024) {
+    if (lineText.length > 1024) {
       return [];
     }
 
     let match;
     let stringIndex = -1;
-    const result: ILink[] = [];
 
-    while ((match = rex.exec(line)) !== null) {
+    const matchRanges: MatchRange[] = []
+    while ((match = rex.exec(lineText)) !== null) {
       const text = match[1];
       if (!text) {
         // something matched but does not comply with the given matchIndex
@@ -70,43 +80,70 @@ export class LinkComputer {
       // therefore we cannot use match.index directly, instead we search the position
       // of the match group in text again
       // also correct regex and string search offsets for the next loop run
-      stringIndex = line.indexOf(text, stringIndex + 1);
-      rex.lastIndex = stringIndex + text.length;
-      if (stringIndex < 0) {
-        // invalid stringIndex (should not have happened)
-        break;
+      let start = -1;
+      start = lineText.indexOf(text, stringIndex + 1);
+      let end = -1;
+      if (start > -1) {
+        end = start + text.length;
       }
-
-      let endX = stringIndex + text.length;
-      let endY = startLineIndex + 1;
-
-      while (endX > terminal.cols) {
-        endX -= terminal.cols;
-        endY++;
+      if (start > -1 && end > -1) {
+        matchRanges.push({
+          start: start,
+          text: text,
+          end: start + text.length,
+          startX: -1,
+          startY: -1,
+          endX: -1,
+          endY: -1,
+        })
+        rex.lastIndex = stringIndex + text.length;
       }
-
-      let startX = stringIndex + 1;
-      let startY = startLineIndex + 1;
-      while (startX > terminal.cols) {
-        startX -= terminal.cols;
-        startY++;
-      }
-
-      const range = {
-        start: {
-          x: startX,
-          y: startY
-        },
-        end: {
-          x: endX,
-          y: endY
-        }
-      };
-
-      result.push({ range, text, activate });
     }
 
-    return result;
+    // Convert the matched text position range to buffer offsets range in the double byte character scenario
+    let stringX = 0;
+    let lineY = startLineIndex + 1;
+    let matchIndex = 0;
+    lines.forEach(line => {
+      if (line.length > 1024) {
+        return [];
+      }
+      for (let x = 0; x < line.length; x++) {
+        if (matchRanges[matchIndex]) {
+          if (stringX == matchRanges[matchIndex].start) {
+            matchRanges[matchIndex].startX = x + 1;
+            matchRanges[matchIndex].startY = lineY;
+          }
+          if (stringX == matchRanges[matchIndex].end) {
+            matchRanges[matchIndex].endX = x;
+            matchRanges[matchIndex].endY = lineY;
+
+            matchIndex++;
+          }
+          if (line.getCell(x)?.getChars()) {
+            stringX++
+          }
+        }
+      }
+      lineY++
+    })
+
+    return matchRanges.map(r => {
+      return {
+        range: {
+          start: {
+            x: r.startX,
+            y: r.startY
+          },
+          end: {
+            x: r.endX,
+            y: r.endY
+          }
+        },
+        text: r.text,
+        activate,
+      }
+    })
   }
 
   /**
@@ -114,11 +151,11 @@ export class LinkComputer {
    * @param lineIndex The index of the line being translated.
    * @param trimRight Whether to trim whitespace to the right.
    */
-  private static _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean, terminal: Terminal): [string, number] {
+  private static _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean, terminal: Terminal): [IBufferLine[], string, number] {
     let lineString = '';
     let lineWrapsToNext: boolean;
     let prevLinesToWrap: boolean;
-
+    let lines: IBufferLine[] = [];
     do {
       const line = terminal.buffer.active.getLine(lineIndex);
       if (!line) {
@@ -141,10 +178,11 @@ export class LinkComputer {
       if (!line) {
         break;
       }
+      lines.push(line)
       lineString += line.translateToString(!lineWrapsToNext && trimRight).substring(0, terminal.cols);
       lineIndex++;
     } while (lineWrapsToNext);
 
-    return [lineString, startLineIndex];
+    return [lines, lineString, startLineIndex];
   }
 }
