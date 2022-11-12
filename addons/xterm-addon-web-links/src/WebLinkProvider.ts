@@ -7,7 +7,9 @@ import { ILinkProvider, ILink, Terminal, IViewportRange, IBufferLine } from 'xte
 
 export interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
+
   leave?(event: MouseEvent, text: string): void;
+
   urlRegex?: RegExp;
 }
 
@@ -41,14 +43,14 @@ export class WebLinkProvider implements ILinkProvider {
   }
 }
 
-export interface MatchRange {
-  start: number,
-  end: number,
-  text: string,
-  startX: number,
-  startY: number,
-  endX: number,
-  endY: number,
+export interface IMatchRange {
+  start: number;
+  end: number;
+  text: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
 }
 
 export class LinkComputer {
@@ -66,7 +68,7 @@ export class LinkComputer {
     let match;
     let stringIndex = -1;
 
-    const matchRanges: MatchRange[] = []
+    const matchRanges: IMatchRange[] = [];
     while ((match = rex.exec(lineText)) !== null) {
       const text = match[1];
       if (!text) {
@@ -86,6 +88,7 @@ export class LinkComputer {
       if (start > -1) {
         end = start + text.length;
       }
+      stringIndex = end;
       if (start > -1 && end > -1) {
         matchRanges.push({
           start: start,
@@ -94,8 +97,8 @@ export class LinkComputer {
           startX: -1,
           startY: -1,
           endX: -1,
-          endY: -1,
-        })
+          endY: -1
+        });
         rex.lastIndex = stringIndex + text.length;
       }
     }
@@ -110,23 +113,23 @@ export class LinkComputer {
       }
       for (let x = 0; x < line.length; x++) {
         if (matchRanges[matchIndex]) {
-          if (stringX == matchRanges[matchIndex].start) {
+          if (stringX === matchRanges[matchIndex].start) {
             matchRanges[matchIndex].startX = x + 1;
             matchRanges[matchIndex].startY = lineY;
           }
-          if (stringX == matchRanges[matchIndex].end) {
+          if (stringX === matchRanges[matchIndex].end) {
             matchRanges[matchIndex].endX = x;
             matchRanges[matchIndex].endY = lineY;
 
             matchIndex++;
           }
           if (line.getCell(x)?.getChars()) {
-            stringX++
+            stringX++;
           }
         }
       }
-      lineY++
-    })
+      lineY++;
+    });
 
     return matchRanges.map(r => {
       return {
@@ -141,9 +144,9 @@ export class LinkComputer {
           }
         },
         text: r.text,
-        activate,
-      }
-    })
+        activate
+      };
+    });
   }
 
   /**
@@ -155,7 +158,7 @@ export class LinkComputer {
     let lineString = '';
     let lineWrapsToNext: boolean;
     let prevLinesToWrap: boolean;
-    let lines: IBufferLine[] = [];
+    const lines: IBufferLine[] = [];
     do {
       const line = terminal.buffer.active.getLine(lineIndex);
       if (!line) {
@@ -178,7 +181,7 @@ export class LinkComputer {
       if (!line) {
         break;
       }
-      lines.push(line)
+      lines.push(line);
       lineString += line.translateToString(!lineWrapsToNext && trimRight).substring(0, terminal.cols);
       lineIndex++;
     } while (lineWrapsToNext);
