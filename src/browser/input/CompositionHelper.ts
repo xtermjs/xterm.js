@@ -169,6 +169,7 @@ export class CompositionHelper {
           }
           if (input.length > 0) {
             this._coreService.triggerDataEvent(input, true);
+            this._textarea.value = '';
           }
         }
       }, 0);
