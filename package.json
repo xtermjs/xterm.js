@@ -1,5 +1,5 @@
 {
-  "name": "xterm",
+  "name": "@replit/xterm",
   "description": "Full xterm terminal, in your browser",
   "version": "5.0.0",
   "main": "lib/xterm.js",
