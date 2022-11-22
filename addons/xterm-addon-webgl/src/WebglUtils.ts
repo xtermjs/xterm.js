@@ -51,3 +51,13 @@ export function expandFloat32Array(source: Float32Array, max: number): Float32Ar
   }
   return newArray;
 }
+
+export class GLTexture {
+  public texture: WebGLTexture;
+  public dirtyId: number;
+
+  constructor(texture: WebGLTexture) {
+    this.texture = texture;
+    this.dirtyId = -1;
+  }
+}

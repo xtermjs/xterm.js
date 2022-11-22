@@ -87,7 +87,7 @@ export interface IRenderer extends IDisposable {
 }
 
 export interface ITextureAtlas extends IDisposable {
-  readonly pages: { canvas: HTMLCanvasElement, hasCanvasChanged: boolean }[];
+  readonly pages: { canvas: HTMLCanvasElement, dirtyId: number }[];
 
   onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
   onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
