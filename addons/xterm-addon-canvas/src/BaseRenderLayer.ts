@@ -376,12 +376,12 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
-    if (this._charAtlas.pages[glyph.texturePage].hasCanvasChanged) {
+    if (this._charAtlas.pages[glyph.texturePage].version !== this._bitmapGenerator[glyph.texturePage]?.version) {
       if (!this._bitmapGenerator[glyph.texturePage]) {
         this._bitmapGenerator[glyph.texturePage] = new BitmapGenerator(this._charAtlas.pages[glyph.texturePage].canvas);
       }
-      this._bitmapGenerator[glyph.texturePage]?.refresh();
-      this._charAtlas.pages[glyph.texturePage].hasCanvasChanged = false;
+      this._bitmapGenerator[glyph.texturePage]!.refresh();
+      this._bitmapGenerator[glyph.texturePage]!.version = this._charAtlas.pages[glyph.texturePage].version;
     }
     this._ctx.drawImage(
       this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
@@ -440,6 +440,7 @@ class BitmapGenerator {
   private _commitTimeout: number | undefined = undefined;
   private _bitmap: ImageBitmap | undefined = undefined;
   public get bitmap(): ImageBitmap | undefined { return this._bitmap; }
+  public version: number = -1;
 
   constructor(private readonly _canvas: HTMLCanvasElement) {
   }

@@ -61,7 +61,7 @@ export class TextureAtlas implements ITextureAtlas {
 
   // The texture that the atlas is drawn to
   private _pages: AtlasPage[] = [];
-  public get pages(): { canvas: HTMLCanvasElement, hasCanvasChanged: boolean }[] { return this._pages; }
+  public get pages(): { canvas: HTMLCanvasElement, version: number }[] { return this._pages; }
 
   // The set of atlas pages that can be written to
   private _activePages: AtlasPage[] = [];
@@ -179,7 +179,7 @@ export class TextureAtlas implements ITextureAtlas {
 
         // Merge into the new page
         const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-        mergedPage.hasCanvasChanged = true;
+        mergedPage.version++;
 
         // Replace the first _merging_ page with the _merged_ page
         this._pages[mergedPageIndex] = mergedPage;
@@ -238,7 +238,7 @@ export class TextureAtlas implements ITextureAtlas {
       for (const g of adjustingPage.glyphs) {
         g.texturePage--;
       }
-      adjustingPage.hasCanvasChanged = true;
+      adjustingPage.version++;
     }
   }
 
@@ -826,7 +826,7 @@ export class TextureAtlas implements ITextureAtlas {
       rasterizedGlyph.size.y
     );
     activePage.addGlyph(rasterizedGlyph);
-    activePage.hasCanvasChanged = true;
+    activePage.version++;
 
     return rasterizedGlyph;
   }
@@ -936,10 +936,9 @@ class AtlasPage {
   }
 
   /**
-   * Whether the canvas of the atlas page has changed, this is only set to true by the atlas, the
-   * user of the boolean is required to reset its value to false.
+   * Used to check whether the canvas of the atlas page has changed.
    */
-  public hasCanvasChanged = false;
+  public version = 0;
 
   // Texture atlas current positioning data. The texture packing strategy used is to fill from
   // left-to-right and top-to-bottom. When the glyph being written is less than half of the current
@@ -982,7 +981,7 @@ class AtlasPage {
     this.currentRow.y = 0;
     this.currentRow.height = 0;
     this.fixedRows.length = 0;
-    this.hasCanvasChanged = true;
+    this.version++;
   }
 }
 

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
+import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel } from './Types';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
@@ -94,7 +94,7 @@ export class GlyphRenderer extends Disposable {
   private readonly _projectionLocation: WebGLUniformLocation;
   private readonly _resolutionLocation: WebGLUniformLocation;
   private readonly _textureLocation: WebGLUniformLocation;
-  private readonly _atlasTextures: WebGLTexture[];
+  private readonly _atlasTextures: GLTexture[];
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
@@ -190,14 +190,14 @@ export class GlyphRenderer extends Disposable {
     // is ever drawn it will show characters as red rectangles.
     this._atlasTextures = [];
     for (let i = 0; i < TextureAtlas.maxAtlasPages; i++) {
-      const texture = throwIfFalsy(gl.createTexture());
-      this.register(toDisposable(() => gl.deleteTexture(texture)));
+      const glTexture = new GLTexture(throwIfFalsy(gl.createTexture()));
+      this.register(toDisposable(() => gl.deleteTexture(glTexture.texture)));
       gl.activeTexture(gl.TEXTURE0 + i);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.bindTexture(gl.TEXTURE_2D, glTexture.texture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
-      this._atlasTextures[i] = texture;
+      this._atlasTextures[i] = glTexture;
     }
 
     // Allow drawing of transparent texture
@@ -348,8 +348,7 @@ export class GlyphRenderer extends Disposable {
 
     // Bind the atlas page texture if they have changed
     for (let i = 0; i < this._atlas.pages.length; i++) {
-      if (this._atlas.pages[i].hasCanvasChanged) {
-        this._atlas.pages[i].hasCanvasChanged = false;
+      if (this._atlas.pages[i].version !== this._atlasTextures[i].version) {
         this._bindAtlasPageTexture(gl, this._atlas, i);
       }
     }
@@ -360,18 +359,19 @@ export class GlyphRenderer extends Disposable {
 
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
-    for (let i = 0; i < atlas.pages.length; i++) {
-      this._bindAtlasPageTexture(this._gl, atlas, i);
+    for (const glTexture of this._atlasTextures) {
+      glTexture.version = -1;
     }
   }
 
   private _bindAtlasPageTexture(gl: IWebGL2RenderingContext, atlas: ITextureAtlas, i: number): void {
     gl.activeTexture(gl.TEXTURE0 + i);
-    gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i]);
+    gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i].texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[i].canvas);
     gl.generateMipmap(gl.TEXTURE_2D);
+    this._atlasTextures[i].version = atlas.pages[i].version;
   }
 
   public setDimensions(dimensions: IRenderDimensions): void {
