@@ -348,7 +348,7 @@ export class GlyphRenderer extends Disposable {
 
     // Bind the atlas page texture if they have changed
     for (let i = 0; i < this._atlas.pages.length; i++) {
-      if (this._atlas.pages[i].dirtyId !== this._atlasTextures[i].dirtyId) {
+      if (this._atlas.pages[i].version !== this._atlasTextures[i].version) {
         this._bindAtlasPageTexture(gl, this._atlas, i);
       }
     }
@@ -360,7 +360,7 @@ export class GlyphRenderer extends Disposable {
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
     for (const glTexture of this._atlasTextures) {
-      glTexture.dirtyId = -1;
+      glTexture.version = -1;
     }
   }
 
@@ -371,7 +371,7 @@ export class GlyphRenderer extends Disposable {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[i].canvas);
     gl.generateMipmap(gl.TEXTURE_2D);
-    this._atlasTextures[i].dirtyId = atlas.pages[i].dirtyId;
+    this._atlasTextures[i].version = atlas.pages[i].version;
   }
 
   public setDimensions(dimensions: IRenderDimensions): void {

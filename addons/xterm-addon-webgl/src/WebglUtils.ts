@@ -54,10 +54,10 @@ export function expandFloat32Array(source: Float32Array, max: number): Float32Ar
 
 export class GLTexture {
   public texture: WebGLTexture;
-  public dirtyId: number;
+  public version: number;
 
   constructor(texture: WebGLTexture) {
     this.texture = texture;
-    this.dirtyId = -1;
+    this.version = -1;
   }
 }
