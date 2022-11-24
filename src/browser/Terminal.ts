@@ -1056,15 +1056,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._showCursor();
     this.coreService.triggerDataEvent(result.key, true);
 
-    // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
-    // other listeners. When screen reader mode is enabled, this could cause issues if the event
-    // is handled at a higher level, this is a compromise in order to echo keys to the screen
-    // reader.
-    if (!this.optionsService.rawOptions.screenReaderMode) {
-      return this.cancel(event, true);
-    }
-
-    this._keyDownHandled = true;
+    return this.cancel(event, true);
   }
 
   private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {

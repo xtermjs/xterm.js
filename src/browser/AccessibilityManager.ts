@@ -34,17 +34,6 @@ export class AccessibilityManager extends Disposable {
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
 
-  /**
-   * This queue has a character pushed to it for keys that are pressed, if the
-   * next character added to the terminal is equal to the key char then it is
-   * not announced (added to live region) because it has already been announced
-   * by the textarea event (which cannot be canceled). There are some race
-   * condition cases if there is typing while data is streaming, but this covers
-   * the main case of typing into the prompt and inputting the answer to a
-   * question (Y/N, etc.).
-   */
-  private _charsToConsume: string[] = [];
-
   private _charsToAnnounce: string = '';
 
   constructor(
@@ -94,7 +83,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onA11yChar(char => this._handleChar(char)));
     this.register(this._terminal.onLineFeed(() => this._handleChar('\n')));
     this.register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
-    this.register(this._terminal.onKey(e => this._handleKey(e.key)));
+    this.register(this._terminal.onKey(() => this._clearLiveRegion()));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
 
@@ -206,15 +195,7 @@ export class AccessibilityManager extends Disposable {
 
   private _handleChar(char: string): void {
     if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
-      if (this._charsToConsume.length > 0) {
-        // Have the screen reader ignore the char if it was just input
-        const shiftedChar = this._charsToConsume.shift();
-        if (shiftedChar !== char) {
-          this._charsToAnnounce += char;
-        }
-      } else {
-        this._charsToAnnounce += char;
-      }
+      this._charsToAnnounce += char;
 
       if (char === '\n') {
         this._liveRegionLineCount++;
@@ -242,11 +223,6 @@ export class AccessibilityManager extends Disposable {
     if (isMac) {
       removeElementFromParent(this._liveRegion);
     }
-  }
-
-  private _handleKey(keyChar: string): void {
-    this._clearLiveRegion();
-    this._charsToConsume.push(keyChar);
   }
 
   private _refreshRows(start?: number, end?: number): void {
