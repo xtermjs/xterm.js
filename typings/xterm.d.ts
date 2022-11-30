@@ -867,6 +867,24 @@ declare module 'xterm' {
      * This is a function that takes a KeyboardEvent, allowing consumers to stop
      * propagation and/or prevent the default action. The function returns
      * whether the event should be processed by xterm.js.
+     *
+     * @example A custom keymap that overrides the backspace key
+     * ```ts
+     * const keymap = [
+     *   { "key": "Backspace", "shiftKey": false, "mapCode": 8 },
+     *   { "key": "Backspace", "shiftKey": true, "mapCode": 127 }
+     * ];
+     * term.attachCustomKeyEventHandler(ev => {
+     *   if (ev.type === 'keydown') {
+     *     for (let i in keymap) {
+     *       if (keymap[i].key == ev.key && keymap[i].shiftKey == ev.shiftKey) {
+     *         socket.send(String.fromCharCode(keymap[i].mapCode));
+     *         return false;
+     *       }
+     *     }
+     *   }
+     * });
+     * ```
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
