@@ -9,6 +9,7 @@ import { CircularList } from 'common/CircularList';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
+import { ExtendedAttrs } from 'common/buffer/AttributeData';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -1175,6 +1176,35 @@ describe('Buffer', () => {
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
       assert.equal(str3, '😁a');
+    });
+  });
+
+  describe('memory cleanup after shrinking', () => {
+    it('should realign memory from idle task execution', async () => {
+      buffer.fillViewportRows();
+
+      // shrink more than 2 times to trigger lazy memory cleanup
+      buffer.resize(INIT_COLS / 2 - 1, INIT_ROWS);
+
+      // sync
+      for (let i = 0; i < INIT_ROWS; i++) {
+        const line = buffer.lines.get(i)!;
+        // line memory is still at old size from initialization
+        assert.equal((line as any)._data.buffer.byteLength, INIT_COLS * 3 * 4);
+        // array.length and .length get immediately adjusted
+        assert.equal((line as any)._data.length, (INIT_COLS / 2 - 1) * 3);
+        assert.equal(line.length, INIT_COLS / 2 - 1);
+      }
+
+      // wait for a bit to give IdleTaskQueue a chance to kick in
+      // and finish memory cleaning
+      await new Promise(r => setTimeout(r, 100));
+
+      // cleanup should have realigned memory with exact bytelength
+      for (let i = 0; i < INIT_ROWS; i++) {
+        const line = buffer.lines.get(i)!;
+        assert.equal((line as any)._data.buffer.byteLength, (INIT_COLS / 2 - 1) * 3 * 4);
+      }
     });
   });
 });

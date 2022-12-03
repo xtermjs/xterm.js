@@ -14,7 +14,7 @@ import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { DebouncedIdleTask } from 'common/TaskQueue';
+import { DebouncedIdleTask, IdleTaskQueue } from 'common/TaskQueue';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -151,8 +151,8 @@ export class Buffer implements IBuffer {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
-    // defer memory cleanup of bufferlines
-    let needsCleanup = 0;
+    // count bufferlines with overly big memory to be cleaned afterwards
+    let dirtyMemoryLines = 0;
 
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
@@ -168,7 +168,7 @@ export class Buffer implements IBuffer {
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
           // +boolean for fast 0 or 1 conversion
-          needsCleanup |= +this.lines.get(i)!.resize(newCols, nullCell);
+          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
 
@@ -248,7 +248,7 @@ export class Buffer implements IBuffer {
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
           // +boolean for fast 0 or 1 conversion
-          needsCleanup |= +this.lines.get(i)!.resize(newCols, nullCell);
+          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
     }
@@ -256,25 +256,32 @@ export class Buffer implements IBuffer {
     this._cols = newCols;
     this._rows = newRows;
 
-    if (needsCleanup) {
-      this._memoryCleanupTask.set(() => this._cleanupMemory());
-    } else {
-      // FIXME: DebouncedIdleTask has no clear method?
-      this._memoryCleanupTask.set(() => {});
+    this._memoryCleanupQueue.clear();
+    // schedule memory cleanup only, if more than 10% of the lines are affected
+    if (dirtyMemoryLines > 0.1 * this.lines.length) {
+      this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
     }
   }
 
-  private _memoryCleanupTask: DebouncedIdleTask = new DebouncedIdleTask();
+  private _memoryCleanupQueue = new IdleTaskQueue();
 
-  private _cleanupMemory(): void {
+  private _batchedMemoryCleanup(): boolean {
     let counted = 0;
     for (let i = 0; i < this.lines.length; i++) {
       counted += this.lines.get(i)!.cleanupMemory();
-      // throttle to 5k lines
+      // throttle to 5k lines at once and
+      // return true to indicate, that the task is not finished yet
       if (counted > 5000) {
-        this._memoryCleanupTask.set(() => this._cleanupMemory());
-        break;
+        return true;
       }
+    }
+    return false;
+  }
+
+  private _forceMemoryCleanup(): void {
+    this._memoryCleanupQueue.clear();
+    for (let i = 0; i < this.lines.length; i++) {
+      this.lines.get(i)!.cleanupMemory();
     }
   }
 
