@@ -11,34 +11,40 @@ import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICellData } from 'common/Types';
+import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { isSafari } from 'common/Platform';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx!: CanvasRenderingContext2D;
-  private _scaledCharWidth: number = 0;
-  private _scaledCharHeight: number = 0;
-  private _scaledCellWidth: number = 0;
-  private _scaledCellHeight: number = 0;
-  private _scaledCharLeft: number = 0;
-  private _scaledCharTop: number = 0;
+  private _deviceCharWidth: number = 0;
+  private _deviceCharHeight: number = 0;
+  private _deviceCellWidth: number = 0;
+  private _deviceCellHeight: number = 0;
+  private _deviceCharLeft: number = 0;
+  private _deviceCharTop: number = 0;
 
   protected _selectionModel: ISelectionRenderModel = createSelectionRenderModel();
   private _cellColorResolver: CellColorResolver;
-  private _bitmapGenerator?: BitmapGenerator;
+  private _bitmapGenerator: (BitmapGenerator | undefined)[] = [];
 
   protected _charAtlas!: ITextureAtlas;
+  private _charAtlasDisposable?: IDisposable;
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
-  public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.cacheCanvas!; }
+  public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.pages[0].canvas!; }
+
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   constructor(
     private readonly _terminal: Terminal,
@@ -112,25 +118,29 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param colorSet The color set to use for the char atlas.
    */
   private _refreshCharAtlas(colorSet: ReadonlyColorSet): void {
-    if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
+    if (this._deviceCharWidth <= 0 && this._deviceCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._scaledCellWidth, this._scaledCellHeight, this._scaledCharWidth, this._scaledCharHeight, this._coreBrowserService.dpr);
+    this._charAtlasDisposable?.dispose();
+    this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
+    this._charAtlasDisposable = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
-    this._bitmapGenerator = new BitmapGenerator(this._charAtlas.cacheCanvas);
+    for (let i = 0; i < this._charAtlas.pages.length; i++) {
+      this._bitmapGenerator[i] = new BitmapGenerator(this._charAtlas.pages[i].canvas);
+    }
   }
 
   public resize(dim: IRenderDimensions): void {
-    this._scaledCellWidth = dim.scaledCellWidth;
-    this._scaledCellHeight = dim.scaledCellHeight;
-    this._scaledCharWidth = dim.scaledCharWidth;
-    this._scaledCharHeight = dim.scaledCharHeight;
-    this._scaledCharLeft = dim.scaledCharLeft;
-    this._scaledCharTop = dim.scaledCharTop;
-    this._canvas.width = dim.scaledCanvasWidth;
-    this._canvas.height = dim.scaledCanvasHeight;
-    this._canvas.style.width = `${dim.canvasWidth}px`;
-    this._canvas.style.height = `${dim.canvasHeight}px`;
+    this._deviceCellWidth = dim.device.cell.width;
+    this._deviceCellHeight = dim.device.cell.height;
+    this._deviceCharWidth = dim.device.char.width;
+    this._deviceCharHeight = dim.device.char.height;
+    this._deviceCharLeft = dim.device.char.left;
+    this._deviceCharTop = dim.device.char.top;
+    this._canvas.width = dim.device.canvas.width;
+    this._canvas.height = dim.device.canvas.height;
+    this._canvas.style.width = `${dim.css.canvas.width}px`;
+    this._canvas.style.height = `${dim.css.canvas.height}px`;
 
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
@@ -155,24 +165,24 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _fillCells(x: number, y: number, width: number, height: number): void {
     this._ctx.fillRect(
-      x * this._scaledCellWidth,
-      y * this._scaledCellHeight,
-      width * this._scaledCellWidth,
-      height * this._scaledCellHeight);
+      x * this._deviceCellWidth,
+      y * this._deviceCellHeight,
+      width * this._deviceCellWidth,
+      height * this._deviceCellHeight);
   }
 
   /**
-     * Fills a 1px line (2px on HDPI) at the middle of the cell. This uses the
-     * existing fillStyle on the context.
-     * @param x The column to fill.
-     * @param y The row to fill.
-     */
+   * Fills a 1px line (2px on HDPI) at the middle of the cell. This uses the
+   * existing fillStyle on the context.
+   * @param x The column to fill.
+   * @param y The row to fill.
+   */
   protected _fillMiddleLineAtCells(x: number, y: number, width: number = 1): void {
-    const cellOffset = Math.ceil(this._scaledCellHeight * 0.5);
+    const cellOffset = Math.ceil(this._deviceCellHeight * 0.5);
     this._ctx.fillRect(
-      x * this._scaledCellWidth,
-      (y + 1) * this._scaledCellHeight - cellOffset - this._coreBrowserService.dpr,
-      width * this._scaledCellWidth,
+      x * this._deviceCellWidth,
+      (y + 1) * this._deviceCellHeight - cellOffset - this._coreBrowserService.dpr,
+      width * this._deviceCellWidth,
       this._coreBrowserService.dpr);
   }
 
@@ -184,9 +194,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _fillBottomLineAtCells(x: number, y: number, width: number = 1, pixelOffset: number = 0): void {
     this._ctx.fillRect(
-      x * this._scaledCellWidth,
-      (y + 1) * this._scaledCellHeight + pixelOffset - this._coreBrowserService.dpr - 1 /* Ensure it's drawn within the cell */,
-      width * this._scaledCellWidth,
+      x * this._deviceCellWidth,
+      (y + 1) * this._deviceCellHeight + pixelOffset - this._coreBrowserService.dpr - 1 /* Ensure it's drawn within the cell */,
+      width * this._deviceCellWidth,
       this._coreBrowserService.dpr);
   }
 
@@ -197,10 +207,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     const lineWidth = this._coreBrowserService.dpr;
     this._ctx.lineWidth = lineWidth;
     for (let xOffset = 0; xOffset < width; xOffset++) {
-      const xLeft = (x + xOffset) * this._scaledCellWidth;
-      const xMid = (x + xOffset + 0.5) * this._scaledCellWidth;
-      const xRight = (x + xOffset + 1) * this._scaledCellWidth;
-      const yMid = (y + 1) * this._scaledCellHeight - lineWidth - 1;
+      const xLeft = (x + xOffset) * this._deviceCellWidth;
+      const xMid = (x + xOffset + 0.5) * this._deviceCellWidth;
+      const xRight = (x + xOffset + 1) * this._deviceCellWidth;
+      const yMid = (y + 1) * this._deviceCellHeight - lineWidth - 1;
       const yMidBot = yMid - lineWidth;
       const yMidTop = yMid + lineWidth;
       this._ctx.moveTo(xLeft, yMid);
@@ -226,12 +236,12 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     const lineWidth = this._coreBrowserService.dpr;
     this._ctx.lineWidth = lineWidth;
     this._ctx.setLineDash([lineWidth * 2, lineWidth]);
-    const xLeft = x * this._scaledCellWidth;
-    const yMid = (y + 1) * this._scaledCellHeight - lineWidth - 1;
+    const xLeft = x * this._deviceCellWidth;
+    const yMid = (y + 1) * this._deviceCellHeight - lineWidth - 1;
     this._ctx.moveTo(xLeft, yMid);
     for (let xOffset = 0; xOffset < width; xOffset++) {
-      // const xLeft = x * this._scaledCellWidth;
-      const xRight = (x + width + xOffset) * this._scaledCellWidth;
+      // const xLeft = x * this._deviceCellWidth;
+      const xRight = (x + width + xOffset) * this._deviceCellWidth;
       this._ctx.lineTo(xRight, yMid);
     }
     this._ctx.stroke();
@@ -246,9 +256,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     const lineWidth = this._coreBrowserService.dpr;
     this._ctx.lineWidth = lineWidth;
     this._ctx.setLineDash([lineWidth * 4, lineWidth * 3]);
-    const xLeft = x * this._scaledCellWidth;
-    const xRight = (x + width) * this._scaledCellWidth;
-    const yMid = (y + 1) * this._scaledCellHeight - lineWidth - 1;
+    const xLeft = x * this._deviceCellWidth;
+    const xRight = (x + width) * this._deviceCellWidth;
+    const yMid = (y + 1) * this._deviceCellHeight - lineWidth - 1;
     this._ctx.moveTo(xLeft, yMid);
     this._ctx.lineTo(xRight, yMid);
     this._ctx.stroke();
@@ -264,10 +274,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _fillLeftLineAtCell(x: number, y: number, width: number): void {
     this._ctx.fillRect(
-      x * this._scaledCellWidth,
-      y * this._scaledCellHeight,
+      x * this._deviceCellWidth,
+      y * this._deviceCellHeight,
       this._coreBrowserService.dpr * width,
-      this._scaledCellHeight);
+      this._deviceCellHeight);
   }
 
   /**
@@ -280,10 +290,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     const lineWidth = this._coreBrowserService.dpr;
     this._ctx.lineWidth = lineWidth;
     this._ctx.strokeRect(
-      x * this._scaledCellWidth + lineWidth / 2,
-      y * this._scaledCellHeight + (lineWidth / 2),
-      width * this._scaledCellWidth - lineWidth,
-      (height * this._scaledCellHeight) - lineWidth);
+      x * this._deviceCellWidth + lineWidth / 2,
+      y * this._deviceCellHeight + (lineWidth / 2),
+      width * this._deviceCellWidth - lineWidth,
+      (height * this._deviceCellHeight) - lineWidth);
   }
 
   /**
@@ -308,17 +318,17 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _clearCells(x: number, y: number, width: number, height: number): void {
     if (this._alpha) {
       this._ctx.clearRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        width * this._scaledCellWidth,
-        height * this._scaledCellHeight);
+        x * this._deviceCellWidth,
+        y * this._deviceCellHeight,
+        width * this._deviceCellWidth,
+        height * this._deviceCellHeight);
     } else {
       this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        width * this._scaledCellWidth,
-        height * this._scaledCellHeight);
+        x * this._deviceCellWidth,
+        y * this._deviceCellHeight,
+        width * this._deviceCellWidth,
+        height * this._deviceCellHeight);
     }
   }
 
@@ -329,7 +339,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param cell The cell data for the character to draw.
    * @param x The column to draw at.
    * @param y The row to draw at.
-   * @param color The color of the character.
    */
   protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(false, false);
@@ -339,15 +348,15 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     // Draw custom characters if applicable
     let drawSuccess = false;
     if (this._optionsService.rawOptions.customGlyphs !== false) {
-      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._scaledCellWidth, y * this._scaledCellHeight, this._scaledCellWidth, this._scaledCellHeight, this._optionsService.rawOptions.fontSize, this._coreBrowserService.dpr);
+      drawSuccess = tryDrawCustomChar(this._ctx, cell.getChars(), x * this._deviceCellWidth, y * this._deviceCellHeight, this._deviceCellWidth, this._deviceCellHeight, this._optionsService.rawOptions.fontSize, this._coreBrowserService.dpr);
     }
 
     // Draw the character
     if (!drawSuccess) {
       this._ctx.fillText(
         cell.getChars(),
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight);
+        x * this._deviceCellWidth + this._deviceCharLeft,
+        y * this._deviceCellHeight + this._deviceCharTop + this._deviceCharHeight);
     }
   }
 
@@ -357,7 +366,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
-    this._cellColorResolver.resolve(cell, x, y);
+    this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
     let glyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
       glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
@@ -367,18 +376,21 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
-    if (this._charAtlas.hasCanvasChanged) {
-      this._bitmapGenerator?.refresh();
-      this._charAtlas.hasCanvasChanged = false;
+    if (this._charAtlas.pages[glyph.texturePage].version !== this._bitmapGenerator[glyph.texturePage]?.version) {
+      if (!this._bitmapGenerator[glyph.texturePage]) {
+        this._bitmapGenerator[glyph.texturePage] = new BitmapGenerator(this._charAtlas.pages[glyph.texturePage].canvas);
+      }
+      this._bitmapGenerator[glyph.texturePage]!.refresh();
+      this._bitmapGenerator[glyph.texturePage]!.version = this._charAtlas.pages[glyph.texturePage].version;
     }
     this._ctx.drawImage(
-      this._bitmapGenerator?.bitmap || this._charAtlas!.cacheCanvas,
+      this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
       glyph.texturePosition.x,
       glyph.texturePosition.y,
       glyph.size.x,
       glyph.size.y,
-      x * this._scaledCellWidth - glyph.offset.x,
-      y * this._scaledCellHeight - glyph.offset.y,
+      x * this._deviceCellWidth - glyph.offset.x,
+      y * this._deviceCellHeight - glyph.offset.y,
       glyph.size.x,
       glyph.size.y
     );
@@ -393,9 +405,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._ctx.beginPath();
     this._ctx.rect(
       0,
-      y * this._scaledCellHeight,
-      this._bufferService.cols * this._scaledCellWidth,
-      this._scaledCellHeight);
+      y * this._deviceCellHeight,
+      this._bufferService.cols * this._deviceCellWidth,
+      this._deviceCellHeight);
     this._ctx.clip();
   }
 
@@ -428,6 +440,7 @@ class BitmapGenerator {
   private _commitTimeout: number | undefined = undefined;
   private _bitmap: ImageBitmap | undefined = undefined;
   public get bitmap(): ImageBitmap | undefined { return this._bitmap; }
+  public version: number = -1;
 
   constructor(private readonly _canvas: HTMLCanvasElement) {
   }
@@ -435,6 +448,10 @@ class BitmapGenerator {
   public refresh(): void {
     // Clear the bitmap immediately as it's stale
     this._bitmap = undefined;
+    // Disable ImageBitmaps on Safari because of https://bugs.webkit.org/show_bug.cgi?id=149990
+    if (isSafari) {
+      return;
+    }
     if (this._commitTimeout === undefined) {
       this._commitTimeout = window.setTimeout(() => this._generate(), GLYPH_BITMAP_COMMIT_DELAY);
     }

@@ -20,6 +20,16 @@ const platform = (isNode) ? 'node' : navigator.platform;
 export const isFirefox = userAgent.includes('Firefox');
 export const isLegacyEdge = userAgent.includes('Edge');
 export const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+export function getSafariVersion(): number {
+  if (!isSafari) {
+    return 0;
+  }
+  const majorVersion = userAgent.match(/Version\/(\d+)/);
+  if (majorVersion === null || majorVersion.length < 2) {
+    return 0;
+  }
+  return parseInt(majorVersion[1]);
+}
 
 // Find the users platform. We use this to interpret the meta key
 // and ISO third level shifts.

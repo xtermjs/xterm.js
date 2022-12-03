@@ -24,7 +24,6 @@ export class BufferSet extends Disposable implements IBufferSet {
 
   /**
    * Create a new BufferSet for the given terminal.
-   * @param _terminal - The terminal the BufferSet will belong to
    */
   constructor(
     private readonly _optionsService: IOptionsService,

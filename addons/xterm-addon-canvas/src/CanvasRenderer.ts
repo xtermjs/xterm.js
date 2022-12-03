@@ -5,10 +5,11 @@
 
 import { removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IColorSet, ILinkifier2, ReadonlyColorSet } from 'browser/Types';
-import { EventEmitter } from 'common/EventEmitter';
+import { ILinkifier2 } from 'browser/Types';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
@@ -28,6 +29,8 @@ export class CanvasRenderer extends Disposable implements IRenderer {
   public readonly onRequestRedraw = this._onRequestRedraw.event;
   private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   constructor(
     private readonly _terminal: Terminal,
@@ -50,20 +53,10 @@ export class CanvasRenderer extends Disposable implements IRenderer {
       new LinkRenderLayer(this._terminal, this._screenElement, 2, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService, _themeService),
       new CursorRenderLayer(this._terminal, this._screenElement, 3, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService, _themeService)
     ];
-    this.dimensions = {
-      scaledCharWidth: 0,
-      scaledCharHeight: 0,
-      scaledCellWidth: 0,
-      scaledCellHeight: 0,
-      scaledCharLeft: 0,
-      scaledCharTop: 0,
-      scaledCanvasWidth: 0,
-      scaledCanvasHeight: 0,
-      canvasWidth: 0,
-      canvasHeight: 0,
-      actualCellWidth: 0,
-      actualCellHeight: 0
-    };
+    for (const layer of this._renderLayers) {
+      forwardEvent(layer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+    }
+    this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
 
@@ -99,8 +92,8 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     }
 
     // Resize the screen
-    this._screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
+    this._screenElement.style.height = `${this.dimensions.css.canvas.height}px`;
   }
 
   public handleCharSizeChanged(): void {
@@ -163,23 +156,23 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
     // See the WebGL renderer for an explanation of this section.
     const dpr = this._coreBrowserService.dpr;
-    this.dimensions.scaledCharWidth = Math.floor(this._charSizeService.width * dpr);
-    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * dpr);
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._optionsService.rawOptions.lineHeight);
-    this.dimensions.scaledCharTop = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._optionsService.rawOptions.letterSpacing);
-    this.dimensions.scaledCharLeft = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
-    this.dimensions.scaledCanvasHeight = this._bufferService.rows * this.dimensions.scaledCellHeight;
-    this.dimensions.scaledCanvasWidth = this._bufferService.cols * this.dimensions.scaledCellWidth;
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / dpr);
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / dpr);
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._bufferService.rows;
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
+    this.dimensions.device.char.width = Math.floor(this._charSizeService.width * dpr);
+    this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * dpr);
+    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
+    this.dimensions.device.char.top = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
+    this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
+    this.dimensions.device.char.left = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
+    this.dimensions.device.canvas.height = this._bufferService.rows * this.dimensions.device.cell.height;
+    this.dimensions.device.canvas.width = this._bufferService.cols * this.dimensions.device.cell.width;
+    this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / dpr);
+    this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / dpr);
+    this.dimensions.css.cell.height = this.dimensions.css.canvas.height / this._bufferService.rows;
+    this.dimensions.css.cell.width = this.dimensions.css.canvas.width / this._bufferService.cols;
   }
 
   private _setCanvasDevicePixelDimensions(width: number, height: number): void {
-    this.dimensions.scaledCanvasHeight = height;
-    this.dimensions.scaledCanvasWidth = width;
+    this.dimensions.device.canvas.height = height;
+    this.dimensions.device.canvas.width = width;
     // Resize all render layers
     for (const l of this._renderLayers) {
       l.resize(this.dimensions);

@@ -408,7 +408,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = getCoordsRelativeToElement(this._coreBrowserService.window, event, this._screenElement)[1];
-    const terminalHeight = this._renderService.dimensions.canvasHeight;
+    const terminalHeight = this._renderService.dimensions.css.canvas.height;
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
@@ -757,19 +757,20 @@ export class SelectionService extends Disposable implements ISelectionService {
   }
 
   /**
-   * Converts a viewport column to the character index on the buffer line, the
-   * latter takes into account wide characters.
-   * @param coords The coordinates to find the 2 index for.
+   * Converts a viewport column (0 to cols - 1) to the character index on the
+   * buffer line, the latter takes into account wide and null characters.
+   * @param bufferLine The buffer line to use.
+   * @param x The x index in the buffer line to convert.
    */
-  private _convertViewportColToCharacterIndex(bufferLine: IBufferLine, coords: [number, number]): number {
-    let charIndex = coords[0];
-    for (let i = 0; coords[0] >= i; i++) {
+  private _convertViewportColToCharacterIndex(bufferLine: IBufferLine, x: number): number {
+    let charIndex = x;
+    for (let i = 0; x >= i; i++) {
       const length = bufferLine.loadCell(i, this._workCell).getChars().length;
       if (this._workCell.getWidth() === 0) {
         // Wide characters aren't included in the line string so decrement the
         // index so the index is back on the wide character.
         charIndex--;
-      } else if (length > 1 && coords[0] !== i) {
+      } else if (length > 1 && x !== i) {
         // Emojis take up multiple characters, so adjust accordingly. For these
         // we don't want ot include the character at the column as we're
         // returning the start index in the string, not the end index.
@@ -816,7 +817,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     const line = buffer.translateBufferLineToString(coords[1], false);
 
     // Get actual index, taking into consideration wide characters
-    let startIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
+    let startIndex = this._convertViewportColToCharacterIndex(bufferLine, coords[0]);
     let endIndex = startIndex;
 
     // Record offset to be used later
@@ -1000,7 +1001,7 @@ export class SelectionService extends Disposable implements ISelectionService {
   /**
    * Gets whether the character is considered a word separator by the select
    * word logic.
-   * @param char The character to check.
+   * @param cell The cell to check.
    */
   private _isCharWordSeparator(cell: CellData): boolean {
     // Zero width characters are never separators as they are always to the

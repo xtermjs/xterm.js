@@ -113,8 +113,9 @@ export class RectangleRenderer extends Disposable {
     gl.vertexAttribPointer(VertexAttribLocations.UNIT_QUAD, 2, this._gl.FLOAT, false, 0, 0);
 
     // Setup the unit quad element array buffer, this points to indices in
-    // unitQuadVertices to allow is to draw 2 triangles from the vertices
-    const unitQuadElementIndices = new Uint8Array([0, 1, 3, 0, 2, 3]);
+    // unitQuadVertices to allow is to draw 2 triangles from the vertices via a
+    // triangle strip
+    const unitQuadElementIndices = new Uint8Array([0, 1, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
     this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
@@ -153,7 +154,7 @@ export class RectangleRenderer extends Disposable {
     // Bind attributes buffer and draw
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this._vertices.attributes, gl.DYNAMIC_DRAW);
-    gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._vertices.count);
+    gl.drawElementsInstanced(this._gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, this._vertices.count);
   }
 
   public handleResize(): void {
@@ -175,8 +176,8 @@ export class RectangleRenderer extends Disposable {
       0,
       0,
       0,
-      this._terminal.cols * this._dimensions.scaledCellWidth,
-      this._terminal.rows * this._dimensions.scaledCellHeight,
+      this._terminal.cols * this._dimensions.device.cell.width,
+      this._terminal.rows * this._dimensions.device.cell.height,
       this._bgFloat
     );
   }
@@ -264,21 +265,21 @@ export class RectangleRenderer extends Disposable {
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
     }
-    $x1 = startX * this._dimensions.scaledCellWidth;
-    $y1 = y * this._dimensions.scaledCellHeight;
+    $x1 = startX * this._dimensions.device.cell.width;
+    $y1 = y * this._dimensions.device.cell.height;
     $r = (($rgba >> 24) & 0xFF) / 255;
     $g = (($rgba >> 16) & 0xFF) / 255;
     $b = (($rgba >> 8 ) & 0xFF) / 255;
     $a = (!$isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
 
-    this._addRectangle(vertices.attributes, offset, $x1, $y1, (endX - startX) * this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight, $r, $g, $b, $a);
+    this._addRectangle(vertices.attributes, offset, $x1, $y1, (endX - startX) * this._dimensions.device.cell.width, this._dimensions.device.cell.height, $r, $g, $b, $a);
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {
-    array[offset    ] = x1 / this._dimensions.scaledCanvasWidth;
-    array[offset + 1] = y1 / this._dimensions.scaledCanvasHeight;
-    array[offset + 2] = width / this._dimensions.scaledCanvasWidth;
-    array[offset + 3] = height / this._dimensions.scaledCanvasHeight;
+    array[offset    ] = x1 / this._dimensions.device.canvas.width;
+    array[offset + 1] = y1 / this._dimensions.device.canvas.height;
+    array[offset + 2] = width / this._dimensions.device.canvas.width;
+    array[offset + 3] = height / this._dimensions.device.canvas.height;
     array[offset + 4] = r;
     array[offset + 5] = g;
     array[offset + 6] = b;
@@ -286,10 +287,10 @@ export class RectangleRenderer extends Disposable {
   }
 
   private _addRectangleFloat(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, color: Float32Array): void {
-    array[offset    ] = x1 / this._dimensions.scaledCanvasWidth;
-    array[offset + 1] = y1 / this._dimensions.scaledCanvasHeight;
-    array[offset + 2] = width / this._dimensions.scaledCanvasWidth;
-    array[offset + 3] = height / this._dimensions.scaledCanvasHeight;
+    array[offset    ] = x1 / this._dimensions.device.canvas.width;
+    array[offset + 1] = y1 / this._dimensions.device.canvas.height;
+    array[offset + 2] = width / this._dimensions.device.canvas.width;
+    array[offset + 3] = height / this._dimensions.device.canvas.height;
     array[offset + 4] = color[0];
     array[offset + 5] = color[1];
     array[offset + 6] = color[2];

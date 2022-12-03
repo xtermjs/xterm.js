@@ -3,7 +3,6 @@
  * @license MIT
  */
 import { IUnicodeVersionProvider } from 'common/services/Services';
-import { fill } from 'common/TypedArrayUtils';
 
 type CharWidth = 0 | 1 | 2;
 
@@ -90,26 +89,26 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
     // init lookup table once
     if (!table) {
       table = new Uint8Array(65536);
-      fill(table, 1);
+      table.fill(1);
       table[0] = 0;
       // control chars
-      fill(table, 0, 1, 32);
-      fill(table, 0, 0x7f, 0xa0);
+      table.fill(0, 1, 32);
+      table.fill(0, 0x7f, 0xa0);
 
       // apply wide char rules first
       // wide chars
-      fill(table, 2, 0x1100, 0x1160);
+      table.fill(2, 0x1100, 0x1160);
       table[0x2329] = 2;
       table[0x232a] = 2;
-      fill(table, 2, 0x2e80, 0xa4d0);
+      table.fill(2, 0x2e80, 0xa4d0);
       table[0x303f] = 1;  // wrongly in last line
 
-      fill(table, 2, 0xac00, 0xd7a4);
-      fill(table, 2, 0xf900, 0xfb00);
-      fill(table, 2, 0xfe10, 0xfe1a);
-      fill(table, 2, 0xfe30, 0xfe70);
-      fill(table, 2, 0xff00, 0xff61);
-      fill(table, 2, 0xffe0, 0xffe7);
+      table.fill(2, 0xac00, 0xd7a4);
+      table.fill(2, 0xf900, 0xfb00);
+      table.fill(2, 0xfe10, 0xfe1a);
+      table.fill(2, 0xfe30, 0xfe70);
+      table.fill(2, 0xff00, 0xff61);
+      table.fill(2, 0xffe0, 0xffe7);
 
       // apply combining last to ensure we overwrite
       // wrongly wide set chars:
@@ -117,7 +116,7 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
       //    through to wide check so we simply do here the opposite
       // combining 0
       for (let r = 0; r < BMP_COMBINING.length; ++r) {
-        fill(table, 0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
+        table.fill(0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
       }
     }
   }

@@ -274,7 +274,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _refreshRowsDimensions(): void {
-    if (!this._renderService.dimensions.actualCellHeight) {
+    if (!this._renderService.dimensions.css.cell.height) {
       return;
     }
     if (this._rowElements.length !== this._terminal.rows) {
@@ -286,7 +286,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _refreshRowDimensions(element: HTMLElement): void {
-    element.style.height = `${this._renderService.dimensions.actualCellHeight}px`;
+    element.style.height = `${this._renderService.dimensions.css.cell.height}px`;
   }
 
   private _announceCharacters(): void {

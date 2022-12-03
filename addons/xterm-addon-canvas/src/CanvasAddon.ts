@@ -17,6 +17,8 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
 
   private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
     return this._renderer?.textureAtlas;
@@ -46,6 +48,7 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
 
     this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
     renderService.handleResize(bufferService.cols, bufferService.rows);
 

@@ -24,8 +24,8 @@ export const enum ParserState {
 }
 
 /**
-* Internal actions of EscapeSequenceParser.
-*/
+ * Internal actions of EscapeSequenceParser.
+ */
 export const enum ParserAction {
   IGNORE = 0,
   ERROR = 1,

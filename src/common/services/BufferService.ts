@@ -54,6 +54,7 @@ export class BufferService extends Disposable implements IBufferService {
 
   /**
    * Scroll the terminal down 1 row, creating a blank line.
+   * @param eraseAttr The attribute data to use the for blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {

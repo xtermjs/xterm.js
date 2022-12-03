@@ -7,17 +7,19 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
+import { createRenderDimensions, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IColorSet, ITerminal, ReadonlyColorSet } from 'browser/Types';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ITerminal } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
-import { Terminal } from 'xterm';
+import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
@@ -28,6 +30,7 @@ import { IWebGL2RenderingContext } from './Types';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
+  private _charAtlasDisposable: IDisposable | undefined;
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
 
@@ -40,7 +43,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _rectangleRenderer!: RectangleRenderer;
   private _glyphRenderer!: GlyphRenderer;
 
-  public dimensions: IRenderDimensions;
+  public readonly dimensions: IRenderDimensions;
 
   private _core: ITerminal;
   private _isAttached: boolean;
@@ -48,6 +51,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+  private readonly _onRemoveTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
   private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
   private readonly _onContextLoss = this.register(new EventEmitter<void>());
@@ -55,12 +62,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: Terminal,
-    private readonly _themeService: IThemeService,
     private readonly _characterJoinerService: ICharacterJoinerService,
+    private readonly _charSizeService: ICharSizeService,
     private readonly _coreBrowserService: ICoreBrowserService,
-    optionsService: IOptionsService,
     coreService: ICoreService,
     private readonly _decorationService: IDecorationService,
+    optionsService: IOptionsService,
+    private readonly _themeService: IThemeService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -75,20 +83,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, this._themeService),
       new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, this._themeService, optionsService)
     ];
-    this.dimensions = {
-      scaledCharWidth: 0,
-      scaledCharHeight: 0,
-      scaledCellWidth: 0,
-      scaledCellHeight: 0,
-      scaledCharLeft: 0,
-      scaledCharTop: 0,
-      scaledCanvasWidth: 0,
-      scaledCanvasHeight: 0,
-      canvasWidth: 0,
-      canvasHeight: 0,
-      actualCellWidth: 0,
-      actualCellHeight: 0
-    };
+    this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
     this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
@@ -146,7 +141,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
-    return this._charAtlas?.cacheCanvas;
+    return this._charAtlas?.pages[0].canvas;
   }
 
   private _handleColorChange(): void {
@@ -177,14 +172,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Resize the canvas
-    this._canvas.width = this.dimensions.scaledCanvasWidth;
-    this._canvas.height = this.dimensions.scaledCanvasHeight;
-    this._canvas.style.width = `${this.dimensions.canvasWidth}px`;
-    this._canvas.style.height = `${this.dimensions.canvasHeight}px`;
+    this._canvas.width = this.dimensions.device.canvas.width;
+    this._canvas.height = this.dimensions.device.canvas.height;
+    this._canvas.style.width = `${this.dimensions.css.canvas.width}px`;
+    this._canvas.style.height = `${this.dimensions.css.canvas.height}px`;
 
     // Resize the screen
-    this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
-    this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
+    this._core.screenElement!.style.width = `${this.dimensions.css.canvas.width}px`;
+    this._core.screenElement!.style.height = `${this.dimensions.css.canvas.height}px`;
 
     this._rectangleRenderer.setDimensions(this.dimensions);
     this._rectangleRenderer.handleResize();
@@ -254,19 +249,31 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   /**
    * Refreshes the char atlas, aquiring a new one if necessary.
-   * @param terminal The terminal.
-   * @param colorSet The color set to use for the char atlas.
    */
   private _refreshCharAtlas(): void {
-    if (this.dimensions.scaledCharWidth <= 0 && this.dimensions.scaledCharHeight <= 0) {
+    if (this.dimensions.device.char.width <= 0 && this.dimensions.device.char.height <= 0) {
       // Mark as not attached so char atlas gets refreshed on next render
       this._isAttached = false;
       return;
     }
 
-    const atlas = acquireTextureAtlas(this._terminal, this._themeService.colors, this.dimensions.scaledCellWidth, this.dimensions.scaledCellHeight, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, this._coreBrowserService.dpr);
+    const atlas = acquireTextureAtlas(
+      this._terminal,
+      this._themeService.colors,
+      this.dimensions.device.cell.width,
+      this.dimensions.device.cell.height,
+      this.dimensions.device.char.width,
+      this.dimensions.device.char.height,
+      this._coreBrowserService.dpr
+    );
     if (this._charAtlas !== atlas) {
-      this._onChangeTextureAtlas.fire(atlas.cacheCanvas);
+
+      this._charAtlasDisposable?.dispose();
+      this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
+      this._charAtlasDisposable = getDisposeArrayDisposable([
+        forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
+        forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
+      ]);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
@@ -308,7 +315,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
+      if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;
@@ -325,7 +332,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._clearModel(true);
-      this._model.selection.clear();
     }
 
     // Update model to reflect what's drawn
@@ -446,64 +452,62 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Recalculates the character and canvas dimensions.
    */
   private _updateDimensions(): void {
-    // TODO: Acquire CharSizeService properly
-
     // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!(this._core as any)._charSizeService.width || !(this._core as any)._charSizeService.height) {
+    if (!this._charSizeService.width || !this._charSizeService.height) {
       return;
     }
 
-    // Calculate the scaled character width. Width is floored as it must be drawn to an integer grid
+    // Calculate the device character width. Width is floored as it must be drawn to an integer grid
     // in order for the char atlas glyphs to not be blurry.
-    this.dimensions.scaledCharWidth = Math.floor((this._core as any)._charSizeService.width * this._devicePixelRatio);
+    this.dimensions.device.char.width = Math.floor(this._charSizeService.width * this._devicePixelRatio);
 
-    // Calculate the scaled character height. Height is ceiled in case devicePixelRatio is a
+    // Calculate the device character height. Height is ceiled in case devicePixelRatio is a
     // floating point number in order to ensure there is enough space to draw the character to the
     // cell.
-    this.dimensions.scaledCharHeight = Math.ceil((this._core as any)._charSizeService.height * this._devicePixelRatio);
+    this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * this._devicePixelRatio);
 
-    // Calculate the scaled cell height, if lineHeight is _not_ 1, the resulting value will be
-    // floored since lineHeight can never be lower then 1, this guarentees the scaled cell height
-    // will always be larger than scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
+    // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
+    // floored since lineHeight can never be lower then 1, this guarentees the device cell height
+    // will always be larger than device char height.
+    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._terminal.options.lineHeight);
 
     // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
     // correctly within the cell.
-    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+    this.dimensions.device.char.top = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
 
-    // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
+    // Calculate the device cell width, taking the letterSpacing into account.
+    this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._terminal.options.letterSpacing);
 
     // Calculate the x offset with a cell that text should draw from in order for it to be centered
     // correctly within the cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
+    this.dimensions.device.char.left = Math.floor(this._terminal.options.letterSpacing / 2);
 
-    // Recalculate the canvas dimensions, the scaled dimensions define the actual number of pixel in
+    // Recalculate the canvas dimensions, the device dimensions define the actual number of pixel in
     // the canvas
-    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
-    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
+    this.dimensions.device.canvas.height = this._terminal.rows * this.dimensions.device.cell.height;
+    this.dimensions.device.canvas.width = this._terminal.cols * this.dimensions.device.cell.width;
 
     // The the size of the canvas on the page. It's important that this rounds to nearest integer
     // and not ceils as browsers often have floating point precision issues where
     // `window.devicePixelRatio` ends up being something like `1.100000023841858` for example, when
     // it's actually 1.1. Ceiling may causes blurriness as the backing canvas image is 1 pixel too
     // large for the canvas element size.
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / this._devicePixelRatio);
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / this._devicePixelRatio);
+    this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / this._devicePixelRatio);
+    this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / this._devicePixelRatio);
 
     // Get the CSS dimensions of an individual cell. This needs to be derived from the calculated
     // device pixel canvas value above. CharMeasure.width/height by itself is insufficient when the
     // page is not at 100% zoom level as CharMeasure is measured in CSS pixels, but the actual char
     // size on the canvas can differ.
-    this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
-    this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
+    this.dimensions.css.cell.height = this.dimensions.device.cell.height / this._devicePixelRatio;
+    this.dimensions.css.cell.width = this.dimensions.device.cell.width / this._devicePixelRatio;
   }
 
   private _setCanvasDevicePixelDimensions(width: number, height: number): void {
     if (this._canvas.width === width && this._canvas.height === height) {
       return;
     }
-    // While the actual canvas size has changed, keep scaledCanvasWidth/Height as the value before
+    // While the actual canvas size has changed, keep device canvas dimensions as the value before
     // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;

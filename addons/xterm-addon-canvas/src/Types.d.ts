@@ -4,24 +4,8 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
-
-// TODO: Use core interfaces
-export interface IRenderDimensions {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  scaledCellWidth: number;
-  scaledCellHeight: number;
-  scaledCharLeft: number;
-  scaledCharTop: number;
-  scaledCanvasWidth: number;
-  scaledCanvasHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  actualCellWidth: number;
-  actualCellHeight: number;
-}
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 export interface IRequestRedrawEvent {
   start: number;
@@ -58,13 +42,14 @@ export interface IRenderLayer extends IDisposable {
   readonly canvas: HTMLCanvasElement;
   readonly cacheCanvas: HTMLCanvasElement;
 
+  readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
   /**
    * Called when the terminal loses focus.
    */
   handleBlur(): void;
 
   /**
-   * * Called when the terminal gets focus.
+   * Called when the terminal gets focus.
    */
   handleFocus(): void;
 

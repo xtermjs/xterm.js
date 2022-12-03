@@ -126,7 +126,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
-   * @return Whether a result was found.
+   * @returns Whether a result was found.
    */
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
@@ -307,7 +307,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
-   * @return Whether a result was found.
+   * @returns Whether a result was found.
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
@@ -477,10 +477,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
    * @param term The search term.
-   * @param position The position to start the search.
+   * @param searchPosition The position to start the search.
    * @param searchOptions Search options.
    * @param isReverseSearch Whether the search should start from the right side of the terminal and search to the left.
-   * @return The search result if it was found.
+   * @returns The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
     const terminal = this._terminal!;
@@ -627,7 +627,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
    * position.
-   * @param line The line being translated.
+   * @param lineIndex The index of the line being translated.
    * @param trimRight Whether to trim whitespace to the right.
    */
   private _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): LineCacheEntry {
@@ -662,7 +662,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   /**
    * Selects and scrolls to a result.
    * @param result The result to select.
-   * @return Whether a result was selected.
+   * @returns Whether a result was selected.
    */
   private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
     const terminal = this._terminal!;
@@ -702,10 +702,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   }
 
   /**
-   * Applies styles to the decoration when it is rendered
-   * @param element the decoration's element
-   * @param backgroundColor the background color to apply
-   * @param borderColor the border color to apply
+   * Applies styles to the decoration when it is rendered.
+   * @param element The decoration's element.
+   * @param borderColor The border color to apply.
+   * @param isActiveResult Whether the element is part of the active search result.
    * @returns
    */
   private _applyStyles(element: HTMLElement, borderColor: string | undefined, isActiveResult: boolean): void {

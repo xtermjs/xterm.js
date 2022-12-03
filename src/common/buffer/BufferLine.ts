@@ -133,7 +133,7 @@ export class BufferLine implements IBufferLine {
    * Test whether contains any chars.
    * Basically an empty has no content, but other cells might differ in FG/BG
    * from real empty cells.
-   * */
+   */
   public hasContent(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK;
   }

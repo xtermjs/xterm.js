@@ -867,6 +867,24 @@ declare module 'xterm' {
      * This is a function that takes a KeyboardEvent, allowing consumers to stop
      * propagation and/or prevent the default action. The function returns
      * whether the event should be processed by xterm.js.
+     *
+     * @example A custom keymap that overrides the backspace key
+     * ```ts
+     * const keymap = [
+     *   { "key": "Backspace", "shiftKey": false, "mapCode": 8 },
+     *   { "key": "Backspace", "shiftKey": true, "mapCode": 127 }
+     * ];
+     * term.attachCustomKeyEventHandler(ev => {
+     *   if (ev.type === 'keydown') {
+     *     for (let i in keymap) {
+     *       if (keymap[i].key == ev.key && keymap[i].shiftKey == ev.shiftKey) {
+     *         socket.send(String.fromCharCode(keymap[i].mapCode));
+     *         return false;
+     *       }
+     *     }
+     *   }
+     * });
+     * ```
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
@@ -905,7 +923,7 @@ declare module 'xterm' {
      * with a string of text that is eligible for joining and returns an array
      * where each entry is an array containing the start (inclusive) and end
      * (exclusive) indexes of ranges that should be rendered as a single unit.
-     * @return The ID of the new joiner, this can be used to deregister
+     * @returns The ID of the new joiner, this can be used to deregister
      */
     registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
 
@@ -1558,7 +1576,7 @@ declare module 'xterm' {
      * array will contain subarrays with their numercial values.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
@@ -1576,7 +1594,7 @@ declare module 'xterm' {
      * The function gets the payload and numerical parameters as arguments.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
@@ -1588,7 +1606,7 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
 
@@ -1605,7 +1623,7 @@ declare module 'xterm' {
      * The callback is called with OSC data string.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }

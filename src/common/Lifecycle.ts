@@ -17,18 +17,15 @@ export abstract class Disposable implements IDisposable {
   }
 
   /**
-   * Disposes the object, triggering the `dispose` method on all registered IDisposables. This is a
-   * readonly property instead of a method to prevent subclasses overriding it which is an easy
-   * mistake that can introduce memory leaks. If a class extends Disposable, all dispose calls
-   * should be done via {@link register}.
+   * Disposes the object, triggering the `dispose` method on all registered IDisposables.
    */
-  public readonly dispose = (): void => {
+  public dispose(): void {
     this._isDisposed = true;
     for (const d of this._disposables) {
       d.dispose();
     }
     this._disposables.length = 0;
-  };
+  }
 
   /**
    * Registers a disposable object.
