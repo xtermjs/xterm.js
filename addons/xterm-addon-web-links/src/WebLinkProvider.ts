@@ -46,13 +46,12 @@ export class LinkComputer {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
     const [lines, startLineIndex] = LinkComputer._getFullLineString(y - 1, terminal);
-
-    // TODO: do locally limited search if string is too long
     const line = lines.join('');
 
     // Don't try if the wrapped line if excessively large as the regex matching will block the main
     // thread.
     if (line.length > 1024) {
+      // TODO: more sophisticated handling with individual line introspection?
       return [];
     }
 
@@ -62,12 +61,6 @@ export class LinkComputer {
 
     while ((match = rex.exec(line)) !== null) {
       const text = match[0];
-      if (!text) {
-        // something matched but does not comply with the given matchIndex
-        // since this is most likely a bug the regex itself we simply do nothing here
-        console.log('match found without corresponding matchIndex');
-        break;
-      }
 
       // Get index, match.index is for the outer match which includes negated chars
       // therefore we cannot use match.index directly, instead we search the position
@@ -99,8 +92,8 @@ export class LinkComputer {
       }
 
 
-      const [startY, startX] = LinkComputer._mapStringIndexToBuffer(startLineIndex, stringIndex, terminal);
-      const [endY, endX] = LinkComputer._mapStringIndexToBuffer(startLineIndex, stringIndex + text.length, terminal);
+      const [startY, startX] = LinkComputer._mapStrIdx(startLineIndex, stringIndex, terminal);
+      const [endY, endX] = LinkComputer._mapStrIdx(startLineIndex, stringIndex + text.length, terminal);
 
       if (startY === -1 || startX === -1 || endY === -1 || endX === -1) {
         continue;
@@ -112,8 +105,8 @@ export class LinkComputer {
           y: startY + 1
         },
         end: {
-          x: endX + 1,
-          y: endY
+          x: endX,
+          y: endY + 1
         }
       };
 
@@ -155,7 +148,7 @@ export class LinkComputer {
    * Returns buffer position as [lineIndex, columnIndex] 0-based,
    * or [-1, -1] in case the lookup ran into a non-existing line.
    */
-  private static _mapStringIndexToBuffer(lineIndex: number, stringIndex: number, terminal: Terminal): [number, number] {
+  private static _mapStrIdx(lineIndex: number, stringIndex: number, terminal: Terminal): [number, number] {
     const buf = terminal.buffer.active;
     const cell = buf.getNullCell();
     while (stringIndex) {

@@ -376,6 +376,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
+    // FIXME: offset calculation is wrong (temp. fixed by adding empty spans for wide chars
+    // to fullfill column to element index identity assumption)
     while (x !== x2 || y !== y2) {
       const row = this._rowElements[y];
       if (!row) {

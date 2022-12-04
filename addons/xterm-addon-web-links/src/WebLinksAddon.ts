@@ -7,9 +7,10 @@ import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
 // consider everthing starting with http:// or https://
-// up to first whitespace as url
-// gets further narrowed down with URL later on
-const strictUrlRegex = /https?:[/]{2}\S*/;
+// up to first whitespace, `"` or `'` as url
+// NOTE: The repeated end clause is needed to not match a dangling `:`
+// resembling the old (...)*([^:"\'\\s]) final path clause
+const strictUrlRegex = /https?:[/]{2}[^\s^"^']*[^\s^"^'^:]/;
 
 function handleLink(event: MouseEvent, uri: string): void {
   const newWindow = window.open();

@@ -32,6 +32,7 @@ export class DomRendererRowFactory {
   private _selectionStart: [number, number] | undefined;
   private _selectionEnd: [number, number] | undefined;
   private _columnSelectMode: boolean = false;
+  private _nullSpan: HTMLSpanElement;
 
   constructor(
     private readonly _document: Document,
@@ -42,6 +43,8 @@ export class DomRendererRowFactory {
     @IDecorationService private readonly _decorationService: IDecorationService,
     @IThemeService private readonly _themeService: IThemeService
   ) {
+    this._nullSpan = this._document.createElement('span');
+    this._nullSpan.style.width = `0`;
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
@@ -75,6 +78,8 @@ export class DomRendererRowFactory {
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
+        // hack: fix underline bug for wide chars by appending an empty span
+        fragment.appendChild(this._nullSpan.cloneNode());
         continue;
       }
 

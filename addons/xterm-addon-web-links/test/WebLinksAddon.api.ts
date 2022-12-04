@@ -35,6 +35,10 @@ describe('WebLinksAddon', () => {
   it('.io', async function(): Promise<any> {
     await testHostName('foo.io');
   });
+
+  it.skip('correct buffer offsets', async () => {
+    // TODO: test strings in test_weblinks.sh automatically
+  });
 });
 
 async function testHostName(hostname: string): Promise<void> {
