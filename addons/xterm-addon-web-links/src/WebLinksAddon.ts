@@ -6,25 +6,10 @@
 import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
-const protocolClause = '(https?:\\/\\/)';
-const domainCharacterSet = '[\\da-z\\.-]+';
-const negatedDomainCharacterSet = '[^\\da-z\\.-]+';
-const domainBodyClause = '(' + domainCharacterSet + ')';
-const tldClause = '([a-z\\.]{2,18})';
-const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
-const localHostClause = '(localhost)';
-const portClause = '(:\\d{1,5})';
-const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-const pathCharacterSet = '(\\/[\\/\\w\\.\\-%~:+@]*)*([^:"\'\\s])';
-const pathClause = '(' + pathCharacterSet + ')?';
-const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
-const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
-const hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
-const negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
-const bodyClause = hostClause + pathClause + queryStringClause + hashFragmentClause;
-const start = '(?:^|' + negatedDomainCharacterSet + ')(';
-const end = ')($|' + negatedPathCharacterSet + ')';
-const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
+// consider everthing starting with http:// or https://
+// up to first whitespace as url
+// gets further narrowed down with URL later on
+const strictUrlRegex = /https?:[/]{2}\S*/;
 
 function handleLink(event: MouseEvent, uri: string): void {
   const newWindow = window.open();
