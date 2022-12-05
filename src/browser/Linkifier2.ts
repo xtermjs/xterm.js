@@ -158,7 +158,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
           // higher priority links
           if (this._activeProviderReplies?.size === this._linkProviders.length) {
             // FIXME: commented out due to bug below
-            //this._removeIntersectingLinks(position.y, this._activeProviderReplies);
+            // this._removeIntersectingLinks(position.y, this._activeProviderReplies);
           }
         });
       }
