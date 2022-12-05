@@ -157,13 +157,15 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
           // If all providers have responded, remove lower priority links that intersect ranges of
           // higher priority links
           if (this._activeProviderReplies?.size === this._linkProviders.length) {
-            this._removeIntersectingLinks(position.y, this._activeProviderReplies);
+            // FIXME: commented out due to bug below
+            //this._removeIntersectingLinks(position.y, this._activeProviderReplies);
           }
         });
       }
     }
   }
 
+  // FIXME: What is this supposed to do? Currently it removes wrongly a second link on a wrapped line...
   private _removeIntersectingLinks(y: number, replies: Map<Number, ILinkWithState[] | undefined>): void {
     const occupiedCells = new Set<number>();
     for (let i = 0; i < replies.size; i++) {
@@ -367,18 +369,10 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
    * @param position
    */
   private _linkAtPosition(link: ILink, position: IBufferCellPosition): boolean {
-    const sameLine = link.range.start.y === link.range.end.y;
-    const wrappedFromLeft = link.range.start.y < position.y;
-    const wrappedToRight = link.range.end.y > position.y;
-
-    // If the start and end have the same y, then the position must be between start and end x
-    // If not, then handle each case seperately, depending on which way it wraps
-    return ((sameLine && link.range.start.x <= position.x && link.range.end.x >= position.x) ||
-      (wrappedFromLeft && link.range.end.x >= position.x) ||
-      (wrappedToRight && link.range.start.x <= position.x) ||
-      (wrappedFromLeft && wrappedToRight)) &&
-      link.range.start.y <= position.y &&
-      link.range.end.y >= position.y;
+    const lower = link.range.start.y * this._bufferService.cols + link.range.start.x;
+    const upper = link.range.end.y * this._bufferService.cols + link.range.end.x;
+    const current = position.y * this._bufferService.cols + position.x;
+    return (lower <= current && current <= upper);
   }
 
   /**
