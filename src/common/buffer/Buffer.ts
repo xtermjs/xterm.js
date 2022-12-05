@@ -278,13 +278,6 @@ export class Buffer implements IBuffer {
     return false;
   }
 
-  private _forceMemoryCleanup(): void {
-    this._memoryCleanupQueue.clear();
-    for (let i = 0; i < this.lines.length; i++) {
-      this.lines.get(i)!.cleanupMemory();
-    }
-  }
-
   private get _isReflowEnabled(): boolean {
     return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
   }
