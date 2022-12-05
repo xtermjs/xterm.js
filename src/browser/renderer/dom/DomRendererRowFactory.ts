@@ -32,7 +32,6 @@ export class DomRendererRowFactory {
   private _selectionStart: [number, number] | undefined;
   private _selectionEnd: [number, number] | undefined;
   private _columnSelectMode: boolean = false;
-  private _nullSpan: HTMLSpanElement;
 
   constructor(
     private readonly _document: Document,
@@ -42,10 +41,7 @@ export class DomRendererRowFactory {
     @ICoreService private readonly _coreService: ICoreService,
     @IDecorationService private readonly _decorationService: IDecorationService,
     @IThemeService private readonly _themeService: IThemeService
-  ) {
-    this._nullSpan = this._document.createElement('span');
-    this._nullSpan.style.width = `0`;
-  }
+  ) {}
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     this._selectionStart = start;
@@ -53,7 +49,11 @@ export class DomRendererRowFactory {
     this._columnSelectMode = columnSelectMode;
   }
 
-  public createRow(lineData: IBufferLine, row: number, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: IBufferLine, row: number, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number, cellMap: Uint16Array): DocumentFragment {
+    // NOTE: `cellMap` maps cell positions to a span element index in a row.
+    // All positions should be updated, even skipped ones after wide chars or left overs at the end,
+    // otherwise the mouse hover logic might mark the wrong elements as underlined.
+
     const fragment = this._document.createDocumentFragment();
 
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
@@ -71,15 +71,17 @@ export class DomRendererRowFactory {
     }
 
     const colors = this._themeService.colors;
+    let elemIndex = -1;
 
-    for (let x = 0; x < lineLength; x++) {
+    let x = 0;
+    for (; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);
       let width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
+      // still have to update cellMap with current element index
       if (width === 0) {
-        // hack: fix underline bug for wide chars by appending an empty span
-        fragment.appendChild(this._nullSpan.cloneNode());
+        cellMap[x] = elemIndex;
         continue;
       }
 
@@ -306,9 +308,17 @@ export class DomRendererRowFactory {
       }
 
       fragment.appendChild(charElement);
+      cellMap[x] = ++elemIndex;
 
       x = lastCharX;
     }
+
+    // since the loop above might exit early not handling all cells,
+    // also set remaining cell positions to last element index
+    if (x < cols - 1) {
+      cellMap.subarray(x + 1).fill(elemIndex);
+    }
+
     return fragment;
   }
 

@@ -38,6 +38,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
+  private _cellToRowElements: Uint16Array[] = [];
 
   public dimensions: IRenderDimensions;
 
@@ -359,7 +360,10 @@ export class DomRenderer extends Disposable implements IRenderer {
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
-      rowElement.replaceChildren(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols));
+      if (!this._cellToRowElements[y] || this._cellToRowElements[y].length !== this._bufferService.cols) {
+        this._cellToRowElements[y] = new Uint16Array(this._bufferService.cols);
+      }
+      rowElement.replaceChildren(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols, this._cellToRowElements[y]));
     }
   }
 
@@ -376,8 +380,13 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
-    // FIXME: offset calculation is wrong (temp. fixed by adding empty spans for wide chars
-    // to fullfill column to element index identity assumption)
+    x = this._cellToRowElements[y][x];
+    x2 = this._cellToRowElements[y2][x2];
+
+    if (x === -1 || x2 === -1) {
+      return;
+    }
+
     while (x !== x2 || y !== y2) {
       const row = this._rowElements[y];
       if (!row) {
