@@ -269,9 +269,9 @@ export class Buffer implements IBuffer {
     let counted = 0;
     for (let i = 0; i < this.lines.length; i++) {
       counted += this.lines.get(i)!.cleanupMemory();
-      // throttle to 5k lines at once and
+      // throttle to 500 lines at once and
       // return true to indicate, that the task is not finished yet
-      if (counted > 5000) {
+      if (counted > 500) {
         return true;
       }
     }

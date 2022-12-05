@@ -340,8 +340,8 @@ export class BufferLine implements IBufferLine {
    * Resize BufferLine to `cols` filling excess cells with `fillCellData`.
    * The underlying array buffer will not change if there is still enough space
    * to hold the new buffer line data.
-   * Returns a boolean indicating, whether a `cleanBuffer` call would free
-   * excess memory (after shrinking > CLEANUP_THRESHOLD).
+   * Returns a boolean indicating, whether a `cleanupMemory` call would free
+   * excess memory (true after shrinking > CLEANUP_THRESHOLD).
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
     if (cols === this.length) {
