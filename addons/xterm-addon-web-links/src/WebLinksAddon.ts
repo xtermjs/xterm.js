@@ -10,7 +10,8 @@ import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 // up to first whitespace, `"` or `'` as url
 // NOTE: The repeated end clause is needed to not match a dangling `:`
 // resembling the old (...)*([^:"\'\\s]) final path clause
-const strictUrlRegex = /https?:[/]{2}[^\s^"^']*[^\s^"^'^:]/;
+// also exclude final interpunction like ,.!?
+const strictUrlRegex = /https?:[/]{2}[^\s^"^']*[^\s^"^'^:^,^.^!^?]/;
 
 function handleLink(event: MouseEvent, uri: string): void {
   const newWindow = window.open();

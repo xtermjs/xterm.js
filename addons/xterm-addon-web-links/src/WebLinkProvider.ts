@@ -45,21 +45,14 @@ export class LinkComputer {
   public static computeLink(y: number, regex: RegExp, terminal: Terminal, activate: (event: MouseEvent, uri: string) => void): ILink[] {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
 
-    const [lines, startLineIndex] = LinkComputer._getFullLineString(y - 1, terminal);
+    const [lines, startLineIndex] = LinkComputer._getWindowedLineStrings(y - 1, terminal);
     const line = lines.join('');
-
-    // Don't try if the wrapped line if excessively large as the regex matching will block the main
-    // thread.
-    if (line.length > 1024) {
-      // TODO: more sophisticated handling with individual line introspection?
-      return [];
-    }
 
     let match;
     let stringIndex = -1;
     const result: ILink[] = [];
 
-    while ((match = rex.exec(line)) !== null) {
+    while (match = rex.exec(line)) {
       const text = match[0];
 
       // Get index, match.index is for the outer match which includes negated chars
@@ -117,29 +110,49 @@ export class LinkComputer {
   }
 
   /**
-   * Gets the entire line for the buffer line
-   * @param lineIndex The index of the line being translated.
+   * Get wrapped content lines for the current line index.
+   * The top/bottom line expansion stops at whitespaces or length > 2048.
+   * Returns an array with line strings and the top line index.
    */
-  private static _getFullLineString(lineIndex: number, terminal: Terminal): [string[], number] {
+  private static _getWindowedLineStrings(lineIndex: number, terminal: Terminal): [string[], number] {
     let line: any;
-
-    // expand top
     let topIdx = lineIndex;
-    while ((line = terminal.buffer.active.getLine(topIdx)) && line.isWrapped) {
-      topIdx--;
-    }
-
-    // expand bottom
-    let bottomIdx = lineIndex + 1;
-    while ((line = terminal.buffer.active.getLine(bottomIdx)) && line.isWrapped) {
-      bottomIdx++;
-    }
-
+    let bottomIdx = lineIndex;
+    let length = 0;
+    let content = '';
     const lines: string[] = [];
-    for (let idx = topIdx; idx < bottomIdx; ++idx) {
-      lines.push(terminal.buffer.active.getLine(idx)?.translateToString(true)!);
-    }
 
+    if ((line = terminal.buffer.active.getLine(lineIndex))) {
+      const currentContent = line.translateToString(true);
+
+      // expand top, stop on whitespaces or length > 2048
+      if (line.isWrapped && currentContent[0] !== ' ') {
+        length = 0;
+        while ((line = terminal.buffer.active.getLine(--topIdx)) && length < 2048) {
+          content = line.translateToString(true);
+          length += content.length;
+          lines.push(content);
+          if (!line.isWrapped || content.indexOf(' ') !== -1) {
+            break;
+          }
+        }
+        lines.reverse();
+      }
+
+      // append current line
+      lines.push(currentContent);
+
+      // expand bottom, stop on whitespaces or length > 2048
+      length = 0;
+      while ((line = terminal.buffer.active.getLine(++bottomIdx)) && line.isWrapped && length < 2048) {
+        content = line.translateToString(true);
+        length += content.length;
+        lines.push(content);
+        if (content.indexOf(' ') !== -1) {
+          break;
+        }
+      }
+    }
     return [lines, topIdx];
   }
 
