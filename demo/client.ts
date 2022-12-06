@@ -273,22 +273,22 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   addons.fit.instance!.fit();
-  typedTerm.loadAddon(addons.webgl.instance);
-  setTimeout(() => {
-    if (addons.webgl.instance !== undefined) {
-      setTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-      addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
-    }
-  }, 0);
 
-  try { // try-catch to allow the demo to load if webgl is not supported
+  // try to start with webgl renderer (might throw on older safari/webkit)
+  try {
+    typedTerm.loadAddon(addons.webgl.instance);
+    term.open(terminalContainer);
+    setTextureAtlas(addons.webgl.instance.textureAtlas);
+    addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+    addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+    addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
+  } catch (e) {
+    console.log(e);
+    addons.webgl.instance.dispose();
+    addons.webgl.instance = undefined;
     term.open(terminalContainer);
   }
-  catch {
-    addons.webgl.instance = undefined;
-  }
+
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
