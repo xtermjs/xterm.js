@@ -125,6 +125,12 @@ describe('Keyboard', () => {
       it('should return \\x1ba for alt+a', () => {
         assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 65 }, { isMac: false }).key, '\x1ba');
       });
+      it('should return \\x1b\\x20 for alt+space', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 32 }, { isMac: false }).key, '\x1b\x20');
+      });
+      it('should return \\x1b\\x00 for ctrl+alt+space', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, ctrlKey: true, keyCode: 32 }, { isMac: false }).key, '\x1b\x00');
+      });
     });
 
     describe('On macOS platforms', () => {
