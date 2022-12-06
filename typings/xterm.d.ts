@@ -194,6 +194,12 @@ declare module 'xterm' {
     scrollback?: number;
 
     /**
+     * Whether to scroll to the bottom whenever a key is pressed. The default is
+     * true.
+     */
+    scrollOnKeypress?: boolean;
+
+    /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
      */
     scrollSensitivity?: number;
