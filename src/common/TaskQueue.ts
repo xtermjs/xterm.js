@@ -79,8 +79,8 @@ abstract class TaskQueue implements ITaskQueue {
       if (longestTask * 1.5 > deadlineRemaining) {
         // Warn when the time exceeding the deadline is over 20ms, if this happens in practice the
         // task should be split into sub-tasks to ensure the UI remains responsive.
-        if (lastDeadlineRemaining - taskDuration < -5) {
-          console.warn(`task queue exceeded allotted deadline by ${Math.abs(Math.round(lastDeadlineRemaining - taskDuration))}ms`, { stacktrace: new Error().stack });
+        if (lastDeadlineRemaining - taskDuration < -20) {
+          console.warn(`task queue exceeded allotted deadline by ${Math.abs(Math.round(lastDeadlineRemaining - taskDuration))}ms`);
         }
         this._start();
         return;
