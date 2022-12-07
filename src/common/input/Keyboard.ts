@@ -360,6 +360,8 @@ export function evaluateKeyboardEvent(
             keyString = keyString.toUpperCase();
           }
           result.key = C0.ESC + keyString;
+        } else if (ev.keyCode === 32) {
+          result.key = C0.ESC + (ev.ctrlKey ? C0.NUL : ' ');
         } else if (ev.key === 'Dead' && ev.code.startsWith('Key')) {
           // Reference: https://github.com/xtermjs/xterm.js/issues/3725
           // Alt will produce a "dead key" (initate composition) with some
