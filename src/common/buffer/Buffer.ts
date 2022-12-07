@@ -14,6 +14,7 @@ import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
+import { DebouncedIdleTask, IdleTaskQueue } from 'common/TaskQueue';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -150,6 +151,9 @@ export class Buffer implements IBuffer {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
+    // count bufferlines with overly big memory to be cleaned afterwards
+    let dirtyMemoryLines = 0;
+
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
@@ -163,7 +167,8 @@ export class Buffer implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+          // +boolean for fast 0 or 1 conversion
+          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
 
@@ -242,13 +247,46 @@ export class Buffer implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+          // +boolean for fast 0 or 1 conversion
+          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
     }
 
     this._cols = newCols;
     this._rows = newRows;
+
+    this._memoryCleanupQueue.clear();
+    // schedule memory cleanup only, if more than 10% of the lines are affected
+    if (dirtyMemoryLines > 0.1 * this.lines.length) {
+      this._memoryCleanupPosition = 0;
+      this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
+    }
+  }
+
+  private _memoryCleanupQueue = new IdleTaskQueue();
+  private _memoryCleanupPosition = 0;
+
+  private _batchedMemoryCleanup(): boolean {
+    let normalRun = true;
+    if (this._memoryCleanupPosition >= this.lines.length) {
+      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted lines,
+      // which should finish rather quick if there are no more cleanups pending
+      this._memoryCleanupPosition = 0;
+      normalRun = false;
+    }
+    let counted = 0;
+    while (this._memoryCleanupPosition < this.lines.length) {
+      counted += this.lines.get(this._memoryCleanupPosition++)!.cleanupMemory();
+      // cleanup max 100 lines per batch
+      if (counted > 100) {
+        return true;
+      }
+    }
+    // normal runs always need another rescan afterwards
+    // if we made it here with normalRun=false, we are in a final run
+    // and can end the cleanup task for sure
+    return normalRun;
   }
 
   private get _isReflowEnabled(): boolean {
