@@ -259,23 +259,34 @@ export class Buffer implements IBuffer {
     this._memoryCleanupQueue.clear();
     // schedule memory cleanup only, if more than 10% of the lines are affected
     if (dirtyMemoryLines > 0.1 * this.lines.length) {
+      this._memoryCleanupPosition = 0;
       this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
     }
   }
 
   private _memoryCleanupQueue = new IdleTaskQueue();
+  private _memoryCleanupPosition = 0;
 
   private _batchedMemoryCleanup(): boolean {
+    let normalRun = true;
+    if (this._memoryCleanupPosition >= this.lines.length) {
+      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted lines,
+      // which should finish rather quick if there are no more cleanups pending
+      this._memoryCleanupPosition = 0;
+      normalRun = false;
+    }
     let counted = 0;
-    for (let i = 0; i < this.lines.length; i++) {
-      counted += this.lines.get(i)!.cleanupMemory();
-      // throttle to 500 lines at once and
-      // return true to indicate, that the task is not finished yet
-      if (counted > 500) {
+    while (this._memoryCleanupPosition < this.lines.length) {
+      counted += this.lines.get(this._memoryCleanupPosition++)!.cleanupMemory();
+      // cleanup max 100 lines per batch
+      if (counted > 100) {
         return true;
       }
     }
-    return false;
+    // normal runs always need another rescan afterwards
+    // if we made it here with normalRun=false, we are in a final run
+    // and can end the cleanup task for sure
+    return normalRun;
   }
 
   private get _isReflowEnabled(): boolean {

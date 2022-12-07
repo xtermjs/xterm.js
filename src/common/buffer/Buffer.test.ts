@@ -1198,7 +1198,7 @@ describe('Buffer', () => {
 
       // wait for a bit to give IdleTaskQueue a chance to kick in
       // and finish memory cleaning
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 30));
 
       // cleanup should have realigned memory with exact bytelength
       for (let i = 0; i < INIT_ROWS; i++) {
