@@ -71,6 +71,8 @@ abstract class TaskQueue implements ITaskQueue {
     this._idleCallback = undefined;
     let taskDuration = 0;
     let longestTask = 0;
+    let lastDeadlineRemaining = deadline.timeRemaining();
+    let deadlineRemaining = 0;
     while (this._i < this._tasks.length) {
       taskDuration = Date.now();
       if (!this._tasks[this._i]()) {
@@ -83,10 +85,17 @@ abstract class TaskQueue implements ITaskQueue {
       longestTask = Math.max(taskDuration, longestTask);
       // Guess the following task will take a similar time to the longest task in this batch, allow
       // additional room to try avoid exceeding the deadline
-      if (longestTask * 1.5 > deadline.timeRemaining()) {
+      deadlineRemaining = deadline.timeRemaining();
+      if (longestTask * 1.5 > deadlineRemaining) {
+        // Warn when the time exceeding the deadline is over 20ms, if this happens in practice the
+        // task should be split into sub-tasks to ensure the UI remains responsive.
+        if (lastDeadlineRemaining - taskDuration < -20) {
+          console.warn(`task queue exceeded allotted deadline by ${Math.abs(Math.round(lastDeadlineRemaining - taskDuration))}ms`);
+        }
         this._start();
         return;
       }
+      lastDeadlineRemaining = deadlineRemaining;
     }
     this.clear();
   }
