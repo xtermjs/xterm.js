@@ -157,15 +157,13 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
           // If all providers have responded, remove lower priority links that intersect ranges of
           // higher priority links
           if (this._activeProviderReplies?.size === this._linkProviders.length) {
-            // FIXME: commented out due to bug below
-            // this._removeIntersectingLinks(position.y, this._activeProviderReplies);
+            this._removeIntersectingLinks(position.y, this._activeProviderReplies);
           }
         });
       }
     }
   }
 
-  // FIXME: What is this supposed to do? Currently it removes wrongly a second link on a wrapped line...
   private _removeIntersectingLinks(y: number, replies: Map<Number, ILinkWithState[] | undefined>): void {
     const occupiedCells = new Set<number>();
     for (let i = 0; i < replies.size; i++) {
