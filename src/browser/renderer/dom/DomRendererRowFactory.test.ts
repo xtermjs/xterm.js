@@ -14,7 +14,7 @@ import { MockCoreService, MockDecorationService, MockOptionsService } from 'comm
 import { css } from 'common/Color';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
 
-const EMPTY_ELEM_MAPPING = new Uint16Array(1000);
+const EMPTY_ELEM_MAPPING = new Int16Array(1000);
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;

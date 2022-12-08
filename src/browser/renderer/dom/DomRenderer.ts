@@ -38,7 +38,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
-  private _cellToRowElements: Uint16Array[] = [];
+  private _cellToRowElements: Int16Array[] = [];
 
   public dimensions: IRenderDimensions;
 
@@ -361,7 +361,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
       if (!this._cellToRowElements[y] || this._cellToRowElements[y].length !== this._bufferService.cols) {
-        this._cellToRowElements[y] = new Uint16Array(this._bufferService.cols);
+        this._cellToRowElements[y] = new Int16Array(this._bufferService.cols);
       }
       rowElement.replaceChildren(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols, this._cellToRowElements[y]));
     }
