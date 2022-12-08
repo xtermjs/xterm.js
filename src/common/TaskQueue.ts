@@ -8,8 +8,11 @@ import { isNode } from 'common/Platform';
 interface ITaskQueue {
   /**
    * Adds a task to the queue which will run in a future idle callback.
+   * To avoid perceivable stalls on the mainthread, tasks with heavy workload
+   * should split their work into smaller pieces and return `true` to get
+   * called again until the work is done (on falsy return value).
    */
-  enqueue(task: () => void): void;
+  enqueue(task: () => boolean | void): void;
 
   /**
    * Flushes the queue, running all remaining tasks synchronously.
@@ -28,21 +31,23 @@ interface ITaskDeadline {
 type CallbackWithDeadline = (deadline: ITaskDeadline) => void;
 
 abstract class TaskQueue implements ITaskQueue {
-  private _tasks: (() => void)[] = [];
+  private _tasks: (() => boolean | void)[] = [];
   private _idleCallback?: number;
   private _i = 0;
 
   protected abstract _requestCallback(callback: CallbackWithDeadline): number;
   protected abstract _cancelCallback(identifier: number): void;
 
-  public enqueue(task: () => void): void {
+  public enqueue(task: () => boolean | void): void {
     this._tasks.push(task);
     this._start();
   }
 
   public flush(): void {
     while (this._i < this._tasks.length) {
-      this._tasks[this._i++]();
+      if (!this._tasks[this._i]()) {
+        this._i++;
+      }
     }
     this.clear();
   }
@@ -66,17 +71,31 @@ abstract class TaskQueue implements ITaskQueue {
     this._idleCallback = undefined;
     let taskDuration = 0;
     let longestTask = 0;
+    let lastDeadlineRemaining = deadline.timeRemaining();
+    let deadlineRemaining = 0;
     while (this._i < this._tasks.length) {
-      taskDuration = performance.now();
-      this._tasks[this._i++]();
-      taskDuration = performance.now() - taskDuration;
+      taskDuration = Date.now();
+      if (!this._tasks[this._i]()) {
+        this._i++;
+      }
+      // other than performance.now, Date.now might not be stable (changes on wall clock changes),
+      // this is not an issue here as a clock change during a short running task is very unlikely
+      // in case it still happened and leads to negative duration, simply assume 1 msec
+      taskDuration = Math.max(1, Date.now() - taskDuration);
       longestTask = Math.max(taskDuration, longestTask);
       // Guess the following task will take a similar time to the longest task in this batch, allow
       // additional room to try avoid exceeding the deadline
-      if (longestTask * 1.5 > deadline.timeRemaining()) {
+      deadlineRemaining = deadline.timeRemaining();
+      if (longestTask * 1.5 > deadlineRemaining) {
+        // Warn when the time exceeding the deadline is over 20ms, if this happens in practice the
+        // task should be split into sub-tasks to ensure the UI remains responsive.
+        if (lastDeadlineRemaining - taskDuration < -20) {
+          console.warn(`task queue exceeded allotted deadline by ${Math.abs(Math.round(lastDeadlineRemaining - taskDuration))}ms`);
+        }
         this._start();
         return;
       }
+      lastDeadlineRemaining = deadlineRemaining;
     }
     this.clear();
   }
@@ -97,9 +116,9 @@ export class PriorityTaskQueue extends TaskQueue {
   }
 
   private _createDeadline(duration: number): ITaskDeadline {
-    const end = performance.now() + duration;
+    const end = Date.now() + duration;
     return {
-      timeRemaining: () => Math.max(0, end - performance.now())
+      timeRemaining: () => Math.max(0, end - Date.now())
     };
   }
 }
@@ -136,7 +155,7 @@ export class DebouncedIdleTask {
     this._queue = new IdleTaskQueue();
   }
 
-  public set(task: () => void): void {
+  public set(task: () => boolean | void): void {
     this._queue.clear();
     this._queue.enqueue(task);
   }
