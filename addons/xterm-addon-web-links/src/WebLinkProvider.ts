@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkProvider, ILink, Terminal, IViewportRange } from 'xterm';
+import { ILinkProvider, ILink, Terminal, IViewportRange, IBufferLine } from 'xterm';
 
 export interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
@@ -49,22 +49,10 @@ export class LinkComputer {
     const line = lines.join('');
 
     let match;
-    let stringIndex = -1;
     const result: ILink[] = [];
 
     while (match = rex.exec(line)) {
       const text = match[0];
-
-      // Get index, match.index is for the outer match which includes negated chars
-      // therefore we cannot use match.index directly, instead we search the position
-      // of the match group in text again
-      // also correct regex and string search offsets for the next loop run
-      stringIndex = line.indexOf(text, stringIndex + 1);
-      rex.lastIndex = stringIndex + text.length;
-      if (stringIndex < 0) {
-        // invalid stringIndex (should not have happened)
-        break;
-      }
 
       // check via URL if the matched text would form a proper url
       // NOTE: This outsources the ugly url parsing to the browser.
@@ -84,14 +72,16 @@ export class LinkComputer {
         continue;
       }
 
-
-      const [startY, startX] = LinkComputer._mapStrIdx(startLineIndex, stringIndex, terminal);
-      const [endY, endX] = LinkComputer._mapStrIdx(startLineIndex, stringIndex + text.length, terminal);
+      // map string positions back to buffer positions
+      // values are 0-based right side excluding
+      const [startY, startX] = LinkComputer._mapStrIdx(terminal, startLineIndex, 0, match.index);
+      const [endY, endX] = LinkComputer._mapStrIdx(terminal, startY, startX, text.length);
 
       if (startY === -1 || startX === -1 || endY === -1 || endX === -1) {
         continue;
       }
 
+      // range expects values 1-based right side including, thus +1 except for endX
       const range = {
         start: {
           x: startX + 1,
@@ -113,9 +103,13 @@ export class LinkComputer {
    * Get wrapped content lines for the current line index.
    * The top/bottom line expansion stops at whitespaces or length > 2048.
    * Returns an array with line strings and the top line index.
+   *
+   * NOTE: We pull line strings with trimRight=true on purpose to make sure
+   * to correctly match urls with early wrapped wide chars. This corrupts the string index
+   * for 1:1 backmapping to buffer positions, thus needs an additional correction in _mapStrIdx.
    */
   private static _getWindowedLineStrings(lineIndex: number, terminal: Terminal): [string[], number] {
-    let line: any;
+    let line: IBufferLine | undefined;
     let topIdx = lineIndex;
     let bottomIdx = lineIndex;
     let length = 0;
@@ -161,28 +155,34 @@ export class LinkComputer {
    * Returns buffer position as [lineIndex, columnIndex] 0-based,
    * or [-1, -1] in case the lookup ran into a non-existing line.
    */
-  private static _mapStrIdx(lineIndex: number, stringIndex: number, terminal: Terminal): [number, number] {
+  private static _mapStrIdx(terminal: Terminal, lineIndex: number, rowIndex: number, stringIndex: number): [number, number] {
     const buf = terminal.buffer.active;
     const cell = buf.getNullCell();
+    let start = rowIndex;
     while (stringIndex) {
       const line = buf.getLine(lineIndex);
       if (!line) {
         return [-1, -1];
       }
-      for (let i = 0; i < line.length; ++i) {
+      for (let i = start; i < line.length; ++i) {
         line.getCell(i, cell);
         const chars = cell.getChars();
         const width = cell.getWidth();
         if (width) {
           stringIndex -= chars.length || 1;
-        }
-        // look ahead for early wrap around of wide chars
-        if (i === line.length - 1 && chars === '' && width) {
-          const line = buf.getLine(lineIndex + 1);
-          if (line && line.isWrapped) {
-            line.getCell(0, cell);
-            if (cell.getWidth() === 2) {
-              stringIndex += 1;
+
+          // correct stringIndex for early wrapped wide chars:
+          // - currently only happens at last cell
+          // - cells to the right are reset with chars='' and width=1 in InputHandler.print
+          // - follow-up line must be wrapped and contain wide char at first cell
+          // --> if all these conditions are met, correct stringIndex by +1
+          if (i === line.length - 1 && chars === '') {
+            const line = buf.getLine(lineIndex + 1);
+            if (line && line.isWrapped) {
+              line.getCell(0, cell);
+              if (cell.getWidth() === 2) {
+                stringIndex += 1;
+              }
             }
           }
         }
@@ -191,7 +191,8 @@ export class LinkComputer {
         }
       }
       lineIndex++;
+      start = 0;
     }
-    return [lineIndex, 0];
+    return [lineIndex, start];
   }
 }
