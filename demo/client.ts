@@ -969,6 +969,20 @@ function sgrTest(): void {
   for (const e of entries) {
     term.writeln(`\x1b[0m\x1b[${e.ps}m ${e.ps.toString().padEnd(2, ' ')} ${e.name.padEnd(maxNameLength, ' ')} - ${testString}\x1b[0m`);
   }
+  const entriesByPs: Map<number, string> = new Map();
+  for (const e of entries) {
+    entriesByPs.set(e.ps, e.name);
+  }
+  const comboEntries: { ps: number[] }[] = [
+    { ps: [1, 2, 3, 4, 5, 6, 7, 9] },
+    { ps: [2, 41] }
+  ];
+  term.write('\n\n\r');
+  term.writeln(`Combinations`);
+  for (const e of comboEntries) {
+    const name = e.ps.map(e => entriesByPs.get(e)).join(', ');
+    term.writeln(`\x1b[0m\x1b[${e.ps.join(';')}m ${name}\n\r${testString}\x1b[0m`);
+  }
 }
 
 function addAnsiHyperlink(): void {
