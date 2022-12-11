@@ -122,7 +122,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       return;
     }
     this._charAtlasDisposable?.dispose();
-    this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(this._terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
     this._charAtlasDisposable = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
     for (let i = 0; i < this._charAtlas.pages.length; i++) {

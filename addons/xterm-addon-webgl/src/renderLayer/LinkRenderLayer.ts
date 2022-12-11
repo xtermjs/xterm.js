@@ -8,6 +8,7 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent } from 'browser/Types';
+import { IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
@@ -20,9 +21,10 @@ export class LinkRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     linkifier2: ILinkifier2,
     coreBrowserService: ICoreBrowserService,
+    optionsService: IOptionsService,
     themeService: IThemeService
   ) {
-    super(terminal, container, 'link', zIndex, true, coreBrowserService, themeService);
+    super(terminal, container, 'link', zIndex, true, coreBrowserService, optionsService, themeService);
 
     this.register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
     this.register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));
