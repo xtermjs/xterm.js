@@ -250,7 +250,11 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.unicode11.instance = new Unicode11Addon();
-  addons.webgl.instance = new WebglAddon();
+  try {  // try to start with webgl renderer (might throw on older safari/webkit)
+    addons.webgl.instance = new WebglAddon();
+  } catch (e) {
+    console.warn(e);
+  }
   addons['web-links'].instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.search.instance);
@@ -273,22 +277,26 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   addons.fit.instance!.fit();
-  typedTerm.loadAddon(addons.webgl.instance);
-  setTimeout(() => {
-    if (addons.webgl.instance !== undefined) {
+
+  if (addons.webgl.instance) {
+    try {
+      typedTerm.loadAddon(addons.webgl.instance);
+      term.open(terminalContainer);
       setTextureAtlas(addons.webgl.instance.textureAtlas);
       addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
       addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
       addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
+    } catch (e) {
+      console.warn('error during loading webgl addon:', e);
+      addons.webgl.instance.dispose();
+      addons.webgl.instance = undefined;
     }
-  }, 0);
-
-  try { // try-catch to allow the demo to load if webgl is not supported
+  }
+  if (!typedTerm.element) {
+    // webgl loading failed for some reason, attach with DOM renderer
     term.open(terminalContainer);
   }
-  catch {
-    addons.webgl.instance = undefined;
-  }
+
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
