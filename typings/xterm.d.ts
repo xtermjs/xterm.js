@@ -704,29 +704,24 @@ declare module 'xterm' {
      * Gets or sets the terminal options. This supports setting multiple options.
      *
      * @example Get a single option
-     * ```typescript
+     * ```ts
      * console.log(terminal.options.fontSize);
      * ```
-     */
-    get options(): Required<ITerminalOptions>;
-
-    /**
-     * Gets or sets the terminal options. This supports setting multiple options.
      *
      * @example Set a single option
-     * ```typescript
+     * ```ts
      * terminal.options.fontSize = 12;
      * ```
      *
      * @example Set multiple options
-     * ```typescript
+     * ```ts
      * terminal.options = {
      *   fontSize: 12,
      *   fontFamily: 'Arial',
      * };
      * ```
      */
-    set options(options: ITerminalOptions);
+    options: ITerminalOptions;
 
     /**
      * Natural language strings that can be localized.
