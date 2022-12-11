@@ -4,7 +4,7 @@
  */
 
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
-import { Terminal } from 'xterm';
+import { ITerminalOptions, Terminal } from 'xterm';
 import { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
@@ -22,11 +22,10 @@ const charAtlasCache: ITextureAtlasCacheEntry[] = [];
 /**
  * Acquires a char atlas, either generating a new one or returning an existing
  * one that is in use by another terminal.
- * @param terminal The terminal.
- * @param colors The colors to use.
  */
 export function acquireTextureAtlas(
   terminal: Terminal,
+  options: Required<ITerminalOptions>,
   colors: ReadonlyColorSet,
   deviceCellWidth: number,
   deviceCellHeight: number,
@@ -34,7 +33,7 @@ export function acquireTextureAtlas(
   deviceCharHeight: number,
   devicePixelRatio: number
 ): ITextureAtlas {
-  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, terminal, colors, devicePixelRatio);
+  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, options, colors, devicePixelRatio);
 
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {
