@@ -68,7 +68,7 @@ export class CoreService extends Disposable implements ICoreService {
 
     // Input is being sent to the terminal, the terminal should focus the prompt.
     const buffer = this._bufferService.buffer;
-    if (buffer.ybase !== buffer.ydisp) {
+    if (wasUserInput && this._optionsService.rawOptions.scrollOnUserInput && buffer.ybase !== buffer.ydisp) {
       this._scrollToBottom!();
     }
 

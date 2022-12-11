@@ -995,7 +995,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
-      if (this.buffer.ybase !== this.buffer.ydisp) {
+      if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
         this._bufferService.scrollToBottom();
       }
       return false;

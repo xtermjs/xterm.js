@@ -85,9 +85,9 @@ export interface ICoreService {
   /**
    * Triggers the onData event in the public API.
    * @param data The data that is being emitted.
-   * @param wasFromUser Whether the data originated from the user (as opposed to
+   * @param wasUserInput Whether the data originated from the user (as opposed to
    * resulting from parsing incoming data). When true this will also:
-   * - Scroll to the bottom of the buffer.s
+   * - Scroll to the bottom of the buffer if option scrollOnUserInput is true.
    * - Fire the `onUserInput` event (so selection can be cleared).
    */
   triggerDataEvent(data: string, wasUserInput?: boolean): void;
@@ -243,6 +243,7 @@ export interface ITerminalOptions {
   rows?: number;
   screenReaderMode?: boolean;
   scrollback?: number;
+  scrollOnUserInput?: boolean;
   scrollSensitivity?: number;
   smoothScrollDuration?: number;
   tabStopWidth?: number;
