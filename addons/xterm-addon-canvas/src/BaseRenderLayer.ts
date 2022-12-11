@@ -373,6 +373,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     } else {
       glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
     }
+    if (!glyph.size.x || !glyph.size.y) {
+      return;
+    }
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available

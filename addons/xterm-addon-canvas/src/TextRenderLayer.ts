@@ -95,6 +95,12 @@ export class TextRenderLayer extends BaseRenderLayer {
           continue;
         }
 
+        // exit early for NULL and SP
+        const code = cell.getCode();
+        if (code === 0 || code === 32) {
+          continue;
+        }
+
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
         // and attributes of our input.

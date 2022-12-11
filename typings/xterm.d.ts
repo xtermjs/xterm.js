@@ -194,6 +194,12 @@ declare module 'xterm' {
     scrollback?: number;
 
     /**
+     * Whether to scroll to the bottom whenever there is some user input. The
+     * default is true.
+     */
+    scrollOnUserInput?: boolean;
+
+    /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
      */
     scrollSensitivity?: number;
