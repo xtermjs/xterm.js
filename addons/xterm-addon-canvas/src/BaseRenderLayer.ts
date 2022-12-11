@@ -389,8 +389,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       glyph.texturePosition.y,
       glyph.size.x,
       glyph.size.y,
-      x * this._deviceCellWidth - glyph.offset.x,
-      y * this._deviceCellHeight - glyph.offset.y,
+      x * this._deviceCellWidth + this._deviceCharLeft - glyph.offset.x,
+      y * this._deviceCellHeight + this._deviceCharTop - glyph.offset.y,
       glyph.size.x,
       glyph.size.y
     );
