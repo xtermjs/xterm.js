@@ -79,6 +79,7 @@ export interface ICoreService {
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
   readonly onBinary: IEvent<string>;
+  readonly onRequestScrollToBottom: IEvent<void>;
 
   reset(): void;
 
