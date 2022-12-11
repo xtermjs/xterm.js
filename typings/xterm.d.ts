@@ -717,7 +717,7 @@ declare module 'xterm' {
      * ```ts
      * terminal.options = {
      *   fontSize: 12,
-     *   fontFamily: 'Arial',
+     *   fontFamily: 'Courier New'
      * };
      * ```
      */
