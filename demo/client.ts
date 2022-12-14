@@ -228,6 +228,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('sgr-test').addEventListener('click', sgrTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
+  addVtButtons();
 }
 
 function createTerminal(): void {
@@ -1091,3 +1092,33 @@ function addOverviewRuler(): void {
   );
   console.groupEnd();
 };
+
+function addVtButtons(): void {
+  function csi(e: string): string {
+    return `\x1b[${e}`;
+  }
+
+  const vtCUU = (): void => term.write(csi('A'));
+  const vtCUD = (): void => term.write(csi('B'));
+  const vtCUF = (): void => term.write(csi('C'));
+  const vtCUB = (): void => term.write(csi('D'));
+
+  function createButton(name: string, writeCsi: string): HTMLElement {
+    const element = document.createElement('button');
+    element.textContent = name;
+    element.addEventListener('click', () => term.write(csi(writeCsi)));
+    return element;
+  }
+  const vtFragment = document.createDocumentFragment();
+  const buttonSpecs: { [key: string]: string } = {
+    A: 'CUU ↑',
+    B: 'CUD ↓',
+    C: 'CUF →',
+    D: 'CUB ←'
+  };
+  for (const s of Object.keys(buttonSpecs)) {
+    vtFragment.appendChild(createButton(buttonSpecs[s], s));
+  }
+
+  document.querySelector('#vt-container').appendChild(vtFragment);
+}
