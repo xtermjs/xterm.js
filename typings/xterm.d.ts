@@ -129,9 +129,14 @@ declare module 'xterm' {
 
     /**
      * The handler for OSC 8 hyperlinks. Links will use the `confirm` browser
-     * API if no link handler is set. Consider the security of users when using
-     * this, there should be some tooltip or prompt when hovering or activating
-     * the link.
+     * API with a strongly worded warning if no link handler is set.
+     *
+     * When setting this, consider the security of users opening these links,
+     * at a minimum there should be a tooltip or a prompt when hovering or
+     * activating the link respectively. An example of what might be possible is
+     * a terminal app writing link in the form `javascript:...` that runs some
+     * javascript, a safe approach to prevent that is to validate the link
+     * starts with http(s)://.
      */
     linkHandler?: ILinkHandler | null;
 
