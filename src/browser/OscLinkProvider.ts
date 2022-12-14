@@ -94,7 +94,7 @@ export class OscLinkProvider implements ILinkProvider {
 }
 
 function defaultActivate(e: MouseEvent, uri: string): void {
-  const answer = confirm(`Do you want to navigate to ${uri}?`);
+  const answer = confirm(`Do you want to navigate to ${uri}?\n\nWARNING: This link could potentially be dangerous`);
   if (answer) {
     const newWindow = window.open();
     if (newWindow) {
