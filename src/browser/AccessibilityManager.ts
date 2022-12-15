@@ -277,6 +277,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._renderService.dimensions.css.cell.height) {
       return;
     }
+    this._accessibilityTreeRoot.style.width = `${this._renderService.dimensions.css.canvas.width}px`;
     if (this._rowElements.length !== this._terminal.rows) {
       this._handleResize(this._terminal.rows);
     }
