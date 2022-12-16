@@ -450,12 +450,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
+
+    // Register the core browser service before the generic textarea handlers are registered so it
+    // handles them first. Otherwise the renderers may use the wrong focus state.
+    this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea, this._document.defaultView ?? window);
+    this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
+
     this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._handleTextAreaFocus(ev)));
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._handleTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
-    this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea, this._document.defaultView ?? window);
-    this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
