@@ -69,8 +69,13 @@ export class OscLinkProvider implements ILinkProvider {
 
           let ignoreLink = false;
           if (!linkHandler?.allowNonHttpProtocols) {
-            const parsed = new URL(text);
-            if (!['http:', 'https:'].includes(parsed.protocol)) {
+            try {
+              const parsed = new URL(text);
+              if (!['http:', 'https:'].includes(parsed.protocol)) {
+                ignoreLink = true;
+              }
+            } catch (e) {
+              // Ignore invalid URLs to prevent unexpected behaviors
               ignoreLink = true;
             }
           }
