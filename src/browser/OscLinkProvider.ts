@@ -66,14 +66,25 @@ export class OscLinkProvider implements ILinkProvider {
               y
             }
           };
-          // OSC links always use underline and pointer decorations
-          result.push({
-            text,
-            range,
-            activate: (e, text) => (linkHandler ? linkHandler.activate(e, text, range) : defaultActivate(e, text)),
-            hover: (e, text) => linkHandler?.hover?.(e, text, range),
-            leave: (e, text) => linkHandler?.leave?.(e, text, range)
-          });
+
+          let ignoreLink = false;
+          if (!linkHandler?.allowNonHttpProtocols) {
+            const parsed = new URL(text);
+            if (!['http:', 'https:'].includes(parsed.protocol)) {
+              ignoreLink = true;
+            }
+          }
+
+          if (!ignoreLink) {
+            // OSC links always use underline and pointer decorations
+            result.push({
+              text,
+              range,
+              activate: (e, text) => (linkHandler ? linkHandler.activate(e, text, range) : defaultActivate(e, text)),
+              hover: (e, text) => linkHandler?.hover?.(e, text, range),
+              leave: (e, text) => linkHandler?.leave?.(e, text, range)
+            });
+          }
         }
         finishLink = false;
 
