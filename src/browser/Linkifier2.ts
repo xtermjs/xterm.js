@@ -315,7 +315,15 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
           // When start is 0 a scroll most likely occurred, make sure links above the fold also get
           // cleared.
           const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
+          const oldEvent = this._currentLink ? this._lastMouseEvent : undefined;
           this._clearCurrentLink(start, e.end + 1 + this._bufferService.buffer.ydisp);
+          if (oldEvent && this._element) {
+            // re-eval previously active link after changes
+            const position = this._positionFromMouseEvent(oldEvent, this._element, this._mouseService!);
+            if (position) {
+              this._askForLink(position, false);
+            }
+          }
         }));
       }
     }
