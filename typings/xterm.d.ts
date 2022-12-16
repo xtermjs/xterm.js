@@ -712,16 +712,29 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
-     * Gets or sets the terminal options. This supports setting multiple options.
+     * Gets or sets the terminal options. This supports setting multiple
+     * options.
      *
      * @example Get a single option
      * ```ts
      * console.log(terminal.options.fontSize);
      * ```
      *
-     * @example Set a single option
+     * @example Set a single option:
      * ```ts
      * terminal.options.fontSize = 12;
+     * ```
+     * Note that for options that are object, a new object must be used in order
+     * to take effect as a reference comparison will be done:
+     * ```ts
+     * const newValue = terminal.options.theme;
+     * newValue.background = '#000000';
+     *
+     * // This won't work
+     * terminal.options.theme = newValue;
+     *
+     * // This will work
+     * terminal.options.theme = { ...newValue };
      * ```
      *
      * @example Set multiple options
