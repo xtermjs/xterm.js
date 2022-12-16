@@ -1181,9 +1181,9 @@ declare module 'xterm' {
      leave?(event: MouseEvent, text: string, range: IBufferRange): void;
     
      /**
-      * Whether to allow the use of non HTTP URLs in OscLinkProvider. When false, any usage of non
-      * HTTP URLs will be ignored. Enabling this option without proper protection in activate function
-      * may allow XSS.
+      * Whether to receive non HTTP URLs from LinkProvider. When false, any usage of non HTTP URLs
+      * will be ignored. Enabling this option without proper protection in `activate` function
+      * may cause security issues such as XSS.
       */
      allowNonHttpProtocols?: boolean;
   }
