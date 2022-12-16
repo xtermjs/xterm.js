@@ -445,7 +445,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel);
-    this.textarea.setAttribute('aria-multiline', 'false');
+    if (!Browser.isChromeOS) {
+      // ChromeVox on ChromeOS does not like this. See
+      // https://issuetracker.google.com/issues/260170397
+      this.textarea.setAttribute('aria-multiline', 'false');
+    }
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
@@ -1057,10 +1061,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.coreService.triggerDataEvent(result.key, true);
 
     // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
-    // other listeners. When screen reader mode is enabled, this could cause issues if the event
-    // is handled at a higher level, this is a compromise in order to echo keys to the screen
-    // reader.
-    if (!this.optionsService.rawOptions.screenReaderMode) {
+    // other listeners. When screen reader mode is enabled, we don't cancel them (unless ctrl or alt
+    // is also depressed) so that the cursor textarea can be updated, which triggers the screen
+    // reader to read it.
+    if (!this.optionsService.rawOptions.screenReaderMode || event.altKey || event.ctrlKey) {
       return this.cancel(event, true);
     }
 

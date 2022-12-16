@@ -246,7 +246,10 @@ export class AccessibilityManager extends Disposable {
 
   private _handleKey(keyChar: string): void {
     this._clearLiveRegion();
-    this._charsToConsume.push(keyChar);
+    // Only add the char if there is no control character.
+    if (!/\p{Control}/u.test(keyChar)) {
+      this._charsToConsume.push(keyChar);
+    }
   }
 
   private _refreshRows(start?: number, end?: number): void {
