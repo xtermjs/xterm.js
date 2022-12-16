@@ -40,8 +40,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer!: RectangleRenderer;
-  private _glyphRenderer!: GlyphRenderer;
+  private _rectangleRenderer: RectangleRenderer;
+  private _glyphRenderer: GlyphRenderer;
 
   public readonly dimensions: IRenderDimensions;
 
@@ -127,7 +127,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._initializeWebGLState();
+    [this._rectangleRenderer, this._glyphRenderer] = this._initializeWebGLState();
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
 
@@ -235,7 +235,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   /**
    * Initializes members dependent on WebGL context state.
    */
-  private _initializeWebGLState(): void {
+  private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
     // Dispose any previous rectangle and glyph renderers before creating new ones.
     this._rectangleRenderer?.dispose();
     this._glyphRenderer?.dispose();
@@ -245,6 +245,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
+
+    return [this._rectangleRenderer, this._glyphRenderer];
   }
 
   /**
@@ -268,7 +270,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._coreBrowserService.dpr
     );
     if (this._charAtlas !== atlas) {
-
       this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
       this._charAtlasDisposable = getDisposeArrayDisposable([
