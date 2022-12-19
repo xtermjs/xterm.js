@@ -1098,7 +1098,7 @@ function addVtButtons(): void {
     return `\x1b[${e}`;
   }
 
-  function createButton(name: string, description: string, writeCsi: string, paramCount: number = 0): HTMLElement {
+  function createButton(name: string, description: string, writeCsi: string, paramCount: number = 1): HTMLElement {
     const inputs: HTMLInputElement[] = [];
     for (let i = 0; i < paramCount; i++) {
       const input = document.createElement('input');
@@ -1109,7 +1109,10 @@ function addVtButtons(): void {
 
     const element = document.createElement('button');
     element.textContent = name;
-    element.addEventListener('click', () => term.write(csi(inputs.map(e => e.value).join(';') + writeCsi)));
+    writeCsi.split('');
+    const prefix = writeCsi.length === 2 ? writeCsi[0] : '';
+    const suffix = writeCsi[writeCsi.length - 1];
+    element.addEventListener(`click`, () => term.write(csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
 
     const desc = document.createElement('span');
     desc.textContent = description;
@@ -1120,12 +1123,23 @@ function addVtButtons(): void {
     return container;
   }
   const vtFragment = document.createDocumentFragment();
-  const buttonSpecs: { [key: string]: { label: string, description: string, paramCount: number }} = {
-    A: { label: 'CUU ↑', description: 'Cursor Up Ps Times',       paramCount: 1 },
-    B: { label: 'CUD ↓', description: 'Cursor Down Ps Times',     paramCount: 1 },
-    C: { label: 'CUF →', description: 'Cursor Forward Ps Times',  paramCount: 1 },
-    D: { label: 'CUB ←', description: 'Cursor Backward Ps Times', paramCount: 1 },
-    L: { label: 'IL',    description: 'Insert Ps Line(s)',        paramCount: 1 }
+  const buttonSpecs: { [key: string]: { label: string, description: string, paramCount?: number }} = {
+    A:    { label: 'CUU ↑',  description: 'Cursor Up Ps Times' },
+    B:    { label: 'CUD ↓',  description: 'Cursor Down Ps Times' },
+    C:    { label: 'CUF →',  description: 'Cursor Forward Ps Times' },
+    D:    { label: 'CUB ←',  description: 'Cursor Backward Ps Times' },
+    E:    { label: 'CNL',    description: 'Cursor Next Line Ps Times' },
+    F:    { label: 'CPL',    description: 'Cursor Preceding Line Ps Times' },
+    G:    { label: 'CHA',    description: 'Cursor Character Absolute' },
+    H:    { label: 'CUP',    description: 'Cursor Position [row;column]', paramCount: 2 },
+    I:    { label: 'CHT',    description: 'Cursor Forward Tabulation Ps tab stops' },
+    J:    { label: 'ED',     description: 'Erase in Display' },
+    '?J': { label: 'DECSED', description: 'Erase in Display' },
+    K:    { label: 'EL',     description: 'Erase in Line' },
+    '?K': { label: 'DECSEL', description: 'Erase in Line' },
+    L:    { label: 'IL',     description: 'Insert Ps Line(s)' },
+    M:    { label: 'DL',     description: 'Delete Ps Line(s)' },
+    P:    { label: 'DCH',    description: 'Delete Ps Character(s)' }
   };
   for (const s of Object.keys(buttonSpecs)) {
     const spec = buttonSpecs[s];
