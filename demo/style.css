@@ -102,3 +102,7 @@ pre {
     image-rendering: pixelated;
     border: 1px solid #ccc;
 }
+
+.vt-button * {
+  margin-right: 1em;
+}
