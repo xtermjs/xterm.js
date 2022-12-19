@@ -8,7 +8,7 @@ import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet } from 'browser/Types';
-import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
@@ -239,12 +239,6 @@ export class MockBuffer implements IBuffer {
   }
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
     return Buffer.prototype.getBlankLine.apply(this, arguments as any);
-  }
-  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
-    return Buffer.prototype.stringIndexToBufferIndex.apply(this, arguments as any);
-  }
-  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
-    return Buffer.prototype.iterator.apply(this, arguments as any);
   }
   public getNullCell(attr?: IAttributeData): ICellData {
     throw new Error('Method not implemented.');
