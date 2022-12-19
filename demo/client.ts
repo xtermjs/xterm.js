@@ -1098,26 +1098,52 @@ function addVtButtons(): void {
     return `\x1b[${e}`;
   }
 
-  const vtCUU = (): void => term.write(csi('A'));
-  const vtCUD = (): void => term.write(csi('B'));
-  const vtCUF = (): void => term.write(csi('C'));
-  const vtCUB = (): void => term.write(csi('D'));
+  function createButton(name: string, description: string, writeCsi: string, paramCount: number = 1): HTMLElement {
+    const inputs: HTMLInputElement[] = [];
+    for (let i = 0; i < paramCount; i++) {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.title = `Input #${i + 1}`;
+      inputs.push(input);
+    }
 
-  function createButton(name: string, writeCsi: string): HTMLElement {
     const element = document.createElement('button');
     element.textContent = name;
-    element.addEventListener('click', () => term.write(csi(writeCsi)));
-    return element;
+    writeCsi.split('');
+    const prefix = writeCsi.length === 2 ? writeCsi[0] : '';
+    const suffix = writeCsi[writeCsi.length - 1];
+    element.addEventListener(`click`, () => term.write(csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
+
+    const desc = document.createElement('span');
+    desc.textContent = description;
+
+    const container = document.createElement('div');
+    container.classList.add('vt-button');
+    container.append(element, ...inputs, desc);
+    return container;
   }
   const vtFragment = document.createDocumentFragment();
-  const buttonSpecs: { [key: string]: string } = {
-    A: 'CUU ↑',
-    B: 'CUD ↓',
-    C: 'CUF →',
-    D: 'CUB ←'
+  const buttonSpecs: { [key: string]: { label: string, description: string, paramCount?: number }} = {
+    A:    { label: 'CUU ↑',  description: 'Cursor Up Ps Times' },
+    B:    { label: 'CUD ↓',  description: 'Cursor Down Ps Times' },
+    C:    { label: 'CUF →',  description: 'Cursor Forward Ps Times' },
+    D:    { label: 'CUB ←',  description: 'Cursor Backward Ps Times' },
+    E:    { label: 'CNL',    description: 'Cursor Next Line Ps Times' },
+    F:    { label: 'CPL',    description: 'Cursor Preceding Line Ps Times' },
+    G:    { label: 'CHA',    description: 'Cursor Character Absolute' },
+    H:    { label: 'CUP',    description: 'Cursor Position [row;column]', paramCount: 2 },
+    I:    { label: 'CHT',    description: 'Cursor Forward Tabulation Ps tab stops' },
+    J:    { label: 'ED',     description: 'Erase in Display' },
+    '?J': { label: 'DECSED', description: 'Erase in Display' },
+    K:    { label: 'EL',     description: 'Erase in Line' },
+    '?K': { label: 'DECSEL', description: 'Erase in Line' },
+    L:    { label: 'IL',     description: 'Insert Ps Line(s)' },
+    M:    { label: 'DL',     description: 'Delete Ps Line(s)' },
+    P:    { label: 'DCH',    description: 'Delete Ps Character(s)' }
   };
   for (const s of Object.keys(buttonSpecs)) {
-    vtFragment.appendChild(createButton(buttonSpecs[s], s));
+    const spec = buttonSpecs[s];
+    vtFragment.appendChild(createButton(spec.label, spec.description, s, spec.paramCount));
   }
 
   document.querySelector('#vt-container').appendChild(vtFragment);
