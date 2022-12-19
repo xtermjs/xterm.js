@@ -375,18 +375,10 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
    * @param position
    */
   private _linkAtPosition(link: ILink, position: IBufferCellPosition): boolean {
-    const sameLine = link.range.start.y === link.range.end.y;
-    const wrappedFromLeft = link.range.start.y < position.y;
-    const wrappedToRight = link.range.end.y > position.y;
-
-    // If the start and end have the same y, then the position must be between start and end x
-    // If not, then handle each case seperately, depending on which way it wraps
-    return ((sameLine && link.range.start.x <= position.x && link.range.end.x >= position.x) ||
-      (wrappedFromLeft && link.range.end.x >= position.x) ||
-      (wrappedToRight && link.range.start.x <= position.x) ||
-      (wrappedFromLeft && wrappedToRight)) &&
-      link.range.start.y <= position.y &&
-      link.range.end.y >= position.y;
+    const lower = link.range.start.y * this._bufferService.cols + link.range.start.x;
+    const upper = link.range.end.y * this._bufferService.cols + link.range.end.x;
+    const current = position.y * this._bufferService.cols + position.x;
+    return (lower <= current && current <= upper);
   }
 
   /**

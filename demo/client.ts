@@ -228,6 +228,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('sgr-test').addEventListener('click', sgrTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
+  document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   addVtButtons();
 }
 
@@ -1147,4 +1148,26 @@ function addVtButtons(): void {
   }
 
   document.querySelector('#vt-container').appendChild(vtFragment);
+}
+
+function testWeblinks(): void {
+  const linkExamples = `
+aaa http://example.com aaa http://example.com aaa
+￥￥￥ http://example.com aaa http://example.com aaa
+aaa http://example.com ￥￥￥ http://example.com aaa
+￥￥￥ http://example.com ￥￥￥ http://example.com aaa
+aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa
+￥￥￥ https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 ￥￥￥
+aaa http://test:password@example.com/some_path aaa
+brackets enclosed:
+aaa [http://example.de] aaa
+aaa (http://example.de) aaa
+aaa <http://example.de> aaa
+aaa {http://example.de} aaa
+ipv6 https://[::1]/with/some?vars=and&a#hash aaa
+stop at final '.': This is a sentence with an url to http://example.com.
+stop at final '?': Is this the right url http://example.com/?
+stop at final '?': Maybe this one http://example.com/with?arguments=false?
+  `;
+  term.write(linkExamples.split('\n').join('\r\n'));
 }
