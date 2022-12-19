@@ -1098,26 +1098,38 @@ function addVtButtons(): void {
     return `\x1b[${e}`;
   }
 
-  const vtCUU = (): void => term.write(csi('A'));
-  const vtCUD = (): void => term.write(csi('B'));
-  const vtCUF = (): void => term.write(csi('C'));
-  const vtCUB = (): void => term.write(csi('D'));
+  function createButton(name: string, description: string, writeCsi: string, paramCount: number = 0): HTMLElement {
+    const inputs: HTMLInputElement[] = [];
+    for (let i = 0; i < paramCount; i++) {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.title = `Input #${i + 1}`;
+      inputs.push(input);
+    }
 
-  function createButton(name: string, writeCsi: string): HTMLElement {
     const element = document.createElement('button');
     element.textContent = name;
-    element.addEventListener('click', () => term.write(csi(writeCsi)));
-    return element;
+    element.addEventListener('click', () => term.write(csi(inputs.map(e => e.value).join(';') + writeCsi)));
+
+    const desc = document.createElement('span');
+    desc.textContent = description;
+
+    const container = document.createElement('div');
+    container.classList.add('vt-button');
+    container.append(element, ...inputs, desc);
+    return container;
   }
   const vtFragment = document.createDocumentFragment();
-  const buttonSpecs: { [key: string]: string } = {
-    A: 'CUU ↑',
-    B: 'CUD ↓',
-    C: 'CUF →',
-    D: 'CUB ←'
+  const buttonSpecs: { [key: string]: { label: string, description: string, paramCount: number }} = {
+    A: { label: 'CUU ↑', description: 'Cursor Up Ps Times',       paramCount: 1 },
+    B: { label: 'CUD ↓', description: 'Cursor Down Ps Times',     paramCount: 1 },
+    C: { label: 'CUF →', description: 'Cursor Forward Ps Times',  paramCount: 1 },
+    D: { label: 'CUB ←', description: 'Cursor Backward Ps Times', paramCount: 1 },
+    L: { label: 'IL',    description: 'Insert Ps Line(s)',        paramCount: 1 }
   };
   for (const s of Object.keys(buttonSpecs)) {
-    vtFragment.appendChild(createButton(buttonSpecs[s], s));
+    const spec = buttonSpecs[s];
+    vtFragment.appendChild(createButton(spec.label, spec.description, s, spec.paramCount));
   }
 
   document.querySelector('#vt-container').appendChild(vtFragment);
