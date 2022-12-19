@@ -122,7 +122,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       return;
     }
     this._charAtlasDisposable?.dispose();
-    this._charAtlas = acquireTextureAtlas(this._terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(this._terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
     this._charAtlasDisposable = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
     for (let i = 0; i < this._charAtlas.pages.length; i++) {
@@ -373,6 +373,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     } else {
       glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
     }
+    if (!glyph.size.x || !glyph.size.y) {
+      return;
+    }
     this._ctx.save();
     this._clipRow(y);
     // Draw the image, use the bitmap if it's available
@@ -389,8 +392,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       glyph.texturePosition.y,
       glyph.size.x,
       glyph.size.y,
-      x * this._deviceCellWidth - glyph.offset.x,
-      y * this._deviceCellHeight - glyph.offset.y,
+      x * this._deviceCellWidth + this._deviceCharLeft - glyph.offset.x,
+      y * this._deviceCellHeight + this._deviceCharTop - glyph.offset.y,
       glyph.size.x,
       glyph.size.y
     );

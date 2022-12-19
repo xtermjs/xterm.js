@@ -228,6 +228,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('sgr-test').addEventListener('click', sgrTest);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
+  addVtButtons();
 }
 
 function createTerminal(): void {
@@ -250,7 +251,11 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.unicode11.instance = new Unicode11Addon();
-  addons.webgl.instance = new WebglAddon();
+  try {  // try to start with webgl renderer (might throw on older safari/webkit)
+    addons.webgl.instance = new WebglAddon();
+  } catch (e) {
+    console.warn(e);
+  }
   addons['web-links'].instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.search.instance);
@@ -273,22 +278,26 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   addons.fit.instance!.fit();
-  typedTerm.loadAddon(addons.webgl.instance);
-  setTimeout(() => {
-    if (addons.webgl.instance !== undefined) {
+
+  if (addons.webgl.instance) {
+    try {
+      typedTerm.loadAddon(addons.webgl.instance);
+      term.open(terminalContainer);
       setTextureAtlas(addons.webgl.instance.textureAtlas);
       addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
       addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
       addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
+    } catch (e) {
+      console.warn('error during loading webgl addon:', e);
+      addons.webgl.instance.dispose();
+      addons.webgl.instance = undefined;
     }
-  }, 0);
-
-  try { // try-catch to allow the demo to load if webgl is not supported
+  }
+  if (!typedTerm.element) {
+    // webgl loading failed for some reason, attach with DOM renderer
     term.open(terminalContainer);
   }
-  catch {
-    addons.webgl.instance = undefined;
-  }
+
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
@@ -961,6 +970,20 @@ function sgrTest(): void {
   for (const e of entries) {
     term.writeln(`\x1b[0m\x1b[${e.ps}m ${e.ps.toString().padEnd(2, ' ')} ${e.name.padEnd(maxNameLength, ' ')} - ${testString}\x1b[0m`);
   }
+  const entriesByPs: Map<number, string> = new Map();
+  for (const e of entries) {
+    entriesByPs.set(e.ps, e.name);
+  }
+  const comboEntries: { ps: number[] }[] = [
+    { ps: [1, 2, 3, 4, 5, 6, 7, 9] },
+    { ps: [2, 41] }
+  ];
+  term.write('\n\n\r');
+  term.writeln(`Combinations`);
+  for (const e of comboEntries) {
+    const name = e.ps.map(e => entriesByPs.get(e)).join(', ');
+    term.writeln(`\x1b[0m\x1b[${e.ps.join(';')}m ${name}\n\r${testString}\x1b[0m`);
+  }
 }
 
 function addAnsiHyperlink(): void {
@@ -1069,3 +1092,33 @@ function addOverviewRuler(): void {
   );
   console.groupEnd();
 };
+
+function addVtButtons(): void {
+  function csi(e: string): string {
+    return `\x1b[${e}`;
+  }
+
+  const vtCUU = (): void => term.write(csi('A'));
+  const vtCUD = (): void => term.write(csi('B'));
+  const vtCUF = (): void => term.write(csi('C'));
+  const vtCUB = (): void => term.write(csi('D'));
+
+  function createButton(name: string, writeCsi: string): HTMLElement {
+    const element = document.createElement('button');
+    element.textContent = name;
+    element.addEventListener('click', () => term.write(csi(writeCsi)));
+    return element;
+  }
+  const vtFragment = document.createDocumentFragment();
+  const buttonSpecs: { [key: string]: string } = {
+    A: 'CUU ↑',
+    B: 'CUD ↓',
+    C: 'CUF →',
+    D: 'CUB ←'
+  };
+  for (const s of Object.keys(buttonSpecs)) {
+    vtFragment.appendChild(createButton(buttonSpecs[s], s));
+  }
+
+  document.querySelector('#vt-container').appendChild(vtFragment);
+}

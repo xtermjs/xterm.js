@@ -5,11 +5,11 @@
 
 import { ICharAtlasConfig } from './Types';
 import { Attributes } from 'common/buffer/Constants';
-import { Terminal } from 'xterm';
+import { ITerminalOptions } from 'xterm';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { NULL_COLOR } from 'common/Color';
 
-export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, terminal: Terminal, colors: ReadonlyColorSet, devicePixelRatio: number): ICharAtlasConfig {
+export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, options: Required<ITerminalOptions>, colors: ReadonlyColorSet, devicePixelRatio: number): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -27,21 +27,21 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
     contrastCache: colors.contrastCache
   };
   return {
-    customGlyphs: terminal.options.customGlyphs,
+    customGlyphs: options.customGlyphs,
     devicePixelRatio,
-    letterSpacing: terminal.options.letterSpacing,
-    lineHeight: terminal.options.lineHeight,
+    letterSpacing: options.letterSpacing,
+    lineHeight: options.lineHeight,
     deviceCellWidth: deviceCellWidth,
     deviceCellHeight: deviceCellHeight,
     deviceCharWidth: deviceCharWidth,
     deviceCharHeight: deviceCharHeight,
-    fontFamily: terminal.options.fontFamily,
-    fontSize: terminal.options.fontSize,
-    fontWeight: terminal.options.fontWeight,
-    fontWeightBold: terminal.options.fontWeightBold,
-    allowTransparency: terminal.options.allowTransparency,
-    drawBoldTextInBrightColors: terminal.options.drawBoldTextInBrightColors,
-    minimumContrastRatio: terminal.options.minimumContrastRatio,
+    fontFamily: options.fontFamily,
+    fontSize: options.fontSize,
+    fontWeight: options.fontWeight,
+    fontWeightBold: options.fontWeightBold,
+    allowTransparency: options.allowTransparency,
+    drawBoldTextInBrightColors: options.drawBoldTextInBrightColors,
+    minimumContrastRatio: options.minimumContrastRatio,
     colors: clonedColors
   };
 }

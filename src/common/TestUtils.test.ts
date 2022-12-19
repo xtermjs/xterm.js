@@ -95,6 +95,7 @@ export class MockCoreService implements ICoreService {
   public onData: IEvent<string> = new EventEmitter<string>().event;
   public onUserInput: IEvent<void> = new EventEmitter<void>().event;
   public onBinary: IEvent<string> = new EventEmitter<string>().event;
+  public onRequestScrollToBottom: IEvent<void> = new EventEmitter<void>().event;
   public reset(): void { }
   public triggerDataEvent(data: string, wasUserInput?: boolean): void { }
   public triggerBinaryEvent(data: string): void { }

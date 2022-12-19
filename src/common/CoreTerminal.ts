@@ -109,7 +109,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IBufferService, this._bufferService);
     this._logService = this.register(this._instantiationService.createInstance(LogService));
     this._instantiationService.setService(ILogService, this._logService);
-    this.coreService = this.register(this._instantiationService.createInstance(CoreService, () => this.scrollToBottom()));
+    this.coreService = this.register(this._instantiationService.createInstance(CoreService));
     this._instantiationService.setService(ICoreService, this.coreService);
     this.coreMouseService = this.register(this._instantiationService.createInstance(CoreMouseService));
     this._instantiationService.setService(ICoreMouseService, this.coreMouseService);
@@ -129,6 +129,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._bufferService.onResize, this._onResize));
     this.register(forwardEvent(this.coreService.onData, this._onData));
     this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
+    this.register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom()));
     this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
     this.register(this.optionsService.onSpecificOptionChange('windowsMode', e => this._handleWindowsModeOptionChange(e)));
     this.register(this._bufferService.onScroll(event => {

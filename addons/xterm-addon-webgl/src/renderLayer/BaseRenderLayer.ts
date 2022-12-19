@@ -13,6 +13,7 @@ import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types'
 import { CellData } from 'common/buffer/CellData';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { IOptionsService } from 'common/services/Services';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -33,6 +34,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     zIndex: number,
     private _alpha: boolean,
     protected readonly _coreBrowserService: ICoreBrowserService,
+    protected readonly _optionsService: IOptionsService,
     protected readonly _themeService: IThemeService
   ) {
     super();
@@ -93,7 +95,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     if (this._deviceCharWidth <= 0 && this._deviceCharHeight <= 0) {
       return;
     }
-    this._charAtlas = acquireTextureAtlas(terminal, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
+    this._charAtlas = acquireTextureAtlas(terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
     this._charAtlas.warmUp();
   }
 

@@ -129,9 +129,14 @@ declare module 'xterm' {
 
     /**
      * The handler for OSC 8 hyperlinks. Links will use the `confirm` browser
-     * API if no link handler is set. Consider the security of users when using
-     * this, there should be some tooltip or prompt when hovering or activating
-     * the link.
+     * API with a strongly worded warning if no link handler is set.
+     *
+     * When setting this, consider the security of users opening these links,
+     * at a minimum there should be a tooltip or a prompt when hovering or
+     * activating the link respectively. An example of what might be possible is
+     * a terminal app writing link in the form `javascript:...` that runs some
+     * javascript, a safe approach to prevent that is to validate the link
+     * starts with http(s)://.
      */
     linkHandler?: ILinkHandler | null;
 
@@ -192,6 +197,12 @@ declare module 'xterm' {
      * viewport.
      */
     scrollback?: number;
+
+    /**
+     * Whether to scroll to the bottom whenever there is some user input. The
+     * default is true.
+     */
+    scrollOnUserInput?: boolean;
 
     /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
@@ -701,32 +712,40 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
-     * Gets or sets the terminal options. This supports setting multiple options.
+     * Gets or sets the terminal options. This supports setting multiple
+     * options.
      *
      * @example Get a single option
-     * ```typescript
+     * ```ts
      * console.log(terminal.options.fontSize);
      * ```
-     */
-    get options(): Required<ITerminalOptions>;
-
-    /**
-     * Gets or sets the terminal options. This supports setting multiple options.
      *
-     * @example Set a single option
-     * ```typescript
+     * @example Set a single option:
+     * ```ts
      * terminal.options.fontSize = 12;
+     * ```
+     * Note that for options that are object, a new object must be used in order
+     * to take effect as a reference comparison will be done:
+     * ```ts
+     * const newValue = terminal.options.theme;
+     * newValue.background = '#000000';
+     *
+     * // This won't work
+     * terminal.options.theme = newValue;
+     *
+     * // This will work
+     * terminal.options.theme = { ...newValue };
      * ```
      *
      * @example Set multiple options
-     * ```typescript
+     * ```ts
      * terminal.options = {
      *   fontSize: 12,
-     *   fontFamily: 'Arial',
+     *   fontFamily: 'Courier New'
      * };
      * ```
      */
-    set options(options: ITerminalOptions);
+    options: ITerminalOptions;
 
     /**
      * Natural language strings that can be localized.
@@ -1160,6 +1179,13 @@ declare module 'xterm' {
       * @param range The buffer range of the link.
       */
      leave?(event: MouseEvent, text: string, range: IBufferRange): void;
+    
+     /**
+      * Whether to receive non-HTTP URLs from LinkProvider. When false, any usage of non-HTTP URLs
+      * will be ignored. Enabling this option without proper protection in `activate` function
+      * may cause security issues such as XSS.
+      */
+     allowNonHttpProtocols?: boolean;
   }
 
   /**

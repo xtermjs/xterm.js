@@ -65,7 +65,7 @@ describe('InputHandler', () => {
     optionsService = new MockOptionsService();
     bufferService = new BufferService(optionsService);
     bufferService.resize(80, 30);
-    coreService = new CoreService(() => { }, bufferService, new MockLogService(), optionsService);
+    coreService = new CoreService(bufferService, new MockLogService(), optionsService);
 
     inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
   });
@@ -2300,7 +2300,7 @@ describe('InputHandler - async handlers', () => {
     optionsService = new MockOptionsService();
     bufferService = new BufferService(optionsService);
     bufferService.resize(80, 30);
-    coreService = new CoreService(() => { }, bufferService, new MockLogService(), optionsService);
+    coreService = new CoreService(bufferService, new MockLogService(), optionsService);
     coreService.onData(data => { console.log(data); });
 
     inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());

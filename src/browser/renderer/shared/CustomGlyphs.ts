@@ -362,15 +362,31 @@ export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL, leftPadding: 2 },
   // Left triangle line
   '\u{E0B3}': { d: 'M2,-.5 L0,.5 L2,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
-  // Right semi-circle solid,
+  // Right semi-circle solid
   '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.FILL, rightPadding: 1 },
-  // Right semi-circle line,
+  // Right semi-circle line
   '\u{E0B5}': { d: 'M0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.STROKE, rightPadding: 1 },
-  // Left semi-circle solid,
+  // Left semi-circle solid
   '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL, leftPadding: 1 },
-  // Left semi-circle line,
-  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, leftPadding: 1 }
+  // Left semi-circle line
+  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, leftPadding: 1 },
+  // Lower left triangle
+  '\u{E0B8}': { d: 'M-.5,-.5 L1.5,1.5 L-.5,1.5', type: VectorType.FILL },
+  // Backslash separator
+  '\u{E0B9}': { d: 'M-.5,-.5 L1.5,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
+  // Lower right triangle
+  '\u{E0BA}': { d: 'M1.5,-.5 L-.5,1.5 L1.5,1.5', type: VectorType.FILL },
+  // Upper left triangle
+  '\u{E0BC}': { d: 'M1.5,-.5 L-.5,1.5 L-.5,-.5', type: VectorType.FILL },
+  // Forward slash separator
+  '\u{E0BD}': { d: 'M1.5,-.5 L-.5,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
+  // Upper right triangle
+  '\u{E0BE}': { d: 'M-.5,-.5 L1.5,1.5 L1.5,-.5', type: VectorType.FILL }
 };
+// Backslash separator redundant
+powerlineDefinitions['\u{E0BB}'] = powerlineDefinitions['\u{E0B9}'];
+// Forward slash separator redundant
+powerlineDefinitions['\u{E0BF}'] = powerlineDefinitions['\u{E0BD}'];
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -584,6 +600,11 @@ function drawPowerlineChar(
   fontSize: number,
   devicePixelRatio: number
 ): void {
+  // Clip the cell to make sure drawing doesn't occur beyond bounds
+  const clipRegion = new Path2D();
+  clipRegion.rect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+  ctx.clip(clipRegion);
+
   ctx.beginPath();
   // Scale the stroke with DPR and font size
   const cssLineWidth = fontSize / 12;
@@ -606,6 +627,7 @@ function drawPowerlineChar(
       xOffset,
       yOffset,
       false,
+      devicePixelRatio,
       (charDefinition.leftPadding ?? 0) * (cssLineWidth / 2),
       (charDefinition.rightPadding ?? 0) * (cssLineWidth / 2)
     ));

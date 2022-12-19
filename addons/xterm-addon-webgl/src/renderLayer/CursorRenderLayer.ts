@@ -39,10 +39,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     private _onRequestRefreshRowsEvent: IEventEmitter<IRequestRedrawEvent>,
     coreBrowserService: ICoreBrowserService,
     private readonly _coreService: ICoreService,
-    themeService: IThemeService,
-    optionsService: IOptionsService
+    optionsService: IOptionsService,
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'cursor', zIndex, true, coreBrowserService, themeService);
+    super(terminal, container, 'cursor', zIndex, true, coreBrowserService, optionsService, themeService);
     this._state = {
       x: 0,
       y: 0,
@@ -213,7 +213,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBarCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._themeService.colors.cursor.css;
-    this._fillLeftLineAtCell(x, y, terminal.options.cursorWidth);
+    this._fillLeftLineAtCell(x, y, this._optionsService.rawOptions.cursorWidth);
     this._ctx.restore();
   }
 

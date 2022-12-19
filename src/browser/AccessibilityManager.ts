@@ -246,7 +246,10 @@ export class AccessibilityManager extends Disposable {
 
   private _handleKey(keyChar: string): void {
     this._clearLiveRegion();
-    this._charsToConsume.push(keyChar);
+    // Only add the char if there is no control character.
+    if (!/\p{Control}/u.test(keyChar)) {
+      this._charsToConsume.push(keyChar);
+    }
   }
 
   private _refreshRows(start?: number, end?: number): void {
@@ -277,6 +280,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._renderService.dimensions.css.cell.height) {
       return;
     }
+    this._accessibilityTreeRoot.style.width = `${this._renderService.dimensions.css.canvas.width}px`;
     if (this._rowElements.length !== this._terminal.rows) {
       this._handleResize(this._terminal.rows);
     }

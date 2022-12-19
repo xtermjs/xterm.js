@@ -40,8 +40,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer!: RectangleRenderer;
-  private _glyphRenderer!: GlyphRenderer;
+  private _rectangleRenderer: RectangleRenderer;
+  private _glyphRenderer: GlyphRenderer;
 
   public readonly dimensions: IRenderDimensions;
 
@@ -67,7 +67,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _coreBrowserService: ICoreBrowserService,
     coreService: ICoreService,
     private readonly _decorationService: IDecorationService,
-    optionsService: IOptionsService,
+    private readonly _optionsService: IOptionsService,
     private readonly _themeService: IThemeService,
     preserveDrawingBuffer?: boolean
   ) {
@@ -80,13 +80,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, this._themeService),
-      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, this._themeService, optionsService)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, _optionsService, this._themeService),
+      new CursorRenderLayer(_terminal, this._core.screenElement!, 3, this._onRequestRedraw, this._coreBrowserService, coreService, _optionsService, this._themeService)
     ];
     this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
-    this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this.register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
     this._canvas = document.createElement('canvas');
 
@@ -127,7 +127,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._initializeWebGLState();
+    [this._rectangleRenderer, this._glyphRenderer] = this._initializeWebGLState();
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
 
@@ -235,7 +235,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   /**
    * Initializes members dependent on WebGL context state.
    */
-  private _initializeWebGLState(): void {
+  private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
     // Dispose any previous rectangle and glyph renderers before creating new ones.
     this._rectangleRenderer?.dispose();
     this._glyphRenderer?.dispose();
@@ -245,6 +245,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
+
+    return [this._rectangleRenderer, this._glyphRenderer];
   }
 
   /**
@@ -259,6 +261,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     const atlas = acquireTextureAtlas(
       this._terminal,
+      this._optionsService.rawOptions,
       this._themeService.colors,
       this.dimensions.device.cell.width,
       this.dimensions.device.cell.height,
@@ -267,7 +270,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._coreBrowserService.dpr
     );
     if (this._charAtlas !== atlas) {
-
       this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
       this._charAtlasDisposable = getDisposeArrayDisposable([
@@ -350,7 +352,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let lastBg: number;
     let y: number;
     let row: number;
-    let line: IBufferLine;
+    let line: IBufferLine | undefined;
     let joinedRanges: [number, number][];
     let isJoined: boolean;
     let lastCharX: number;
@@ -363,7 +365,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
-      line = terminal.buffer.lines.get(row)!;
+      line = terminal.buffer.lines.get(row);
+      if (!line) {
+        break;
+      }
       this._model.lineLengths[y] = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (x = 0; x < terminal.cols; x++) {
@@ -469,18 +474,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
     // floored since lineHeight can never be lower then 1, this guarentees the device cell height
     // will always be larger than device char height.
-    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._terminal.options.lineHeight);
+    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
 
     // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
     // correctly within the cell.
-    this.dimensions.device.char.top = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
+    this.dimensions.device.char.top = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
 
     // Calculate the device cell width, taking the letterSpacing into account.
-    this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._terminal.options.letterSpacing);
+    this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
 
     // Calculate the x offset with a cell that text should draw from in order for it to be centered
     // correctly within the cell.
-    this.dimensions.device.char.left = Math.floor(this._terminal.options.letterSpacing / 2);
+    this.dimensions.device.char.left = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
 
     // Recalculate the canvas dimensions, the device dimensions define the actual number of pixel in
     // the canvas

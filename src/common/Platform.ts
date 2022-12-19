@@ -39,3 +39,5 @@ export const isIpad = platform === 'iPad';
 export const isIphone = platform === 'iPhone';
 export const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].includes(platform);
 export const isLinux = platform.indexOf('Linux') >= 0;
+// Note that when this is true, isLinux will also be true.
+export const isChromeOS = /\bCrOS\b/.test(userAgent);
