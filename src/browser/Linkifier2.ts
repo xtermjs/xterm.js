@@ -309,8 +309,8 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
         }
       });
 
-      // Listen to viewport changes re-render the link under the cursor when the viewport line
-      // changes
+      // Listen to viewport changes to re-render the link under the cursor (only when the line the
+      // link is on changes)
       if (this._renderService) {
         this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
           // Sanity check, this shouldn't happen in practice as this listener would be disposed
