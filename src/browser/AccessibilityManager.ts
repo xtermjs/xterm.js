@@ -27,6 +27,7 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
+  private _fullOutputElement: HTMLElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -54,7 +55,7 @@ export class AccessibilityManager extends Disposable {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
-    this._accessibilityTreeRoot.tabIndex = 0;
+    // this._accessibilityTreeRoot.tabIndex = 0;
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
@@ -85,6 +86,15 @@ export class AccessibilityManager extends Disposable {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
+
+    this._fullOutputElement = document.createElement('section');
+    // TODO: Add to strings
+    this._fullOutputElement.ariaLabel = 'Terminal buffer';
+    this._fullOutputElement.contentEditable = 'true';
+    this._fullOutputElement.spellcheck = false;
+    this._fullOutputElement.classList.add('xterm-accessibility-full-output');
+    this._fullOutputElement.addEventListener('focus', () => this._refreshFullOutput());
+    this._terminal.element.insertAdjacentElement('afterbegin', this._fullOutputElement);
 
     this.register(this._renderRowsDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
@@ -299,5 +309,41 @@ export class AccessibilityManager extends Disposable {
     }
     this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
+  }
+
+  private _refreshFullOutput(): void {
+    const outputLines: HTMLElement[] = [];
+    let currentLine: string = '';
+    for (let i = 0; i < this._terminal.buffer.lines.length; i++) {
+      const line = this._terminal.buffer.lines.get(i);
+      if (!line) {
+        continue;
+      }
+      // TODO: Something weird going on with wrappped lines, maybe a Windows or demo poblem?
+      const isWrapped = this._terminal.buffer.lines.get(i + 1)?.isWrapped;
+      currentLine += line.translateToString(!isWrapped);
+      if (!isWrapped || i === this._terminal.buffer.lines.length - 1) {
+        const div = document.createElement('div');
+        div.textContent = currentLine;
+        outputLines.push(div);
+        currentLine = '';
+      }
+    }
+    while (this._fullOutputElement.children.length > 0) {
+      this._fullOutputElement.removeChild(this._fullOutputElement.children[0]);
+    }
+    this._fullOutputElement.append(...outputLines);
+    // TODO: Set selection cursor to terminal cursor position
+    const s = document.getSelection();
+    if (s) {
+      s.removeAllRanges();
+      const r = document.createRange();
+      const lastElement = outputLines[outputLines.length - 1];
+      r.selectNode(outputLines[outputLines.length - 1]);
+      r.setStart(lastElement, 0);
+      r.setEnd(lastElement, 0);
+      s.addRange(r);
+    }
+    // TODO: Delegate API for translating lines into elements
   }
 }

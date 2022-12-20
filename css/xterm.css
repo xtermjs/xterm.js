@@ -150,6 +150,22 @@
     color: transparent;
 }
 
+.xterm .xterm-accessibility-full-output {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    padding: .5em;
+    background: #000;
+    color: #fff;
+    opacity: 0;
+}
+.xterm .xterm-accessibility-full-output:focus {
+    opacity: 1;
+    z-index: 20;
+}
+
 .xterm .live-region {
     position: absolute;
     left: -9999px;
