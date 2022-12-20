@@ -89,7 +89,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
-    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
+    // this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this._fullOutputElement = document.createElement('section');
     // TODO: Add to strings
@@ -324,7 +324,10 @@ export class AccessibilityManager extends Disposable {
     const outputLines: HTMLElement[] = [];
     let currentLine: string = '';
     let lastContentfulElement: HTMLElement | undefined;
-    for (let i = 0; i < this._terminal.buffer.lines.length; i++) {
+    // Cap the number of items in full output, without this screen reader can easily lock up for 20+
+    // seconds, probably due to refreshing their a11y tree
+    const start = Math.max(this._terminal.buffer.lines.length - 100, 0);
+    for (let i = start; i < this._terminal.buffer.lines.length; i++) {
       const line = this._terminal.buffer.lines.get(i);
       if (!line) {
         continue;
@@ -341,10 +344,7 @@ export class AccessibilityManager extends Disposable {
         currentLine = '';
       }
     }
-    while (this._fullOutputElement.children.length > 0) {
-      this._fullOutputElement.removeChild(this._fullOutputElement.children[0]);
-    }
-    this._fullOutputElement.append(...outputLines);
+    this._fullOutputElement.replaceChildren(...outputLines);
     const s = document.getSelection();
     if (s && lastContentfulElement) {
       s.removeAllRanges();
@@ -354,6 +354,7 @@ export class AccessibilityManager extends Disposable {
       r.setEnd(lastContentfulElement, 0);
       s.addRange(r);
     }
+    this._fullOutputElement.scrollTop = this._fullOutputElement.scrollHeight;
     // TODO: Delegate API for translating lines into elements
   }
 
