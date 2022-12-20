@@ -314,6 +314,7 @@ export class AccessibilityManager extends Disposable {
   private _refreshFullOutput(): void {
     const outputLines: HTMLElement[] = [];
     let currentLine: string = '';
+    let lastContentfulElement: HTMLElement | undefined;
     for (let i = 0; i < this._terminal.buffer.lines.length; i++) {
       const line = this._terminal.buffer.lines.get(i);
       if (!line) {
@@ -326,6 +327,9 @@ export class AccessibilityManager extends Disposable {
         const div = document.createElement('div');
         div.textContent = currentLine;
         outputLines.push(div);
+        if (currentLine.length > 0) {
+          lastContentfulElement = div;
+        }
         currentLine = '';
       }
     }
@@ -333,15 +337,13 @@ export class AccessibilityManager extends Disposable {
       this._fullOutputElement.removeChild(this._fullOutputElement.children[0]);
     }
     this._fullOutputElement.append(...outputLines);
-    // TODO: Set selection cursor to terminal cursor position
     const s = document.getSelection();
-    if (s) {
+    if (s && lastContentfulElement) {
       s.removeAllRanges();
       const r = document.createRange();
-      const lastElement = outputLines[outputLines.length - 1];
       r.selectNode(outputLines[outputLines.length - 1]);
-      r.setStart(lastElement, 0);
-      r.setEnd(lastElement, 0);
+      r.setStart(lastContentfulElement, 0);
+      r.setEnd(lastContentfulElement, 0);
       s.addRange(r);
     }
     // TODO: Delegate API for translating lines into elements
