@@ -267,7 +267,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _handleScreenReaderModeOptionChange(value: boolean): void {
     if (value) {
       if (!this._accessibilityManager && this._renderService) {
-        this._accessibilityManager = new AccessibilityManager(this, this._renderService);
+        this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
       }
     } else {
       this._accessibilityManager?.dispose();
@@ -553,7 +553,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = new AccessibilityManager(this, this._renderService);
+      this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
     }
     this.register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 

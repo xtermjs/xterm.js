@@ -4,15 +4,17 @@
  */
 
 import * as Strings from 'browser/LocalizableStrings';
-import { ITerminal, IRenderDebouncer } from 'browser/Types';
+import { ITerminal, IRenderDebouncer, ReadonlyColorSet } from 'browser/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
-import { IRenderService } from 'browser/services/Services';
+import { IRenderService, IThemeService } from 'browser/services/Services';
 import { removeElementFromParent } from 'browser/Dom';
+import { IOptionsService } from 'common/services/Services';
+import { ITerminalOptions } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -50,7 +52,9 @@ export class AccessibilityManager extends Disposable {
 
   constructor(
     private readonly _terminal: ITerminal,
-    private readonly _renderService: IRenderService
+    @IOptionsService optionsService: IOptionsService,
+    @IRenderService private readonly _renderService: IRenderService,
+    @IThemeService themeService: IThemeService
   ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
@@ -107,6 +111,11 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
+
+    this._handleColorChange(themeService.colors);
+    this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
+    this._handleFontOptionChange(optionsService.options);
+    this.register(optionsService.onMultipleOptionChange(['fontSize', 'fontFamily'], () => this._handleFontOptionChange(optionsService.options)));
 
     this._screenDprMonitor = new ScreenDprMonitor(window);
     this.register(this._screenDprMonitor);
@@ -320,7 +329,6 @@ export class AccessibilityManager extends Disposable {
       if (!line) {
         continue;
       }
-      // TODO: Something weird going on with wrappped lines, maybe a Windows or demo poblem?
       const isWrapped = this._terminal.buffer.lines.get(i + 1)?.isWrapped;
       currentLine += line.translateToString(!isWrapped);
       if (!isWrapped || i === this._terminal.buffer.lines.length - 1) {
@@ -347,5 +355,15 @@ export class AccessibilityManager extends Disposable {
       s.addRange(r);
     }
     // TODO: Delegate API for translating lines into elements
+  }
+
+  private _handleColorChange(colorSet: ReadonlyColorSet): void {
+    this._fullOutputElement.style.backgroundColor = colorSet.background.css;
+    this._fullOutputElement.style.color = colorSet.foreground.css;
+  }
+
+  private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
+    this._fullOutputElement.style.fontFamily = options.fontFamily;
+    this._fullOutputElement.style.fontSize = `${options.fontSize}px`;
   }
 }
