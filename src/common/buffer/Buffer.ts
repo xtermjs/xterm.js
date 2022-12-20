@@ -4,7 +4,7 @@
  */
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
-import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from 'common/buffer/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICharset } from 'common/Types';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
@@ -14,7 +14,7 @@ import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { DebouncedIdleTask, IdleTaskQueue } from 'common/TaskQueue';
+import { IdleTaskQueue } from 'common/TaskQueue';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -510,43 +510,6 @@ export class Buffer implements IBuffer {
     }
   }
 
-  // private _reflowSmallerGetLinesNeeded()
-
-  /**
-   * Translates a string index back to a BufferIndex.
-   * To get the correct buffer position the string must start at `startCol` 0
-   * (default in translateBufferLineToString).
-   * The method also works on wrapped line strings given rows were not trimmed.
-   * The method operates on the CharData string length, there are no
-   * additional content or boundary checks. Therefore the string and the buffer
-   * should not be altered in between.
-   * TODO: respect trim flag after fixing #1685
-   * @param lineIndex line index the string was retrieved from
-   * @param stringIndex index within the string
-   * @param trimRight Whether to trim whitespace to the right.
-   */
-  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
-    while (stringIndex) {
-      const line = this.lines.get(lineIndex);
-      if (!line) {
-        return [-1, -1];
-      }
-      const length = (trimRight) ? line.getTrimmedLength() : line.length;
-      for (let i = 0; i < length; ++i) {
-        if (line.get(i)[CHAR_DATA_WIDTH_INDEX]) {
-          // empty cells report a string length of 0, but get replaced
-          // with a whitespace in translateToString, thus replace with 1
-          stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length || 1;
-        }
-        if (stringIndex < 0) {
-          return [lineIndex, i];
-        }
-      }
-      lineIndex++;
-    }
-    return [lineIndex, 0];
-  }
-
   /**
    * Translates a buffer line to a string, with optional start and end columns.
    * Wide characters will count as two columns in the resulting string. This
@@ -683,66 +646,5 @@ export class Buffer implements IBuffer {
     if (!this._isClearing) {
       this.markers.splice(this.markers.indexOf(marker), 1);
     }
-  }
-
-  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator {
-    return new BufferStringIterator(this, trimRight, startIndex, endIndex, startOverscan, endOverscan);
-  }
-}
-
-/**
- * Iterator to get unwrapped content strings from the buffer.
- * The iterator returns at least the string data between the borders
- * `startIndex` and `endIndex` (exclusive) and will expand the lines
- * by `startOverscan` to the top and by `endOverscan` to the bottom,
- * if no new line was found in between.
- * It will never read/return string data beyond `startIndex - startOverscan`
- * or `endIndex + endOverscan`. Therefore the first and last line might be truncated.
- * It is possible to always get the full string for the first and last line as well
- * by setting the overscan values to the actual buffer length. This not recommended
- * since it might return the whole buffer within a single string in a worst case scenario.
- */
-export class BufferStringIterator implements IBufferStringIterator {
-  private _current: number;
-
-  constructor(
-    private _buffer: IBuffer,
-    private _trimRight: boolean,
-    private _startIndex: number = 0,
-    private _endIndex: number = _buffer.lines.length,
-    private _startOverscan: number = 0,
-    private _endOverscan: number = 0
-  ) {
-    if (this._startIndex < 0) {
-      this._startIndex = 0;
-    }
-    if (this._endIndex > this._buffer.lines.length) {
-      this._endIndex = this._buffer.lines.length;
-    }
-    this._current = this._startIndex;
-  }
-
-  public hasNext(): boolean {
-    return this._current < this._endIndex;
-  }
-
-  public next(): IBufferStringIteratorResult {
-    const range = this._buffer.getWrappedRangeForLine(this._current);
-    // limit search window to overscan value at both borders
-    if (range.first < this._startIndex - this._startOverscan) {
-      range.first = this._startIndex - this._startOverscan;
-    }
-    if (range.last > this._endIndex + this._endOverscan) {
-      range.last = this._endIndex + this._endOverscan;
-    }
-    // limit to current buffer length
-    range.first = Math.max(range.first, 0);
-    range.last = Math.min(range.last, this._buffer.lines.length);
-    let content = '';
-    for (let i = range.first; i <= range.last; ++i) {
-      content += this._buffer.translateBufferLineToString(i, this._trimRight);
-    }
-    this._current = range.last + 1;
-    return { range, content };
   }
 }

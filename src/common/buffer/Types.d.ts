@@ -9,16 +9,6 @@ import { IEvent } from 'common/EventEmitter';
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];
 
-export interface IBufferStringIteratorResult {
-  range: { first: number, last: number };
-  content: string;
-}
-
-export interface IBufferStringIterator {
-  hasNext(): boolean;
-  next(): IBufferStringIteratorResult;
-}
-
 export interface IBuffer {
   readonly lines: ICircularList<IBufferLine>;
   ydisp: number;
@@ -40,8 +30,6 @@ export interface IBuffer {
   nextStop(x?: number): number;
   prevStop(x?: number): number;
   getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
-  stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight?: boolean): number[];
-  iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
   addMarker(y: number): IMarker;
