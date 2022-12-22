@@ -152,6 +152,14 @@ export class RenderService extends Disposable implements IRenderService {
     if (!this._renderer) {
       return;
     }
+
+    // Since this is debounced, a resize event could have happened between the time a refresh was
+    // requested and when this triggers. Clamp the values of start and end to ensure they're valid
+    // given the current viewport state.
+    start = Math.min(start, this._rowCount - 1);
+    end = Math.min(end, this._rowCount - 1);
+
+    // Render
     this._renderer.renderRows(start, end);
 
     // Update selection if needed

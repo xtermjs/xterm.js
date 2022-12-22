@@ -352,7 +352,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let lastBg: number;
     let y: number;
     let row: number;
-    let line: IBufferLine | undefined;
+    let line: IBufferLine;
     let joinedRanges: [number, number][];
     let isJoined: boolean;
     let lastCharX: number;
@@ -365,10 +365,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
-      line = terminal.buffer.lines.get(row);
-      if (!line) {
-        break;
-      }
+      line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (x = 0; x < terminal.cols; x++) {
