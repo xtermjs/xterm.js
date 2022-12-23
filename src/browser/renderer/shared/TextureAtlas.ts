@@ -587,7 +587,7 @@ export class TextureAtlas implements ITextureAtlas {
             );
             break;
           case UnderlineStyle.DOTTED:
-            this._tmpCtx.setLineDash([this._config.devicePixelRatio * 2, this._config.devicePixelRatio]);
+            this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
             this._tmpCtx.moveTo(xChLeft, yTop);
             this._tmpCtx.lineTo(xChRight, yTop);
             break;
