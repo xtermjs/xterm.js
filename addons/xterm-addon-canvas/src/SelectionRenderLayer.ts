@@ -5,7 +5,6 @@
 
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Terminal } from 'xterm';
@@ -48,6 +47,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // On resize use the base render layer's cached selection values since resize clears _state
     // inside reset.
     if (this._selectionModel.selectionStart && this._selectionModel.selectionEnd) {
+      this._clearState();
       this._redrawSelection(this._selectionModel.selectionStart, this._selectionModel.selectionEnd, this._selectionModel.columnSelectMode);
     }
   }

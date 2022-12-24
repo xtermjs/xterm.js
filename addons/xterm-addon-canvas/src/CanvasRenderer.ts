@@ -7,7 +7,7 @@ import { removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache'
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2 } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
