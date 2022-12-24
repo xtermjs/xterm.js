@@ -69,6 +69,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this.register(this._themeService.onChangeColors(e => {
       this._refreshCharAtlas(e);
       this.reset();
+      // Trigger selection changed as it's handled separately to regular rendering
+      this.handleSelectionChanged(this._selectionModel.selectionStart, this._selectionModel.selectionEnd, this._selectionModel.columnSelectMode);
     }));
 
     this.register(toDisposable(() => {
