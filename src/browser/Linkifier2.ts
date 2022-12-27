@@ -23,6 +23,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
   private _isMouseOut: boolean = true;
+  private _wasResized: boolean = false;
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
 
@@ -38,6 +39,11 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
     this.register(toDisposable(() => {
       this._lastMouseEvent = undefined;
+    }));
+    // Listen to resize to catch the case where it's resized and the cursor is out of the viewport.
+    this.register(this._bufferService.onResize(() => {
+      this._clearCurrentLink();
+      this._wasResized = true;
     }));
   }
 
@@ -105,9 +111,10 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _handleHover(position: IBufferCellPosition): void {
     // TODO: This currently does not cache link provider results across wrapped lines, activeLine should be something like `activeRange: {startY, endY}`
     // Check if we need to clear the link
-    if (this._activeLine !== position.y) {
+    if (this._activeLine !== position.y || this._wasResized) {
       this._clearCurrentLink();
       this._askForLink(position, false);
+      this._wasResized = false;
       return;
     }
 
