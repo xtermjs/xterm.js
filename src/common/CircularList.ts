@@ -4,7 +4,7 @@
  */
 
 import { ICircularList } from 'common/Types';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 
 export interface IInsertEvent {
