@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { removeElementFromParent } from 'browser/Dom';
 import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
@@ -74,7 +73,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     }));
 
     this.register(toDisposable(() => {
-      removeElementFromParent(this._canvas);
+      this._canvas.remove();
       this._charAtlas?.dispose();
     }));
   }
