@@ -79,9 +79,8 @@ class DomMeasureStrategy implements IMeasureStrategy {
     // Note that this triggers a synchronous layout
     const geometry = {
       height: Number(this._measureElement.offsetHeight),
-      width: Number(this._measureElement.offsetWidth),
-    }
-    
+      width: Number(this._measureElement.offsetWidth)
+    };
 
     // If values are 0 then the element is likely currently display:none, in which case we should
     // retain the previous value.
