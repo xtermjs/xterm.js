@@ -12,7 +12,6 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { IRenderService, IThemeService } from 'browser/services/Services';
-import { removeElementFromParent } from 'browser/Dom';
 import { IOptionsService } from 'common/services/Services';
 import { ITerminalOptions } from 'xterm';
 
