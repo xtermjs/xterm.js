@@ -327,15 +327,15 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.viewport) {
       return;
     }
-    const { bufferElements, lastContentfulElement } = this._terminal.viewport.getBufferElements(start);
+    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(start);
     this._fullOutputElement.replaceChildren(...bufferElements);
     const s = document.getSelection();
-    if (s && lastContentfulElement) {
+    if (s && cursorElement) {
       s.removeAllRanges();
       const r = document.createRange();
       r.selectNode(bufferElements[bufferElements.length - 1]);
-      r.setStart(lastContentfulElement, 0);
-      r.setEnd(lastContentfulElement, 0);
+      r.setStart(cursorElement, 0);
+      r.setEnd(cursorElement, 0);
       s.addRange(r);
     }
     this._fullOutputElement.scrollTop = this._fullOutputElement.scrollHeight;

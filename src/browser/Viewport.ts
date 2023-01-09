@@ -280,9 +280,9 @@ export class Viewport extends Disposable implements IViewport {
   }
 
 
-  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; lastContentfulElement?: HTMLElement } {
+  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement } {
     let currentLine: string = '';
-    let lastContentfulElement: HTMLElement | undefined;
+    let cursorElement: HTMLElement | undefined;
     const bufferElements: HTMLElement[] = [];
     const end = endLine ?? this._bufferService.buffer.lines.length;
     const lines = this._bufferService.buffer.lines;
@@ -298,12 +298,12 @@ export class Viewport extends Disposable implements IViewport {
         div.textContent = currentLine;
         bufferElements.push(div);
         if (currentLine.length > 0) {
-          lastContentfulElement = div;
+          cursorElement = div;
         }
         currentLine = '';
       }
     }
-    return { bufferElements, lastContentfulElement };
+    return { bufferElements, cursorElement };
   }
 
   /**

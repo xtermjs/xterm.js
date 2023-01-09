@@ -220,7 +220,7 @@ export class Terminal implements ITerminalApi {
     this._core.write(data);
     this._core.write('\r\n', callback);
   }
-  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; lastContentfulElement?: HTMLElement } {
+  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement } {
     if (!this._core.viewport) {
       throw new Error('No viewport, cannot get buffer elements');
     }
