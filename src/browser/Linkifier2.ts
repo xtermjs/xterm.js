@@ -23,6 +23,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
   private _isMouseOut: boolean = true;
+  private _wasResized: boolean = false;
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
 
@@ -38,6 +39,11 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
     this.register(toDisposable(() => {
       this._lastMouseEvent = undefined;
+    }));
+    // Listen to resize to catch the case where it's resized and the cursor is out of the viewport.
+    this.register(this._bufferService.onResize(() => {
+      this._clearCurrentLink();
+      this._wasResized = true;
     }));
   }
 
@@ -105,9 +111,10 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _handleHover(position: IBufferCellPosition): void {
     // TODO: This currently does not cache link provider results across wrapped lines, activeLine should be something like `activeRange: {startY, endY}`
     // Check if we need to clear the link
-    if (this._activeLine !== position.y) {
+    if (this._activeLine !== position.y || this._wasResized) {
       this._clearCurrentLink();
       this._askForLink(position, false);
+      this._wasResized = false;
       return;
     }
 
@@ -309,19 +316,27 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
         }
       });
 
-      // Add listener for rerendering
+      // Listen to viewport changes to re-render the link under the cursor (only when the line the
+      // link is on changes)
       if (this._renderService) {
         this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
+          // Sanity check, this shouldn't happen in practice as this listener would be disposed
+          if (!this._currentLink) {
+            return;
+          }
           // When start is 0 a scroll most likely occurred, make sure links above the fold also get
           // cleared.
           const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
-          const oldEvent = this._currentLink ? this._lastMouseEvent : undefined;
-          this._clearCurrentLink(start, e.end + 1 + this._bufferService.buffer.ydisp);
-          if (oldEvent && this._element) {
-            // re-eval previously active link after changes
-            const position = this._positionFromMouseEvent(oldEvent, this._element, this._mouseService!);
-            if (position) {
-              this._askForLink(position, false);
+          const end = this._bufferService.buffer.ydisp + 1 + e.end;
+          // Only clear the link if the viewport change happened on this line
+          if (this._currentLink.link.range.start.y >= start && this._currentLink.link.range.end.y <= end) {
+            this._clearCurrentLink(start, end);
+            if (this._lastMouseEvent && this._element) {
+              // re-eval previously active link after changes
+              const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element, this._mouseService!);
+              if (position) {
+                this._askForLink(position, false);
+              }
             }
           }
         }));

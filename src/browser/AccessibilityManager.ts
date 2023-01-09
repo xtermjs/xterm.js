@@ -124,7 +124,7 @@ export class AccessibilityManager extends Disposable {
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
     this.register(toDisposable(() => {
-      removeElementFromParent(this._accessibilityTreeRoot);
+      this._accessibilityTreeRoot.remove();
       this._rowElements.length = 0;
     }));
   }
@@ -259,7 +259,7 @@ export class AccessibilityManager extends Disposable {
 
     // Only detach/attach on mac as otherwise messages can go unaccounced
     if (isMac) {
-      removeElementFromParent(this._liveRegion);
+      this._liveRegion.remove();
     }
   }
 

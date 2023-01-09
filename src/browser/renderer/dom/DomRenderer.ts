@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { removeElementFromParent } from 'browser/Dom';
 import { BOLD_CLASS, CURSOR_BLINK_CLASS, CURSOR_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory, ITALIC_CLASS } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
@@ -87,7 +86,10 @@ export class DomRenderer extends Disposable implements IRenderer {
 
       // Outside influences such as React unmounts may manipulate the DOM before our disposal.
       // https://github.com/xtermjs/xterm.js/issues/2960
-      removeElementFromParent(this._rowContainer, this._selectionContainer, this._themeStyleElement, this._dimensionsStyleElement);
+      this._rowContainer.remove();
+      this._selectionContainer.remove();
+      this._themeStyleElement.remove();
+      this._dimensionsStyleElement.remove();
     }));
   }
 

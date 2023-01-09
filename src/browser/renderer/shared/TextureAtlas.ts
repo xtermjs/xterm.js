@@ -587,7 +587,7 @@ export class TextureAtlas implements ITextureAtlas {
             );
             break;
           case UnderlineStyle.DOTTED:
-            this._tmpCtx.setLineDash([this._config.devicePixelRatio * 2, this._config.devicePixelRatio]);
+            this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
             this._tmpCtx.moveTo(xChLeft, yTop);
             this._tmpCtx.lineTo(xChRight, yTop);
             break;
@@ -627,7 +627,7 @@ export class TextureAtlas implements ITextureAtlas {
             // outline around the whole glyph, as well as additional pixels in the glyph at the top
             // which would increase GPU memory demands
             const clipRegion = new Path2D();
-            clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.deviceCellWidth, yBot - yTop + Math.ceil(lineWidth / 2));
+            clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.deviceCellWidth * chWidth, yBot - yTop + Math.ceil(lineWidth / 2));
             this._tmpCtx.clip(clipRegion);
             this._tmpCtx.lineWidth = this._config.devicePixelRatio * 3;
             this._tmpCtx.strokeStyle = backgroundColor.css;

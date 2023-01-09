@@ -214,6 +214,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**web3os**](https://web3os.sh): A decentralized operating system for the next web
 - [**Cratecode**](https://cratecode.com): Learn to program for free through interactive online lessons. Cratecode uses xterm.js to give users access to their own Linux environment.
 - [**Super Terminal**](https://github.com/bugwheels94/super-terminal): It is a http based terminal for developers who dont like repetition and save time.
+- [**graSSHopper**](https://grasshopper.coding.kiwi): A simple SSH client with file explorer, history and many more features.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.

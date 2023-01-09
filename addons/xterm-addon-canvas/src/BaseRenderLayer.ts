@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { removeElementFromParent } from 'browser/Dom';
 import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
@@ -69,10 +68,12 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this.register(this._themeService.onChangeColors(e => {
       this._refreshCharAtlas(e);
       this.reset();
+      // Trigger selection changed as it's handled separately to regular rendering
+      this.handleSelectionChanged(this._selectionModel.selectionStart, this._selectionModel.selectionEnd, this._selectionModel.columnSelectMode);
     }));
 
     this.register(toDisposable(() => {
-      removeElementFromParent(this._canvas);
+      this._canvas.remove();
       this._charAtlas?.dispose();
     }));
   }
