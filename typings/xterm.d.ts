@@ -1103,6 +1103,13 @@ declare module 'xterm' {
      * @param addon The addon to load.
      */
     loadAddon(addon: ITerminalAddon): void;
+
+    /**
+     * Gets the HTML elements associated with buffer lines and the last element with content
+     * @param startLine the line at which to start
+     * @param endLine the line at which to end or the buffer length if not provided
+     */
+    getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; lastContentfulElement?: HTMLElement };
   }
 
   /**

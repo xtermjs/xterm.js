@@ -319,42 +319,26 @@ export class AccessibilityManager extends Disposable {
     this._charsToAnnounce = '';
   }
 
+
   private _refreshFullOutput(): void {
-    const outputLines: HTMLElement[] = [];
-    let currentLine: string = '';
-    let lastContentfulElement: HTMLElement | undefined;
     // Cap the number of items in full output, without this screen reader can easily lock up for 20+
     // seconds, probably due to refreshing their a11y tree
     const start = Math.max(this._terminal.buffer.lines.length - 100, 0);
-    for (let i = start; i < this._terminal.buffer.lines.length; i++) {
-      const line = this._terminal.buffer.lines.get(i);
-      if (!line) {
-        continue;
-      }
-      const isWrapped = this._terminal.buffer.lines.get(i + 1)?.isWrapped;
-      currentLine += line.translateToString(!isWrapped);
-      if (!isWrapped || i === this._terminal.buffer.lines.length - 1) {
-        const div = document.createElement('div');
-        div.textContent = currentLine;
-        outputLines.push(div);
-        if (currentLine.length > 0) {
-          lastContentfulElement = div;
-        }
-        currentLine = '';
-      }
+    if (!this._terminal.viewport) {
+      return;
     }
-    this._fullOutputElement.replaceChildren(...outputLines);
+    const { bufferElements, lastContentfulElement } = this._terminal.viewport.getBufferElements(start);
+    this._fullOutputElement.replaceChildren(...bufferElements);
     const s = document.getSelection();
     if (s && lastContentfulElement) {
       s.removeAllRanges();
       const r = document.createRange();
-      r.selectNode(outputLines[outputLines.length - 1]);
+      r.selectNode(bufferElements[bufferElements.length - 1]);
       r.setStart(lastContentfulElement, 0);
       r.setEnd(lastContentfulElement, 0);
       s.addRange(r);
     }
     this._fullOutputElement.scrollTop = this._fullOutputElement.scrollHeight;
-    // TODO: Delegate API for translating lines into elements
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
