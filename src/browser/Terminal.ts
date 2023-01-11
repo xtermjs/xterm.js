@@ -967,6 +967,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     };
   }
 
+  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement } {
+    if (!this.viewport) {
+      throw new Error('No viewport, cannot get buffer elements');
+    }
+    return this.viewport.getBufferElements(startLine, endLine);
+  }
+
   /**
    * Clears the current terminal selection.
    */

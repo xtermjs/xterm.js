@@ -200,6 +200,10 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(pageCount);
     this._core.scrollPages(pageCount);
   }
+  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement } {
+    this._verifyPositiveIntegers(startLine, endLine ?? 0);
+    return this._core.getBufferElements(startLine, endLine);
+  }
   public scrollToTop(): void {
     this._core.scrollToTop();
   }
@@ -219,12 +223,6 @@ export class Terminal implements ITerminalApi {
   public writeln(data: string | Uint8Array, callback?: () => void): void {
     this._core.write(data);
     this._core.write('\r\n', callback);
-  }
-  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement } {
-    if (!this._core.viewport) {
-      throw new Error('No viewport, cannot get buffer elements');
-    }
-    return this._core.viewport.getBufferElements(startLine, endLine);
   }
   public paste(data: string): void {
     this._core.paste(data);

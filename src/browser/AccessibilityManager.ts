@@ -327,7 +327,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.viewport) {
       return;
     }
-    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(start);
+    const { bufferElements, cursorElement } = this._terminal.getBufferElements(start);
     this._fullOutputElement.replaceChildren(...bufferElements);
     const s = document.getSelection();
     if (s && cursorElement) {
