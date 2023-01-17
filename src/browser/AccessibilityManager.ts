@@ -330,6 +330,11 @@ export class AccessibilityManager extends Disposable {
       return;
     }
     const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(start);
+    for (const element of bufferElements) {
+      if (element.textContent) {
+        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+      }
+    }
     this._fullOutputElement.replaceChildren(...bufferElements);
     const s = document.getSelection();
     if (s && cursorElement) {
