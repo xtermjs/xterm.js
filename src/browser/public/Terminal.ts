@@ -200,10 +200,6 @@ export class Terminal implements ITerminalApi {
     this._verifyIntegers(pageCount);
     this._core.scrollPages(pageCount);
   }
-  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement } {
-    this._verifyPositiveIntegers(startLine, endLine ?? 0);
-    return this._core.getBufferElements(startLine, endLine);
-  }
   public scrollToTop(): void {
     this._core.scrollToTop();
   }

@@ -61,7 +61,6 @@ export interface IPublicTerminal extends IDisposable {
   deregisterCharacterJoiner(joinerId: number): void;
   addMarker(cursorYOffset: number): IMarker | undefined;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
-  getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement };
   hasSelection(): boolean;
   getSelection(): string;
   getSelectionPosition(): IBufferRange | undefined;

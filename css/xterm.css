@@ -161,6 +161,7 @@
     color: #fff;
     opacity: 0;
     overflow: scroll;
+    overflow-x: hidden;
 }
 .xterm .xterm-accessibility-full-output:focus {
     opacity: 1;
