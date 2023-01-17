@@ -257,6 +257,7 @@ export interface ITerminalOptions {
   [key: string]: any;
   cancelEvents: boolean;
   termName: string;
+  accessibilityElementContentEditable?: boolean;
 }
 
 export interface ITheme {

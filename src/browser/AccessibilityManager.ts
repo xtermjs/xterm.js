@@ -88,9 +88,11 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
-    // this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
-    this._fullOutputElement = document.createElement('section');
+    const contentEditable = optionsService.options.accessibilityElementContentEditable;
+    this._fullOutputElement = document.createElement(contentEditable ? 'section' : 'div');
+    this._fullOutputElement.contentEditable = contentEditable ? 'true' : 'false';
+
     // TODO: Add to strings
     this._fullOutputElement.ariaLabel = 'Terminal buffer';
     this._fullOutputElement.contentEditable = 'true';
