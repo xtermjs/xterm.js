@@ -279,6 +279,33 @@ export class Viewport extends Disposable implements IViewport {
     return amount;
   }
 
+
+  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[], cursorElement?: HTMLElement } {
+    let currentLine: string = '';
+    let cursorElement: HTMLElement | undefined;
+    const bufferElements: HTMLElement[] = [];
+    const end = endLine ?? this._bufferService.buffer.lines.length;
+    const lines = this._bufferService.buffer.lines;
+    for (let i = startLine; i < end; i++) {
+      const line = lines.get(i);
+      if (!line) {
+        continue;
+      }
+      const isWrapped = lines.get(i + 1)?.isWrapped;
+      currentLine += line.translateToString(!isWrapped);
+      if (!isWrapped || i === lines.length - 1) {
+        const div = document.createElement('div');
+        div.textContent = currentLine;
+        bufferElements.push(div);
+        if (currentLine.length > 0) {
+          cursorElement = div;
+        }
+        currentLine = '';
+      }
+    }
+    return { bufferElements, cursorElement };
+  }
+
   /**
    * Gets the number of pixels scrolled by the mouse event taking into account what type of delta
    * is being used.

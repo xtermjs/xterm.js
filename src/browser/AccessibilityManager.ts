@@ -4,14 +4,16 @@
  */
 
 import * as Strings from 'browser/LocalizableStrings';
-import { ITerminal, IRenderDebouncer } from 'browser/Types';
+import { ITerminal, IRenderDebouncer, ReadonlyColorSet } from 'browser/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
-import { IRenderService } from 'browser/services/Services';
+import { IRenderService, IThemeService } from 'browser/services/Services';
+import { IOptionsService } from 'common/services/Services';
+import { ITerminalOptions } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -26,6 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
+  private _accessiblityBuffer: HTMLElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -48,7 +51,9 @@ export class AccessibilityManager extends Disposable {
 
   constructor(
     private readonly _terminal: ITerminal,
-    private readonly _renderService: IRenderService
+    @IOptionsService optionsService: IOptionsService,
+    @IRenderService private readonly _renderService: IRenderService,
+    @IThemeService themeService: IThemeService
   ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
@@ -83,7 +88,16 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
-    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
+
+    this._accessiblityBuffer = document.createElement('div');
+    this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
+
+    // TODO: this is needed when content editable is false
+    this._refreshAccessibilityBuffer();
+    this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
+    this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
+
 
     this.register(this._renderRowsDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
@@ -96,6 +110,11 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
+
+    this._handleColorChange(themeService.colors);
+    this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
+    this._handleFontOptionChange(optionsService.options);
+    this.register(optionsService.onMultipleOptionChange(['fontSize', 'fontFamily'], () => this._handleFontOptionChange(optionsService.options)));
 
     this._screenDprMonitor = new ScreenDprMonitor(window);
     this.register(this._screenDprMonitor);
@@ -298,5 +317,34 @@ export class AccessibilityManager extends Disposable {
     }
     this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
+  }
+
+
+  private _refreshAccessibilityBuffer(): void {
+    if (!this._terminal.viewport) {
+      return;
+    }
+
+    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
+    for (const element of bufferElements) {
+      if (element.textContent) {
+        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+      }
+    }
+    this._accessiblityBuffer.tabIndex = 0;
+    this._accessiblityBuffer.ariaRoleDescription = 'document';
+    this._accessiblityBuffer.replaceChildren(...bufferElements);
+    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    this._accessiblityBuffer.focus();
+  }
+
+  private _handleColorChange(colorSet: ReadonlyColorSet): void {
+    this._accessiblityBuffer.style.backgroundColor = colorSet.background.css;
+    this._accessiblityBuffer.style.color = colorSet.foreground.css;
+  }
+
+  private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
+    this._accessiblityBuffer.style.fontFamily = options.fontFamily;
+    this._accessiblityBuffer.style.fontSize = `${options.fontSize}px`;
   }
 }

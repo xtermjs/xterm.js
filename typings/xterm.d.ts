@@ -498,6 +498,11 @@ declare module 'xterm' {
      * being printed to the terminal when `screenReaderMode` is enabled.
      */
     tooMuchOutput: string;
+
+    /**
+     * The aria label for the accessibility buffer
+     */
+    accessibilityBuffer: string;
   }
 
   /**

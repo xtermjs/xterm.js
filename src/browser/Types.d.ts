@@ -144,6 +144,7 @@ export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(immediate?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
+  getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[], cursorElement?: HTMLElement };
   handleWheel(ev: WheelEvent): boolean;
   handleTouchStart(ev: TouchEvent): void;
   handleTouchMove(ev: TouchEvent): boolean;
