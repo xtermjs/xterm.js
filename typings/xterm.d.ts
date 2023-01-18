@@ -1160,32 +1160,29 @@ declare module 'xterm' {
      * @param text The text of the link.
      * @param range The buffer range of the link.
      */
-    activate(event: MouseEvent, text: string, range: IBufferRange): void;
-
-    /**
-     * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
-     * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
-     * that will cause mouse events to not fall through and activate other links.
-     * @param event The mouse event triggering the callback.
-     * @param text The text of the link.
-     * @param range The buffer range of the link.
-     */
-    hover?(event: MouseEvent, text: string, range: IBufferRange): void;
-
-    /**
-     * Called when the mouse leaves the link.
-     * @param event The mouse event triggering the callback.
-     * @param text The text of the link.
-     * @param range The buffer range of the link.
-     */
-    leave?(event: MouseEvent, text: string, range: IBufferRange): void;
-
-    /**
-     * Whether to receive non-HTTP URLs from LinkProvider. When false, any usage of non-HTTP URLs
-     * will be ignored. Enabling this option without proper protection in `activate` function
-     * may cause security issues such as XSS.
-     */
-    allowNonHttpProtocols?: boolean;
+   activate(event: MouseEvent, text: string, range: IBufferRange): void;
+   /**
+    * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
+    * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
+    * that will cause mouse events to not fall through and activate other links.
+    * @param event The mouse event triggering the callback.
+    * @param text The text of the link.
+    * @param range The buffer range of the link.
+    */
+   hover?(event: MouseEvent, text: string, range: IBufferRange): void;
+   /**
+    * Called when the mouse leaves the link.
+    * @param event The mouse event triggering the callback.
+    * @param text The text of the link.
+    * @param range The buffer range of the link.
+    */
+   leave?(event: MouseEvent, text: string, range: IBufferRange): void;
+   /**
+    * Whether to receive non-HTTP URLs from LinkProvider. When false, any usage of non-HTTP URLs
+    * will be ignored. Enabling this option without proper protection in `activate` function
+    * may cause security issues such as XSS.
+    */
+   allowNonHttpProtocols?: boolean;
   }
 
   /**
