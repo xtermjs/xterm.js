@@ -90,9 +90,9 @@ export class AccessibilityManager extends Disposable {
     }
 
     this._accessibleBuffer = document.createElement('div');
-    this._accessibleBuffer.contentEditable = 'true';
     this._accessibleBuffer.ariaLabel = Strings.accessibleBuffer;
     this._accessibleBuffer.classList.add('xterm-accessibility-buffer');
+    this._refreshAccessibilityBuffer();
     this._accessibleBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibleBuffer);
 
@@ -329,19 +329,11 @@ export class AccessibilityManager extends Disposable {
         element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
       }
     }
+    this._accessibleBuffer.tabIndex = 0;
     this._accessibleBuffer.ariaRoleDescription = "document";
     this._accessibleBuffer.replaceChildren(...bufferElements);
     this._accessibleBuffer.scrollTop = this._accessibleBuffer.scrollHeight;
-    const s = document.getSelection();
-    // Set the cursor position
-    if (s && cursorElement) {
-      s.removeAllRanges();
-      const r = document.createRange();
-      r.selectNode(bufferElements[bufferElements.length - 1]);
-      r.setStart(cursorElement, 0);
-      r.setEnd(cursorElement, 0);
-      s.addRange(r);
-    }
+    this._accessibleBuffer.focus();
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
