@@ -28,7 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
-  private _accessibleBuffer: HTMLElement;
+  private _accessiblityBuffer: HTMLElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -89,14 +89,14 @@ export class AccessibilityManager extends Disposable {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
 
-    this._accessibleBuffer = document.createElement('div');
-    this._accessibleBuffer.ariaLabel = Strings.accessibilityBuffer;
-    this._accessibleBuffer.classList.add('xterm-accessibility-buffer');
+    this._accessiblityBuffer = document.createElement('div');
+    this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
 
     //TODO: this is needed when content editable is false
     this._refreshAccessibilityBuffer();
-    this._accessibleBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
-    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibleBuffer);
+    this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
+    this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
 
 
     this.register(this._renderRowsDebouncer);
@@ -331,20 +331,20 @@ export class AccessibilityManager extends Disposable {
         element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
       }
     }
-    this._accessibleBuffer.tabIndex = 0;
-    this._accessibleBuffer.ariaRoleDescription = "document";
-    this._accessibleBuffer.replaceChildren(...bufferElements);
-    this._accessibleBuffer.scrollTop = this._accessibleBuffer.scrollHeight;
-    this._accessibleBuffer.focus();
+    this._accessiblityBuffer.tabIndex = 0;
+    this._accessiblityBuffer.ariaRoleDescription = "document";
+    this._accessiblityBuffer.replaceChildren(...bufferElements);
+    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    this._accessiblityBuffer.focus();
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
-    this._accessibleBuffer.style.backgroundColor = colorSet.background.css;
-    this._accessibleBuffer.style.color = colorSet.foreground.css;
+    this._accessiblityBuffer.style.backgroundColor = colorSet.background.css;
+    this._accessiblityBuffer.style.color = colorSet.foreground.css;
   }
 
   private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
-    this._accessibleBuffer.style.fontFamily = options.fontFamily;
-    this._accessibleBuffer.style.fontSize = `${options.fontSize}px`;
+    this._accessiblityBuffer.style.fontFamily = options.fontFamily;
+    this._accessiblityBuffer.style.fontSize = `${options.fontSize}px`;
   }
 }
