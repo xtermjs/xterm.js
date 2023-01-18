@@ -140,7 +140,7 @@ export class MockTerminal implements ITerminal {
   public write(data: string): void {
     throw new Error('Method not implemented.');
   }
-  public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement | undefined; } {
+  public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
     throw new Error('Method not implemented.');
   }
   public bracketedPasteMode!: boolean;
@@ -313,7 +313,7 @@ export class MockViewport implements IViewport {
   public getLinesScrolled(ev: WheelEvent): number {
     throw new Error('Method not implemented.');
   }
-  public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement | undefined; } {
+  public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
     throw new Error('Method not implemented.');
   }
 }

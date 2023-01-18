@@ -280,7 +280,7 @@ export class Viewport extends Disposable implements IViewport {
   }
 
 
-  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[]; cursorElement?: HTMLElement } {
+  public getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[], cursorElement?: HTMLElement } {
     let currentLine: string = '';
     let cursorElement: HTMLElement | undefined;
     const bufferElements: HTMLElement[] = [];

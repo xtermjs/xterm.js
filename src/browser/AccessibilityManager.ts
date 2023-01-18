@@ -93,7 +93,7 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
 
-    //TODO: this is needed when content editable is false
+    // TODO: this is needed when content editable is false
     this._refreshAccessibilityBuffer();
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
