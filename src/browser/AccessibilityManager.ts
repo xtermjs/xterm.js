@@ -28,7 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
-  private _fullOutputElement: HTMLElement;
+  private _accessibleBuffer: HTMLElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -58,7 +58,7 @@ export class AccessibilityManager extends Disposable {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
-    // this._accessibilityTreeRoot.tabIndex = 0;
+    this._accessibilityTreeRoot.tabIndex = 0;
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
@@ -89,17 +89,13 @@ export class AccessibilityManager extends Disposable {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
 
-    const contentEditable = optionsService.options.accessibilityElementContentEditable;
-    this._fullOutputElement = document.createElement(contentEditable ? 'section' : 'div');
-    this._fullOutputElement.contentEditable = contentEditable ? 'true' : 'false';
+    this._accessibleBuffer = document.createElement('div');
+    this._accessibleBuffer.contentEditable = 'true';
+    this._accessibleBuffer.ariaLabel = Strings.accessibleBuffer;
+    this._accessibleBuffer.classList.add('xterm-accessibility-buffer');
+    this._accessibleBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
+    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibleBuffer);
 
-    // TODO: Add to strings
-    this._fullOutputElement.ariaLabel = 'Terminal buffer';
-    this._fullOutputElement.contentEditable = 'true';
-    this._fullOutputElement.spellcheck = false;
-    this._fullOutputElement.classList.add('xterm-accessibility-full-output');
-    this._fullOutputElement.addEventListener('focus', () => this._refreshFullOutput());
-    this._terminal.element.insertAdjacentElement('afterbegin', this._fullOutputElement);
 
     this.register(this._renderRowsDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
@@ -322,21 +318,22 @@ export class AccessibilityManager extends Disposable {
   }
 
 
-  private _refreshFullOutput(): void {
-    // Cap the number of items in full output, without this screen reader can easily lock up for 20+
-    // seconds, probably due to refreshing their a11y tree
-    const start = Math.max(this._terminal.buffer.lines.length - 100, 0);
+  private _refreshAccessibilityBuffer(): void {
     if (!this._terminal.viewport) {
       return;
     }
-    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(start);
+
+    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
         element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
       }
     }
-    this._fullOutputElement.replaceChildren(...bufferElements);
+    this._accessibleBuffer.ariaRoleDescription = "document";
+    this._accessibleBuffer.replaceChildren(...bufferElements);
+    this._accessibleBuffer.scrollTop = this._accessibleBuffer.scrollHeight;
     const s = document.getSelection();
+    // Set the cursor position
     if (s && cursorElement) {
       s.removeAllRanges();
       const r = document.createRange();
@@ -345,16 +342,15 @@ export class AccessibilityManager extends Disposable {
       r.setEnd(cursorElement, 0);
       s.addRange(r);
     }
-    this._fullOutputElement.scrollTop = this._fullOutputElement.scrollHeight;
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
-    this._fullOutputElement.style.backgroundColor = colorSet.background.css;
-    this._fullOutputElement.style.color = colorSet.foreground.css;
+    this._accessibleBuffer.style.backgroundColor = colorSet.background.css;
+    this._accessibleBuffer.style.color = colorSet.foreground.css;
   }
 
   private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
-    this._fullOutputElement.style.fontFamily = options.fontFamily;
-    this._fullOutputElement.style.fontSize = `${options.fontSize}px`;
+    this._accessibleBuffer.style.fontFamily = options.fontFamily;
+    this._accessibleBuffer.style.fontSize = `${options.fontSize}px`;
   }
 }

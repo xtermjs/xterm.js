@@ -258,11 +258,6 @@ declare module 'xterm' {
      * ruler will be hidden when not set.
      */
     overviewRulerWidth?: number;
-
-    /**
-     * If the accessibility element is created, whether it should be content editable
-     */
-    accessibilityElementContentEditable?: boolean;
   }
 
   /**
