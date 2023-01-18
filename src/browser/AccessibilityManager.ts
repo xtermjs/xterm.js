@@ -332,7 +332,7 @@ export class AccessibilityManager extends Disposable {
       }
     }
     this._accessiblityBuffer.tabIndex = 0;
-    this._accessiblityBuffer.ariaRoleDescription = "document";
+    this._accessiblityBuffer.ariaRoleDescription = 'document';
     this._accessiblityBuffer.replaceChildren(...bufferElements);
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
     this._accessiblityBuffer.focus();
