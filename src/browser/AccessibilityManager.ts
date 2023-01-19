@@ -92,9 +92,7 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer = document.createElement('div');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
-
-    // HACK: this is needed when content editable is false
-    this._refreshAccessibilityBuffer();
+    this._accessiblityBuffer.contentEditable = 'true';
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
 
@@ -325,16 +323,24 @@ export class AccessibilityManager extends Disposable {
       return;
     }
 
-    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
+    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
         element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
       }
     }
-    this._accessiblityBuffer.tabIndex = 0;
     this._accessiblityBuffer.ariaRoleDescription = 'document';
     this._accessiblityBuffer.replaceChildren(...bufferElements);
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    const s = document.getSelection();
+    if (s && cursorElement) {
+      s.removeAllRanges();
+      const r = document.createRange();
+      r.selectNode(bufferElements[bufferElements.length - 1]);
+      r.setStart(cursorElement, 0);
+      r.setEnd(cursorElement, 0);
+      s.addRange(r);
+    }
     this._accessiblityBuffer.focus();
   }
 
