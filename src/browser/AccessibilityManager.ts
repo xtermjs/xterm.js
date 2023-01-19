@@ -93,7 +93,7 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
 
-    // TODO: this is needed when content editable is false
+    // HACK: this is needed when content editable is false
     this._refreshAccessibilityBuffer();
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
@@ -114,7 +114,7 @@ export class AccessibilityManager extends Disposable {
     this._handleColorChange(themeService.colors);
     this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
     this._handleFontOptionChange(optionsService.options);
-    this.register(optionsService.onMultipleOptionChange(['fontSize', 'fontFamily'], () => this._handleFontOptionChange(optionsService.options)));
+    this.register(optionsService.onMultipleOptionChange(['fontSize', 'fontFamily', 'letterSpacing', 'lineHeight'], () => this._handleFontOptionChange(optionsService.options)));
 
     this._screenDprMonitor = new ScreenDprMonitor(window);
     this.register(this._screenDprMonitor);
@@ -325,7 +325,7 @@ export class AccessibilityManager extends Disposable {
       return;
     }
 
-    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
+    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
         element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
@@ -346,5 +346,7 @@ export class AccessibilityManager extends Disposable {
   private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
     this._accessiblityBuffer.style.fontFamily = options.fontFamily;
     this._accessiblityBuffer.style.fontSize = `${options.fontSize}px`;
+    this._accessiblityBuffer.style.lineHeight = `${options.lineHeight * this._renderService.dimensions.css.cell.height ?? 1}px`;
+    this._accessiblityBuffer.style.letterSpacing = `${options.letterSpacing}px`;
   }
 }
