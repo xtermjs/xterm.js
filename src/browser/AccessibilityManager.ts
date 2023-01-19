@@ -346,7 +346,7 @@ export class AccessibilityManager extends Disposable {
   private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
     this._accessiblityBuffer.style.fontFamily = options.fontFamily;
     this._accessiblityBuffer.style.fontSize = `${options.fontSize}px`;
-    this._accessiblityBuffer.style.lineHeight = `${options.lineHeight * this._renderService.dimensions.css.cell.height ?? 1}px`;
+    this._accessiblityBuffer.style.lineHeight = `${options.lineHeight * this._renderService.dimensions.css.cell.height}px`;
     this._accessiblityBuffer.style.letterSpacing = `${options.letterSpacing}px`;
   }
 }
