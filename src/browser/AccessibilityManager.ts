@@ -28,7 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
-  private _accessiblityBuffer: HTMLElement;
+  private _accessiblityBuffer: HTMLTextAreaElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -336,6 +336,10 @@ export class AccessibilityManager extends Disposable {
     this._accessibilityTreeRoot.spellcheck = false;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
     this._accessiblityBuffer.focus();
+
+    const end = this._accessiblityBuffer.value.length;
+    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    this._accessiblityBuffer.setSelectionRange(end, end);
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
