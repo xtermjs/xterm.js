@@ -335,6 +335,7 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.textContent = content.join('\n');
     this._accessiblityBuffer.tabIndex = 0;
     this._accessiblityBuffer.ariaRoleDescription = 'textbox';
+    this._accessibilityTreeRoot.spellcheck = false;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
     this._accessiblityBuffer.focus();
   }
