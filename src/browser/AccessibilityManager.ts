@@ -92,9 +92,7 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
-
-    // HACK: this is needed when content editable is false
-    this._refreshAccessibilityBuffer();
+    this._accessiblityBuffer.contentEditable = 'true';
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
 
@@ -335,7 +333,6 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.textContent = content.join('\n');
     this._accessiblityBuffer.tabIndex = 0;
     this._accessiblityBuffer.ariaRoleDescription = 'textbox';
-    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
     this._accessiblityBuffer.focus();
   }
 
