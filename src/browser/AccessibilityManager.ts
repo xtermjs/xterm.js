@@ -89,7 +89,7 @@ export class AccessibilityManager extends Disposable {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
 
-    this._accessiblityBuffer = document.createElement('div');
+    this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
 
@@ -326,14 +326,15 @@ export class AccessibilityManager extends Disposable {
     }
 
     const { bufferElements } = this._terminal.viewport.getBufferElements(0);
+    const content = [];
     for (const element of bufferElements) {
       if (element.textContent) {
-        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+        content.push(element.textContent.replace(new RegExp(' ', 'g'), '\xA0'));
       }
     }
+    this._accessiblityBuffer.textContent = content.join('\n');
     this._accessiblityBuffer.tabIndex = 0;
-    this._accessiblityBuffer.ariaRoleDescription = 'document';
-    this._accessiblityBuffer.replaceChildren(...bufferElements);
+    this._accessiblityBuffer.ariaRoleDescription = 'textbox';
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
     this._accessiblityBuffer.focus();
   }
