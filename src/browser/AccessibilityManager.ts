@@ -121,6 +121,7 @@ export class AccessibilityManager extends Disposable {
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
     this.register(toDisposable(() => {
+      this._accessiblityBuffer.remove();
       this._accessibilityTreeRoot.remove();
       this._rowElements.length = 0;
     }));
@@ -313,7 +314,7 @@ export class AccessibilityManager extends Disposable {
     if (this._charsToAnnounce.length === 0) {
       return;
     }
-    this._liveRegion.textContent += this._charsToAnnounce;
+   this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
   }
 
@@ -335,7 +336,6 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.ariaRoleDescription = 'textbox';
     this._accessibilityTreeRoot.spellcheck = false;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-    this._accessiblityBuffer.focus();
 
     const end = this._accessiblityBuffer.value.length;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
