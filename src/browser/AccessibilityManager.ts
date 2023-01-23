@@ -316,13 +316,8 @@ export class AccessibilityManager extends Disposable {
     if (this._charsToAnnounce.length === 0) {
       return;
     }
-<<<<<<< Updated upstream
     this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
-=======
-   this._liveRegion.textContent += this._charsToAnnounce;
-   this._charsToAnnounce = '';
->>>>>>> Stashed changes
   }
 
 
