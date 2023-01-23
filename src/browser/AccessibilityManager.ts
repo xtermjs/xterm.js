@@ -314,7 +314,7 @@ export class AccessibilityManager extends Disposable {
     if (this._charsToAnnounce.length === 0) {
       return;
     }
-   this._liveRegion.textContent += this._charsToAnnounce;
+    this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
   }
 
