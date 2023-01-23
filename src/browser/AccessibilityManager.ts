@@ -91,8 +91,8 @@ export class AccessibilityManager extends Disposable {
 
     this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.readOnly = true;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
-    this._accessiblityBuffer.contentEditable = 'true';
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
 
@@ -121,6 +121,7 @@ export class AccessibilityManager extends Disposable {
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
     this.register(toDisposable(() => {
+      this._accessiblityBuffer.remove();
       this._accessibilityTreeRoot.remove();
       this._rowElements.length = 0;
     }));
@@ -335,7 +336,6 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.ariaRoleDescription = 'textbox';
     this._accessibilityTreeRoot.spellcheck = false;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-    this._accessiblityBuffer.focus();
 
     const end = this._accessiblityBuffer.value.length;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
