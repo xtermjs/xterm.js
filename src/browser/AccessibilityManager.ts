@@ -88,15 +88,14 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
-    this._terminal.element?.appendChild(this._accessibilityTreeRoot);
+    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.readOnly = true;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
-    this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
-
+    this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
 
     this.register(this._renderRowsDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
