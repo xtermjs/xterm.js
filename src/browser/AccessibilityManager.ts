@@ -57,7 +57,7 @@ export class AccessibilityManager extends Disposable {
   ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
-    this._terminal.element?.appendChild(this._accessibilityTreeRoot);
+    this._terminal.element?.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
     this._accessibilityTreeRoot.tabIndex = 0;
 
