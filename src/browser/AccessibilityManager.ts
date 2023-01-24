@@ -122,7 +122,6 @@ export class AccessibilityManager extends Disposable {
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
     this.register(toDisposable(() => {
-      this._terminal.element?.removeChild(this._accessibilityTreeRoot);
       this._accessiblityBuffer.remove();
       this._accessibilityTreeRoot.remove();
       this._rowElements.length = 0;
