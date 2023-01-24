@@ -57,7 +57,6 @@ export class AccessibilityManager extends Disposable {
   ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
-    this._terminal.element?.appendChild(this._accessibilityTreeRoot);
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
     this._accessibilityTreeRoot.tabIndex = 0;
 
@@ -89,6 +88,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
+    this._terminal.element?.appendChild(this._accessibilityTreeRoot);
 
     this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
