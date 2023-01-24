@@ -28,7 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
-  private _accessiblityBuffer: HTMLElement;
+  private _accessiblityBuffer: HTMLTextAreaElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -90,10 +90,10 @@ export class AccessibilityManager extends Disposable {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
 
-    this._accessiblityBuffer = document.createElement('div');
+    this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.readOnly = true;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
-    this._accessiblityBuffer.contentEditable = 'true';
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
 
@@ -325,25 +325,22 @@ export class AccessibilityManager extends Disposable {
       return;
     }
 
-    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
+    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
+    const content = [];
     for (const element of bufferElements) {
       if (element.textContent) {
-        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+        content.push(element.textContent.replace(new RegExp(' ', 'g'), '\xA0'));
       }
     }
-    this._accessiblityBuffer.ariaRoleDescription = 'document';
-    this._accessiblityBuffer.replaceChildren(...bufferElements);
+    this._accessiblityBuffer.textContent = content.join('\n');
+    this._accessiblityBuffer.tabIndex = 0;
+    this._accessiblityBuffer.ariaRoleDescription = 'textbox';
+    this._accessibilityTreeRoot.spellcheck = false;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-    const s = document.getSelection();
-    if (s && cursorElement) {
-      s.removeAllRanges();
-      const r = document.createRange();
-      r.selectNode(bufferElements[bufferElements.length - 1]);
-      r.setStart(cursorElement, 0);
-      r.setEnd(cursorElement, 0);
-      s.addRange(r);
-    }
-    this._accessiblityBuffer.focus();
+
+    const end = this._accessiblityBuffer.value.length;
+    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    this._accessiblityBuffer.setSelectionRange(end, end);
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
