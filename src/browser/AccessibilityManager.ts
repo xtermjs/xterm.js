@@ -102,7 +102,6 @@ export class AccessibilityManager extends Disposable {
     this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
 
     this.register(this._renderRowsDebouncer);
-    this.register(this._terminal.onFocus(() => this._refreshAccessibilityBuffer()));
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
