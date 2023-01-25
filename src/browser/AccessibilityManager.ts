@@ -93,10 +93,16 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
+    this.register(addDisposableDomListener(this._accessiblityBuffer!, 'keydown', (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape' || ev.key === 'Tab') {
+        this._terminal?.textarea?.focus();
+      }}
+    ));
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
     this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
 
     this.register(this._renderRowsDebouncer);
+    this.register(this._terminal.onFocus(() => this._refreshAccessibilityBuffer()));
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
@@ -265,7 +271,7 @@ export class AccessibilityManager extends Disposable {
     // Only add the char if there is no control character.
     if (!/\p{Control}/u.test(keyChar)) {
       this._charsToConsume.push(keyChar);
-    }
+    } 
   }
 
   private _refreshRows(start?: number, end?: number): void {

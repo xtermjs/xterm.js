@@ -259,6 +259,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
    * Focus the terminal. Delegates focus handling to the terminal's DOM element.
    */
   public focus(): void {
+    if (document.querySelector('.xterm-accessibility-buffer:focus')) {
+      return;
+    }
     if (this.textarea) {
       this.textarea.focus({ preventScroll: true });
     }
