@@ -2,9 +2,7 @@
  * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-hello
-testing
-there
+
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
