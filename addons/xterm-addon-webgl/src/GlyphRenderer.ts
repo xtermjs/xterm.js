@@ -85,6 +85,7 @@ const CELL_POSITION_INDICES = 2;
 // Work variables to avoid garbage collection
 let $i = 0;
 let $glyph: IRasterizedGlyph | undefined = undefined;
+let $glyphs: IRasterizedGlyph[] | undefined = undefined;
 let $leftCellPadding = 0;
 let $clippedPixels = 0;
 
@@ -236,10 +237,11 @@ export class GlyphRenderer extends Disposable {
 
     // Get the glyph
     if (chars && chars.length > 1) {
-      $glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
+      $glyphs = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
     } else {
-      $glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
+      $glyphs = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
     }
+    $glyph = $glyphs[0];
 
     $leftCellPadding = Math.floor((this._dimensions.device.cell.width - this._dimensions.device.char.width) / 2);
     if (bg !== lastBg && $glyph.offset.x > $leftCellPadding) {

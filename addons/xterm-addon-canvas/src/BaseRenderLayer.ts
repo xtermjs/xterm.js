@@ -368,37 +368,43 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
     this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
-    let glyph: IRasterizedGlyph;
+    let glyphs: IRasterizedGlyph[];
     if (chars && chars.length > 1) {
-      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
+      glyphs = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
     } else {
-      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
+      glyphs = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
     }
-    if (!glyph.size.x || !glyph.size.y) {
-      return;
-    }
-    this._ctx.save();
-    this._clipRow(y);
-    // Draw the image, use the bitmap if it's available
-    if (this._charAtlas.pages[glyph.texturePage].version !== this._bitmapGenerator[glyph.texturePage]?.version) {
-      if (!this._bitmapGenerator[glyph.texturePage]) {
-        this._bitmapGenerator[glyph.texturePage] = new BitmapGenerator(this._charAtlas.pages[glyph.texturePage].canvas);
+
+    let glyphsOffsetX = 0;
+    for (let i = 0; i < glyphs.length; i++) {
+      const glyph = glyphs[i];
+      if (!glyph.size.x || !glyph.size.y) {
+        continue;
       }
-      this._bitmapGenerator[glyph.texturePage]!.refresh();
-      this._bitmapGenerator[glyph.texturePage]!.version = this._charAtlas.pages[glyph.texturePage].version;
+      this._ctx.save();
+      this._clipRow(y);
+      // Draw the image, use the bitmap if it's available
+      if (this._charAtlas.pages[glyph.texturePage].version !== this._bitmapGenerator[glyph.texturePage]?.version) {
+        if (!this._bitmapGenerator[glyph.texturePage]) {
+          this._bitmapGenerator[glyph.texturePage] = new BitmapGenerator(this._charAtlas.pages[glyph.texturePage].canvas);
+        }
+        this._bitmapGenerator[glyph.texturePage]!.refresh();
+        this._bitmapGenerator[glyph.texturePage]!.version = this._charAtlas.pages[glyph.texturePage].version;
+      }
+      this._ctx.drawImage(
+        this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
+        glyph.texturePosition.x,
+        glyph.texturePosition.y,
+        glyph.size.x,
+        glyph.size.y,
+        x * this._deviceCellWidth + this._deviceCharLeft - glyph.offset.x + glyphsOffsetX,
+        y * this._deviceCellHeight + this._deviceCharTop - glyph.offset.y,
+        glyph.size.x,
+        glyph.size.y
+      );
+      glyphsOffsetX += glyph.size.x;
+      this._ctx.restore();
     }
-    this._ctx.drawImage(
-      this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
-      glyph.texturePosition.x,
-      glyph.texturePosition.y,
-      glyph.size.x,
-      glyph.size.y,
-      x * this._deviceCellWidth + this._deviceCharLeft - glyph.offset.x,
-      y * this._deviceCellHeight + this._deviceCharTop - glyph.offset.y,
-      glyph.size.x,
-      glyph.size.y
-    );
-    this._ctx.restore();
   }
 
   /**
