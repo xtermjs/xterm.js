@@ -402,7 +402,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
         glyph.size.x,
         glyph.size.y
       );
-      glyphsOffsetX += glyph.size.x;
+      glyphsOffsetX += glyph.size.x - glyph.offset.x;
       this._ctx.restore();
     }
   }
