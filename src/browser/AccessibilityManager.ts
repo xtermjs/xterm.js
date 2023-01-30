@@ -129,8 +129,8 @@ export class AccessibilityManager extends Disposable {
     }));
   }
 
-  private _handleAccessibilityBufferKey(event: KeyboardEvent) {
-    if (["ArrowUp", "ArrowLeft", "ArrowRight", "ArrowDown", "Tab", "Shift"].includes(event.key)) {
+  private _handleAccessibilityBufferKey(event: KeyboardEvent): void {
+    if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'Tab', 'Shift'].includes(event.key)) {
       return;
     }
     event?.preventDefault();
