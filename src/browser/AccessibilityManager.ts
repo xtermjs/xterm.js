@@ -94,6 +94,9 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
     this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
+    this._accessiblityBuffer.addEventListener('keydown', (e) => this._handleAccessibilityBufferKey(e));
+    this._accessiblityBuffer.addEventListener('keyup', (e) => this._handleAccessibilityBufferKey(e));
+    this._accessiblityBuffer.addEventListener('keypress', (e) => this._handleAccessibilityBufferKey(e));
     this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
 
     this.register(this._renderRowsDebouncer);
@@ -124,6 +127,14 @@ export class AccessibilityManager extends Disposable {
       this._accessibilityTreeRoot.remove();
       this._rowElements.length = 0;
     }));
+  }
+
+  private _handleAccessibilityBufferKey(event: KeyboardEvent) {
+    if (["ArrowUp", "ArrowLeft", "ArrowRight", "ArrowDown", "Tab", "Shift"].includes(event.key)) {
+      return;
+    }
+    event?.preventDefault();
+    event?.stopImmediatePropagation();
   }
 
   private _handleBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
