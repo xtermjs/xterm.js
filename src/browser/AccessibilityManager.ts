@@ -94,8 +94,9 @@ export class AccessibilityManager extends Disposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this._accessiblityBuffer = document.createElement('div');
-    this._accessiblityBuffer.contentEditable = 'true';
-    this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.setAttribute('role', 'document');
+    this._accessiblityBuffer.tabIndex = 0;
+    this._accessiblityBuffer.ariaRoleDescription = Strings.accessibilityBuffer;
     this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
     this.register(addDisposableDomListener(this._accessiblityBuffer!, 'keydown', (ev: KeyboardEvent) => {
@@ -339,7 +340,6 @@ export class AccessibilityManager extends Disposable {
         element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
       }
     }
-    this._accessiblityBuffer.ariaRoleDescription = 'document';
     this._accessiblityBuffer.replaceChildren(...bufferElements);
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
     const s = document.getSelection();
