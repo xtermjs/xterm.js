@@ -28,7 +28,7 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
-  private _accessiblityBuffer: HTMLTextAreaElement;
+  private _accessiblityBuffer: HTMLElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -92,7 +92,8 @@ export class AccessibilityManager extends Disposable {
     }
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
-    this._accessiblityBuffer = document.createElement('textarea');
+    this._accessiblityBuffer = document.createElement('div');
+    this._accessiblityBuffer.contentEditable = 'true';
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
     this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
@@ -330,23 +331,25 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.viewport) {
       return;
     }
-    this.accessibilityBufferActive = true;
-    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
-    const content = [];
+
+    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
-        content.push(element.textContent.replace(new RegExp(' ', 'g'), '\xA0'));
+        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
       }
     }
-    this._accessiblityBuffer.textContent = content.join('\n');
-    this._accessiblityBuffer.tabIndex = 0;
-    this._accessiblityBuffer.ariaRoleDescription = 'textbox';
-    this._accessibilityTreeRoot.spellcheck = false;
+    this._accessiblityBuffer.ariaRoleDescription = 'document';
+    this._accessiblityBuffer.replaceChildren(...bufferElements);
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-
-    const end = this._accessiblityBuffer.value.length;
-    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-    this._accessiblityBuffer.setSelectionRange(end, end);
+    const s = document.getSelection();
+    if (s && cursorElement) {
+      s.removeAllRanges();
+      const r = document.createRange();
+      r.selectNode(bufferElements[bufferElements.length - 1]);
+      r.setStart(cursorElement, 0);
+      r.setEnd(cursorElement, 0);
+      s.addRange(r);
+    }
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
