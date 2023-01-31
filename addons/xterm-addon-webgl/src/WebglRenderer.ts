@@ -40,8 +40,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer: RectangleRenderer;
-  private _glyphRenderer: GlyphRenderer;
+  private _rectangleRenderer?: RectangleRenderer;
+  private _glyphRenderer?: GlyphRenderer;
 
   public readonly dimensions: IRenderDimensions;
 
@@ -181,10 +181,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.width = `${this.dimensions.css.canvas.width}px`;
     this._core.screenElement!.style.height = `${this.dimensions.css.canvas.height}px`;
 
-    this._rectangleRenderer.setDimensions(this.dimensions);
-    this._rectangleRenderer.handleResize();
-    this._glyphRenderer.setDimensions(this.dimensions);
-    this._glyphRenderer.handleResize();
+    this._rectangleRenderer?.setDimensions(this.dimensions);
+    this._rectangleRenderer?.handleResize();
+    this._glyphRenderer?.setDimensions(this.dimensions);
+    this._glyphRenderer?.handleResize();
 
     this._refreshCharAtlas();
 
@@ -279,7 +279,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
-    this._glyphRenderer.setAtlas(this._charAtlas);
+    this._glyphRenderer?.setAtlas(this._charAtlas);
   }
 
   /**
@@ -290,7 +290,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _clearModel(clearGlyphRenderer: boolean): void {
     this._model.clear();
     if (clearGlyphRenderer) {
-      this._glyphRenderer.clear();
+      this._glyphRenderer?.clear();
     }
   }
 
@@ -331,6 +331,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.handleGridChanged(this._terminal, start, end);
     }
 
+    if (!this._glyphRenderer || !this._rectangleRenderer) {
+      return;
+    }
+
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
       this._clearModel(true);
@@ -340,8 +344,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateModel(start, end);
 
     // Render
-    this._rectangleRenderer.render();
-    this._glyphRenderer.render(this._model);
+    this._rectangleRenderer?.render();
+    this._glyphRenderer?.render(this._model);
   }
 
   private _updateModel(start: number, end: number): void {
@@ -429,7 +433,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
         this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
 
-        this._glyphRenderer.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
+        this._glyphRenderer!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -438,7 +442,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
+            this._glyphRenderer!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
@@ -447,7 +451,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
       }
     }
-    this._rectangleRenderer.updateBackgrounds(this._model);
+    this._rectangleRenderer!.updateBackgrounds(this._model);
   }
 
   /**
