@@ -94,6 +94,7 @@ export class AccessibilityManager extends Disposable {
 
     this._accessiblityBuffer = document.createElement('textarea');
     this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
+    this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
     this.register(addDisposableDomListener(this._accessiblityBuffer!, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab') {
