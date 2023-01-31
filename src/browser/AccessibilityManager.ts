@@ -341,15 +341,6 @@ export class AccessibilityManager extends Disposable {
     }
     this._accessiblityBuffer.replaceChildren(...bufferElements);
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-    const s = document.getSelection();
-    if (s && cursorElement) {
-      s.removeAllRanges();
-      const r = document.createRange();
-      r.selectNode(bufferElements[bufferElements.length - 1]);
-      r.setStart(cursorElement, 0);
-      r.setEnd(cursorElement, 0);
-      s.addRange(r);
-    }
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
