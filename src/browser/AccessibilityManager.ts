@@ -36,6 +36,8 @@ export class AccessibilityManager extends Disposable {
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
 
+  public accessibilityBufferActive: boolean = false;
+
   /**
    * This queue has a character pushed to it for keys that are pressed, if the
    * next character added to the terminal is equal to the key char then it is
@@ -322,7 +324,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.viewport) {
       return;
     }
-
+    this.accessibilityBufferActive = true;
     const { bufferElements } = this._terminal.viewport.getBufferElements(0);
     const content = [];
     for (const element of bufferElements) {
