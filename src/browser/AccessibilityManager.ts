@@ -133,8 +133,8 @@ export class AccessibilityManager extends Disposable {
     if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'Tab', 'Shift'].includes(event.key)) {
       return;
     }
-    event?.preventDefault();
-    event?.stopImmediatePropagation();
+    event.preventDefault();
+    event.stopImmediatePropagation();
   }
 
   private _handleBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
