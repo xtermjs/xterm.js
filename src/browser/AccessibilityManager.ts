@@ -36,7 +36,8 @@ export class AccessibilityManager extends Disposable {
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
 
-  public accessibilityBufferActive: boolean = false;
+  private _accessibilityBufferActive: boolean = false;
+  get accessibilityBufferActive(): boolean { return this._accessibilityBufferActive; };
 
   /**
    * This queue has a character pushed to it for keys that are pressed, if the
@@ -100,7 +101,7 @@ export class AccessibilityManager extends Disposable {
     this.register(addDisposableDomListener(this._accessiblityBuffer!, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab') {
         this._terminal?.textarea?.focus();
-        this.accessibilityBufferActive = false;
+        this._accessibilityBufferActive = false;
       }}
     ));
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus',() => this._refreshAccessibilityBuffer()));
@@ -331,7 +332,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.viewport) {
       return;
     }
-
+    this._accessibilityBufferActive = true;
     const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
