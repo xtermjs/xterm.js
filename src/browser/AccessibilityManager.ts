@@ -37,7 +37,7 @@ export class AccessibilityManager extends Disposable {
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
 
   private _accessibilityBufferActive: boolean = false;
-  get accessibilityBufferActive(): boolean { return this._accessibilityBufferActive; };
+  public get accessibilityBufferActive(): boolean { return this._accessibilityBufferActive; }
 
   /**
    * This queue has a character pushed to it for keys that are pressed, if the
@@ -333,7 +333,7 @@ export class AccessibilityManager extends Disposable {
     }
     this._accessibilityBufferActive = true;
     this._accessiblityBuffer.setAttribute('role', 'document');
-    const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
+    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
         element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
