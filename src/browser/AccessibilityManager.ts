@@ -61,7 +61,6 @@ export class AccessibilityManager extends Disposable {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
-    this._accessibilityTreeRoot.tabIndex = 0;
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
@@ -94,9 +93,8 @@ export class AccessibilityManager extends Disposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this._accessiblityBuffer = document.createElement('div');
-    this._accessiblityBuffer.setAttribute('role', 'document');
-    this._accessiblityBuffer.tabIndex = 0;
     this._accessiblityBuffer.ariaRoleDescription = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.tabIndex = 0;
     this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
     this.register(addDisposableDomListener(this._accessiblityBuffer!, 'keydown', (ev: KeyboardEvent) => {
@@ -334,6 +332,7 @@ export class AccessibilityManager extends Disposable {
       return;
     }
     this._accessibilityBufferActive = true;
+    this._accessiblityBuffer.setAttribute('role', 'document');
     const { bufferElements, cursorElement } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
