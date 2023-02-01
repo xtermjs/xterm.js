@@ -28,13 +28,16 @@ export class AccessibilityManager extends Disposable {
   private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
-  private _accessiblityBuffer: HTMLTextAreaElement;
+  private _accessiblityBuffer: HTMLElement;
 
   private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
+
+  private _accessibilityBufferActive: boolean = false;
+  public get accessibilityBufferActive(): boolean { return this._accessibilityBufferActive; }
 
   /**
    * This queue has a character pushed to it for keys that are pressed, if the
@@ -58,7 +61,6 @@ export class AccessibilityManager extends Disposable {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
-    this._accessibilityTreeRoot.tabIndex = 0;
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
@@ -90,11 +92,19 @@ export class AccessibilityManager extends Disposable {
     }
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
-    this._accessiblityBuffer = document.createElement('textarea');
-    this._accessiblityBuffer.ariaLabel = Strings.accessibilityBuffer;
-    this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
-    this._accessiblityBuffer.addEventListener('focus', () => this._refreshAccessibilityBuffer());
+    this._accessiblityBuffer = document.createElement('div');
+    this._accessiblityBuffer.setAttribute('role', 'document');
+    this._accessiblityBuffer.ariaRoleDescription = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.tabIndex = 0;
     this._accessibilityTreeRoot.appendChild(this._accessiblityBuffer);
+    this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'keydown', (ev: KeyboardEvent) => {
+      if (ev.key === 'Tab') {
+        this._terminal?.textarea?.focus();
+        this._accessibilityBufferActive = false;
+      }}
+    ));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus',() => this._refreshAccessibilityBuffer()));
 
     this.register(this._renderRowsDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
@@ -322,23 +332,15 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.viewport) {
       return;
     }
-
+    this._accessibilityBufferActive = true;
     const { bufferElements } = this._terminal.viewport.getBufferElements(0);
-    const content = [];
     for (const element of bufferElements) {
       if (element.textContent) {
-        content.push(element.textContent.replace(new RegExp(' ', 'g'), '\xA0'));
+        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
       }
     }
-    this._accessiblityBuffer.textContent = content.join('\n');
-    this._accessiblityBuffer.tabIndex = 0;
-    this._accessiblityBuffer.ariaRoleDescription = 'textbox';
-    this._accessibilityTreeRoot.spellcheck = false;
+    this._accessiblityBuffer.replaceChildren(...bufferElements);
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-
-    const end = this._accessiblityBuffer.value.length;
-    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-    this._accessiblityBuffer.setSelectionRange(end, end);
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {

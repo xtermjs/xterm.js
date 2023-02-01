@@ -767,6 +767,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
      */
     this.register(addDisposableDomListener(el, 'mousedown', (ev: MouseEvent) => {
       ev.preventDefault();
+      if (this._accessibilityManager?.accessibilityBufferActive) {
+        return;
+      }
       this.focus();
 
       // Don't send the mouse button to the pty if mouse events are disabled or
