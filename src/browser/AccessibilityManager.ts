@@ -107,7 +107,7 @@ export class AccessibilityManager extends Disposable {
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout',() => {
       this._accessibilityBufferActive = false;
     }));
-    
+
 
     this.register(this._renderRowsDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
