@@ -767,7 +767,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
      */
     this.register(addDisposableDomListener(el, 'mousedown', (ev: MouseEvent) => {
       ev.preventDefault();
-      if (this._accessibilityManager?.accessibilityBufferActive) {
+      if (this._accessibilityManager?.isAccessibilityBufferActive) {
         return;
       }
       this.focus();
