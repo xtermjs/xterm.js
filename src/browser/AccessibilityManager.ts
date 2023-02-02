@@ -17,14 +17,11 @@ const MAX_ROWS_TO_READ = 20;
 
 export class AccessibilityManager extends Disposable {
   private _accessibilityContainer: HTMLElement;
-  private _liveRegion: HTMLElement;
-  private _liveRegionLineCount: number = 0;
   private _accessiblityBuffer: HTMLElement;
 
-  private _renderRowsDebouncer: IRenderDebouncer;
-
-  private _isAccessibilityBufferActive: boolean = false;
-  public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
+  private _liveRegion: HTMLElement;
+  private _liveRegionLineCount: number = 0;
+  private _liveRegionDebouncer: IRenderDebouncer;
 
   /**
    * This queue has a character pushed to it for keys that are pressed, if the
@@ -38,6 +35,9 @@ export class AccessibilityManager extends Disposable {
   private _charsToConsume: string[] = [];
 
   private _charsToAnnounce: string = '';
+
+  private _isAccessibilityBufferActive: boolean = false;
+  public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
 
   constructor(
     private readonly _terminal: ITerminal,
@@ -53,7 +53,7 @@ export class AccessibilityManager extends Disposable {
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityContainer.appendChild(this._liveRegion);
-    this._renderRowsDebouncer = this.register(new TimeBasedDebouncer(this._announceCharacters.bind(this)));
+    this._liveRegionDebouncer = this.register(new TimeBasedDebouncer(this._announceCharacters.bind(this)));
 
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
@@ -77,7 +77,7 @@ export class AccessibilityManager extends Disposable {
     }));
 
 
-    this.register(this._renderRowsDebouncer);
+    this.register(this._liveRegionDebouncer);
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
@@ -153,7 +153,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _refreshRows(start?: number, end?: number): void {
-    this._renderRowsDebouncer.refresh(start, end, this._terminal.rows);
+    this._liveRegionDebouncer.refresh(start, end, this._terminal.rows);
   }
 
   private _refreshRowDimensions(element: HTMLElement): void {
