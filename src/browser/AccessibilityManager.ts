@@ -36,8 +36,8 @@ export class AccessibilityManager extends Disposable {
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
 
-  private _accessibilityBufferActive: boolean = false;
-  public get accessibilityBufferActive(): boolean { return this._accessibilityBufferActive; }
+  private _isAccessibilityBufferActive: boolean = false;
+  public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
 
   /**
    * This queue has a character pushed to it for keys that are pressed, if the
@@ -100,12 +100,12 @@ export class AccessibilityManager extends Disposable {
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab') {
-        this._accessibilityBufferActive = false;
+        this._isAccessibilityBufferActive = false;
       }}
     ));
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus',() => this._refreshAccessibilityBuffer()));
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout',() => {
-      this._accessibilityBufferActive = false;
+      this._isAccessibilityBufferActive = false;
     }));
 
 
@@ -335,7 +335,7 @@ export class AccessibilityManager extends Disposable {
     if (!this._terminal.viewport) {
       return;
     }
-    this._accessibilityBufferActive = true;
+    this._isAccessibilityBufferActive = true;
     const { bufferElements } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
