@@ -8,7 +8,6 @@ import { ITerminal, IRenderDebouncer } from 'browser/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IRenderService } from 'browser/services/Services';
 
 const MAX_ROWS_TO_READ = 20;
 
