@@ -33,8 +33,7 @@ export class AccessibilityManager extends Disposable {
   private _charsToAnnounce: string = '';
 
   constructor(
-    private readonly _terminal: ITerminal,
-    @IRenderService private readonly _renderService: IRenderService
+    private readonly _terminal: ITerminal
   ) {
     super();
     this._accessibilityContainer = document.createElement('div');
