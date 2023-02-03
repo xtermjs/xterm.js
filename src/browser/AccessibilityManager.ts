@@ -32,9 +32,6 @@ export class AccessibilityManager extends Disposable {
 
   private _charsToAnnounce: string = '';
 
-  private _isAccessibilityBufferActive: boolean = false;
-  public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
-
   constructor(
     private readonly _terminal: ITerminal,
     @IRenderService private readonly _renderService: IRenderService
