@@ -124,10 +124,6 @@ export class AccessibilityManager extends Disposable {
     this._liveRegionDebouncer.refresh(start, end, this._terminal.rows);
   }
 
-  private _refreshRowDimensions(element: HTMLElement): void {
-    element.style.height = `${this._renderService.dimensions.css.cell.height}px`;
-  }
-
   private _announceCharacters(): void {
     if (this._charsToAnnounce.length === 0) {
       return;
