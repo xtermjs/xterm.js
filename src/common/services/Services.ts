@@ -132,17 +132,9 @@ export interface IBrandedService {
   serviceBrand: undefined;
 }
 
-type GetLeadingNonServiceArgs<Args> =
-  Args extends [...IBrandedService[]] ? []
-    : Args extends [infer A1, ...IBrandedService[]] ? [A1]
-      : Args extends [infer A1, infer A2, ...IBrandedService[]] ? [A1, A2]
-        : Args extends [infer A1, infer A2, infer A3, ...IBrandedService[]] ? [A1, A2, A3]
-          : Args extends [infer A1, infer A2, infer A3, infer A4, ...IBrandedService[]] ? [A1, A2, A3, A4]
-            : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IBrandedService[]] ? [A1, A2, A3, A4, A5]
-              : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6]
-                : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7]
-                  : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
-                    : never;
+type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends [] ? []
+  : TArgs extends [...infer TFirst, infer TLast] ? TLast extends IBrandedService ? GetLeadingNonServiceArgs<TFirst> : TArgs
+    : never;
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
