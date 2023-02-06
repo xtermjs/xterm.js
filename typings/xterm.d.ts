@@ -1111,7 +1111,7 @@ declare module 'xterm' {
 
 
     /**
-     * Sets the accessibility buffer children.
+     * Sets the accessibility buffer's child elements.
      * @param elements The elements to add to the accessibility buffer.
      */
     setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment;
