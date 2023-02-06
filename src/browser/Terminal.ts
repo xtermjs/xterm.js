@@ -33,7 +33,6 @@ import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
-import { AccessibleBuffer } from './AccessibleBuffer';
 import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
@@ -72,7 +71,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _viewportElement: HTMLElement | undefined;
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
-  private _accessibleBuffer: AccessibleBuffer | undefined;
 
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
 
@@ -578,8 +576,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
-
-    this._accessibleBuffer = this._instantiationService.createInstance(AccessibleBuffer, this);
   }
 
   private _createRenderer(): IRenderer {
@@ -771,7 +767,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
      */
     this.register(addDisposableDomListener(el, 'mousedown', (ev: MouseEvent) => {
       ev.preventDefault();
-      if (this._accessibleBuffer?.isAccessibilityBufferActive) {
+      if (this._accessibilityManager?.isAccessibilityBufferActive) {
         return;
       }
       this.focus();

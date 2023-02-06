@@ -4,15 +4,20 @@
  */
 
 import * as Strings from 'browser/LocalizableStrings';
-import { ITerminal, IRenderDebouncer } from 'browser/Types';
+import { ITerminal, IRenderDebouncer, ReadonlyColorSet } from 'browser/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
+import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { IRenderService, IThemeService } from 'browser/services/Services';
+import { IOptionsService } from 'common/services/Services';
+import { ITerminalOptions } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
 
 export class AccessibilityManager extends Disposable {
   private _accessibilityContainer: HTMLElement;
+  private _accessiblityBuffer: HTMLElement;
 
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
@@ -31,8 +36,14 @@ export class AccessibilityManager extends Disposable {
 
   private _charsToAnnounce: string = '';
 
+  private _isAccessibilityBufferActive: boolean = false;
+  public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
+
   constructor(
-    private readonly _terminal: ITerminal
+    private readonly _terminal: ITerminal,
+    @IOptionsService optionsService: IOptionsService,
+    @IRenderService private readonly _renderService: IRenderService,
+    @IThemeService themeService: IThemeService
   ) {
     super();
     this._accessibilityContainer = document.createElement('div');
@@ -49,6 +60,23 @@ export class AccessibilityManager extends Disposable {
     }
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityContainer);
 
+    this._accessiblityBuffer = document.createElement('div');
+    this._accessiblityBuffer.setAttribute('role', 'document');
+    this._accessiblityBuffer.ariaRoleDescription = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.tabIndex = 0;
+    this._accessibilityContainer.appendChild(this._accessiblityBuffer);
+    this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'keydown', (ev: KeyboardEvent) => {
+      if (ev.key === 'Tab') {
+        this._isAccessibilityBufferActive = false;
+      }}
+    ));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus',() => this._refreshAccessibilityBuffer()));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout',() => {
+      this._isAccessibilityBufferActive = false;
+    }));
+
+
     this.register(this._liveRegionDebouncer);
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
@@ -58,7 +86,16 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
-    this.register(toDisposable(() => this._accessibilityContainer.remove()));
+
+    this._handleColorChange(themeService.colors);
+    this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
+    this._handleFontOptionChange(optionsService.options);
+    this.register(optionsService.onMultipleOptionChange(['fontSize', 'fontFamily', 'letterSpacing', 'lineHeight'], () => this._handleFontOptionChange(optionsService.options)));
+
+    this.register(toDisposable(() => {
+      this._accessiblityBuffer.remove();
+      this._accessibilityContainer.remove();
+    }));
   }
 
   private _handleTab(spaceCount: number): void {
@@ -119,11 +156,43 @@ export class AccessibilityManager extends Disposable {
     this._liveRegionDebouncer.refresh(start, end, this._terminal.rows);
   }
 
+  private _refreshRowDimensions(element: HTMLElement): void {
+    element.style.height = `${this._renderService.dimensions.css.cell.height}px`;
+  }
+
   private _announceCharacters(): void {
     if (this._charsToAnnounce.length === 0) {
       return;
     }
     this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
+  }
+
+
+  private _refreshAccessibilityBuffer(): void {
+    if (!this._terminal.viewport) {
+      return;
+    }
+    this._isAccessibilityBufferActive = true;
+    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
+    for (const element of bufferElements) {
+      if (element.textContent) {
+        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+      }
+    }
+    this._accessiblityBuffer.replaceChildren(...bufferElements);
+    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+  }
+
+  private _handleColorChange(colorSet: ReadonlyColorSet): void {
+    this._accessiblityBuffer.style.backgroundColor = colorSet.background.css;
+    this._accessiblityBuffer.style.color = colorSet.foreground.css;
+  }
+
+  private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
+    this._accessiblityBuffer.style.fontFamily = options.fontFamily;
+    this._accessiblityBuffer.style.fontSize = `${options.fontSize}px`;
+    this._accessiblityBuffer.style.lineHeight = `${options.lineHeight * this._renderService.dimensions.css.cell.height}px`;
+    this._accessiblityBuffer.style.letterSpacing = `${options.letterSpacing}px`;
   }
 }
