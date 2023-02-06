@@ -45,7 +45,7 @@ export class AccessibleBuffer extends Disposable {
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus', () => this._refreshAccessibilityBuffer()));
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout', (e) => {
       if (!this._accessiblityBuffer.contains(e.element)) {
-        this._isAccessibilityBufferActive = false
+        this._isAccessibilityBufferActive = false;
       }
     }));
 
