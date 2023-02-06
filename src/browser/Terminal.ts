@@ -992,6 +992,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._selectionService?.selectLines(start, end);
   }
 
+  public setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment {
+    if (!this._accessibleBuffer) {
+      throw new Error('No accessible buffer');
+    }
+    return this._accessibleBuffer.setElements(elements);
+  }
+
   /**
    * Handle a keydown [KeyboardEvent].
    *

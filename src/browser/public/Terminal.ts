@@ -236,6 +236,9 @@ export class Terminal implements ITerminalApi {
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
   }
+  public setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment {
+    return this._core.setAccessibilityBufferElements(elements);
+  }
   public static get strings(): ILocalizableStrings {
     return Strings;
   }

@@ -1108,6 +1108,13 @@ declare module 'xterm' {
      * @param addon The addon to load.
      */
     loadAddon(addon: ITerminalAddon): void;
+
+
+    /**
+     * Sets the accessibility buffer children.
+     * @param elements The elements to add to the accessibility buffer.
+     */
+    setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment;
   }
 
   /**

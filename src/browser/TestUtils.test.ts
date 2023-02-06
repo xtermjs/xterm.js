@@ -143,6 +143,9 @@ export class MockTerminal implements ITerminal {
   public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
     throw new Error('Method not implemented.');
   }
+  public setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment {
+    throw new Error('Method not implemented.');
+  }
   public bracketedPasteMode!: boolean;
   public renderer!: IRenderer;
   public linkifier2!: ILinkifier2;

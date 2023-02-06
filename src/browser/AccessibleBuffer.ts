@@ -39,10 +39,15 @@ export class AccessibleBuffer extends Disposable {
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab') {
         this._isAccessibilityBufferActive = false;
-      }}
+      }
+    }
     ));
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus',() => this._refreshAccessibilityBuffer()));
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout',() => this._isAccessibilityBufferActive = false));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus', () => this._refreshAccessibilityBuffer()));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout', (e) => {
+      if (!this._accessiblityBuffer.contains(e.element)) {
+        this._isAccessibilityBufferActive = false
+      }
+    }));
 
     this._handleColorChange(themeService.colors);
     this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
@@ -51,11 +56,24 @@ export class AccessibleBuffer extends Disposable {
     this.register(toDisposable(() => this._accessiblityBuffer.remove()));
   }
 
+  public setElements(elements: HTMLElement[]): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+    for (const element of elements) {
+      fragment.appendChild(element);
+    }
+    this._accessiblityBuffer.replaceChildren(fragment);
+    return fragment;
+  }
+
   private _refreshAccessibilityBuffer(): void {
     if (!this._terminal.viewport) {
       return;
     }
     this._isAccessibilityBufferActive = true;
+    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    if (this._terminal.options.screenReaderMode) {
+      return;
+    }
     const { bufferElements } = this._terminal.viewport.getBufferElements(0);
     for (const element of bufferElements) {
       if (element.textContent) {
@@ -63,7 +81,6 @@ export class AccessibleBuffer extends Disposable {
       }
     }
     this._accessiblityBuffer.replaceChildren(...bufferElements);
-    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {

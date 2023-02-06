@@ -79,6 +79,8 @@ export interface IPublicTerminal extends IDisposable {
   paste(data: string): void;
   refresh(start: number, end: number): void;
   clearTextureAtlas(): void;
+  setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment
+  
   reset(): void;
 }
 
