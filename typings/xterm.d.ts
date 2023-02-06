@@ -1110,11 +1110,11 @@ declare module 'xterm' {
     loadAddon(addon: ITerminalAddon): void;
 
 
-    /**
-     * Sets the accessibility buffer children.
-     * @param elements The elements to add to the accessibility buffer.
-     */
-    setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment;
+   /**
+    * Registers a buffer element provider
+    * @param bufferProvider 
+    */
+    registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable;
   }
 
   /**
@@ -1365,6 +1365,14 @@ declare module 'xterm' {
      * cell objects when dealing with tons of cells.
      */
     getNullCell(): IBufferCell;
+  }
+
+  export interface IBufferElementProvider {
+    /**
+     * Provides a buffer element provider
+     * @param callback The callback to be fired when the buffer elements are requested
+     */
+    provideBufferElements(callback: (fragment: DocumentFragment) => void): void;
   }
 
   /**

@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange, IBufferElementProvider } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/shared/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -192,6 +192,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.element?.parentNode?.removeChild(this.element);
     }));
   }
+
+  public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
+    if (!this._accessibleBuffer) {
+      throw new Error ('No accessible buffer');
+    }
+    return this._accessibleBuffer.registerBufferElementProvider(bufferProvider);
+   }
 
   /**
    * Handle color event from inputhandler for OSC 4|104 | 10|110 | 11|111 | 12|112.
@@ -990,13 +997,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   public selectLines(start: number, end: number): void {
     this._selectionService?.selectLines(start, end);
-  }
-
-  public setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment {
-    if (!this._accessibleBuffer) {
-      throw new Error('No accessible buffer');
-    }
-    return this._accessibleBuffer.setElements(elements);
   }
 
   /**

@@ -79,8 +79,8 @@ export interface IPublicTerminal extends IDisposable {
   paste(data: string): void;
   refresh(start: number, end: number): void;
   clearTextureAtlas(): void;
-  setAccessibilityBufferElements(elements: HTMLElement[]): DocumentFragment;
   reset(): void;
+  registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
@@ -220,4 +220,8 @@ export interface IRenderDebouncer extends IDisposable {
 
 export interface IRenderDebouncerWithCallback extends IRenderDebouncer {
   addRefreshCallback(callback: FrameRequestCallback): number;
+}
+
+export interface IBufferElementProvider {
+  provideBufferElements(callback: (fragment: DocumentFragment) => void): void;
 }

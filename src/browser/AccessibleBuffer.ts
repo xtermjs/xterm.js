@@ -4,20 +4,19 @@
  */
 
 import * as Strings from 'browser/LocalizableStrings';
-import { ITerminal, IRenderDebouncer, ReadonlyColorSet } from 'browser/Types';
-import { isMac } from 'common/Platform';
-import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
+import { IBufferElementProvider, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IRenderService, IThemeService } from 'browser/services/Services';
 import { IOptionsService } from 'common/services/Services';
 import { ITerminalOptions } from 'xterm';
+import { IDisposable } from 'common/Types';
 
 export class AccessibleBuffer extends Disposable {
   private _accessiblityBuffer: HTMLElement;
   private _isAccessibilityBufferActive: boolean = false;
   public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
-
+  private _providers: IBufferElementProvider[] = [];
   constructor(
     private readonly _terminal: ITerminal,
     @IOptionsService optionsService: IOptionsService,
@@ -56,13 +55,17 @@ export class AccessibleBuffer extends Disposable {
     this.register(toDisposable(() => this._accessiblityBuffer.remove()));
   }
 
-  public setElements(elements: HTMLElement[]): DocumentFragment {
-    const fragment = document.createDocumentFragment();
-    for (const element of elements) {
-      fragment.appendChild(element);
-    }
-    this._accessiblityBuffer.replaceChildren(fragment);
-    return fragment;
+  public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
+    this._providers.push(bufferProvider);
+    return {
+      dispose: () => {
+        const providerIndex = this._providers.indexOf(bufferProvider);
+
+        if (providerIndex !== -1) {
+          this._providers.splice(providerIndex, 1);
+        }
+      }
+    };
   }
 
   private _refreshAccessibilityBuffer(): void {
@@ -74,13 +77,21 @@ export class AccessibleBuffer extends Disposable {
     if (this._terminal.options.screenReaderMode) {
       return;
     }
-    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
-    for (const element of bufferElements) {
-      if (element.textContent) {
-        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+    if (!this._providers.length) {
+      const { bufferElements } = this._terminal.viewport.getBufferElements(0);
+      for (const element of bufferElements) {
+        if (element.textContent) {
+          element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+        }
       }
+      this._accessiblityBuffer.replaceChildren(...bufferElements);
+    } else {
+      const fragment = document.createDocumentFragment();
+      for (const provider of this._providers) {
+        provider.provideBufferElements((f) =>  fragment.appendChild(f));
+      }
+      this._accessiblityBuffer.replaceChildren(fragment);
     }
-    this._accessiblityBuffer.replaceChildren(...bufferElements);
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
