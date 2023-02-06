@@ -151,6 +151,10 @@
     color: transparent;
 }
 
+.xterm .xterm-accessibility-buffer div {
+	white-space: pre-wrap;
+}
+
 .xterm .xterm-accessibility-buffer {
     position: absolute;
     left: 0;
