@@ -356,7 +356,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let lastBg: number;
     let y: number;
     let row: number;
-    let line: IBufferLine | undefined;
+    let line: IBufferLine;
     let joinedRanges: [number, number][];
     let isJoined: boolean;
     let lastCharX: number;
@@ -366,16 +366,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let i: number;
     let x: number;
     let j: number;
-
+    start = clamp(start, 0, terminal.rows - 1);
+    end = clamp(end, 0, terminal.rows - 1);
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
-      line = terminal.buffer.lines.get(row);
+      line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (x = 0; x < terminal.cols; x++) {
-        if (!line) {
-          continue;
-        }
         lastBg = this._cellColorResolver.result.bg;
         line.loadCell(x, cell);
 
@@ -572,4 +570,8 @@ export class JoinedCellData extends AttributeData implements ICellData {
   public getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
+}
+
+function clamp(value: number, max: number, min: number = 0): number {
+  return Math.max(Math.min(value, max), min);
 }
