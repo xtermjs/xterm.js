@@ -1108,6 +1108,14 @@ declare module 'xterm' {
      * @param addon The addon to load.
      */
     loadAddon(addon: ITerminalAddon): void;
+
+   /*
+    * Registers a buffer element provider which will provide a custom element to
+    * use in the terminal's accessible buffer. Using this an xterm.js embedder
+    * has full control over how the buffer is represented in the DOM.
+    * @param bufferElementProvider The buffer element provider.
+    */
+    registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable;
   }
 
   /**
@@ -1358,6 +1366,13 @@ declare module 'xterm' {
      * cell objects when dealing with tons of cells.
      */
     getNullCell(): IBufferCell;
+  }
+
+  export interface IBufferElementProvider {
+    /**
+     * Provides a document fragment containing the buffer elements.
+     */
+    provideBufferElements(): DocumentFragment;
   }
 
   /**

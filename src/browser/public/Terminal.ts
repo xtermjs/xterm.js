@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, IModes, IDecorationOptions, IDecoration } from 'xterm';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, IModes, IDecorationOptions, IDecoration, IBufferElementProvider } from 'xterm';
 import { IBufferRange, ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
@@ -235,6 +235,9 @@ export class Terminal implements ITerminalApi {
   }
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
+  }
+  public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
+    return this._core.registerBufferElementProvider(bufferProvider);
   }
   public static get strings(): ILocalizableStrings {
     return Strings;

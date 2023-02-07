@@ -4,20 +4,19 @@
  */
 
 import * as Strings from 'browser/LocalizableStrings';
-import { ITerminal, IRenderDebouncer, ReadonlyColorSet } from 'browser/Types';
-import { isMac } from 'common/Platform';
-import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
+import { IBufferElementProvider, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IRenderService, IThemeService } from 'browser/services/Services';
 import { IOptionsService } from 'common/services/Services';
 import { ITerminalOptions } from 'xterm';
+import { IDisposable } from 'common/Types';
 
 export class AccessibleBuffer extends Disposable {
   private _accessiblityBuffer: HTMLElement;
   private _isAccessibilityBufferActive: boolean = false;
   public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
-
+  private _provider: IBufferElementProvider | undefined;
   constructor(
     private readonly _terminal: ITerminal,
     @IOptionsService optionsService: IOptionsService,
@@ -26,7 +25,7 @@ export class AccessibleBuffer extends Disposable {
   ) {
     super();
     if (!this._terminal.element) {
-      throw new Error('Cannot enable accessibility before Terminal.open');
+      throw new Error('Cannot enable accessibility buffer before Terminal.open');
     }
 
     this._accessiblityBuffer = document.createElement('div');
@@ -39,10 +38,15 @@ export class AccessibleBuffer extends Disposable {
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab') {
         this._isAccessibilityBufferActive = false;
-      }}
+      }
+    }
     ));
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus',() => this._refreshAccessibilityBuffer()));
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout',() => this._isAccessibilityBufferActive = false));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus', () => this._refreshAccessibilityBuffer()));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout', (e) => {
+      if (!this._accessiblityBuffer.contains(e.element)) {
+        this._isAccessibilityBufferActive = false;
+      }
+    }));
 
     this._handleColorChange(themeService.colors);
     this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
@@ -51,19 +55,36 @@ export class AccessibleBuffer extends Disposable {
     this.register(toDisposable(() => this._accessiblityBuffer.remove()));
   }
 
+  public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
+    if (this._provider) {
+      throw new Error('Buffer element provider already registered');
+    }
+    this._provider = bufferProvider;
+    return {
+      dispose: () => {
+        this._provider = undefined;
+      }
+    };
+  }
+
   private _refreshAccessibilityBuffer(): void {
     if (!this._terminal.viewport) {
       return;
     }
     this._isAccessibilityBufferActive = true;
-    const { bufferElements } = this._terminal.viewport.getBufferElements(0);
-    for (const element of bufferElements) {
-      if (element.textContent) {
-        element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
-      }
-    }
-    this._accessiblityBuffer.replaceChildren(...bufferElements);
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    const bufferElements = this._provider?.provideBufferElements();
+    if (!bufferElements) {
+      const { bufferElements } = this._terminal.viewport.getBufferElements(0);
+      for (const element of bufferElements) {
+        if (element.textContent) {
+          element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
+        }
+      }
+      this._accessiblityBuffer.replaceChildren(...bufferElements);
+    } else {
+      this._accessiblityBuffer.replaceChildren(bufferElements);
+    }
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
