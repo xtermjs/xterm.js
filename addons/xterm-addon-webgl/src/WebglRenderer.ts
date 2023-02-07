@@ -366,8 +366,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let i: number;
     let x: number;
     let j: number;
-    start = clamp(start, 0, terminal.rows - 1);
-    end = clamp(end, 0, terminal.rows - 1);
+    start = clamp(start, terminal.rows - 1, 0);
+    end = clamp(end, terminal.rows - 1, 0);
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
       line = terminal.buffer.lines.get(row)!;
