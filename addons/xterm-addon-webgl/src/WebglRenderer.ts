@@ -373,6 +373,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._model.lineLengths[y] = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (x = 0; x < terminal.cols; x++) {
+        if (!line) {
+          continue;
+        }
         lastBg = this._cellColorResolver.result.bg;
         line.loadCell(x, cell);
 
