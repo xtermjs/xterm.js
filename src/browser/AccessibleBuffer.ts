@@ -16,7 +16,7 @@ export class AccessibleBuffer extends Disposable {
   private _accessiblityBuffer: HTMLElement;
   private _isAccessibilityBufferActive: boolean = false;
   public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
-  private _provider: IBufferElementProvider | undefined;;
+  private _provider: IBufferElementProvider | undefined;
   constructor(
     private readonly _terminal: ITerminal,
     @IOptionsService optionsService: IOptionsService,
@@ -25,7 +25,7 @@ export class AccessibleBuffer extends Disposable {
   ) {
     super();
     if (!this._terminal.element) {
-      throw new Error('Cannot enable accessibility before Terminal.open');
+      throw new Error('Cannot enable accessibility buffer before Terminal.open');
     }
 
     this._accessiblityBuffer = document.createElement('div');
@@ -56,6 +56,9 @@ export class AccessibleBuffer extends Disposable {
   }
 
   public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
+    if (this._provider) {
+      throw new Error('Buffer element provider already registered');
+    }
     this._provider = bufferProvider;
     return {
       dispose: () => {

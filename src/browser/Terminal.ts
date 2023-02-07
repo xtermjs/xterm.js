@@ -195,10 +195,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
     if (!this._accessibleBuffer) {
-      throw new Error ('No accessible buffer');
+      throw new Error ('Cannot register buffer element provider when terminal has not been opened yet');
     }
     return this._accessibleBuffer.registerBufferElementProvider(bufferProvider);
-   }
+  }
 
   /**
    * Handle color event from inputhandler for OSC 4|104 | 10|110 | 11|111 | 12|112.
