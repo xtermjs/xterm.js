@@ -16,7 +16,7 @@ export class AccessibleBuffer extends Disposable {
   private _accessiblityBuffer: HTMLElement;
   private _isAccessibilityBufferActive: boolean = false;
   public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
-  private _providers: IBufferElementProvider[] = [];
+  private _provider: IBufferElementProvider | undefined;;
   constructor(
     private readonly _terminal: ITerminal,
     @IOptionsService optionsService: IOptionsService,
@@ -56,14 +56,10 @@ export class AccessibleBuffer extends Disposable {
   }
 
   public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
-    this._providers.push(bufferProvider);
+    this._provider = bufferProvider;
     return {
       dispose: () => {
-        const providerIndex = this._providers.indexOf(bufferProvider);
-
-        if (providerIndex !== -1) {
-          this._providers.splice(providerIndex, 1);
-        }
+        this._provider = undefined;
       }
     };
   }
@@ -74,10 +70,8 @@ export class AccessibleBuffer extends Disposable {
     }
     this._isAccessibilityBufferActive = true;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
-    if (this._terminal.options.screenReaderMode) {
-      return;
-    }
-    if (!this._providers.length) {
+    const bufferElements = this._provider?.provideBufferElements();
+    if (!bufferElements) {
       const { bufferElements } = this._terminal.viewport.getBufferElements(0);
       for (const element of bufferElements) {
         if (element.textContent) {
@@ -86,11 +80,7 @@ export class AccessibleBuffer extends Disposable {
       }
       this._accessiblityBuffer.replaceChildren(...bufferElements);
     } else {
-      const fragment = document.createDocumentFragment();
-      for (const provider of this._providers) {
-        provider.provideBufferElements((f) =>  fragment.appendChild(f));
-      }
-      this._accessiblityBuffer.replaceChildren(fragment);
+      this._accessiblityBuffer.replaceChildren(bufferElements);
     }
   }
 

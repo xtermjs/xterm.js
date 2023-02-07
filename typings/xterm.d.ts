@@ -1112,7 +1112,7 @@ declare module 'xterm' {
 
    /**
     * Registers a buffer element provider
-    * @param bufferProvider 
+    * @param bufferProvider
     */
     registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable;
   }
@@ -1369,10 +1369,9 @@ declare module 'xterm' {
 
   export interface IBufferElementProvider {
     /**
-     * Provides a buffer element provider
-     * @param callback The callback to be fired when the buffer elements are requested
+     * Provides a document fragment containing the buffer elements.
      */
-    provideBufferElements(callback: (fragment: DocumentFragment) => void): void;
+    provideBufferElements(): DocumentFragment;
   }
 
   /**

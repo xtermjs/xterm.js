@@ -223,5 +223,5 @@ export interface IRenderDebouncerWithCallback extends IRenderDebouncer {
 }
 
 export interface IBufferElementProvider {
-  provideBufferElements(callback: (fragment: DocumentFragment) => void): void;
+  provideBufferElements(): DocumentFragment;
 }
