@@ -366,7 +366,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let i: number;
     let x: number;
     let j: number;
-
+    start = clamp(start, terminal.rows - 1, 0);
+    end = clamp(end, terminal.rows - 1, 0);
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
       line = terminal.buffer.lines.get(row)!;
@@ -569,4 +570,8 @@ export class JoinedCellData extends AttributeData implements ICellData {
   public getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
+}
+
+function clamp(value: number, max: number, min: number = 0): number {
+  return Math.max(Math.min(value, max), min);
 }
