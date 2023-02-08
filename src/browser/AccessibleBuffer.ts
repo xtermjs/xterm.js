@@ -13,9 +13,9 @@ import { ITerminalOptions } from 'xterm';
 import { IDisposable } from 'common/Types';
 
 export class AccessibleBuffer extends Disposable {
-  private _accessiblityBuffer: HTMLElement;
-  private _isAccessibilityBufferActive: boolean = false;
-  public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
+  private _element: HTMLElement;
+  private _isAccessibleBufferActive: boolean = false;
+  public get isAccessibleBufferActive(): boolean { return this._isAccessibleBufferActive; }
   private _provider: IBufferElementProvider | undefined;
   constructor(
     private readonly _terminal: ITerminal,
@@ -25,26 +25,26 @@ export class AccessibleBuffer extends Disposable {
   ) {
     super();
     if (!this._terminal.element) {
-      throw new Error('Cannot enable accessibility buffer before Terminal.open');
+      throw new Error('Cannot enable accessible buffer before Terminal.open');
     }
 
-    this._accessiblityBuffer = document.createElement('div');
-    this._accessiblityBuffer.setAttribute('role', 'document');
-    this._accessiblityBuffer.ariaRoleDescription = Strings.accessibilityBuffer;
-    this._accessiblityBuffer.tabIndex = 0;
-    this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
-    this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
+    this._element = document.createElement('div');
+    this._element.setAttribute('role', 'document');
+    this._element.ariaRoleDescription = Strings.accessibleBuffer;
+    this._element.tabIndex = 0;
+    this._element.classList.add('xterm-accessible-buffer');
+    this._terminal.element.insertAdjacentElement('afterbegin', this._element);
 
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'keydown', (ev: KeyboardEvent) => {
+    this.register(addDisposableDomListener(this._element, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab') {
-        this._isAccessibilityBufferActive = false;
+        this._isAccessibleBufferActive = false;
       }
     }
     ));
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus', () => this._refreshAccessibilityBuffer()));
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout', (e) => {
-      if (!this._accessiblityBuffer.contains(e.element)) {
-        this._isAccessibilityBufferActive = false;
+    this.register(addDisposableDomListener(this._element, 'focus', () => this._refreshAccessibleBuffer()));
+    this.register(addDisposableDomListener(this._element, 'focusout', (e) => {
+      if (!this._element.contains(e.element)) {
+        this._isAccessibleBufferActive = false;
       }
     }));
 
@@ -52,7 +52,7 @@ export class AccessibleBuffer extends Disposable {
     this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
     this._handleFontOptionChange(optionsService.options);
     this.register(optionsService.onMultipleOptionChange(['fontSize', 'fontFamily', 'letterSpacing', 'lineHeight'], () => this._handleFontOptionChange(optionsService.options)));
-    this.register(toDisposable(() => this._accessiblityBuffer.remove()));
+    this.register(toDisposable(() => this._element.remove()));
   }
 
   public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
@@ -67,12 +67,12 @@ export class AccessibleBuffer extends Disposable {
     };
   }
 
-  private _refreshAccessibilityBuffer(): void {
+  private _refreshAccessibleBuffer(): void {
     if (!this._terminal.viewport) {
       return;
     }
-    this._isAccessibilityBufferActive = true;
-    this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
+    this._isAccessibleBufferActive = true;
+    this._element.scrollTop = this._element.scrollHeight;
     const bufferElements = this._provider?.provideBufferElements();
     if (!bufferElements) {
       const { bufferElements } = this._terminal.viewport.getBufferElements(0);
@@ -81,21 +81,21 @@ export class AccessibleBuffer extends Disposable {
           element.textContent = element.textContent.replace(new RegExp(' ', 'g'), '\xA0');
         }
       }
-      this._accessiblityBuffer.replaceChildren(...bufferElements);
+      this._element.replaceChildren(...bufferElements);
     } else {
-      this._accessiblityBuffer.replaceChildren(bufferElements);
+      this._element.replaceChildren(bufferElements);
     }
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {
-    this._accessiblityBuffer.style.backgroundColor = colorSet.background.css;
-    this._accessiblityBuffer.style.color = colorSet.foreground.css;
+    this._element.style.backgroundColor = colorSet.background.css;
+    this._element.style.color = colorSet.foreground.css;
   }
 
   private _handleFontOptionChange(options: Required<ITerminalOptions>): void {
-    this._accessiblityBuffer.style.fontFamily = options.fontFamily;
-    this._accessiblityBuffer.style.fontSize = `${options.fontSize}px`;
-    this._accessiblityBuffer.style.lineHeight = `${options.lineHeight * (this._renderService.dimensions.css.cell.height)}px`;
-    this._accessiblityBuffer.style.letterSpacing = `${options.letterSpacing}px`;
+    this._element.style.fontFamily = options.fontFamily;
+    this._element.style.fontSize = `${options.fontSize}px`;
+    this._element.style.lineHeight = `${options.lineHeight * (this._renderService.dimensions.css.cell.height)}px`;
+    this._element.style.letterSpacing = `${options.letterSpacing}px`;
   }
 }
