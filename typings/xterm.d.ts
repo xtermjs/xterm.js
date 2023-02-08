@@ -502,7 +502,7 @@ declare module 'xterm' {
     /**
      * The aria label for the accessibility buffer
      */
-    accessibilityBuffer: string;
+    accessibleBuffer: string;
   }
 
   /**

@@ -14,8 +14,8 @@ import { IDisposable } from 'common/Types';
 
 export class AccessibleBuffer extends Disposable {
   private _accessiblityBuffer: HTMLElement;
-  private _isAccessibilityBufferActive: boolean = false;
-  public get isAccessibilityBufferActive(): boolean { return this._isAccessibilityBufferActive; }
+  private _isAccessibleBufferActive: boolean = false;
+  public get isAccessibleBufferActive(): boolean { return this._isAccessibleBufferActive; }
   private _provider: IBufferElementProvider | undefined;
   constructor(
     private readonly _terminal: ITerminal,
@@ -30,21 +30,21 @@ export class AccessibleBuffer extends Disposable {
 
     this._accessiblityBuffer = document.createElement('div');
     this._accessiblityBuffer.setAttribute('role', 'document');
-    this._accessiblityBuffer.ariaRoleDescription = Strings.accessibilityBuffer;
+    this._accessiblityBuffer.ariaRoleDescription = Strings.accessibleBuffer;
     this._accessiblityBuffer.tabIndex = 0;
     this._accessiblityBuffer.classList.add('xterm-accessibility-buffer');
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessiblityBuffer);
 
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab') {
-        this._isAccessibilityBufferActive = false;
+        this._isAccessibleBufferActive = false;
       }
     }
     ));
-    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus', () => this._refreshAccessibilityBuffer()));
+    this.register(addDisposableDomListener(this._accessiblityBuffer, 'focus', () => this._refreshAccessibleBuffer()));
     this.register(addDisposableDomListener(this._accessiblityBuffer, 'focusout', (e) => {
       if (!this._accessiblityBuffer.contains(e.element)) {
-        this._isAccessibilityBufferActive = false;
+        this._isAccessibleBufferActive = false;
       }
     }));
 
@@ -67,11 +67,11 @@ export class AccessibleBuffer extends Disposable {
     };
   }
 
-  private _refreshAccessibilityBuffer(): void {
+  private _refreshAccessibleBuffer(): void {
     if (!this._terminal.viewport) {
       return;
     }
-    this._isAccessibilityBufferActive = true;
+    this._isAccessibleBufferActive = true;
     this._accessiblityBuffer.scrollTop = this._accessiblityBuffer.scrollHeight;
     const bufferElements = this._provider?.provideBufferElements();
     if (!bufferElements) {
