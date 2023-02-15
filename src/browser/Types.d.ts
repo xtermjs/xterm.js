@@ -223,5 +223,5 @@ export interface IRenderDebouncerWithCallback extends IRenderDebouncer {
 }
 
 export interface IBufferElementProvider {
-  provideBufferElements(): DocumentFragment;
+  provideBufferElements(): DocumentFragment | HTMLElement;
 }
