@@ -23,8 +23,11 @@ const MINIMUM_ROWS = 1;
 
 export class FitAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
+  private _measureParent: boolean;
 
-  constructor() {}
+  constructor(measureParent: boolean = true) {
+    this._measureParent =  measureParent;
+  }
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
@@ -68,9 +71,12 @@ export class FitAddon implements ITerminalAddon {
     const scrollbarWidth = this._terminal.options.scrollback === 0 ?
       0 : core.viewport.scrollBarWidth;
 
-    const parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
-    const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-    const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
+    const measureElement = this._measureParent
+      ? this._terminal.element.parentElement
+      : this._terminal.element;
+    const measureElementStyle = window.getComputedStyle(measureElement);
+    const measureElementHeight = parseInt(measureElementStyle.getPropertyValue('height'));
+    const measureElementWidth = Math.max(0, parseInt(measureElementStyle.getPropertyValue('width')));
     const elementStyle = window.getComputedStyle(this._terminal.element);
     const elementPadding = {
       top: parseInt(elementStyle.getPropertyValue('padding-top')),
@@ -80,8 +86,8 @@ export class FitAddon implements ITerminalAddon {
     };
     const elementPaddingVer = elementPadding.top + elementPadding.bottom;
     const elementPaddingHor = elementPadding.right + elementPadding.left;
-    const availableHeight = parentElementHeight - elementPaddingVer;
-    const availableWidth = parentElementWidth - elementPaddingHor - scrollbarWidth;
+    const availableHeight = measureElementHeight - elementPaddingVer;
+    const availableWidth = measureElementWidth - elementPaddingHor - scrollbarWidth;
     const geometry = {
       cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / dims.css.cell.width)),
       rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / dims.css.cell.height))
