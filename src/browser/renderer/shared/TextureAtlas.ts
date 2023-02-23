@@ -643,7 +643,7 @@ export class TextureAtlas implements ITextureAtlas {
 
     // Draw the character
     if (!customGlyph) {
-      this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight);
+      this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight, allowedWidth - padding);
     }
 
     // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible
