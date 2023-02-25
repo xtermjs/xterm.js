@@ -684,12 +684,18 @@ export class TextureAtlas implements ITextureAtlas {
 
     // split the image into multiple images to fit into the texture
     const images: ImageData[] = [];
-    let glyphWidth = allowedWidth;
     if (this._tmpCanvas.width > this._textureSize) {
       const step = this._textureSize-(2*padding);
-      glyphWidth = step;
-      for (let i = 0; i < this._tmpCanvas.width; i += step) {
-        const width = Math.min(step, this._tmpCanvas.width - i);
+
+      const fullImageData = this._tmpCtx.getImageData(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
+      if (!this._config.allowTransparency) {
+        clearColor(fullImageData, backgroundColor, foregroundColor, enableClearThresholdCheck);
+      }
+
+      this._findGlyphBoundingBox(fullImageData, this._workBoundingBox, fullImageData.width, restrictedPowerlineGlyph, customGlyph, padding);
+      const end = this._workBoundingBox.right;
+      for (let i = 0; i <= end; i += step) {
+        const width = Math.min(step, end - i + 1);
         const image = this._tmpCtx.getImageData(i, 0, width, this._tmpCanvas.height);
         images.push(image);
       }
@@ -715,7 +721,7 @@ export class TextureAtlas implements ITextureAtlas {
         continue;
       }
 
-      const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, Math.min(glyphWidth, imageData.width), restrictedPowerlineGlyph, customGlyph, padding);
+      const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox,  imageData.width, restrictedPowerlineGlyph, customGlyph, padding);
 
       // Find the best atlas row to use
       let activePage: AtlasPage;
@@ -881,7 +887,7 @@ export class TextureAtlas implements ITextureAtlas {
     }
     boundingBox.left = 0;
     found = false;
-    for (let x = 0; x < padding + width; x++) {
+    for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         const alphaOffset = y * imageData.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
@@ -896,7 +902,7 @@ export class TextureAtlas implements ITextureAtlas {
     }
     boundingBox.right = width;
     found = false;
-    for (let x = padding + width - 1; x >= padding; x--) {
+    for (let x = width - 1; x >= 0; x--) {
       for (let y = 0; y < height; y++) {
         const alphaOffset = y * imageData.width * 4 + x * 4 + 3;
         if (imageData.data[alphaOffset] !== 0) {
