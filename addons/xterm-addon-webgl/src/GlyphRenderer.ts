@@ -89,6 +89,7 @@ let $glyph: IRasterizedGlyph | undefined = undefined;
 let $glyphs: IRasterizedGlyph[] | undefined = undefined;
 let $leftCellPadding = 0;
 let $clippedPixels = 0;
+let $offset = 0;
 
 export class GlyphRenderer extends Disposable {
   private readonly _program: WebGLProgram;
@@ -243,15 +244,17 @@ export class GlyphRenderer extends Disposable {
       $glyphs = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
     }
 
+    $offset = $glyphs[0].offset.x;
+
     for ($j = 0; $j < $glyphs.length; $j++) {
       $i = (y * this._terminal.cols + x + $j) * INDICES_PER_CELL;
       $glyph = $glyphs[$j];
 
       $leftCellPadding = Math.floor((this._dimensions.device.cell.width - this._dimensions.device.char.width) / 2);
-      if (bg !== lastBg && $glyph.offset.x > $leftCellPadding) {
-        $clippedPixels = $glyph.offset.x - $leftCellPadding;
+      if (bg !== lastBg && $offset > $leftCellPadding) {
+        $clippedPixels = $offset - $leftCellPadding;
         // a_origin
-        array[$i    ] = -($glyph.offset.x - $clippedPixels) + this._dimensions.device.char.left;
+        array[$i    ] = -($offset - $clippedPixels) + this._dimensions.device.char.left;
         array[$i + 1] = -$glyph.offset.y + this._dimensions.device.char.top;
         // a_size
         array[$i + 2] = ($glyph.size.x - $clippedPixels) / this._dimensions.device.canvas.width;
@@ -266,7 +269,7 @@ export class GlyphRenderer extends Disposable {
         array[$i + 8] = $glyph.sizeClipSpace.y;
       } else {
         // a_origin
-        array[$i    ] = -$glyph.offset.x + this._dimensions.device.char.left;
+        array[$i    ] = -$offset + this._dimensions.device.char.left;
         array[$i + 1] = -$glyph.offset.y + this._dimensions.device.char.top;
         // a_size
         array[$i + 2] = $glyph.size.x / this._dimensions.device.canvas.width;
@@ -280,6 +283,7 @@ export class GlyphRenderer extends Disposable {
         array[$i + 7] = $glyph.sizeClipSpace.x;
         array[$i + 8] = $glyph.sizeClipSpace.y;
       }
+      $offset -= $glyph.size.x - this._dimensions.device.cell.width;
     }
     // a_cellpos only changes on resize
   }

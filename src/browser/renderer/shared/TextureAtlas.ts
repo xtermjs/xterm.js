@@ -685,7 +685,7 @@ export class TextureAtlas implements ITextureAtlas {
     // split the image into multiple images to fit into the texture
     const images: ImageData[] = [];
     if (this._tmpCanvas.width > this._textureSize) {
-      const step = this._config.deviceCellWidth;
+      const step = this._textureSize - 2 * padding;
 
       const fullImageData = this._tmpCtx.getImageData(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
       if (!this._config.allowTransparency) {
