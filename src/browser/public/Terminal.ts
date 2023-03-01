@@ -242,6 +242,7 @@ export class Terminal implements ITerminalApi {
   public static get strings(): ILocalizableStrings {
     return Strings;
   }
+ 
   private _verifyIntegers(...values: number[]): void {
     for (const value of values) {
       if (value === Infinity || isNaN(value) || value % 1 !== 0) {
