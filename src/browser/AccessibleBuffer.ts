@@ -38,6 +38,7 @@ export class AccessibleBuffer extends Disposable {
     this.register(addDisposableDomListener(this._element, 'keydown', (ev: KeyboardEvent) => {
       if (ev.key === 'Tab' || ev.key === 'Escape') {
         this._isAccessibleBufferActive = false;
+        this._element.classList.remove('active');
         if (ev.key === 'Escape') {
           this._terminal.focus();
         }
@@ -83,6 +84,7 @@ export class AccessibleBuffer extends Disposable {
     } else {
       this._element.replaceChildren(bufferElements);
     }
+    this._element.classList.add('active');
   }
 
   private _handleColorChange(colorSet: ReadonlyColorSet): void {

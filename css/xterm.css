@@ -168,7 +168,7 @@
     overflow-x: hidden;
 }
 
-.xterm .xterm-accessible-buffer:focus-within {
+.xterm .xterm-accessible-buffer.active {
     z-index: 20;
 }
 
