@@ -1370,9 +1370,9 @@ declare module 'xterm' {
 
   export interface IBufferElementProvider {
     /**
-     * Provides a document fragment containing the buffer elements.
+     * Provides a document fragment or HTMLElement containing the buffer elements.
      */
-    provideBufferElements(): DocumentFragment;
+    provideBufferElements(): DocumentFragment | HTMLElement;
   }
 
   /**
