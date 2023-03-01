@@ -164,13 +164,11 @@
     padding: .5em;
     background: #000;
     color: #fff;
-    opacity: 0;
     overflow: scroll;
     overflow-x: hidden;
 }
 
 .xterm .xterm-accessible-buffer:focus-within {
-    opacity: 1;
     z-index: 20;
 }
 

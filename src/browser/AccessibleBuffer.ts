@@ -36,17 +36,15 @@ export class AccessibleBuffer extends Disposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._element);
 
     this.register(addDisposableDomListener(this._element, 'keydown', (ev: KeyboardEvent) => {
-      if (ev.key === 'Tab') {
+      if (ev.key === 'Tab' || ev.key === 'Escape') {
         this._isAccessibleBufferActive = false;
+        if (ev.key === 'Escape') {
+          this._terminal.focus();
+        }
       }
     }
     ));
     this.register(addDisposableDomListener(this._element, 'focus', () => this._refreshAccessibleBuffer()));
-    this.register(addDisposableDomListener(this._element, 'focusout', (e) => {
-      if (!this._element.contains(e.element)) {
-        this._isAccessibleBufferActive = false;
-      }
-    }));
 
     this._handleColorChange(themeService.colors);
     this.register(themeService.onChangeColors(e => this._handleColorChange(e)));
