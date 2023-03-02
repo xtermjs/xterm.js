@@ -236,9 +236,6 @@ export class Terminal implements ITerminalApi {
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
   }
-  public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
-    return this._core.registerBufferElementProvider(bufferProvider);
-  }
   public static get strings(): ILocalizableStrings {
     return Strings;
   }
