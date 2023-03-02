@@ -80,7 +80,6 @@ export interface IPublicTerminal extends IDisposable {
   refresh(start: number, end: number): void;
   clearTextureAtlas(): void;
   reset(): void;
-  registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
