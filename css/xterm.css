@@ -151,29 +151,6 @@
     color: transparent;
 }
 
-.xterm .xterm-accessible-buffer div {
-	white-space: pre-wrap;
-}
-
-.xterm .xterm-accessible-buffer {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    padding: .5em;
-    background: #000;
-    color: #fff;
-    opacity: 0;
-    overflow: scroll;
-    overflow-x: hidden;
-}
-
-.xterm .xterm-accessible-buffer:focus-within {
-    opacity: 1;
-    z-index: 20;
-}
-
 .xterm .live-region {
     position: absolute;
     left: -9999px;
