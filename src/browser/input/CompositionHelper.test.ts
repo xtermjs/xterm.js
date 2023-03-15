@@ -78,7 +78,6 @@ describe('CompositionHelper', () => {
       setTimeout(() => { // wait for any textarea updates
         compositionHelper.compositionupdate({ data: 'ㅏ' });
         textarea.value = '아';
-        console.log(textarea.value);
         setTimeout(() => { // wait for any textarea updates
           compositionHelper.compositionupdate({ data: 'ㅇ' });
           textarea.value = '앙';
