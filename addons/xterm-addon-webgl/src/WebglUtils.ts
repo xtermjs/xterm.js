@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+
 /**
  * A matrix that when multiplies will translate 0-1 coordinates (left to right,
  * top to bottom) to clip space.
@@ -50,9 +52,12 @@ export function expandFloat32Array(source: Float32Array, max: number): Float32Ar
   return newArray;
 }
 
-export function throwIfFalsy<T>(value: T | undefined | null): T {
-  if (!value) {
-    throw new Error('value must not be falsy');
+export class GLTexture {
+  public texture: WebGLTexture;
+  public version: number;
+
+  constructor(texture: WebGLTexture) {
+    this.texture = texture;
+    this.version = -1;
   }
-  return value;
 }

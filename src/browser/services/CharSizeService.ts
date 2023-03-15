@@ -4,10 +4,12 @@
  */
 
 import { IOptionsService } from 'common/services/Services';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
+import { Disposable } from 'common/Lifecycle';
+import { ITerminalOptions } from 'common/Types';
 
-export class CharSizeService implements ICharSizeService {
+export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
 
   public width: number = 0;
@@ -16,15 +18,17 @@ export class CharSizeService implements ICharSizeService {
 
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
-  private _onCharSizeChange = new EventEmitter<void>();
-  public get onCharSizeChange(): IEvent<void> { return this._onCharSizeChange.event; }
+  private readonly _onCharSizeChange = this.register(new EventEmitter<void>());
+  public readonly onCharSizeChange = this._onCharSizeChange.event;
 
   constructor(
     document: Document,
     parentElement: HTMLElement,
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
+    super();
     this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
+    this.register(this._optionsService.onMultipleOptionChange(['fontFamily', 'fontSize'], () => this.measure()));
   }
 
   public measure(): void {

@@ -10,8 +10,6 @@
     <link rel="shortcut icon" type="image/png" href="/logo.png">
     <link rel="stylesheet" href="/xterm.css" />
     <link rel="stylesheet" href="/style.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.1.1/es6-promise.auto.min.js" integrity="sha384-kM3+BR0fKGmv8mDasMGLSHdqcbgWHUNWV1rAL+tkqnH578xS82vhlu9gR5BHhBai" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.min.js" integrity="sha384-bR8my2pcqqtUkMMTomrgTyDVACSJz1M9D70XdkeK2BaYbCYxG3CfngYdSAOcPkUZ" crossorigin="anonymous"></script>
   </head>
   <body>
     <h1 style="color: #2D2E2C">xterm.js: A terminal for the <em style="color: #5DA5D5">web</em></h1>
@@ -25,6 +23,7 @@
           <button id= "addonsbutton" class="tabLinks" onclick="openSection(event, 'addons')">Addons</button>
           <button id= "stylebutton" class="tabLinks" onclick="openSection(event, 'style')">Style</button>
           <button id= "testbutton" class="tabLinks" onclick="openSection(event, 'test')">Test</button>
+          <button id= "vtbutton" class="tabLinks" onclick="openSection(event, 'vt')">VT</button>
         </div>
         <div id="options" class="tabContent">
           <h3>Options</h3>
@@ -74,22 +73,34 @@
 
               <dt>Performance</dt>
               <dd><button id="load-test" title="Write several MB of data to simulate a lot of data coming from the process">Load test</button></dd>
+              <dd><button id="print-cjk" title="Prints the 20977 characters from the CJK Unified Ideographs unicode block">CJK Unified Ideographs</button></dd>
+              <dd><button id="print-cjk-sgr" title="Prints the 20977 characters from the CJK Unified Ideographs unicode block with randomized SGR attributes">CJK Unified Ideographs (random SGR)</button></dd>
 
               <dt>Styles</dt>
               <dd><button id="custom-glyph" title="Write custom box drawing and block element characters to the terminal">Test custom glyphs</button></dd>
               <dd><button id="powerline-symbol-test" title="Write powerline symbol characters to the terminal (\ue0a0+)">Powerline symbol test</button></dd>
               <dd><button id="underline-test" title="Write text with Kitty's extended underline sequences">Underline test</button></dd>
+	            <dd><button id="sgr-test" title="Write text with SGR attribute">SGR test</button></dd>
 	            <dd><button id="ansi-colors" title="Write a wide range of ansi colors">Ansi colors test</button></dd>
 	            <dd><button id="osc-hyperlinks" title="Write some OSC 8 hyperlinks">Ansi hyperlinks test</button></dd>
 
               <dt>Decorations</dt>
               <dd><button id="add-decoration" title="Add a decoration to the terminal">Decoration</button></dd>
               <dd><button id="add-overview-ruler" title="Add an overview ruler to the terminal">Add Overview Ruler</button></dd>
+
+              <dt>Weblinks Addon</dt>
+              <dd><button id="weblinks-test" title="Various url conditions from demo data, hover&click to test">Test URLs</button></dd>
             </dl>
           </div>
         </div>
+        <div id="vt" class="tabContent">
+          <h3>VT</h3>
+          <div id="vt-container"></div>
+        </div>
       </div>
     </div>
+    <input type="checkbox" id="texture-atlas-zoom"/>
+    <label for="texture-atlas-zoom">Zoom texture atlas</label>
     <div id="texture-atlas"></div>
       <script src="dist/client-bundle.js" defer ></script>
       <script>

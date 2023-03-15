@@ -47,7 +47,7 @@ export class CellData extends AttributeData implements ICellData {
    * Note this returns the UTF32 codepoint of single chars,
    * if content is a combined string it returns the codepoint
    * of the last char in string to be in line with code in CharData.
-   * */
+   */
   public getCode(): number {
     return (this.isCombined())
       ? this.combinedData.charCodeAt(this.combinedData.length - 1)

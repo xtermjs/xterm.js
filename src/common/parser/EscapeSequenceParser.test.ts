@@ -87,7 +87,7 @@ class TestEscapeSequenceParser extends EscapeSequenceParser {
     }
   }
   public mockOscParser(): void {
-    this._oscParser = oscPutParser;
+    (this as any)._oscParser = oscPutParser;
   }
   public identifier(id: IFunctionIdentifier): number {
     return this._identifier(id);

@@ -19,8 +19,7 @@ declare module 'xterm-headless' {
   export interface ITerminalOptions {
     /**
      * Whether to allow the use of proposed API. When false, any usage of APIs
-     * marked as experimental/proposed will throw an error. This defaults to
-     * true currently, but will change to false in v5.0.
+     * marked as experimental/proposed will throw an error. The default is false.
      */
     allowProposedApi?: boolean;
 
@@ -538,11 +537,6 @@ declare module 'xterm-headless' {
      * ```typescript
      * console.log(terminal.options.fontSize);
      * ```
-     */
-    get options(): Required<ITerminalOptions>;
-
-    /**
-     * Gets or sets the terminal options. This supports setting multiple options.
      *
      * @example Set a single option
      * ```typescript
@@ -553,11 +547,11 @@ declare module 'xterm-headless' {
      * ```typescript
      * terminal.options = {
      *   fontSize: 12,
-     *   fontFamily: 'Arial',
+     *   fontFamily: 'Courier New',
      * };
      * ```
      */
-    set options(options: ITerminalOptions);
+    options: ITerminalOptions;
 
     /**
      * Natural language strings that can be localized.
@@ -1081,7 +1075,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addCsiHandler or setCsiHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
 
@@ -1100,7 +1094,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addDcsHandler or setDcsHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
 
@@ -1113,7 +1107,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
 
@@ -1131,7 +1125,7 @@ declare module 'xterm-headless' {
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addOscHandler or setOscHandler).
      * The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }

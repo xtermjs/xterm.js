@@ -26,8 +26,7 @@ declare module 'xterm' {
   export interface ITerminalOptions {
     /**
      * Whether to allow the use of proposed API. When false, any usage of APIs
-     * marked as experimental/proposed will throw an error. This defaults to
-     * true currently, but will change to false in v5.0.
+     * marked as experimental/proposed will throw an error. The default is false.
      */
     allowProposedApi?: boolean;
 
@@ -130,9 +129,14 @@ declare module 'xterm' {
 
     /**
      * The handler for OSC 8 hyperlinks. Links will use the `confirm` browser
-     * API if no link handler is set. Consider the security of users when using
-     * this, there should be some tooltip or prompt when hovering or activating
-     * the link.
+     * API with a strongly worded warning if no link handler is set.
+     *
+     * When setting this, consider the security of users opening these links,
+     * at a minimum there should be a tooltip or a prompt when hovering or
+     * activating the link respectively. An example of what might be possible is
+     * a terminal app writing link in the form `javascript:...` that runs some
+     * javascript, a safe approach to prevent that is to validate the link
+     * starts with http(s)://.
      */
     linkHandler?: ILinkHandler | null;
 
@@ -193,6 +197,12 @@ declare module 'xterm' {
      * viewport.
      */
     scrollback?: number;
+
+    /**
+     * Whether to scroll to the bottom whenever there is some user input. The
+     * default is true.
+     */
+    scrollOnUserInput?: boolean;
 
     /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
@@ -702,32 +712,40 @@ declare module 'xterm' {
     readonly modes: IModes;
 
     /**
-     * Gets or sets the terminal options. This supports setting multiple options.
+     * Gets or sets the terminal options. This supports setting multiple
+     * options.
      *
      * @example Get a single option
-     * ```typescript
+     * ```ts
      * console.log(terminal.options.fontSize);
      * ```
-     */
-    get options(): Required<ITerminalOptions>;
-
-    /**
-     * Gets or sets the terminal options. This supports setting multiple options.
      *
-     * @example Set a single option
-     * ```typescript
+     * @example Set a single option:
+     * ```ts
      * terminal.options.fontSize = 12;
+     * ```
+     * Note that for options that are object, a new object must be used in order
+     * to take effect as a reference comparison will be done:
+     * ```ts
+     * const newValue = terminal.options.theme;
+     * newValue.background = '#000000';
+     *
+     * // This won't work
+     * terminal.options.theme = newValue;
+     *
+     * // This will work
+     * terminal.options.theme = { ...newValue };
      * ```
      *
      * @example Set multiple options
-     * ```typescript
+     * ```ts
      * terminal.options = {
      *   fontSize: 12,
-     *   fontFamily: 'Arial',
+     *   fontFamily: 'Courier New'
      * };
      * ```
      */
-    set options(options: ITerminalOptions);
+    options: ITerminalOptions;
 
     /**
      * Natural language strings that can be localized.
@@ -868,6 +886,24 @@ declare module 'xterm' {
      * This is a function that takes a KeyboardEvent, allowing consumers to stop
      * propagation and/or prevent the default action. The function returns
      * whether the event should be processed by xterm.js.
+     *
+     * @example A custom keymap that overrides the backspace key
+     * ```ts
+     * const keymap = [
+     *   { "key": "Backspace", "shiftKey": false, "mapCode": 8 },
+     *   { "key": "Backspace", "shiftKey": true, "mapCode": 127 }
+     * ];
+     * term.attachCustomKeyEventHandler(ev => {
+     *   if (ev.type === 'keydown') {
+     *     for (let i in keymap) {
+     *       if (keymap[i].key == ev.key && keymap[i].shiftKey == ev.shiftKey) {
+     *         socket.send(String.fromCharCode(keymap[i].mapCode));
+     *         return false;
+     *       }
+     *     }
+     *   }
+     * });
+     * ```
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
@@ -906,7 +942,7 @@ declare module 'xterm' {
      * with a string of text that is eligible for joining and returns an array
      * where each entry is an array containing the start (inclusive) and end
      * (exclusive) indexes of ranges that should be rendered as a single unit.
-     * @return The ID of the new joiner, this can be used to deregister
+     * @returns The ID of the new joiner, this can be used to deregister
      */
     registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
 
@@ -1143,6 +1179,13 @@ declare module 'xterm' {
       * @param range The buffer range of the link.
       */
      leave?(event: MouseEvent, text: string, range: IBufferRange): void;
+
+     /**
+      * Whether to receive non-HTTP URLs from LinkProvider. When false, any usage of non-HTTP URLs
+      * will be ignored. Enabling this option without proper protection in `activate` function
+      * may cause security issues such as XSS.
+      */
+     allowNonHttpProtocols?: boolean;
   }
 
   /**
@@ -1310,6 +1353,13 @@ declare module 'xterm' {
      * cell objects when dealing with tons of cells.
      */
     getNullCell(): IBufferCell;
+  }
+
+  export interface IBufferElementProvider {
+    /**
+     * Provides a document fragment or HTMLElement containing the buffer elements.
+     */
+    provideBufferElements(): DocumentFragment | HTMLElement;
   }
 
   /**
@@ -1559,7 +1609,7 @@ declare module 'xterm' {
      * array will contain subarrays with their numercial values.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
@@ -1577,7 +1627,7 @@ declare module 'xterm' {
      * The function gets the payload and numerical parameters as arguments.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
@@ -1589,7 +1639,7 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
 
@@ -1606,7 +1656,7 @@ declare module 'xterm' {
      * The callback is called with OSC data string.
      * Return `true` if the sequence was handled, `false` if the parser should try
      * a previous handler. The most recently added handler is tried first.
-     * @return An IDisposable you can call to remove this handler.
+     * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }

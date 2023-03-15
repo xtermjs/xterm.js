@@ -23,8 +23,8 @@ export class MouseService implements IMouseService {
       colCount,
       rowCount,
       this._charSizeService.hasValidSize,
-      this._renderService.dimensions.actualCellWidth,
-      this._renderService.dimensions.actualCellHeight,
+      this._renderService.dimensions.css.cell.width,
+      this._renderService.dimensions.css.cell.height,
       isSelection
     );
   }
@@ -37,14 +37,14 @@ export class MouseService implements IMouseService {
     if (!this._charSizeService.hasValidSize
       || coords[0] < 0
       || coords[1] < 0
-      || coords[0] >= this._renderService.dimensions.canvasWidth
-      || coords[1] >= this._renderService.dimensions.canvasHeight) {
+      || coords[0] >= this._renderService.dimensions.css.canvas.width
+      || coords[1] >= this._renderService.dimensions.css.canvas.height) {
       return undefined;
     }
 
     return {
-      col: Math.floor(coords[0] / this._renderService.dimensions.actualCellWidth),
-      row: Math.floor(coords[1] / this._renderService.dimensions.actualCellHeight),
+      col: Math.floor(coords[0] / this._renderService.dimensions.css.cell.width),
+      row: Math.floor(coords[1] / this._renderService.dimensions.css.cell.height),
       x: Math.floor(coords[0]),
       y: Math.floor(coords[1])
     };

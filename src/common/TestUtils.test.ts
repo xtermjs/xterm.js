@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IDirtyRowService, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from 'xterm';
 
@@ -95,19 +95,10 @@ export class MockCoreService implements ICoreService {
   public onData: IEvent<string> = new EventEmitter<string>().event;
   public onUserInput: IEvent<void> = new EventEmitter<void>().event;
   public onBinary: IEvent<string> = new EventEmitter<string>().event;
+  public onRequestScrollToBottom: IEvent<void> = new EventEmitter<void>().event;
   public reset(): void { }
   public triggerDataEvent(data: string, wasUserInput?: boolean): void { }
   public triggerBinaryEvent(data: string): void { }
-}
-
-export class MockDirtyRowService implements IDirtyRowService {
-  public serviceBrand: any;
-  public start: number = 0;
-  public end: number = 0;
-  public clearRange(): void { }
-  public markDirty(y: number): void { }
-  public markRangeDirty(y1: number, y2: number): void { }
-  public markAllDirty(): void { }
 }
 
 export class MockLogService implements ILogService {
@@ -123,13 +114,29 @@ export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
   public readonly rawOptions: Required<ITerminalOptions> = clone(DEFAULT_OPTIONS);
   public options: Required<ITerminalOptions> = this.rawOptions;
-  public onOptionChange: IEvent<string> = new EventEmitter<string>().event;
+  public onOptionChange: IEvent<keyof ITerminalOptions> = new EventEmitter<keyof ITerminalOptions>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
         this.rawOptions[key] = testOptions[key];
       }
     }
+  }
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (arg1: ITerminalOptions[T]) => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (eventKey === key) {
+        listener(this.rawOptions[key]);
+      }
+    });
+  }
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  public onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable {
+    return this.onOptionChange(eventKey => {
+      if (keys.indexOf(eventKey) !== -1) {
+        listener();
+      }
+    });
   }
   public setOptions(options: ITerminalOptions): void {
     for (const key of Object.keys(options)) {

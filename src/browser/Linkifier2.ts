@@ -8,7 +8,7 @@ import { IDisposable } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBufferService } from 'common/services/Services';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { Disposable, getDisposeArrayDisposable, disposeArray } from 'common/Lifecycle';
+import { Disposable, getDisposeArrayDisposable, disposeArray, toDisposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 
 export class Linkifier2 extends Disposable implements ILinkifier2 {
@@ -23,24 +23,28 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
   private _isMouseOut: boolean = true;
+  private _wasResized: boolean = false;
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
 
-  private _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onShowLinkUnderline(): IEvent<ILinkifierEvent> { return this._onShowLinkUnderline.event; }
-  private _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
-  public get onHideLinkUnderline(): IEvent<ILinkifierEvent> { return this._onHideLinkUnderline.event; }
+  private readonly _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  public readonly onShowLinkUnderline = this._onShowLinkUnderline.event;
+  private readonly _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  public readonly onHideLinkUnderline = this._onHideLinkUnderline.event;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
-  }
-
-  public dispose(): void {
-    super.dispose();
-    this._lastMouseEvent = undefined;
+    this.register(toDisposable(() => {
+      this._lastMouseEvent = undefined;
+    }));
+    // Listen to resize to catch the case where it's resized and the cursor is out of the viewport.
+    this.register(this._bufferService.onResize(() => {
+      this._clearCurrentLink();
+      this._wasResized = true;
+    }));
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
@@ -66,12 +70,12 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
       this._isMouseOut = true;
       this._clearCurrentLink();
     }));
-    this.register(addDisposableDomListener(this._element, 'mousemove', this._onMouseMove.bind(this)));
+    this.register(addDisposableDomListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
     this.register(addDisposableDomListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
     this.register(addDisposableDomListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
   }
 
-  private _onMouseMove(event: MouseEvent): void {
+  private _handleMouseMove(event: MouseEvent): void {
     this._lastMouseEvent = event;
 
     if (!this._element || !this._mouseService) {
@@ -99,17 +103,18 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     }
 
     if (!this._lastBufferCell || (position.x !== this._lastBufferCell.x || position.y !== this._lastBufferCell.y)) {
-      this._onHover(position);
+      this._handleHover(position);
       this._lastBufferCell = position;
     }
   }
 
-  private _onHover(position: IBufferCellPosition): void {
+  private _handleHover(position: IBufferCellPosition): void {
     // TODO: This currently does not cache link provider results across wrapped lines, activeLine should be something like `activeRange: {startY, endY}`
     // Check if we need to clear the link
-    if (this._activeLine !== position.y) {
+    if (this._activeLine !== position.y || this._wasResized) {
       this._clearCurrentLink();
       this._askForLink(position, false);
+      this._wasResized = false;
       return;
     }
 
@@ -311,13 +316,29 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
         }
       });
 
-      // Add listener for rerendering
+      // Listen to viewport changes to re-render the link under the cursor (only when the line the
+      // link is on changes)
       if (this._renderService) {
         this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
+          // Sanity check, this shouldn't happen in practice as this listener would be disposed
+          if (!this._currentLink) {
+            return;
+          }
           // When start is 0 a scroll most likely occurred, make sure links above the fold also get
           // cleared.
           const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
-          this._clearCurrentLink(start, e.end + 1 + this._bufferService.buffer.ydisp);
+          const end = this._bufferService.buffer.ydisp + 1 + e.end;
+          // Only clear the link if the viewport change happened on this line
+          if (this._currentLink.link.range.start.y >= start && this._currentLink.link.range.end.y <= end) {
+            this._clearCurrentLink(start, end);
+            if (this._lastMouseEvent && this._element) {
+              // re-eval previously active link after changes
+              const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element, this._mouseService!);
+              if (position) {
+                this._askForLink(position, false);
+              }
+            }
+          }
         }));
       }
     }
@@ -369,18 +390,10 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
    * @param position
    */
   private _linkAtPosition(link: ILink, position: IBufferCellPosition): boolean {
-    const sameLine = link.range.start.y === link.range.end.y;
-    const wrappedFromLeft = link.range.start.y < position.y;
-    const wrappedToRight = link.range.end.y > position.y;
-
-    // If the start and end have the same y, then the position must be between start and end x
-    // If not, then handle each case seperately, depending on which way it wraps
-    return ((sameLine && link.range.start.x <= position.x && link.range.end.x >= position.x) ||
-      (wrappedFromLeft && link.range.end.x >= position.x) ||
-      (wrappedToRight && link.range.start.x <= position.x) ||
-      (wrappedFromLeft && wrappedToRight)) &&
-      link.range.start.y <= position.y &&
-      link.range.end.y >= position.y;
+    const lower = link.range.start.y * this._bufferService.cols + link.range.start.x;
+    const upper = link.range.end.y * this._bufferService.cols + link.range.end.x;
+    const current = position.y * this._bufferService.cols + position.x;
+    return (lower <= current && current <= upper);
   }
 
   /**

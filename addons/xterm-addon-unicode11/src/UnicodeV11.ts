@@ -4,7 +4,6 @@
  */
 
 import { IUnicodeVersionProvider } from 'xterm';
-import { fill } from 'common/TypedArrayUtils';
 
 type CharWidth = 0 | 1 | 2;
 
@@ -198,15 +197,15 @@ export class UnicodeV11 implements IUnicodeVersionProvider {
   constructor() {
     if (!table) {
       table = new Uint8Array(65536);
-      fill(table, 1);
+      table.fill(1);
       table[0] = 0;
-      fill(table, 0, 1, 32);
-      fill(table, 0, 0x7f, 0xa0);
+      table.fill(0, 1, 32);
+      table.fill(0, 0x7f, 0xa0);
       for (let r = 0; r < BMP_COMBINING.length; ++r) {
-        fill(table, 0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
+        table.fill(0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
       }
       for (let r = 0; r < BMP_WIDE.length; ++r) {
-        fill(table, 2, BMP_WIDE[r][0], BMP_WIDE[r][1] + 1);
+        table.fill(2, BMP_WIDE[r][0], BMP_WIDE[r][1] + 1);
       }
     }
   }

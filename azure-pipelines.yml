@@ -9,7 +9,7 @@ trigger:
 jobs:
 - job: Linux
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - task: NodeTool@0
     inputs:
@@ -82,7 +82,7 @@ jobs:
 
 - job: Linux_IntegrationTests
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       # source: https://github.com/microsoft/playwright/issues/1041
@@ -151,7 +151,7 @@ jobs:
   - Windows_IntegrationTests
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['FORCE_RELEASE'], 'true')))
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - task: NodeTool@0
     inputs:

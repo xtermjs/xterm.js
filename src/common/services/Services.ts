@@ -79,15 +79,16 @@ export interface ICoreService {
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
   readonly onBinary: IEvent<string>;
+  readonly onRequestScrollToBottom: IEvent<void>;
 
   reset(): void;
 
   /**
    * Triggers the onData event in the public API.
    * @param data The data that is being emitted.
-   * @param wasFromUser Whether the data originated from the user (as opposed to
+   * @param wasUserInput Whether the data originated from the user (as opposed to
    * resulting from parsing incoming data). When true this will also:
-   * - Scroll to the bottom of the buffer.s
+   * - Scroll to the bottom of the buffer if option scrollOnUserInput is true.
    * - Fire the `onUserInput` event (so selection can be cleared).
    */
   triggerDataEvent(data: string, wasUserInput?: boolean): void;
@@ -122,19 +123,6 @@ export interface ICharsetService {
   setgCharset(g: number, charset: ICharset | undefined): void;
 }
 
-export const IDirtyRowService = createDecorator<IDirtyRowService>('DirtyRowService');
-export interface IDirtyRowService {
-  serviceBrand: undefined;
-
-  readonly start: number;
-  readonly end: number;
-
-  clearRange(): void;
-  markDirty(y: number): void;
-  markRangeDirty(y1: number, y2: number): void;
-  markAllDirty(): void;
-}
-
 export interface IServiceIdentifier<T> {
   (...args: any[]): void;
   type: T;
@@ -144,17 +132,9 @@ export interface IBrandedService {
   serviceBrand: undefined;
 }
 
-type GetLeadingNonServiceArgs<Args> =
-  Args extends [...IBrandedService[]] ? []
-    : Args extends [infer A1, ...IBrandedService[]] ? [A1]
-      : Args extends [infer A1, infer A2, ...IBrandedService[]] ? [A1, A2]
-        : Args extends [infer A1, infer A2, infer A3, ...IBrandedService[]] ? [A1, A2, A3]
-          : Args extends [infer A1, infer A2, infer A3, infer A4, ...IBrandedService[]] ? [A1, A2, A3, A4]
-            : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IBrandedService[]] ? [A1, A2, A3, A4, A5]
-              : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6]
-                : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7]
-                  : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
-                    : never;
+type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends [] ? []
+  : TArgs extends [...infer TFirst, infer TLast] ? TLast extends IBrandedService ? GetLeadingNonServiceArgs<TFirst> : TArgs
+    : never;
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
@@ -195,9 +175,33 @@ export interface IOptionsService {
    * internally.
    */
   readonly rawOptions: Required<ITerminalOptions>;
+
+  /**
+   * Options as exposed through the public API, this property uses getters and setters with
+   * validation which makes it safer but slower. {@link rawOptions} should be used for pretty much
+   * all internal usage for performance reasons.
+   */
   readonly options: Required<ITerminalOptions>;
 
-  readonly onOptionChange: IEvent<string>;
+  /**
+   * Adds an event listener for when any option changes.
+   */
+  readonly onOptionChange: IEvent<keyof ITerminalOptions>;
+
+  /**
+   * Adds an event listener for when a specific option changes, this is a convenience method that is
+   * preferred over {@link onOptionChange} when only a single option is being listened to.
+   */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  onSpecificOptionChange<T extends keyof ITerminalOptions>(key: T, listener: (arg1: Required<ITerminalOptions>[T]) => any): IDisposable;
+
+  /**
+   * Adds an event listener for when a set of specific options change, this is a convenience method
+   * that is preferred over {@link onOptionChange} when multiple options are being listened to and
+   * handled the same way.
+   */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  onMultipleOptionChange(keys: (keyof ITerminalOptions)[], listener: () => any): IDisposable;
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
@@ -232,6 +236,7 @@ export interface ITerminalOptions {
   rows?: number;
   screenReaderMode?: boolean;
   scrollback?: number;
+  scrollOnUserInput?: boolean;
   scrollSensitivity?: number;
   smoothScrollDuration?: number;
   tabStopWidth?: number;

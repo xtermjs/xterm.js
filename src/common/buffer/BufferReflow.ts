@@ -16,7 +16,10 @@ export interface INewLayoutResult {
  * Evaluates and returns indexes to be removed after a reflow larger occurs. Lines will be removed
  * when a wrapped line unwraps.
  * @param lines The buffer lines.
+ * @param oldCols The columns before resize
  * @param newCols The columns after resize.
+ * @param bufferAbsoluteY The absolute y position of the cursor (baseY + cursorY).
+ * @param nullCell The cell data to use when filling in empty cells.
  */
 export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be

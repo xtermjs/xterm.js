@@ -13,7 +13,6 @@ describe('CoreService', () => {
 
   beforeEach(() => {
     coreService = new CoreService(
-      () => {},
       new MockBufferService(80, 30),
       new MockLogService(),
       new MockOptionsService());

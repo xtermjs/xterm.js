@@ -32,17 +32,16 @@ export class Terminal extends CoreTerminal {
   // TODO: We should remove options once components adopt optionsService
   public get options(): Required<IInitializedTerminalOptions> { return this.optionsService.options; }
 
-  private _onBell = new EventEmitter<void>();
-  public get onBell(): IEvent<void> { return this._onBell.event; }
-  private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-
-  private _onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
-  private _onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  private readonly _onBell = this.register(new EventEmitter<void>());
+  public readonly onBell = this._onBell.event;
+  private readonly _onCursorMove = this.register(new EventEmitter<void>());
+  public readonly onCursorMove = this._onCursorMove.event;
+  private readonly _onTitleChange = this.register(new EventEmitter<string>());
+  public readonly onTitleChange = this._onTitleChange.event;
+  private readonly _onA11yCharEmitter = this.register(new EventEmitter<string>());
+  public readonly onA11yChar = this._onA11yCharEmitter.event;
+  private readonly _onA11yTabEmitter = this.register(new EventEmitter<number>());
+  public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   /**
    * Creates a new `Terminal` object.
@@ -72,28 +71,11 @@ export class Terminal extends CoreTerminal {
     this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
   }
 
-  public dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    super.dispose();
-    this.write = () => { };
-  }
-
   /**
    * Convenience property to active buffer.
    */
   public get buffer(): IBuffer {
     return this.buffers.active;
-  }
-
-  protected _updateOptions(key: string): void {
-    super._updateOptions(key);
-
-    // TODO: These listeners should be owned by individual components
-    switch (key) {
-      case 'tabStopWidth': this.buffers.setupTabStops(); break;
-    }
   }
 
   // TODO: Support paste here?

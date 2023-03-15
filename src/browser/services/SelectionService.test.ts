@@ -49,8 +49,8 @@ describe('SelectionService', () => {
     bufferService = new MockBufferService(20, 20, optionsService);
     buffer = bufferService.buffer;
     const renderService = new MockRenderService();
-    renderService.dimensions.canvasHeight = 10 * 20;
-    renderService.dimensions.canvasWidth = 10 * 20;
+    renderService.dimensions.css.canvas.height = 10 * 20;
+    renderService.dimensions.css.canvas.width = 10 * 20;
     selectionService = new TestSelectionService(bufferService, optionsService, renderService);
   });
 

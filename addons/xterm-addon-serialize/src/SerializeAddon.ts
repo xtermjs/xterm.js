@@ -544,7 +544,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     super(buffer);
 
     // https://github.com/xtermjs/xterm.js/issues/3601
-    this._colors = (_terminal as any)._core._colorManager.colors;
+    this._colors = (_terminal as any)._core._themeService.colors;
   }
 
   private _padStart(target: string, targetLength: number, padString: string): string {

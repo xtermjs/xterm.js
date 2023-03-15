@@ -5,6 +5,7 @@
 
 import { Terminal, IDisposable, ITerminalAddon, IBufferRange, IDecoration } from 'xterm';
 import { EventEmitter } from 'common/EventEmitter';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -50,7 +51,7 @@ type LineCacheEntry = [
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
-export class SearchAddon implements ITerminalAddon {
+export class SearchAddon extends Disposable implements ITerminalAddon {
   private _terminal: Terminal | undefined;
   private _cachedSearchTerm: string | undefined;
   private _selectedDecoration: IDecoration | undefined;
@@ -72,13 +73,18 @@ export class SearchAddon implements ITerminalAddon {
 
   private _resultIndex: number | undefined;
 
-  private readonly _onDidChangeResults = new EventEmitter<{ resultIndex: number, resultCount: number } | undefined>();
+  private readonly _onDidChangeResults = this.register(new EventEmitter<{ resultIndex: number, resultCount: number } | undefined>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._onDataDisposable = this._terminal.onWriteParsed(() => this._updateMatches());
-    this._onResizeDisposable = this._terminal.onResize(() => this._updateMatches());
+    this._onDataDisposable = this.register(this._terminal.onWriteParsed(() => this._updateMatches()));
+    this._onResizeDisposable = this.register(this._terminal.onResize(() => this._updateMatches()));
+    this.register(toDisposable(() => {
+      this.clearDecorations();
+      this._onDataDisposable?.dispose();
+      this._onResizeDisposable?.dispose();
+    }));
   }
 
   private _updateMatches(): void {
@@ -92,12 +98,6 @@ export class SearchAddon implements ITerminalAddon {
         this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size ?? -1 });
       }, 200);
     }
-  }
-
-  public dispose(): void {
-    this.clearDecorations();
-    this._onDataDisposable?.dispose();
-    this._onResizeDisposable?.dispose();
   }
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
@@ -126,7 +126,7 @@ export class SearchAddon implements ITerminalAddon {
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
-   * @return Whether a result was found.
+   * @returns Whether a result was found.
    */
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
@@ -307,7 +307,7 @@ export class SearchAddon implements ITerminalAddon {
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
-   * @return Whether a result was found.
+   * @returns Whether a result was found.
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
@@ -477,10 +477,10 @@ export class SearchAddon implements ITerminalAddon {
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
    * @param term The search term.
-   * @param position The position to start the search.
+   * @param searchPosition The position to start the search.
    * @param searchOptions Search options.
    * @param isReverseSearch Whether the search should start from the right side of the terminal and search to the left.
-   * @return The search result if it was found.
+   * @returns The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
     const terminal = this._terminal!;
@@ -627,7 +627,7 @@ export class SearchAddon implements ITerminalAddon {
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
    * position.
-   * @param line The line being translated.
+   * @param lineIndex The index of the line being translated.
    * @param trimRight Whether to trim whitespace to the right.
    */
   private _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): LineCacheEntry {
@@ -662,7 +662,7 @@ export class SearchAddon implements ITerminalAddon {
   /**
    * Selects and scrolls to a result.
    * @param result The result to select.
-   * @return Whether a result was selected.
+   * @returns Whether a result was selected.
    */
   private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
     const terminal = this._terminal!;
@@ -702,10 +702,10 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   /**
-   * Applies styles to the decoration when it is rendered
-   * @param element the decoration's element
-   * @param backgroundColor the background color to apply
-   * @param borderColor the border color to apply
+   * Applies styles to the decoration when it is rendered.
+   * @param element The decoration's element.
+   * @param borderColor The border color to apply.
+   * @param isActiveResult Whether the element is part of the active search result.
    * @returns
    */
   private _applyStyles(element: HTMLElement, borderColor: string | undefined, isActiveResult: boolean): void {

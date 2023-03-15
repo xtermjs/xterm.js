@@ -121,35 +121,42 @@ describe('text encodings', () => {
 
   describe('Utf8ToUtf32 decoder', () => {
     describe('full codepoint test', () => {
-
-      it('0..65535 (1/2/3 byte sequences)', () => {
-        const decoder = new Utf8ToUtf32();
-        const target = new Uint32Array(5);
-        for (let i = 0; i < 65536; ++i) {
-          // skip surrogate pairs and a BOM
-          if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
-            continue;
+      function formatRange(min: number, max: number): string {
+        return `${min}..${max} (0x${min.toString(16).toUpperCase()}..0x${max.toString(16).toUpperCase()})`;
+      }
+      for (let min = 0; min < 65535; min += 10000) {
+        const max = Math.min(min + 10000, 65536);
+        it(`${formatRange(min, max)} (1/2/3 byte sequences)`, () => {
+          const decoder = new Utf8ToUtf32();
+          const target = new Uint32Array(5);
+          for (let i = min; i < max; ++i) {
+            // skip surrogate pairs and a BOM
+            if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
+              continue;
+            }
+            const utf8Data = fromByteString(encode(String.fromCharCode(i)));
+            const length = decoder.decode(utf8Data, target);
+            assert.equal(length, 1);
+            assert.equal(toString(target, length), String.fromCharCode(i));
+            decoder.clear();
           }
-          const utf8Data = fromByteString(encode(String.fromCharCode(i)));
-          const length = decoder.decode(utf8Data, target);
-          assert.equal(length, 1);
-          assert.equal(toString(target, length), String.fromCharCode(i));
-          decoder.clear();
-        }
-      });
-
-      it('65536..0x10FFFF (4 byte sequences)', function (): void {
-        this.timeout(20000);
-        const decoder = new Utf8ToUtf32();
-        const target = new Uint32Array(5);
-        for (let i = 65536; i < 0x10FFFF; ++i) {
-          const utf8Data = fromByteString(encode(stringFromCodePoint(i)));
-          const length = decoder.decode(utf8Data, target);
-          assert.equal(length, 1);
-          assert.equal(target[0], i);
-          decoder.clear();
-        }
-      });
+        });
+      }
+      for (let minRaw = 60000; minRaw < 0x10FFFF; minRaw += 10000) {
+        const min = Math.max(minRaw, 65536);
+        const max = Math.min(minRaw + 10000, 0x10FFFF);
+        it(`${formatRange(min, max)} (4 byte sequences)`, function (): void {
+          const decoder = new Utf8ToUtf32();
+          const target = new Uint32Array(5);
+          for (let i = min; i < max; ++i) {
+            const utf8Data = fromByteString(encode(stringFromCodePoint(i)));
+            const length = decoder.decode(utf8Data, target);
+            assert.equal(length, 1);
+            assert.equal(target[0], i);
+            decoder.clear();
+          }
+        });
+      }
 
       it('0xFEFF(BOM)', () => {
         const decoder = new Utf8ToUtf32();

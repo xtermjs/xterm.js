@@ -17,7 +17,8 @@ function startServer() {
   expressWs(app);
 
   var terminals = {},
-      logs = {};
+    unsentOutput = {},
+    temporaryDisposable = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => {
@@ -44,7 +45,7 @@ function startServer() {
     env['COLORTERM'] = 'truecolor';
     var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
-      term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+      term = pty.spawn(process.platform === 'win32' ? 'pwsh.exe' : 'bash', [], {
         name: 'xterm-256color',
         cols: cols || 80,
         rows: rows || 24,
@@ -55,9 +56,9 @@ function startServer() {
 
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
-    logs[term.pid] = '';
-    term.on('data', function(data) {
-      logs[term.pid] += data;
+    unsentOutput[term.pid] = '';
+    temporaryDisposable[term.pid] = term.onData(function(data) {
+      unsentOutput[term.pid] += data;
     });
     res.send(term.pid.toString());
     res.end();
@@ -77,15 +78,29 @@ function startServer() {
   app.ws('/terminals/:pid', function (ws, req) {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
-    ws.send(logs[term.pid]);
+    temporaryDisposable[term.pid].dispose();
+    delete temporaryDisposable[term.pid];
+    ws.send(unsentOutput[term.pid]);
+    delete unsentOutput[term.pid];
+
+    // unbuffered delivery after user input
+    let userInput = false;
 
     // string message buffering
-    function buffer(socket, timeout) {
+    function buffer(socket, timeout, maxSize) {
       let s = '';
       let sender = null;
       return (data) => {
         s += data;
-        if (!sender) {
+        if (s.length > maxSize || userInput) {
+          userInput = false;
+          socket.send(s);
+          s = '';
+          if (sender) {
+            clearTimeout(sender);
+            sender = null;
+          }
+        } else if (!sender) {
           sender = setTimeout(() => {
             socket.send(s);
             s = '';
@@ -95,29 +110,41 @@ function startServer() {
       };
     }
     // binary message buffering
-    function bufferUtf8(socket, timeout) {
-      let buffer = [];
+    function bufferUtf8(socket, timeout, maxSize) {
+      const dataBuffer = new Uint8Array(maxSize);
       let sender = null;
       let length = 0;
       return (data) => {
-        buffer.push(data);
-        length += data.length;
-        if (!sender) {
-          sender = setTimeout(() => {
-            socket.send(Buffer.concat(buffer, length));
-            buffer = [];
+        function flush() {
+          socket.send(Buffer.from(dataBuffer.buffer, 0, length));
+          length = 0;
+          if (sender) {
+            clearTimeout(sender);
             sender = null;
-            length = 0;
+          }
+        }
+        if (length + data.length > maxSize) {
+          flush();
+        }
+        dataBuffer.set(data, length);
+        length += data.length;
+        if (length > maxSize || userInput) {
+          userInput = false;
+          flush();
+        } else if (!sender) {
+          sender = setTimeout(() => {
+            sender = null;
+            flush();
           }, timeout);
         }
       };
     }
-    const send = USE_BINARY ? bufferUtf8(ws, 5) : buffer(ws, 5);
+    const send = (USE_BINARY ? bufferUtf8 : buffer)(ws, 5, 262144);
 
     // WARNING: This is a naive implementation that will not throttle the flow of data. This means
     // it could flood the communication channel and make the terminal unresponsive. Learn more about
     // the problem and how to implement flow control at https://xtermjs.org/docs/guides/flowcontrol/
-    term.on('data', function(data) {
+    term.onData(function(data) {
       try {
         send(data);
       } catch (ex) {
@@ -126,13 +153,13 @@ function startServer() {
     });
     ws.on('message', function(msg) {
       term.write(msg);
+      userInput = true;
     });
     ws.on('close', function () {
       term.kill();
       console.log('Closed terminal ' + term.pid);
       // Clean things up
       delete terminals[term.pid];
-      delete logs[term.pid];
     });
   });
 

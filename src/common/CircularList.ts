@@ -4,7 +4,8 @@
  */
 
 import { ICircularList } from 'common/Types';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 
 export interface IInsertEvent {
   index: number;
@@ -20,21 +21,22 @@ export interface IDeleteEvent {
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
  * overriding values at the start of the list.
  */
-export class CircularList<T> implements ICircularList<T> {
+export class CircularList<T> extends Disposable implements ICircularList<T> {
   protected _array: (T | undefined)[];
   private _startIndex: number;
   private _length: number;
 
-  public onDeleteEmitter = new EventEmitter<IDeleteEvent>();
-  public get onDelete(): IEvent<IDeleteEvent> { return this.onDeleteEmitter.event; }
-  public onInsertEmitter = new EventEmitter<IInsertEvent>();
-  public get onInsert(): IEvent<IInsertEvent> { return this.onInsertEmitter.event; }
-  public onTrimEmitter = new EventEmitter<number>();
-  public get onTrim(): IEvent<number> { return this.onTrimEmitter.event; }
+  public readonly onDeleteEmitter = this.register(new EventEmitter<IDeleteEvent>());
+  public readonly onDelete = this.onDeleteEmitter.event;
+  public readonly onInsertEmitter = this.register(new EventEmitter<IInsertEvent>());
+  public readonly onInsert = this.onInsertEmitter.event;
+  public readonly onTrimEmitter = this.register(new EventEmitter<number>());
+  public readonly onTrim = this.onTrimEmitter.event;
 
   constructor(
     private _maxLength: number
   ) {
+    super();
     this._array = new Array<T>(this._maxLength);
     this._startIndex = 0;
     this._length = 0;
@@ -80,7 +82,7 @@ export class CircularList<T> implements ICircularList<T> {
    * Note that for performance reasons there is no bounds checking here, the index reference is
    * circular so this should always return a value and never throw.
    * @param index The index of the value to get.
-   * @return The value corresponding to the index.
+   * @returns The value corresponding to the index.
    */
   public get(index: number): T | undefined {
     return this._array[this._getCyclicIndex(index)];
@@ -136,7 +138,7 @@ export class CircularList<T> implements ICircularList<T> {
 
   /**
    * Removes and returns the last value on the list.
-   * @return The popped value.
+   * @returns The popped value.
    */
   public pop(): T | undefined {
     return this._array[this._getCyclicIndex(this._length-- - 1)];

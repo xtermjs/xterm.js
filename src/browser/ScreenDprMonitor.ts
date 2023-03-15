@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 
 export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRatio?: number) => void;
 
@@ -26,6 +26,9 @@ export class ScreenDprMonitor extends Disposable {
   constructor(private _parentWindow: Window) {
     super();
     this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
+    this.register(toDisposable(() => {
+      this.clearListener();
+    }));
   }
 
   public setListener(listener: ScreenDprListener): void {
@@ -41,11 +44,6 @@ export class ScreenDprMonitor extends Disposable {
       this._updateDpr();
     };
     this._updateDpr();
-  }
-
-  public dispose(): void {
-    super.dispose();
-    this.clearListener();
   }
 
   private _updateDpr(): void {

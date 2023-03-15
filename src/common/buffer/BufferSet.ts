@@ -19,12 +19,11 @@ export class BufferSet extends Disposable implements IBufferSet {
   private _alt!: Buffer;
   private _activeBuffer!: Buffer;
 
-  private _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
-  public get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
+  private readonly _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
+  public readonly onBufferActivate = this._onBufferActivate.event;
 
   /**
    * Create a new BufferSet for the given terminal.
-   * @param _terminal - The terminal the BufferSet will belong to
    */
   constructor(
     private readonly _optionsService: IOptionsService,
@@ -32,6 +31,8 @@ export class BufferSet extends Disposable implements IBufferSet {
   ) {
     super();
     this.reset();
+    this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.resize(this._bufferService.cols, this._bufferService.rows)));
+    this.register(this._optionsService.onSpecificOptionChange('tabStopWidth', () => this.setupTabStops()));
   }
 
   public reset(): void {
@@ -119,6 +120,7 @@ export class BufferSet extends Disposable implements IBufferSet {
   public resize(newCols: number, newRows: number): void {
     this._normal.resize(newCols, newRows);
     this._alt.resize(newCols, newRows);
+    this.setupTabStops(newCols);
   }
 
   /**

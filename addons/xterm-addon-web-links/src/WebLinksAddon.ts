@@ -6,25 +6,19 @@
 import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
-const protocolClause = '(https?:\\/\\/)';
-const domainCharacterSet = '[\\da-z\\.-]+';
-const negatedDomainCharacterSet = '[^\\da-z\\.-]+';
-const domainBodyClause = '(' + domainCharacterSet + ')';
-const tldClause = '([a-z\\.]{2,18})';
-const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
-const localHostClause = '(localhost)';
-const portClause = '(:\\d{1,5})';
-const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-const pathCharacterSet = '(\\/[\\/\\w\\.\\-%~:+@]*)*([^:"\'\\s])';
-const pathClause = '(' + pathCharacterSet + ')?';
-const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
-const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
-const hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
-const negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
-const bodyClause = hostClause + pathClause + queryStringClause + hashFragmentClause;
-const start = '(?:^|' + negatedDomainCharacterSet + ')(';
-const end = ')($|' + negatedPathCharacterSet + ')';
-const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
+// consider everthing starting with http:// or https://
+// up to first whitespace, `"` or `'` as url
+// NOTE: The repeated end clause is needed to not match a dangling `:`
+// resembling the old (...)*([^:"\'\\s]) final path clause
+// additionally exclude early + final:
+// - unsafe from rfc3986: !*'()
+// - unsafe chars from rfc1738: {}|\^~[]` (minus [] as we need them for ipv6 adresses, also allow ~)
+// also exclude as finals:
+// - final interpunction like ,.!?
+// - any sort of brackets <>()[]{} (not spec conform, but often used to enclose urls)
+// - unsafe chars from rfc1738: {}|\^~[]`
+const strictUrlRegex = /https?:[/]{2}[^\s"'!*(){}|\\\^<>`]*[^\s"':,.!?{}|\\\^~\[\]`()<>]/;
+
 
 function handleLink(event: MouseEvent, uri: string): void {
   const newWindow = window.open();

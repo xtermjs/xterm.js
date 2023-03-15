@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { throwIfFalsy } from 'browser/renderer/RendererUtils';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IBlockVector {
   x: number;
@@ -33,7 +33,7 @@ export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefi
   '▐': [{ x: 4, y: 0, w: 4, h: 8 }], // RIGHT HALF BLOCK
 
   // Block elements (0x2594-0x2595)
-  '▔': [{ x: 0, y: 0, w: 9, h: 1 }], // UPPER ONE EIGHTH BLOCK
+  '▔': [{ x: 0, y: 0, w: 8, h: 1 }], // UPPER ONE EIGHTH BLOCK
   '▕': [{ x: 7, y: 0, w: 1, h: 8 }], // RIGHT ONE EIGHTH BLOCK
 
   // Terminal graphic characters (0x2596-0x259F)
@@ -362,15 +362,31 @@ export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: VectorType.FILL, leftPadding: 2 },
   // Left triangle line
   '\u{E0B3}': { d: 'M2,-.5 L0,.5 L2,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
-  // Right semi-circle solid,
+  // Right semi-circle solid
   '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.FILL, rightPadding: 1 },
-  // Right semi-circle line,
+  // Right semi-circle line
   '\u{E0B5}': { d: 'M0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.STROKE, rightPadding: 1 },
-  // Left semi-circle solid,
+  // Left semi-circle solid
   '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL, leftPadding: 1 },
-  // Left semi-circle line,
-  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, leftPadding: 1 }
+  // Left semi-circle line
+  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, leftPadding: 1 },
+  // Lower left triangle
+  '\u{E0B8}': { d: 'M-.5,-.5 L1.5,1.5 L-.5,1.5', type: VectorType.FILL },
+  // Backslash separator
+  '\u{E0B9}': { d: 'M-.5,-.5 L1.5,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
+  // Lower right triangle
+  '\u{E0BA}': { d: 'M1.5,-.5 L-.5,1.5 L1.5,1.5', type: VectorType.FILL },
+  // Upper left triangle
+  '\u{E0BC}': { d: 'M1.5,-.5 L-.5,1.5 L-.5,-.5', type: VectorType.FILL },
+  // Forward slash separator
+  '\u{E0BD}': { d: 'M1.5,-.5 L-.5,1.5', type: VectorType.STROKE, leftPadding: 1, rightPadding: 1 },
+  // Upper right triangle
+  '\u{E0BE}': { d: 'M-.5,-.5 L1.5,1.5 L1.5,-.5', type: VectorType.FILL }
 };
+// Backslash separator redundant
+powerlineDefinitions['\u{E0BB}'] = powerlineDefinitions['\u{E0B9}'];
+// Forward slash separator redundant
+powerlineDefinitions['\u{E0BF}'] = powerlineDefinitions['\u{E0BD}'];
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -381,32 +397,32 @@ export function tryDrawCustomChar(
   c: string,
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
   fontSize: number,
   devicePixelRatio: number
 ): boolean {
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
-    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
   const patternDefinition = patternCharacterDefinitions[c];
   if (patternDefinition) {
-    drawPatternChar(ctx, patternDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+    drawPatternChar(ctx, patternDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
-    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, devicePixelRatio);
+    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
     return true;
   }
 
   const powerlineDefinition = powerlineDefinitions[c];
   if (powerlineDefinition) {
-    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, scaledCellWidth, scaledCellHeight, fontSize, devicePixelRatio);
+    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
     return true;
   }
 
@@ -418,13 +434,13 @@ function drawBlockElementChar(
   charDefinition: IBlockVector[],
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number
+  deviceCellWidth: number,
+  deviceCellHeight: number
 ): void {
   for (let i = 0; i < charDefinition.length; i++) {
     const box = charDefinition[i];
-    const xEighth = scaledCellWidth / 8;
-    const yEighth = scaledCellHeight / 8;
+    const xEighth = deviceCellWidth / 8;
+    const yEighth = deviceCellHeight / 8;
     ctx.fillRect(
       xOffset + box.x * xEighth,
       yOffset + box.y * yEighth,
@@ -441,8 +457,8 @@ function drawPatternChar(
   charDefinition: number[][],
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number
+  deviceCellWidth: number,
+  deviceCellHeight: number
 ): void {
   let patternSet = cachedPatterns.get(charDefinition);
   if (!patternSet) {
@@ -492,7 +508,7 @@ function drawPatternChar(
     patternSet.set(fillStyle, pattern);
   }
   ctx.fillStyle = pattern;
-  ctx.fillRect(xOffset, yOffset, scaledCellWidth, scaledCellHeight);
+  ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
 }
 
 /**
@@ -540,8 +556,8 @@ function drawBoxDrawingChar(
   charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
   devicePixelRatio: number
 ): void {
   ctx.strokeStyle = ctx.fillStyle;
@@ -551,7 +567,7 @@ function drawBoxDrawingChar(
     let actualInstructions: string;
     if (typeof instructions === 'function') {
       const xp = .15;
-      const yp = .15 / scaledCellHeight * scaledCellWidth;
+      const yp = .15 / deviceCellHeight * deviceCellWidth;
       actualInstructions = instructions(xp, yp);
     } else {
       actualInstructions = instructions;
@@ -567,7 +583,7 @@ function drawBoxDrawingChar(
       if (!args[0] || !args[1]) {
         continue;
       }
-      f(ctx, translateArgs(args, scaledCellWidth, scaledCellHeight, xOffset, yOffset, true, devicePixelRatio));
+      f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
     }
     ctx.stroke();
     ctx.closePath();
@@ -579,11 +595,16 @@ function drawPowerlineChar(
   charDefinition: IVectorShape,
   xOffset: number,
   yOffset: number,
-  scaledCellWidth: number,
-  scaledCellHeight: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
   fontSize: number,
   devicePixelRatio: number
 ): void {
+  // Clip the cell to make sure drawing doesn't occur beyond bounds
+  const clipRegion = new Path2D();
+  clipRegion.rect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+  ctx.clip(clipRegion);
+
   ctx.beginPath();
   // Scale the stroke with DPR and font size
   const cssLineWidth = fontSize / 12;
@@ -601,11 +622,12 @@ function drawPowerlineChar(
     }
     f(ctx, translateArgs(
       args,
-      scaledCellWidth,
-      scaledCellHeight,
+      deviceCellWidth,
+      deviceCellHeight,
       xOffset,
       yOffset,
       false,
+      devicePixelRatio,
       (charDefinition.leftPadding ?? 0) * (cssLineWidth / 2),
       (charDefinition.rightPadding ?? 0) * (cssLineWidth / 2)
     ));

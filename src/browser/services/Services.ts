@@ -4,11 +4,12 @@
  */
 
 import { IEvent } from 'common/EventEmitter';
-import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
-import { IColorSet } from 'browser/Types';
+import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
+import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDisposable } from 'common/Types';
+import { ColorIndex, IDisposable } from 'common/Types';
+import { ITheme } from 'common/services/Services';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -71,16 +72,15 @@ export interface IRenderService extends IDisposable {
   refreshRows(start: number, end: number): void;
   clearTextureAtlas(): void;
   resize(cols: number, rows: number): void;
+  hasRenderer(): boolean;
   setRenderer(renderer: IRenderer): void;
-  setColors(colors: IColorSet): void;
-  onDevicePixelRatioChange(): void;
-  onResize(cols: number, rows: number): void;
-  // TODO: Is this useful when we have onResize?
-  onCharSizeChanged(): void;
-  onBlur(): void;
-  onFocus(): void;
-  onSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
-  onCursorMove(): void;
+  handleDevicePixelRatioChange(): void;
+  handleResize(cols: number, rows: number): void;
+  handleCharSizeChanged(): void;
+  handleBlur(): void;
+  handleFocus(): void;
+  handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
+  handleCursorMove(): void;
   clear(): void;
 }
 
@@ -109,7 +109,7 @@ export interface ISelectionService {
   shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean;
   shouldForceSelection(event: MouseEvent): boolean;
   refresh(isLinuxMouseSelection?: boolean): void;
-  onMouseDown(event: MouseEvent): void;
+  handleMouseDown(event: MouseEvent): void;
   isCellInSelection(x: number, y: number): boolean;
 }
 
@@ -120,4 +120,20 @@ export interface ICharacterJoinerService {
   register(handler: (text: string) => [number, number][]): number;
   deregister(joinerId: number): boolean;
   getJoinedCharacters(row: number): [number, number][];
+}
+
+export const IThemeService = createDecorator<IThemeService>('ThemeService');
+export interface IThemeService {
+  serviceBrand: undefined;
+
+  readonly colors: ReadonlyColorSet;
+
+  readonly onChangeColors: IEvent<ReadonlyColorSet>;
+
+  restoreColor(slot?: ColorIndex): void;
+  /**
+   * Allows external modifying of colors in the theme, this is used instead of {@link colors} to
+   * prevent accidental writes.
+   */
+  modifyColors(callback: (colors: IColorSet) => void): void;
 }
