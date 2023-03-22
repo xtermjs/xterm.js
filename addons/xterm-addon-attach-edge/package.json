@@ -1,12 +1,12 @@
 {
-  "name": "xterm-addon-attach",
+  "name": "xterm-addon-attach-edge",
   "version": "0.8.0",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
   },
-  "main": "lib/xterm-addon-attach.js",
-  "types": "typings/xterm-addon-attach.d.ts",
+  "main": "lib/xterm-addon-attach-edge.js",
+  "types": "typings/xterm-addon-attach-edge.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
   "keywords": [
@@ -22,5 +22,6 @@
   },
   "peerDependencies": {
     "xterm": "^5.0.0"
-  }
+  },
+  "dependencies": {}
 }

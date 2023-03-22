@@ -5,8 +5,8 @@
 
 const path = require('path');
 
-const addonName = 'AttachAddon';
-const mainFile = 'xterm-addon-attach.js';
+const addonName = 'AttachAddonEdge';
+const mainFile = 'xterm-addon-attach-edge.js';
 
 module.exports = {
   entry: `./out/${addonName}.js`,

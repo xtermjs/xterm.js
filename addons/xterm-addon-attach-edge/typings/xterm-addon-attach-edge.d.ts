@@ -5,7 +5,7 @@
 
 import { Terminal, ITerminalAddon } from 'xterm';
 
-declare module 'xterm-addon-attach' {
+declare module 'xterm-addon-attach-edge' {
   export interface IAttachOptions {
     /**
      * Whether input should be written to the backend. Defaults to `true`.
@@ -13,7 +13,7 @@ declare module 'xterm-addon-attach' {
     bidirectional?: boolean;
   }
 
-  export class AttachAddon implements ITerminalAddon {
+  export class AttachAddonEdge implements ITerminalAddon {
     constructor(socket: WebSocket, options?: IAttachOptions);
     public activate(terminal: Terminal): void;
     public dispose(): void;
