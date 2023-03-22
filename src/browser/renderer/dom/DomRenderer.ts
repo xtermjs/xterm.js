@@ -184,6 +184,16 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` outline: 1px solid ${colors.cursor.css};` +
       ` outline-offset: -1px;` +
       `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
+      ` outline: 1px solid ${colors.cursor.css};` +
+      ` outline-offset: -1px;` +
+      ` width: ${this.dimensions.css.cell.width}px` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      ` outline: 1px solid ${colors.cursor.css};` +
+      ` outline-offset: -1px;` +
+      ` width: ${this.dimensions.css.cell.width}px` +
+      `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
       ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
       `}` +
