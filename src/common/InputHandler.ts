@@ -711,6 +711,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._bufferService.scroll(this._eraseAttrData());
     } else if (this._activeBuffer.y >= this._bufferService.rows) {
       this._activeBuffer.y = this._bufferService.rows - 1;
+    } else {
+      // There was an explicit line feed (not just a carriage return), so clear the wrapped state of
+      // the line. This is particularly important on conpty/Windows where revisiting lines to
+      // reprint is common, especially on resize. Note that the windowsMode wrapped line heuristics
+      // can mess with this so windowsMode should be disabled, which is recommended on Windows build
+      // 21376 and above.
+      this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._activeBuffer.x >= this._bufferService.cols) {
