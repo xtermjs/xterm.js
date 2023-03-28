@@ -215,6 +215,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Cratecode**](https://cratecode.com): Learn to program for free through interactive online lessons. Cratecode uses xterm.js to give users access to their own Linux environment.
 - [**Super Terminal**](https://github.com/bugwheels94/super-terminal): It is a http based terminal for developers who dont like repetition and save time.
 - [**graSSHopper**](https://grasshopper.coding.kiwi): A simple SSH client with file explorer, history and many more features.
+- [**DomTerm**](https://domterm.org/xtermjs.html): Tiles and tabs. Detachable sessions (like tmux). [Remote connections](https://domterm.org/Remoting-over-ssh.html) using a nice ssh wrapper with predictive echo. Qt, Electron, Tauri/Wry, or desktop browser front-ends. Choose between xterm.js engine (faster) or native DomTerm (more functionality and graphics) - or both.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
