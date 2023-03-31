@@ -954,12 +954,11 @@ declare module 'xterm' {
     deregisterCharacterJoiner(joinerId: number): void;
 
     /**
-     * Adds a marker to the normal buffer and returns it. If the alt buffer is
-     * active, undefined is returned.
+     * Adds a marker to the normal buffer and returns it.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
-    registerMarker(cursorYOffset?: number): IMarker | undefined;
+    registerMarker(cursorYOffset?: number): IMarker;
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using

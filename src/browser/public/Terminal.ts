@@ -156,7 +156,7 @@ export class Terminal implements ITerminalApi {
     this._checkProposedApi();
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
+  public registerMarker(cursorYOffset: number = 0): IMarker {
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }

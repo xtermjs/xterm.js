@@ -917,7 +917,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker | undefined {
+  public addMarker(cursorYOffset: number): IMarker {
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 
