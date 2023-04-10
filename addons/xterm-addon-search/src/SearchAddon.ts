@@ -50,6 +50,7 @@ type LineCacheEntry = [
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
+const RESULT_SIZE_LIMIT = 1000;
 
 export class SearchAddon extends Disposable implements ITerminalAddon {
   private _terminal: Terminal | undefined;
@@ -165,10 +166,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
         result.col + result.term.length >= this._terminal.cols ? 0 : result.col + 1,
         searchOptions
       );
-      if (this._searchResults.size > 1000) {
-        this.clearDecorations();
+      if (this._searchResults.size > RESULT_SIZE_LIMIT) {
         this._resultIndex = undefined;
-        return;
+        break;
       }
     }
     this._searchResults.forEach(result => {
@@ -287,7 +287,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
       result = this._findInLine(term, searchPosition, searchOptions);
     }
 
-    if (this._searchResults) {
+    if (this._searchResults && this._searchResults.size <= RESULT_SIZE_LIMIT) {
       if (this._searchResults.size === 0) {
         this._resultIndex = -1;
       } else if (this._resultIndex === undefined) {
@@ -298,6 +298,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
           this._resultIndex = 0;
         }
       }
+    } else {
+      this._resultIndex = undefined;
     }
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
@@ -409,7 +411,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
       }
     }
 
-    if (this._searchResults) {
+    if (this._searchResults && this._searchResults.size <= RESULT_SIZE_LIMIT) {
       if (this._searchResults.size === 0) {
         this._resultIndex = -1;
       } else if (this._resultIndex === undefined || this._resultIndex < 0) {
@@ -420,6 +422,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
           this._resultIndex = this._searchResults.size - 1;
         }
       }
+    } else {
+      this._resultIndex = undefined;
     }
 
     // If there is only one result, return true.
