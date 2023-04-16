@@ -15,7 +15,7 @@
     "xterm.js"
   ],
   "scripts": {
-    "build": "../../node_modules/.bin/tsc -p . && inwasm out/*.wasm.js",
+    "inwasm": "inwasm out/*.wasm.js",
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
