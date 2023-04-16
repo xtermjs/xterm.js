@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { InWasm, OutputMode, OutputType } from 'inwasm';
 import { ITerminal } from 'browser/Types';
 import { IBufferLine, IExtendedAttrs } from 'common/Types';

@@ -44,7 +44,7 @@ class TestSelectionService {
   }
 }
 
-describe('xterm-addon-serialize', () => {
+describe('xterm-addon-serialize2', () => {
   let dom: jsdom.JSDOM;
   let window: jsdom.DOMWindow;
 
@@ -82,7 +82,7 @@ describe('xterm-addon-serialize', () => {
     // TODO: wirte alot more test cases here...
     it('restoring cursor styles', async () => {
       await writeP(terminal, sgr('32') + '> ' + sgr('0'));
-      assert.equal(serializeAddon.serialize(), '\u001b[32m> \u001b[0m');
+      assert.equal(serializeAddon.serialize(), '\u001b[32m> \u001b[m');
     });
   });
 });

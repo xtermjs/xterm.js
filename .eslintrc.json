@@ -23,6 +23,8 @@
       "addons/xterm-addon-search/test/tsconfig.json",
       "addons/xterm-addon-serialize/src/tsconfig.json",
       "addons/xterm-addon-serialize/test/tsconfig.json",
+      "addons/xterm-addon-serialize2/src/tsconfig.json",
+      "addons/xterm-addon-serialize2/test/tsconfig.json",
       "addons/xterm-addon-serialize/benchmark/tsconfig.json",
       "addons/xterm-addon-unicode11/src/tsconfig.json",
       "addons/xterm-addon-unicode11/test/tsconfig.json",
