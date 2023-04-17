@@ -4,3 +4,6 @@ out-benchmark
 
 # skip inwasm folders
 inwasm-sdks/
+inwasm-builds/
+!inwasm-builds/**/final.wat
+!inwasm-builds/**/final.wasm
