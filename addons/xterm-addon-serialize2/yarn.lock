@@ -2,18 +2,6 @@
 # yarn lockfile v1
 
 
-"@types/acorn@^4.0.6":
-  version "4.0.6"
-  resolved "https://registry.yarnpkg.com/@types/acorn/-/acorn-4.0.6.tgz#d61ca5480300ac41a7d973dd5b84d0a591154a22"
-  integrity sha512-veQTnWP+1D/xbxVrPC3zHnCZRjSrKfhbMUlEA43iMZLu7EsnTtkJklIuwrCPbOi8YkvDQAiW05VQQFvvz9oieQ==
-  dependencies:
-    "@types/estree" "*"
-
-"@types/estree@*":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@types/estree/-/estree-1.0.0.tgz#5fb2e536c1ae9bf35366eed879e827fa59ca41c2"
-  integrity sha512-WulqXMDUTYAXCjZnk6JtIHPigp55cVtDgDrO2gHRwhyJto21+1zbVCtOYB2L1F9w4qCQ0rOGWBnBe0FNTiEJIQ==
-
 acorn-walk@^8.2.0:
   version "8.2.0"
   resolved "https://registry.yarnpkg.com/acorn-walk/-/acorn-walk-8.2.0.tgz#741210f2e2426454508853a2f44d0ab83b7f69c1"
@@ -71,7 +59,7 @@ chokidar@^3.5.3:
   optionalDependencies:
     fsevents "~2.3.2"
 
-colorette@^2.0.19:
+colorette@^2.0.20:
   version "2.0.20"
   resolved "https://registry.yarnpkg.com/colorette/-/colorette-2.0.20.tgz#9eb793e6833067f7235902fcd3b09917a000a95a"
   integrity sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==
@@ -110,16 +98,15 @@ glob@^10.0.0:
     minipass "^5.0.0"
     path-scurry "^1.7.0"
 
-inwasm@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/inwasm/-/inwasm-0.0.7.tgz#6b5241346e6a08ad98ac5ff664f279231fcf94e6"
-  integrity sha512-mKBYr/rsqJGbn/3uF8He8+zieNT0HIbg2qzbWZZ7HnB8Qa20kK7a9J7Xa4qmVdxG5grJoV/BJnJBBeUKlXogyA==
+inwasm@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/inwasm/-/inwasm-0.0.10.tgz#d2d15897ae65a7a2d14e6601494ca1bccc9ee1a0"
+  integrity sha512-PGAK9I5AdbaWCZbJ6NNUGVGf1knGNfke339De/ZV7U+uEBM80DMKc6DLpX7yKIzX+f2qNzbVDWIiDTsuhc7RfA==
   dependencies:
-    "@types/acorn" "^4.0.6"
     acorn "^8.8.2"
     acorn-walk "^8.2.0"
     chokidar "^3.5.3"
-    colorette "^2.0.19"
+    colorette "^2.0.20"
     glob "^10.0.0"
     wabt "^1.0.32"
 

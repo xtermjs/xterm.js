@@ -27,6 +27,6 @@
     "xterm": "^5.0.0"
   },
   "devDependencies": {
-    "inwasm": "^0.0.7"
+    "inwasm": "^0.0.10"
   }
 }
