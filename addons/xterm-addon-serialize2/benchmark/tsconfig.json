@@ -11,7 +11,7 @@
     "paths": {
       "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],
-      "SerializeAddon": ["../src/SerializeAddon"]
+      "Serialize2Addon": ["../src/Serialize2Addon"]
     }
   },
   "include": ["../**/*", "../../../typings/xterm.d.ts"],

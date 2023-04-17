@@ -8,7 +8,7 @@ import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 import { spawn } from 'node-pty';
 import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { Terminal } from 'browser/public/Terminal';
-import { SerializeAddon } from 'SerializeAddon';
+import { Serialize2Addon } from 'Serialize2Addon';
 
 class TestTerminal extends Terminal {
   public writeSync(data: string): void {
@@ -52,11 +52,11 @@ perfContext('Terminal: sh -c "dd if=/dev/urandom count=40 bs=1k | hexdump | lolc
 
   perfContext('serialize', () => {
     let terminal: TestTerminal;
-    const serializeAddon = new SerializeAddon();
-    before(() => {
+    const serializeAddon = new Serialize2Addon();
+    before(async () => {
       terminal = new TestTerminal({ cols: 80, rows: 25, scrollback: 5000 });
       serializeAddon.activate(terminal);
-      terminal.writeSync(content);
+      await new Promise<void>(r => terminal.write(content, r));
     });
     new ThroughputRuntimeCase('', () => {
       return { payloadSize: serializeAddon.serialize().length };

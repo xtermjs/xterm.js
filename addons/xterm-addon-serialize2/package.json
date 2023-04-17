@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "inwasm": "inwasm out/*.wasm.js",
-    "prepackage": "npm run build",
+    "prepackage": "../../node_modules/.bin/tsc -p . && inwasm -f out/*.wasm.js",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
     "benchmark": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json",
