@@ -160,10 +160,10 @@ glob@^10.0.0:
     minipass "^5.0.0"
     path-scurry "^1.7.0"
 
-inwasm@^0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/inwasm/-/inwasm-0.0.11.tgz#738eceac0599342de8236bd5f6ea0bdea45a10c9"
-  integrity sha512-pfGP6mE7eBk8VolnJzOScb+085gDEt5xcAT9/iwUUosrEzuiIbhAmNxmVJ4Po1bbc5UPmiUOXQ+a0iLtdXXI1Q==
+inwasm@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/inwasm/-/inwasm-0.0.12.tgz#22dfcc69a512f5ce8e704200e0a567aba405bcc3"
+  integrity sha512-f+coaZsZ0lYPKWvaPTzKR/fMEjCjGxTYJ06Sqx5wohmJ6gR6DUScLOLCLdeyX7KX0dh47T+XnhRi22B4zdNr9g==
   dependencies:
     acorn "^8.8.2"
     acorn-walk "^8.2.0"
