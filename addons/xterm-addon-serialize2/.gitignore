@@ -7,3 +7,4 @@ inwasm-sdks/
 inwasm-builds/
 !inwasm-builds/**/final.wat
 !inwasm-builds/**/final.wasm
+!inwasm-builds/**/definition.json
