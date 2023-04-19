@@ -5,19 +5,13 @@
 
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, IViewport, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet, ISmoothScrollState, IViewport, ReadonlyColorSet } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
-
-interface ISmoothScrollState {
-  startTime: number;
-  origin: number;
-  target: number;
-}
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.

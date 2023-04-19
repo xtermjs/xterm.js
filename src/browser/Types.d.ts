@@ -150,6 +150,16 @@ export interface IViewport extends IDisposable {
   handleTouchMove(ev: TouchEvent): boolean;
 }
 
+export interface ISmoothScrollState {
+  startTime: number;
+  origin: number;
+  target: number;
+}
+
+export interface ISmoothScrollProgressState extends ISmoothScrollState {
+  progress: number;
+}
+
 export interface ILinkifierEvent {
   x1: number;
   y1: number;
