@@ -1,9 +1,10 @@
-/* eslint-disable */
 
 import { InWasm, OutputMode, OutputType } from 'inwasm';
 import { ITerminal } from 'browser/Types';
 import { IBufferLine, IExtendedAttrs } from 'common/Types';
+import { Attributes, BgFlags, Content, ExtFlags, FgFlags, UnderlineStyle } from 'common/buffer/Constants';
 
+/* eslint-disable */
 interface IExtendedAttrsInternal extends IExtendedAttrs {
   _urlId: number;
   _ext: number;
@@ -14,6 +15,8 @@ interface IBufferLineInternal extends IBufferLine {
   _extendedAttrs: {[index: number]: IExtendedAttrsInternal | undefined};
   _combined: {[index: number]: string};
 }
+/* eslint-enable */
+
 
 const wasmSerialize = InWasm({
   name: 'serialize',
@@ -23,20 +26,84 @@ const wasmSerialize = InWasm({
   imports: {
     env: {
       memory: new WebAssembly.Memory({ initial: 1 }),
-      single_combined: (dst: number, x: number) => 0,
-      load_link: (dst: number, linkId: number) => 0
+      writeCombined: (dst: number, x: number) => 0,
+      writeLink: (dst: number, linkId: number) => 0
     }
   },
   exports: {
-    line16: (src: number, length: number, dst: number) => 0,
+    line: (src: number, length: number, dst: number) => 0,
     reset: (fg: number, bg: number, ul: number, link: number) => {}
   },
   compile: {
     switches: ['-Wl,-z,stack-size=0', '-Wl,--stack-first']
   },
-  code: `${require('fs').readFileSync('src-wasm/serialize.c')}`,
   trackChanges: ['src-wasm/serialize.c'],
-  trackMode: 'content'
+  code: `
+    #define TS_OVERRIDE
+
+    #define CODEPOINT_MASK    ${Content.CODEPOINT_MASK}
+    #define IS_COMBINED_MASK  ${Content.IS_COMBINED_MASK}
+    #define HAS_CONTENT_MASK  ${Content.HAS_CONTENT_MASK}
+    #define WIDTH_MASK        ${Content.WIDTH_MASK}
+    #define WIDTH_SHIFT       ${Content.WIDTH_SHIFT}
+
+    /* bit 1..8     blue in RGB, color in P256 and P16 */
+    #define BLUE_MASK         ${Attributes.BLUE_MASK}
+    #define BLUE_SHIFT        ${Attributes.BLUE_SHIFT}
+    #define PCOLOR_MASK       ${Attributes.PCOLOR_MASK}
+    #define PCOLOR_SHIFT      ${Attributes.PCOLOR_SHIFT}
+
+    /* bit 9..16    green in RGB */
+    #define GREEN_MASK        ${Attributes.GREEN_MASK}
+    #define GREEN_SHIFT       ${Attributes.GREEN_SHIFT}
+
+    /* bit 17..24   red in RGB */
+    #define RED_MASK          ${Attributes.RED_MASK}
+    #define RED_SHIFT         ${Attributes.RED_SHIFT}
+
+    /* bit 25..26   color mode: DEFAULT (0) | P16 (1) | P256 (2) | RGB (3) */
+    #define CM_MASK           ${Attributes.CM_MASK}
+    #define CM_DEFAULT        ${Attributes.CM_DEFAULT}
+    #define CM_P16            ${Attributes.CM_P16}
+    #define CM_P256           ${Attributes.CM_P256}
+    #define CM_RGB            ${Attributes.CM_RGB}
+
+    /* bit 1..24  RGB room */
+    #define RGB_MASK          ${Attributes.RGB_MASK}
+    #define COLOR_MASK        ${Attributes.CM_MASK | Attributes.RGB_MASK}
+
+    /* fg flags:   bit 27..32 */
+    #define INVERSE           ${FgFlags.INVERSE}
+    #define BOLD              ${FgFlags.BOLD}
+    #define UNDERLINE         ${FgFlags.UNDERLINE}
+    #define BLINK             ${FgFlags.BLINK}
+    #define INVISIBLE         ${FgFlags.INVISIBLE}
+    #define STRIKETHROUGH     ${FgFlags.STRIKETHROUGH}
+
+    /* bg flags:   bit 27..32 (upper 2 unused) */
+    #define ITALIC            ${BgFlags.ITALIC}
+    #define DIM               ${BgFlags.DIM}
+    #define HAS_EXTENDED      ${BgFlags.HAS_EXTENDED}
+    #define PROTECTED         ${BgFlags.PROTECTED}
+
+    /* ext flags:   bit 27..32 (upper 3 unused) */
+    #define UNDERLINE_STYLE   ${ExtFlags.UNDERLINE_STYLE}
+
+    /* underline style */
+    #define UL_NONE           ${UnderlineStyle.NONE}
+    #define UL_SINGLE         ${UnderlineStyle.SINGLE}
+    #define UL_DOUBLE         ${UnderlineStyle.DOUBLE}
+    #define UL_CURLY          ${UnderlineStyle.CURLY}
+    #define UL_DOTTED         ${UnderlineStyle.DOTTED}
+    #define UL_DASHED         ${UnderlineStyle.DASHED}
+
+
+    /* memory locations */
+    #define P_LUT100 256
+    #define P_EXT 16384
+
+    ${require('fs').readFileSync('src-wasm/serialize.c')}
+  `
 });
 
 // itoa LUT
@@ -52,11 +119,11 @@ for (let i1 = 0; i1 < 10; ++i1) {
 const mem = new WebAssembly.Memory({ initial: 3000 });
 const d16 = new Uint16Array(mem.buffer);
 const d32 = new Uint32Array(mem.buffer);
-let _single_comb: (dst: number, x: number) => number = (dst, x) => dst;
-const single_combined: (dst: number, x: number) => number = (dst, x) => _single_comb(dst, x);
-let _load_link: (dst: number, x: number) => number = (dst, x) => dst;
-const load_link: (dst: number, x: number) => number = (dst, x) => _load_link(dst, x);
-const inst = wasmSerialize({ env: { memory: mem, single_combined, load_link } });
+let writeCombinedOverload: (dst: number, x: number) => number = (dst, x) => dst;
+const writeCombined: (dst: number, x: number) => number = (dst, x) => writeCombinedOverload(dst, x);
+let writeLinkOverload: (dst: number, x: number) => number = (dst, x) => dst;
+const writeLink: (dst: number, x: number) => number = (dst, x) => writeLinkOverload(dst, x);
+const inst = wasmSerialize({ env: { memory: mem, writeCombined, writeLink } });
 d32.set(LUT100, 64);
 const td = new TextDecoder('UTF-16LE');
 
@@ -70,9 +137,9 @@ export function serialize(t: ITerminal): string {
   let wPos = 150*65536;
 
   let line: IBufferLineInternal;
-  
+
   // single call is pretty wasteful? preload combines once instead?
-  _single_comb = (dst, x) => {
+  writeCombinedOverload = (dst, x) => {
     let dp = dst >> 1;
     const comb: string = (line as any)._combined[x] || '';
     for (let i = 0; i < comb.length; ++i) {
@@ -82,7 +149,7 @@ export function serialize(t: ITerminal): string {
   };
 
   // write link to buffer
-  _load_link = (dst, linkId) => {
+  writeLinkOverload = (dst, linkId) => {
     const entry = (t as any)._oscLinkService._dataByLinkId.get(linkId);
     if (!entry) {
       return dst;
@@ -129,17 +196,17 @@ export function serialize(t: ITerminal): string {
     }
 
     d32.set(line._data, 16384);
-    wPos = inst.exports.line16(65536, t.cols, wPos);
+    wPos = inst.exports.line(65536, t.cols, wPos);
 
     // TODO: end of line hook goes here...
   }
-  const final_data = d16.subarray(75*65536, wPos >> 1);
+  const finalData = d16.subarray(75*65536, wPos >> 1);
   // strip empty lines at bottom
-  let fdp = final_data.length - 1;
-  while (fdp && final_data[fdp] === 10 && final_data[fdp-1] === 13) fdp -= 2;
+  let fdp = finalData.length - 1;
+  while (fdp && finalData[fdp] === 10 && finalData[fdp-1] === 13) fdp -= 2;
 
   // strip leading CRLF
-  const offset = final_data[0] === 13 && final_data[1] === 10 ? 2 : 0;
+  const offset = finalData[0] === 13 && finalData[1] === 10 ? 2 : 0;
 
   // return as string
   // TODO: compose from hook parts (needs to store wPos line offsets?)
