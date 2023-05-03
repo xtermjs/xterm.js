@@ -149,6 +149,7 @@
     right: 0;
     z-index: 10;
     color: transparent;
+    pointer-events: none;
 }
 
 .xterm .live-region {
