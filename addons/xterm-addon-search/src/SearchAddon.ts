@@ -232,12 +232,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     let startRow = 0;
     let currentSelection: IBufferRange | undefined;
     if (this._terminal.hasSelection()) {
-      const incremental = searchOptions ? searchOptions.incremental : false;
+      // const incremental = searchOptions ? searchOptions.incremental : false;
       // Start from the selection end if there is a selection
       // For incremental search, use existing row
       currentSelection = this._terminal.getSelectionPosition()!;
-      startRow = incremental ? currentSelection.start.y : currentSelection.end.y;
-      startCol = incremental ? currentSelection.start.x : currentSelection.end.x;
+      startRow = currentSelection.end.y;
+      startCol = currentSelection.end.x;
     }
 
     this._initLinesCache();
@@ -347,7 +347,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     let startCol = this._terminal.cols;
     const isReverseSearch = true;
 
-    const incremental = searchOptions ? searchOptions.incremental : false;
     let currentSelection: IBufferRange | undefined;
     if (this._terminal.hasSelection()) {
       currentSelection = this._terminal.getSelectionPosition()!;
@@ -362,21 +361,22 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
       startCol
     };
 
-    if (incremental) {
-      // Try to expand selection to right first.
-      result = this._findInLine(term, searchPosition, searchOptions, false);
-      const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
-      if (!isOldResultHighlighted) {
-        // If selection was not able to be expanded to the right, then try reverse search
-        if (currentSelection) {
-          searchPosition.startRow = currentSelection.end.y;
-          searchPosition.startCol = currentSelection.end.x;
-        }
-        result = this._findInLine(term, searchPosition, searchOptions, true);
-      }
-    } else {
-      result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
-    }
+    // const incremental = searchOptions ? searchOptions.incremental : false;
+    // if (incremental) {
+    //   // Try to expand selection to right first.
+    //   result = this._findInLine(term, searchPosition, searchOptions, false);
+    //   const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
+    //   if (!isOldResultHighlighted) {
+    //     // If selection was not able to be expanded to the right, then try reverse search
+    //     if (currentSelection) {
+    //       searchPosition.startRow = currentSelection.end.y;
+    //       searchPosition.startCol = currentSelection.end.x;
+    //     }
+    //     result = this._findInLine(term, searchPosition, searchOptions, true);
+    //   }
+    // } else {
+    result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+    // }
 
     // Search from startRow - 1 to top
     if (!result) {
