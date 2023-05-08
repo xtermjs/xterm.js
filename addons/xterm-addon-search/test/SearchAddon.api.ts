@@ -210,6 +210,29 @@ describe('Search Tests', function (): void {
           { resultCount: 0, resultIndex: -1 }
         ]);
       });
+      it('should fire with more than 1k matches', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
+        await writeSync(page, data);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: 0 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: 0 },
+          { resultCount: 1000, resultIndex: 1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: 0 },
+          { resultCount: 1000, resultIndex: 1 },
+          { resultCount: 1000, resultIndex: 0 }
+        ]);
+      });
     });
     describe('findPrevious', () => {
       it('should not fire unless the decorations option is set', async () => {
@@ -292,6 +315,29 @@ describe('Search Tests', function (): void {
           { resultCount: 2, resultIndex: 1 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 0, resultIndex: -1 }
+        ]);
+      });
+      it('should fire with more than 1k matches', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
+        await writeSync(page, data);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 }
         ]);
       });
     });
