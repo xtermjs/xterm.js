@@ -220,24 +220,22 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
-      this._cachedSearchTerm = undefined;
       return false;
     }
 
-    if (this._cachedSearchTerm !== term) {
-      this._terminal.clearSelection();
-    }
+    const prevSelectedPos = this._terminal.getSelectionPosition();
+    this._terminal.clearSelection();
 
     let startCol = 0;
     let startRow = 0;
-    let currentSelection: IBufferRange | undefined;
-    if (this._terminal.hasSelection()) {
-      // const incremental = searchOptions ? searchOptions.incremental : false;
-      // Start from the selection end if there is a selection
-      // For incremental search, use existing row
-      currentSelection = this._terminal.getSelectionPosition()!;
-      startRow = currentSelection.end.y;
-      startCol = currentSelection.end.x;
+    if (prevSelectedPos) {
+      if (this._cachedSearchTerm === term) {
+        startCol = prevSelectedPos.end.x;
+        startRow = prevSelectedPos.end.y;
+      } else {
+        startCol = prevSelectedPos.start.x;
+        startRow = prevSelectedPos.start.y;
+      }
     }
 
     this._initLinesCache();
@@ -276,8 +274,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     }
 
     // If there is only one result, wrap back and return selection if it exists.
-    if (!result && currentSelection) {
-      searchPosition.startRow = currentSelection.start.y;
+    if (!result && prevSelectedPos) {
+      searchPosition.startRow = prevSelectedPos.start.y;
       searchPosition.startCol = 0;
       result = this._findInLine(term, searchPosition, searchOptions);
     }
@@ -331,29 +329,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    let result: ISearchResult | undefined;
     if (!this._terminal || !term || term.length === 0) {
-      result = undefined;
       this._terminal?.clearSelection();
       this.clearDecorations();
       return false;
     }
 
-    if (this._cachedSearchTerm !== term) {
-      this._terminal.clearSelection();
-    }
+    const prevSelectedPos = this._terminal.getSelectionPosition();
+    this._terminal.clearSelection();
 
     let startRow = this._terminal.buffer.active.baseY + this._terminal.rows - 1;
     let startCol = this._terminal.cols;
     const isReverseSearch = true;
-
-    let currentSelection: IBufferRange | undefined;
-    if (this._terminal.hasSelection()) {
-      currentSelection = this._terminal.getSelectionPosition()!;
-      // Start from selection start if there is a selection
-      startRow = currentSelection.start.y;
-      startCol = currentSelection.start.x;
-    }
 
     this._initLinesCache();
     const searchPosition: ISearchPosition = {
@@ -361,22 +348,24 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
       startCol
     };
 
-    // const incremental = searchOptions ? searchOptions.incremental : false;
-    // if (incremental) {
-    //   // Try to expand selection to right first.
-    //   result = this._findInLine(term, searchPosition, searchOptions, false);
-    //   const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
-    //   if (!isOldResultHighlighted) {
-    //     // If selection was not able to be expanded to the right, then try reverse search
-    //     if (currentSelection) {
-    //       searchPosition.startRow = currentSelection.end.y;
-    //       searchPosition.startCol = currentSelection.end.x;
-    //     }
-    //     result = this._findInLine(term, searchPosition, searchOptions, true);
-    //   }
-    // } else {
-    result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
-    // }
+    let result: ISearchResult | undefined;
+    if (prevSelectedPos) {
+      searchPosition.startRow = startRow = prevSelectedPos.start.y;
+      searchPosition.startCol = startCol = prevSelectedPos.start.x;
+      if (this._cachedSearchTerm !== term) {
+        // Try to expand selection to right first.
+        result = this._findInLine(term, searchPosition, searchOptions, false);
+        if (!result) {
+          // If selection was not able to be expanded to the right, then try reverse search
+          searchPosition.startRow = startRow = prevSelectedPos.end.y;
+          searchPosition.startCol = startCol = prevSelectedPos.end.x;
+        }
+      }
+    }
+
+    if (!result) {
+      result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+    }
 
     // Search from startRow - 1 to top
     if (!result) {
@@ -399,9 +388,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
         }
       }
     }
-
-    // If there is only one result, return true.
-    if (!result && currentSelection) return true;
 
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
