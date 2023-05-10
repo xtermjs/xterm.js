@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: FAQ
+    url:  https://github.com/xtermjs/xterm.js/wiki/FAQ
+    about: See our frequently asked questions before filing a bug report
   - name: Support / Q&A
     url:  https://github.com/xtermjs/xterm.js/discussions/categories/q-a
     about: Use GitHub Discussions for community support and general Q&A
