@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon, IBufferRange, IDecoration } from 'xterm';
+import { Terminal, IDisposable, ITerminalAddon, IDecoration } from 'xterm';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable, disposeArray } from 'common/Lifecycle';
 
@@ -30,6 +30,10 @@ export interface ISearchPosition {
   startRow: number;
 }
 
+export interface ISearchAddonOptions {
+  highlightLimit: number;
+}
+
 export interface ISearchResult {
   term: string;
   col: number;
@@ -48,15 +52,22 @@ type LineCacheEntry = [
   lineOffsets: number[]
 ];
 
+interface IHighlight extends IDisposable {
+  decoration: IDecoration;
+  match: ISearchResult;
+}
+
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
+const DEFAULT_HIGHLIGHT_LIMIT = 1000;
 
 export class SearchAddon extends Disposable implements ITerminalAddon {
   private _terminal: Terminal | undefined;
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();
-  private _highlightDecorations: (IDecoration & { match: ISearchResult })[] = [];
-  private _selectedDecoration: IDecoration & { match: ISearchResult } | undefined;
+  private _highlightDecorations: IHighlight[] = [];
+  private _selectedDecoration: IHighlight | undefined;
+  private _highlightLimit: number;
   private _onDataDisposable: IDisposable | undefined;
   private _onResizeDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
@@ -74,7 +85,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   private readonly _onDidChangeResults = this.register(new EventEmitter<{ resultIndex: number, resultCount: number }>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
-  public readonly MATCHES_LIMIT = 1000;
+  constructor(options?: Partial<ISearchAddonOptions>) {
+    super();
+
+    this._highlightLimit = options?.highlightLimit ?? DEFAULT_HIGHLIGHT_LIMIT;
+  }
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
@@ -93,14 +108,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     }
     if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
       this._highlightTimeout = setTimeout(() => {
-        this.findPrevious(this._cachedSearchTerm!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
-        this._fireResults(this._lastSearchOptions);
+        const term = this._cachedSearchTerm;
+        this._cachedSearchTerm = undefined;
+        this.findPrevious(term!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
       }, 200);
     }
   }
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
-    this._selectedDecoration?.dispose();
+    this.clearActiveDecoration();
     disposeArray(this._highlightDecorations);
     this._highlightDecorations = [];
     this._highlightedLines.clear();
@@ -156,7 +172,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     let prevResult: ISearchResult | undefined = undefined;
     let result = this._find(term, 0, 0, searchOptions);
     while (result && (prevResult?.row !== result.row || prevResult?.col !== result.col)) {
-      if (searchResultsWithHighlight.length >= this.MATCHES_LIMIT) {
+      if (searchResultsWithHighlight.length >= this._highlightLimit) {
         break;
       }
       prevResult = result;
@@ -168,12 +184,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
         searchOptions
       );
     }
-    for (const result of searchResultsWithHighlight) {
-      const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
-      if (resultDecoration) {
-        this._highlightedLines.add(resultDecoration.marker.line);
-        (resultDecoration as unknown as { match: ISearchResult }).match = result;
-        this._highlightDecorations.push(resultDecoration as (IDecoration & { match: ISearchResult }));
+    for (const match of searchResultsWithHighlight) {
+      const decoration = this._createResultDecoration(match, searchOptions.decorations!);
+      if (decoration) {
+        this._highlightedLines.add(decoration.marker.line);
+        this._highlightDecorations.push({ decoration, match, dispose() { decoration.dispose(); } });
       }
     }
   }
@@ -654,8 +669,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
           disposables.push(marker);
           disposables.push(decoration.onRender((e) => this._applyStyles(e, options.activeMatchBorder, true)));
           disposables.push(decoration.onDispose(() => disposeArray(disposables)));
-          (decoration as unknown as { match: ISearchResult }).match = result;
-          this._selectedDecoration = decoration as (IDecoration & { match: ISearchResult });
+          this._selectedDecoration = { decoration, match: result, dispose() { decoration.dispose(); } };
         }
       }
     }

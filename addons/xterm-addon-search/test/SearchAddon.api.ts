@@ -242,6 +242,23 @@ describe('Search Tests', function (): void {
           { resultCount: 1000, resultIndex: 1 }
         ]);
       });
+      it('should fire when writing to terminal', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc bc c\\n\\r'.repeat(2));
+        assert.strictEqual(await page.evaluate(`window.search.findNext('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 0 }
+        ]);
+        await writeSync(page, 'abc bc c\\n\\r');
+        await timeout(300);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 3, resultIndex: 0 }
+        ]);
+      });
     });
     describe('findPrevious', () => {
       it('should not fire unless the decorations option is set', async () => {
@@ -357,6 +374,23 @@ describe('Search Tests', function (): void {
           { resultCount: 1000, resultIndex: -1 },
           { resultCount: 1000, resultIndex: -1 },
           { resultCount: 1000, resultIndex: -1 }
+        ]);
+      });
+      it('should fire when writing to terminal', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc bc c\\n\\r'.repeat(2));
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 1 }
+        ]);
+        await writeSync(page, 'abc bc c\\n\\r');
+        await timeout(300);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 3, resultIndex: 1 }
         ]);
       });
     });
