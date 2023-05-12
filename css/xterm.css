@@ -179,8 +179,12 @@
 	position: absolute;
 }
 
+.xterm-screen .xterm-decoration-container .xterm-decoration.top-layer {
+	z-index: 7;
+}
+
 .xterm-decoration-overview-ruler {
-    z-index: 7;
+    z-index: 8;
     position: absolute;
     top: 0;
     right: 0;
