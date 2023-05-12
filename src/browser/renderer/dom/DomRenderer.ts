@@ -53,7 +53,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
-    @IThemeService themeService: IThemeService
+    @IThemeService private readonly _themeService: IThemeService
   ) {
     super();
     this._rowContainer = document.createElement('div');
@@ -69,8 +69,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
-    this.register(themeService.onChangeColors(e => this._injectCss(e)));
-    this._injectCss(themeService.colors);
+    this.register(this._themeService.onChangeColors(e => this._injectCss(e)));
+    this._injectCss(this._themeService.colors);
 
     this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document);
 
@@ -340,6 +340,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _handleOptionsChanged(): void {
     // Force a refresh
     this._updateDimensions();
+    // Refresh CSS
+    this._injectCss(this._themeService.colors);
   }
 
   public clear(): void {
