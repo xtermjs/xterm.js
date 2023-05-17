@@ -693,9 +693,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    * @returns
    */
   private _applyStyles(element: HTMLElement, borderColor: string | undefined, isActiveResult: boolean): void {
-    if (element.clientWidth <= 0) {
-      return;
-    }
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
       if (borderColor) {
