@@ -179,7 +179,7 @@
 	position: absolute;
 }
 
-.xterm-screen .xterm-decoration-container .xterm-decoration.top-layer {
+.xterm-screen .xterm-decoration-container .xterm-decoration.xterm-decoration-top-layer {
 	z-index: 7;
 }
 
