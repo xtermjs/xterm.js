@@ -132,12 +132,11 @@ function setPadding(): void {
   addons.fit.instance.fit();
 }
 
-function getSearchOptions(e: KeyboardEvent): ISearchOptions {
+function getSearchOptions(): ISearchOptions {
   return {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
-    incremental: e.key !== `Enter`,
     decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
       matchBackground: '#232422',
       matchBorder: '#555753',
@@ -303,11 +302,23 @@ function createTerminal(): void {
 
   addDomListener(paddingElement, 'change', setPadding);
 
-  addDomListener(actionElements.findNext, 'keyup', (e) => {
-    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
+  addDomListener(actionElements.findNext, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+      e.preventDefault();
+    }
   });
-  addDomListener(actionElements.findPrevious, 'keyup', (e) => {
-    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
+  addDomListener(actionElements.findNext, 'input', (e) => {
+    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+  });
+  addDomListener(actionElements.findPrevious, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+      e.preventDefault();
+    }
+  });
+  addDomListener(actionElements.findPrevious, 'input', (e) => {
+    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
   });
   addDomListener(actionElements.findNext, 'blur', (e) => {
     addons.search.instance.clearActiveDecoration();

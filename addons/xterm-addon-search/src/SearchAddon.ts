@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon, IBufferRange, IDecoration } from 'xterm';
+import { Terminal, IDisposable, ITerminalAddon, IDecoration } from 'xterm';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable, disposeArray } from 'common/Lifecycle';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -30,6 +30,10 @@ export interface ISearchPosition {
   startRow: number;
 }
 
+export interface ISearchAddonOptions {
+  highlightLimit: number;
+}
+
 export interface ISearchResult {
   term: string;
   col: number;
@@ -48,15 +52,22 @@ type LineCacheEntry = [
   lineOffsets: number[]
 ];
 
+interface IHighlight extends IDisposable {
+  decoration: IDecoration;
+  match: ISearchResult;
+}
+
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
+const DEFAULT_HIGHLIGHT_LIMIT = 1000;
 
 export class SearchAddon extends Disposable implements ITerminalAddon {
   private _terminal: Terminal | undefined;
   private _cachedSearchTerm: string | undefined;
-  private _selectedDecoration: IDecoration | undefined;
-  private _resultDecorations: Map<number, IDecoration[]> | undefined;
-  private _searchResults: Map<string, ISearchResult> | undefined;
+  private _highlightedLines: Set<number> = new Set();
+  private _highlightDecorations: IHighlight[] = [];
+  private _selectedDecoration: IHighlight | undefined;
+  private _highlightLimit: number;
   private _onDataDisposable: IDisposable | undefined;
   private _onResizeDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
@@ -71,10 +82,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
 
-  private _resultIndex: number | undefined;
-
-  private readonly _onDidChangeResults = this.register(new EventEmitter<{ resultIndex: number, resultCount: number } | undefined>());
+  private readonly _onDidChangeResults = this.register(new EventEmitter<{ resultIndex: number, resultCount: number }>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
+
+  constructor(options?: Partial<ISearchAddonOptions>) {
+    super();
+
+    this._highlightLimit = options?.highlightLimit ?? DEFAULT_HIGHLIGHT_LIMIT;
+  }
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
@@ -93,24 +108,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     }
     if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
       this._highlightTimeout = setTimeout(() => {
-        this.findPrevious(this._cachedSearchTerm!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
-        this._resultIndex = this._searchResults ? this._searchResults.size - 1 : -1;
-        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults?.size ?? -1 });
+        const term = this._cachedSearchTerm;
+        this._cachedSearchTerm = undefined;
+        this.findPrevious(term!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
       }, 200);
     }
   }
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
-    this._selectedDecoration?.dispose();
-    this._searchResults?.clear();
-    this._resultDecorations?.forEach(decorations => {
-      for (const d of decorations) {
-        d.dispose();
-      }
-    });
-    this._resultDecorations?.clear();
-    this._searchResults = undefined;
-    this._resultDecorations = undefined;
+    this.clearActiveDecoration();
+    disposeArray(this._highlightDecorations);
+    this._highlightDecorations = [];
+    this._highlightedLines.clear();
     if (!retainCachedSearchTerm) {
       this._cachedSearchTerm = undefined;
     }
@@ -134,11 +143,16 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._resultIndex !== undefined || this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
+      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
-    return this._fireResults(term, this._findNextAndSelect(term, searchOptions), searchOptions);
+
+    const found = this._findNextAndSelect(term, searchOptions);
+    this._fireResults(searchOptions);
+    this._cachedSearchTerm = term;
+
+    return found;
   }
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
@@ -153,32 +167,30 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
 
     // new search, clear out the old decorations
     this.clearDecorations(true);
-    this._searchResults = new Map<string, ISearchResult>();
-    this._resultDecorations = new Map<number, IDecoration[]>();
-    const resultDecorations = this._resultDecorations;
+
+    const searchResultsWithHighlight: ISearchResult[] = [];
+    let prevResult: ISearchResult | undefined = undefined;
     let result = this._find(term, 0, 0, searchOptions);
-    while (result && !this._searchResults.get(`${result.row}-${result.col}`)) {
-      this._searchResults.set(`${result.row}-${result.col}`, result);
+    while (result && (prevResult?.row !== result.row || prevResult?.col !== result.col)) {
+      if (searchResultsWithHighlight.length >= this._highlightLimit) {
+        break;
+      }
+      prevResult = result;
+      searchResultsWithHighlight.push(prevResult);
       result = this._find(
         term,
-        result.col + result.term.length >= this._terminal.cols ? result.row + 1 : result.row,
-        result.col + result.term.length >= this._terminal.cols ? 0 : result.col + 1,
+        prevResult.col + prevResult.term.length >= this._terminal.cols ? prevResult.row + 1 : prevResult.row,
+        prevResult.col + prevResult.term.length >= this._terminal.cols ? 0 : prevResult.col + 1,
         searchOptions
       );
-      if (this._searchResults.size > 1000) {
-        this.clearDecorations();
-        this._resultIndex = undefined;
-        return;
+    }
+    for (const match of searchResultsWithHighlight) {
+      const decoration = this._createResultDecoration(match, searchOptions.decorations!);
+      if (decoration) {
+        this._highlightedLines.add(decoration.marker.line);
+        this._highlightDecorations.push({ decoration, match, dispose() { decoration.dispose(); } });
       }
     }
-    this._searchResults.forEach(result => {
-      const resultDecoration = this._createResultDecoration(result, searchOptions.decorations!);
-      if (resultDecoration) {
-        const decorationsForLine = resultDecorations.get(resultDecoration.marker.line) || [];
-        decorationsForLine.push(resultDecoration);
-        resultDecorations.set(resultDecoration.marker.line, decorationsForLine);
-      }
-    });
   }
 
   private _find(term: string, startRow: number, startCol: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
@@ -223,26 +235,22 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
-      this._cachedSearchTerm = undefined;
-      this._resultIndex = -1;
       return false;
     }
 
-    if (this._cachedSearchTerm !== term) {
-      this._resultIndex = undefined;
-      this._terminal.clearSelection();
-    }
+    const prevSelectedPos = this._terminal.getSelectionPosition();
+    this._terminal.clearSelection();
 
     let startCol = 0;
     let startRow = 0;
-    let currentSelection: IBufferRange | undefined;
-    if (this._terminal.hasSelection()) {
-      const incremental = searchOptions ? searchOptions.incremental : false;
-      // Start from the selection end if there is a selection
-      // For incremental search, use existing row
-      currentSelection = this._terminal.getSelectionPosition()!;
-      startRow = incremental ? currentSelection.start.y : currentSelection.end.y;
-      startCol = incremental ? currentSelection.start.x : currentSelection.end.x;
+    if (prevSelectedPos) {
+      if (this._cachedSearchTerm === term) {
+        startCol = prevSelectedPos.end.x;
+        startRow = prevSelectedPos.end.y;
+      } else {
+        startCol = prevSelectedPos.start.x;
+        startRow = prevSelectedPos.start.y;
+      }
     }
 
     this._initLinesCache();
@@ -281,24 +289,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     }
 
     // If there is only one result, wrap back and return selection if it exists.
-    if (!result && currentSelection) {
-      searchPosition.startRow = currentSelection.start.y;
+    if (!result && prevSelectedPos) {
+      searchPosition.startRow = prevSelectedPos.start.y;
       searchPosition.startCol = 0;
       result = this._findInLine(term, searchPosition, searchOptions);
     }
 
-    if (this._searchResults) {
-      if (this._searchResults.size === 0) {
-        this._resultIndex = -1;
-      } else if (this._resultIndex === undefined) {
-        this._resultIndex = 0;
-      } else {
-        this._resultIndex++;
-        if (this._resultIndex >= this._searchResults.size) {
-          this._resultIndex = 0;
-        }
-      }
-    }
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
   }
@@ -315,55 +311,51 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     }
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._resultIndex !== undefined || this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
+      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
-    return this._fireResults(term, this._findPreviousAndSelect(term, searchOptions), searchOptions);
+
+    const found = this._findPreviousAndSelect(term, searchOptions);
+    this._fireResults(searchOptions);
+    this._cachedSearchTerm = term;
+
+    return found;
   }
 
-  private _fireResults(term: string, found: boolean, searchOptions?: ISearchOptions): boolean {
+  private _fireResults(searchOptions?: ISearchOptions): void {
     if (searchOptions?.decorations) {
-      if (this._resultIndex !== undefined && this._searchResults?.size !== undefined) {
-        this._onDidChangeResults.fire({ resultIndex: this._resultIndex, resultCount: this._searchResults.size });
-      } else {
-        this._onDidChangeResults.fire(undefined);
+      let resultIndex = -1;
+      if (this._selectedDecoration) {
+        const selectedMatch = this._selectedDecoration.match;
+        for (let i = 0; i < this._highlightDecorations.length; i++) {
+          const match = this._highlightDecorations[i].match;
+          if (match.row === selectedMatch.row && match.col === selectedMatch.col && match.size === selectedMatch.size) {
+            resultIndex = i;
+            break;
+          }
+        }
       }
+      this._onDidChangeResults.fire({ resultIndex, resultCount: this._highlightDecorations.length });
     }
-    this._cachedSearchTerm = term;
-    return found;
   }
 
   private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    let result: ISearchResult | undefined;
     if (!this._terminal || !term || term.length === 0) {
-      result = undefined;
       this._terminal?.clearSelection();
       this.clearDecorations();
-      this._resultIndex = -1;
       return false;
     }
 
-    if (this._cachedSearchTerm !== term) {
-      this._resultIndex = undefined;
-      this._terminal.clearSelection();
-    }
+    const prevSelectedPos = this._terminal.getSelectionPosition();
+    this._terminal.clearSelection();
 
-    let startRow = this._terminal.buffer.active.baseY + this._terminal.rows;
+    let startRow = this._terminal.buffer.active.baseY + this._terminal.rows - 1;
     let startCol = this._terminal.cols;
     const isReverseSearch = true;
-
-    const incremental = searchOptions ? searchOptions.incremental : false;
-    let currentSelection: IBufferRange | undefined;
-    if (this._terminal.hasSelection()) {
-      currentSelection = this._terminal.getSelectionPosition()!;
-      // Start from selection start if there is a selection
-      startRow = currentSelection.start.y;
-      startCol = currentSelection.start.x;
-    }
 
     this._initLinesCache();
     const searchPosition: ISearchPosition = {
@@ -371,19 +363,22 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
       startCol
     };
 
-    if (incremental) {
-      // Try to expand selection to right first.
-      result = this._findInLine(term, searchPosition, searchOptions, false);
-      const isOldResultHighlighted = result && result.row === startRow && result.col === startCol;
-      if (!isOldResultHighlighted) {
-        // If selection was not able to be expanded to the right, then try reverse search
-        if (currentSelection) {
-          searchPosition.startRow = currentSelection.end.y;
-          searchPosition.startCol = currentSelection.end.x;
+    let result: ISearchResult | undefined;
+    if (prevSelectedPos) {
+      searchPosition.startRow = startRow = prevSelectedPos.start.y;
+      searchPosition.startCol = startCol = prevSelectedPos.start.x;
+      if (this._cachedSearchTerm !== term) {
+        // Try to expand selection to right first.
+        result = this._findInLine(term, searchPosition, searchOptions, false);
+        if (!result) {
+          // If selection was not able to be expanded to the right, then try reverse search
+          searchPosition.startRow = startRow = prevSelectedPos.end.y;
+          searchPosition.startCol = startCol = prevSelectedPos.end.x;
         }
-        result = this._findInLine(term, searchPosition, searchOptions, true);
       }
-    } else {
+    }
+
+    if (!result) {
       result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
     }
 
@@ -399,8 +394,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
       }
     }
     // If we hit the top and didn't search from the very bottom wrap back down
-    if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows)) {
-      for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows); y >= startRow; y--) {
+    if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows - 1)) {
+      for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows - 1); y >= startRow; y--) {
         searchPosition.startRow = y;
         result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
         if (result) {
@@ -408,22 +403,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
         }
       }
     }
-
-    if (this._searchResults) {
-      if (this._searchResults.size === 0) {
-        this._resultIndex = -1;
-      } else if (this._resultIndex === undefined || this._resultIndex < 0) {
-        this._resultIndex = this._searchResults.size - 1;
-      } else {
-        this._resultIndex--;
-        if (this._resultIndex === -1) {
-          this._resultIndex = this._searchResults.size - 1;
-        }
-      }
-    }
-
-    // If there is only one result, return true.
-    if (!result && currentSelection) return true;
 
     // Set selection and scroll if a result was found
     return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
@@ -675,7 +654,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (options) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
-        this._selectedDecoration = terminal.registerDecoration({
+        const decoration = terminal.registerDecoration({
           marker,
           x: result.col,
           width: result.size,
@@ -685,8 +664,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
             color: options.activeMatchColorOverviewRuler
           }
         });
-        this._selectedDecoration?.onRender((e) => this._applyStyles(e, options.activeMatchBorder, true));
-        this._selectedDecoration?.onDispose(() => marker.dispose());
+        if (decoration) {
+          const disposables: IDisposable[] = [];
+          disposables.push(marker);
+          disposables.push(decoration.onRender((e) => this._applyStyles(e, options.activeMatchBorder, true)));
+          disposables.push(decoration.onDispose(() => disposeArray(disposables)));
+          this._selectedDecoration = { decoration, match: result, dispose() { decoration.dispose(); } };
+        }
       }
     }
 
@@ -740,13 +724,17 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
       x: result.col,
       width: result.size,
       backgroundColor: options.matchBackground,
-      overviewRulerOptions: this._resultDecorations?.get(marker.line) ? undefined : {
+      overviewRulerOptions: this._highlightedLines.has(marker.line) ? undefined : {
         color: options.matchOverviewRuler,
         position: 'center'
       }
     });
-    findResultDecoration?.onRender((e) => this._applyStyles(e, options.matchBorder, false));
-    findResultDecoration?.onDispose(() => marker.dispose());
+    if (findResultDecoration) {
+      const disposables: IDisposable[] = [];
+      disposables.push(marker);
+      disposables.push(findResultDecoration.onRender((e) => this._applyStyles(e, options.matchBorder, false)));
+      disposables.push(findResultDecoration.onDispose(() => disposeArray(disposables)));
+    }
     return findResultDecoration;
   }
 }
