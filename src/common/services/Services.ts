@@ -294,6 +294,11 @@ export interface IOscLinkService {
   getLinkData(linkId: number): IOscLinkData | undefined;
 }
 
+/** Width and Grapheme_Cluster_Break properties of a character. */
+export type UnicodeCharProperties = number;
+export const UnicodeInitialProperties: UnicodeCharProperties = 0; // UNEEDED?
+export type UnicodeCharWidth = 0 | 1 | 2;
+
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
   serviceBrand: undefined;
@@ -309,13 +314,18 @@ export interface IUnicodeService {
   /**
    * Unicode version dependent
    */
-  wcwidth(codepoint: number): number;
+  wcwidth(codepoint: number): UnicodeCharWidth;
   getStringCellWidth(s: string): number;
+  /** Return character width, character type (for grapheme clustering).
+   * If preceding!=0, it is return code from previous character;
+   * in that case result specifies if characters should be joined. */
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
 export interface IUnicodeVersionProvider {
   readonly version: string;
-  wcwidth(ucs: number): 0 | 1 | 2;
+  wcwidth(ucs: number): UnicodeCharWidth;
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
 export const IDecorationService = createDecorator<IDecorationService>('DecorationService');

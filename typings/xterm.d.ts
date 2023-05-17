@@ -1674,6 +1674,7 @@ declare module 'xterm' {
      * Unicode version dependent wcwidth implementation.
      */
     wcwidth(codepoint: number): 0 | 1 | 2;
+    charProperties(codepoint: number, preceding: number): number;
   }
 
   /**

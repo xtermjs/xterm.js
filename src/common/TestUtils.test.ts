@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
+import { UnicodeService } from 'common/services/UnicodeService';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -167,7 +168,12 @@ export class MockUnicodeService implements IUnicodeService {
   public versions: string[] = [];
   public activeVersion: string = '';
   public onChange: IEvent<string> = new EventEmitter<string>().event;
-  public wcwidth = (codepoint: number): number => this._provider.wcwidth(codepoint);
+  public wcwidth = (codepoint: number): UnicodeCharWidth => this._provider.wcwidth(codepoint);
+  public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
+    const w = this.wcwidth(codepoint);
+    const shouldJoin = w !== 0;
+    return UnicodeService.createPropertyValue(0, w, shouldJoin);
+  }
   public getStringCellWidth(s: string): number {
     throw new Error('Method not implemented.');
   }

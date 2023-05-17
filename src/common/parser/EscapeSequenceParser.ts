@@ -231,6 +231,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   public initialState: number;
   public currentState: number;
   public precedingCodepoint: number;
+  // Cached result of getJoinProperties(..., precedingCodepoint).
+  // Only valid if precedingCodepoint !== 0
+  public precedingJoinState: number = -1; // UnicodeJoinProperties
 
   // buffers over several parse calls
   protected _params: Params;
