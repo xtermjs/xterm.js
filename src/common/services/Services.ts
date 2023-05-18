@@ -296,7 +296,6 @@ export interface IOscLinkService {
 
 /** Width and Grapheme_Cluster_Break properties of a character. */
 export type UnicodeCharProperties = number;
-export const UnicodeInitialProperties: UnicodeCharProperties = 0; // UNEEDED?
 export type UnicodeCharWidth = 0 | 1 | 2;
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');

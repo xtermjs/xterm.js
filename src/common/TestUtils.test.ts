@@ -170,9 +170,17 @@ export class MockUnicodeService implements IUnicodeService {
   public onChange: IEvent<string> = new EventEmitter<string>().event;
   public wcwidth = (codepoint: number): UnicodeCharWidth => this._provider.wcwidth(codepoint);
   public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
-    const w = this.wcwidth(codepoint);
-    const shouldJoin = w !== 0;
-    return UnicodeService.createPropertyValue(0, w, shouldJoin);
+    let width = this.wcwidth(codepoint);
+    let shouldJoin = width === 0 && preceding !== 0;
+    if (shouldJoin) {
+      const oldWidth = UnicodeService.extractWidth(preceding);
+      if (oldWidth === 0) {
+        shouldJoin = false;
+      } else if (oldWidth > width) {
+        width = oldWidth;
+      }
+    }
+    return UnicodeService.createPropertyValue(0, width, shouldJoin);
   }
   public getStringCellWidth(s: string): number {
     throw new Error('Method not implemented.');

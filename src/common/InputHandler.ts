@@ -530,16 +530,15 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
 
-      let precedingInfo = this._parser.precedingCodepoint === 0 ? 0
+      const precedingInfo = this._parser.precedingCodepoint === 0 ? 0
         : this._parser.precedingJoinState;
-      // calculate print space
-      // expensive call, therefore we save width in line buffer
-      let currentInfo = this._unicodeService.charProperties(code, precedingInfo);
-      let chWidth = UnicodeService.extractWidth(currentInfo);
-      let shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
+      const currentInfo = this._unicodeService.charProperties(code, precedingInfo);
+      chWidth = UnicodeService.extractWidth(currentInfo);
+      const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
       const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingInfo) : 0;
       this._parser.precedingCodepoint = code;
       this._parser.precedingJoinState = currentInfo;
+
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
@@ -575,7 +574,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             // Combining character widens 1 column to 2.
             // Move old character to next line.
             bufferRow.copyCellsFrom(oldRow as BufferLine,
-                                    oldCol, 0, oldWidth, false);
+              oldCol, 0, oldWidth, false);
           }
           // clear left over cells to the right
           while (oldCol < cols) {
@@ -596,12 +595,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for this._activeBuffer.x to avoid overflow left
       if (shouldJoin && this._activeBuffer.x) {
-        const offset = bufferRow.getWidth(this._activeBuffer.x - 1) ? 1 : 2
+        const offset = bufferRow.getWidth(this._activeBuffer.x - 1) ? 1 : 2;
         // if empty cell after fullwidth, need to go 2 cells back
         // it is save to step 2 cells back here
         // since an empty cell is only set by fullwidth chars
         bufferRow.addCodepointToCell(this._activeBuffer.x - offset,
-                                     code, chWidth);
+          code, chWidth);
         this._activeBuffer.x += chWidth - oldWidth;
         continue;
       }
@@ -609,7 +608,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(this._activeBuffer.x, chWidth, this._activeBuffer.getNullCell(curAttr), curAttr);
+        bufferRow.insertCells(this._activeBuffer.x, chWidth - oldWidth, this._activeBuffer.getNullCell(curAttr), curAttr);
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
@@ -631,22 +630,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
     }
-      /*
-    // store last char in Parser.precedingCodepoint for REP to work correctly
-    // This needs to check whether:
-    //  - fullwidth + surrogates: reset
-    //  - combining: only base char gets carried on (bug in xterm?)
-    if (end - start > 0) {
-      bufferRow.loadCell(this._activeBuffer.x - 1, this._workCell);
-      if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
-        this._parser.precedingCodepoint = 0;
-      } else if (this._workCell.isCombined()) {
-        this._parser.precedingCodepoint = this._workCell.getChars().charCodeAt(0);
-      } else {
-        this._parser.precedingCodepoint = this._workCell.content;
-      }
-    }
-      */
+
     // handle wide chars: reset cell to the right if it is second cell of a wide char
     if (this._activeBuffer.x < cols && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x) === 0 && !bufferRow.hasContent(this._activeBuffer.x)) {
       bufferRow.setCellFromCodePoint(this._activeBuffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);

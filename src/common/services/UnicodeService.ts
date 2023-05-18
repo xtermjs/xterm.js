@@ -70,6 +70,7 @@ export class UnicodeService implements IUnicodeService {
 
   public getStringCellWidth(s: string): number {
     let result = 0;
+    let precedingInfo = 0;
     const length = s.length;
     for (let i = 0; i < length; ++i) {
       let code = s.charCodeAt(i);
@@ -92,12 +93,18 @@ export class UnicodeService implements IUnicodeService {
           result += this.wcwidth(second);
         }
       }
-      result += this.wcwidth(code);
+      const currentInfo = this.charProperties(code, precedingInfo);
+      let chWidth = UnicodeService.extractWidth(currentInfo);
+      if (UnicodeService.extractShouldJoin(currentInfo)) {
+        chWidth -= UnicodeService.extractWidth(precedingInfo);
+      }
+      result += chWidth;
+      precedingInfo = currentInfo;
     }
     return result;
   }
 
-  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
+  public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     return this._activeProvider.charProperties(codepoint, preceding);
   }
 }

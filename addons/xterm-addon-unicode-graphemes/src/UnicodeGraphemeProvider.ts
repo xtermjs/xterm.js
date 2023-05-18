@@ -10,7 +10,7 @@ import * as UC from './UnicodeProperties';
 
 export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
   public readonly version = '15-graphemes';
-
+  public ambiguousCharsAreWide: boolean = false;
   constructor() {
   }
 
@@ -19,9 +19,8 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
     let w = UC.infoToWidthInfo(charInfo);
     let shouldJoin = false;
     if (w >= 2) {
-      const preferWide = false; //this.ambiguousCharsAreWide(context);
       // Treat emoji_presentation_selector as WIDE.
-      w = w == 3 || preferWide || codepoint === 0xfe0f ? 2 : 1;
+      w = w == 3 || this.ambiguousCharsAreWide || codepoint === 0xfe0f ? 2 : 1;
     } else
       w = 1;
     if (preceding !== 0) {
@@ -31,14 +30,23 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
       if (shouldJoin) {
         if (oldWidth > w)
           w = oldWidth;
-          else if (charInfo === 32) // FIXME UC.GRAPHEME_BREAK_SAW_Regional_Pair)
+        else if (charInfo === 32) // FIXME UC.GRAPHEME_BREAK_SAW_Regional_Pair)
           w = 2;
       }
     }
     return UnicodeService.createPropertyValue(charInfo, w, shouldJoin);
   }
 
-  public wcwidth(num: number): UnicodeCharWidth {
-    return UC.infoToWidth(UC.getInfo(num));
+  public wcwidth(codepoint: number): UnicodeCharWidth {
+    let charInfo = UC.getInfo(codepoint);
+    let w = UC.infoToWidthInfo(charInfo);
+    let kind = (charInfo & UC.GRAPHEME_BREAK_MASK) >> UC.GRAPHEME_BREAK_SHIFT;
+    if (kind === UC.GRAPHEME_BREAK_Extend
+        || kind === UC.GRAPHEME_BREAK_Prepend)
+      return 0;
+    else if (w >= 2)
+      return w == 3 || this.ambiguousCharsAreWide? 2 : 1;
+    else
+      return 1;
   }
 }

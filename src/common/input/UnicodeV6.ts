@@ -2,8 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IUnicodeVersionProvider } from 'common/services/Services';
-import { UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
+import { IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 
 const BMP_COMBINING = [
@@ -130,14 +129,12 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
     return 1;
   }
 
-  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
+  public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     let width = this.wcwidth(codepoint);
-    let shouldJoin = width === 0;
+    let shouldJoin = width === 0 && preceding !== 0;
     if (shouldJoin) {
-      let oldWidth = preceding === 0 ? 0
-        : UnicodeService.extractWidth(preceding);
+      const oldWidth = UnicodeService.extractWidth(preceding);
       if (oldWidth === 0) {
-        width = 1;
         shouldJoin = false;
       } else if (oldWidth > width) {
         width = oldWidth;
