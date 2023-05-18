@@ -14,39 +14,36 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
   constructor() {
   }
 
-  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
+  public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     let charInfo = UC.getInfo(codepoint);
     let w = UC.infoToWidthInfo(charInfo);
     let shouldJoin = false;
     if (w >= 2) {
       // Treat emoji_presentation_selector as WIDE.
-      w = w == 3 || this.ambiguousCharsAreWide || codepoint === 0xfe0f ? 2 : 1;
-    } else
+      w = w === 3 || this.ambiguousCharsAreWide || codepoint === 0xfe0f ? 2 : 1;
+    } else {
       w = 1;
+    }
     if (preceding !== 0) {
-      let oldWidth = UnicodeService.extractWidth(preceding);
+      const oldWidth = UnicodeService.extractWidth(preceding);
       charInfo = UC.shouldJoin(UnicodeService.extractCharKind(preceding), charInfo);
       shouldJoin = charInfo > 0;
       if (shouldJoin) {
-        if (oldWidth > w)
+        if (oldWidth > w) {
           w = oldWidth;
-        else if (charInfo === 32) // FIXME UC.GRAPHEME_BREAK_SAW_Regional_Pair)
+        } else if (charInfo === 32) { // UC.GRAPHEME_BREAK_SAW_Regional_Pair)
           w = 2;
+        }
       }
     }
     return UnicodeService.createPropertyValue(charInfo, w, shouldJoin);
   }
 
   public wcwidth(codepoint: number): UnicodeCharWidth {
-    let charInfo = UC.getInfo(codepoint);
-    let w = UC.infoToWidthInfo(charInfo);
-    let kind = (charInfo & UC.GRAPHEME_BREAK_MASK) >> UC.GRAPHEME_BREAK_SHIFT;
-    if (kind === UC.GRAPHEME_BREAK_Extend
-        || kind === UC.GRAPHEME_BREAK_Prepend)
-      return 0;
-    else if (w >= 2)
-      return w == 3 || this.ambiguousCharsAreWide? 2 : 1;
-    else
-      return 1;
+    const charInfo = UC.getInfo(codepoint);
+    const w = UC.infoToWidthInfo(charInfo);
+    const kind = (charInfo & UC.GRAPHEME_BREAK_MASK) >> UC.GRAPHEME_BREAK_SHIFT;
+    return (kind === UC.GRAPHEME_BREAK_Extend || kind === UC.GRAPHEME_BREAK_Prepend) ? 0
+      : (w >= 2 && (w === 3 || this.ambiguousCharsAreWide)) ? 2 : 1;
   }
 }

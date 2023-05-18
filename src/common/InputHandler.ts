@@ -517,6 +517,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
+    let precedingInfo = this._parser.precedingCodepoint === 0 ? 0
+      : this._parser.precedingJoinState;
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
@@ -530,14 +532,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
 
-      const precedingInfo = this._parser.precedingCodepoint === 0 ? 0
-        : this._parser.precedingJoinState;
       const currentInfo = this._unicodeService.charProperties(code, precedingInfo);
       chWidth = UnicodeService.extractWidth(currentInfo);
       const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
       const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingInfo) : 0;
-      this._parser.precedingCodepoint = code;
-      this._parser.precedingJoinState = currentInfo;
+      precedingInfo = currentInfo;
 
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
@@ -628,6 +627,19 @@ export class InputHandler extends Disposable implements IInputHandler {
           // other than a regular empty cell a cell following a wide char has no width
           bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
         }
+      }
+    }
+
+    this._parser.precedingJoinState = precedingInfo;
+    // store last char in Parser.precedingCodepoint for REP to work correctly
+    // This needs to check whether:
+    //  - combining: only base char gets carried on (bug in xterm?)
+    if (end - start > 0) {
+      bufferRow.loadCell(this._activeBuffer.x - 1, this._workCell);
+      if (this._workCell.isCombined()) {
+        this._parser.precedingCodepoint = this._workCell.getChars().charCodeAt(0);
+      } else {
+        this._parser.precedingCodepoint = this._workCell.content;
       }
     }
 
