@@ -18,6 +18,7 @@ import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAdd
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
+import { UnicodeGraphemesAddon } from '../addons/xterm-addon-unicode-graphemes/out/UnicodeGraphemesAddon';
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
 
 // Use webpacked version (yarn package)
@@ -29,6 +30,7 @@ import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAdd
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
 // import { Unicode11Addon } from 'xterm-addon-unicode11';
+// import { UnicodeGraphemesAddon } from 'xterm-addon-unicode-graphemes';
 // import { LigaturesAddon } from 'xterm-addon-ligatures';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
@@ -45,6 +47,7 @@ export interface IWindowWithTerminal extends Window {
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebglAddon?: typeof WebglAddon; // eslint-disable-line @typescript-eslint/naming-convention
   Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
+  UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon; // eslint-disable-line @typescript-eslint/naming-convention
   LigaturesAddon?: typeof LigaturesAddon; // eslint-disable-line @typescript-eslint/naming-convention
 }
 declare let window: IWindowWithTerminal;
@@ -55,7 +58,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'unicode-graphemes' | 'web-links' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -68,8 +71,9 @@ interface IDemoAddon<T extends AddonType> {
             T extends 'serialize' ? typeof SerializeAddon :
               T extends 'web-links' ? typeof WebLinksAddon :
                 T extends 'unicode11' ? typeof Unicode11Addon :
-                  T extends 'ligatures' ? typeof LigaturesAddon :
-                    typeof WebglAddon
+                  T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
+                    T extends 'ligatures' ? typeof LigaturesAddon :
+                      typeof WebglAddon
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -80,8 +84,9 @@ interface IDemoAddon<T extends AddonType> {
               T extends 'web-links' ? WebLinksAddon :
                 T extends 'webgl' ? WebglAddon :
                   T extends 'unicode11' ? typeof Unicode11Addon :
-                    T extends 'ligatures' ? typeof LigaturesAddon :
-                      never
+                    T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
+                      T extends 'ligatures' ? typeof LigaturesAddon :
+                        never
   );
 }
 
@@ -94,6 +99,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
+  'unicode-graphemes': { name: 'unicode-graphemes', ctor: UnicodeGraphemesAddon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
 };
 
@@ -162,6 +168,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
+    addons['unicode-graphemes'].instance = undefined;
     addons.ligatures.instance = undefined;
     addons['web-links'].instance = undefined;
     addons.webgl.instance = undefined;
@@ -208,6 +215,7 @@ if (document.location.pathname === '/test') {
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
+  window.UnicodeGraphemesAddon = UnicodeGraphemesAddon;
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
@@ -252,6 +260,7 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.unicode11.instance = new Unicode11Addon();
+  addons['unicode-graphemes'].instance = new UnicodeGraphemesAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
     addons.webgl.instance = new WebglAddon();
   } catch (e) {
@@ -262,6 +271,7 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicode11.instance);
+  typedTerm.loadAddon(addons['unicode-graphemes'].instance);
   typedTerm.loadAddon(addons['web-links'].instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
@@ -554,6 +564,9 @@ function initAddons(term: TerminalType): void {
     if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
     }
+    if (name === 'unicode-graphemes' && checkbox.checked) {
+      term.unicode.activeVersion = '15-graphemes';
+    }
     if (name === 'search' && checkbox.checked) {
       addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
@@ -576,6 +589,8 @@ function initAddons(term: TerminalType): void {
             }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
+          } else if (name === 'unicode-graphemes') {
+            term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
             addon.instance.onDidChangeResults(e => updateFindResults(e));
           }
@@ -590,7 +605,7 @@ function initAddons(term: TerminalType): void {
           addons.webgl.instance.textureAtlas.remove();
         } else if (name === 'canvas') {
           addons.canvas.instance.textureAtlas.remove();
-        } else if (name === 'unicode11') {
+        } else if (name === 'unicode11' || name === 'unicode-graphemes') {
           term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();

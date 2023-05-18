@@ -29,6 +29,9 @@ describe('UnicodeGraphemesAddon', () => {
     await page.goto(APP);
     await openTerminal(page);
   });
+  async function evalWidth(str: string): Promise<number> {
+    return page.evaluate(`window.term._core.unicodeService.getStringCellWidth('${str}')`);
+  }
   const ourVersion = '15-graphemes';
   it('wcwidth V15 emoji test', async () => {
     await page.evaluate(`
@@ -41,6 +44,23 @@ describe('UnicodeGraphemesAddon', () => {
     await page.evaluate(`window.term.unicode.activeVersion = '${ourVersion}';`);
     assert.deepEqual(await page.evaluate(`window.term.unicode.activeVersion`), ourVersion);
     // v6: 10, V15: 20
-    assert.deepEqual(await page.evaluate(`window.term._core.unicodeService.getStringCellWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣')`), 20);
+    assert.deepEqual(await evalWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣'), 20);
+    // baby with emoji modifier fitzpatrick type-6; baby
+    assert.deepEqual(await evalWidth('\u{1F476}\u{1F3FF}\u{1F476}'), 4);
+    // woman+zwj+woman+zwj+boy
+    assert.deepEqual(await evalWidth('\u{1F469}\u200d\u{1f469}\u200d\u{1f466}'), 2);
+    // REGIONAL INDICATOR SYMBOL LETTER N and RI O
+    assert.deepEqual(await evalWidth('\u{1f1f3}\u{1f1f4}_'), 3);
+    assert.deepEqual(await evalWidth('\u{1f1f3}_\u{1f1f4}'), 3);
+    // letter a with acute accent
+    assert.deepEqual(await evalWidth('\u0061\u0301'), 1);
+    // Korean Jamo
+    assert.deepEqual(await evalWidth('{\u1100\u1161\u11a8}'), 4);
+    // coffin with text_presentation
+    assert.deepEqual(await evalWidth('(\u26b0\ufe0e)'), 3);
+    // coffin with Emoji_presentation
+    assert.deepEqual(await evalWidth('(\u26b0\ufe0f)'), 4);
+    // Égalité (using separate acute) emoij_presentation
+    assert.deepEqual(await evalWidth('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f>'), 16);
   });
 });
