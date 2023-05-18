@@ -178,7 +178,7 @@ describe('Search Tests', function (): void {
           window.calls = [];
           window.search.onDidChangeResults(e => window.calls.push(e));
         `);
-        await writeSync(page, 'abc aabc');
+        await writeSync(page, 'd abc aabc d');
         assert.deepStrictEqual(await page.evaluate(`window.search.findNext('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 0 }
@@ -201,13 +201,62 @@ describe('Search Tests', function (): void {
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 }
         ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findNext('d', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 1 }
+        ]);
         assert.deepStrictEqual(await page.evaluate(`window.search.findNext('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 1 },
           { resultCount: 0, resultIndex: -1 }
+        ]);
+      });
+      it('should fire with more than 1k matches', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
+        await writeSync(page, data);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: 0 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: 0 },
+          { resultCount: 1000, resultIndex: 1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findNext('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: 0 },
+          { resultCount: 1000, resultIndex: 1 },
+          { resultCount: 1000, resultIndex: 1 }
+        ]);
+      });
+      it('should fire when writing to terminal', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc bc c\\n\\r'.repeat(2));
+        assert.strictEqual(await page.evaluate(`window.search.findNext('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 0 }
+        ]);
+        await writeSync(page, 'abc bc c\\n\\r');
+        await timeout(300);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 3, resultIndex: 0 }
         ]);
       });
     });
@@ -233,6 +282,7 @@ describe('Search Tests', function (): void {
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 1, resultIndex: 0 }
         ]);
+        await page.evaluate(`window.term.clearSelection()`);
         assert.strictEqual(await page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 1, resultIndex: 0 },
@@ -262,7 +312,7 @@ describe('Search Tests', function (): void {
           window.calls = [];
           window.search.onDidChangeResults(e => window.calls.push(e));
         `);
-        await writeSync(page, 'abc aabc');
+        await writeSync(page, 'd abc aabc d');
         assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 2 }
@@ -285,13 +335,62 @@ describe('Search Tests', function (): void {
           { resultCount: 2, resultIndex: 1 },
           { resultCount: 2, resultIndex: 0 }
         ]);
+        assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('d', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 3, resultIndex: 2 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 }
+        ]);
         assert.deepStrictEqual(await page.evaluate(`window.search.findPrevious('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 2 },
           { resultCount: 2, resultIndex: 1 },
           { resultCount: 2, resultIndex: 1 },
           { resultCount: 2, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 },
           { resultCount: 0, resultIndex: -1 }
+        ]);
+      });
+      it('should fire with more than 1k matches', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
+        await writeSync(page, data);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+      });
+      it('should fire when writing to terminal', async () => {
+        await page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await writeSync(page, 'abc bc c\\n\\r'.repeat(2));
+        assert.strictEqual(await page.evaluate(`window.search.findPrevious('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 1 }
+        ]);
+        await writeSync(page, 'abc bc c\\n\\r');
+        await timeout(300);
+        assert.deepStrictEqual(await page.evaluate('window.calls'), [
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 3, resultIndex: 1 }
         ]);
       });
     });

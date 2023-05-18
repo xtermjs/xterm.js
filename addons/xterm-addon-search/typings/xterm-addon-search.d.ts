@@ -76,9 +76,27 @@ declare module 'xterm-addon-search' {
   }
 
   /**
+   * Options for the search addon.
+   */
+  export interface ISearchAddonOptions {
+    /**
+     * Max number of matches highlighted when decorations are enabled.
+     * Defaults to 1000 highlighted matches
+     */
+    highlightLimit: number
+  }
+
+  /**
    * An xterm.js addon that provides search functionality.
    */
   export class SearchAddon implements ITerminalAddon {
+
+    /**
+     * Creates a new search addon.
+     * @param options Options for the search addon.
+     */
+    constructor(options?: Partial<ISearchAddonOptions>);
+
     /**
      * Activates the addon
      * @param terminal The terminal the addon is being loaded in.
@@ -121,10 +139,8 @@ declare module 'xterm-addon-search' {
     /**
      * When decorations are enabled, fires when
      * the search results change.
-     * @returns -1 for resultIndex for a resultCount of 0
-     * and @returns undefined when the threshold of 1k results
-     * is exceeded and decorations are disposed of.
+     * @returns -1 for resultIndex when the threshold of matches is exceeded.
      */
-    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number } | undefined>;
+    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number }>;
   }
 }
