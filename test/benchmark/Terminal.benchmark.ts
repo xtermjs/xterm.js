@@ -8,7 +8,6 @@ import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 import { spawn } from 'node-pty';
 import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { Terminal } from 'browser/Terminal';
-import { UnicodeGraphemesAddon } from 'UnicodeGraphemesAddon';
 
 
 perfContext('Terminal: ls -lR /usr/lib', () => {
@@ -50,8 +49,6 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     let terminal: Terminal;
     before(() => {
       terminal = new Terminal({ cols: 80, rows: 25, scrollback: 1000 });
-      const uga = new UnicodeGraphemesAddon();
-      (terminal as any).loadAddon(uga);
     });
     new ThroughputRuntimeCase('', async () => {
       await new Promise<void>(res => terminal.write(content, res));
