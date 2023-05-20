@@ -976,7 +976,9 @@ function sgrTest(): void {
     { ps: 45, name: 'Background Magenta' },
     { ps: 46, name: 'Background Cyan' },
     { ps: 47, name: 'Background White' },
-    { ps: 49, name: 'Background default' }
+    { ps: 49, name: 'Background default' },
+    { ps: 53, name: 'Overlined' },
+    { ps: 55, name: 'Not overlined' }
   ];
   const maxNameLength = entries.reduce<number>((p, c) => Math.max(c.name.length, p), 0);
   for (const e of entries) {
@@ -988,7 +990,8 @@ function sgrTest(): void {
   }
   const comboEntries: { ps: number[] }[] = [
     { ps: [1, 2, 3, 4, 5, 6, 7, 9] },
-    { ps: [2, 41] }
+    { ps: [2, 41] },
+    { ps: [4, 53] }
   ];
   term.write('\n\n\r');
   term.writeln(`Combinations`);

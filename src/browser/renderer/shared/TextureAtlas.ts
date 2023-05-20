@@ -449,6 +449,7 @@ export class TextureAtlas implements ITextureAtlas {
     const italic = !!this._workAttributeData.isItalic();
     const underline = !!this._workAttributeData.isUnderline();
     const strikethrough = !!this._workAttributeData.isStrikethrough();
+    const overline = !!this._workAttributeData.isOverline();
     let fgColor = this._workAttributeData.getFgColor();
     let fgColorMode = this._workAttributeData.getFgColorMode();
     let bgColor = this._workAttributeData.getBgColor();
@@ -632,12 +633,24 @@ export class TextureAtlas implements ITextureAtlas {
       }
     }
 
+    // Overline
+    if (overline) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * this._config.devicePixelRatio / 15));
+      const yOffset = lineWidth % 2 === 1 ? 0.5 : 0;
+      this._tmpCtx.lineWidth = lineWidth;
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      this._tmpCtx.beginPath();
+      this._tmpCtx.moveTo(padding, padding + yOffset);
+      this._tmpCtx.lineTo(padding + this._config.deviceCharWidth * chWidth, padding + yOffset);
+      this._tmpCtx.stroke();
+    }
+
     // Draw the character
     if (!customGlyph) {
       this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight);
     }
 
-    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible
+    // If this character is underscore and beyond the cell bounds, shift it up until it is visible
     // even on the bottom row, try for a maximum of 5 pixels.
     if (chars === '_' && !this._config.allowTransparency) {
       let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
