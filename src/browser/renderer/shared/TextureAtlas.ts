@@ -304,12 +304,6 @@ export class TextureAtlas implements ITextureAtlas {
         break;
     }
 
-    if (dim) {
-      // Blend here instead of using opacity because transparent colors mess with clipping the
-      // glyph's bounding box
-      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, DIM_OPACITY));
-    }
-
     return result;
   }
 
