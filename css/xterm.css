@@ -161,7 +161,9 @@
 }
 
 .xterm-dim {
-    opacity: 0.5;
+    /* Dim should not apply to background, so the opacity of the foreground color is applied
+     * explicitly in the generated class and reset to 1 here */
+    opacity: 1 !important;
 }
 
 .xterm-underline-1 { text-decoration: underline; }
