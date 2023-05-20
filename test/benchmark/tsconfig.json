@@ -16,7 +16,8 @@
     "paths": {
       "common/*": [ "../../src/common/*" ],
       "browser/*": [ "../../src/browser/*" ],
-      "Terminal": ["../../src/Terminal"]
+      "Terminal": ["../../src/Terminal"],
+      "UnicodeGraphemesAddon": ["../../addons/xterm-addon-unicode-graphemes/src/UnicodeGraphemesAddon"]
     },
   },
   "include": [
