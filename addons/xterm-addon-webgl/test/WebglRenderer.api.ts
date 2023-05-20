@@ -364,7 +364,7 @@ describe('WebGL Renderer Integration Tests', async () => {
       }
     });
 
-    it('foreground 16-255 dim', async () => {
+    itWebgl('foreground 16-255 dim', async () => {
       let data = '';
       for (let y = 0; y < 240 / 16; y++) {
         for (let x = 0; x < 16; x++) {
