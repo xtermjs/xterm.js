@@ -9,7 +9,6 @@ import { spawn } from 'node-pty';
 import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { Terminal } from 'browser/Terminal';
 
-
 perfContext('Terminal: ls -lR /usr/lib', () => {
   let content = '';
   let contentUtf8: Uint8Array;
