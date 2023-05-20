@@ -641,73 +641,14 @@ export class TextureAtlas implements ITextureAtlas {
 
     // Overline
     if (overline) {
-      this._tmpCtx.save();
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize * this._config.devicePixelRatio / 15));
-      // When the line width is odd, draw at a 0.5 position
       const yOffset = lineWidth % 2 === 1 ? 0.5 : 0;
       this._tmpCtx.lineWidth = lineWidth;
-
-      // Overline color
-      if (this._workAttributeData.isUnderlineColorDefault()) {
-        this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
-      } else if (this._workAttributeData.isUnderlineColorRGB()) {
-        enableClearThresholdCheck = false;
-        this._tmpCtx.strokeStyle = `rgb(${AttributeData.toColorRGB(this._workAttributeData.getUnderlineColor()).join(',')})`;
-      } else {
-        enableClearThresholdCheck = false;
-        let fg = this._workAttributeData.getUnderlineColor();
-        if (this._config.drawBoldTextInBrightColors && this._workAttributeData.isBold() && fg < 8) {
-          fg += 8;
-        }
-        this._tmpCtx.strokeStyle = this._getColorFromAnsiIndex(fg).css;
-      }
-
-      // Overline style/stroke
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
-      const xLeft = padding;
-      const yTop = padding + yOffset;
-      const yBot = Math.ceil(padding + lineWidth * 2) + yOffset;
-
-      for (let i = 0; i < chWidth; i++) {
-        this._tmpCtx.save();
-        const xChLeft = xLeft + i * this._config.deviceCellWidth;
-        const xChRight = xLeft + (i + 1) * this._config.deviceCellWidth;
-        this._tmpCtx.moveTo(xChLeft, yTop);
-        this._tmpCtx.lineTo(xChRight, yTop);
-        this._tmpCtx.stroke();
-        this._tmpCtx.restore();
-      }
-      this._tmpCtx.restore();
-
-      // Draw stroke in the background color for non custom characters in order to give an outline
-      // between the text and the underline. Only do this when font size is >= 12 as the underline
-      // looks odd when the font size is too small
-      if (!customGlyph && this._config.fontSize >= 12) {
-        // This only works when transparency is disabled because it's not clear how to clear stroked
-        // text
-        if (!this._config.allowTransparency && chars !== ' ') {
-          // Measure the text, only draw the stroke if there is a descent beyond an alphabetic text
-          // baseline
-          this._tmpCtx.save();
-          this._tmpCtx.textBaseline = 'alphabetic';
-          const metrics = this._tmpCtx.measureText(chars);
-          this._tmpCtx.restore();
-          if ('actualBoundingBoxDescent' in metrics && metrics.actualBoundingBoxDescent > 0) {
-            // This translates to 1/2 the line width in either direction
-            this._tmpCtx.save();
-            // Clip the region to only draw in valid pixels near the underline to avoid a slight
-            // outline around the whole glyph, as well as additional pixels in the glyph at the top
-            // which would increase GPU memory demands
-            const clipRegion = new Path2D();
-            clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.deviceCellWidth * chWidth, yBot - yTop + Math.ceil(lineWidth / 2));
-            this._tmpCtx.clip(clipRegion);
-            this._tmpCtx.lineWidth = this._config.devicePixelRatio * 3;
-            this._tmpCtx.strokeStyle = backgroundColor.css;
-            this._tmpCtx.strokeText(chars, padding, padding + this._config.deviceCharHeight);
-            this._tmpCtx.restore();
-          }
-        }
-      }
+      this._tmpCtx.moveTo(padding, padding + yOffset);
+      this._tmpCtx.lineTo(padding + this._config.deviceCharWidth * chWidth, padding + yOffset);
+      this._tmpCtx.stroke();
     }
 
     // Draw the character
