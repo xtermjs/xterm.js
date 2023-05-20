@@ -364,6 +364,55 @@ describe('WebGL Renderer Integration Tests', async () => {
       }
     });
 
+    it('foreground 16-255 dim', async () => {
+      let data = '';
+      for (let y = 0; y < 240 / 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          data += `\\x1b[2;38;5;${16 + y * 16 + x}m█\x1b[0m`;
+        }
+        data += '\\r\\n';
+      }
+      await writeSync(page, data);
+      for (let y = 0; y < 240 / 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const cssColor = COLORS_16_TO_255[y * 16 + x];
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
+          // It's difficult to assert the exact color due to rounding, just ensure the color differs
+          // to the regular color
+          await pollFor(page, async () => {
+            const c = await getCellColor(x + 1, y + 1);
+            return (
+              (c[0] === 0 || c[0] !== r) &&
+              (c[1] === 0 || c[1] !== g) &&
+              (c[2] === 0 || c[2] !== b)
+            );
+          }, true);
+        }
+      }
+    });
+
+    itWebgl('background 16-255 dim', async () => {
+      let data = '';
+      for (let y = 0; y < 240 / 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          data += `\\x1b[2;48;5;${16 + y * 16 + x}m \\x1b[0m`;
+        }
+        data += '\\r\\n';
+      }
+      await writeSync(page, data);
+      for (let y = 0; y < 240 / 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const cssColor = COLORS_16_TO_255[y * 16 + x];
+          const r = parseInt(cssColor.slice(1, 3), 16);
+          const g = parseInt(cssColor.slice(3, 5), 16);
+          const b = parseInt(cssColor.slice(5, 7), 16);
+          await pollFor(page, () => getCellColor(x + 1, y + 1), [r, g, b, 255]);
+        }
+      }
+    });
+
     itWebgl('foreground true color red', async () => {
       let data = '';
       for (let y = 0; y < 16; y++) {
