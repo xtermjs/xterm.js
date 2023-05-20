@@ -2551,6 +2551,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
+      } else if (p === 53) {
+        // overline
+        attr.bg |= BgFlags.OVERLINE;
+      } else if (p === 55) {
+        // not overline
+        attr.bg &= ~BgFlags.OVERLINE;
       } else if (p === 59) {
         attr.extended = attr.extended.clone();
         attr.extended.underlineColor = -1;

@@ -47,6 +47,7 @@ export class AttributeData implements IAttributeData {
   public isDim(): number           { return this.bg & BgFlags.DIM; }
   public isStrikethrough(): number { return this.fg & FgFlags.STRIKETHROUGH; }
   public isProtected(): number     { return this.bg & BgFlags.PROTECTED; }
+  public isOverline(): number      { return this.bg & BgFlags.OVERLINE; }
 
   // color modes
   public getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }
