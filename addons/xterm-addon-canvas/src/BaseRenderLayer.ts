@@ -379,7 +379,16 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     }
     this._ctx.save();
     this._clipRow(y);
+
     // Draw the image, use the bitmap if it's available
+
+    // HACK: If the canvas doesn't match, delete the generator. It's not clear how this happens but
+    // something is wrong with either the lifecycle of _bitmapGenerator or the page canvases are
+    // swapped out unexpectedly
+    if (this._bitmapGenerator[glyph.texturePage] && this._charAtlas.pages[glyph.texturePage].canvas !== this._bitmapGenerator[glyph.texturePage]!.canvas) {
+      delete this._bitmapGenerator[glyph.texturePage];
+    }
+
     if (this._charAtlas.pages[glyph.texturePage].version !== this._bitmapGenerator[glyph.texturePage]?.version) {
       if (!this._bitmapGenerator[glyph.texturePage]) {
         this._bitmapGenerator[glyph.texturePage] = new BitmapGenerator(this._charAtlas.pages[glyph.texturePage].canvas);
@@ -446,11 +455,12 @@ class BitmapGenerator {
   public get bitmap(): ImageBitmap | undefined { return this._bitmap; }
   public version: number = -1;
 
-  constructor(private readonly _canvas: HTMLCanvasElement) {
+  constructor(public readonly canvas: HTMLCanvasElement) {
   }
 
   public refresh(): void {
     // Clear the bitmap immediately as it's stale
+    this._bitmap?.close();
     this._bitmap = undefined;
     // Disable ImageBitmaps on Safari because of https://bugs.webkit.org/show_bug.cgi?id=149990
     if (isSafari) {
@@ -466,9 +476,10 @@ class BitmapGenerator {
 
   private _generate(): void {
     if (this._state === BitmapGeneratorState.IDLE) {
+      this._bitmap?.close();
       this._bitmap = undefined;
       this._state = BitmapGeneratorState.GENERATING;
-      window.createImageBitmap(this._canvas).then(bitmap => {
+      window.createImageBitmap(this.canvas).then(bitmap => {
         if (this._state === BitmapGeneratorState.GENERATING_INVALID) {
           this.refresh();
         } else {
