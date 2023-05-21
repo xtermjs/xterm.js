@@ -28,6 +28,7 @@
       "addons/xterm-addon-unicode11/test/tsconfig.json",
       "addons/xterm-addon-unicode-graphemes/src/tsconfig.json",
       "addons/xterm-addon-unicode-graphemes/test/tsconfig.json",
+      "addons/xterm-addon-unicode-graphemes/benchmark/tsconfig.json",
       "addons/xterm-addon-web-links/src/tsconfig.json",
       "addons/xterm-addon-web-links/test/tsconfig.json",
       "addons/xterm-addon-webgl/src/tsconfig.json",
