@@ -111,35 +111,32 @@ function startServer() {
     }
     // binary message buffering
     function bufferUtf8(socket, timeout, maxSize) {
-      const dataBuffer = new Uint8Array(maxSize);
-      let sender = null;
+      const chunks = [];
       let length = 0;
+      let sender = null;
       return (data) => {
-        function flush() {
-          socket.send(Buffer.from(dataBuffer.buffer, 0, length));
+        chunks.push(data);
+        length += data.length;
+        if (length > maxSize || userInput) {
+          userInput = false;
+          socket.send(Buffer.concat(chunks));
+          chunks.length = 0;
           length = 0;
           if (sender) {
             clearTimeout(sender);
             sender = null;
           }
-        }
-        if (length + data.length > maxSize) {
-          flush();
-        }
-        dataBuffer.set(data, length);
-        length += data.length;
-        if (length > maxSize || userInput) {
-          userInput = false;
-          flush();
         } else if (!sender) {
           sender = setTimeout(() => {
+            socket.send(Buffer.concat(chunks));
+            chunks.length = 0;
+            length = 0;
             sender = null;
-            flush();
           }, timeout);
         }
       };
     }
-    const send = (USE_BINARY ? bufferUtf8 : buffer)(ws, 5, 262144);
+    const send = (USE_BINARY ? bufferUtf8 : buffer)(ws, 3, 262144);
 
     // WARNING: This is a naive implementation that will not throttle the flow of data. This means
     // it could flood the communication channel and make the terminal unresponsive. Learn more about

@@ -336,12 +336,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Tell renderer the frame is beginning
+    // upon a model clear also refresh the full viewport model
+    // (also triggered by an atlas page merge, part of #4480)
     if (this._glyphRenderer.beginFrame()) {
       this._clearModel(true);
+      this._updateModel(0, this._terminal.rows - 1);
+    } else {
+      // just update changed lines to draw
+      this._updateModel(start, end);
     }
-
-    // Update model to reflect what's drawn
-    this._updateModel(start, end);
 
     // Render
     this._rectangleRenderer?.render();

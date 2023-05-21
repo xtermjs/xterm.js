@@ -165,6 +165,7 @@ export interface IAttributeData {
   isDim(): number;
   isStrikethrough(): number;
   isProtected(): number;
+  isOverline(): number;
 
   /**
    * The color mode of the foreground color which determines how to decode {@link getFgColor},

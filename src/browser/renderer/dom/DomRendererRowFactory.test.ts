@@ -167,6 +167,16 @@ describe('DomRendererRowFactory', () => {
         });
       });
 
+      it('should add class for overline', () => {
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.OVERLINE;
+        lineData.setCell(0, cell);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, 20, EMPTY_ELEM_MAPPING);
+        assert.equal(getFragmentHtml(fragment),
+          '<span class="xterm-overline">a</span>'
+        );
+      });
+
       it('should add class for strikethrough', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.STRIKETHROUGH;

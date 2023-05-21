@@ -77,6 +77,7 @@ function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): bo
   return cell1.isInverse() === cell2.isInverse()
     && cell1.isBold() === cell2.isBold()
     && cell1.isUnderline() === cell2.isUnderline()
+    && cell1.isOverline() === cell2.isOverline()
     && cell1.isBlink() === cell2.isBlink()
     && cell1.isInvisible() === cell2.isInvisible()
     && cell1.isItalic() === cell2.isItalic()
@@ -264,6 +265,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
           if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
           if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
           if (cell.isUnderline() !== oldCell.isUnderline()) { sgrSeq.push(cell.isUnderline() ? 4 : 24); }
+          if (cell.isOverline() !== oldCell.isOverline()) { sgrSeq.push(cell.isOverline() ? 53 : 55); }
           if (cell.isBlink() !== oldCell.isBlink()) { sgrSeq.push(cell.isBlink() ? 5 : 25); }
           if (cell.isInvisible() !== oldCell.isInvisible()) { sgrSeq.push(cell.isInvisible() ? 8 : 28); }
           if (cell.isItalic() !== oldCell.isItalic()) { sgrSeq.push(cell.isItalic() ? 3 : 23); }
@@ -625,7 +627,9 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
       if (cell.isInverse()) { content.push('color: #000000; background-color: #BFBFBF;'); }
       if (cell.isBold()) { content.push('font-weight: bold;'); }
-      if (cell.isUnderline()) { content.push('text-decoration: underline;'); }
+      if (cell.isUnderline() && cell.isOverline()) { content.push('text-decoration: overline underline;'); }
+      else if (cell.isUnderline()) { content.push('text-decoration: underline;'); }
+      else if (cell.isOverline()) { content.push('text-decoration: overline;'); }
       if (cell.isBlink()) { content.push('text-decoration: blink;'); }
       if (cell.isInvisible()) { content.push('visibility: hidden;'); }
       if (cell.isItalic()) { content.push('font-style: italic;'); }

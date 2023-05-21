@@ -188,12 +188,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         nextFillStyle = this._themeService.colors.ansi[cell.getBgColor()].css;
       }
 
-      // Apply dim to the background, this is relatively slow as the CSS is re-parsed but dim is
-      // rarely used
-      if (nextFillStyle && cell.isDim()) {
-        nextFillStyle = color.multiplyOpacity(css.toColor(nextFillStyle), 0.5).css;
-      }
-
       // Get any decoration foreground/background overrides, this must be fetched before the early
       // exist but applied after inverse
       let isTop = false;

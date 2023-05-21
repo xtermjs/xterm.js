@@ -270,7 +270,7 @@ export class RectangleRenderer extends Disposable {
     $r = (($rgba >> 24) & 0xFF) / 255;
     $g = (($rgba >> 16) & 0xFF) / 255;
     $b = (($rgba >> 8 ) & 0xFF) / 255;
-    $a = (!$isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
+    $a = 1;
 
     this._addRectangle(vertices.attributes, offset, $x1, $y1, (endX - startX) * this._dimensions.device.cell.width, this._dimensions.device.cell.height, $r, $g, $b, $a);
   }
