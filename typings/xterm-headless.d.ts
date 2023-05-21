@@ -999,6 +999,8 @@ declare module 'xterm-headless' {
     isInvisible(): number;
     /** Whether the cell has the strikethrough attribute (CSI 9 m). */
     isStrikethrough(): number;
+    /** Whether the cell has the overline attribute (CSI 53 m). */
+    isOverline(): number;
 
     /** Whether the cell is using the RGB foreground color mode. */
     isFgRGB(): boolean;
