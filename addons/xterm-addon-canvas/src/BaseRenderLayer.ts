@@ -386,6 +386,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     // something is wrong with either the lifecycle of _bitmapGenerator or the page canvases are
     // swapped out unexpectedly
     if (this._bitmapGenerator[glyph.texturePage] && this._charAtlas.pages[glyph.texturePage].canvas !== this._bitmapGenerator[glyph.texturePage]!.canvas) {
+      this._bitmapGenerator[glyph.texturePage]?.bitmap?.close();
       delete this._bitmapGenerator[glyph.texturePage];
     }
 
