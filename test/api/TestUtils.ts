@@ -46,6 +46,14 @@ export async function timeout(ms: number): Promise<void> {
 export async function openTerminal(page: playwright.Page, options: ITerminalOptions & ITerminalInitOnlyOptions = {}): Promise<void> {
   await page.evaluate(`window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })})`);
   await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+  
+  // TODO: make this injection configurable from outside
+  await page.evaluate(`
+    window.unicode = new UnicodeGraphemesAddon();
+    window.term.loadAddon(window.unicode);
+    window.term.unicode.activeVersion = '15-graphemes';
+  `);
+
   await page.waitForSelector('.xterm-rows');
 }
 
