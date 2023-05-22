@@ -63,12 +63,12 @@ export class AccessibilityManager extends Disposable {
       this._rowElements[i] = this._createAccessibilityTreeNode();
       this._rowContainer.appendChild(this._rowElements[i]);
     }
-    
+
     this._topBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.TOP);
     this._bottomBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.BOTTOM);
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
-    
+
     this._refreshRowsDimensions();
     this._accessibilityContainer.appendChild(this._rowContainer);
 
@@ -94,7 +94,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
-  
+
     this._screenDprMonitor = new ScreenDprMonitor(window);
     this.register(this._screenDprMonitor);
     this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
