@@ -55,6 +55,23 @@ export class AccessibilityManager extends Disposable {
     this._accessibilityContainer = document.createElement('div');
     this._accessibilityContainer.classList.add('xterm-accessibility');
 
+    this._rowContainer = document.createElement('div');
+    this._rowContainer.setAttribute('role', 'list');
+    this._rowContainer.classList.add('xterm-accessibility-tree');
+    this._rowElements = [];
+    for (let i = 0; i < this._terminal.rows; i++) {
+      this._rowElements[i] = this._createAccessibilityTreeNode();
+      this._rowContainer.appendChild(this._rowElements[i]);
+    }
+    
+    this._topBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.TOP);
+    this._bottomBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.BOTTOM);
+    this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
+    this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
+    
+    this._refreshRowsDimensions();
+    this._accessibilityContainer.appendChild(this._rowContainer);
+
     this._liveRegion = document.createElement('div');
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
@@ -67,6 +84,7 @@ export class AccessibilityManager extends Disposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityContainer);
 
     this.register(this._liveRegionDebouncer);
+    this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
@@ -75,36 +93,20 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
-    this.register(toDisposable(() => {
-      this._accessibilityContainer.remove();
-      this._rowElements.length = 0;
-    }));
-    this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
+  
     this._screenDprMonitor = new ScreenDprMonitor(window);
     this.register(this._screenDprMonitor);
     this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
-    this._rowContainer = document.createElement('div');
-    this._rowContainer.setAttribute('role', 'list');
-    this._rowContainer.classList.add('xterm-accessibility-tree');
-    this._rowElements = [];
-    for (let i = 0; i < this._terminal.rows; i++) {
-      this._rowElements[i] = this._createAccessibilityTreeNode();
-      this._rowContainer.appendChild(this._rowElements[i]);
-    }
-
-    this._topBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.TOP);
-    this._bottomBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.BOTTOM);
-    this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
-    this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
-
-    this._refreshRowsDimensions();
-    this._accessibilityContainer.appendChild(this._rowContainer);
 
     this._refreshRows();
+    this.register(toDisposable(() => {
+      this._accessibilityContainer.remove();
+      this._rowElements.length = 0;
+    }));
   }
 
   private _handleTab(spaceCount: number): void {
