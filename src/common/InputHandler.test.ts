@@ -2222,7 +2222,7 @@ describe('InputHandler', () => {
     });
     it('ANSI 2 (keyboard action mode)', async () => {
       await inputHandler.parseP('\x1b[2$p');
-      assert.deepEqual(reportStack.pop(), '\x1b[2;3$y');    // always set
+      assert.deepEqual(reportStack.pop(), '\x1b[2;4$y');    // always reset
     });
     it('ANSI 4 (insert mode)', async () => {
       await inputHandler.parseP('\x1b[4$p');
@@ -2236,7 +2236,7 @@ describe('InputHandler', () => {
     });
     it('ANSI 12 (send/receive)', async () => {
       await inputHandler.parseP('\x1b[12$p');
-      assert.deepEqual(reportStack.pop(), '\x1b[12;4$y');   // always reset
+      assert.deepEqual(reportStack.pop(), '\x1b[12;3$y');   // always set
     });
     it('ANSI 20 (newline mode)', async () => {
       await inputHandler.parseP('\x1b[20$p');
@@ -2280,7 +2280,7 @@ describe('InputHandler', () => {
     });
     it('DEC privates perma modes', async () => {
       // [mode number, state value]
-      const perma = [[3, 0], [8, 3], [1005, 4], [1015, 4], [1048, 1]];
+      const perma = [[3, 0], [8, 3], [67, 4], [1005, 4], [1015, 4], [1048, 1]];
       for (const [mode, value] of perma) {
         await inputHandler.parseP(`\x1b[?${mode}$p`);
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};${value}$y`);
