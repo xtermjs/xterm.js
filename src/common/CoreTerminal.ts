@@ -265,8 +265,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _handleWindowsPtyOptionChange(): void {
     let value = false;
     const windowsPty = this.optionsService.rawOptions.windowsPty;
-    if (windowsPty) {
-      value = !!(windowsPty.buildNumber && windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
+    if (windowsPty && windowsPty.buildNumber !== undefined && windowsPty.buildNumber !== undefined) {
+      value = !!(windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
     } else if (this.optionsService.rawOptions.windowsMode) {
       value = true;
     }
