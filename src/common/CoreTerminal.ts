@@ -57,7 +57,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
-  private _windowsMode: IDisposable | undefined;
+  private _windowsWrappingHeuristics: IDisposable | undefined;
 
   private readonly _onBinary = this.register(new EventEmitter<string>());
   public readonly onBinary = this._onBinary.event;
@@ -146,8 +146,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
 
     this.register(toDisposable(() => {
-      this._windowsMode?.dispose();
-      this._windowsMode = undefined;
+      this._windowsWrappingHeuristics?.dispose();
+      this._windowsWrappingHeuristics = undefined;
     }));
   }
 
@@ -250,8 +250,13 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   protected _setup(): void {
-    if (this.optionsService.rawOptions.windowsMode) {
-      this._enableWindowsMode();
+    const windowsPty = this.optionsService.rawOptions.windowsPty;
+    if (windowsPty) {
+      if (windowsPty.buildNumber && windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376) {
+        this._enableWindowsWrappingHeuristics();
+      }
+    } else if (this.optionsService.rawOptions.windowsMode) {
+      this._enableWindowsWrappingHeuristics();
     }
   }
 
@@ -265,28 +270,26 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   private _handleWindowsModeOptionChange(value: boolean): void {
     if (value) {
-      this._enableWindowsMode();
+      this._enableWindowsWrappingHeuristics();
     } else {
-      this._windowsMode?.dispose();
-      this._windowsMode = undefined;
+      this._windowsWrappingHeuristics?.dispose();
+      this._windowsWrappingHeuristics = undefined;
     }
   }
 
-  protected _enableWindowsMode(): void {
-    if (!this._windowsMode) {
+  protected _enableWindowsWrappingHeuristics(): void {
+    if (!this._windowsWrappingHeuristics) {
       const disposables: IDisposable[] = [];
       disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
       disposables.push(this.registerCsiHandler({ final: 'H' }, () => {
         updateWindowsModeWrappedState(this._bufferService);
         return false;
       }));
-      this._windowsMode = {
-        dispose: () => {
-          for (const d of disposables) {
-            d.dispose();
-          }
+      this._windowsWrappingHeuristics = toDisposable(() => {
+        for (const d of disposables) {
+          d.dispose();
         }
-      };
+      });
     }
   }
 }
