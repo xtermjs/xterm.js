@@ -131,7 +131,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
     this.register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom()));
     this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
-    this.register(this.optionsService.onSpecificOptionChange('windowsMode', e => this._handleWindowsModeOptionChange(e)));
+    this.register(this.optionsService.onMultipleOptionChange(['windowsMode', 'windowsPty'], () => this._handleWindowsPtyOptionChange()));
     this.register(this._bufferService.onScroll(event => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
       this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
@@ -250,14 +250,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   protected _setup(): void {
-    const windowsPty = this.optionsService.rawOptions.windowsPty;
-    if (windowsPty) {
-      if (windowsPty.buildNumber && windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376) {
-        this._enableWindowsWrappingHeuristics();
-      }
-    } else if (this.optionsService.rawOptions.windowsMode) {
-      this._enableWindowsWrappingHeuristics();
-    }
+    this._handleWindowsPtyOptionChange();
   }
 
   public reset(): void {
@@ -268,7 +261,15 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.coreMouseService.reset();
   }
 
-  private _handleWindowsModeOptionChange(value: boolean): void {
+
+  private _handleWindowsPtyOptionChange(): void {
+    let value = false;
+    const windowsPty = this.optionsService.rawOptions.windowsPty;
+    if (windowsPty) {
+      value = !!(windowsPty.buildNumber && windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
+    } else if (this.optionsService.rawOptions.windowsMode) {
+      value = true;
+    }
     if (value) {
       this._enableWindowsWrappingHeuristics();
     } else {
