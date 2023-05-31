@@ -175,7 +175,6 @@
 .xterm-overline {
     text-decoration: none;
     border-top: 1px solid #fff;
-    padding-top: 0.05em;
 }
 
 .xterm-overline.xterm-underline-1 { text-decoration: overline underline; }
