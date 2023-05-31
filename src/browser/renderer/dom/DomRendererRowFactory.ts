@@ -189,7 +189,7 @@ export class DomRendererRowFactory {
       if (cell.isOverline()) {
         charElement.classList.add(OVERLINE_CLASS);
         if (charElement.textContent === ' ') {
-          charElement.textContent = '\xa0'; // = &nbsp;
+          charElement.textContent = '\x1b'; // = &nbsp;
         }
       }
 
