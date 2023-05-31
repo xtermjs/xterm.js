@@ -125,7 +125,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
       ` display: inline-block;` +
       ` height: 100%;` +
-      ` vertical-align: middle;` +
+      ` vertical-align: top;` +
       ` width: ${this.dimensions.css.cell.width}px` +
       `}`;
 
