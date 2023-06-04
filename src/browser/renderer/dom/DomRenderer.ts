@@ -393,11 +393,11 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
-    const lenY = this._cellToRowElements.length - 1;
+    const maxY = this._cellToRowElements.length - 1;
     if (y < 0) x = 0;
     if (y2 < 0) x2 = 0;
-    y = Math.max(Math.min(y, lenY), 0);
-    y2 = Math.max(Math.min(y2, lenY), 0);
+    y = Math.max(Math.min(y, maxY), 0);
+    y2 = Math.max(Math.min(y2, maxY), 0);
     const elemY = this._cellToRowElements[y];
     const elemY2 = this._cellToRowElements[y2];
     if (x >= elemY.length || x2 >= elemY2.length) {
