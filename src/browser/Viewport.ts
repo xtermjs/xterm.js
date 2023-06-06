@@ -5,13 +5,25 @@
 
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, ISmoothScrollState, IViewport, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet, IViewport, ReadonlyColorSet } from 'browser/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
+
+interface ISmoothScrollState {
+  startTime: number;
+  origin: number;
+  target: number;
+}
+
+interface ISmoothScrollCalculateContext {
+  percent: number;
+  position: number;
+  lastPosition: number;
+}
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
@@ -43,7 +55,7 @@ export class Viewport extends Disposable implements IViewport {
   };
 
   constructor(
-    private readonly _scrollLines: (amount: number) => void,
+    private readonly _scrollLines: (amount: number, suppressScrollEvent: boolean) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
@@ -169,16 +181,16 @@ export class Viewport extends Disposable implements IViewport {
     if (this._ignoreNextScrollEvent) {
       this._ignoreNextScrollEvent = false;
       // Still trigger the scroll so lines get refreshed
-      this._scrollLines(0);
+      this._scrollLines(0, true);
       return;
     }
 
     const newRow = Math.round(this._lastScrollTop / this._currentRowHeight);
     const diff = newRow - this._bufferService.buffer.ydisp;
-    this._scrollLines(diff);
+    this._scrollLines(diff, true);
   }
 
-  private _smoothScroll(): void {
+  private _smoothScroll(handle: (context: ISmoothScrollCalculateContext) => void, lastPosition: number = 0): void {
     // Check valid state
     if (this._isDisposed || this._smoothScrollState.origin === -1 || this._smoothScrollState.target === -1) {
       return;
@@ -186,14 +198,27 @@ export class Viewport extends Disposable implements IViewport {
 
     // Calculate position complete
     const percent = this._smoothScrollPercent();
-    this._viewportElement.scrollTop = this._smoothScrollState.origin + Math.round(percent * (this._smoothScrollState.target - this._smoothScrollState.origin));
+    const position = Math.round(percent * (this._smoothScrollState.target - this._smoothScrollState.origin));
+    handle({ percent, position, lastPosition });
 
     // Continue or finish smooth scroll
     if (percent < 1) {
-      this._coreBrowserService.window.requestAnimationFrame(() => this._smoothScroll());
+      this._coreBrowserService.window.requestAnimationFrame(() => this._smoothScroll(handle, position));
     } else {
       this._clearSmoothScrollState();
     }
+  }
+
+  private _wheelSmoothScroll(): void {
+    this._smoothScroll(({ position }) => {
+      this._viewportElement.scrollTop = this._smoothScrollState.origin + position;
+    });
+  }
+
+  private _linesSmoothScroll(): void {
+    this._smoothScroll(({ position, lastPosition }) => {
+      this._scrollLines(position - lastPosition, false);
+    });
   }
 
   private _smoothScrollPercent(): number {
@@ -249,12 +274,27 @@ export class Viewport extends Disposable implements IViewport {
           this._smoothScrollState.target += amount;
         }
         this._smoothScrollState.target = Math.max(Math.min(this._smoothScrollState.target, this._viewportElement.scrollHeight), 0);
-        this._smoothScroll();
+        this._wheelSmoothScroll();
       } else {
         this._clearSmoothScrollState();
       }
     }
     return this._bubbleScroll(ev, amount);
+  }
+
+  public scrollLines(disp: number): void {
+    if (!this._optionsService.rawOptions.smoothScrollDuration) {
+      this._scrollLines(disp, false);
+    } else {
+      this._smoothScrollState.startTime = Date.now();
+      if (this._smoothScrollPercent() < 1) {
+        this._smoothScrollState.origin = 0;
+        this._smoothScrollState.target = disp;
+        this._linesSmoothScroll();
+      } else {
+        this._clearSmoothScrollState();
+      }
+    }
   }
 
   private _getPixelsScrolled(ev: WheelEvent): number {

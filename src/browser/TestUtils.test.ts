@@ -319,6 +319,9 @@ export class MockViewport implements IViewport {
   public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
     throw new Error('Method not implemented.');
   }
+  public scrollLines(disp: number): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockCompositionHelper implements ICompositionHelper {

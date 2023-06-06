@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange, IBufferElementProvider, ISmoothScrollProgressState } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange, IBufferElementProvider } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/shared/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -121,13 +121,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: AccessibilityManager | undefined;
-
-  private _smoothScrollProgressState: ISmoothScrollProgressState = {
-    startTime: 0,
-    origin: 0,
-    target: 0,
-    progress: 0
-  };
 
   private readonly _onCursorMove = this.register(new EventEmitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
@@ -505,7 +498,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._instantiationService.setService(IMouseService, this._mouseService);
 
     this.viewport = this._instantiationService.createInstance(Viewport,
-      (amount: number) => this.scrollLines(amount, true, ScrollSource.VIEWPORT),
+      (amount: number, suppressScrollEvent: boolean) => this.scrollLines(amount, suppressScrollEvent, ScrollSource.VIEWPORT),
       this._viewportElement,
       this._viewportScrollArea
     );
@@ -876,74 +869,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  private _scrollLines(disp: number, suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
-    super.scrollLines(disp, suppressScrollEvent, source);
-    this.refresh(0, this.rows - 1);
-  }
-
   public scrollLines(disp: number, suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
     if (source === ScrollSource.VIEWPORT) {
-      this._scrollLines(disp, suppressScrollEvent, source);
+      super.scrollLines(disp, suppressScrollEvent, source);
+      this.refresh(0, this.rows - 1);
     } else {
-      if (!this.optionsService.rawOptions.smoothScrollDuration) {
-        this._scrollLines(disp, suppressScrollEvent, source);
-      } else {
-        this._smoothScrollProgressState.startTime = Date.now();
-        if (this._smoothScrollPercent() < 1) {
-          this._smoothScrollProgressState.origin = 0;
-          this._smoothScrollProgressState.target = disp;
-          this._smoothScrollProgressState.progress = 0;
-          this._smoothScroll(suppressScrollEvent, source);
-        } else {
-          this._clearSmoothScrollState();
-        }
-      }
+      this.viewport?.scrollLines(disp);
     }
-  }
-
-  private _smoothScrollPercent(): number {
-    if (!this.optionsService.rawOptions.smoothScrollDuration || !this._smoothScrollProgressState.startTime) {
-      return 1;
-    }
-    return Math.max(Math.min((Date.now() - this._smoothScrollProgressState.startTime) / this.optionsService.rawOptions.smoothScrollDuration, 1), 0);
-  }
-
-  private _isSmoothScrollEnd(): boolean {
-    if (this._smoothScrollProgressState.target < 0) {
-      if (this._smoothScrollProgressState.progress > this._smoothScrollProgressState.target) {
-        return false;
-      }
-    } else if (this._smoothScrollProgressState.target > 0) {
-      if (this._smoothScrollProgressState.progress < this._smoothScrollProgressState.target) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private _smoothScroll(suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
-    if (this._smoothScrollProgressState.startTime === 0 || this._isSmoothScrollEnd()) {
-      return;
-    }
-
-    const percent = this._smoothScrollPercent();
-    const step = Math.round(percent * (this._smoothScrollProgressState.target - this._smoothScrollProgressState.origin)) - this._smoothScrollProgressState.progress;
-    this._smoothScrollProgressState.progress += step;
-    this._scrollLines(step, suppressScrollEvent, source);
-
-    if (this._isSmoothScrollEnd()) {
-      this._clearSmoothScrollState();
-      return;
-    }
-
-    this._coreBrowserService?.window.requestAnimationFrame(() => this._smoothScroll(suppressScrollEvent, source));
-  }
-
-  private _clearSmoothScrollState(): void {
-    this._smoothScrollProgressState.origin = 0;
-    this._smoothScrollProgressState.target = 0;
-    this._smoothScrollProgressState.progress = 0;
-    this._smoothScrollProgressState.startTime = 0;
   }
 
   public paste(data: string): void {

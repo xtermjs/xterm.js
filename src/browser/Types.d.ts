@@ -148,16 +148,7 @@ export interface IViewport extends IDisposable {
   handleWheel(ev: WheelEvent): boolean;
   handleTouchStart(ev: TouchEvent): void;
   handleTouchMove(ev: TouchEvent): boolean;
-}
-
-export interface ISmoothScrollState {
-  startTime: number;
-  origin: number;
-  target: number;
-}
-
-export interface ISmoothScrollProgressState extends ISmoothScrollState {
-  progress: number;
+  scrollLines(disp: number): void;  // todo api name?
 }
 
 export interface ILinkifierEvent {
