@@ -43,6 +43,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   rightClickSelectsWord: isMac,
   windowOptions: {},
   windowsMode: false,
+  windowsPty: {},
   wordSeparator: ' ()[]{}\',"`',
   altClickMovesCursor: true,
   convertEol: false,
