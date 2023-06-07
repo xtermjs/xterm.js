@@ -128,7 +128,8 @@ export const enum BgFlags {
   ITALIC = 0x4000000,
   DIM = 0x8000000,
   HAS_EXTENDED = 0x10000000,
-  PROTECTED = 0x20000000
+  PROTECTED = 0x20000000,
+  OVERLINE = 0x40000000
 }
 
 export const enum ExtFlags {

@@ -2223,9 +2223,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const p = params.params[0];
 
     if (ansi) {
-      if (p === 2) return f(p, V.PERMANENTLY_SET);
+      if (p === 2) return f(p, V.PERMANENTLY_RESET);
       if (p === 4) return f(p, b2v(cs.modes.insertMode));
-      if (p === 12) return f(p, V.PERMANENTLY_RESET);
+      if (p === 12) return f(p, V.PERMANENTLY_SET);
       if (p === 20) return f(p, b2v(opts.convertEol));
       return f(p, V.NOT_RECOGNIZED);
     }
@@ -2240,6 +2240,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 25) return f(p, b2v(!cs.isCursorHidden));
     if (p === 45) return f(p, b2v(dm.reverseWraparound));
     if (p === 66) return f(p, b2v(dm.applicationKeypad));
+    if (p === 67) return f(p, V.PERMANENTLY_RESET);
     if (p === 1000) return f(p, b2v(mouseProtocol === 'VT200'));
     if (p === 1002) return f(p, b2v(mouseProtocol === 'DRAG'));
     if (p === 1003) return f(p, b2v(mouseProtocol === 'ANY'));
@@ -2425,6 +2426,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 47        | Background color: White.                                 | #Y      |
    * | 48        | Background color: Extended color.                        | #P[Support for RGB and indexed colors, see below.] |
    * | 49        | Background color: Default (original).                    | #Y      |
+   * | 53        | Overlined.                                               | #Y      |
+   * | 55        | Not Overlined.                                           | #Y      |
    * | 58        | Underline color: Extended color.                         | #P[Support for RGB and indexed colors, see below.] |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
@@ -2551,6 +2554,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
+      } else if (p === 53) {
+        // overline
+        attr.bg |= BgFlags.OVERLINE;
+      } else if (p === 55) {
+        // not overline
+        attr.bg &= ~BgFlags.OVERLINE;
       } else if (p === 59) {
         attr.extended = attr.extended.clone();
         attr.extended.underlineColor = -1;

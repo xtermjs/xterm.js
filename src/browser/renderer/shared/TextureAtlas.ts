@@ -304,12 +304,6 @@ export class TextureAtlas implements ITextureAtlas {
         break;
     }
 
-    if (dim) {
-      // Blend here instead of using opacity because transparent colors mess with clipping the
-      // glyph's bounding box
-      result = color.blend(this._config.colors.background, color.multiplyOpacity(result, DIM_OPACITY));
-    }
-
     return result;
   }
 
@@ -429,12 +423,12 @@ export class TextureAtlas implements ITextureAtlas {
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2;
+    const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._textureSize);
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
     }
     // Include line height when drawing glyphs
-    const allowedHeight = this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 4;
+    const allowedHeight = Math.min(this._config.deviceCellHeight + TMP_CANVAS_GLYPH_PADDING * 4, this._textureSize);
     if (this._tmpCanvas.height < allowedHeight) {
       this._tmpCanvas.height = allowedHeight;
     }
@@ -455,6 +449,7 @@ export class TextureAtlas implements ITextureAtlas {
     const italic = !!this._workAttributeData.isItalic();
     const underline = !!this._workAttributeData.isUnderline();
     const strikethrough = !!this._workAttributeData.isStrikethrough();
+    const overline = !!this._workAttributeData.isOverline();
     let fgColor = this._workAttributeData.getFgColor();
     let fgColorMode = this._workAttributeData.getFgColorMode();
     let bgColor = this._workAttributeData.getBgColor();
@@ -638,12 +633,24 @@ export class TextureAtlas implements ITextureAtlas {
       }
     }
 
+    // Overline
+    if (overline) {
+      const lineWidth = Math.max(1, Math.floor(this._config.fontSize * this._config.devicePixelRatio / 15));
+      const yOffset = lineWidth % 2 === 1 ? 0.5 : 0;
+      this._tmpCtx.lineWidth = lineWidth;
+      this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
+      this._tmpCtx.beginPath();
+      this._tmpCtx.moveTo(padding, padding + yOffset);
+      this._tmpCtx.lineTo(padding + this._config.deviceCharWidth * chWidth, padding + yOffset);
+      this._tmpCtx.stroke();
+    }
+
     // Draw the character
     if (!customGlyph) {
       this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight);
     }
 
-    // If this charcater is underscore and beyond the cell bounds, shift it up until it is visible
+    // If this character is underscore and beyond the cell bounds, shift it up until it is visible
     // even on the bottom row, try for a maximum of 5 pixels.
     if (chars === '_' && !this._config.allowTransparency) {
       let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
