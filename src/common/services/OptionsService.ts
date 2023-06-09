@@ -178,11 +178,15 @@ export class OptionsService extends Disposable implements IOptionsService {
         if (value <= 0) {
           throw new Error(`${key} cannot be less than or equal to 0, value: ${value}`);
         }
+        break;
       case 'rows':
       case 'cols':
         if (!value && value !== 0) {
           throw new Error(`${key} must be numeric, value: ${value}`);
         }
+        break;
+      case 'windowsPty':
+        value = value ?? {};
         break;
     }
     return value;

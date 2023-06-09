@@ -1152,10 +1152,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
-    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
-    this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
-    line.isWrapped = false;
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
+    if (line) {
+      line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
+      this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
+      line.isWrapped = false;
+    }
   }
 
   /**
