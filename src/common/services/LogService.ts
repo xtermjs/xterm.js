@@ -62,25 +62,25 @@ export class LogService extends Disposable implements ILogService {
 
   public debug(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.DEBUG) {
-      this._log(this._optionsService.options.logger?.debug ?? console.log, message, optionalParams);
+      this._log(this._optionsService.options.logger?.debug.bind(this._optionsService.options.logger) ?? console.log, message, optionalParams);
     }
   }
 
   public info(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.INFO) {
-      this._log(this._optionsService.options.logger?.info ?? console.info, message, optionalParams);
+      this._log(this._optionsService.options.logger?.info.bind(this._optionsService.options.logger) ?? console.info, message, optionalParams);
     }
   }
 
   public warn(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.WARN) {
-      this._log(this._optionsService.options.logger?.warn ?? console.warn, message, optionalParams);
+      this._log(this._optionsService.options.logger?.warn.bind(this._optionsService.options.logger) ?? console.warn, message, optionalParams);
     }
   }
 
   public error(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.ERROR) {
-      this._log(this._optionsService.options.logger?.error ?? console.error, message, optionalParams);
+      this._log(this._optionsService.options.logger?.error.bind(this._optionsService.options.logger) ?? console.error, message, optionalParams);
     }
   }
 }
