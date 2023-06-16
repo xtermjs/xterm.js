@@ -157,7 +157,7 @@ export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
 
-  logLevel: LogLevelEnum;
+  readonly logLevel: LogLevelEnum;
 
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
