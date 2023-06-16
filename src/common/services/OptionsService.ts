@@ -27,6 +27,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   letterSpacing: 0,
   linkHandler: null,
   logLevel: 'info',
+  logger: null,
   scrollback: 1000,
   scrollOnUserInput: true,
   scrollSensitivity: 1,

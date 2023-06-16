@@ -108,6 +108,11 @@ declare module 'xterm-headless' {
     logLevel?: LogLevel;
 
     /**
+     * A logger to use instead of `console`.
+     */
+    logger?: ILogger | null;
+
+    /**
      * Whether to treat option as the meta key.
      */
     macOptionIsMeta?: boolean;
@@ -302,6 +307,32 @@ declare module 'xterm-headless' {
      * The Windows build version (eg. 19045)
      */
     buildNumber?: number;
+  }
+
+  /**
+   * A replacement logger for `console`.
+   */
+  export interface ILogger {
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * debug.
+     */
+    debug(message: string, ...args: any[]): void;
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * info or below.
+     */
+    info(message: string, ...args: any[]): void;
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * warn or below.
+     */
+    warn(message: string, ...args: any[]): void;
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * error or below.
+     */
+    error(message: string | Error, ...args: any[]): void;
   }
 
   /**

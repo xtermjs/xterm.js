@@ -57,30 +57,30 @@ export class LogService extends Disposable implements ILogService {
 
   private _log(type: LogType, message: string, optionalParams: any[]): void {
     this._evalLazyOptionalParams(optionalParams);
-    type.call(console, LOG_PREFIX + message, ...optionalParams);
+    type.call(console, (this._optionsService.options.logger ? '' : LOG_PREFIX) + message, ...optionalParams);
   }
 
   public debug(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.DEBUG) {
-      this._log(console.log, message, optionalParams);
+      this._log(this._optionsService.options.logger?.debug ?? console.log, message, optionalParams);
     }
   }
 
   public info(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.INFO) {
-      this._log(console.info, message, optionalParams);
+      this._log(this._optionsService.options.logger?.info ?? console.info, message, optionalParams);
     }
   }
 
   public warn(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.WARN) {
-      this._log(console.warn, message, optionalParams);
+      this._log(this._optionsService.options.logger?.warn ?? console.warn, message, optionalParams);
     }
   }
 
   public error(message: string, ...optionalParams: any[]): void {
     if (this.logLevel <= LogLevelEnum.ERROR) {
-      this._log(console.error, message, optionalParams);
+      this._log(this._optionsService.options.logger?.error ?? console.error, message, optionalParams);
     }
   }
 }
