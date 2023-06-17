@@ -308,6 +308,7 @@ export class GlyphRenderer extends Disposable {
 
   public handleResize(): void {
     const gl = this._gl;
+    gl.useProgram(this._program);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
     this.clear();

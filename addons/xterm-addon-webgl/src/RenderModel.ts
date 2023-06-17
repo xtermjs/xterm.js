@@ -18,6 +18,14 @@ export class RenderModel implements IRenderModel {
   public cells: Uint32Array;
   public lineLengths: Uint32Array;
   public selection: ISelectionRenderModel;
+  public cursor?: {
+    x: number;
+    y: number;
+    width: number;
+    style: string;
+    cursorWidth: number;
+    dpr: number;
+  };
 
   constructor() {
     this.cells = new Uint32Array(0);

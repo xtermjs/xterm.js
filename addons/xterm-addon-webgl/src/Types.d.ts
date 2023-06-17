@@ -9,6 +9,14 @@ export interface IRenderModel {
   cells: Uint32Array;
   lineLengths: Uint32Array;
   selection: ISelectionRenderModel;
+  cursor?: {
+    x: number;
+    y: number;
+    width: number;
+    style: string;
+    cursorWidth: number;
+    dpr: number;
+  };
 }
 
 export interface IWebGL2RenderingContext extends WebGLRenderingContext {
