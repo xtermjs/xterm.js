@@ -238,7 +238,7 @@ describe('ImageAddon', () => {
     it('evict tiles by in-place overwrites (only full overwrite tested)', async () => {
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       let usage = await page.evaluate('imageAddon.storageUsage');
-      while (usage == 0) {
+      while (usage === 0) {
         await new Promise(r => setTimeout(r, 50));
         usage = await page.evaluate('imageAddon.storageUsage');
       }
