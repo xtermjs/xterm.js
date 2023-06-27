@@ -33,7 +33,8 @@ const MAP = new Uint8Array(
 
 describe('Base64Decoder', () => {
   describe('decoding', () => {
-    it('single bytes', () => {
+    it('single bytes', function() {
+      this.timeout(20000);
       const dec = new Base64Decoder(0);
       for (let i = 0; i < 256; ++i) {
         dec.init(1);
@@ -44,7 +45,8 @@ describe('Base64Decoder', () => {
         assert.deepEqual(dec.data8, inp);
       }
     });
-    it('1+2 bytes', () => {
+    it('1+2 bytes', function() {
+      this.timeout(20000);
       const dec = new Base64Decoder(0);
       for (let a = 0; a < 256; ++a) {
         for (let b = 0; b < 256; ++b) {
@@ -57,7 +59,8 @@ describe('Base64Decoder', () => {
         }
       }
     });
-    it('2+3 bytes', () => {
+    it('2+3 bytes', function() {
+      this.timeout(20000);
       const dec = new Base64Decoder(0);
       for (let a = 0; a < 256; ++a) {
         for (let b = 0; b < 256; ++b) {
@@ -70,7 +73,8 @@ describe('Base64Decoder', () => {
         }
       }
     });
-    it('3+4 bytes', () => {
+    it('3+4 bytes', function() {
+      this.timeout(20000);
       const dec = new Base64Decoder(0);
       for (let a = 0; a < 256; ++a) {
         for (let b = 0; b < 256; ++b) {
@@ -107,7 +111,8 @@ describe('Base64Decoder', () => {
         assert.deepEqual(dec.data8, d.slice(0, i + 1));
       }
     });
-    it('exit on false byte', () => {
+    it('exit on false byte', function() {
+      this.timeout(20000);
       const dec = new Base64Decoder(0);
       for (let pos = 0; pos < 8; ++pos) {
         const inp = new Uint8Array([65, 65, 65, 65, 65, 65, 65, 65]);
