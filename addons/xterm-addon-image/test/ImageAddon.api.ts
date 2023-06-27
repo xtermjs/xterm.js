@@ -215,11 +215,13 @@ describe('ImageAddon', () => {
       await writeToTerminal(SIXEL_SEQ_0);
       await writeToTerminal(SIXEL_SEQ_0);
       await writeToTerminal(SIXEL_SEQ_0);
+      await new Promise(r => setTimeout(r, 50));
       const usage = await page.evaluate('imageAddon.storageUsage');
       await writeToTerminal(SIXEL_SEQ_0);
       await writeToTerminal(SIXEL_SEQ_0);
       await writeToTerminal(SIXEL_SEQ_0);
       await writeToTerminal(SIXEL_SEQ_0);
+      await new Promise(r => setTimeout(r, 50));
       assert.equal(await page.evaluate('imageAddon.storageUsage'), usage);
       assert.equal(usage as number < 1, true);
     });
@@ -239,18 +241,22 @@ describe('ImageAddon', () => {
     });
     it('evict tiles by in-place overwrites (only full overwrite tested)', async () => {
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      await new Promise(r => setTimeout(r, 50));
       const usage = await page.evaluate('imageAddon.storageUsage');
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      await new Promise(r => setTimeout(r, 50));
       assert.equal(await page.evaluate('imageAddon.storageUsage'), usage);
     });
     it('manual eviction on alternate buffer must not miss images', async () => {
       await writeToTerminal('\x1b[?1049h');
       await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      await new Promise(r => setTimeout(r, 50));
       const usage: number = await page.evaluate('imageAddon.storageUsage');
       await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
       await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      await new Promise(r => setTimeout(r, 50));
       const newUsage: number = await page.evaluate('imageAddon.storageUsage');
       assert.equal(newUsage, usage);
     });
