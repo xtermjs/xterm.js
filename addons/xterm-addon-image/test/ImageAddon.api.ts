@@ -237,12 +237,15 @@ describe('ImageAddon', () => {
     });
     it('evict tiles by in-place overwrites (only full overwrite tested)', async () => {
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
-      await new Promise(r => setTimeout(r, 50));
-      const usage = await page.evaluate('imageAddon.storageUsage');
+      let usage = 0;
+      while (!usage) {
+        usage = await page.evaluate('imageAddon.storageUsage');
+        await new Promise(r => setTimeout(r, 50));
+      }
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, 200));  // wait some time and re-check
       assert.equal(await page.evaluate('imageAddon.storageUsage'), usage);
     });
     it('manual eviction on alternate buffer must not miss images', async () => {
