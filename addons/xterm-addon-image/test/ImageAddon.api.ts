@@ -179,7 +179,7 @@ describe('ImageAddon', () => {
   });
 
   describe('image lifecycle & eviction', () => {
-    it.only('delete image once scrolled off', async () => {
+    it('delete image once scrolled off', async () => {
       await writeToTerminal(SIXEL_SEQ_0);
       pollFor(page, 'window.imageAddon._storage._images.size', 1);
       // scroll to scrollback + rows - 1
