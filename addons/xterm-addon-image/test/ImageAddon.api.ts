@@ -179,7 +179,7 @@ describe('ImageAddon', () => {
   });
 
   describe('image lifecycle & eviction', () => {
-    it.only('delete image once scrolled off', async () => {
+    it('delete image once scrolled off', async () => {
       // note: the waits in between are needed to make sure,
       // that the state got updated on the remote browser,
       // otherwise the test might fail in heavy load CI
