@@ -1,10 +1,20 @@
 {
   "name": "xterm.js",
-  "dockerFile": "Dockerfile",
-  "appPort": 3000,
-  "extensions": [
-    "dbaeumer.vscode-eslint",
-    "editorconfig.editorconfig",
-    "hbenl.vscode-mocha-test-adapter"
-  ]
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:0-18-buster",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {} // yarn
+  },
+  "forwardPorts": [
+    3000
+  ],
+  "postCreateCommand": "yarn install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig",
+        "hbenl.vscode-mocha-test-adapter"
+      ]
+    }
+  }
 }

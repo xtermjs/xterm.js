@@ -248,7 +248,11 @@ function createTerminal(): void {
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
     allowProposedApi: true,
-    windowsMode: isWindows,
+    windowsPty: isWindows ? {
+      // In a real scenario, these values should be verified on the backend
+      backend: 'conpty',
+      buildNumber: 22621
+    } : undefined,
     fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);

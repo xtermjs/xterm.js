@@ -33,7 +33,8 @@ const LOG_PREFIX = 'xterm.js: ';
 export class LogService extends Disposable implements ILogService {
   public serviceBrand: any;
 
-  public logLevel: LogLevelEnum = LogLevelEnum.OFF;
+  private _logLevel: LogLevelEnum = LogLevelEnum.OFF;
+  public get logLevel(): LogLevelEnum { return this._logLevel; }
 
   constructor(
     @IOptionsService private readonly _optionsService: IOptionsService
@@ -44,7 +45,7 @@ export class LogService extends Disposable implements ILogService {
   }
 
   private _updateLogLevel(): void {
-    this.logLevel = optionsKeyToLogLevel[this._optionsService.rawOptions.logLevel];
+    this._logLevel = optionsKeyToLogLevel[this._optionsService.rawOptions.logLevel];
   }
 
   private _evalLazyOptionalParams(optionalParams: any[]): void {
@@ -57,30 +58,30 @@ export class LogService extends Disposable implements ILogService {
 
   private _log(type: LogType, message: string, optionalParams: any[]): void {
     this._evalLazyOptionalParams(optionalParams);
-    type.call(console, LOG_PREFIX + message, ...optionalParams);
+    type.call(console, (this._optionsService.options.logger ? '' : LOG_PREFIX) + message, ...optionalParams);
   }
 
   public debug(message: string, ...optionalParams: any[]): void {
-    if (this.logLevel <= LogLevelEnum.DEBUG) {
-      this._log(console.log, message, optionalParams);
+    if (this._logLevel <= LogLevelEnum.DEBUG) {
+      this._log(this._optionsService.options.logger?.debug.bind(this._optionsService.options.logger) ?? console.log, message, optionalParams);
     }
   }
 
   public info(message: string, ...optionalParams: any[]): void {
-    if (this.logLevel <= LogLevelEnum.INFO) {
-      this._log(console.info, message, optionalParams);
+    if (this._logLevel <= LogLevelEnum.INFO) {
+      this._log(this._optionsService.options.logger?.info.bind(this._optionsService.options.logger) ?? console.info, message, optionalParams);
     }
   }
 
   public warn(message: string, ...optionalParams: any[]): void {
-    if (this.logLevel <= LogLevelEnum.WARN) {
-      this._log(console.warn, message, optionalParams);
+    if (this._logLevel <= LogLevelEnum.WARN) {
+      this._log(this._optionsService.options.logger?.warn.bind(this._optionsService.options.logger) ?? console.warn, message, optionalParams);
     }
   }
 
   public error(message: string, ...optionalParams: any[]): void {
-    if (this.logLevel <= LogLevelEnum.ERROR) {
-      this._log(console.error, message, optionalParams);
+    if (this._logLevel <= LogLevelEnum.ERROR) {
+      this._log(this._optionsService.options.logger?.error.bind(this._optionsService.options.logger) ?? console.error, message, optionalParams);
     }
   }
 }

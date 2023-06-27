@@ -1163,10 +1163,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
-    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
-    this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
-    line.isWrapped = false;
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
+    if (line) {
+      line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
+      this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
+      line.isWrapped = false;
+    }
   }
 
   /**
@@ -2234,9 +2236,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const p = params.params[0];
 
     if (ansi) {
-      if (p === 2) return f(p, V.PERMANENTLY_SET);
+      if (p === 2) return f(p, V.PERMANENTLY_RESET);
       if (p === 4) return f(p, b2v(cs.modes.insertMode));
-      if (p === 12) return f(p, V.PERMANENTLY_RESET);
+      if (p === 12) return f(p, V.PERMANENTLY_SET);
       if (p === 20) return f(p, b2v(opts.convertEol));
       return f(p, V.NOT_RECOGNIZED);
     }
@@ -2251,6 +2253,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 25) return f(p, b2v(!cs.isCursorHidden));
     if (p === 45) return f(p, b2v(dm.reverseWraparound));
     if (p === 66) return f(p, b2v(dm.applicationKeypad));
+    if (p === 67) return f(p, V.PERMANENTLY_RESET);
     if (p === 1000) return f(p, b2v(mouseProtocol === 'VT200'));
     if (p === 1002) return f(p, b2v(mouseProtocol === 'DRAG'));
     if (p === 1003) return f(p, b2v(mouseProtocol === 'ANY'));

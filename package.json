@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "5.1.0",
+  "version": "5.2.1",
   "main": "lib/xterm.js",
   "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
@@ -58,7 +58,7 @@
     "@types/glob": "^7.2.0",
     "@types/jsdom": "^16.2.13",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^14.14.44",
+    "@types/node": "^18.16.0",
     "@types/utf8": "^3.0.0",
     "@types/webpack": "^5.28.0",
     "@types/ws": "^8.2.0",

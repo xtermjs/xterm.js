@@ -393,8 +393,37 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
-    x = this._cellToRowElements[y][x];
-    x2 = this._cellToRowElements[y2][x2];
+    /**
+     * NOTE: The linkifier may send out of viewport y-values if:
+     * - negative y-value: the link started at a higher line
+     * - y-value >= maxY: the link ends at a line below viewport
+     *
+     * For negative y-values we can simply adjust x = 0,
+     * as higher up link start means, that everything from
+     * (0,0) is a link under top-down-left-right char progression
+     *
+     * Additionally there might be a small chance of out-of-sync x|y-values
+     * from a race condition of render updates vs. link event handler execution:
+     * - (sync) resize: chances terminal buffer in sync, schedules render update async
+     * - (async) link handler race condition: new buffer metrics, but still on old render state
+     * - (async) render update: brings term metrics and render state back in sync
+     */
+    if (y < 0) x = 0;
+    if (y2 < 0) x2 = 0;
+
+    // avoid out-of-sync y-values, simply clamp into valid area
+    const maxY = this._cellToRowElements.length - 1;
+    y = Math.max(Math.min(y, maxY), 0);
+    y2 = Math.max(Math.min(y2, maxY), 0);
+    const elemY = this._cellToRowElements[y];
+    const elemY2 = this._cellToRowElements[y2];
+    if (x >= elemY.length || x2 >= elemY2.length) {
+      // avoid out-of-sync x-values
+      // simply exit early, gets fixed by the next render update
+      return;
+    }
+    x = elemY[x];
+    x2 = elemY2[x2];
 
     if (x === -1 || x2 === -1) {
       return;
