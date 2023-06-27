@@ -13,7 +13,7 @@ import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
-import { ImageAddon } from '../addons/xterm-addon-image/out/ImageAddon';
+import { ImageAddon, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
@@ -237,6 +237,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   addVtButtons();
+  initImageAddonExposed();
 }
 
 function createTerminal(): void {
@@ -583,6 +584,19 @@ function initAddons(term: TerminalType): void {
       addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
+      if (name === 'image') {
+        if (checkbox.checked) {
+          const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
+          addon.instance = ctorOptionsJson
+            ? new addon.ctor(JSON.parse(ctorOptionsJson))
+            : new addon.ctor();
+          term.loadAddon(addon.instance);
+        } else {
+          addon.instance!.dispose();
+          addon.instance = undefined;
+        }
+        return;
+      }
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
         try {
@@ -1198,4 +1212,79 @@ stop at final '?': Is this the right url http://example.com/?
 stop at final '?': Maybe this one http://example.com/with?arguments=false?
   `;
   term.write(linkExamples.split('\n').join('\r\n'));
+}
+
+
+function initImageAddonExposed(): void {
+  const DEFAULT_OPTIONS: IImageAddonOptions = (addons.image.instance as any)._defaultOpts;
+  const limitStorageElement = document.querySelector<HTMLInputElement>('#image-storagelimit');
+  limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
+  addDomListener(limitStorageElement, 'change', () => {
+    try {
+      addons.image.instance.storageLimit = limitStorageElement.valueAsNumber;
+      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
+      console.log('changed storageLimit to', addons.image.instance.storageLimit);
+    } catch (e) {
+      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
+      console.log('storageLimit at', addons.image.instance.storageLimit);
+      throw e;
+    }
+  });
+  const showPlaceholderElement = document.querySelector<HTMLInputElement>('#image-showplaceholder');
+  showPlaceholderElement.checked = addons.image.instance.showPlaceholder;
+  addDomListener(showPlaceholderElement, 'change', () => {
+    addons.image.instance.showPlaceholder = showPlaceholderElement.checked;
+  });
+  const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
+  ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
+
+  const sixel_demo = (url: string) => () => fetch(url)
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      term.write('\r\n');
+      term.write(new Uint8Array(buffer));
+    });
+  
+  const iip_demo = (url: string) => () => fetch(url)
+  .then(resp => resp.arrayBuffer())
+  .then(buffer => {
+    const data = new Uint8Array(buffer);
+    let sdata = '';
+    for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+    term.write('\r\n');
+    term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
+  });
+
+  document.getElementById('image-demo1').addEventListener('click',
+    sixel_demo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
+  document.getElementById('image-demo2').addEventListener('click',
+    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
+  document.getElementById('image-demo3').addEventListener('click',
+    iip_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+
+  // demo for image retrieval API
+  term.element.addEventListener('click', (ev: MouseEvent) => {
+    if (!ev.ctrlKey || !addons.image.instance) return;
+
+    // TODO...
+    // if (ev.altKey) {
+    //   const sel = term.getSelectionPosition();
+    //   if (sel) {
+    //     addons.image.instance
+    //       .extractCanvasAtBufferRange(term.getSelectionPosition())
+    //       ?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+    //     return;
+    //   }
+    // }
+
+    const pos = term._core._mouseService!.getCoords(ev, term._core.screenElement!, term.cols, term.rows);
+    const x = pos[0] - 1;
+    const y = pos[1] - 1;
+    const canvas = ev.shiftKey
+      // ctrl+shift+click: get single tile
+      ? addons.image.instance.extractTileAtBufferCell(x, term.buffer.active.viewportY + y)
+      // ctrl+click: get original image
+      : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
+    canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+  });
 }
