@@ -65,7 +65,7 @@ const TESTDATA_IIP: [string, [number, number]][] = [
   [readFileSync('./addons/xterm-addon-image/fixture/iip/w3c_png.iip', { encoding: 'utf-8' }), [72, 48]]
 ];
 
-describe.only('ImageAddon', () => {
+describe('ImageAddon', () => {
   before(async () => {
     browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
