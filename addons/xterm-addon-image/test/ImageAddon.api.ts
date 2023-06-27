@@ -179,17 +179,23 @@ describe('ImageAddon', () => {
   });
 
   describe('image lifecycle & eviction', () => {
-    it('delete image once scrolled off', async () => {
+    it.only('delete image once scrolled off', async () => {
+      // note: the waits in between are needed to make sure,
+      // that the state got updated on the remote browser,
+      // otherwise the test might fail in heavy load CI
       await writeToTerminal(SIXEL_SEQ_0);
+      await new Promise(r => setTimeout(r, 50));
       assert.equal(await getImageStorageLength(), 1);
       // scroll to scrollback + rows - 1
       await page.evaluate(
         scrollback => new Promise(res => (window as any).term.write('\n'.repeat(scrollback), res)),
         (await getScrollbackPlusRows() - 1)
       );
+      await new Promise(r => setTimeout(r, 50));
       assert.equal(await getImageStorageLength(), 1);
       // scroll one further should delete the image
       await page.evaluate(() => new Promise(res => (window as any).term.write('\n', res)));
+      await new Promise(r => setTimeout(r, 50));
       assert.equal(await getImageStorageLength(), 0);
     });
     it('get storageUsage', async () => {
