@@ -14,14 +14,15 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
   constructor() {
   }
 
+  static readonly plainNarrowProperties: UnicodeCharProperties
+    = UnicodeService.createPropertyValue(UC.GRAPHEME_BREAK_Other, 1, false);
+
   public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     // Optimize the simple ASCII case, under the condition that
     // UnicodeService.extractCharKind(preceding) === GRAPHEME_BREAK_Other
     // (which also covers the case that preceding === 0).
-
     if ((codepoint >= 32 && codepoint < 127) && (preceding >> 3) === 0) {
-      // Inlined UnicodeService.createPropertyValue(GRAPHEME_BREAK_Other, 1, false)
-      return 1;
+      return UnicodeGraphemeProvider.plainNarrowProperties;
     }
 
     let charInfo = UC.getInfo(codepoint);
