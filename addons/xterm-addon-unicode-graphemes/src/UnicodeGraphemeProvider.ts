@@ -14,7 +14,7 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
   constructor() {
   }
 
-  static readonly plainNarrowProperties: UnicodeCharProperties
+  private static readonly _plainNarrowProperties: UnicodeCharProperties
     = UnicodeService.createPropertyValue(UC.GRAPHEME_BREAK_Other, 1, false);
 
   public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
@@ -22,7 +22,7 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
     // UnicodeService.extractCharKind(preceding) === GRAPHEME_BREAK_Other
     // (which also covers the case that preceding === 0).
     if ((codepoint >= 32 && codepoint < 127) && (preceding >> 3) === 0) {
-      return UnicodeGraphemeProvider.plainNarrowProperties;
+      return UnicodeGraphemeProvider._plainNarrowProperties;
     }
 
     let charInfo = UC.getInfo(codepoint);
