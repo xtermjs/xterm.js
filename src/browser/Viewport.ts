@@ -279,7 +279,7 @@ export class Viewport extends Disposable implements IViewport {
       }
     }
   }
-  
+
   private _getPixelsScrolled(ev: WheelEvent): number {
     // Do nothing if it's not a vertical scroll event
     if (ev.deltaY === 0 || ev.shiftKey) {
