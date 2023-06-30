@@ -19,12 +19,6 @@ interface ISmoothScrollState {
   target: number;
 }
 
-interface ISmoothScrollCalculateContext {
-  percent: number;
-  position: number;
-  lastPosition: number;
-}
-
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
@@ -190,7 +184,7 @@ export class Viewport extends Disposable implements IViewport {
     this._scrollLines(diff, true);
   }
 
-  private _smoothScroll(handle: (context: ISmoothScrollCalculateContext) => void, lastPosition: number = 0): void {
+  private _smoothScroll(): void {
     // Check valid state
     if (this._isDisposed || this._smoothScrollState.origin === -1 || this._smoothScrollState.target === -1) {
       return;
@@ -198,27 +192,14 @@ export class Viewport extends Disposable implements IViewport {
 
     // Calculate position complete
     const percent = this._smoothScrollPercent();
-    const position = Math.round(percent * (this._smoothScrollState.target - this._smoothScrollState.origin));
-    handle({ percent, position, lastPosition });
+    this._viewportElement.scrollTop = this._smoothScrollState.origin + Math.round(percent * (this._smoothScrollState.target - this._smoothScrollState.origin));
 
     // Continue or finish smooth scroll
     if (percent < 1) {
-      this._coreBrowserService.window.requestAnimationFrame(() => this._smoothScroll(handle, position));
+      this._coreBrowserService.window.requestAnimationFrame(() => this._smoothScroll());
     } else {
       this._clearSmoothScrollState();
     }
-  }
-
-  private _wheelSmoothScroll(): void {
-    this._smoothScroll(({ position }) => {
-      this._viewportElement.scrollTop = this._smoothScrollState.origin + position;
-    });
-  }
-
-  private _linesSmoothScroll(): void {
-    this._smoothScroll(({ position, lastPosition }) => {
-      this._scrollLines(position - lastPosition, false);
-    });
   }
 
   private _smoothScrollPercent(): number {
@@ -274,7 +255,7 @@ export class Viewport extends Disposable implements IViewport {
           this._smoothScrollState.target += amount;
         }
         this._smoothScrollState.target = Math.max(Math.min(this._smoothScrollState.target, this._viewportElement.scrollHeight), 0);
-        this._wheelSmoothScroll();
+        this._smoothScroll();
       } else {
         this._clearSmoothScrollState();
       }
@@ -286,17 +267,19 @@ export class Viewport extends Disposable implements IViewport {
     if (!this._optionsService.rawOptions.smoothScrollDuration) {
       this._scrollLines(disp, false);
     } else {
+      const amount = disp * this._currentRowHeight;
       this._smoothScrollState.startTime = Date.now();
       if (this._smoothScrollPercent() < 1) {
-        this._smoothScrollState.origin = 0;
-        this._smoothScrollState.target = disp;
-        this._linesSmoothScroll();
+        this._smoothScrollState.origin = this._viewportElement.scrollTop;
+        this._smoothScrollState.target = this._smoothScrollState.origin + amount;
+        this._smoothScrollState.target = Math.max(Math.min(this._smoothScrollState.target, this._viewportElement.scrollHeight), 0);
+        this._smoothScroll();
       } else {
         this._clearSmoothScrollState();
       }
     }
   }
-
+  
   private _getPixelsScrolled(ev: WheelEvent): number {
     // Do nothing if it's not a vertical scroll event
     if (ev.deltaY === 0 || ev.shiftKey) {
