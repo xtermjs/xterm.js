@@ -747,8 +747,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       if (!(events & CoreMouseEventType.UP)) {
         this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
+        el.removeEventListener('mouseup', requestedEvents.mouseup!);
         requestedEvents.mouseup = null;
       } else if (!requestedEvents.mouseup) {
+        el.addEventListener('mouseup', eventListeners.mouseup);
         requestedEvents.mouseup = eventListeners.mouseup;
       }
 
