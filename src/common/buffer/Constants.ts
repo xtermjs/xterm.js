@@ -98,6 +98,7 @@ export const enum Attributes {
    * bit 25..26   color mode: DEFAULT (0) | P16 (1) | P256 (2) | RGB (3)
    */
   CM_MASK = 0x3000000,
+  CM_COLOR_MASK = 0x3ffffff,
   CM_DEFAULT = 0,
   CM_P16 = 0x1000000,
   CM_P256 = 0x2000000,
@@ -109,27 +110,41 @@ export const enum Attributes {
   RGB_MASK = 0xFFFFFF
 }
 
+export const enum StyleFlags {
+  INVERSE = 0x4,
+  BOLD = 0x8,
+  UNDERLINE = 0x10,
+  BLINK = 0x20,
+  INVISIBLE = 0x40,
+  STRIKETHROUGH = 0x80,
+  ITALIC = 0x400,
+  DIM = 0x800,
+  HAS_EXTENDED = 0x1000,
+  PROTECTED = 0x2000,
+  OVERLINE = 0x4000
+}
+
 export const enum FgFlags {
   /**
    * bit 27..32
    */
-  INVERSE = 0x4000000,
-  BOLD = 0x8000000,
-  UNDERLINE = 0x10000000,
-  BLINK = 0x20000000,
-  INVISIBLE = 0x40000000,
-  STRIKETHROUGH = 0x80000000,
+  INVERSE = StyleFlags.INVERSE << 24, // 0x4000000,
+  BOLD = StyleFlags.BOLD << 24, // 0x8000000,
+  UNDERLINE = StyleFlags.UNDERLINE << 24, // 0x10000000,
+  BLINK = StyleFlags.BLINK << 24, // x20000000,
+  INVISIBLE = StyleFlags.INVISIBLE << 24, // 0x40000000,
+  STRIKETHROUGH = StyleFlags.STRIKETHROUGH << 24 // 0x80000000
 }
 
 export const enum BgFlags {
   /**
    * bit 27..32 (upper 2 unused)
    */
-  ITALIC = 0x4000000,
-  DIM = 0x8000000,
-  HAS_EXTENDED = 0x10000000,
-  PROTECTED = 0x20000000,
-  OVERLINE = 0x40000000
+  ITALIC = StyleFlags.ITALIC << 16, // 0x4000000,
+  DIM = StyleFlags.DIM << 16, // 0x8000000,
+  HAS_EXTENDED = StyleFlags.HAS_EXTENDED << 16, // 0x10000000,
+  PROTECTED = StyleFlags.PROTECTED << 16, // 0x20000000
+  OVERLINE = StyleFlags.OVERLINE << 16 // 0x40000000
 }
 
 export const enum ExtFlags {

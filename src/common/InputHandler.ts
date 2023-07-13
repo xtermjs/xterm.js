@@ -510,11 +510,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
 
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
+    const cursor = this._workCell;
+    bufferRow.scanMove(cursor, this._activeBuffer.x);
 
-    // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
-    if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+      // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
+    if (this._activeBuffer.x && end - start > 0) {
+      bufferRow.fixSplitWide(cursor);
     }
+
+    bufferRow.setAttributes(cursor, curAttr.fg, curAttr.bg, curAttr.extended);
 
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
@@ -545,13 +549,14 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for this._activeBuffer.x to avoid overflow left
       if (!chWidth && this._activeBuffer.x) {
-        if (!bufferRow.getWidth(this._activeBuffer.x - 1)) {
+        /*if (!bufferRow.getWidth(this._activeBuffer.x - 1)) {
           // found empty cell after fullwidth, need to go 2 cells back
           // it is save to step 2 cells back here
           // since an empty cell is only set by fullwidth chars
           bufferRow.addCodepointToCell(this._activeBuffer.x - 2, code);
-        } else {
-          bufferRow.addCodepointToCell(this._activeBuffer.x - 1, code);
+        } else*/ {
+          bufferRow.addToPrecedingGrapheme(cursor, code, chWidth);
+          //bufferRow.addCodepointToCell(this._activeBuffer.x - 1, code);
         }
         continue;
       }
@@ -582,6 +587,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           // row changed, get it again
           bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+          bufferRow.scanMove(cursor, 0);
         } else {
           this._activeBuffer.x = cols - 1;
           if (chWidth === 2) {
@@ -605,31 +611,17 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
-
-      // fullwidth char - also set next cell to placeholder stub and advance cursor
-      // for graphemes bigger than fullwidth we can simply loop to zero
-      // we already made sure above, that this._activeBuffer.x + chWidth will not overflow right
-      if (chWidth > 0) {
-        while (--chWidth) {
-          // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
-        }
-      }
+      bufferRow.setCodePoint(cursor, code, chWidth);
+      this._activeBuffer.x += chWidth;
+      bufferRow.scanNext(cursor, chWidth, 0);
     }
     // store last char in Parser.precedingCodepoint for REP to work correctly
     // This needs to check whether:
     //  - fullwidth + surrogates: reset
     //  - combining: only base char gets carried on (bug in xterm?)
     if (end - start > 0) {
-      bufferRow.loadCell(this._activeBuffer.x - 1, this._workCell);
-      if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
-        this._parser.precedingCodepoint = 0;
-      } else if (this._workCell.isCombined()) {
-        this._parser.precedingCodepoint = this._workCell.getChars().charCodeAt(0);
-      } else {
-        this._parser.precedingCodepoint = this._workCell.content;
-      }
+      const ch = bufferRow.previousCodePoint(cursor);
+      this._parser.precedingCodepoint = ch < 0 || ch > 0xffff ? 0 : ch;
     }
 
     // handle wide chars: reset cell to the right if it is second cell of a wide char
@@ -1138,7 +1130,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       start,
       end,
       this._activeBuffer.getNullCell(this._eraseAttrData()),
-      this._eraseAttrData(),
       respectProtect
     );
     if (clearWrap) {
@@ -1553,8 +1544,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.replaceCells(
         this._activeBuffer.x,
         this._activeBuffer.x + (params.params[0] || 1),
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }

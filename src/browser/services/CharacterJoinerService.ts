@@ -11,6 +11,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IBufferService } from 'common/services/Services';
 import { ICharacterJoinerService } from 'browser/services/Services';
 
+/*
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
   // .content carries no meaning for joined CellData, simply nullify it
@@ -55,6 +56,7 @@ export class JoinedCellData extends AttributeData implements ICellData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
 }
+*/
 
 export class CharacterJoinerService implements ICharacterJoinerService {
   public serviceBrand: undefined;

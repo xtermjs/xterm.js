@@ -167,6 +167,10 @@ export interface IAttributeData {
   isProtected(): number;
   isOverline(): number;
 
+  getFg(): number; // 26 bits including CM_MASK
+  getBg(): number; // 26 bits including CM_MASK
+  getStyleFlags(): number;
+
   /**
    * The color mode of the foreground color which determines how to decode {@link getFgColor},
    * possible values include {@link Attributes.CM_DEFAULT}, {@link Attributes.CM_P16},
@@ -212,6 +216,7 @@ export interface IAttributeData {
 /** Cell data */
 export interface ICellData extends IAttributeData {
   content: number;
+  column: number; // 0-origin; -1 if unknown
   combinedData: string;
   isCombined(): number;
   getWidth(): number;
@@ -227,22 +232,45 @@ export interface ICellData extends IAttributeData {
 export interface IBufferLine {
   length: number;
   isWrapped: boolean;
+  /**
+   * Initialize cursot to beginning of line.
+   */
+  scanInit(cursor: ICellData): void;
+  /**
+   * Scan to n'th next position, filling in character data in cursor.
+   * FUTURE: Negative n moves backward (left in left-to-right text).
+   * Special case n==0 is a "peek" operation: Fill in cursor with
+   * data from the nextcharacter - return -1 if there is no next character.
+   * The cursor properties are set from the last character over over.
+   * By default the next positon is the next column, but this may
+   * be modified by the flags (future: codepoints, graphemes, words, etc).
+   * Return 0 on sucess, otherwise the number of characters we couldn't move.
+   * TODO: Define handling of wide characters,
+   */
+  scanNext(cursor: ICellData, n: number, flags: number): number;
+  scanMove(cursor: ICellData, column: number): void;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
   setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
-  addCodepointToCell(index: number, codePoint: number): void;
+  setFromCodePoint(cursor: ICellData, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
+  setAttributes(cursor: ICellData, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
+  setCodePoint(cursor: ICellData, codePoint: number, width: number): void;
+  addToPrecedingGrapheme(cursor: ICellData, codePoint: number, width: number): void;
   insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
   deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
-  replaceCells(start: number, end: number, fill: ICellData, eraseAttr?: IAttributeData, respectProtect?: boolean): void;
+  replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
+  replaceCols(cursor: ICellData, count: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;
+  fixSplitWide(cell: ICellData): void;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
+  previousCodePoint(cursor: ICellData): number;
 
   /* direct access to cell attrs */
   getWidth(index: number): number;
@@ -253,6 +281,7 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
+  _getChars(cursor: ICellData): string;
 }
 
 export interface IMarker extends IDisposable {

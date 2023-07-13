@@ -862,7 +862,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       }
 
       // Expand the string in both directions until a space is hit
-      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine.loadCell(startCol - 1, this._workCell))) {
+      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine.loadCell(startCol - 1, this._workCell) as CellData)) {
         bufferLine.loadCell(startCol - 1, this._workCell);
         const length = this._workCell.getChars().length;
         if (this._workCell.getWidth() === 0) {
@@ -878,7 +878,7 @@ export class SelectionService extends Disposable implements ISelectionService {
         startIndex--;
         startCol--;
       }
-      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine.loadCell(endCol + 1, this._workCell))) {
+      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine.loadCell(endCol + 1, this._workCell) as CellData)) {
         bufferLine.loadCell(endCol + 1, this._workCell);
         const length = this._workCell.getChars().length;
         if (this._workCell.getWidth() === 2) {

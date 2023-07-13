@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, ICellData, IExtendedAttrs } from 'common/Types';
+import { CharData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
@@ -18,7 +18,25 @@ export class CellData extends AttributeData implements ICellData {
     obj.setFromCharData(value);
     return obj;
   }
+  public bufferLine: IBufferLine | undefined;
+
+  /** Position and state in BufferLine.
+   * The actual meaning of _stateA/_stateB/_stateM/_stateN depends on
+   * on the actual class that implements bufferLine.
+   * See the BufferLine class for the "default" implementation.
+   * We use these place-holder fields in order to not have to allocate a
+   * a specfic CellData object depending on the bufferLine class.
+   */
+  public _stateA: any;
+  public _stateB: any;
+  public _stateM: number = 0;
+  public _stateN: number = 0;
+
+  public textStart: number = 0;
+  public textEnd: number = 0;
+
   /** Primitives from terminal buffer. */
+  public column = -1;
   public content = 0;
   public fg = 0;
   public bg = 0;
@@ -34,14 +52,11 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** JS string of the content. */
   public getChars(): string {
-    if (this.content & Content.IS_COMBINED_MASK) {
-      return this.combinedData;
-    }
-    if (this.content & Content.CODEPOINT_MASK) {
-      return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
-    }
-    return '';
+    if (this.textStart === this.textEnd || this.bufferLine === undefined)
+      return '';
+    return this.bufferLine._getChars(this);
   }
+
   /**
    * Codepoint of cell
    * Note this returns the UTF32 codepoint of single chars,

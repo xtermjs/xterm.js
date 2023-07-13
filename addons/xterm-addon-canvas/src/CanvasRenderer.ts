@@ -39,7 +39,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     private readonly _bufferService: IBufferService,
     private readonly _charSizeService: ICharSizeService,
     private readonly _optionsService: IOptionsService,
-    characterJoinerService: ICharacterJoinerService,
+    characterJoinerService: ICharacterJoinerService, // FIXME remove
     coreService: ICoreService,
     private readonly _coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
@@ -48,7 +48,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     super();
     const allowTransparency = this._optionsService.rawOptions.allowTransparency;
     this._renderLayers = [
-      new TextRenderLayer(this._terminal, this._screenElement, 0, allowTransparency, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService, _themeService),
+      new TextRenderLayer(this._terminal, this._screenElement, 0, allowTransparency, this._bufferService, this._optionsService, decorationService, this._coreBrowserService, _themeService),
       new SelectionRenderLayer(this._terminal, this._screenElement, 1, this._bufferService, this._coreBrowserService, decorationService, this._optionsService, _themeService),
       new LinkRenderLayer(this._terminal, this._screenElement, 2, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService, _themeService),
       new CursorRenderLayer(this._terminal, this._screenElement, 3, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService, _themeService)

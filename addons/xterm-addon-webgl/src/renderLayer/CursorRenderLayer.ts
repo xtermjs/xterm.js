@@ -29,9 +29,9 @@ const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
-  private _cursorRenderers: {[key: string]: (terminal: Terminal, x: number, y: number, cell: ICellData) => void};
+  private _cursorRenderers: {[key: string]: (terminal: Terminal, x: number, y: number, cell: CellData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
-  private _cell: ICellData = new CellData();
+  private _cell: CellData = new CellData();
 
   constructor(
     terminal: Terminal,
@@ -208,14 +208,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _renderBarCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
+  private _renderBarCursor(terminal: Terminal, x: number, y: number, cell: CellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillLeftLineAtCell(x, y, this._optionsService.rawOptions.cursorWidth);
     this._ctx.restore();
   }
 
-  private _renderBlockCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
+  private _renderBlockCursor(terminal: Terminal, x: number, y: number, cell: CellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillCells(x, y, cell.getWidth(), 1);
@@ -224,14 +224,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.restore();
   }
 
-  private _renderUnderlineCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
+  private _renderUnderlineCursor(terminal: Terminal, x: number, y: number, cell: CellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 
-  private _renderBlurCursor(terminal: Terminal, x: number, y: number, cell: ICellData): void {
+  private _renderBlurCursor(terminal: Terminal, x: number, y: number, cell: CellData): void {
     this._ctx.save();
     this._ctx.strokeStyle = this._themeService.colors.cursor.css;
     this._strokeRectAtCell(x, y, cell.getWidth(), 1);
