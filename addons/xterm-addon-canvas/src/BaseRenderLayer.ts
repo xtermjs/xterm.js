@@ -369,7 +369,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     const chars = cell.getChars();
     this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
 
-    if (this._charAtlas === undefined || this._charAtlas === null) {
+    if (!this._charAtlas) {
       return;
     }
 
