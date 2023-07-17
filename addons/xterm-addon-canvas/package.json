@@ -7,7 +7,7 @@
   },
   "main": "lib/xterm-addon-canvas.js",
   "types": "typings/xterm-addon-canvas.d.ts",
-  "repository": "https://github.com/xtermjs/xterm.js",
+  "repository": "https://github.com/lewis-sanchez/xterm.js",
   "license": "MIT",
   "keywords": [
     "terminal",
