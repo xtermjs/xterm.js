@@ -73,6 +73,8 @@ export const enum Content {
   WIDTH_SHIFT = 22
 }
 
+export const NULL_CELL_WORD = 1 << Content.WIDTH_MASK;
+
 export const enum Attributes {
   /**
    * bit 1..8     blue in RGB, color in P256 and P16

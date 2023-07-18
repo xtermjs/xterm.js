@@ -54,25 +54,27 @@ export class DomRendererRowFactory {
     // otherwise the mouse hover logic might mark the wrong elements as underlined.
 
     const fragment = this._document.createDocumentFragment();
+    let cell = this._workCell;
 
     //const joinedRanges = this._characterJoinerService.getJoinedCharacters(row); // FIXME
+
     // Find the line length first, this prevents the need to output a bunch of
     // empty cells at the end. This cannot easily be integrated into the main
     // loop below because of the colCount feature (which can be removed after we
     // properly support reflow and disallow data to go beyond the right-side of
     // the viewport).
-    let lineLength = 0;
-    for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
-      // FIXME optimize
-      if (lineData.loadCell(x, this._workCell).getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+    let lineLength = 0; // FIXME optimize!
+    lineData.scanInit(cell);
+    let rawLength = Math.min(lineData.length, cols);
+    for (let x = 0; x < rawLength; x++) {
+      lineData.scanNext(cell, 1, 0);
+      if (cell.getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
         lineLength = x + 1;
-        break;
       }
     }
 
     const colors = this._themeService.colors;
     let elemIndex = -1;
-    let cell = this._workCell;
     lineData.scanInit(cell);
 
     let x = 0;

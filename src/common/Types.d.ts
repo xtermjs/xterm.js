@@ -257,9 +257,9 @@ export interface IBufferLine {
   setFromCodePoint(cursor: ICellData, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
   setAttributes(cursor: ICellData, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
   setCodePoint(cursor: ICellData, codePoint: number, width: number): void;
-  addToPrecedingGrapheme(cursor: ICellData, codePoint: number, width: number): void;
+  addToPrecedingGrapheme(cursor: ICellData, newText: string, width: number): void;
   insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
-  deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
+  deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
   replaceCols(cursor: ICellData, count: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;

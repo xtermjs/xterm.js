@@ -555,7 +555,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // since an empty cell is only set by fullwidth chars
           bufferRow.addCodepointToCell(this._activeBuffer.x - 2, code);
         } else*/ {
-          bufferRow.addToPrecedingGrapheme(cursor, code, chWidth);
+          bufferRow.addToPrecedingGrapheme(cursor, stringFromCodePoint(code), chWidth);
           //bufferRow.addCodepointToCell(this._activeBuffer.x - 1, code);
         }
         continue;
@@ -1126,12 +1126,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.replaceCells(
-      start,
-      end,
-      this._activeBuffer.getNullCell(this._eraseAttrData()),
-      respectProtect
-    );
+    const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
+    if (respectProtect) {
+      line.replaceCells(start, end, fill, respectProtect);
+    } else {
+      line.deleteCells(start, end - start, fill);
+    }
     if (clearWrap) {
       line.isWrapped = false;
     }
@@ -1145,7 +1145,12 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
     if (line) {
-      line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
+      const fillData = this._activeBuffer.getNullCell(this._eraseAttrData());
+      if (respectProtect) {
+        line.fill(fillData, respectProtect);
+      } else {
+        line.deleteCells(0, line.length, fillData);
+      }
       this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
       line.isWrapped = false;
     }
@@ -1375,8 +1380,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(
         this._activeBuffer.x,
         params.params[0] || 1,
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
@@ -1443,7 +1447,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
@@ -1522,7 +1526,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
@@ -1541,9 +1545,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor();
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
     if (line) {
-      line.replaceCells(
-        this._activeBuffer.x,
-        this._activeBuffer.x + (params.params[0] || 1),
+      line.deleteCells(
+        this._activeBuffer.x, params.params[0] || 1,
         this._activeBuffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);

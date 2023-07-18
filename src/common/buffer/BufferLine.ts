@@ -5,7 +5,7 @@
 
 import { CharData, IBufferLine, ICellData, IAttributeData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content, StyleFlags, BgFlags, FgFlags } from 'common/buffer/Constants';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, NULL_CELL_WORD, WHITESPACE_CELL_CHAR, Content, StyleFlags, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 
@@ -30,7 +30,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
   abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
   abstract replaceCols(cursor: ICellData, count: number, fillCellData: ICellData, respectProtect?: boolean): void;
   // abstract addCodepointToCell(index: number, codePoint: number): void;
-  abstract addToPrecedingGrapheme(cursor: ICellData, codePoint: number, width: number): void;
+  abstract addToPrecedingGrapheme(cursor: ICellData, newText: string, width: number): void;
   abstract previousCodePoint(cell: ICellData): number;
   abstract resize(cols: number, fillCellData: ICellData): boolean;
   abstract fill(fillCellData: ICellData, respectProtect: boolean): void;
@@ -104,7 +104,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
    * @deprecated use these when only one value is needed, otherwise use `loadCell`
    */
   public getWidth(index: number): number {
-    return this.loadCell(index, new CellData()).content >> Content.WIDTH_SHIFT;
+    return this.loadCell(index, new CellData()).content >>> Content.WIDTH_SHIFT;
   }
 
   /** Test whether content has width. @deprecated */
@@ -150,7 +150,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
    * Since the input handler see the incoming chars as UTF32 codepoints,
    * it gets an optimized access method.
    */
-  public setFromCodePoint(cursor: ICellData, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
+    public setFromCodePoint(cursor: ICellData, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
     this.setAttributes(cursor, fg, bg, eAttrs);
     this.setCodePoint(cursor, codePoint, width);
   }
@@ -172,12 +172,12 @@ export abstract class AbstractBufferLine implements IBufferLine {
     return this.loadCell(index, new CellData()).isCombined();
   }
 
-  public deleteCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
+  public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
     pos %= this.length;
     let cursor = new CellData();
     this.scanInit(cursor);
     this.scanNext(cursor, pos, 0);
-    this.deleteCols(cursor, n, eraseAttr ? eraseAttr.bg & 0x3ffffff : 0);
+    this.deleteCols(cursor, n, fillCellData.bg);
   }
 
   /** Returns the string content of the cell. @deprecated  */
@@ -202,9 +202,9 @@ const enum DataKind { // 4 bits
   STYLE_FLAGS = 3, // lower 26 bits is StyleFlags
   SKIP_COLUMNS = 4, // empty ("null") columns (20 bit count)
 
-  // The following have 20 bits length (in 16-bit code units).
+  // The following have 20 bits length (number of 16-bit code units).
   // Narrow vs wide assumes a monospace font.
-  // Future will support variable-width fonts; then treat all as narrow.
+  // Future: maybe support variable-width fonts; then treat all as narrow.
   TEXT_w1 = 5, // Text in basic plane, narrow, 1 character per grapheme
   TEXT_w2 = 6, // Text in basic plane, wide, 1 character per grapheme
   // The following have 20 bits length and 8 bits (high-order)
@@ -228,25 +228,35 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
   private static dataIndex(cell: CellData): number { return cell._stateM; }
   /** Index in _text of start of string for "current chunk". */
   private static textIndex(cell: CellData): number { return cell._stateN; }
-  /** The "current position" is this many columns past into the current chunk.
+
+  /** The "current position" is this many columns into the current chunk.
+   * If W is the wStrLen of the chunk, then valid values are:
+   * 0..W (if TEXT_w1); 0..2*W (if TEXT_w2); 0..1 (if CLUSTER_w1);
+   * 0..2 (if CLUSTER_w2). (Odd values of TEXT_w2 or CLUSTER_w2 are only
+   * allowed as temporary intermediate positions; except for appending, it is
+   * an error to try modify *part* of a cluster or a wide character,
+   * the effect will that the entire cluster or wide character is cleared.)
    * Normally non-zero except right after initialization or backwards movement.
    * I.e. when at the end of a N-column chunk, column offset should be N,
    * rather than offset 0 in the next chunk.
    */
   private static columnOffset(cell: CellData): number { return cell._stateA; }
+
   private static setPosition(cell: CellData, idata: number, itext: number, columnOffset: number): void {
     cell._stateM = idata;
     cell._stateN = itext;
-    cell._stateA = columnOffset;
+    cell._stateA = columnOffset; // See note at columnOffset
   }
   /** From a Uint23 in _data, extract the DataKind bits. */
-  private static wKind(word: number): DataKind { return word >> 28; }
+  private static wKind(word: number): DataKind { return word >>> 28; }
   private static wKindIsText(kind: DataKind): boolean { return kind >= DataKind.TEXT_w1 && kind <= DataKind.CLUSTER_w2; }
   private static wKindIsTextOrSkip(kind: DataKind): boolean { return kind >= DataKind.SKIP_COLUMNS && kind <= DataKind.CLUSTER_w2; }
   /** From a Uint23 in _data, extract length of string within _text.
     * Assumes kind is TEXT_w1, TEXT_w2, CLUSTER_w1, CLUSTER W2. */
   private static wStrLen(word: number): number { return word & 0xfffff; }
-  private static wSet1(kind: DataKind, value: number): number { return (kind << 28) | (value & 0x0fffffff); }
+  private static wSet1(kind: DataKind, value: number): number {
+    return (kind << 28) | (value & 0x0fffffff);
+  }
   //private static wSet2(kind: DataKind, start: number, len: number): number { return (kind << 28) | (start & 0x3ffff) | ((len & 0x3dd) << 18); }
 
   scanInit(cursor: ICellData): void {
@@ -412,16 +422,17 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     }
   }
 
+  /**
+   * Set character following the cursor.
+   */
   public setCodePoint(cursor: ICellData, codePoint: number, width: number): void {
     const cell = cursor as CellData;
-
     let idata = BufferLine.dataIndex(cell);
     let itext = BufferLine.textIndex(cell);
     let word = idata < this._dataLength ? this._data[idata] : NULL_DATA_WORD;
     let kind = BufferLine.wKind(word);
     const wlen = BufferLine.wStrLen(word);
     let colOffset = BufferLine.columnOffset(cell);
-    const appending = width * colOffset >= wlen;
     codePoint &= Content.HAS_CONTENT_MASK;
     if (codePoint === 0) {
       if (kind === DataKind.SKIP_COLUMNS && colOffset < wlen) {
@@ -434,21 +445,24 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         this.addEmptyDataElements(idata, 1);
         this._data[++idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1);
         BufferLine.setPosition(cell, idata, itext, 0);
+        return;
       }
-      return;
     }
 
     const newGlyph = stringFromCodePoint(codePoint);
-    if ((kind === DataKind.TEXT_w1 && width === 1)
-        || (kind === DataKind.TEXT_w2 && width === 2)) {
-        if (appending) {
+    const newLength = newGlyph.length;
+    if (newLength === 1
+        && ((kind === DataKind.TEXT_w1 && width === 1)
+            || (kind === DataKind.TEXT_w2 && width === 2
+                && (colOffset & 1) === 0))) {
+        if (width * colOffset >= wlen) {
           this.deleteCols(cell, width, -1/*???*/);
           this._data[idata] = BufferLine.wSet1(kind, wlen+1);
         }
         const charOffset = itext + (width == 2 ? colOffset >> 1 : colOffset);
         this._text = this._text.substring(0, charOffset)
             + newGlyph
-            + (appending ? '' : this._text.substring(charOffset + 1));
+            + this._text.substring(charOffset + 1);
     } else {
       this.deleteCols(cell, width, -1/*???*/);
         if (idata < this._dataLength && BufferLine.wKindIsTextOrSkip(kind)) {
@@ -458,25 +472,64 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         } else {
           this.addEmptyDataElements(idata, 1);
         }
-      kind = width == 2 ? DataKind.TEXT_w2
-          : DataKind.TEXT_w1;
-      this._data[idata] = BufferLine.wSet1(kind, newGlyph.length);
+      kind = newLength === 1
+        ? (width == 2 ? DataKind.TEXT_w2 : DataKind.TEXT_w1)
+        : (width == 2 ? DataKind.CLUSTER_w2 : DataKind.CLUSTER_w1);
+      this._data[idata] = BufferLine.wSet1(kind, newLength);
       this._text = this._text.substring(0, itext)
           + newGlyph
-          + (appending ? '' : this._text.substring(itext));
+          + this._text.substring(itext);
       colOffset = 0;
     }
     BufferLine.setPosition(cell, idata, itext, colOffset);
   }
 
+  // MERGE INTO setCluster
   /**
    * Add a codepoint to a cell from input handler.
    * During input stage combining chars with a width of 0 follow and stack
    * onto a leading char. Since we already set the attrs
    * by the previous `setDataFromCodePoint` call, we can omit it here.
    */
-  public addToPrecedingGrapheme(cursor: ICellData, codePoint: number, width: number): void {
-    alert("addToPrecedingGrapheme");
+  public addToPrecedingGrapheme(cell: ICellData, newText: string, width: number): void {
+    const cursor = cell as CellData;
+    let itext = BufferLine.textIndex(cursor);
+    let idata = BufferLine.dataIndex(cursor);
+    const colOffset = BufferLine.columnOffset(cursor);
+    if (idata >= this._dataLength || colOffset === 0) {
+        return;
+    }
+    let word = this._data[idata];
+    let kind = BufferLine.wKind(word);
+    let oldWidth =
+      (kind === DataKind.TEXT_w2 || kind === DataKind.CLUSTER_w2) ? 2 : 1;
+    const newWidth = Math.max(oldWidth, width);
+    const at = itext + colOffset;
+    this._text = this._text.substring(0, at) + newText
+          + this._text.substring(at);
+    const wlen = BufferLine.wStrLen(word);
+    const newLength = newText.length;
+    if (kind === DataKind.CLUSTER_w1 || kind === DataKind.CLUSTER_w2) {
+      if (colOffset !== oldWidth) {
+        return;
+      }
+      kind = width >= 2 ? DataKind.CLUSTER_w2 : kind;
+      this._data[idata] = BufferLine.wSet1(kind, BufferLine.wStrLen(word) + newLength);
+    } else if (kind === DataKind.TEXT_w1 || kind === DataKind.TEXT_w2) {
+      if (colOffset !== wlen * oldWidth) {
+        return;
+      }
+      BufferLine.setPosition(cursor, idata, itext, colOffset - oldWidth);
+      this.splitWord(cursor, 0);
+      idata = BufferLine.dataIndex(cursor);
+      itext = BufferLine.textIndex(cursor);
+      kind = newWidth >= 2 ?  DataKind.CLUSTER_w2 : DataKind.CLUSTER_w1;
+      word = this._data[idata];
+      this._data[idata] = BufferLine.wSet1(kind, BufferLine.wStrLen(word) + newLength);
+    } else {
+      return;
+    }
+    BufferLine.setPosition(cursor, idata, itext, newWidth);
     /*
     let content = this._data[index * CELL_SIZE + Cell.CONTENT];
     if (content & Content.IS_COMBINED_MASK) {
@@ -573,12 +626,16 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     } else {
       const word = this._data[idata];
       const wlen = BufferLine.wStrLen(word);
-      if (colOffset === wlen) {
+      const kind = BufferLine.wKind(word);
+      const atEnd = (kind === DataKind.TEXT_w1 || kind === DataKind.TEXT_w2)
+            ? colOffset === wlen * (kind - DataKind.TEXT_w1 + 1)
+            : colOffset === (kind - DataKind.CLUSTER_w1 + 1);
+      if (atEnd) {
         if (extraWordsToAdd) {
           this.addEmptyDataElements(idata + 1, add);
         }
         idata++;
-        itext += colOffset;
+        itext += wlen;
       } else {
         const kind = BufferLine.wKind(word);
         this._data[idata] = BufferLine.wSet1(kind, colOffset);
@@ -627,7 +684,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
 
     // handle fullwidth at start: reset cell one to the left if start is second cell of a wide char
     if (start && this.getWidth(start - 1) === 2) {
-      this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || newU733 ExtendedAttrs());
     }
     // handle fullwidth at last cell + 1: reset to empty cell if it is second part of a wide char
     if (end < this.length && this.getWidth(end - 1) === 2) {
@@ -644,6 +701,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
 
   /**
    * Move cursor forward the specified number of columns.
+   * After, getChars() is the last character whose start edge is traversed.
    */
   scanNext(cell: ICellData, n: number = 1, flags: number = 0): number {
     const cursor = cell as CellData;
@@ -651,15 +709,6 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     let itext = BufferLine.textIndex(cursor);
     let col = BufferLine.columnOffset(cursor);
     let todo = n;
-    /*
-    if (inWide) {
-      todo++;
-      inWide = false;
-      }
-    */
-    // while (todo > 0) {
-    //   if (idata >= this._dataLength)
-    //     break;
     while (idata < this._dataLength) {
       const word = this._data[idata];
       const kind = BufferLine.wKind(word);
@@ -670,7 +719,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         case DataKind.CLUSTER_w2:
           w = kind + 1 - DataKind.CLUSTER_w1;
           if (col + todo > w) {
-            todo -= w;
+            todo -= w - col;
             col = 0;
             idata++;
             itext += wlen;
@@ -710,18 +759,19 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         case DataKind.TEXT_w2:
           w = kind + 1 - DataKind.TEXT_w1; // 1, or 2 if wide characters
           if (col + todo > w * wlen) {
-              todo -= w * wlen - col;
-              idata++;
-              itext += wlen;
-              col = 0;
+            todo -= w * wlen - col;
+            idata++;
+            itext += wlen;
+            col = 0;
           } else {
+            col += todo;
             const wshift = w > 1 ? 1 : 0;
-            const start = itext + (col + todo - 1) >> wshift;
+            const start = itext + ((col - 1) >> wshift);
             if (w > 1 && (col & 1) !== 0)
-              this._setChars(cursor, 0, 0, 0);
+                this._setChars(cursor, 0, 0, 0);
             else
-              this._setChars(cursor, start, start + 1, w);
-            BufferLine.setPosition(cursor, idata, itext, col + todo);
+                this._setChars(cursor, start, start + 1, w);
+            BufferLine.setPosition(cursor, idata, itext, col);
             return 0;
         }
       }
@@ -814,43 +864,50 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         case DataKind.TEXT_w1:
         case DataKind.TEXT_w2:
           w = kind - DataKind.TEXT_w1; // 0, or 1 if wide characters
+          const tstart = (colOffset >> w);
+          const tend = Math.min((colOffset + todo) >> w,  wlen);
           if (colOffset === 0 && (wlen << w) <= todo) {
             dskip_first = dskip_first < 0 ? idata : dskip_first;
             dskip_last = idata;
-            if (tskip_first < 0)
-              tskip_first = itext;
-            tskip_last = itext + wlen;
             todo -= wlen << w;
           } else {
-            const tstart = (colOffset >> w);
-            const tend = Math.min((colOffset + todo) >> w,  wlen);
-            if (tskip_first < 0)
-              tskip_first = itext + tstart;
-            tskip_last = itext + tend;
             const delta = tend - tstart;
             this._data[idata] = BufferLine.wSet1(kind, wlen - delta);
             todo -= delta << w;
           }
+          if (tskip_first < 0)
+            tskip_first = itext + tstart;
+          tskip_last = itext + tend;
+          itext += wlen;
           colOffset = 0;
           break;
         case DataKind.CLUSTER_w1:
         case DataKind.CLUSTER_w2:
           w = kind - DataKind.CLUSTER_w1; // 0, or 1 if wide characters
-          if (colOffset === 0 && wlen << w <= todo) {
+          if (colOffset < (1 << w)) {
             dskip_first = dskip_first < 0 ? idata : dskip_first;
             dskip_last = idata;
             if (tskip_first < 0)
               tskip_first = itext;
             tskip_last = itext + wlen;
+            todo -= (1 << w);
+          }
+          /*
+          if (colOffset === 0 && wlen << w <= todo) {
+            dskip_first = dskip_first < 0 ? idata : dskip_first;
+            dskip_last = idata;
+            tskip_last = itext + wlen;
           } else {
-            // FIXME
+            // FIXME - deleting part of grapheme
             wlen = Math.min((colOffset + todo) >> w,  wlen);
-            if (tskip_first < 0)
-              tskip_first = itext + (colOffset >> w);
             tskip_last = itext + wlen;
             this._data[idata] = BufferLine.wSet1(kind, wlen);
           }
+          if (tskip_first < 0)
+            tskip_first = itext + (colOffset >> w);
           todo -= wlen << w;
+          */
+          itext += wlen;
           colOffset = 0;
           break;
       }
@@ -862,6 +919,22 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     if (dskip_first >= 0) {
       this._data.copyWithin(dskip_first, dskip_last + 1, this._dataLength);
       this._dataLength -= dskip_last + 1 - dskip_first;
+    }
+    const deleted = n - todo;
+    idata = BufferLine.dataIndex(cursor);
+    if (idata !== this._dataLength && deleted > 0) {
+      let word0 = this._data[idata];
+      //const wlen = BufferLine.wStrLen(word0);
+      // if kind of idata is SKIP_COLUMN, add deleted
+      // if kind of idata-1 is SKIP_COLUMN, add deleted, adjust coloffset.
+      if (BufferLine.wKind(word0) === DataKind.SKIP_COLUMNS) {
+        this._data[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS,
+                                             BufferLine.wStrLen(word0) + deleted);
+      } else {
+        this.splitWord(cursor, 1);
+        idata = BufferLine.dataIndex(cursor);
+        this._data[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, deleted)
+      }
     }
     if (n === -1) {
       // deleted an extra column because we ended up inside a wide char
@@ -994,18 +1067,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
 
   /** fill a line with fillCharData */
   public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
-    // full branching on respectProtect==true, hopefully getting fast JIT for standard case
-    if (respectProtect) {
-      for (let i = 0; i < this.length; ++i) {
-        if (!this.isProtected(i)) {
-          this.setCell(i, fillCellData);
-        }
-      }
-      return;
-    }
-    for (let i = 0; i < this.length; ++i) { // FIXME OPTIMIZE
-      this.setCell(i, fillCellData);
-    }
+    this.replaceCells(0, this.length, fillCellData, respectProtect);
   }
 
   /** alter to a full copy of line  */
