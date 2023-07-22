@@ -37,7 +37,6 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
-  private _cellToRowElements: Int16Array[] = [];
 
   public dimensions: IRenderDimensions;
 
@@ -96,6 +95,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   // TODO: put metrics calc into lazy tasks
+  // TODO: use relative threshold calc to allow bigger px offsets at bigger font sizes
   private _fontMetrics: Uint8Array = new Uint8Array(1424);
   private _calcFontMetrics(): void {
     const start = Date.now();
@@ -391,10 +391,20 @@ export class DomRenderer extends Disposable implements IRenderer {
       const row = y + this._bufferService.buffer.ydisp;
       const lineData = this._bufferService.buffer.lines.get(row);
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
-      if (!this._cellToRowElements[y] || this._cellToRowElements[y].length !== this._bufferService.cols) {
-        this._cellToRowElements[y] = new Int16Array(this._bufferService.cols);
-      }
-      rowElement.replaceChildren(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols, this._cellToRowElements[y], this._fontMetrics));
+      rowElement.replaceChildren(
+        this._rowFactory.createRow(
+          lineData!,
+          row,
+          row === cursorAbsoluteY,
+          cursorStyle,
+          cursorX,
+          cursorBlink,
+          this.dimensions.css.cell.width,
+          this._bufferService.cols,
+          this._fontMetrics,
+          this._linkState
+        )
+      );
     }
   }
 
@@ -402,6 +412,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
 
+  private _linkState = new Uint8Array(3);
   private _handleLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
   }
@@ -411,55 +422,46 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
-    /**
-     * NOTE: The linkifier may send out of viewport y-values if:
-     * - negative y-value: the link started at a higher line
-     * - y-value >= maxY: the link ends at a line below viewport
-     *
-     * For negative y-values we can simply adjust x = 0,
-     * as higher up link start means, that everything from
-     * (0,0) is a link under top-down-left-right char progression
-     *
-     * Additionally there might be a small chance of out-of-sync x|y-values
-     * from a race condition of render updates vs. link event handler execution:
-     * - (sync) resize: chances terminal buffer in sync, schedules render update async
-     * - (async) link handler race condition: new buffer metrics, but still on old render state
-     * - (async) render update: brings term metrics and render state back in sync
-     */
+    // nomalize coords into viewport borders
     if (y < 0) x = 0;
     if (y2 < 0) x2 = 0;
-
-    // avoid out-of-sync y-values, simply clamp into valid area
-    const maxY = this._cellToRowElements.length - 1;
+    const maxY = this._bufferService.rows - 1;
     y = Math.max(Math.min(y, maxY), 0);
     y2 = Math.max(Math.min(y2, maxY), 0);
-    const elemY = this._cellToRowElements[y];
-    const elemY2 = this._cellToRowElements[y2];
-    if (x >= elemY.length || x2 >= elemY2.length) {
-      // avoid out-of-sync x-values
-      // simply exit early, gets fixed by the next render update
-      return;
-    }
-    x = elemY[x];
-    x2 = elemY2[x2];
 
-    if (x === -1 || x2 === -1) {
-      return;
-    }
+    const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
+    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
+    const cursorBlink = this._optionsService.rawOptions.cursorBlink;
+    const cursorStyle = this._optionsService.rawOptions.cursorStyle;
 
-    while (x !== x2 || y !== y2) {
-      const row = this._rowElements[y];
-      if (!row) {
-        return;
+    // refresh rows within link range
+    this._linkState[0] = +enabled;
+    for (let i = y; i <= y2; ++i) {
+      const rowElement = this._rowElements[i];
+      if (!rowElement) {
+        break;
       }
-      const span = row.children[x] as HTMLElement;
-      if (span) {
-        span.style.textDecoration = enabled ? 'underline' : 'none';
+      if (enabled) {
+        this._linkState[1] = i === y ? x : 0;
+        this._linkState[2] = (i === y2 ? x2 : cols) - 1;
       }
-      if (++x >= cols) {
-        x = 0;
-        y++;
-      }
+      const row = i + this._bufferService.buffer.ydisp;
+      const lineData = this._bufferService.buffer.lines.get(row);
+      rowElement.replaceChildren(
+        this._rowFactory.createRow(
+          lineData!,
+          row,
+          row === cursorAbsoluteY,
+          cursorStyle,
+          cursorX,
+          cursorBlink,
+          this.dimensions.css.cell.width,
+          this._bufferService.cols,
+          this._fontMetrics,
+          this._linkState
+        )
+      );
     }
+    this._linkState[0] = 0;
   }
 }
