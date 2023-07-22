@@ -75,8 +75,8 @@ export class DomRendererRowFactory {
 
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
-    let old_bg = 0;
-    let old_fg = 0;
+    let oldBg = 0;
+    let oldFg = 0;
 
     let x = 0;
     for (; x < lineLength; x++) {
@@ -121,27 +121,27 @@ export class DomRendererRowFactory {
 
 
 
-      //const charElement = this._document.createElement('span');
+      // const charElement = this._document.createElement('span');
       if (!charElement) {
         charElement = this._document.createElement('span');
       } else {
         const cc = cell.getCode();
-        if (cellAmount && width === 1 && cc < 1424 && !metrics[cc] && cell.bg === old_bg && cell.fg === old_fg) {
+        if (cellAmount && width === 1 && cc < 1424 && !metrics[cc] && cell.bg === oldBg && cell.fg === oldFg) {
           charElement.textContent += cell.getChars() || WHITESPACE_CELL_CHAR;
           cellAmount++;
           if (cellAmount > 1) {
             charElement.style.width = `${cellWidth * cellAmount}px`;
           }
-          old_bg = cell.bg;
-          old_fg = cell.fg;
+          oldBg = cell.bg;
+          oldFg = cell.fg;
           continue;
         } else {
           charElement = this._document.createElement('span');
           cellAmount = 0;
         }
       }
-      old_bg = cell.bg;
-      old_fg = cell.fg;
+      oldBg = cell.bg;
+      oldFg = cell.fg;
       const ccc = cell.getCode();
       if (width === 1 && ccc < 1424 && !metrics[ccc]) cellAmount++;
 
