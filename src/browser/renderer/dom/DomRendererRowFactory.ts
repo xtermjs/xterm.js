@@ -75,6 +75,7 @@ export class DomRendererRowFactory {
 
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
+    let text = '';
     let oldBg = 0;
     let oldFg = 0;
 
@@ -133,33 +134,30 @@ export class DomRendererRowFactory {
          * - fg/bg did not change
          * - char not part a selection
          */
-        // FIMXE: add combined check, add ext underline attr
+        // FIMXE: add combined check, add ext underline attr, fix \xa0 text handling as below
         if (
           cellAmount && width === 1
           && cell.bg === oldBg && cell.fg === oldFg
           && cc < 1424 && !metrics[cc]
           && !isInSelection
         ) {
-          charElement.textContent += cell.getChars() || WHITESPACE_CELL_CHAR;
+          text += cell.getChars() || WHITESPACE_CELL_CHAR;
           cellAmount++;
-          if (cellAmount > 1) {
-            charElement.style.width = `${cellWidth * cellAmount}px`;
-          }
           oldBg = cell.bg;
           oldFg = cell.fg;
           continue;
         } else {
+          if (cellAmount) {
+            charElement.textContent = text;
+            charElement.style.width = `${cellWidth * cellAmount}px`;
+          }
           charElement = this._document.createElement('span');
           cellAmount = 0;
+          text = '';
         }
       }
       oldBg = cell.bg;
       oldFg = cell.fg;
-
-      // account first char for later merge if it meets the start conditions
-      if (width === 1 && cc < 1424 && !metrics[cc] && !isInSelection) {
-        cellAmount++;
-      }
 
 
 
@@ -214,15 +212,15 @@ export class DomRendererRowFactory {
       }
 
       if (cell.isInvisible()) {
-        charElement.textContent = WHITESPACE_CELL_CHAR;
+        text = WHITESPACE_CELL_CHAR;
       } else {
-        charElement.textContent = cell.getChars() || WHITESPACE_CELL_CHAR;
+        text = cell.getChars() || WHITESPACE_CELL_CHAR;
       }
 
       if (cell.isUnderline()) {
         charElement.classList.add(`${UNDERLINE_CLASS}-${cell.extended.underlineStyle}`);
-        if (charElement.textContent === ' ') {
-          charElement.textContent = '\xa0'; // = &nbsp;
+        if (text === ' ') {
+          text = '\xa0'; // = &nbsp;
         }
         if (!cell.isUnderlineColorDefault()) {
           if (cell.isUnderlineColorRGB()) {
@@ -239,8 +237,8 @@ export class DomRendererRowFactory {
 
       if (cell.isOverline()) {
         charElement.classList.add(OVERLINE_CLASS);
-        if (charElement.textContent === ' ') {
-          charElement.textContent = '\xa0'; // = &nbsp;
+        if (text === ' ') {
+          text = '\xa0'; // = &nbsp;
         }
       }
 
@@ -364,10 +362,26 @@ export class DomRendererRowFactory {
           }
       }
 
+
+      // account first char for later merge if it meets the start conditions
+      if (width === 1 && cc < 1424 && !metrics[cc] && !isInSelection) {
+        cellAmount++;
+      } else {
+        // every non-mergeable char gets directly written to its own span
+        charElement.textContent = text;
+      }
+
+
       fragment.appendChild(charElement);
       cellMap[x] = ++elemIndex;
 
       x = lastCharX;
+    }
+
+    // postfix width and text of last merged span
+    if (charElement && cellAmount) {
+      charElement.textContent = text;
+      charElement.style.width = `${cellWidth * cellAmount}px`;
     }
 
     // since the loop above might exit early not handling all cells,
