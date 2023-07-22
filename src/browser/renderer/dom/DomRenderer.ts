@@ -13,6 +13,7 @@ import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { IdleTaskQueue } from 'common/TaskQueue';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -22,6 +23,14 @@ const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 
 let nextTerminalId = 1;
+
+// font metrics calc settings
+const enum FontMetrics {
+  START = 32,         // start codepoint
+  MAX = 1424,         // only calc up to this codepoint
+  BATCH_SIZE = 30,    // amount of codepoints to calc in a single batch (sync & blocking)
+  THRESHOLD = 0.005   // relative deviation from cell width
+}
 
 /**
  * A fallback renderer for when canvas is slow. This is not meant to be
@@ -38,6 +47,9 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
   private _linkState = new Uint8Array(3);
+  private _fontMetrics: Uint8Array = new Uint8Array(FontMetrics.MAX);
+  private _metricsQueue = new IdleTaskQueue();
+  private _metricsPos: number = FontMetrics.START;
 
   public dimensions: IRenderDimensions;
 
@@ -92,26 +104,36 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._dimensionsStyleElement.remove();
     }));
 
-    this._calcFontMetrics();
+    this._cacheMetrics();
   }
 
-  // TODO: put metrics calc into lazy tasks
-  // TODO: use relative threshold calc to allow bigger px offsets at bigger font sizes
-  private _fontMetrics: Uint8Array = new Uint8Array(1424);
-  private _calcFontMetrics(): void {
-    const start = Date.now();
-    this._fontMetrics.fill(0xFF);
-    const threshold = 0.05;
+  // TODO: fix bad render runtime by scheduling across multiple elements on a fragment
+  //       better with requestAnimationFrame? (might not work with IdleTaskQueue?)
+  private _batchedMetrics(): boolean {
+    const cellWidth = this.dimensions.css.cell.width;
+    const lower = cellWidth * (1 - FontMetrics.THRESHOLD);
+    const upper = cellWidth * (1 + FontMetrics.THRESHOLD);
     const el = document.getElementsByClassName('xterm-char-measure-element')[0];
-    const lower = this.dimensions.css.cell.width - threshold;
-    const upper = this.dimensions.css.cell.width + threshold;
-    for (let i = 32; i < 1424; ++i) {
+    const end = Math.min(this._metricsPos + FontMetrics.BATCH_SIZE, FontMetrics.MAX);
+    for (let i = this._metricsPos; i < end; ++i) {
       el.textContent = String.fromCharCode(i).repeat(10);
       const width = el.getBoundingClientRect().width / 10;
       this._fontMetrics[i] = +(width < lower || width > upper);
     }
     el.textContent = 'W';
-    console.log(Date.now() - start);
+    this._metricsPos = end;
+    if (this._metricsPos >= FontMetrics.MAX) {
+      this._metricsPos = FontMetrics.START;
+      return false;
+    }
+    return true;
+  }
+
+  private _cacheMetrics(): void {
+    this._metricsQueue.clear();
+    this._metricsPos = FontMetrics.START;
+    this._metricsQueue.enqueue(() => this._batchedMetrics());
+    this._fontMetrics.fill(0xFF);
   }
 
   private _updateDimensions(): void {
@@ -367,6 +389,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     // Refresh CSS
     this._injectCss(this._themeService.colors);
+    this._cacheMetrics();
   }
 
   public clear(): void {
