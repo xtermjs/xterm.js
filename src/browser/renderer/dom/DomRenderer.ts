@@ -296,10 +296,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
     // Remove all selections
-    while (this._selectionContainer.children.length) {
-      this._selectionContainer.removeChild(this._selectionContainer.children[0]);
-    }
-
+    this._selectionContainer.replaceChildren();
     this._rowFactory.handleSelectionChanged(start, end, columnSelectMode);
     this.renderRows(0, this._bufferService.rows - 1);
 
