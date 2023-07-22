@@ -78,6 +78,7 @@ export class DomRendererRowFactory {
     let text = '';
     let oldBg = 0;
     let oldFg = 0;
+    let oldExt = 0;
 
     let x = 0;
     for (; x < lineLength; x++) {
@@ -132,14 +133,14 @@ export class DomRendererRowFactory {
          * chars can only be merged on existing span if:
          * - existing span only contains mergeable chars (cellAmount != 0)
          * - glyph is within metrics limits (width === 1 && metrics[cc] == 0)
-         * - fg/bg did not change
-         * - char not part a selection
+         * - fg/bg/ul did not change
+         * - char not part of a selection
          * - char is not cursor
          */
-        // FIMXE: add combined check, add ext underline attr, fix \xa0 text handling as below
+        // FIMXE: add combined check, fix \xa0 text handling as below
         if (
           cellAmount && width === 1
-          && cell.bg === oldBg && cell.fg === oldFg
+          && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext == oldExt
           && cc < 1424 && !metrics[cc]
           && !isInSelection
           && !isCursorCell
@@ -148,6 +149,7 @@ export class DomRendererRowFactory {
           cellAmount++;
           oldBg = cell.bg;
           oldFg = cell.fg;
+          oldExt = cell.extended.ext;
           continue;
         } else {
           if (cellAmount) {
@@ -161,6 +163,7 @@ export class DomRendererRowFactory {
       }
       oldBg = cell.bg;
       oldFg = cell.fg;
+      oldExt = cell.extended.ext;
 
 
 
