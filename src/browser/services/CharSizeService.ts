@@ -69,6 +69,7 @@ class DomMeasureStrategy implements IMeasureStrategy {
     this._measureElement.classList.add('xterm-char-measure-element');
     this._measureElement.textContent = 'W';
     this._measureElement.setAttribute('aria-hidden', 'true');
+    this._measureElement.style.whiteSpace = 'pre';
     this._parentElement.appendChild(this._measureElement);
   }
 

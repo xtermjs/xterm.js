@@ -49,7 +49,7 @@ export class DomRendererRowFactory {
     this._columnSelectMode = columnSelectMode;
   }
 
-  public createRow(lineData: IBufferLine, row: number, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number, cellMap: Int16Array): DocumentFragment {
+  public createRow(lineData: IBufferLine, row: number, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number, cellMap: Int16Array, metrics: Uint8Array): DocumentFragment {
     // NOTE: `cellMap` maps cell positions to a span element index in a row.
     // All positions should be updated, even skipped ones after wide chars or left overs at the end,
     // otherwise the mouse hover logic might mark the wrong elements as underlined.
@@ -72,6 +72,11 @@ export class DomRendererRowFactory {
 
     const colors = this._themeService.colors;
     let elemIndex = -1;
+
+    let charElement: HTMLSpanElement | undefined;
+    let cellAmount = 0;
+    let old_bg = 0;
+    let old_fg = 0;
 
     let x = 0;
     for (; x < lineLength; x++) {
@@ -112,7 +117,37 @@ export class DomRendererRowFactory {
         width = cell.getWidth();
       }
 
-      const charElement = this._document.createElement('span');
+
+
+
+
+      //const charElement = this._document.createElement('span');
+      if (!charElement) {
+        charElement = this._document.createElement('span');
+      } else {
+        const cc = cell.getCode();
+        if (cellAmount && width === 1 && cc < 1424 && !metrics[cc] && cell.bg === old_bg && cell.fg === old_fg) {
+          charElement.textContent += cell.getChars() || WHITESPACE_CELL_CHAR;
+          cellAmount++;
+          if (cellAmount > 1) {
+            charElement.style.width = `${cellWidth * cellAmount}px`;
+          }
+          old_bg = cell.bg;
+          old_fg = cell.fg;
+          continue;
+        } else {
+          charElement = this._document.createElement('span');
+          cellAmount = 0;
+        }
+      }
+      old_bg = cell.bg;
+      old_fg = cell.fg;
+      const ccc = cell.getCode();
+      if (width === 1 && ccc < 1424 && !metrics[ccc]) cellAmount++;
+
+
+
+
       if (width > 1) {
         charElement.style.width = `${cellWidth * width}px`;
       }

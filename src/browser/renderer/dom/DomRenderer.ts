@@ -91,6 +91,26 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._themeStyleElement.remove();
       this._dimensionsStyleElement.remove();
     }));
+
+    this._calcFontMetrics();
+  }
+
+  // TODO: put metrics calc into lazy tasks
+  private _fontMetrics: Uint8Array = new Uint8Array(1424);
+  private _calcFontMetrics(): void {
+    const start = Date.now();
+    this._fontMetrics.fill(0xFF);
+    const threshold = 0.05;
+    const el = document.getElementsByClassName('xterm-char-measure-element')[0];
+    const lower = this.dimensions.css.cell.width - threshold;
+    const upper = this.dimensions.css.cell.width + threshold;
+    for (let i = 32; i < 1424; ++i) {
+      el.textContent = String.fromCharCode(i).repeat(10);
+      const width = el.getBoundingClientRect().width / 10;
+      this._fontMetrics[i] = +(width < lower || width > upper);
+    }
+    el.textContent = 'W';
+    console.log(Date.now() - start);
   }
 
   private _updateDimensions(): void {
@@ -126,7 +146,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` display: inline-block;` +
       ` height: 100%;` +
       ` vertical-align: top;` +
-      ` width: ${this.dimensions.css.cell.width}px` +
+      ` width: ${this.dimensions.css.cell.width}px;` +
+      ` white-space: pre` +
       `}`;
 
     this._dimensionsStyleElement.textContent = styles;
@@ -376,7 +397,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       if (!this._cellToRowElements[y] || this._cellToRowElements[y].length !== this._bufferService.cols) {
         this._cellToRowElements[y] = new Int16Array(this._bufferService.cols);
       }
-      rowElement.replaceChildren(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols, this._cellToRowElements[y]));
+      rowElement.replaceChildren(this._rowFactory.createRow(lineData!, row, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.css.cell.width, this._bufferService.cols, this._cellToRowElements[y], this._fontMetrics));
     }
   }
 
