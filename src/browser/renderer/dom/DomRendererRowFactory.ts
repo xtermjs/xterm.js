@@ -120,13 +120,26 @@ export class DomRendererRowFactory {
 
 
 
+      const isInSelection = this._isCellInSelection(x, row);
+      const cc = cell.getCode();
 
-      // const charElement = this._document.createElement('span');
       if (!charElement) {
         charElement = this._document.createElement('span');
       } else {
-        const cc = cell.getCode();
-        if (cellAmount && width === 1 && cc < 1424 && !metrics[cc] && cell.bg === oldBg && cell.fg === oldFg) {
+        /**
+         * chars can only be merged on existing span if:
+         * - existing span only contains mergeable chars (cellAmount != 0)
+         * - glyph is within metrics limits (width === 1 && metrics[cc] == 0)
+         * - fg/bg did not change
+         * - char not part a selection
+         */
+        // FIMXE: add combined check, add ext underline attr
+        if (
+          cellAmount && width === 1
+          && cell.bg === oldBg && cell.fg === oldFg
+          && cc < 1424 && !metrics[cc]
+          && !isInSelection
+        ) {
           charElement.textContent += cell.getChars() || WHITESPACE_CELL_CHAR;
           cellAmount++;
           if (cellAmount > 1) {
@@ -142,8 +155,11 @@ export class DomRendererRowFactory {
       }
       oldBg = cell.bg;
       oldFg = cell.fg;
-      const ccc = cell.getCode();
-      if (width === 1 && ccc < 1424 && !metrics[ccc]) cellAmount++;
+
+      // account first char for later merge if it meets the start conditions
+      if (width === 1 && cc < 1424 && !metrics[cc] && !isInSelection) {
+        cellAmount++;
+      }
 
 
 
@@ -269,7 +285,6 @@ export class DomRendererRowFactory {
       });
 
       // Apply selection foreground if applicable
-      const isInSelection = this._isCellInSelection(x, row);
       if (!isTop) {
         if (colors.selectionForeground && isInSelection) {
           fgColorMode = Attributes.CM_RGB;
