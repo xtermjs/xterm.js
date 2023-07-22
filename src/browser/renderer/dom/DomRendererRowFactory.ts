@@ -138,7 +138,6 @@ export class DomRendererRowFactory {
          * - char not part of a selection
          * - char is not cursor
          */
-        // FIMXE: add combined check, fix \xa0 text handling as below
         if (
           cellAmount && width === 1 && !isCombined
           && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext === oldExt
@@ -146,7 +145,11 @@ export class DomRendererRowFactory {
           && !isInSelection
           && !isCursorCell
         ) {
-          text += cell.getChars() || WHITESPACE_CELL_CHAR;
+          let c = cell.isInvisible() ? WHITESPACE_CELL_CHAR : (cell.getChars() || WHITESPACE_CELL_CHAR);
+          if (c === ' ' && (cell.isUnderline() || cell.isOverline())) {
+            c = '\xa0';
+          }
+          text += c;
           cellAmount++;
           oldBg = cell.bg;
           oldFg = cell.fg;
