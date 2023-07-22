@@ -37,6 +37,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
+  private _linkState = new Uint8Array(3);
 
   public dimensions: IRenderDimensions;
 
@@ -412,7 +413,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
 
-  private _linkState = new Uint8Array(3);
   private _handleLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
   }

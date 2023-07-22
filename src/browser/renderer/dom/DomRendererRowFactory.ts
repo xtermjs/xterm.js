@@ -61,10 +61,6 @@ export class DomRendererRowFactory {
     metrics: Uint8Array,
     linkState: Uint8Array
   ): DocumentFragment {
-    // NOTE: `cellMap` maps cell positions to a span element index in a row.
-    // All positions should be updated, even skipped ones after wide chars or left overs at the end,
-    // otherwise the mouse hover logic might mark the wrong elements as underlined.
-
     const fragment = this._document.createDocumentFragment();
 
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
@@ -130,9 +126,6 @@ export class DomRendererRowFactory {
         width = cell.getWidth();
       }
 
-
-
-
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
       const cc = cell.getCode();
@@ -149,6 +142,7 @@ export class DomRendererRowFactory {
          * - fg/bg/ul did not change
          * - char not part of a selection
          * - char is not cursor
+         * - underline from hover state did not change
          */
         if (
           cellAmount && width === 1 && !isCombined
@@ -183,9 +177,6 @@ export class DomRendererRowFactory {
       oldFg = cell.fg;
       oldExt = cell.extended.ext;
       oldLinkHover = isLinkHover;
-
-
-
 
       if (width > 1) {
         charElement.style.width = `${cellWidth * width}px`;
@@ -271,6 +262,7 @@ export class DomRendererRowFactory {
         charElement.classList.add(STRIKETHROUGH_CLASS);
       }
 
+      // apply link hover underline late, effectively overrides any previous text-decoration settings
       if (isLinkHover) {
         charElement.style.textDecoration = 'underline';
       }
