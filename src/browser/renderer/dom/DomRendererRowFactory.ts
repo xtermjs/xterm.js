@@ -125,6 +125,7 @@ export class DomRendererRowFactory {
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
       const cc = cell.getCode();
+      const isCombined = cell.isCombined();
 
       if (!charElement) {
         charElement = this._document.createElement('span');
@@ -139,8 +140,8 @@ export class DomRendererRowFactory {
          */
         // FIMXE: add combined check, fix \xa0 text handling as below
         if (
-          cellAmount && width === 1
-          && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext == oldExt
+          cellAmount && width === 1 && !isCombined
+          && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext === oldExt
           && cc < 1424 && !metrics[cc]
           && !isInSelection
           && !isCursorCell
@@ -370,7 +371,7 @@ export class DomRendererRowFactory {
 
 
       // account first char for later merge if it meets the start conditions
-      if (width === 1 && cc < 1424 && !metrics[cc] && !isInSelection && !isCursorCell) {
+      if (width === 1 && !isCombined && cc < 1424 && !metrics[cc] && !isInSelection && !isCursorCell) {
         cellAmount++;
       } else {
         // every non-mergeable char gets directly written to its own span
