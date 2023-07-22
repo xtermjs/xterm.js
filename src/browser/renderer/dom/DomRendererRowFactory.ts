@@ -122,6 +122,7 @@ export class DomRendererRowFactory {
 
 
       const isInSelection = this._isCellInSelection(x, row);
+      const isCursorCell = isCursorRow && x === cursorX;
       const cc = cell.getCode();
 
       if (!charElement) {
@@ -133,6 +134,7 @@ export class DomRendererRowFactory {
          * - glyph is within metrics limits (width === 1 && metrics[cc] == 0)
          * - fg/bg did not change
          * - char not part a selection
+         * - char is not cursor
          */
         // FIMXE: add combined check, add ext underline attr, fix \xa0 text handling as below
         if (
@@ -140,6 +142,7 @@ export class DomRendererRowFactory {
           && cell.bg === oldBg && cell.fg === oldFg
           && cc < 1424 && !metrics[cc]
           && !isInSelection
+          && !isCursorCell
         ) {
           text += cell.getChars() || WHITESPACE_CELL_CHAR;
           cellAmount++;
@@ -179,7 +182,7 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (!this._coreService.isCursorHidden && isCursorRow && x === cursorX) {
+      if (!this._coreService.isCursorHidden && isCursorCell) {
         charElement.classList.add(CURSOR_CLASS);
 
         if (cursorBlink) {
@@ -364,7 +367,7 @@ export class DomRendererRowFactory {
 
 
       // account first char for later merge if it meets the start conditions
-      if (width === 1 && cc < 1424 && !metrics[cc] && !isInSelection) {
+      if (width === 1 && cc < 1424 && !metrics[cc] && !isInSelection && !isCursorCell) {
         cellAmount++;
       } else {
         // every non-mergeable char gets directly written to its own span
