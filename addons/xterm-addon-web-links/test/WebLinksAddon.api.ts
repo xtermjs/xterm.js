@@ -113,7 +113,7 @@ async function testHostName(hostname: string): Promise<void> {
 async function pollForLinkAtCell(col: number, row: number, value: string): Promise<void> {
   await page.mouse.move(...(await cellPos(col, row)));
   await pollFor(page, `!!Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').length`, true);
-  const text = await page.evaluate(`Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').map(el => el.textContent).join(' , ');`);
+  const text = await page.evaluate(`Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').map(el => el.textContent).join('');`);
   assert.deepEqual(text, value);
 }
 
