@@ -253,7 +253,7 @@ describe('Search Tests', function (): void {
           { resultCount: 2, resultIndex: 0 }
         ]);
         await writeSync(page, 'abc bc c\\n\\r');
-        await timeout(300);
+        await timeout(500);
         assert.deepStrictEqual(await page.evaluate('window.calls'), [
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 3, resultIndex: 0 }
