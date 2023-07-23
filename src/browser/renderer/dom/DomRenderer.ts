@@ -107,20 +107,40 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._cacheMetrics();
   }
 
-  // TODO: fix bad render runtime by scheduling across multiple elements on a fragment
-  //       better with requestAnimationFrame? (might not work with IdleTaskQueue?)
   private _batchedMetrics(): boolean {
+    const parent = this._screenElement.querySelector('.xterm-helpers');
+    if (!parent) {
+      this._metricsPos = FontMetrics.START;
+      return false;
+    }
+
+    const container = document.createElement('div');
+    container.setAttribute('aria-hidden', 'true');
+    container.style.whiteSpace = 'pre';
+    container.style.overflow = 'hidden';
+    container.style.fontFamily = this._optionsService.rawOptions.fontFamily;
+    container.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
+
     const cellWidth = this.dimensions.css.cell.width;
     const lower = cellWidth * (1 - FontMetrics.THRESHOLD);
     const upper = cellWidth * (1 + FontMetrics.THRESHOLD);
-    const el = document.getElementsByClassName('xterm-char-measure-element')[0];
     const end = Math.min(this._metricsPos + FontMetrics.BATCH_SIZE, FontMetrics.MAX);
+
     for (let i = this._metricsPos; i < end; ++i) {
+      const el = document.createElement('span');
+      el.classList.add('xterm-char-measure-element');
       el.textContent = String.fromCharCode(i).repeat(10);
-      const width = el.getBoundingClientRect().width / 10;
-      this._fontMetrics[i] = +(width < lower || width > upper);
+      container.appendChild(el);
     }
-    el.textContent = 'W';
+    parent.appendChild(container);
+
+    const collection = container.children;
+    for (let i = 0; i < collection.length; ++i) {
+      const width = collection[i].getBoundingClientRect().width / 10;
+      this._fontMetrics[i + this._metricsPos] = +(width < lower || width > upper);
+    }
+    container.remove();
+
     this._metricsPos = end;
     if (this._metricsPos >= FontMetrics.MAX) {
       this._metricsPos = FontMetrics.START;
@@ -445,7 +465,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
-    // nomalize coords into viewport borders
+    // clip coords into viewport
     if (y < 0) x = 0;
     if (y2 < 0) x2 = 0;
     const maxY = this._bufferService.rows - 1;
