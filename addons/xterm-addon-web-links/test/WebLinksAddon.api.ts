@@ -128,9 +128,7 @@ window.term.loadAddon(window._linkaddon);`);
 async function resetAndHover(col: number, row: number): Promise<void> {
   await page.mouse.move(0, 0);
   await page.evaluate(`window._linkStateData = {uri:''};`);
-  // FIXME: pollFor not working here - why?
   await new Promise(r => setTimeout(r, 200));
-  //await pollFor(page, `!!window._linkStateData.uri.length`, false);
   await page.mouse.move(...(await cellPos(col, row)));
   await pollFor(page, `!!window._linkStateData.uri.length`, true);
 }
