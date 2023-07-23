@@ -131,9 +131,9 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   private _cacheMetrics(): void {
     this._metricsQueue.clear();
+    this._fontMetrics.fill(0xFF);
     this._metricsPos = FontMetrics.START;
     this._metricsQueue.enqueue(() => this._batchedMetrics());
-    this._fontMetrics.fill(0xFF);
   }
 
   private _updateDimensions(): void {
