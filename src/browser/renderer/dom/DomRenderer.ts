@@ -444,7 +444,6 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,
-          this._bufferService.cols,
           this._fontMetrics,
           this._linkState
         )
@@ -476,6 +475,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._optionsService.rawOptions.cursorStyle;
+    cols = Math.min(cols, this._bufferService.cols);
 
     // refresh rows within link range
     this._linkState[0] = +enabled;
@@ -499,7 +499,6 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,
-          this._bufferService.cols,
           this._fontMetrics,
           this._linkState
         )

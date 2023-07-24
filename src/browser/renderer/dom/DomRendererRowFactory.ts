@@ -5,7 +5,7 @@
 
 import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes, NULL_CELL_WIDTH } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
@@ -57,27 +57,18 @@ export class DomRendererRowFactory {
     cursorX: number,
     cursorBlink: boolean,
     cellWidth: number,
-    cols: number,
     metrics: Uint8Array,
     linkState: Uint8Array
   ): DocumentFragment {
+
     const fragment = this._document.createDocumentFragment();
-
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
-    // Find the line length first, this prevents the need to output a bunch of
-    // empty cells at the end. This cannot easily be integrated into the main
-    // loop below because of the colCount feature (which can be removed after we
-    // properly support reflow and disallow data to go beyond the right-side of
-    // the viewport).
-    let lineLength = 0;
-    for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
-      if (lineData.loadCell(x, this._workCell).getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
-        lineLength = x + 1;
-        break;
-      }
-    }
-
     const colors = this._themeService.colors;
+
+    let lineLength = lineData.getNoBgTrimmedLength();
+    if (isCursorRow && lineLength < cursorX + 1) {
+      lineLength = cursorX + 1;
+    }
 
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
@@ -89,8 +80,7 @@ export class DomRendererRowFactory {
 
     const isHover = linkState[0];
 
-    let x = 0;
-    for (; x < lineLength; x++) {
+    for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);
       let width = this._workCell.getWidth();
 
@@ -129,6 +119,7 @@ export class DomRendererRowFactory {
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
       const cc = cell.getCode();
+      const isNull = cc === NULL_CELL_CODE && width === NULL_CELL_WIDTH;
       const isCombined = cell.isCombined();
       const isLinkHover = isHover && x >= linkState[1] && x <= linkState[2];
 
@@ -145,9 +136,9 @@ export class DomRendererRowFactory {
          * - underline from hover state did not change
          */
         if (
-          cellAmount && width === 1 && !isCombined
+          cellAmount
+          && (isNull || (width === 1 && !isCombined && cc < 1424 && !metrics[cc]))
           && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext === oldExt
-          && cc < 1424 && !metrics[cc]
           && !isInSelection
           && !isCursorCell
           && isLinkHover === oldLinkHover
@@ -166,7 +157,9 @@ export class DomRendererRowFactory {
         } else {
           if (cellAmount) {
             charElement.textContent = text;
-            charElement.style.width = `${cellWidth * cellAmount}px`;
+            if (cellAmount > 1) {
+              charElement.style.width = `${cellWidth * cellAmount}px`;
+            }
           }
           charElement = this._document.createElement('span');
           cellAmount = 0;
@@ -385,7 +378,7 @@ export class DomRendererRowFactory {
 
 
       // account first char for later merge if it meets the start conditions
-      if (width === 1 && !isCombined && cc < 1424 && !metrics[cc] && !isInSelection && !isCursorCell) {
+      if ((isNull || (width === 1 && !isCombined && cc < 1424 && !metrics[cc])) && !isInSelection && !isCursorCell) {
         cellAmount++;
       } else {
         // every non-mergeable char gets directly written to its own span
@@ -399,7 +392,13 @@ export class DomRendererRowFactory {
     // postfix width and text of last merged span
     if (charElement && cellAmount) {
       charElement.textContent = text;
-      charElement.style.width = `${cellWidth * cellAmount}px`;
+      /*
+       * optimization: if the last merged span has no BG color set, use faster "width: auto",
+       * else use correct px value for aligned BG coloring and BCE
+       */
+      if (cellAmount > 1) {
+        charElement.style.width = (oldBg & Attributes.CM_MASK) ? `${cellWidth * cellAmount}px`: 'auto';
+      }
     }
 
     return fragment;
