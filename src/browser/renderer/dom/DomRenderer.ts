@@ -27,9 +27,9 @@ let nextTerminalId = 1;
 // font metrics calc settings
 const enum FontMetrics {
   START = 32,         // start codepoint
-  MAX = 1424,         // only calc up to this codepoint
+  MAX = 256,          // only calc up to this codepoint (256 means only Basic Latin + Latin-1 Supplement)
   BATCH_SIZE = 30,    // amount of codepoints to calc in a single batch (sync & blocking)
-  THRESHOLD = 0.005   // relative deviation from cell width
+  THRESHOLD = 0.005   // allowed relative deviation from cell width
 }
 
 /**
@@ -122,8 +122,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     container.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
 
     const cellWidth = this.dimensions.css.cell.width;
-    const lower = cellWidth * (1 - FontMetrics.THRESHOLD);
-    const upper = cellWidth * (1 + FontMetrics.THRESHOLD);
+    const lower = 10 * cellWidth * (1 - FontMetrics.THRESHOLD);
+    const upper = 10 * cellWidth * (1 + FontMetrics.THRESHOLD);
     const end = Math.min(this._metricsPos + FontMetrics.BATCH_SIZE, FontMetrics.MAX);
 
     for (let i = this._metricsPos; i < end; ++i) {
@@ -136,7 +136,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     const collection = container.children;
     for (let i = 0; i < collection.length; ++i) {
-      const width = collection[i].getBoundingClientRect().width / 10;
+      const width = collection[i].getBoundingClientRect().width;
       this._fontMetrics[i + this._metricsPos] = +(width < lower || width > upper);
     }
     container.remove();

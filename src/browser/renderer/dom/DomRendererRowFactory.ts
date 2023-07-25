@@ -122,6 +122,7 @@ export class DomRendererRowFactory {
       const isNull = cc === NULL_CELL_CODE && width === NULL_CELL_WIDTH;
       const isCombined = cell.isCombined();
       const isLinkHover = isHover && x >= linkState[1] && x <= linkState[2];
+      const isBoldOrItalic = cell.isBold() && cell.isItalic();
 
       if (!charElement) {
         charElement = this._document.createElement('span');
@@ -378,7 +379,12 @@ export class DomRendererRowFactory {
 
 
       // account first char for later merge if it meets the start conditions
-      if ((isNull || (width === 1 && !isCombined && cc < 1424 && !metrics[cc])) && !isInSelection && !isCursorCell) {
+      if (
+        (isNull || (width === 1 && !isCombined && cc < 1424 && !metrics[cc]))
+        && !isBoldOrItalic
+        && !isInSelection
+        && !isCursorCell
+      ) {
         cellAmount++;
       } else {
         // every non-mergeable char gets directly written to its own span
