@@ -138,7 +138,7 @@ export class DomRendererRowFactory {
          */
         if (
           cellAmount
-          && (isNull || (width === 1 && !isCombined && cc < 1424 && !metrics[cc]))
+          && (isNull || (width === 1 && !isCombined && cc < metrics.length && !metrics[cc]))
           && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext === oldExt
           && !isInSelection
           && !isCursorCell
@@ -380,7 +380,7 @@ export class DomRendererRowFactory {
 
       // account first char for later merge if it meets the start conditions
       if (
-        (isNull || (width === 1 && !isCombined && cc < 1424 && !metrics[cc]))
+        (isNull || (width === 1 && !isCombined && cc < metrics.length && !metrics[cc]))
         && !isBoldOrItalic
         && !isInSelection
         && !isCursorCell
