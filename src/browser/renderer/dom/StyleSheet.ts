@@ -12,7 +12,7 @@ const createCssStyleSheet = (): IStyleSheet => {
       document.adoptedStyleSheets.splice(index, 1);
     },
     setCss(css) {
-      sheet.replace(css);
+      sheet.replaceSync(css);
     }
   };
 };
