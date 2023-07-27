@@ -13,8 +13,9 @@ import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
 import { css } from 'common/Color';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
+import { FontMetrics } from 'browser/renderer/dom/DomRenderer';
 
-const EMPTY_METRICS = new Uint8Array(1024);
+const EMPTY_METRICS = new Uint8Array(FontMetrics.MAX);
 EMPTY_METRICS.fill(0xFF);
 const EMPTY_LINKSTATE = new Uint8Array(3);
 
@@ -296,6 +297,109 @@ describe('DomRendererRowFactory', () => {
         );
       });
     });
+  });
+
+  describe.only('createRow with merged spans', () => {
+    // for test purpose assume all in codepoints 0..255 are merging
+    const ALL_MERGING = new Uint8Array(FontMetrics.MAX);
+
+    beforeEach(() => {
+      lineData = createEmptyLineData(10);
+    });
+
+    it('should not create anything for an empty row', () => {
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        ''
+      );
+    });
+
+    it('can merge codepoints in FontMetrics range', () => {
+      lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
+      lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span style="width: auto;">abc</span>'
+      );
+    });
+
+    it('should not merge codepoints outside of FontMetrics range', () => {
+      lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '€', 1, '€'.charCodeAt(0)]));
+      lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span>a</span><span>€</span><span>c</span>'
+      );
+    });
+
+    it('should not merge on FG change', () => {
+      const a_color1 = CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]);
+      a_color1.fg |= Attributes.CM_P16 | 1;
+      const b_color2 = CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]);
+      b_color2.fg |= Attributes.CM_P16 | 2;
+      lineData.setCell(0, a_color1);
+      lineData.setCell(1, a_color1);
+      lineData.setCell(2, b_color2);
+      lineData.setCell(3, b_color2);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span class="xterm-fg-1" style="width: 10px;">aa</span><span class="xterm-fg-2" style="width: auto;">bb</span>'
+      );
+    });
+
+    it('should not merge cursor cell', () => {
+      lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'X', 1, 'X'.charCodeAt(0)]));
+      lineData.setCell(3, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
+      lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
+      const fragment = rowFactory.createRow(lineData, 0, true, undefined, 2, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span style="width: 10px;">aa</span><span class="xterm-cursor xterm-cursor-block">X</span><span style="width: auto;">bb</span>'
+      );
+    });
+
+    it('should handle BCE correctly', () => {
+      const nullCell = lineData.loadCell(0, new CellData());
+      nullCell.bg = Attributes.CM_P16 | 1;
+      lineData.setCell(2, nullCell);
+      nullCell.bg = Attributes.CM_P16 | 2;
+      lineData.setCell(3, nullCell);
+      lineData.setCell(4, nullCell);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span style="width: 10px;">  </span><span class="xterm-bg-1"> </span><span class="xterm-bg-2" style="width: 10px;">  </span>'
+      );
+    });
+
+    it('should contain px value in BCE for multiple cells', () => {
+      const nullCell = lineData.loadCell(0, new CellData());
+      nullCell.bg = Attributes.CM_P16 | 1;
+      lineData.setCell(0, nullCell);
+      let fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span class="xterm-bg-1"> </span>'
+      );
+      lineData.setCell(1, nullCell);
+      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span class="xterm-bg-1" style="width: 10px;">  </span>'
+      );
+      lineData.setCell(2, nullCell);
+      lineData.setCell(3, nullCell);
+      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span class="xterm-bg-1" style="width: 20px;">    </span>'
+      );
+      lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      assert.equal(getFragmentHtml(fragment),
+        '<span class="xterm-bg-1" style="width: 20px;">    </span><span>a</span>'
+      );
+    });
+
   });
 
   function getFragmentHtml(fragment: DocumentFragment): string {

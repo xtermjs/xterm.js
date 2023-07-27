@@ -25,7 +25,7 @@ const SELECTION_CLASS = 'xterm-selection';
 let nextTerminalId = 1;
 
 // font metrics calc settings
-const enum FontMetrics {
+export const enum FontMetrics {
   START = 32,         // start codepoint
   MAX = 256,          // only calc up to this codepoint (256 means only Basic Latin + Latin-1 Supplement)
   BATCH_SIZE = 30,    // amount of codepoints to calc in a single batch (sync & blocking)
