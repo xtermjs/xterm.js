@@ -1,9 +1,9 @@
-export interface StyleSheet {
+export interface IStyleSheet {
   dispose: () => void;
   setCss: (value: string) => void;
 }
 
-const createCssStyleSheet = (): StyleSheet => {
+const createCssStyleSheet = (): IStyleSheet => {
   const sheet = new CSSStyleSheet();
   document.adoptedStyleSheets.push(sheet);
   return {
@@ -13,12 +13,12 @@ const createCssStyleSheet = (): StyleSheet => {
     },
     setCss(css) {
       sheet.replace(css);
-    },
+    }
   };
 };
 
-const createStyleElement = (parent: HTMLElement): StyleSheet => {
-  const element = document.createElement("style");
+const createStyleElement = (parent: HTMLElement): IStyleSheet => {
+  const element = document.createElement('style');
   parent.append(element);
   return {
     dispose() {
@@ -26,11 +26,11 @@ const createStyleElement = (parent: HTMLElement): StyleSheet => {
     },
     setCss(css) {
       element.textContent = css;
-    },
+    }
   };
 };
 
-export const createStyle = (parent: HTMLElement): StyleSheet => {
+export const createStyle = (parent: HTMLElement): IStyleSheet => {
   try {
     return createCssStyleSheet();
   } catch {

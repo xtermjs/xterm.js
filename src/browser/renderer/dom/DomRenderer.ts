@@ -13,7 +13,7 @@ import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
-import { createStyle, StyleSheet } from "./StyleSheet";
+import { createStyle, IStyleSheet } from './StyleSheet';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -33,8 +33,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
 
-  private _themeStyle!: StyleSheet;
-  private _dimensionsStyle!: StyleSheet;
+  private _themeStyle!: IStyleSheet;
+  private _dimensionsStyle!: IStyleSheet;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
