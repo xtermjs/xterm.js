@@ -13,6 +13,7 @@ import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { createStyle, StyleSheet } from "./StyleSheet";
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -32,8 +33,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
 
-  private _themeStyleElement!: HTMLStyleElement;
-  private _dimensionsStyleElement!: HTMLStyleElement;
+  private _themeStyle!: StyleSheet;
+  private _dimensionsStyle!: StyleSheet;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -88,8 +89,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       // https://github.com/xtermjs/xterm.js/issues/2960
       this._rowContainer.remove();
       this._selectionContainer.remove();
-      this._themeStyleElement.remove();
-      this._dimensionsStyleElement.remove();
+      this._themeStyle.dispose();
+      this._dimensionsStyle.dispose();
     }));
   }
 
@@ -116,9 +117,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       element.style.overflow = 'hidden';
     }
 
-    if (!this._dimensionsStyleElement) {
-      this._dimensionsStyleElement = document.createElement('style');
-      this._screenElement.appendChild(this._dimensionsStyleElement);
+    if (!this._dimensionsStyle) {
+      this._dimensionsStyle = createStyle(this._screenElement);
     }
 
     const styles =
@@ -129,7 +129,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` width: ${this.dimensions.css.cell.width}px` +
       `}`;
 
-    this._dimensionsStyleElement.textContent = styles;
+    this._dimensionsStyle.setCss(styles);
 
     this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
@@ -137,9 +137,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _injectCss(colors: ReadonlyColorSet): void {
-    if (!this._themeStyleElement) {
-      this._themeStyleElement = document.createElement('style');
-      this._screenElement.appendChild(this._themeStyleElement);
+    if (!this._themeStyle) {
+      this._themeStyle = createStyle(this._screenElement);
     }
 
     // Base CSS
@@ -236,7 +235,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
 
-    this._themeStyleElement.textContent = styles;
+    this._themeStyle.setCss(styles);
   }
 
   public handleDevicePixelRatioChange(): void {
