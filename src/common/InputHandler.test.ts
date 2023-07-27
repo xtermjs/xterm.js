@@ -1950,14 +1950,14 @@ describe('InputHandler', () => {
       inputHandler.onColor(ev => stack.push(ev));
       // single color query
       await inputHandler.parseP('\x1b]4;0;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: 0 }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: 0 as ColorIndex }]]);
       stack.length = 0;
       await inputHandler.parseP('\x1b]4;123;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: 123 }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: 123 as ColorIndex }]]);
       stack.length = 0;
       // multiple queries
       await inputHandler.parseP('\x1b]4;0;?;123;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: 0 }, { type: ColorRequestType.REPORT, index: 123 }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: 0 as ColorIndex }, { type: ColorRequestType.REPORT, index: 123 as ColorIndex }]]);
       stack.length = 0;
     });
     it('4: set color events', async () => {
@@ -1965,32 +1965,32 @@ describe('InputHandler', () => {
       inputHandler.onColor(ev => stack.push(ev));
       // single color query
       await inputHandler.parseP('\x1b]4;0;rgb:01/02/03\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0, color: [1, 2, 3] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0 as ColorIndex, color: [1, 2, 3] }]]);
       stack.length = 0;
       await inputHandler.parseP('\x1b]4;123;#aabbcc\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 123, color: [170, 187, 204] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 123 as ColorIndex, color: [170, 187, 204] }]]);
       stack.length = 0;
       // multiple queries
       await inputHandler.parseP('\x1b]4;0;rgb:aa/bb/cc;123;#001122\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0, color: [170, 187, 204] }, { type: ColorRequestType.SET, index: 123, color: [0, 17, 34] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0 as ColorIndex, color: [170, 187, 204] }, { type: ColorRequestType.SET, index: 123 as ColorIndex, color: [0, 17, 34] }]]);
       stack.length = 0;
     });
     it('4: should ignore invalid values', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       await inputHandler.parseP('\x1b]4;0;rgb:aa/bb/cc;45;rgb:1/22/333;123;#001122\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0, color: [170, 187, 204] }, { type: ColorRequestType.SET, index: 123, color: [0, 17, 34] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0 as ColorIndex, color: [170, 187, 204] }, { type: ColorRequestType.SET, index: 123 as ColorIndex, color: [0, 17, 34] }]]);
       stack.length = 0;
     });
     it('104: restore events', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       await inputHandler.parseP('\x1b]104;0\x07\x1b]104;43\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: 0 }], [{ type: ColorRequestType.RESTORE, index: 43 }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: 0 as ColorIndex }], [{ type: ColorRequestType.RESTORE, index: 43 as ColorIndex }]]);
       stack.length = 0;
       // multiple in one command
       await inputHandler.parseP('\x1b]104;0;43\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: 0 }, { type: ColorRequestType.RESTORE, index: 43 }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: 0 as ColorIndex }, { type: ColorRequestType.RESTORE, index: 43 as ColorIndex }]]);
       stack.length = 0;
       // full ANSI table restore
       await inputHandler.parseP('\x1b]104\x07');
