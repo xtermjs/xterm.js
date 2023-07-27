@@ -48,7 +48,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
     private readonly _linkifier2: ILinkifier2,
-    @IInstantiationService instantiationService: IInstantiationService,
+    @IInstantiationService public instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService,

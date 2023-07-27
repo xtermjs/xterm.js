@@ -55,12 +55,12 @@ export class RenderService extends Disposable implements IRenderService {
   constructor(
     private _rowCount: number,
     screenElement: HTMLElement,
-    @IOptionsService optionsService: IOptionsService,
+    @IOptionsService public optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
-    @IDecorationService decorationService: IDecorationService,
-    @IBufferService bufferService: IBufferService,
-    @ICoreBrowserService coreBrowserService: ICoreBrowserService,
-    @IThemeService themeService: IThemeService
+    @IDecorationService public decorationService: IDecorationService,
+    @IBufferService public bufferService: IBufferService,
+    @ICoreBrowserService public coreBrowserService: ICoreBrowserService,
+    @IThemeService public themeService: IThemeService
   ) {
     super();
 

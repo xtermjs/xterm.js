@@ -32,7 +32,7 @@ export class BufferService extends Disposable implements IBufferService {
   /** An IBufferline to clone/copy from for new blank lines */
   private _cachedBlankLine: IBufferLine | undefined;
 
-  constructor(@IOptionsService optionsService: IOptionsService) {
+  constructor(@IOptionsService public optionsService: IOptionsService) {
     super();
     this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
     this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);

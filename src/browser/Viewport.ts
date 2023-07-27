@@ -57,7 +57,7 @@ export class Viewport extends Disposable implements IViewport {
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IRenderService private readonly _renderService: IRenderService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
-    @IThemeService themeService: IThemeService
+    @IThemeService public themeService: IThemeService
   ) {
     super();
 
