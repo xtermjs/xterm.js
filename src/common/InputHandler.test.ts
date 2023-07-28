@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType, ColorIndexValue } from 'common/Types';
+import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
@@ -2002,87 +2002,87 @@ describe('InputHandler', () => {
       inputHandler.onColor(ev => stack.push(ev));
       // single foreground query --> color undefined
       await inputHandler.parseP('\x1b]10;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: ColorIndexValue.FOREGROUND }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: SpecialColorIndex.FOREGROUND }]]);
       stack.length = 0;
       // OSC with multiple values maps to OSC 10 & OSC 11 & OSC 12
       await inputHandler.parseP('\x1b]10;?;?;?;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: ColorIndexValue.FOREGROUND }], [{ type: ColorRequestType.REPORT, index: ColorIndexValue.BACKGROUND }], [{ type: ColorRequestType.REPORT, index: ColorIndexValue.CURSOR }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: SpecialColorIndex.FOREGROUND }], [{ type: ColorRequestType.REPORT, index: SpecialColorIndex.BACKGROUND }], [{ type: ColorRequestType.REPORT, index: SpecialColorIndex.CURSOR }]]);
       stack.length = 0;
       // set foreground color events
       await inputHandler.parseP('\x1b]10;rgb:01/02/03\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: ColorIndexValue.FOREGROUND, color: [1, 2, 3] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: SpecialColorIndex.FOREGROUND, color: [1, 2, 3] }]]);
       stack.length = 0;
       await inputHandler.parseP('\x1b]10;#aabbcc\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: ColorIndexValue.FOREGROUND, color: [170, 187, 204] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: SpecialColorIndex.FOREGROUND, color: [170, 187, 204] }]]);
       stack.length = 0;
       // set FG, BG and cursor color at once
       await inputHandler.parseP('\x1b]10;rgb:aa/bb/cc;#001122;rgb:12/34/56\x07');
       assert.deepEqual(stack, [
-        [{ type: ColorRequestType.SET, index: ColorIndexValue.FOREGROUND, color: [170, 187, 204] }],
-        [{ type: ColorRequestType.SET, index: ColorIndexValue.BACKGROUND, color: [0, 17, 34] }],
-        [{ type: ColorRequestType.SET, index: ColorIndexValue.CURSOR, color: [18, 52, 86] }]
+        [{ type: ColorRequestType.SET, index: SpecialColorIndex.FOREGROUND, color: [170, 187, 204] }],
+        [{ type: ColorRequestType.SET, index: SpecialColorIndex.BACKGROUND, color: [0, 17, 34] }],
+        [{ type: ColorRequestType.SET, index: SpecialColorIndex.CURSOR, color: [18, 52, 86] }]
       ]);
     });
     it('110: restore FG color', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       await inputHandler.parseP('\x1b]110\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: ColorIndexValue.FOREGROUND }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.FOREGROUND }]]);
     });
     it('11: BG set & query events', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       // single background query --> color undefined
       await inputHandler.parseP('\x1b]11;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: ColorIndexValue.BACKGROUND }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: SpecialColorIndex.BACKGROUND }]]);
       stack.length = 0;
       // OSC 11 with multiple values creates only BG and cursor event
       await inputHandler.parseP('\x1b]11;?;?;?;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: ColorIndexValue.BACKGROUND }], [{ type: ColorRequestType.REPORT, index: ColorIndexValue.CURSOR }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: SpecialColorIndex.BACKGROUND }], [{ type: ColorRequestType.REPORT, index: SpecialColorIndex.CURSOR }]]);
       stack.length = 0;
       // set background color events
       await inputHandler.parseP('\x1b]11;rgb:01/02/03\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: ColorIndexValue.BACKGROUND, color: [1, 2, 3] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: SpecialColorIndex.BACKGROUND, color: [1, 2, 3] }]]);
       stack.length = 0;
       await inputHandler.parseP('\x1b]11;#aabbcc\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: ColorIndexValue.BACKGROUND, color: [170, 187, 204] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: SpecialColorIndex.BACKGROUND, color: [170, 187, 204] }]]);
       stack.length = 0;
       // set BG and cursor color at once
       await inputHandler.parseP('\x1b]11;#001122;rgb:12/34/56\x07');
       assert.deepEqual(stack, [
-        [{ type: ColorRequestType.SET, index: ColorIndexValue.BACKGROUND, color: [0, 17, 34] }],
-        [{ type: ColorRequestType.SET, index: ColorIndexValue.CURSOR, color: [18, 52, 86] }]
+        [{ type: ColorRequestType.SET, index: SpecialColorIndex.BACKGROUND, color: [0, 17, 34] }],
+        [{ type: ColorRequestType.SET, index: SpecialColorIndex.CURSOR, color: [18, 52, 86] }]
       ]);
     });
     it('111: restore BG color', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       await inputHandler.parseP('\x1b]111\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: ColorIndexValue.BACKGROUND }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.BACKGROUND }]]);
     });
     it('12: cursor color set & query events', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       // single cursor query --> color undefined
       await inputHandler.parseP('\x1b]12;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: ColorIndexValue.CURSOR }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: SpecialColorIndex.CURSOR }]]);
       stack.length = 0;
       // OSC 12 with multiple values creates only cursor event
       await inputHandler.parseP('\x1b]12;?;?;?;?\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: ColorIndexValue.CURSOR }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.REPORT, index: SpecialColorIndex.CURSOR }]]);
       stack.length = 0;
       // set cursor color events
       await inputHandler.parseP('\x1b]12;rgb:01/02/03\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: ColorIndexValue.CURSOR, color: [1, 2, 3] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: SpecialColorIndex.CURSOR, color: [1, 2, 3] }]]);
       stack.length = 0;
       await inputHandler.parseP('\x1b]12;#aabbcc\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: ColorIndexValue.CURSOR, color: [170, 187, 204] }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: SpecialColorIndex.CURSOR, color: [170, 187, 204] }]]);
     });
     it('112: restore cursor color', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
       await inputHandler.parseP('\x1b]112\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: ColorIndexValue.CURSOR }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.CURSOR }]]);
     });
   });
 

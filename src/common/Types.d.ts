@@ -420,25 +420,25 @@ type Enumerate<N extends number, Acc extends number[] = []> = Acc['length'] exte
   : Enumerate<N, [...Acc, Acc['length']]>;
 type IntRange<F extends number, T extends number> = Exclude<Enumerate<T>, Enumerate<F>>;
 
-type ColorIndex = IntRange<0, 259>; // number from 0 to 258
-
-export const enum ColorIndexValue {
+type ColorIndex = IntRange<0, 256>; // number from 0 to 255
+type AllColorIndex = ColorIndex | SpecialColorIndex;
+export const enum SpecialColorIndex {
   FOREGROUND = 256,
   BACKGROUND = 257,
   CURSOR = 258
 }
 export interface IColorReportRequest {
   type: ColorRequestType.REPORT;
-  index: ColorIndex;
+  index: AllColorIndex;
 }
 export interface IColorSetRequest {
   type: ColorRequestType.SET;
-  index: ColorIndex;
+  index: AllColorIndex;
   color: IColorRGB;
 }
 export interface IColorRestoreRequest {
   type: ColorRequestType.RESTORE;
-  index?: ColorIndex;
+  index?: SpecialColorIndex;
 }
 export type IColorEvent = (IColorReportRequest | IColorSetRequest | IColorRestoreRequest)[];
 
