@@ -10,7 +10,7 @@ import { channels, color, css, NULL_COLOR } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IOptionsService, ITheme } from 'common/services/Services';
-import { ColorIndex, IColor } from 'common/Types';
+import { ColorIndex, ColorIndexValue, IColor } from 'common/Types';
 
 interface IRestoreColorSet {
   foreground: IColor;
@@ -190,13 +190,13 @@ export class ThemeService extends Disposable implements IThemeService {
       return;
     }
     switch (slot) {
-      case ColorIndex.FOREGROUND:
+      case ColorIndexValue.FOREGROUND:
         this._colors.foreground = this._restoreColors.foreground;
         break;
-      case ColorIndex.BACKGROUND:
+      case ColorIndexValue.BACKGROUND:
         this._colors.background = this._restoreColors.background;
         break;
-      case ColorIndex.CURSOR:
+      case ColorIndexValue.CURSOR:
         this._colors.cursor = this._restoreColors.cursor;
         break;
       default:

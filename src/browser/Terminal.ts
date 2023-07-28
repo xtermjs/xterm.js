@@ -35,7 +35,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
+import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType, ColorIndexValue } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -203,15 +203,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
       let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
       let ident = '';
       switch (req.index) {
-        case ColorIndex.FOREGROUND: // OSC 10 | 110
+        case ColorIndexValue.FOREGROUND: // OSC 10 | 110
           acc = 'foreground';
           ident = '10';
           break;
-        case ColorIndex.BACKGROUND: // OSC 11 | 111
+        case ColorIndexValue.BACKGROUND: // OSC 11 | 111
           acc = 'background';
           ident = '11';
           break;
-        case ColorIndex.CURSOR: // OSC 12 | 112
+        case ColorIndexValue.CURSOR: // OSC 12 | 112
           acc = 'cursor';
           ident = '12';
           break;

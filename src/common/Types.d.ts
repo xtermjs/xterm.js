@@ -413,7 +413,16 @@ export const enum ColorRequestType {
   SET = 1,
   RESTORE = 2
 }
-export const enum ColorIndex {
+
+// IntRange from https://stackoverflow.com/a/39495173
+type Enumerate<N extends number, Acc extends number[] = []> = Acc['length'] extends N
+  ? Acc[number]
+  : Enumerate<N, [...Acc, Acc['length']]>;
+type IntRange<F extends number, T extends number> = Exclude<Enumerate<T>, Enumerate<F>>;
+
+type ColorIndex = IntRange<0, 259>; // number from 0 to 258
+
+export const enum ColorIndexValue {
   FOREGROUND = 256,
   BACKGROUND = 257,
   CURSOR = 258
