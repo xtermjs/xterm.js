@@ -4,6 +4,7 @@
  */
 
 import { BOLD_CLASS, CURSOR_BLINK_CLASS, CURSOR_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DIM_CLASS, DomRendererRowFactory, ITALIC_CLASS } from 'browser/renderer/dom/DomRendererRowFactory';
+import { SpacingCache } from 'browser/renderer/dom/SpacingCache';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
@@ -13,7 +14,7 @@ import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
-import { IdleTaskQueue } from 'common/TaskQueue';
+
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -42,14 +43,10 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _terminalClass: number = nextTerminalId++;
 
   private _themeStyleElement!: HTMLStyleElement;
-  private _dimensionsStyleElement!: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
-  private _linkState = new Uint8Array(3);
-  private _fontMetrics: Uint8Array = new Uint8Array(FontMetrics.MAX);
-  private _metricsQueue = new IdleTaskQueue();
-  private _metricsPos: number = FontMetrics.START;
+  private _spacingCache: SpacingCache;
 
   public dimensions: IRenderDimensions;
 
@@ -101,59 +98,11 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._rowContainer.remove();
       this._selectionContainer.remove();
       this._themeStyleElement.remove();
-      this._dimensionsStyleElement.remove();
+      this._spacingCache.dispose();
     }));
 
-    this._cacheMetrics();
-  }
-
-  private _batchedMetrics(): boolean {
-    const parent = this._screenElement.querySelector('.xterm-helpers');
-    if (!parent) {
-      this._metricsPos = FontMetrics.START;
-      return false;
-    }
-
-    const container = document.createElement('div');
-    container.setAttribute('aria-hidden', 'true');
-    container.style.whiteSpace = 'pre';
-    container.style.overflow = 'hidden';
-    container.style.fontFamily = this._optionsService.rawOptions.fontFamily;
-    container.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
-
-    const cellWidth = this.dimensions.css.cell.width;
-    const lower = 10 * cellWidth * (1 - FontMetrics.THRESHOLD);
-    const upper = 10 * cellWidth * (1 + FontMetrics.THRESHOLD);
-    const end = Math.min(this._metricsPos + FontMetrics.BATCH_SIZE, FontMetrics.MAX);
-
-    for (let i = this._metricsPos; i < end; ++i) {
-      const el = document.createElement('span');
-      el.classList.add('xterm-char-measure-element');
-      el.textContent = String.fromCharCode(i).repeat(10);
-      container.appendChild(el);
-    }
-    parent.appendChild(container);
-
-    const collection = container.children;
-    for (let i = 0; i < collection.length; ++i) {
-      const width = collection[i].getBoundingClientRect().width;
-      this._fontMetrics[i + this._metricsPos] = +(width < lower || width > upper);
-    }
-    container.remove();
-
-    this._metricsPos = end;
-    if (this._metricsPos >= FontMetrics.MAX) {
-      this._metricsPos = FontMetrics.START;
-      return false;
-    }
-    return true;
-  }
-
-  private _cacheMetrics(): void {
-    this._metricsQueue.clear();
-    this._fontMetrics.fill(0xFF);
-    this._metricsPos = FontMetrics.START;
-    this._metricsQueue.enqueue(() => this._batchedMetrics());
+    this._spacingCache = new SpacingCache(document);
+    this._spacingCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
   }
 
   private _updateDimensions(): void {
@@ -179,22 +128,6 @@ export class DomRenderer extends Disposable implements IRenderer {
       element.style.overflow = 'hidden';
     }
 
-    if (!this._dimensionsStyleElement) {
-      this._dimensionsStyleElement = document.createElement('style');
-      this._screenElement.appendChild(this._dimensionsStyleElement);
-    }
-
-    const styles =
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
-      ` display: inline-block;` +
-      ` height: 100%;` +
-      ` vertical-align: top;` +
-      ` width: ${this.dimensions.css.cell.width}px;` +
-      ` white-space: pre` +
-      `}`;
-
-    this._dimensionsStyleElement.textContent = styles;
-
     this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
     this._screenElement.style.height = `${this.dimensions.css.canvas.height}px`;
@@ -212,6 +145,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` color: ${colors.foreground.css};` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
+      ` white-space: pre` +
       `}`;
     styles +=
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .xterm-dim {` +
@@ -409,7 +343,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     // Refresh CSS
     this._injectCss(this._themeService.colors);
-    this._cacheMetrics();
+    // update spacing cache
+    this._spacingCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
   }
 
   public clear(): void {
@@ -426,26 +361,31 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public renderRows(start: number, end: number): void {
-    const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
+    const buffer = this._bufferService.buffer;
+    const cursorAbsoluteY = buffer.ybase + buffer.y;
+    const cursorX = Math.min(buffer.x, this._bufferService.cols - 1);
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
+    const cursorStyle = this._optionsService.rawOptions.cursorStyle;
 
     for (let y = start; y <= end; y++) {
+      const row = y + buffer.ydisp;
       const rowElement = this._rowElements[y];
-      const row = y + this._bufferService.buffer.ydisp;
-      const lineData = this._bufferService.buffer.lines.get(row);
-      const cursorStyle = this._optionsService.rawOptions.cursorStyle;
+      const lineData = buffer.lines.get(row);
+      if (!rowElement || !lineData) {
+        break;
+      }
       rowElement.replaceChildren(
         this._rowFactory.createRow(
-          lineData!,
+          lineData,
           row,
           row === cursorAbsoluteY,
           cursorStyle,
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,
-          this._fontMetrics,
-          this._linkState
+          this._spacingCache,
+          -1,
+          -1
         )
       );
     }
@@ -471,39 +411,35 @@ export class DomRenderer extends Disposable implements IRenderer {
     y = Math.max(Math.min(y, maxY), 0);
     y2 = Math.max(Math.min(y2, maxY), 0);
 
-    const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
-    const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
+    cols = Math.min(cols, this._bufferService.cols);
+    const buffer = this._bufferService.buffer;
+    const cursorAbsoluteY = buffer.ybase + buffer.y;
+    const cursorX = Math.min(buffer.x, cols - 1);
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._optionsService.rawOptions.cursorStyle;
-    cols = Math.min(cols, this._bufferService.cols);
 
     // refresh rows within link range
-    this._linkState[0] = +enabled;
     for (let i = y; i <= y2; ++i) {
+      const row = i + buffer.ydisp;
       const rowElement = this._rowElements[i];
-      if (!rowElement) {
+      const bufferline = buffer.lines.get(row);
+      if (!rowElement || !bufferline) {
         break;
       }
-      if (enabled) {
-        this._linkState[1] = i === y ? x : 0;
-        this._linkState[2] = (i === y2 ? x2 : cols) - 1;
-      }
-      const row = i + this._bufferService.buffer.ydisp;
-      const lineData = this._bufferService.buffer.lines.get(row);
       rowElement.replaceChildren(
         this._rowFactory.createRow(
-          lineData!,
+          bufferline,
           row,
           row === cursorAbsoluteY,
           cursorStyle,
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,
-          this._fontMetrics,
-          this._linkState
+          this._spacingCache,
+          enabled ? (i === y ? x : 0) : -1,
+          enabled ? ((i === y2 ? x2 : cols) - 1) : -1
         )
       );
     }
-    this._linkState[0] = 0;
   }
 }

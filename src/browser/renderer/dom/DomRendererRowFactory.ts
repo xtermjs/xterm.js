@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2018, 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
 import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes, NULL_CELL_WIDTH } from 'common/buffer/Constants';
+import { WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
@@ -13,6 +13,7 @@ import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'bro
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { SpacingCache } from 'browser/renderer/dom/SpacingCache';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -57,8 +58,9 @@ export class DomRendererRowFactory {
     cursorX: number,
     cursorBlink: boolean,
     cellWidth: number,
-    metrics: Uint8Array,
-    linkState: Uint8Array
+    spacingCache: SpacingCache,
+    linkStart: number,
+    linkEnd: number
   ): DocumentFragment {
 
     const fragment = this._document.createDocumentFragment();
@@ -77,8 +79,10 @@ export class DomRendererRowFactory {
     let oldFg = 0;
     let oldExt = 0;
     let oldLinkHover: number | boolean = false;
+    let oldSpacing = 0;
+    let spacing = 0;
 
-    const isHover = linkState[0];
+    const hasHover = linkStart !== -1 && linkEnd !== -1;
 
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);
@@ -118,11 +122,13 @@ export class DomRendererRowFactory {
 
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
-      const cc = cell.getCode();
-      const isNull = cc === NULL_CELL_CODE && width === NULL_CELL_WIDTH;
-      const isCombined = cell.isCombined();
-      const isLinkHover = isHover && x >= linkState[1] && x <= linkState[2];
-      const isBoldOrItalic = cell.isBold() && cell.isItalic();
+      const isLinkHover = hasHover && x >= linkStart && x <= linkEnd;
+
+      let chars = cell.getChars() || WHITESPACE_CELL_CHAR;
+      if (chars === ' ' && (cell.isUnderline() || cell.isOverline())) {
+        chars = '\xa0';
+      }
+      spacing = spacingCache.get(chars, width * cellWidth, 0);
 
       if (!charElement) {
         charElement = this._document.createElement('span');
@@ -130,37 +136,27 @@ export class DomRendererRowFactory {
         /**
          * chars can only be merged on existing span if:
          * - existing span only contains mergeable chars (cellAmount != 0)
-         * - glyph is within metrics limits (width === 1 && metrics[cc] == 0)
          * - fg/bg/ul did not change
          * - char not part of a selection
-         * - char is not cursor
          * - underline from hover state did not change
+         * - cell content renders to same letter-spacing
+         * - char is not cursor
          */
         if (
           cellAmount
-          && (isNull || (width === 1 && !isCombined && cc < metrics.length && !metrics[cc]))
           && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext === oldExt
           && !isInSelection
-          && !isCursorCell
           && isLinkHover === oldLinkHover
+          && spacing === oldSpacing
+          && !isCursorCell
+          && !isJoined
         ) {
-          let c = cell.isInvisible() ? WHITESPACE_CELL_CHAR : (cell.getChars() || WHITESPACE_CELL_CHAR);
-          if (c === ' ' && (cell.isUnderline() || cell.isOverline())) {
-            c = '\xa0';
-          }
-          text += c;
+          text += chars;
           cellAmount++;
-          oldBg = cell.bg;
-          oldFg = cell.fg;
-          oldExt = cell.extended.ext;
-          oldLinkHover = isLinkHover;
           continue;
         } else {
           if (cellAmount) {
             charElement.textContent = text;
-            if (cellAmount > 1) {
-              charElement.style.width = `${cellWidth * cellAmount}px`;
-            }
           }
           charElement = this._document.createElement('span');
           cellAmount = 0;
@@ -171,16 +167,9 @@ export class DomRendererRowFactory {
       oldFg = cell.fg;
       oldExt = cell.extended.ext;
       oldLinkHover = isLinkHover;
-
-      if (width > 1) {
-        charElement.style.width = `${cellWidth * width}px`;
-      }
+      oldSpacing = spacing;
 
       if (isJoined) {
-        // Ligatures in the DOM renderer must use display inline, as they may not show with
-        // inline-block if they are outside the bounds of the element
-        charElement.style.display = 'inline';
-
         // The DOM renderer colors the background of the cursor but for ligatures all cells are
         // joined. The workaround here is to show a cursor around the whole ligature so it shows up,
         // the cursor looks the same when on any character of the ligature though
@@ -377,34 +366,22 @@ export class DomRendererRowFactory {
           }
       }
 
-
-      // account first char for later merge if it meets the start conditions
-      if (
-        (isNull || (width === 1 && !isCombined && cc < metrics.length && !metrics[cc]))
-        && !isBoldOrItalic
-        && !isInSelection
-        && !isCursorCell
-      ) {
+      if (!isCursorCell && !isInSelection && !isJoined) {
         cellAmount++;
       } else {
-        // every non-mergeable char gets directly written to its own span
         charElement.textContent = text;
+      }
+      if (spacing) {
+        charElement.style.letterSpacing = `${spacing}px`;
       }
 
       fragment.appendChild(charElement);
       x = lastCharX;
     }
 
-    // postfix width and text of last merged span
+    // postfix text of last merged span
     if (charElement && cellAmount) {
       charElement.textContent = text;
-      /*
-       * optimization: if the last merged span has no BG color set, use faster "width: auto",
-       * else use correct px value for aligned BG coloring and BCE
-       */
-      if (cellAmount > 1) {
-        charElement.style.width = (oldBg & Attributes.CM_MASK) ? `${cellWidth * cellAmount}px`: 'auto';
-      }
     }
 
     return fragment;

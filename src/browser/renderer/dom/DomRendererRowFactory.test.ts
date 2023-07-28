@@ -11,13 +11,21 @@ import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
-import { css } from 'common/Color';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
 import { FontMetrics } from 'browser/renderer/dom/DomRenderer';
+import { FontVariant, SpacingCache } from 'browser/renderer/dom/SpacingCache';
 
-const EMPTY_METRICS = new Uint8Array(FontMetrics.MAX);
-EMPTY_METRICS.fill(0xFF);
-const EMPTY_LINKSTATE = new Uint8Array(3);
+class EmptySpacingCache extends SpacingCache {
+  public spacing: {[key: string]: number} = {};
+  public get(c: string, pixelWidth: number, variant: FontVariant): number {
+    if (this.spacing[c] !== undefined) {
+      return this.spacing[c];
+    }
+    return 0;
+  }
+}
+const EMPTY_SPACING = new EmptySpacingCache(new jsdom.JSDOM('').window.document);
+
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -40,7 +48,7 @@ describe('DomRendererRowFactory', () => {
 
   describe('createRow', () => {
     it('should not create anything for an empty row', () => {
-      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
         ''
       );
@@ -50,15 +58,15 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, '語', 2, '語'.charCodeAt(0)]));
       // There should be no element for the following "empty" cell
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '', 0, 0]));
-      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span style="width: 10px;">語</span>'
+        '<span>語</span>'
       );
     });
 
     it('should add class for cursor and cursor style', () => {
       for (const style of ['block', 'bar', 'underline']) {
-        const fragment = rowFactory.createRow(lineData, 0, true, style, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, true, style, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           `<span class="xterm-cursor xterm-cursor-${style}"> </span>`
         );
@@ -66,7 +74,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should add class for cursor blink', () => {
-      const fragment = rowFactory.createRow(lineData, 0, true, 'block', 0, true, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, true, 'block', 0, true, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
         `<span class="xterm-cursor xterm-cursor-blink xterm-cursor-block"> </span>`
       );
@@ -77,7 +85,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.BOLD;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-bold">a</span>'
         );
@@ -87,7 +95,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.ITALIC;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-italic">a</span>'
         );
@@ -97,7 +105,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.DIM;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-dim">a</span>'
         );
@@ -110,7 +118,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.SINGLE;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             '<span class="xterm-underline-1">a</span>'
           );
@@ -121,7 +129,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.DOUBLE;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             '<span class="xterm-underline-2">a</span>'
           );
@@ -132,7 +140,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.CURLY;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             '<span class="xterm-underline-3">a</span>'
           );
@@ -143,7 +151,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.DOTTED;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             '<span class="xterm-underline-4">a</span>'
           );
@@ -154,7 +162,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.DASHED;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             '<span class="xterm-underline-5">a</span>'
           );
@@ -165,7 +173,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.OVERLINE;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-overline">a</span>'
         );
@@ -175,7 +183,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.STRIKETHROUGH;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-strikethrough">a</span>'
         );
@@ -188,7 +196,7 @@ describe('DomRendererRowFactory', () => {
           cell.fg &= ~Attributes.PCOLOR_MASK;
           cell.fg |= i;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             `<span class="xterm-fg-${i}">a</span>`
           );
@@ -202,7 +210,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg &= ~Attributes.PCOLOR_MASK;
           cell.bg |= i;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             `<span class="xterm-bg-${i}">a</span>`
           );
@@ -214,7 +222,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= Attributes.CM_P16 | 2 | FgFlags.INVERSE;
         cell.bg |= Attributes.CM_P16 | 1;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-bg-2 xterm-fg-1">a</span>'
         );
@@ -225,7 +233,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= FgFlags.INVERSE;
         cell.bg |= Attributes.CM_P16 | 1;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-bg-257 xterm-fg-1">a</span>'
         );
@@ -235,7 +243,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg |= Attributes.CM_P16 | 1 | FgFlags.INVERSE;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-bg-1 xterm-fg-257">a</span>'
         );
@@ -248,7 +256,7 @@ describe('DomRendererRowFactory', () => {
           cell.fg &= ~Attributes.PCOLOR_MASK;
           cell.fg |= i;
           lineData.setCell(0, cell);
-          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+          const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
           assert.equal(getFragmentHtml(fragment),
             `<span class="xterm-bold xterm-fg-${i + 8}">a</span>`
           );
@@ -260,7 +268,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= Attributes.CM_RGB | 1 << 16 | 2 << 8 | 3;
         cell.bg |= Attributes.CM_RGB | 4 << 16 | 5 << 8 | 6;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span style="background-color:#040506;color:#010203;">a</span>'
         );
@@ -271,7 +279,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= Attributes.CM_RGB | 1 << 16 | 2 << 8 | 3 | FgFlags.INVERSE;
         cell.bg |= Attributes.CM_RGB | 4 << 16 | 5 << 8 | 6;
         lineData.setCell(0, cell);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span style="background-color:#010203;color:#040506;">a</span>'
         );
@@ -283,7 +291,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
         rowFactory.handleSelectionChanged([1, 0], [2, 0], false);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span>a</span><span class="xterm-decoration-top">b</span>'
         );
@@ -291,7 +299,7 @@ describe('DomRendererRowFactory', () => {
       it('should force whitespace cells to be rendered above the background', () => {
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
         rowFactory.handleSelectionChanged([0, 0], [2, 0], false);
-        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_METRICS, EMPTY_LINKSTATE);
+        const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-decoration-top"> </span><span class="xterm-decoration-top">a</span>'
         );
@@ -299,53 +307,54 @@ describe('DomRendererRowFactory', () => {
     });
   });
 
-  describe.only('createRow with merged spans', () => {
+  describe('createRow with merged spans', () => {
     // for test purpose assume all in codepoints 0..255 are merging
-    const ALL_MERGING = new Uint8Array(FontMetrics.MAX);
+    // const ALL_MERGING = new Uint8Array(FontMetrics.MAX);
 
     beforeEach(() => {
       lineData = createEmptyLineData(10);
     });
 
     it('should not create anything for an empty row', () => {
-      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
         ''
       );
     });
 
-    it('can merge codepoints in FontMetrics range', () => {
+    it('can merge codepoints for equal spacing', () => {
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
-      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span style="width: auto;">abc</span>'
+        '<span>abc</span>'
       );
     });
 
-    it('should not merge codepoints outside of FontMetrics range', () => {
+    it('should not merge codepoints with different spacing', () => {
+      EMPTY_SPACING.spacing['€'] = 3;
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '€', 1, '€'.charCodeAt(0)]));
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
-      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span>a</span><span>€</span><span>c</span>'
+        '<span>a</span><span style="letter-spacing: 3px;">€</span><span>c</span>'
       );
     });
 
     it('should not merge on FG change', () => {
-      const a_color1 = CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]);
-      a_color1.fg |= Attributes.CM_P16 | 1;
-      const b_color2 = CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]);
-      b_color2.fg |= Attributes.CM_P16 | 2;
-      lineData.setCell(0, a_color1);
-      lineData.setCell(1, a_color1);
-      lineData.setCell(2, b_color2);
-      lineData.setCell(3, b_color2);
-      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      const aColor1 = CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]);
+      aColor1.fg |= Attributes.CM_P16 | 1;
+      const bColor2 = CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]);
+      bColor2.fg |= Attributes.CM_P16 | 2;
+      lineData.setCell(0, aColor1);
+      lineData.setCell(1, aColor1);
+      lineData.setCell(2, bColor2);
+      lineData.setCell(3, bColor2);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span class="xterm-fg-1" style="width: 10px;">aa</span><span class="xterm-fg-2" style="width: auto;">bb</span>'
+        '<span class="xterm-fg-1">aa</span><span class="xterm-fg-2">bb</span>'
       );
     });
 
@@ -355,9 +364,9 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'X', 1, 'X'.charCodeAt(0)]));
       lineData.setCell(3, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
       lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
-      const fragment = rowFactory.createRow(lineData, 0, true, undefined, 2, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, true, undefined, 2, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span style="width: 10px;">aa</span><span class="xterm-cursor xterm-cursor-block">X</span><span style="width: auto;">bb</span>'
+        '<span>aa</span><span class="xterm-cursor xterm-cursor-block">X</span><span>bb</span>'
       );
     });
 
@@ -368,35 +377,35 @@ describe('DomRendererRowFactory', () => {
       nullCell.bg = Attributes.CM_P16 | 2;
       lineData.setCell(3, nullCell);
       lineData.setCell(4, nullCell);
-      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      const fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span style="width: 10px;">  </span><span class="xterm-bg-1"> </span><span class="xterm-bg-2" style="width: 10px;">  </span>'
+        '<span>  </span><span class="xterm-bg-1"> </span><span class="xterm-bg-2">  </span>'
       );
     });
 
-    it('should contain px value in BCE for multiple cells', () => {
+    it('should handle BCE for multiple cells', () => {
       const nullCell = lineData.loadCell(0, new CellData());
       nullCell.bg = Attributes.CM_P16 | 1;
       lineData.setCell(0, nullCell);
-      let fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      let fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
         '<span class="xterm-bg-1"> </span>'
       );
       lineData.setCell(1, nullCell);
-      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span class="xterm-bg-1" style="width: 10px;">  </span>'
+        '<span class="xterm-bg-1">  </span>'
       );
       lineData.setCell(2, nullCell);
       lineData.setCell(3, nullCell);
-      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span class="xterm-bg-1" style="width: 20px;">    </span>'
+        '<span class="xterm-bg-1">    </span>'
       );
       lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
-      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, ALL_MERGING, EMPTY_LINKSTATE);
+      fragment = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_SPACING, -1, -1);
       assert.equal(getFragmentHtml(fragment),
-        '<span class="xterm-bg-1" style="width: 20px;">    </span><span>a</span>'
+        '<span class="xterm-bg-1">    </span><span>a</span>'
       );
     });
 
