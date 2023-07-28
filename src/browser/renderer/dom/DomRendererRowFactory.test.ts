@@ -12,7 +12,6 @@ import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
-import { FontMetrics } from 'browser/renderer/dom/DomRenderer';
 import { FontVariant, SpacingCache } from 'browser/renderer/dom/SpacingCache';
 
 class EmptySpacingCache extends SpacingCache {

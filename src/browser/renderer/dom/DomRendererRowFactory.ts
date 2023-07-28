@@ -15,17 +15,21 @@ import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/Rendere
 import { AttributeData } from 'common/buffer/AttributeData';
 import { SpacingCache } from 'browser/renderer/dom/SpacingCache';
 
-export const BOLD_CLASS = 'xterm-bold';
-export const DIM_CLASS = 'xterm-dim';
-export const ITALIC_CLASS = 'xterm-italic';
-export const UNDERLINE_CLASS = 'xterm-underline';
-export const OVERLINE_CLASS = 'xterm-overline';
-export const STRIKETHROUGH_CLASS = 'xterm-strikethrough';
-export const CURSOR_CLASS = 'xterm-cursor';
-export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
-export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
-export const CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar';
-export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
+
+export const enum RowCss {
+  BOLD_CLASS = 'xterm-bold',
+  DIM_CLASS = 'xterm-dim',
+  ITALIC_CLASS = 'xterm-italic',
+  UNDERLINE_CLASS = 'xterm-underline',
+  OVERLINE_CLASS = 'xterm-overline',
+  STRIKETHROUGH_CLASS = 'xterm-strikethrough',
+  CURSOR_CLASS = 'xterm-cursor',
+  CURSOR_BLINK_CLASS = 'xterm-cursor-blink',
+  CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block',
+  CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar',
+  CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline'
+}
+
 
 export class DomRendererRowFactory {
   private _workCell: CellData = new CellData();
@@ -81,6 +85,7 @@ export class DomRendererRowFactory {
     let oldLinkHover: number | boolean = false;
     let oldSpacing = 0;
     let spacing = 0;
+    const classes: string[] = [];
 
     const hasHover = linkStart !== -1 && linkEnd !== -1;
 
@@ -179,35 +184,29 @@ export class DomRendererRowFactory {
       }
 
       if (!this._coreService.isCursorHidden && isCursorCell) {
-        charElement.classList.add(CURSOR_CLASS);
-
+        classes.push(RowCss.CURSOR_CLASS);
         if (cursorBlink) {
-          charElement.classList.add(CURSOR_BLINK_CLASS);
+          classes.push(RowCss.CURSOR_BLINK_CLASS);
         }
-
-        switch (cursorStyle) {
-          case 'bar':
-            charElement.classList.add(CURSOR_STYLE_BAR_CLASS);
-            break;
-          case 'underline':
-            charElement.classList.add(CURSOR_STYLE_UNDERLINE_CLASS);
-            break;
-          default:
-            charElement.classList.add(CURSOR_STYLE_BLOCK_CLASS);
-            break;
-        }
+        classes.push(
+          cursorStyle === 'bar'
+            ? RowCss.CURSOR_STYLE_BAR_CLASS
+            : cursorStyle === 'underline'
+              ? RowCss.CURSOR_STYLE_UNDERLINE_CLASS
+              : RowCss.CURSOR_STYLE_BLOCK_CLASS
+        );
       }
 
       if (cell.isBold()) {
-        charElement.classList.add(BOLD_CLASS);
+        classes.push(RowCss.BOLD_CLASS);
       }
 
       if (cell.isItalic()) {
-        charElement.classList.add(ITALIC_CLASS);
+        classes.push(RowCss.ITALIC_CLASS);
       }
 
       if (cell.isDim()) {
-        charElement.classList.add(DIM_CLASS);
+        classes.push(RowCss.DIM_CLASS);
       }
 
       if (cell.isInvisible()) {
@@ -217,7 +216,7 @@ export class DomRendererRowFactory {
       }
 
       if (cell.isUnderline()) {
-        charElement.classList.add(`${UNDERLINE_CLASS}-${cell.extended.underlineStyle}`);
+        classes.push(`${RowCss.UNDERLINE_CLASS}-${cell.extended.underlineStyle}`);
         if (text === ' ') {
           text = '\xa0'; // = &nbsp;
         }
@@ -235,14 +234,14 @@ export class DomRendererRowFactory {
       }
 
       if (cell.isOverline()) {
-        charElement.classList.add(OVERLINE_CLASS);
+        classes.push(RowCss.OVERLINE_CLASS);
         if (text === ' ') {
           text = '\xa0'; // = &nbsp;
         }
       }
 
       if (cell.isStrikethrough()) {
-        charElement.classList.add(STRIKETHROUGH_CLASS);
+        classes.push(RowCss.STRIKETHROUGH_CLASS);
       }
 
       // apply link hover underline late, effectively overrides any previous text-decoration settings
@@ -304,7 +303,7 @@ export class DomRendererRowFactory {
 
       // If it's a top decoration, render above the selection
       if (isTop) {
-        charElement.classList.add(`xterm-decoration-top`);
+        classes.push('xterm-decoration-top');
       }
 
       // Background
@@ -313,7 +312,7 @@ export class DomRendererRowFactory {
         case Attributes.CM_P16:
         case Attributes.CM_P256:
           resolvedBg = colors.ansi[bg];
-          charElement.classList.add(`xterm-bg-${bg}`);
+          classes.push(`xterm-bg-${bg}`);
           break;
         case Attributes.CM_RGB:
           resolvedBg = rgba.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
@@ -323,7 +322,7 @@ export class DomRendererRowFactory {
         default:
           if (isInverse) {
             resolvedBg = colors.foreground;
-            charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
+            classes.push(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
           } else {
             resolvedBg = colors.background;
           }
@@ -344,7 +343,7 @@ export class DomRendererRowFactory {
             fg += 8;
           }
           if (!this._applyMinimumContrast(charElement, resolvedBg, colors.ansi[fg], cell, bgOverride, undefined)) {
-            charElement.classList.add(`xterm-fg-${fg}`);
+            classes.push(`xterm-fg-${fg}`);
           }
           break;
         case Attributes.CM_RGB:
@@ -361,9 +360,14 @@ export class DomRendererRowFactory {
         default:
           if (!this._applyMinimumContrast(charElement, resolvedBg, colors.foreground, cell, bgOverride, undefined)) {
             if (isInverse) {
-              charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
+              classes.push(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
           }
+      }
+
+      if (classes.length) {
+        charElement.className = classes.join(' ');
+        classes.length = 0;
       }
 
       if (!isCursorCell && !isInSelection && !isJoined) {

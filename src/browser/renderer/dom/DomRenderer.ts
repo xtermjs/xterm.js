@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { BOLD_CLASS, CURSOR_BLINK_CLASS, CURSOR_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DIM_CLASS, DomRendererRowFactory, ITALIC_CLASS } from 'browser/renderer/dom/DomRendererRowFactory';
+import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererRowFactory';
 import { SpacingCache } from 'browser/renderer/dom/SpacingCache';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
@@ -25,13 +25,6 @@ const SELECTION_CLASS = 'xterm-selection';
 
 let nextTerminalId = 1;
 
-// font metrics calc settings
-export const enum FontMetrics {
-  START = 32,         // start codepoint
-  MAX = 256,          // only calc up to this codepoint (256 means only Basic Latin + Latin-1 Supplement)
-  BATCH_SIZE = 30,    // amount of codepoints to calc in a single batch (sync & blocking)
-  THRESHOLD = 0.005   // allowed relative deviation from cell width
-}
 
 /**
  * A fallback renderer for when canvas is slow. This is not meant to be
@@ -153,13 +146,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}`;
     // Text styles
     styles +=
-      `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
+      `${this._terminalSelector} span:not(.${RowCss.BOLD_CLASS}) {` +
       ` font-weight: ${this._optionsService.rawOptions.fontWeight};` +
       `}` +
-      `${this._terminalSelector} span.${BOLD_CLASS} {` +
+      `${this._terminalSelector} span.${RowCss.BOLD_CLASS} {` +
       ` font-weight: ${this._optionsService.rawOptions.fontWeightBold};` +
       `}` +
-      `${this._terminalSelector} span.${ITALIC_CLASS} {` +
+      `${this._terminalSelector} span.${RowCss.ITALIC_CLASS} {` +
       ` font-style: italic;` +
       `}`;
     // Blink animation
@@ -176,33 +169,33 @@ export class DomRenderer extends Disposable implements IRenderer {
       `  color: ${colors.cursorAccent.css};` +
       ` }` +
       ` 50% {` +
-      `  background-color: ${colors.cursorAccent.css};` +
+      `  background-color: inherit;` +
       `  color: ${colors.cursor.css};` +
       ` }` +
       `}`;
     // Cursor
     styles +=
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} ,` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} ,` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} ` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} ,` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} ,` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} ` +
       `{` +
       ` outline: 1px solid ${colors.cursor.css};` +
       ` outline-offset: -1px;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}:not(.${CURSOR_STYLE_BLOCK_CLASS}) {` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}:not(.${RowCss.CURSOR_STYLE_BLOCK_CLASS}) {` +
       ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` background-color: ${colors.cursor.css};` +
       ` color: ${colors.cursorAccent.css};` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} {` +
       ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${colors.cursor.css} inset;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} {` +
       ` box-shadow: 0 -1px 0 ${colors.cursor.css} inset;` +
       `}`;
     // Selection
@@ -226,12 +219,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (const [i, c] of colors.ansi.entries()) {
       styles +=
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}.${DIM_CLASS} { color: ${color.multiplyOpacity(c, 0.5).css}; }` +
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(c, 0.5).css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     }
     styles +=
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(colors.background).css}; }` +
-      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
 
     this._themeStyleElement.textContent = styles;
