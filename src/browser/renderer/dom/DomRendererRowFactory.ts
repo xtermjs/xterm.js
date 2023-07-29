@@ -65,9 +65,9 @@ export class DomRendererRowFactory {
     widthCache: WidthCache,
     linkStart: number,
     linkEnd: number
-  ): DocumentFragment {
+  ): HTMLSpanElement[] {
 
-    const fragment = this._document.createDocumentFragment();
+    const elements: HTMLSpanElement[] = [];
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
     const colors = this._themeService.colors;
 
@@ -394,7 +394,7 @@ export class DomRendererRowFactory {
         charElement.style.letterSpacing = `${spacing}px`;
       }
 
-      fragment.appendChild(charElement);
+      elements.push(charElement);
       x = lastCharX;
     }
 
@@ -403,7 +403,7 @@ export class DomRendererRowFactory {
       charElement.textContent = text;
     }
 
-    return fragment;
+    return elements;
   }
 
   private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {

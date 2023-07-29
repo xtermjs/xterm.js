@@ -369,7 +369,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         break;
       }
       rowElement.replaceChildren(
-        this._rowFactory.createRow(
+        ...this._rowFactory.createRow(
           lineData,
           row,
           row === cursorAbsoluteY,
@@ -436,7 +436,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         break;
       }
       rowElement.replaceChildren(
-        this._rowFactory.createRow(
+        ...this._rowFactory.createRow(
           bufferline,
           row,
           row === cursorAbsoluteY,
