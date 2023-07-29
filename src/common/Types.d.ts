@@ -438,7 +438,7 @@ export interface IColorSetRequest {
 }
 export interface IColorRestoreRequest {
   type: ColorRequestType.RESTORE;
-  index?: SpecialColorIndex;
+  index?: AllColorIndex;
 }
 export type IColorEvent = (IColorReportRequest | IColorSetRequest | IColorRestoreRequest)[];
 
