@@ -4,7 +4,7 @@
  */
 
 import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererRowFactory';
-import { SpacingCache } from 'browser/renderer/dom/SpacingCache';
+import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
@@ -39,7 +39,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
-  private _spacingCache: SpacingCache;
+  private _widthCache: WidthCache;
 
   public dimensions: IRenderDimensions;
 
@@ -91,11 +91,11 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._rowContainer.remove();
       this._selectionContainer.remove();
       this._themeStyleElement.remove();
-      this._spacingCache.dispose();
+      this._widthCache.dispose();
     }));
 
-    this._spacingCache = new SpacingCache(document);
-    this._spacingCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
+    this._widthCache = new WidthCache(document);
+    this._widthCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
   }
 
   private _updateDimensions(): void {
@@ -338,7 +338,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Refresh CSS
     this._injectCss(this._themeService.colors);
     // update spacing cache
-    this._spacingCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
+    this._widthCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
   }
 
   public clear(): void {
@@ -377,7 +377,7 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,
-          this._spacingCache,
+          this._widthCache,
           -1,
           -1
         )
@@ -429,7 +429,7 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,
-          this._spacingCache,
+          this._widthCache,
           enabled ? (i === y ? x : 0) : -1,
           enabled ? ((i === y2 ? x2 : cols) - 1) : -1
         )

@@ -13,7 +13,7 @@ import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'bro
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { FontVariant, SpacingCache } from 'browser/renderer/dom/SpacingCache';
+import { WidthCache } from 'browser/renderer/dom/WidthCache';
 
 
 export const enum RowCss {
@@ -62,7 +62,7 @@ export class DomRendererRowFactory {
     cursorX: number,
     cursorBlink: boolean,
     cellWidth: number,
-    spacingCache: SpacingCache,
+    widthCache: WidthCache,
     linkStart: number,
     linkEnd: number
   ): DocumentFragment {
@@ -135,11 +135,8 @@ export class DomRendererRowFactory {
         chars = '\xa0';
       }
 
-      // lookup letter-spacing with font variant applied
-      let fontVariant = FontVariant.REGULAR;
-      if (cell.isBold())   fontVariant |= FontVariant.BOLD;
-      if (cell.isItalic()) fontVariant |= FontVariant.ITALIC;
-      spacing = spacingCache.get(chars, width * cellWidth, fontVariant);
+      // lookup char render width and calc spacing
+      spacing = width * cellWidth - widthCache.get(chars, cell.isBold(), cell.isItalic());
 
       if (!charElement) {
         charElement = this._document.createElement('span');

@@ -6,14 +6,6 @@
 import { IDisposable } from 'common/Types';
 
 
-export const enum FontVariant {
-  REGULAR = 0,
-  BOLD = 1,
-  ITALIC = 2,
-  BOLD_ITALIC = 3
-}
-
-
 const enum CacheSettings {
   FLAT_UNSET = -9999,   // sentinel for unset values in flat cache
   FLAT_SIZE = 256,      // codepoint upper bound to handle in flat cache
@@ -21,7 +13,7 @@ const enum CacheSettings {
 }
 
 
-export class SpacingCache implements IDisposable {
+export class WidthCache implements IDisposable {
   // flat cache for regular
   private _flat = new Float32Array(CacheSettings.FLAT_SIZE);
   // holey cache for bold, italic and bold&italic for any string
@@ -55,7 +47,7 @@ export class SpacingCache implements IDisposable {
     boldItalic.style.fontWeight = 'bold';
     boldItalic.style.fontStyle = 'italic';
 
-    // note: must be in order of FontVariant values
+    // note: must be in order of variant in _measure
     this._measureElements = [regular, bold, italic, boldItalic];
     this._container.appendChild(regular);
     this._container.appendChild(bold);
@@ -98,33 +90,31 @@ export class SpacingCache implements IDisposable {
   }
 
   /**
-   * Get the letter-spacing value for cell content `c`.
-   * `c` should be the cell content obtained from `cell.getChars()`.
-   * `pixelWidth` is the standard width the cell should render with
-   * and can be calculated by `cell.getWidth() * cellWidth`.
+   * Get the render width for cell content `c` with current font settings.
    * `variant` denotes the font variant to be used.
-   *
-   * Returns the letter-spacing value, so that `c` renders aligned to `pixelWidth`.
    */
-  public get(c: string, pixelWidth: number, variant: FontVariant): number {
+  public get(c: string, bold: boolean | number, italic: boolean | number): number {
     let cp = 0;
-    if (!variant && c.length === 1 && (cp = c.charCodeAt(0)) < CacheSettings.FLAT_SIZE) {
+    if (!bold && !italic && c.length === 1 && (cp = c.charCodeAt(0)) < CacheSettings.FLAT_SIZE) {
       return this._flat[cp] !== CacheSettings.FLAT_UNSET
         ? this._flat[cp]
-        : (this._flat[cp] = pixelWidth - this._measure(c, 0));
+        : (this._flat[cp] = this._measure(c, 0));
     }
     let key = c;
-    if (variant & FontVariant.BOLD) key += 'B';
-    if (variant & FontVariant.ITALIC) key += 'I';
-    let spacing = this._holey.get(key);
-    if (spacing === undefined) {
-      spacing = pixelWidth - this._measure(c, variant);
-      this._holey.set(key, spacing);
+    if (bold) key += 'B';
+    if (italic) key += 'I';
+    let width = this._holey.get(key);
+    if (width === undefined) {
+      let variant = 0;
+      if (bold) variant |= 1;
+      if (italic) variant |= 2;
+      width = this._measure(c, variant);
+      this._holey.set(key, width);
     }
-    return spacing;
+    return width;
   }
 
-  private _measure(c: string, variant: FontVariant): number {
+  private _measure(c: string, variant: number): number {
     const el = this._measureElements[variant];
     el.textContent = c.repeat(CacheSettings.REPEAT);
     return el.getBoundingClientRect().width / CacheSettings.REPEAT;
