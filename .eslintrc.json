@@ -89,7 +89,12 @@
     ],
     "@typescript-eslint/naming-convention": [
       "warn",
-      { "selector": "default", "format": ["camelCase"] },
+      { "selector": "default", "format": ["camelCase"],
+        "filter": {
+          "regex": "^[a-z]",
+          "match": true
+        }
+      },
       // variableLike
       { "selector": "variable", "format": ["camelCase", "UPPER_CASE"] },
       { "selector": "variable", "filter": "^I.+Service$", "format": ["PascalCase"], "prefix": ["I"] },
@@ -98,7 +103,12 @@
       { "selector": "memberLike", "modifiers": ["protected"], "format": ["camelCase"], "leadingUnderscore": "require" },
       { "selector": "enumMember", "format": ["UPPER_CASE"] },
       // memberLike - Allow enum-like objects to use UPPER_CASE
-      { "selector": "property", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"] },
+      { "selector": "property", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"],
+        "filter": {
+          "regex": "^[a-z]",
+          "match": true
+        }
+      },
       // restrict on* naming for events only
       { "selector": "method", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"], "custom": {
         "regex": "^on[A-Z].+",
