@@ -1,15 +1,20 @@
+/**
+ * Copyright (c) 2023 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 export interface IStyleSheet {
   dispose: () => void;
   setCss: (value: string) => void;
 }
 
-const createCssStyleSheet = (): IStyleSheet => {
+const createCssStyleSheet = (doc: Document): IStyleSheet => {
   const sheet = new CSSStyleSheet();
-  document.adoptedStyleSheets.push(sheet);
+  doc.adoptedStyleSheets.push(sheet);
   return {
     dispose() {
-      const index = document.adoptedStyleSheets.indexOf(sheet);
-      document.adoptedStyleSheets.splice(index, 1);
+      const index = doc.adoptedStyleSheets.indexOf(sheet);
+      doc.adoptedStyleSheets.splice(index, 1);
     },
     setCss(css) {
       sheet.replaceSync(css);
@@ -18,7 +23,8 @@ const createCssStyleSheet = (): IStyleSheet => {
 };
 
 const createStyleElement = (parent: HTMLElement): IStyleSheet => {
-  const element = document.createElement('style');
+  const doc = parent.ownerDocument;
+  const element = doc.createElement('style');
   parent.append(element);
   return {
     dispose() {
@@ -32,7 +38,7 @@ const createStyleElement = (parent: HTMLElement): IStyleSheet => {
 
 export const createStyle = (parent: HTMLElement): IStyleSheet => {
   try {
-    return createCssStyleSheet();
+    return createCssStyleSheet(parent.ownerDocument);
   } catch {
     return createStyleElement(parent);
   }
