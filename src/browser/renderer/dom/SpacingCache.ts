@@ -8,8 +8,8 @@ import { IDisposable } from 'common/Types';
 
 export const enum FontVariant {
   REGULAR = 0,
-  ITALIC = 1,
-  BOLD = 2,
+  BOLD = 1,
+  ITALIC = 2,
   BOLD_ITALIC = 3
 }
 
@@ -53,6 +53,7 @@ export class SpacingCache implements IDisposable {
     boldItalic.style.fontWeight = 'bold';
     boldItalic.style.fontStyle = 'italic';
 
+    // note: must be in order of FontVariant values
     this._measureElements = [regular, bold, italic, boldItalic];
     this._container.appendChild(regular);
     this._container.appendChild(bold);
@@ -99,7 +100,7 @@ export class SpacingCache implements IDisposable {
    * `c` should be the cell content obtained from `cell.getChars()`.
    * `pixelWidth` is the standard width the cell should render with
    * and can be calculated by `cell.getWidth() * cellWidth`.
-   * `variant` denotes the font variant to be used (0-regular, 1-bold, 2-italic, 3-bold&italic).
+   * `variant` denotes the font variant to be used.
    *
    * Returns the letter-spacing value, so that `c` renders aligned to `pixelWidth`.
    */
@@ -124,7 +125,6 @@ export class SpacingCache implements IDisposable {
   private _measure(c: string, variant: FontVariant): number {
     const el = this._measureElements[variant];
     el.textContent = c.repeat(CacheSettings.REPEAT);
-    const width = el.getBoundingClientRect().width / CacheSettings.REPEAT;
-    return width;
+    return el.getBoundingClientRect().width / CacheSettings.REPEAT;
   }
 }

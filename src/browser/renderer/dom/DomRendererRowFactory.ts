@@ -13,7 +13,7 @@ import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'bro
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { SpacingCache } from 'browser/renderer/dom/SpacingCache';
+import { FontVariant, SpacingCache } from 'browser/renderer/dom/SpacingCache';
 
 
 export const enum RowCss {
@@ -129,11 +129,17 @@ export class DomRendererRowFactory {
       const isCursorCell = isCursorRow && x === cursorX;
       const isLinkHover = hasHover && x >= linkStart && x <= linkEnd;
 
+      // get chars to render for this cell
       let chars = cell.getChars() || WHITESPACE_CELL_CHAR;
       if (chars === ' ' && (cell.isUnderline() || cell.isOverline())) {
         chars = '\xa0';
       }
-      spacing = spacingCache.get(chars, width * cellWidth, 0);
+
+      // lookup letter-spacing with font variant applied
+      let fontVariant = FontVariant.REGULAR;
+      if (cell.isBold())   fontVariant |= FontVariant.BOLD;
+      if (cell.isItalic()) fontVariant |= FontVariant.ITALIC;
+      spacing = spacingCache.get(chars, width * cellWidth, fontVariant);
 
       if (!charElement) {
         charElement = this._document.createElement('span');
@@ -145,7 +151,7 @@ export class DomRendererRowFactory {
          * - char not part of a selection
          * - underline from hover state did not change
          * - cell content renders to same letter-spacing
-         * - char is not cursor
+         * - cell is not cursor
          */
         if (
           cellAmount
@@ -156,10 +162,16 @@ export class DomRendererRowFactory {
           && !isCursorCell
           && !isJoined
         ) {
+          // no span alterations, thus only account chars skipping all code below
           text += chars;
           cellAmount++;
           continue;
         } else {
+          /**
+           * cannot merge:
+           * - apply left-over text to old span
+           * - create new span, reset state holders cellAmount & text
+           */
           if (cellAmount) {
             charElement.textContent = text;
           }
@@ -168,6 +180,7 @@ export class DomRendererRowFactory {
           text = '';
         }
       }
+      // preserve conditions for next merger eval round
       oldBg = cell.bg;
       oldFg = cell.fg;
       oldExt = cell.extended.ext;
@@ -365,16 +378,21 @@ export class DomRendererRowFactory {
           }
       }
 
+      // apply CSS classes
+      // slightly faster than using classList by omitting
+      // checks for doubled entries (code above should not have doublets)
       if (classes.length) {
         charElement.className = classes.join(' ');
         classes.length = 0;
       }
 
+      // exclude conditions for cell merging - never merge these
       if (!isCursorCell && !isInSelection && !isJoined) {
         cellAmount++;
       } else {
         charElement.textContent = text;
       }
+      // apply letter-spacing rule
       if (spacing) {
         charElement.style.letterSpacing = `${spacing}px`;
       }
