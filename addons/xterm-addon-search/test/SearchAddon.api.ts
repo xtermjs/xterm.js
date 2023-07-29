@@ -242,8 +242,7 @@ describe('Search Tests', function (): void {
           { resultCount: 1000, resultIndex: 1 }
         ]);
       });
-      // FIXME: skipped due to failing on windows
-      it.skip('should fire when writing to terminal', async () => {
+      it('should fire when writing to terminal', async () => {
         await page.evaluate(`
           window.calls = [];
           window.search.onDidChangeResults(e => window.calls.push(e));
