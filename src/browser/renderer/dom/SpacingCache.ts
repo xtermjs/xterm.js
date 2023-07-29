@@ -40,6 +40,8 @@ export class SpacingCache implements IDisposable {
     this._container.style.top = '-50000px';
     this._container.style.width = '50000px';
     this._container.style.whiteSpace = 'pre';
+    // avoid undercuts in non-monospace fonts from kerning
+    this._container.style.fontKerning = 'none';
 
     const regular = _document.createElement('span');
 
