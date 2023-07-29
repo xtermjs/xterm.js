@@ -14,6 +14,7 @@ import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { createStyle, IStyleSheet } from './StyleSheet';
 
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -35,7 +36,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
 
-  private _themeStyleElement!: HTMLStyleElement;
+  private _themeStyle!: IStyleSheet;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -90,7 +91,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       // https://github.com/xtermjs/xterm.js/issues/2960
       this._rowContainer.remove();
       this._selectionContainer.remove();
-      this._themeStyleElement.remove();
+      this._themeStyle.dispose();
       this._widthCache.dispose();
     }));
 
@@ -127,9 +128,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _injectCss(colors: ReadonlyColorSet): void {
-    if (!this._themeStyleElement) {
-      this._themeStyleElement = document.createElement('style');
-      this._screenElement.appendChild(this._themeStyleElement);
+    if (!this._themeStyle) {
+      this._themeStyle = createStyle(this._screenElement);
     }
 
     // Base CSS
@@ -228,7 +228,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
 
-    this._themeStyleElement.textContent = styles;
+    this._themeStyle.setCss(styles);
   }
 
   public handleDevicePixelRatioChange(): void {
