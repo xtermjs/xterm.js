@@ -398,6 +398,21 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
+    /**
+     * NOTE: The linkifier may send out of viewport y-values if:
+     * - negative y-value: the link started at a higher line
+     * - y-value >= maxY: the link ends at a line below viewport
+     *
+     * For negative y-values we can simply adjust x = 0,
+     * as higher up link start means, that everything from
+     * (0,0) is a link under top-down-left-right char progression
+     *
+     * Additionally there might be a small chance of out-of-sync x|y-values
+     * from a race condition of render updates vs. link event handler execution:
+     * - (sync) resize: chances terminal buffer in sync, schedules render update async
+     * - (async) link handler race condition: new buffer metrics, but still on old render state
+     * - (async) render update: brings term metrics and render state back in sync
+     */
     // clip coords into viewport
     if (y < 0) x = 0;
     if (y2 < 0) x2 = 0;
