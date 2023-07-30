@@ -2915,7 +2915,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
         const index = parseInt(idx);
-        if (isValidColorIndex(index) && index < 256) {
+        if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
           } else {
@@ -3073,7 +3073,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
         const index = parseInt(slots[i]);
-        if (isValidColorIndex(index) && index < 256) {
+        if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }
       }
@@ -3431,5 +3431,5 @@ class DirtyRowTracker implements IDirtyRowTracker {
 }
 
 function isValidColorIndex(value: number): value is ColorIndex {
-  return 0 <= value && value < 259;
+  return 0 <= value && value < 256;
 }
