@@ -38,6 +38,8 @@ export class DomRendererRowFactory {
   private _selectionEnd: [number, number] | undefined;
   private _columnSelectMode: boolean = false;
 
+  public defaultSpacing = 0;
+
   constructor(
     private readonly _document: Document,
     @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
@@ -390,12 +392,7 @@ export class DomRendererRowFactory {
         charElement.textContent = text;
       }
       // apply letter-spacing rule
-      if (spacing) {
-        /**
-         * TODO:
-         * - check if we can ignore tiny spacings here (saves ~400ms)
-         * - check if we can apply a global spacing to rows element
-         */
+      if (spacing !== this.defaultSpacing) {
         charElement.style.letterSpacing = `${spacing}px`;
       }
 

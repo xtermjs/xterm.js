@@ -97,6 +97,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this._widthCache = new WidthCache(document);
     this._widthCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
+    this._setDefaultSpacing();
   }
 
   private _updateDimensions(): void {
@@ -231,9 +232,25 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._themeStyle.setCss(styles);
   }
 
+  /**
+   * default letter spacing
+   * Due to rounding issues in dimensions dpr calc glyph might render
+   * slightly too wide or too narrow. The method corrects the stacking offsets
+   * by applying a default letter-spacing for all chars.
+   * The value gets passed to the row factory to avoid setting this value again
+   * (render speedup is roughly 10%).
+   */
+  private _setDefaultSpacing(): void {
+    // measure same char as in CharSizeService to get the base deviation
+    const spacing = this.dimensions.css.cell.width - this._widthCache.get('W', false, false);
+    this._rowContainer.style.letterSpacing = `${spacing}px`;
+    this._rowFactory.defaultSpacing = spacing;
+  }
+
   public handleDevicePixelRatioChange(): void {
     this._updateDimensions();
     this._widthCache.clear();
+    this._setDefaultSpacing();
   }
 
   private _refreshRowElements(cols: number, rows: number): void {
@@ -257,6 +274,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public handleCharSizeChanged(): void {
     this._updateDimensions();
     this._widthCache.clear();
+    this._setDefaultSpacing();
   }
 
   public handleBlur(): void {
@@ -341,6 +359,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._injectCss(this._themeService.colors);
     // update spacing cache
     this._widthCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
+    this._setDefaultSpacing();
   }
 
   public clear(): void {
