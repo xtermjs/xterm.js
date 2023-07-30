@@ -233,6 +233,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleDevicePixelRatioChange(): void {
     this._updateDimensions();
+    this._widthCache.clear();
   }
 
   private _refreshRowElements(cols: number, rows: number): void {
@@ -255,6 +256,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleCharSizeChanged(): void {
     this._updateDimensions();
+    this._widthCache.clear();
   }
 
   public handleBlur(): void {

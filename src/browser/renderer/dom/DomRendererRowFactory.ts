@@ -391,6 +391,11 @@ export class DomRendererRowFactory {
       }
       // apply letter-spacing rule
       if (spacing) {
+        /**
+         * TODO:
+         * - check if we can ignore tiny spacings here (saves ~400ms)
+         * - check if we can apply a global spacing to rows element
+         */
         charElement.style.letterSpacing = `${spacing}px`;
       }
 
