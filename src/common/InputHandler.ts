@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -2915,7 +2915,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
         const index = parseInt(idx);
-        if (0 <= index && index < 256) {
+        if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
           } else {
@@ -2988,7 +2988,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   // special colors - OSC 10 | 11 | 12
-  private _specialColors = [ColorIndex.FOREGROUND, ColorIndex.BACKGROUND, ColorIndex.CURSOR];
+  private _specialColors = [SpecialColorIndex.FOREGROUND, SpecialColorIndex.BACKGROUND, SpecialColorIndex.CURSOR];
 
   /**
    * Apply colors requests for special colors in OSC 10 | 11 | 12.
@@ -3073,7 +3073,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
         const index = parseInt(slots[i]);
-        if (0 <= index && index < 256) {
+        if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }
       }
@@ -3090,7 +3090,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   110    "Restore default foreground color"   "OSC 110 BEL"  "Restore default foreground to themed color."
    */
   public restoreFgColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.FOREGROUND }]);
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.FOREGROUND }]);
     return true;
   }
 
@@ -3100,7 +3100,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   111    "Restore default background color"   "OSC 111 BEL"  "Restore default background to themed color."
    */
   public restoreBgColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.BACKGROUND }]);
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.BACKGROUND }]);
     return true;
   }
 
@@ -3110,7 +3110,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   112    "Restore default cursor color"   "OSC 112 BEL"  "Restore default cursor to themed color."
    */
   public restoreCursorColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.CURSOR }]);
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.CURSOR }]);
     return true;
   }
 
@@ -3428,4 +3428,8 @@ class DirtyRowTracker implements IDirtyRowTracker {
   public markAllDirty(): void {
     this.markRangeDirty(0, this._bufferService.rows - 1);
   }
+}
+
+function isValidColorIndex(value: number): value is ColorIndex {
+  return 0 <= value && value < 256;
 }
