@@ -37,6 +37,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _terminalClass: number = nextTerminalId++;
 
   private _themeStyle!: IStyleSheet;
+  private _dimensionsStyle!: IStyleSheet;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -92,6 +93,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._rowContainer.remove();
       this._selectionContainer.remove();
       this._themeStyle.dispose();
+      this._dimensionsStyle.dispose();
       this._widthCache.dispose();
     }));
 
@@ -122,6 +124,19 @@ export class DomRenderer extends Disposable implements IRenderer {
       // Make sure rows don't overflow onto following row
       element.style.overflow = 'hidden';
     }
+
+    if (!this._dimensionsStyle) {
+      this._dimensionsStyle = createStyle(this._screenElement);
+    }
+
+    const styles =
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
+      ` display: inline-block;` +   // TODO: find workaround for inline-block (creates ~20% render penalty)
+      ` height: 100%;` +
+      ` vertical-align: top;` +
+      `}`;
+
+    this._dimensionsStyle.setCss(styles);
 
     this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
