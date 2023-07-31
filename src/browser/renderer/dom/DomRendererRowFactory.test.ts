@@ -12,18 +12,10 @@ import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService } from 'common/TestUtils.test';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
-import { WidthCache } from 'browser/renderer/dom/WidthCache';
+import { TestWidthCache } from 'browser/renderer/dom/WidthCache.test';
 
-class EmptyWidthCache extends WidthCache {
-  public widths: {[key: string]: number} = {};
-  public get(c: string, bold: boolean | number, italic: boolean | number): number {
-    if (this.widths[c] !== undefined) {
-      return this.widths[c];
-    }
-    return 5;  // 5 is default width below in tests
-  }
-}
-const EMPTY_WIDTH = new EmptyWidthCache(new jsdom.JSDOM('').window.document);
+
+const EMPTY_WIDTH = new TestWidthCache(new jsdom.JSDOM('').window.document);
 
 
 describe('DomRendererRowFactory', () => {
@@ -54,7 +46,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should set correct attributes for double width characters', () => {
-      EMPTY_WIDTH.widths['語'] = 10;
+      EMPTY_WIDTH.widths['語'] = [10, 10, 10, 10];
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, '語', 2, '語'.charCodeAt(0)]));
       // There should be no element for the following "empty" cell
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '', 0, 0]));
@@ -333,7 +325,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should not merge codepoints with different spacing', () => {
-      EMPTY_WIDTH.widths['€'] = 2;
+      EMPTY_WIDTH.widths['€'] = [2, 2, 2, 2];
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '€', 1, '€'.charCodeAt(0)]));
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
@@ -406,6 +398,56 @@ describe('DomRendererRowFactory', () => {
       spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span class="xterm-bg-1">    </span><span>a</span>'
+      );
+    });
+
+    it('should apply correct positive or negative spacing', () => {
+      EMPTY_WIDTH.widths['€'] = [2, 2, 2, 2];       // too small, should add 3px
+      EMPTY_WIDTH.widths['語'] = [10, 10, 10, 10];  // exact match for its width, should merge
+      EMPTY_WIDTH.widths['𝄞'] = [7, 7, 7, 7];       // too wide, should subtract -2px
+      lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '€', 1, '€'.charCodeAt(0)]));
+      lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
+      lineData.setCell(3, CellData.fromCharData([DEFAULT_ATTR, '語', 2, 'c'.charCodeAt(0)]));
+      lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, '𝄞', 1, 'c'.charCodeAt(0)]));
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      assert.equal(extractHtml(spans),
+        '<span>a</span><span style="letter-spacing: 3px;">€</span><span>c語</span><span style="letter-spacing: -2px;">𝄞</span>'
+      );
+    });
+
+    it('should not merge across link borders', () => {
+      lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
+      lineData.setCell(3, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
+      lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
+      lineData.setCell(5, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
+      lineData.setCell(6, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, 2, 4);
+      assert.equal(extractHtml(spans),
+        '<span>aa</span><span style="text-decoration: underline;">xxx</span><span>bb</span>'
+      );
+    });
+
+    it('empty cells included in link underline', () => {
+      lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
+      lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, 2, 4);
+      assert.equal(extractHtml(spans),
+        '<span>aa</span><span style="text-decoration: underline;">x x</span>'
+      );
+    });
+
+    it('link range gets capped to actual line borders', () => {
+      for (let i = 0; i < 10; ++i) {
+        lineData.setCell(i, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
+      }
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -100, 100);
+      assert.equal(extractHtml(spans),
+        '<span style="text-decoration: underline;">aaaaaaaaaa</span>'
       );
     });
 

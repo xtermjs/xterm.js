@@ -7,7 +7,7 @@ import { IDisposable } from 'common/Types';
 import { FontWeight } from 'common/services/Services';
 
 
-const enum CacheSettings {
+export const enum WidthCacheSettings {
   FLAT_UNSET = -9999,   // sentinel for unset values in flat cache
   FLAT_SIZE = 256,      // codepoint upper bound to handle in flat cache
   REPEAT = 32           // char repeat for measuring
@@ -20,12 +20,12 @@ export class WidthCache implements IDisposable {
   //       It has a small memory footprint (only 1MB for full BMP caching),
   //       still the sweet spot is not reached before touching 32k different codepoints,
   //       thus we store the remaining <<20% of terminal data in a holey structure.
-  private _flat = new Float32Array(CacheSettings.FLAT_SIZE);
+  protected _flat = new Float32Array(WidthCacheSettings.FLAT_SIZE);
 
   // holey cache for bold, italic and bold&italic for any string
   // FIXME: can grow really big over time (~8.5 MB for full BMP caching),
   //        so a shared API across terminals is needed
-  private _holey: Map<string, number> | undefined;
+  protected _holey: Map<string, number> | undefined;
 
   private _font = '';
   private _fontSize = 0;
@@ -80,7 +80,7 @@ export class WidthCache implements IDisposable {
    * Clear the width cache.
    */
   public clear(): void {
-    this._flat.fill(CacheSettings.FLAT_UNSET);
+    this._flat.fill(WidthCacheSettings.FLAT_UNSET);
     // .clear() has some overhead, re-assign instead (>3 times faster)
     this._holey = new Map<string, number>();
   }
@@ -121,8 +121,8 @@ export class WidthCache implements IDisposable {
    */
   public get(c: string, bold: boolean | number, italic: boolean | number): number {
     let cp = 0;
-    if (!bold && !italic && c.length === 1 && (cp = c.charCodeAt(0)) < CacheSettings.FLAT_SIZE) {
-      return this._flat[cp] !== CacheSettings.FLAT_UNSET
+    if (!bold && !italic && c.length === 1 && (cp = c.charCodeAt(0)) < WidthCacheSettings.FLAT_SIZE) {
+      return this._flat[cp] !== WidthCacheSettings.FLAT_UNSET
         ? this._flat[cp]
         : (this._flat[cp] = this._measure(c, 0));
     }
@@ -140,9 +140,9 @@ export class WidthCache implements IDisposable {
     return width;
   }
 
-  private _measure(c: string, variant: number): number {
+  protected _measure(c: string, variant: number): number {
     const el = this._measureElements[variant];
-    el.textContent = c.repeat(CacheSettings.REPEAT);
-    return el.getBoundingClientRect().width / CacheSettings.REPEAT;
+    el.textContent = c.repeat(WidthCacheSettings.REPEAT);
+    return el.getBoundingClientRect().width / WidthCacheSettings.REPEAT;
   }
 }
