@@ -17,11 +17,15 @@ const enum CacheSettings {
 export class WidthCache implements IDisposable {
   // flat cache for regular variant up to CacheSettings.FLAT_SIZE
   // NOTE: ~4x faster access than holey (serving >>80% of terminal content)
+  //       It has a small memory footprint (only 1MB for full BMP caching),
+  //       still the sweet spot is not reached before touching 32k different codepoints,
+  //       thus we store the remaining <<20% of terminal data in a holey structure.
   private _flat = new Float32Array(CacheSettings.FLAT_SIZE);
 
   // holey cache for bold, italic and bold&italic for any string
-  // FIXME: can grow really big over time, so a shared API across terminals is needed
-  private _holey = new Map<string, number>();
+  // FIXME: can grow really big over time (~8.5 MB for full BMP caching),
+  //        so a shared API across terminals is needed
+  private _holey: Map<string, number> | undefined;
 
   private _font = '';
   private _fontSize = 0;
@@ -67,9 +71,9 @@ export class WidthCache implements IDisposable {
   }
 
   public dispose(): void {
-    this._container.remove();
-    this._measureElements.length = 0;
-    this._holey.clear();  // also free memory
+    this._container.remove();           // remove elements from DOM
+    this._measureElements.length = 0;   // release element refs
+    this._holey = undefined;            // free cache memory via GC
   }
 
   /**
@@ -77,7 +81,8 @@ export class WidthCache implements IDisposable {
    */
   public clear(): void {
     this._flat.fill(CacheSettings.FLAT_UNSET);
-    this._holey.clear();
+    // .clear() has some overhead, re-assign instead (>3 times faster)
+    this._holey = new Map<string, number>();
   }
 
   /**
@@ -124,13 +129,13 @@ export class WidthCache implements IDisposable {
     let key = c;
     if (bold) key += 'B';
     if (italic) key += 'I';
-    let width = this._holey.get(key);
+    let width = this._holey!.get(key);
     if (width === undefined) {
       let variant = 0;
       if (bold) variant |= 1;
       if (italic) variant |= 2;
       width = this._measure(c, variant);
-      this._holey.set(key, width);
+      this._holey!.set(key, width);
     }
     return width;
   }
