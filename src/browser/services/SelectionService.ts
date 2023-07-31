@@ -105,8 +105,6 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _mouseUpListener: EventListener;
   private _trimListener: IDisposable;
   private _workCell: CellData = new CellData();
-  // whether last refresh contained active selection
-  private _prevSelection = false;
 
   private _mouseDownTimeStamp: number = 0;
   private _oldHasSelection: boolean = false;
@@ -271,12 +269,6 @@ export class SelectionService extends Disposable implements ISelectionService {
    * selection on Linux.
    */
   public refresh(isLinuxMouseSelection?: boolean): void {
-    // exit early if we have no prev & no active selection
-    if (!this.hasSelection && !this._prevSelection) {
-      return;
-    }
-    this._prevSelection = this.hasSelection;
-
     // Queue the refresh for the renderer
     if (!this._refreshAnimationFrame) {
       this._refreshAnimationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._refresh());
