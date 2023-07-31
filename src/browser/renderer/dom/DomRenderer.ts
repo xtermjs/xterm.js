@@ -98,7 +98,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     }));
 
     this._widthCache = new WidthCache(document);
-    this._widthCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
+    this._widthCache.setFont(
+      this._optionsService.rawOptions.fontFamily,
+      this._optionsService.rawOptions.fontSize,
+      this._optionsService.rawOptions.fontWeight,
+      this._optionsService.rawOptions.fontWeightBold
+    );
     this._setDefaultSpacing();
   }
 
@@ -373,7 +378,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Refresh CSS
     this._injectCss(this._themeService.colors);
     // update spacing cache
-    this._widthCache.setFont(this._optionsService.rawOptions.fontFamily, this._optionsService.rawOptions.fontSize);
+    this._widthCache.setFont(
+      this._optionsService.rawOptions.fontFamily,
+      this._optionsService.rawOptions.fontSize,
+      this._optionsService.rawOptions.fontWeight,
+      this._optionsService.rawOptions.fontWeightBold
+    );
     this._setDefaultSpacing();
   }
 
