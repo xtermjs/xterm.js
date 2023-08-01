@@ -7,7 +7,7 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty } from 'xterm';
+import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from 'xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -157,7 +157,7 @@ export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
 
-  logLevel: LogLevelEnum;
+  readonly logLevel: LogLevelEnum;
 
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
@@ -229,6 +229,7 @@ export interface ITerminalOptions {
   lineHeight?: number;
   linkHandler?: ILinkHandler | null;
   logLevel?: LogLevel;
+  logger?: ILogger | null;
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
