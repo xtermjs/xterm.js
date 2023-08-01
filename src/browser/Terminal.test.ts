@@ -8,7 +8,7 @@ import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from 
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockUnicodeService } from 'common/TestUtils.test';
-import { IMarker } from 'common/Types';
+import { IMarker, ScrollSource } from 'common/Types';
 import { ICoreService } from 'common/services/Services';
 
 const INIT_COLS = 80;
@@ -258,27 +258,27 @@ describe('Terminal', () => {
       });
       it('should scroll a single line', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollLines(-1);
+        term.scrollLines(-1, undefined, ScrollSource.VIEWPORT);
         assert.equal(term.buffer.ydisp, startYDisp - 1);
-        term.scrollLines(1);
+        term.scrollLines(1, undefined, ScrollSource.VIEWPORT);
         assert.equal(term.buffer.ydisp, startYDisp);
       });
       it('should scroll multiple lines', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollLines(-5);
+        term.scrollLines(-5, undefined, ScrollSource.VIEWPORT);
         assert.equal(term.buffer.ydisp, startYDisp - 5);
-        term.scrollLines(5);
+        term.scrollLines(5, undefined, ScrollSource.VIEWPORT);
         assert.equal(term.buffer.ydisp, startYDisp);
       });
       it('should not scroll beyond the bounds of the buffer', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollLines(1);
+        term.scrollLines(1, undefined, ScrollSource.VIEWPORT);
         assert.equal(term.buffer.ydisp, startYDisp);
         for (let i = 0; i < startYDisp; i++) {
-          term.scrollLines(-1);
+          term.scrollLines(-1, undefined, ScrollSource.VIEWPORT);
         }
         assert.equal(term.buffer.ydisp, 0);
-        term.scrollLines(-1);
+        term.scrollLines(-1, undefined, ScrollSource.VIEWPORT);
         assert.equal(term.buffer.ydisp, 0);
       });
     });
@@ -329,7 +329,7 @@ describe('Terminal', () => {
         startYDisp = (term.rows * 2) + 1;
       });
       it('should scroll to the bottom', () => {
-        term.scrollLines(-1);
+        term.scrollLines(-1, undefined, ScrollSource.VIEWPORT);
         term.scrollToBottom();
         assert.equal(term.buffer.ydisp, startYDisp);
         term.scrollPages(-1);
@@ -398,7 +398,7 @@ describe('Terminal', () => {
         });
 
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollLines(-1);
+        term.scrollLines(-1, undefined, ScrollSource.VIEWPORT);
         assert.equal(term.buffer.ydisp, startYDisp - 1);
         term.keyPress({ keyCode: 0 });
         assert.equal(term.buffer.ydisp, startYDisp - 1);
