@@ -1,0 +1,34 @@
+node_modules/
+*.swp
+.lock-wscript
+lib/
+out/
+out-test/
+out-worker/
+.nyc_output/
+Makefile.gyp
+*.Makefile
+*.target.gyp.mk
+*.node
+example/*.log
+docs/
+npm-debug.log
+/.idea/
+.env
+build/
+.DS_Store
+package-lock.json
+yarn.lock
+
+# Keep bundled code out of Git
+dist/
+demo/dist/
+
+# skip benchmark & inwasm folders, except builds
+.benchmark/
+timeline/
+inwasm-sdks/
+inwasm-builds/
+!inwasm-builds/**/final.wat
+!inwasm-builds/**/final.wasm
+!inwasm-builds/**/definition.json

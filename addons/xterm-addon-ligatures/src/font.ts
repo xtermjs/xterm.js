@@ -65,7 +65,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
       }
     }
     // Latest proposal https://bugs.chromium.org/p/chromium/issues/detail?id=1312603
-    else if (typeof process !== 'object' && 'queryLocalFonts' in window) {
+    else if (typeof window !== 'undefined' && 'queryLocalFonts' in window) {
       const fonts: Record<string, IFontMetadata[]> = {};
       try {
         const fontsIterator = await (window as any).queryLocalFonts();

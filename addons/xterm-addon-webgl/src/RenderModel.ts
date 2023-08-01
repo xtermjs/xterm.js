@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderModel } from './Types';
+import { ICursorRenderModel, IRenderModel } from './Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 
@@ -18,6 +18,7 @@ export class RenderModel implements IRenderModel {
   public cells: Uint32Array;
   public lineLengths: Uint32Array;
   public selection: ISelectionRenderModel;
+  public cursor?: ICursorRenderModel;
 
   constructor() {
     this.cells = new Uint32Array(0);

@@ -296,6 +296,8 @@ export class MockRenderer implements IRenderer {
 }
 
 export class MockViewport implements IViewport {
+  private readonly _onRequestScrollLines = new EventEmitter<{ amount: number, suppressScrollEvent: boolean }>();
+  public readonly onRequestScrollLines = this._onRequestScrollLines.event;
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
@@ -318,6 +320,9 @@ export class MockViewport implements IViewport {
   }
   public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
     throw new Error('Method not implemented.');
+  }
+  public scrollLines(disp: number): void {
+    this._onRequestScrollLines.fire({ amount: disp, suppressScrollEvent: false });
   }
 }
 
