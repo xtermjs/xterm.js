@@ -236,6 +236,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
+  document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
   initImageAddonExposed();
 }
@@ -1212,8 +1213,23 @@ ipv6 https://[::1]/with/some?vars=and&a#hash aaa
 stop at final '.': This is a sentence with an url to http://example.com.
 stop at final '?': Is this the right url http://example.com/?
 stop at final '?': Maybe this one http://example.com/with?arguments=false?
-  `;
+`;
   term.write(linkExamples.split('\n').join('\r\n'));
+}
+
+
+function coloredErase(): void {
+  const data = `
+Test BG-colored Erase (BCE):
+  The color block in the following lines should look identical.
+  For newly created rows at the bottom the last color should be applied
+  for all cells to the right.
+
+ def   41   42   43   44   45   46   47\x1b[47m
+\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m     
+\x1b[m\x1b[5X\x1b[41m\x1b[5C\x1b[5X\x1b[42m\x1b[5C\x1b[5X\x1b[43m\x1b[5C\x1b[5X\x1b[44m\x1b[5C\x1b[5X\x1b[45m\x1b[5C\x1b[5X\x1b[46m\x1b[5C\x1b[5X\x1b[47m\x1b[5C\x1b[5X\x1b[m
+`;
+  term.write(data.split('\n').join('\r\n'));
 }
 
 

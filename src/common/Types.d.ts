@@ -242,6 +242,7 @@ export interface IBufferLine {
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;
+  getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
 
   /* direct access to cell attrs */

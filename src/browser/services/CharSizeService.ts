@@ -7,7 +7,12 @@ import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
-import { ITerminalOptions } from 'common/Types';
+
+
+const enum MeasureSettings {
+  REPEAT = 32
+}
+
 
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
@@ -67,8 +72,10 @@ class DomMeasureStrategy implements IMeasureStrategy {
   ) {
     this._measureElement = this._document.createElement('span');
     this._measureElement.classList.add('xterm-char-measure-element');
-    this._measureElement.textContent = 'W';
+    this._measureElement.textContent = 'W'.repeat(MeasureSettings.REPEAT);
     this._measureElement.setAttribute('aria-hidden', 'true');
+    this._measureElement.style.whiteSpace = 'pre';
+    this._measureElement.style.fontKerning = 'none';
     this._parentElement.appendChild(this._measureElement);
   }
 
@@ -85,7 +92,7 @@ class DomMeasureStrategy implements IMeasureStrategy {
     // If values are 0 then the element is likely currently display:none, in which case we should
     // retain the previous value.
     if (geometry.width !== 0 && geometry.height !== 0) {
-      this._result.width = geometry.width;
+      this._result.width = geometry.width / MeasureSettings.REPEAT;
       this._result.height = Math.ceil(geometry.height);
     }
 

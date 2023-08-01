@@ -56,35 +56,35 @@ describe('WebLinksAddon', () => {
     it('all half width', async () => {
       setupCustom();
       await writeSync(page, 'aaa http://example.com aaa http://example.com aaa');
-      await resetAndHover(5, 1);
+      await resetAndHover(5, 0);
       await evalLinkStateData('http://example.com', { start: { x: 5, y: 1 }, end: { x: 22, y: 1 } });
-      await resetAndHover(1, 2);
+      await resetAndHover(1, 1);
       await evalLinkStateData('http://example.com', { start: { x: 28, y: 1 }, end: { x: 5, y: 2 } });
     });
     it('url after full width', async () => {
       setupCustom();
       await writeSync(page, '￥￥￥ http://example.com ￥￥￥ http://example.com aaa');
-      await resetAndHover(8, 1);
+      await resetAndHover(8, 0);
       await evalLinkStateData('http://example.com', { start: { x: 8, y: 1 }, end: { x: 25, y: 1 } });
-      await resetAndHover(1, 2);
+      await resetAndHover(1, 1);
       await evalLinkStateData('http://example.com', { start: { x: 34, y: 1 }, end: { x: 11, y: 2 } });
     });
     it('full width within url and before', async () => {
       setupCustom();
       await writeSync(page, '￥￥￥ https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 ￥￥￥');
-      await resetAndHover(8, 1);
+      await resetAndHover(8, 0);
       await evalLinkStateData('https://ko.wikipedia.org/wiki/위키백과:대문', { start: { x: 8, y: 1 }, end: { x: 11, y: 2 } });
-      await resetAndHover(1, 2);
+      await resetAndHover(1, 1);
       await evalLinkStateData('https://ko.wikipedia.org/wiki/위키백과:대문', { start: { x: 8, y: 1 }, end: { x: 11, y: 2 } });
-      await resetAndHover(17, 2);
+      await resetAndHover(17, 1);
       await evalLinkStateData('https://ko.wikipedia.org/wiki/위키백과:대문', { start: { x: 17, y: 2 }, end: { x: 19, y: 3 } });
     });
     it('name + password url after full width and combining', async () => {
       setupCustom();
       await writeSync(page, '￥￥￥cafe\u0301 http://test:password@example.com/some_path');
-      await resetAndHover(12, 1);
+      await resetAndHover(12, 0);
       await evalLinkStateData('http://test:password@example.com/some_path', { start: { x: 12, y: 1 }, end: { x: 13, y: 2 } });
-      await resetAndHover(13, 2);
+      await resetAndHover(5, 1);
       await evalLinkStateData('http://test:password@example.com/some_path', { start: { x: 12, y: 1 }, end: { x: 13, y: 2 } });
     });
   });
@@ -101,39 +101,51 @@ async function testHostName(hostname: string): Promise<void> {
     `\\'http://${hostname}/\\'\\r\\n` +
     `http://${hostname}/subpath/+/id`;
   await writeSync(page, data);
-  await pollForLinkAtCell(3, 1, `http://${hostname}`);
-  await pollForLinkAtCell(3, 2, `http://${hostname}/a~b#c~d?e~f`);
+  await pollForLinkAtCell(3, 0, `http://${hostname}`);
+  await pollForLinkAtCell(3, 1, `http://${hostname}/a~b#c~d?e~f`);
+  await pollForLinkAtCell(3, 2, `http://${hostname}/colon:test`);
   await pollForLinkAtCell(3, 3, `http://${hostname}/colon:test`);
-  await pollForLinkAtCell(3, 4, `http://${hostname}/colon:test`);
+  await pollForLinkAtCell(2, 4, `http://${hostname}/`);
   await pollForLinkAtCell(2, 5, `http://${hostname}/`);
-  await pollForLinkAtCell(2, 6, `http://${hostname}/`);
-  await pollForLinkAtCell(1, 7, `http://${hostname}/subpath/+/id`);
+  await pollForLinkAtCell(1, 6, `http://${hostname}/subpath/+/id`);
 }
 
 async function pollForLinkAtCell(col: number, row: number, value: string): Promise<void> {
-  const rowSelector = `.xterm-rows > :nth-child(${row})`;
-  // Ensure the hover element exists before trying to hover it
-  await pollFor(page, `!!document.querySelector('${rowSelector} > :nth-child(${col})')`, true);
-  await pollFor(page, `document.querySelectorAll('${rowSelector} > span[style]').length >= ${value.length}`, true, async () => page.hover(`${rowSelector} > :nth-child(${col})`));
-  assert.equal(await page.evaluate(`Array.prototype.reduce.call(document.querySelectorAll('${rowSelector} > span[style]'), (a, b) => a + b.textContent, '');`), value);
+  await page.mouse.move(...(await cellPos(col, row)));
+  await pollFor(page, `!!Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').length`, true);
+  const text = await page.evaluate(`Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').map(el => el.textContent).join('');`);
+  assert.deepEqual(text, value);
 }
 
 async function setupCustom(): Promise<void> {
   await openTerminal(page, { cols: 40 });
-  await page.evaluate(`window._linkStateData = {};
+  await page.evaluate(`window._linkStateData = {uri:''};
 window._linkaddon = new window.WebLinksAddon();
 window._linkaddon._options.hover = (event, uri, range) => { window._linkStateData = { uri, range }; };
 window.term.loadAddon(window._linkaddon);`);
 }
 
 async function resetAndHover(col: number, row: number): Promise<void> {
-  await page.evaluate(`window._linkStateData = {};`);
-  const rowSelector = `.xterm-rows > :nth-child(${row})`;
-  await page.hover(`${rowSelector} > :nth-child(${col})`);
+  await page.mouse.move(0, 0);
+  await page.evaluate(`window._linkStateData = {uri:''};`);
+  await new Promise(r => setTimeout(r, 200));
+  await page.mouse.move(...(await cellPos(col, row)));
+  await pollFor(page, `!!window._linkStateData.uri.length`, true);
 }
 
 async function evalLinkStateData(uri: string, range: any): Promise<void> {
   const data: ILinkStateData = await page.evaluate(`window._linkStateData`);
   assert.equal(data.uri, uri);
   assert.deepEqual(data.range, range);
+}
+
+async function cellPos(col: number, row: number): Promise<[number, number]> {
+  const coords: any = await page.evaluate(`
+    (function() {
+      const rect = window.term.element.getBoundingClientRect();
+      const dim = term._core._renderService.dimensions;
+      return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right, width: dim.css.cell.width, height: dim.css.cell.height};
+    })();
+  `);
+  return [col * coords.width + coords.left + 2, row * coords.height + coords.top + 2];
 }
