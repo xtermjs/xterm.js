@@ -541,6 +541,8 @@ function initOptions(term: TerminalType): void {
             value = {
               background: '#ffffff',
               foreground: '#333333',
+              cursor: '#333333',
+              cursorAccent: '#ffffff',
               selectionBackground: '#add6ff',
               black: '#000000',
               blue: '#0451a5',
