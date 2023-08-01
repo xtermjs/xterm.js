@@ -167,7 +167,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     styles +=
       `@keyframes blink_box_shadow` + `_` + this._terminalClass + ` {` +
       ` 50% {` +
-      `  box-shadow: none;` +
+      `  border-bottom-style: hidden;` +
       ` }` +
       `}`;
     styles +=
@@ -204,7 +204,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${colors.cursor.css} inset;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
-      ` box-shadow: 0 -1px 0 ${colors.cursor.css} inset;` +
+      ` border-bottom: 1px ${colors.cursor.css};` +
+      ` border-bottom-style: solid;` +
+      ` height: calc(100% - 1px);` +
       `}`;
     // Selection
     styles +=
