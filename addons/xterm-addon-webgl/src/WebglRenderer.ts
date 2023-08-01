@@ -471,9 +471,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
               this._coreBrowserService.isFocused &&
               (terminal.options.cursorStyle || 'block') === 'block') {
             this._cellColorResolver.result.fg =
-              Attributes.CM_RGB | this._themeService.colors.cursorAccent.rgba & Attributes.RGB_MASK;
+              Attributes.CM_RGB | (this._themeService.colors.cursorAccent.rgba >> 8 & Attributes.RGB_MASK);
             this._cellColorResolver.result.bg =
-              Attributes.CM_RGB | this._themeService.colors.cursor.rgba & Attributes.RGB_MASK;
+              Attributes.CM_RGB | (this._themeService.colors.cursor.rgba >> 8 & Attributes.RGB_MASK);
           }
         }
 
