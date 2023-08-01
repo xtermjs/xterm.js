@@ -55,6 +55,19 @@
             <span id="htmlserialize-output-result"></span>
             <div><pre id="htmlserialize-output"></pre></div>
           </div>
+          <h4>Image Addon</h4>
+          <details>
+            <summary>image addon settings</summary>
+            <div>
+              <label>Storage Limit (in MB) <input type="number" id="image-storagelimit"/></label><br/>
+              <label>Show Placeholder <input type="checkbox" id="image-showplaceholder"/></label>
+              <br/><br/>
+              <label>
+                Ctor options (applied on addon relaunch)<br/>
+                <textarea id="image-options" cols="40" rows="12"></textarea>
+              </label>
+            </div>
+          </details>
         </div>
         <div id="style" class="tabContent">
           <h3>Style</h3>
@@ -90,6 +103,11 @@
 
               <dt>Weblinks Addon</dt>
               <dd><button id="weblinks-test" title="Various url conditions from demo data, hover&click to test">Test URLs</button></dd>
+            
+              <dt>Image Test</dt>
+              <dd><button id="image-demo1">snake (sixel)</button></dd>
+              <dd><button id="image-demo2">oranges (sixel)</button></dd>
+              <dd><button id="image-demo3">palette (iip)</button></dd>
             </dl>
           </div>
         </div>
