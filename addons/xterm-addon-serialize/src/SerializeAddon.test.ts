@@ -74,7 +74,7 @@ describe('xterm-addon-serialize', () => {
     terminal = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
     terminal.loadAddon(serializeAddon);
 
-    (terminal as any)._core._themeService = new ThemeService(new OptionsService({}));
+    (terminal as any)._core._themeService = new ThemeService((terminal as any)._core.optionsService);
     (terminal as any)._core._selectionService = new TestSelectionService((terminal as any)._core._bufferService);
   });
 
@@ -204,6 +204,26 @@ describe('xterm-addon-serialize', () => {
         includeGlobalBackground: true
       });
       assert.equal((output.match(/color: #ffffff; background-color: #000000; font-family: courier-new, courier, monospace; font-size: 15px;/g) || []).length, 1, output);
+    });
+
+    it('cells with custom color styling', async () => {
+      terminal.options.theme.black = '#ffa500';
+      terminal.options.theme = { ... terminal.options.theme };
+
+      await writeP(terminal, ' ' + sgr('38;5;0') + 'terminal' + sgr('39') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<span style='color: #ffa500;'>terminal<\/span>/g) || []).length, 1, output);
+    });
+
+    it('cells with color styling - xterm headless', async () => {
+      // a headless terminal doesn't have a themeservice
+      (terminal as any)._core._themeService = undefined;
+
+      await writeP(terminal, ' ' + sgr('38;5;46') + 'terminal' + sgr('39') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<span style='color: #00ff00;'>terminal<\/span>/g) || []).length, 1, output);
     });
   });
 });
