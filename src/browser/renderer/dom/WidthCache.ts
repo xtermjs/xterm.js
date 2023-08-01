@@ -37,9 +37,7 @@ export class WidthCache implements IDisposable {
   private _container: HTMLDivElement;
   private _measureElements: HTMLSpanElement[] = [];
 
-  constructor(
-    private readonly _document: Document
-  ) {
+  constructor(_document: Document) {
     this._container = _document.createElement('div');
     this._container.style.position = 'absolute';
     this._container.style.top = '-50000px';
