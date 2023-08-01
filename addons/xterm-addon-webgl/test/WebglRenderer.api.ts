@@ -25,7 +25,7 @@ describe('WebGL Renderer Integration Tests', async () => {
 
   itWebgl('dispose removes renderer canvases', async function(): Promise<void> {
     await setupBrowser();
-    assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 3);
+    assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 2);
     await page.evaluate(`addon.dispose()`);
     assert.equal(await page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 0);
     await browser.close();
