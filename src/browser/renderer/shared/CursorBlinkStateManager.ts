@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { Terminal } from 'xterm';
 import { ICoreBrowserService } from 'browser/services/Services';
 
 /**
@@ -52,7 +51,7 @@ export class CursorBlinkStateManager {
     }
   }
 
-  public restartBlinkAnimation(terminal: Terminal): void {
+  public restartBlinkAnimation(): void {
     if (this.isPaused) {
       return;
     }
@@ -136,12 +135,12 @@ export class CursorBlinkStateManager {
     }
   }
 
-  public resume(terminal: Terminal): void {
+  public resume(): void {
     // Clear out any existing timers just in case
     this.pause();
 
     this._animationTimeRestarted = undefined;
     this._restartInterval();
-    this.restartBlinkAnimation(terminal);
+    this.restartBlinkAnimation();
   }
 }

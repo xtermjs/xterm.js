@@ -22,7 +22,7 @@ import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
-import { CursorBlinkStateManager } from './CursorBlinkStateManager';
+import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
@@ -86,6 +86,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
+    this._updateCursorBlink();
     this.register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
     this._canvas = document.createElement('canvas');
@@ -201,6 +202,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleBlur(this._terminal);
     }
+    console.log('blur');
     this._cursorBlinkStateManager?.pause();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
@@ -210,7 +212,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleFocus(this._terminal);
     }
-    this._cursorBlinkStateManager?.resume(this._terminal);
+    this._cursorBlinkStateManager?.resume();
+    console.log('focus');
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
@@ -227,7 +230,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleCursorMove(this._terminal);
     }
-    this._cursorBlinkStateManager?.restartBlinkAnimation(this._terminal);
+    this._cursorBlinkStateManager?.restartBlinkAnimation();
   }
 
   private _handleOptionsChanged(): void {
@@ -310,7 +313,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.reset(this._terminal);
     }
 
-    this._cursorBlinkStateManager?.restartBlinkAnimation(this._terminal);
+    this._cursorBlinkStateManager?.restartBlinkAnimation();
     this._updateCursorBlink();
   }
 
