@@ -77,7 +77,10 @@ class DomMeasureStrategy implements IMeasureStrategy {
     this._measureElement.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
 
     // Note that this triggers a synchronous layout
-    const geometry = this._measureElement.getBoundingClientRect();
+    const geometry = {
+      height: Number(this._measureElement.offsetHeight),
+      width: Number(this._measureElement.offsetWidth)
+    };
 
     // If values are 0 then the element is likely currently display:none, in which case we should
     // retain the previous value.
