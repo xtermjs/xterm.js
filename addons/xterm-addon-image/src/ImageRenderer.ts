@@ -28,8 +28,17 @@ export class ImageRenderer implements IDisposable {
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
 
   // drawing primitive - canvas
-  public static createCanvas(base: Window, width: number, height: number): HTMLCanvasElement {
-    const canvas = base.document.createElement('canvas');
+  public static createCanvas(localDocument: Document | undefined, width: number, height: number): HTMLCanvasElement {
+    /**
+     * NOTE: We normally dont care, from which document the canvas
+     * gets created, so we can fall back to global document,
+     * if the terminal has no document associated yet.
+     * This way early image loads before calling .open keep working
+     * (still discouraged though, as the metrics will be screwed up).
+     * Only the DOM output canvas should be on the terminal's document,
+     * which gets explicitly checked in `insertLayerToDom`.
+     */
+    const canvas = (localDocument || document).createElement('canvas');
     canvas.width = width | 0;
     canvas.height = height | 0;
     return canvas;
@@ -58,7 +67,7 @@ export class ImageRenderer implements IDisposable {
   }
 
 
-  constructor(private _terminal: ITerminalExt, private _showPlaceholder: boolean) {
+  constructor(private _terminal: ITerminalExt) {
     this._oldOpen = this._terminal._core.open;
     this._terminal._core.open = (parent: HTMLElement): void => {
       this._oldOpen?.call(this._terminal._core, parent);
@@ -79,7 +88,7 @@ export class ImageRenderer implements IDisposable {
 
   public dispose(): void {
     this._optionsRefresh?.dispose();
-    this._removeLayerFromDom();
+    this.removeLayerFromDom();
     if (this._terminal._core && this._oldOpen) {
       this._terminal._core.open = this._oldOpen;
       this._oldOpen = undefined;
@@ -204,7 +213,7 @@ export class ImageRenderer implements IDisposable {
     const finalWidth = width + sx > img.width ? img.width - sx : width;
     const finalHeight = sy + height > img.height ? img.height - sy : height;
 
-    const canvas = ImageRenderer.createCanvas(this._terminal._core._coreBrowserService.window, finalWidth, finalHeight);
+    const canvas = ImageRenderer.createCanvas(this.document, finalWidth, finalHeight);
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.drawImage(
@@ -220,7 +229,7 @@ export class ImageRenderer implements IDisposable {
    * Draw a line with placeholder on the image layer canvas.
    */
   public drawPlaceholder(col: number, row: number, count: number = 1): void {
-    if ((this._placeholderBitmap || this._placeholder) && this._ctx) {
+    if (this._ctx) {
       const { width, height } = this.cellSize;
 
       // Don't try to draw anything, if we cannot get valid renderer metrics.
@@ -228,9 +237,12 @@ export class ImageRenderer implements IDisposable {
         return;
       }
 
-      if (height >= this._placeholder!.height) {
+      if (!this._placeholder) {
+        this._createPlaceHolder(Math.max(height + 1, PLACEHOLDER_HEIGHT));
+      } else if (height >= this._placeholder!.height) {
         this._createPlaceHolder(height + 1);
       }
+      if (!this._placeholder) return;
       this._ctx.drawImage(
         this._placeholderBitmap || this._placeholder!,
         col * width,
@@ -274,7 +286,7 @@ export class ImageRenderer implements IDisposable {
       return;
     }
     const canvas = ImageRenderer.createCanvas(
-      this._terminal._core._coreBrowserService.window,
+      this.document,
       Math.ceil(spec.orig!.width * currentWidth / originalWidth),
       Math.ceil(spec.orig!.height * currentHeight / originalHeight)
     );
@@ -294,25 +306,35 @@ export class ImageRenderer implements IDisposable {
     this._renderService = this._terminal._core._renderService;
     this._oldSetRenderer = this._renderService.setRenderer.bind(this._renderService);
     this._renderService.setRenderer = (renderer: any) => {
-      this._removeLayerFromDom();
+      this.removeLayerFromDom();
       this._oldSetRenderer?.call(this._renderService, renderer);
-      this._insertLayerToDom();
     };
-    this._insertLayerToDom();
-    if (this._showPlaceholder) {
-      this._createPlaceHolder();
+  }
+
+  public insertLayerToDom(): void {
+    // make sure that the terminal is attached to a document and to DOM
+    if (this.document && this._terminal._core.screenElement) {
+      if (!this.canvas) {
+        this.canvas = ImageRenderer.createCanvas(
+          this.document, this.dimensions?.css.canvas.width || 0,
+          this.dimensions?.css.canvas.height || 0
+        );
+        this.canvas.classList.add('xterm-image-layer');
+        this._terminal._core.screenElement.appendChild(this.canvas);
+        this._ctx = this.canvas.getContext('2d', { alpha: true, desynchronized: true });
+        this.clearAll();
+      }
+    } else {
+      console.warn('image addon: cannot insert output canvas to DOM, missing document or screenElement');
     }
   }
 
-  private _insertLayerToDom(): void {
-    this.canvas = ImageRenderer.createCanvas(this._terminal._core._coreBrowserService.window, this.dimensions?.css.canvas.width || 0, this.dimensions?.css.canvas.height || 0);
-    this.canvas.classList.add('xterm-image-layer');
-    this._terminal._core.screenElement?.appendChild(this.canvas);
-    this._ctx = this.canvas.getContext('2d', { alpha: true, desynchronized: true });
-  }
-
-  private _removeLayerFromDom(): void {
-    this.canvas?.parentNode?.removeChild(this.canvas);
+  public removeLayerFromDom(): void {
+    if (this.canvas) {
+      this._ctx = undefined;
+      this.canvas.remove();
+      this.canvas = undefined;
+    }
   }
 
   private _createPlaceHolder(height: number = PLACEHOLDER_HEIGHT): void {
@@ -321,7 +343,7 @@ export class ImageRenderer implements IDisposable {
 
     // create blueprint to fill placeholder with
     const bWidth = 32;  // must be 2^n
-    const blueprint = ImageRenderer.createCanvas(this._terminal._core._coreBrowserService.window, bWidth, height);
+    const blueprint = ImageRenderer.createCanvas(this.document, bWidth, height);
     const ctx = blueprint.getContext('2d', { alpha: false });
     if (!ctx) return;
     const imgData = ImageRenderer.createImageData(ctx, bWidth, height);
@@ -340,7 +362,7 @@ export class ImageRenderer implements IDisposable {
 
     // create placeholder line, width aligned to blueprint width
     const width = (screen.width + bWidth - 1) & ~(bWidth - 1) || PLACEHOLDER_LENGTH;
-    this._placeholder = ImageRenderer.createCanvas(this._terminal._core._coreBrowserService.window, width, height);
+    this._placeholder = ImageRenderer.createCanvas(this.document, width, height);
     const ctx2 = this._placeholder.getContext('2d', { alpha: false });
     if (!ctx2) {
       this._placeholder = undefined;
@@ -350,5 +372,9 @@ export class ImageRenderer implements IDisposable {
       ctx2.drawImage(blueprint, i, 0);
     }
     ImageRenderer.createImageBitmap(this._placeholder).then(bitmap => this._placeholderBitmap = bitmap);
+  }
+
+  public get document(): Document | undefined {
+    return this._terminal._core._coreBrowserService?.window.document;
   }
 }

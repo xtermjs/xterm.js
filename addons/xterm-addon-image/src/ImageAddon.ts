@@ -80,7 +80,7 @@ export class ImageAddon implements ITerminalAddon {
     this._terminal = terminal;
 
     // internal data structures
-    this._renderer = new ImageRenderer(terminal, this._opts.showPlaceholder);
+    this._renderer = new ImageRenderer(terminal);
     this._storage = new ImageStorage(terminal, this._renderer, this._opts);
 
     // enable size reports

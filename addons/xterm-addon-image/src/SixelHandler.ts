@@ -57,7 +57,7 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
     if (this._dec) {
       const fillColor = params.params[1] === 1 ? 0 : extractActiveBg(
         this._coreTerminal._core._inputHandler._curAttrData,
-        this._coreTerminal._core._themeService.colors);
+        this._coreTerminal._core._themeService?.colors);
       this._dec.init(fillColor, null, this._opts.sixelPaletteLimit);
     }
   }
@@ -98,7 +98,7 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
       return true;
     }
 
-    const canvas = ImageRenderer.createCanvas(this._coreTerminal._core._coreBrowserService.window, width, height);
+    const canvas = ImageRenderer.createCanvas(undefined, width, height);
     canvas.getContext('2d')?.putImageData(new ImageData(this._dec.data8, width, height), 0, 0);
     if (this._dec.memoryUsage > MEM_PERMA_LIMIT) {
       this._dec.release();
@@ -115,8 +115,13 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
 
 // get currently active background color from terminal
 // also respect INVERSE setting
-function extractActiveBg(attr: AttributeData, colors: ReadonlyColorSet): RGBA8888 {
+function extractActiveBg(attr: AttributeData, colors: ReadonlyColorSet | undefined): RGBA8888 {
   let bg = 0;
+  if (!colors) {
+    // FIXME: theme service is prolly not available yet,
+    // happens if .open() was not called yet (bug in core?)
+    return bg;
+  }
   if (attr.isInverse()) {
     if (attr.isFgDefault()) {
       bg = convertLe(colors.foreground.rgba);

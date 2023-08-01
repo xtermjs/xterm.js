@@ -108,14 +108,13 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     const blob = new Blob([this._dec.data8], { type: this._metrics.mime });
     this._dec.release();
 
-    const win = this._coreTerminal._core._coreBrowserService.window;
-    if (!win.createImageBitmap) {
+    if (!window.createImageBitmap) {
       const url = URL.createObjectURL(blob);
       const img = new Image();
       return new Promise<boolean>(r => {
         img.addEventListener('load', () => {
           URL.revokeObjectURL(url);
-          const canvas = ImageRenderer.createCanvas(win, w, h);
+          const canvas = ImageRenderer.createCanvas(window.document, w, h);
           canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
           this._storage.addImage(canvas);
           r(true);
@@ -126,9 +125,9 @@ export class IIPHandler implements IOscHandler, IResetHandler {
         setTimeout(() => r(true), 1000);
       });
     }
-    return win.createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
+    return createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
       .then(bm => {
-        this._storage.addImage(bm as unknown as HTMLCanvasElement);
+        this._storage.addImage(bm);
         return true;
       });
   }

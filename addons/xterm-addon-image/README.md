@@ -1,15 +1,9 @@
 ## xterm-addon-image
 
-Image output in xterm.js.
+Inline image output in xterm.js. Supports SIXEL and iTerm's inline image protocol (IIP).
 
 
 ![](fixture/example.png)
-
-
-### Important note
-
-Version 0.4.x will be the last version from this single repo.
-Future versions will reside as addon in the xterm.js main repo.
 
 
 ### Install from npm
@@ -17,28 +11,6 @@ Future versions will reside as addon in the xterm.js main repo.
 ```bash
 npm install --save xterm-addon-image
 ```
-
-### Release Compatibility
-
-- 0.4.2 - compatible to xterm.js 5.2.0
-- 0.4.1 - compatible to xterm.js 5.2.0
-- 0.4.0 - compatible to xterm.js 5.1.0
-- 0.3.1 - compatible to xterm.js 5.1.0
-- 0.3.0 - compatible to xterm.js 5.0.0
-- 0.2.0 - compatible to xterm.js 5.0.0
-- 0.1.x - compatible to xterm.js 4.16.0 - 4.19.0
-
-
-### Clone & Build
-
-The addon integrates tightly with the xterm.js base repo, esp. for tests and the demo.
-To properly set up all needed resources see `bootstrap.sh` or run it directly with
-
-```bash
-curl -s https://raw.githubusercontent.com/jerch/xterm-addon-image/master/bootstrap.sh | XTERMJS=5.2.0 IMAGEADDON=master bash
-```
-
-The addon sources and npm package definition reside under `addons/xterm-addon-image`.
 
 
 ### Usage
@@ -243,6 +215,8 @@ _How can I adjust the memory usage?_
 
 ### Changelog
 
+- 0.5.0 integrate with xtermjs base repo (at v0.4.3)
+- 0.4.3 defer canvas creation
 - 0.4.2 fix image canvas resize
 - 0.4.1 compat release for xterm.js 5.2.0
 - 0.4.0 IIP support
