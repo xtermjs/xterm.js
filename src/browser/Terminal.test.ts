@@ -8,7 +8,7 @@ import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from 
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockUnicodeService } from 'common/TestUtils.test';
-import { IMarker } from 'common/Types';
+import { IMarker, ScrollSource } from 'common/Types';
 import { ICoreService } from 'common/services/Services';
 
 const INIT_COLS = 80;
@@ -29,6 +29,7 @@ describe('Terminal', () => {
     term.refresh = () => { };
     (term as any).renderer = new MockRenderer();
     term.viewport = new MockViewport();
+    term.viewport.onRequestScrollLines(e => term.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT));
     (term as any)._compositionHelper = new MockCompositionHelper();
     (term as any).element = {
       classList: {

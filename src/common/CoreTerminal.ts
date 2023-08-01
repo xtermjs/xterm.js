@@ -195,38 +195,32 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   /**
    * Scroll the display of the terminal
    * @param disp The number of lines to scroll down (negative scroll up).
-   * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
-   * to avoid unwanted events being handled by the viewport when the event was triggered from the
-   * viewport originally.
+   * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used to avoid
+   * unwanted events being handled by the viewport when the event was triggered from the viewport
+   * originally.
+   * @param source Which component the event came from.
    */
   public scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void {
     this._bufferService.scrollLines(disp, suppressScrollEvent, source);
   }
 
-  /**
-   * Scroll the display of the terminal by a number of pages.
-   * @param pageCount The number of pages to scroll (negative scrolls up).
-   */
   public scrollPages(pageCount: number): void {
-    this._bufferService.scrollPages(pageCount);
+    this.scrollLines(pageCount * (this.rows - 1));
   }
 
-  /**
-   * Scrolls the display of the terminal to the top.
-   */
   public scrollToTop(): void {
-    this._bufferService.scrollToTop();
+    this.scrollLines(-this._bufferService.buffer.ydisp);
   }
 
-  /**
-   * Scrolls the display of the terminal to the bottom.
-   */
   public scrollToBottom(): void {
-    this._bufferService.scrollToBottom();
+    this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
   }
 
   public scrollToLine(line: number): void {
-    this._bufferService.scrollToLine(line);
+    const scrollAmount = line - this._bufferService.buffer.ydisp;
+    if (scrollAmount !== 0) {
+      this.scrollLines(scrollAmount);
+    }
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
