@@ -8,9 +8,12 @@ import { FontWeight } from 'common/services/Services';
 
 
 export const enum WidthCacheSettings {
-  FLAT_UNSET = -9999,   // sentinel for unset values in flat cache
-  FLAT_SIZE = 256,      // codepoint upper bound to handle in flat cache
-  REPEAT = 32           // char repeat for measuring
+  /** sentinel for unset values in flat cache */
+  FLAT_UNSET = -9999,
+  /** size of flat cache, size-1 equals highest codepoint handled by flat */
+  FLAT_SIZE = 256,
+  /** char repeat for measuring */
+  REPEAT = 32
 }
 
 
