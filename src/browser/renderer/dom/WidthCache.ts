@@ -152,6 +152,6 @@ export class WidthCache implements IDisposable {
   protected _measure(c: string, variant: FontVariant): number {
     const el = this._measureElements[variant];
     el.textContent = c.repeat(WidthCacheSettings.REPEAT);
-    return el.getBoundingClientRect().width / WidthCacheSettings.REPEAT;
+    return el.offsetWidth / WidthCacheSettings.REPEAT;
   }
 }
