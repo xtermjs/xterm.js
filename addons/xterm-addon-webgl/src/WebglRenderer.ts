@@ -202,7 +202,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleBlur(this._terminal);
     }
-    console.log('blur');
     this._cursorBlinkStateManager?.pause();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
@@ -213,7 +212,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.handleFocus(this._terminal);
     }
     this._cursorBlinkStateManager?.resume();
-    console.log('focus');
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
