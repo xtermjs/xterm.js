@@ -149,8 +149,8 @@ export class ImageStorage implements IDisposable {
   }
 
   public setLimit(value: number): void {
-    if (value < 1 || value > 1000) {
-      throw RangeError('invalid storageLimit, should be at least 1 MB and not exceed 1G');
+    if (value < 0.5 || value > 1000) {
+      throw RangeError('invalid storageLimit, should be at least 0.5 MB and not exceed 1G');
     }
     this._pixelLimit = (value / 4 * 1000000) >>> 0;
     this._evictOldest(0);

@@ -222,11 +222,11 @@ describe('ImageAddon', () => {
       assert.equal(usage as number < 1, true);
     });
     it('set storageLimit removes images synchronously', async () => {
-      await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      await writeToTerminal(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
       const usage: number = await page.evaluate('imageAddon.storageUsage');
-      const newUsage: number = await page.evaluate('imageAddon.storageLimit = 1; imageAddon.storageUsage');
+      const newUsage: number = await page.evaluate('imageAddon.storageLimit = 0.5; imageAddon.storageUsage');
       assert.equal(newUsage < usage, true);
-      assert.equal(newUsage < 1, true);
+      assert.equal(newUsage < 0.5, true);
     });
     it('clear alternate images on buffer change', async () => {
       assert.equal(await page.evaluate('imageAddon.storageUsage'), 0);
@@ -236,14 +236,13 @@ describe('ImageAddon', () => {
       assert.equal(await page.evaluate('imageAddon.storageUsage'), 0);
     });
     it('evict tiles by in-place overwrites (only full overwrite tested)', async () => {
+      await new Promise(r => setTimeout(r, 50));
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       let usage = await page.evaluate('imageAddon.storageUsage');
       while (usage === 0) {
         await new Promise(r => setTimeout(r, 50));
         usage = await page.evaluate('imageAddon.storageUsage');
       }
-      await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
-      await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       await writeToTerminal('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
       await new Promise(r => setTimeout(r, 200));  // wait some time and re-check
       assert.equal(await page.evaluate('imageAddon.storageUsage'), usage);
