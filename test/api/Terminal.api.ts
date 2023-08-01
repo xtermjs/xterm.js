@@ -132,9 +132,12 @@ describe('API Integration Tests', function(): void {
       window.term.paste('\\r\\nfoo\\nbar\\r');
       window.term.write('\\x1b[?2004h', () => {
         window.term.paste('foo');
+
+        window.term.options.ignoreBracketedPasteMode = true;
+        window.term.paste('check_mode');
       });
     `);
-    await pollFor(page, `window.calls`, ['foo', '\rfoo\rbar\r', '\x1b[200~foo\x1b[201~']);
+    await pollFor(page, `window.calls`, ['foo', '\rfoo\rbar\r', '\x1b[200~foo\x1b[201~', 'check_mode']);
   });
 
   it('clear', async () => {

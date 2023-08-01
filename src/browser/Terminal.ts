@@ -352,7 +352,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
       copyHandler(event, this._selectionService!);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this.coreService);
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this.coreService, this.optionsService);
     this.register(addDisposableDomListener(this.textarea!, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element!, 'paste', pasteHandlerWrapper));
 
@@ -878,7 +878,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public paste(data: string): void {
-    paste(data, this.textarea!, this.coreService);
+    paste(data, this.textarea!, this.coreService, this.optionsService);
   }
 
   /**
