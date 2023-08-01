@@ -523,6 +523,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (modelUpdated) {
       this._rectangleRenderer!.updateBackgrounds(this._model);
     }
+    this._rectangleRenderer!.updateCursor(this._model);
   }
 
   /**

@@ -242,11 +242,9 @@ export class RectangleRenderer extends Disposable {
       }
     }
     vertices.count = rectangleCount;
-
-    this._updateCursor(model);
   }
 
-  private _updateCursor(model: IRenderModel): void {
+  public updateCursor(model: IRenderModel): void {
     const vertices = this._verticesCursor;
     const cursor = model.cursor;
     if (!cursor || cursor.style === 'block') {
