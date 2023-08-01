@@ -36,6 +36,7 @@
     "sourceType": "module"
   },
   "ignorePatterns": [
+    "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
     "**/*.js"

@@ -77,10 +77,10 @@ interface IInputHandlerExt extends IInputHandler {
 }
 
 export interface ICoreTerminalExt extends ITerminal {
-  _themeService: IThemeService;
+  _themeService: IThemeService | undefined;
   _inputHandler: IInputHandlerExt;
   _renderService: IRenderService;
-  _coreBrowserService: ICoreBrowserService;
+  _coreBrowserService: ICoreBrowserService | undefined;
 }
 
 export interface ITerminalExt extends Terminal {
