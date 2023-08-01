@@ -497,11 +497,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.viewport = this._instantiationService.createInstance(Viewport,
-      (amount: number, suppressScrollEvent: boolean) => this.scrollLines(amount, suppressScrollEvent, ScrollSource.VIEWPORT),
-      this._viewportElement,
-      this._viewportScrollArea
-    );
+    this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
+    this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
@@ -1007,7 +1004,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
-        this._bufferService.scrollToBottom();
+        this.scrollToBottom();
       }
       return false;
     }

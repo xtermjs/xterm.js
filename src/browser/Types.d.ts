@@ -69,10 +69,28 @@ export interface IPublicTerminal extends IDisposable {
   selectAll(): void;
   selectLines(start: number, end: number): void;
   dispose(): void;
+  /**
+   * Scroll the display of the terminal
+   * @param amount The number of lines to scroll down (negative scroll up).
+   */
   scrollLines(amount: number): void;
+  /**
+   * Scroll the display of the terminal by a number of pages.
+   * @param pageCount The number of pages to scroll (negative scrolls up).
+   */
   scrollPages(pageCount: number): void;
+  /**
+   * Scrolls the display of the terminal to the top.
+   */
   scrollToTop(): void;
+  /**
+   * Scrolls the display of the terminal to the bottom.
+   */
   scrollToBottom(): void;
+  /**
+   * Scrolls to a line within the buffer.
+   * @param line The 0-based line index to scroll to.
+   */
   scrollToLine(line: number): void;
   clear(): void;
   write(data: string | Uint8Array, callback?: () => void): void;
@@ -142,6 +160,7 @@ export interface IPartialColorSet {
 
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
+  readonly onRequestScrollLines: IEvent<{ amount: number, suppressScrollEvent: boolean }>;
   syncScrollArea(immediate?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[], cursorElement?: HTMLElement };

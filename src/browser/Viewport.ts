@@ -10,6 +10,7 @@ import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } 
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { EventEmitter } from 'common/EventEmitter';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -48,8 +49,10 @@ export class Viewport extends Disposable implements IViewport {
     target: -1
   };
 
+  private readonly _onRequestScrollLines = this.register(new EventEmitter<{ amount: number, suppressScrollEvent: boolean }>());
+  public readonly onRequestScrollLines = this._onRequestScrollLines.event;
+
   constructor(
-    private readonly _scrollLines: (amount: number, suppressScrollEvent: boolean) => void,
     private readonly _viewportElement: HTMLElement,
     private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
@@ -175,13 +178,13 @@ export class Viewport extends Disposable implements IViewport {
     if (this._ignoreNextScrollEvent) {
       this._ignoreNextScrollEvent = false;
       // Still trigger the scroll so lines get refreshed
-      this._scrollLines(0, true);
+      this._onRequestScrollLines.fire({ amount: 0, suppressScrollEvent: true });
       return;
     }
 
     const newRow = Math.round(this._lastScrollTop / this._currentRowHeight);
     const diff = newRow - this._bufferService.buffer.ydisp;
-    this._scrollLines(diff, true);
+    this._onRequestScrollLines.fire({ amount: diff, suppressScrollEvent: true });
   }
 
   private _smoothScroll(): void {
@@ -265,7 +268,7 @@ export class Viewport extends Disposable implements IViewport {
 
   public scrollLines(disp: number): void {
     if (!this._optionsService.rawOptions.smoothScrollDuration) {
-      this._scrollLines(disp, false);
+      this._onRequestScrollLines.fire({ amount: disp, suppressScrollEvent: false });
     } else {
       const amount = disp * this._currentRowHeight;
       this._smoothScrollState.startTime = Date.now();
