@@ -17,6 +17,14 @@ export const enum WidthCacheSettings {
 }
 
 
+const enum FontVariant {
+  REGULAR = 0,
+  BOLD = 1,
+  ITALIC = 2,
+  BOLD_ITALIC = 3
+}
+
+
 export class WidthCache implements IDisposable {
   // flat cache for regular variant up to CacheSettings.FLAT_SIZE
   // NOTE: ~4x faster access than holey (serving >>80% of terminal content)
@@ -59,7 +67,7 @@ export class WidthCache implements IDisposable {
     boldItalic.style.fontWeight = 'bold';
     boldItalic.style.fontStyle = 'italic';
 
-    // note: must be in order of variant in _measure
+    // NOTE: must be in order of FontVariant
     this._measureElements = [regular, bold, italic, boldItalic];
     this._container.appendChild(regular);
     this._container.appendChild(bold);
@@ -108,10 +116,10 @@ export class WidthCache implements IDisposable {
 
     this._container.style.fontFamily = this._font;
     this._container.style.fontSize = `${this._fontSize}px`;
-    this._measureElements[0].style.fontWeight = `${weight}`;      // regular
-    this._measureElements[1].style.fontWeight = `${weightBold}`;  // bold
-    this._measureElements[2].style.fontWeight = `${weight}`;      // italic
-    this._measureElements[3].style.fontWeight = `${weightBold}`;  // boldItalic
+    this._measureElements[FontVariant.REGULAR].style.fontWeight = `${weight}`;
+    this._measureElements[FontVariant.BOLD].style.fontWeight = `${weightBold}`;
+    this._measureElements[FontVariant.ITALIC].style.fontWeight = `${weight}`;
+    this._measureElements[FontVariant.BOLD_ITALIC].style.fontWeight = `${weightBold}`;
 
     this.clear();
   }
@@ -133,15 +141,15 @@ export class WidthCache implements IDisposable {
     let width = this._holey!.get(key);
     if (width === undefined) {
       let variant = 0;
-      if (bold) variant |= 1;
-      if (italic) variant |= 2;
+      if (bold) variant |= FontVariant.BOLD;
+      if (italic) variant |= FontVariant.ITALIC;
       width = this._measure(c, variant);
       this._holey!.set(key, width);
     }
     return width;
   }
 
-  protected _measure(c: string, variant: number): number {
+  protected _measure(c: string, variant: FontVariant): number {
     const el = this._measureElements[variant];
     el.textContent = c.repeat(WidthCacheSettings.REPEAT);
     return el.getBoundingClientRect().width / WidthCacheSettings.REPEAT;
