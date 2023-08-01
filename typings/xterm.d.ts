@@ -118,6 +118,13 @@ declare module 'xterm' {
     fontWeightBold?: FontWeight;
 
     /**
+     * Whether to ignore the bracketed paste mode. When true, this will always
+     * paste without the `\x1b[200~` and `\x1b[201~` sequences, even when the
+     * shell enables bracketed mode.
+     */
+    ignoreBracketedPasteMode?: boolean;
+
+    /**
      * The spacing in whole pixels between characters.
      */
     letterSpacing?: number;

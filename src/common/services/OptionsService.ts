@@ -23,6 +23,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   fontSize: 15,
   fontWeight: 'normal',
   fontWeightBold: 'bold',
+  ignoreBracketedPasteMode: false,
   lineHeight: 1.0,
   letterSpacing: 0,
   linkHandler: null,
