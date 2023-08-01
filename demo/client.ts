@@ -132,12 +132,11 @@ function setPadding(): void {
   addons.fit.instance.fit();
 }
 
-function getSearchOptions(e: KeyboardEvent): ISearchOptions {
+function getSearchOptions(): ISearchOptions {
   return {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
-    incremental: e.key !== `Enter`,
     decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
       matchBackground: '#232422',
       matchBorder: '#555753',
@@ -241,7 +240,11 @@ function createTerminal(): void {
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
     allowProposedApi: true,
-    windowsMode: isWindows,
+    windowsPty: isWindows ? {
+      // In a real scenario, these values should be verified on the backend
+      backend: 'conpty',
+      buildNumber: 22621
+    } : undefined,
     fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
@@ -303,11 +306,23 @@ function createTerminal(): void {
 
   addDomListener(paddingElement, 'change', setPadding);
 
-  addDomListener(actionElements.findNext, 'keyup', (e) => {
-    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions(e));
+  addDomListener(actionElements.findNext, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+      e.preventDefault();
+    }
   });
-  addDomListener(actionElements.findPrevious, 'keyup', (e) => {
-    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions(e));
+  addDomListener(actionElements.findNext, 'input', (e) => {
+    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+  });
+  addDomListener(actionElements.findPrevious, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+      e.preventDefault();
+    }
+  });
+  addDomListener(actionElements.findPrevious, 'input', (e) => {
+    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
   });
   addDomListener(actionElements.findNext, 'blur', (e) => {
     addons.search.instance.clearActiveDecoration();
@@ -965,7 +980,9 @@ function sgrTest(): void {
     { ps: 45, name: 'Background Magenta' },
     { ps: 46, name: 'Background Cyan' },
     { ps: 47, name: 'Background White' },
-    { ps: 49, name: 'Background default' }
+    { ps: 49, name: 'Background default' },
+    { ps: 53, name: 'Overlined' },
+    { ps: 55, name: 'Not overlined' }
   ];
   const maxNameLength = entries.reduce<number>((p, c) => Math.max(c.name.length, p), 0);
   for (const e of entries) {
@@ -977,7 +994,8 @@ function sgrTest(): void {
   }
   const comboEntries: { ps: number[] }[] = [
     { ps: [1, 2, 3, 4, 5, 6, 7, 9] },
-    { ps: [2, 41] }
+    { ps: [2, 41] },
+    { ps: [4, 53] }
   ];
   term.write('\n\n\r');
   term.writeln(`Combinations`);

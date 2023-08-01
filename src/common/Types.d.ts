@@ -165,6 +165,7 @@ export interface IAttributeData {
   isDim(): number;
   isStrikethrough(): number;
   isProtected(): number;
+  isOverline(): number;
 
   /**
    * The color mode of the foreground color which determines how to decode {@link getFgColor},
@@ -412,23 +413,32 @@ export const enum ColorRequestType {
   SET = 1,
   RESTORE = 2
 }
-export const enum ColorIndex {
+
+// IntRange from https://stackoverflow.com/a/39495173
+type Enumerate<N extends number, Acc extends number[] = []> = Acc['length'] extends N
+  ? Acc[number]
+  : Enumerate<N, [...Acc, Acc['length']]>;
+type IntRange<F extends number, T extends number> = Exclude<Enumerate<T>, Enumerate<F>>;
+
+type ColorIndex = IntRange<0, 256>; // number from 0 to 255
+type AllColorIndex = ColorIndex | SpecialColorIndex;
+export const enum SpecialColorIndex {
   FOREGROUND = 256,
   BACKGROUND = 257,
   CURSOR = 258
 }
 export interface IColorReportRequest {
   type: ColorRequestType.REPORT;
-  index: ColorIndex;
+  index: AllColorIndex;
 }
 export interface IColorSetRequest {
   type: ColorRequestType.SET;
-  index: ColorIndex;
+  index: AllColorIndex;
   color: IColorRGB;
 }
 export interface IColorRestoreRequest {
   type: ColorRequestType.RESTORE;
-  index?: ColorIndex;
+  index?: AllColorIndex;
 }
 export type IColorEvent = (IColorReportRequest | IColorSetRequest | IColorRestoreRequest)[];
 

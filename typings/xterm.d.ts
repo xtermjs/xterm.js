@@ -153,6 +153,11 @@ declare module 'xterm' {
     logLevel?: LogLevel;
 
     /**
+     * A logger to use instead of `console`.
+     */
+    logger?: ILogger | null;
+
+    /**
      * Whether to treat option as the meta key.
      */
     macOptionIsMeta?: boolean;
@@ -238,8 +243,29 @@ declare module 'xterm' {
      * When using conpty on Windows 11 version >= 21376, it is recommended to
      * disable this because native text wrapping sequences are output correctly
      * thanks to https://github.com/microsoft/terminal/issues/405
+     *
+     * @deprecated Use {@link windowsPty}. This value will be ignored if
+     * windowsPty is set.
      */
     windowsMode?: boolean;
+
+    /**
+     * Compatibility information when the pty is known to be hosted on Windows.
+     * Setting this will turn on certain heuristics/workarounds depending on the
+     * values:
+     *
+     * - `if (backend !== undefined || buildNumber !== undefined)`
+     *   - When increasing the rows in the terminal, the amount increased into
+     *     the scrollback. This is done because ConPTY does not behave like
+     *     expect scrollback to come back into the viewport, instead it makes
+     *     empty rows at of the viewport. Not having this behavior can result in
+     *     missing data as the rows get replaced.
+     * - `if !(backend === 'conpty' && buildNumber >= 21376)`
+     *   - Reflow is disabled
+     *   - Lines are assumed to be wrapped if the last character of the line is
+     *     not whitespace.
+     */
+    windowsPty?: IWindowsPty;
 
     /**
      * A string containing all characters that are considered word separated by the
@@ -328,6 +354,46 @@ declare module 'xterm' {
     brightWhite?: string;
     /** ANSI extended colors (16-255) */
     extendedAnsi?: string[];
+  }
+
+  /**
+   * Pty information for Windows.
+   */
+  export interface IWindowsPty {
+    /**
+     * What pty emulation backend is being used.
+     */
+    backend?: 'conpty' | 'winpty';
+    /**
+     * The Windows build version (eg. 19045)
+     */
+    buildNumber?: number;
+  }
+
+  /**
+   * A replacement logger for `console`.
+   */
+  export interface ILogger {
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * debug.
+     */
+    debug(message: string, ...args: any[]): void;
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * info or below.
+     */
+    info(message: string, ...args: any[]): void;
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * warn or below.
+     */
+    warn(message: string, ...args: any[]): void;
+    /**
+     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
+     * error or below.
+     */
+    error(message: string | Error, ...args: any[]): void;
   }
 
   /**
@@ -954,12 +1020,11 @@ declare module 'xterm' {
     deregisterCharacterJoiner(joinerId: number): void;
 
     /**
-     * Adds a marker to the normal buffer and returns it. If the alt buffer is
-     * active, undefined is returned.
+     * Adds a marker to the normal buffer and returns it.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
-    registerMarker(cursorYOffset?: number): IMarker | undefined;
+    registerMarker(cursorYOffset?: number): IMarker;
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using
@@ -1355,6 +1420,13 @@ declare module 'xterm' {
     getNullCell(): IBufferCell;
   }
 
+  export interface IBufferElementProvider {
+    /**
+     * Provides a document fragment or HTMLElement containing the buffer elements.
+     */
+    provideBufferElements(): DocumentFragment | HTMLElement;
+  }
+
   /**
    * Represents the terminal's set of buffers.
    */
@@ -1510,6 +1582,8 @@ declare module 'xterm' {
     isInvisible(): number;
     /** Whether the cell has the strikethrough attribute (CSI 9 m). */
     isStrikethrough(): number;
+    /** Whether the cell has the overline attribute (CSI 53 m). */
+    isOverline(): number;
 
     /** Whether the cell is using the RGB foreground color mode. */
     isFgRGB(): boolean;

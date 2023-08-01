@@ -96,10 +96,11 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         // exit early for NULL and SP
-        const code = cell.getCode();
-        if (code === 0 || code === 32) {
-          continue;
-        }
+        // NOTE: commented out due to #4120 (needs a more clever patch to keep things performant)
+        // const code = cell.getCode();
+        // if (code === 0 || code === 32) {
+        //  continue;
+        // }
 
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
@@ -185,12 +186,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
       } else if (cell.isBgPalette()) {
         nextFillStyle = this._themeService.colors.ansi[cell.getBgColor()].css;
-      }
-
-      // Apply dim to the background, this is relatively slow as the CSS is re-parsed but dim is
-      // rarely used
-      if (nextFillStyle && cell.isDim()) {
-        nextFillStyle = color.multiplyOpacity(css.toColor(nextFillStyle), 0.5).css;
       }
 
       // Get any decoration foreground/background overrides, this must be fetched before the early

@@ -12,6 +12,7 @@ import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ICoreService, IOptionsService } from 'common/services/Services';
 import { toDisposable } from 'common/Lifecycle';
+import { isFirefox } from 'common/Platform';
 
 interface ICursorState {
   x: number;
@@ -149,11 +150,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.save();
       this._ctx.fillStyle = this._themeService.colors.cursor.css;
       const cursorStyle = terminal.options.cursorStyle;
-      if (cursorStyle && cursorStyle !== 'block') {
-        this._cursorRenderers[cursorStyle](terminal, cursorX, viewportRelativeCursorY, this._cell);
-      } else {
-        this._renderBlurCursor(terminal, cursorX, viewportRelativeCursorY, this._cell);
-      }
+      this._renderBlurCursor(terminal, cursorX, viewportRelativeCursorY, this._cell);
       this._ctx.restore();
       this._state.x = cursorX;
       this._state.y = viewportRelativeCursorY;
@@ -194,8 +191,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _clearCursor(): void {
     if (this._state) {
-      // Avoid potential rounding errors when device pixel ratio is less than 1
-      if (this._coreBrowserService.dpr < 1) {
+      // Avoid potential rounding errors when browser is Firefox (#4487) or device pixel ratio is
+      // less than 1
+      if (isFirefox || this._coreBrowserService.dpr < 1) {
         this._clearAll();
       } else {
         this._clearCells(this._state.x, this._state.y, this._state.width, 1);

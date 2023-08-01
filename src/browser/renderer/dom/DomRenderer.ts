@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { BOLD_CLASS, CURSOR_BLINK_CLASS, CURSOR_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory, ITALIC_CLASS } from 'browser/renderer/dom/DomRendererRowFactory';
+import { BOLD_CLASS, CURSOR_BLINK_CLASS, CURSOR_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DIM_CLASS, DomRendererRowFactory, ITALIC_CLASS } from 'browser/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
@@ -13,6 +13,7 @@ import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { createStyle, IStyleSheet } from './StyleSheet';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -32,8 +33,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
 
-  private _themeStyleElement!: HTMLStyleElement;
-  private _dimensionsStyleElement!: HTMLStyleElement;
+  private _themeStyle!: IStyleSheet;
+  private _dimensionsStyle!: IStyleSheet;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -53,7 +54,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
-    @IThemeService themeService: IThemeService
+    @IThemeService private readonly _themeService: IThemeService
   ) {
     super();
     this._rowContainer = document.createElement('div');
@@ -69,8 +70,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
-    this.register(themeService.onChangeColors(e => this._injectCss(e)));
-    this._injectCss(themeService.colors);
+    this.register(this._themeService.onChangeColors(e => this._injectCss(e)));
+    this._injectCss(this._themeService.colors);
 
     this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document);
 
@@ -88,8 +89,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       // https://github.com/xtermjs/xterm.js/issues/2960
       this._rowContainer.remove();
       this._selectionContainer.remove();
-      this._themeStyleElement.remove();
-      this._dimensionsStyleElement.remove();
+      this._themeStyle.dispose();
+      this._dimensionsStyle.dispose();
     }));
   }
 
@@ -116,9 +117,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       element.style.overflow = 'hidden';
     }
 
-    if (!this._dimensionsStyleElement) {
-      this._dimensionsStyleElement = document.createElement('style');
-      this._screenElement.appendChild(this._dimensionsStyleElement);
+    if (!this._dimensionsStyle) {
+      this._dimensionsStyle = createStyle(this._screenElement);
     }
 
     const styles =
@@ -129,7 +129,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` width: ${this.dimensions.css.cell.width}px` +
       `}`;
 
-    this._dimensionsStyleElement.textContent = styles;
+    this._dimensionsStyle.setCss(styles);
 
     this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
@@ -137,9 +137,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _injectCss(colors: ReadonlyColorSet): void {
-    if (!this._themeStyleElement) {
-      this._themeStyleElement = document.createElement('style');
-      this._screenElement.appendChild(this._themeStyleElement);
+    if (!this._themeStyle) {
+      this._themeStyle = createStyle(this._screenElement);
     }
 
     // Base CSS
@@ -148,6 +147,10 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` color: ${colors.foreground.css};` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
+      `}`;
+    styles +=
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .xterm-dim {` +
+      ` color: ${color.multiplyOpacity(colors.foreground, 0.5).css};` +
       `}`;
     // Text styles
     styles +=
@@ -180,7 +183,10 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}`;
     // Cursor
     styles +=
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} ,` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} ,` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} ` +
+      `{` +
       ` outline: 1px solid ${colors.cursor.css};` +
       ` outline-offset: -1px;` +
       `}` +
@@ -221,13 +227,15 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (const [i, c] of colors.ansi.entries()) {
       styles +=
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}.${DIM_CLASS} { color: ${color.multiplyOpacity(c, 0.5).css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     }
     styles +=
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(colors.background).css}; }` +
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
 
-    this._themeStyleElement.textContent = styles;
+    this._themeStyle.setCss(styles);
   }
 
   public handleDevicePixelRatioChange(): void {
@@ -337,6 +345,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _handleOptionsChanged(): void {
     // Force a refresh
     this._updateDimensions();
+    // Refresh CSS
+    this._injectCss(this._themeService.colors);
   }
 
   public clear(): void {
@@ -382,8 +392,37 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
-    x = this._cellToRowElements[y][x];
-    x2 = this._cellToRowElements[y2][x2];
+    /**
+     * NOTE: The linkifier may send out of viewport y-values if:
+     * - negative y-value: the link started at a higher line
+     * - y-value >= maxY: the link ends at a line below viewport
+     *
+     * For negative y-values we can simply adjust x = 0,
+     * as higher up link start means, that everything from
+     * (0,0) is a link under top-down-left-right char progression
+     *
+     * Additionally there might be a small chance of out-of-sync x|y-values
+     * from a race condition of render updates vs. link event handler execution:
+     * - (sync) resize: chances terminal buffer in sync, schedules render update async
+     * - (async) link handler race condition: new buffer metrics, but still on old render state
+     * - (async) render update: brings term metrics and render state back in sync
+     */
+    if (y < 0) x = 0;
+    if (y2 < 0) x2 = 0;
+
+    // avoid out-of-sync y-values, simply clamp into valid area
+    const maxY = this._cellToRowElements.length - 1;
+    y = Math.max(Math.min(y, maxY), 0);
+    y2 = Math.max(Math.min(y2, maxY), 0);
+    const elemY = this._cellToRowElements[y];
+    const elemY2 = this._cellToRowElements[y2];
+    if (x >= elemY.length || x2 >= elemY2.length) {
+      // avoid out-of-sync x-values
+      // simply exit early, gets fixed by the next render update
+      return;
+    }
+    x = elemY[x];
+    x2 = elemY2[x2];
 
     if (x === -1 || x2 === -1) {
       return;

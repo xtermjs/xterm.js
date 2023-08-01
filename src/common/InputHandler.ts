@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -711,6 +711,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._bufferService.scroll(this._eraseAttrData());
     } else if (this._activeBuffer.y >= this._bufferService.rows) {
       this._activeBuffer.y = this._bufferService.rows - 1;
+    } else {
+      // There was an explicit line feed (not just a carriage return), so clear the wrapped state of
+      // the line. This is particularly important on conpty/Windows where revisiting lines to
+      // reprint is common, especially on resize. Note that the windowsMode wrapped line heuristics
+      // can mess with this so windowsMode should be disabled, which is recommended on Windows build
+      // 21376 and above.
+      this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._activeBuffer.x >= this._bufferService.cols) {
@@ -1145,10 +1152,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
-    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-    line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
-    this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
-    line.isWrapped = false;
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
+    if (line) {
+      line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
+      this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
+      line.isWrapped = false;
+    }
   }
 
   /**
@@ -2216,9 +2225,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const p = params.params[0];
 
     if (ansi) {
-      if (p === 2) return f(p, V.PERMANENTLY_SET);
+      if (p === 2) return f(p, V.PERMANENTLY_RESET);
       if (p === 4) return f(p, b2v(cs.modes.insertMode));
-      if (p === 12) return f(p, V.PERMANENTLY_RESET);
+      if (p === 12) return f(p, V.PERMANENTLY_SET);
       if (p === 20) return f(p, b2v(opts.convertEol));
       return f(p, V.NOT_RECOGNIZED);
     }
@@ -2233,6 +2242,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 25) return f(p, b2v(!cs.isCursorHidden));
     if (p === 45) return f(p, b2v(dm.reverseWraparound));
     if (p === 66) return f(p, b2v(dm.applicationKeypad));
+    if (p === 67) return f(p, V.PERMANENTLY_RESET);
     if (p === 1000) return f(p, b2v(mouseProtocol === 'VT200'));
     if (p === 1002) return f(p, b2v(mouseProtocol === 'DRAG'));
     if (p === 1003) return f(p, b2v(mouseProtocol === 'ANY'));
@@ -2418,6 +2428,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 47        | Background color: White.                                 | #Y      |
    * | 48        | Background color: Extended color.                        | #P[Support for RGB and indexed colors, see below.] |
    * | 49        | Background color: Default (original).                    | #Y      |
+   * | 53        | Overlined.                                               | #Y      |
+   * | 55        | Not Overlined.                                           | #Y      |
    * | 58        | Underline color: Extended color.                         | #P[Support for RGB and indexed colors, see below.] |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
@@ -2544,6 +2556,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
+      } else if (p === 53) {
+        // overline
+        attr.bg |= BgFlags.OVERLINE;
+      } else if (p === 55) {
+        // not overline
+        attr.bg &= ~BgFlags.OVERLINE;
       } else if (p === 59) {
         attr.extended = attr.extended.clone();
         attr.extended.underlineColor = -1;
@@ -2897,7 +2915,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
         const index = parseInt(idx);
-        if (0 <= index && index < 256) {
+        if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
           } else {
@@ -2970,7 +2988,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   // special colors - OSC 10 | 11 | 12
-  private _specialColors = [ColorIndex.FOREGROUND, ColorIndex.BACKGROUND, ColorIndex.CURSOR];
+  private _specialColors = [SpecialColorIndex.FOREGROUND, SpecialColorIndex.BACKGROUND, SpecialColorIndex.CURSOR];
 
   /**
    * Apply colors requests for special colors in OSC 10 | 11 | 12.
@@ -3055,7 +3073,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
         const index = parseInt(slots[i]);
-        if (0 <= index && index < 256) {
+        if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }
       }
@@ -3072,7 +3090,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   110    "Restore default foreground color"   "OSC 110 BEL"  "Restore default foreground to themed color."
    */
   public restoreFgColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.FOREGROUND }]);
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.FOREGROUND }]);
     return true;
   }
 
@@ -3082,7 +3100,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   111    "Restore default background color"   "OSC 111 BEL"  "Restore default background to themed color."
    */
   public restoreBgColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.BACKGROUND }]);
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.BACKGROUND }]);
     return true;
   }
 
@@ -3092,7 +3110,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y  OSC   112    "Restore default cursor color"   "OSC 112 BEL"  "Restore default cursor to themed color."
    */
   public restoreCursorColor(data: string): boolean {
-    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: ColorIndex.CURSOR }]);
+    this._onColor.fire([{ type: ColorRequestType.RESTORE, index: SpecialColorIndex.CURSOR }]);
     return true;
   }
 
@@ -3410,4 +3428,8 @@ class DirtyRowTracker implements IDirtyRowTracker {
   public markAllDirty(): void {
     this.markRangeDirty(0, this._bufferService.rows - 1);
   }
+}
+
+function isValidColorIndex(value: number): value is ColorIndex {
+  return 0 <= value && value < 256;
 }

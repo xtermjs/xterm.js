@@ -4,7 +4,7 @@
  */
 
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
-import { IColorSet, ITerminal } from 'browser/Types';
+import { ITerminal } from 'browser/Types';
 import { CanvasRenderer } from './CanvasRenderer';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';

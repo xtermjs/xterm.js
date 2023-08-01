@@ -5,13 +5,12 @@
 
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
-import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { IRenderService } from 'browser/services/Services';
+import { addDisposableDomListener } from 'browser/Lifecycle';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -21,13 +20,15 @@ const enum BoundaryPosition {
 }
 
 export class AccessibilityManager extends Disposable {
-  private _accessibilityTreeRoot: HTMLElement;
+  private _accessibilityContainer: HTMLElement;
+
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[];
+
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
+  private _liveRegionDebouncer: IRenderDebouncer;
 
-  private _renderRowsDebouncer: IRenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
@@ -48,12 +49,11 @@ export class AccessibilityManager extends Disposable {
 
   constructor(
     private readonly _terminal: ITerminal,
-    private readonly _renderService: IRenderService
+    @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
-    this._accessibilityTreeRoot = document.createElement('div');
-    this._accessibilityTreeRoot.classList.add('xterm-accessibility');
-    this._accessibilityTreeRoot.tabIndex = 0;
+    this._accessibilityContainer = document.createElement('div');
+    this._accessibilityContainer.classList.add('xterm-accessibility');
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
@@ -70,22 +70,20 @@ export class AccessibilityManager extends Disposable {
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
     this._refreshRowsDimensions();
-    this._accessibilityTreeRoot.appendChild(this._rowContainer);
-
-    this._renderRowsDebouncer = new TimeBasedDebouncer(this._renderRows.bind(this));
-    this._refreshRows();
+    this._accessibilityContainer.appendChild(this._rowContainer);
 
     this._liveRegion = document.createElement('div');
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
-    this._accessibilityTreeRoot.appendChild(this._liveRegion);
+    this._accessibilityContainer.appendChild(this._liveRegion);
+    this._liveRegionDebouncer = this.register(new TimeBasedDebouncer(this._announceCharacters.bind(this)));
 
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
-    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
+    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityContainer);
 
-    this.register(this._renderRowsDebouncer);
+    this.register(this._liveRegionDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
@@ -103,10 +101,78 @@ export class AccessibilityManager extends Disposable {
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+
+    this._refreshRows();
     this.register(toDisposable(() => {
-      this._accessibilityTreeRoot.remove();
+      this._accessibilityContainer.remove();
       this._rowElements.length = 0;
     }));
+  }
+
+  private _handleTab(spaceCount: number): void {
+    for (let i = 0; i < spaceCount; i++) {
+      this._handleChar(' ');
+    }
+  }
+
+  private _handleChar(char: string): void {
+    if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
+      if (this._charsToConsume.length > 0) {
+        // Have the screen reader ignore the char if it was just input
+        const shiftedChar = this._charsToConsume.shift();
+        if (shiftedChar !== char) {
+          this._charsToAnnounce += char;
+        }
+      } else {
+        this._charsToAnnounce += char;
+      }
+
+      if (char === '\n') {
+        this._liveRegionLineCount++;
+        if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
+          this._liveRegion.textContent += Strings.tooMuchOutput;
+        }
+      }
+
+      // Only detach/attach on mac as otherwise messages can go unaccounced
+      if (isMac) {
+        if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
+          setTimeout(() => {
+            this._accessibilityContainer.appendChild(this._liveRegion);
+          }, 0);
+        }
+      }
+    }
+  }
+
+  private _clearLiveRegion(): void {
+    this._liveRegion.textContent = '';
+    this._liveRegionLineCount = 0;
+
+    // Only detach/attach on mac as otherwise messages can go unaccounced
+    if (isMac) {
+      this._liveRegion.remove();
+    }
+  }
+
+  private _handleKey(keyChar: string): void {
+    this._clearLiveRegion();
+    // Only add the char if there is no control character.
+    if (!/\p{Control}/u.test(keyChar)) {
+      this._charsToConsume.push(keyChar);
+    }
+  }
+
+  private _refreshRows(start?: number, end?: number): void {
+    this._liveRegionDebouncer.refresh(start, end, this._terminal.rows);
+  }
+
+  private _announceCharacters(): void {
+    if (this._charsToAnnounce.length === 0) {
+      return;
+    }
+    this._liveRegion.textContent += this._charsToAnnounce;
+    this._charsToAnnounce = '';
   }
 
   private _handleBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
@@ -196,90 +262,11 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowDimensions(element);
     return element;
   }
-
-  private _handleTab(spaceCount: number): void {
-    for (let i = 0; i < spaceCount; i++) {
-      this._handleChar(' ');
-    }
-  }
-
-  private _handleChar(char: string): void {
-    if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
-      if (this._charsToConsume.length > 0) {
-        // Have the screen reader ignore the char if it was just input
-        const shiftedChar = this._charsToConsume.shift();
-        if (shiftedChar !== char) {
-          this._charsToAnnounce += char;
-        }
-      } else {
-        this._charsToAnnounce += char;
-      }
-
-      if (char === '\n') {
-        this._liveRegionLineCount++;
-        if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
-          this._liveRegion.textContent += Strings.tooMuchOutput;
-        }
-      }
-
-      // Only detach/attach on mac as otherwise messages can go unaccounced
-      if (isMac) {
-        if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
-          setTimeout(() => {
-            this._accessibilityTreeRoot.appendChild(this._liveRegion);
-          }, 0);
-        }
-      }
-    }
-  }
-
-  private _clearLiveRegion(): void {
-    this._liveRegion.textContent = '';
-    this._liveRegionLineCount = 0;
-
-    // Only detach/attach on mac as otherwise messages can go unaccounced
-    if (isMac) {
-      this._liveRegion.remove();
-    }
-  }
-
-  private _handleKey(keyChar: string): void {
-    this._clearLiveRegion();
-    // Only add the char if there is no control character.
-    if (!/\p{Control}/u.test(keyChar)) {
-      this._charsToConsume.push(keyChar);
-    }
-  }
-
-  private _refreshRows(start?: number, end?: number): void {
-    this._renderRowsDebouncer.refresh(start, end, this._terminal.rows);
-  }
-
-  private _renderRows(start: number, end: number): void {
-    const buffer: IBuffer = this._terminal.buffer;
-    const setSize = buffer.lines.length.toString();
-    for (let i = start; i <= end; i++) {
-      const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
-      const posInSet = (buffer.ydisp + i + 1).toString();
-      const element = this._rowElements[i];
-      if (element) {
-        if (lineData.length === 0) {
-          element.innerText = '\u00a0';
-        } else {
-          element.textContent = lineData;
-        }
-        element.setAttribute('aria-posinset', posInSet);
-        element.setAttribute('aria-setsize', setSize);
-      }
-    }
-    this._announceCharacters();
-  }
-
   private _refreshRowsDimensions(): void {
     if (!this._renderService.dimensions.css.cell.height) {
       return;
     }
-    this._accessibilityTreeRoot.style.width = `${this._renderService.dimensions.css.canvas.width}px`;
+    this._accessibilityContainer.style.width = `${this._renderService.dimensions.css.canvas.width}px`;
     if (this._rowElements.length !== this._terminal.rows) {
       this._handleResize(this._terminal.rows);
     }
@@ -287,16 +274,7 @@ export class AccessibilityManager extends Disposable {
       this._refreshRowDimensions(this._rowElements[i]);
     }
   }
-
   private _refreshRowDimensions(element: HTMLElement): void {
     element.style.height = `${this._renderService.dimensions.css.cell.height}px`;
-  }
-
-  private _announceCharacters(): void {
-    if (this._charsToAnnounce.length === 0) {
-      return;
-    }
-    this._liveRegion.textContent += this._charsToAnnounce;
-    this._charsToAnnounce = '';
   }
 }

@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange } from 'browser/Types';
+import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange, IBufferElementProvider } from 'browser/Types';
 import { IRenderer } from 'browser/renderer/shared/Types';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { Viewport } from 'browser/Viewport';
@@ -35,7 +35,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
+import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -203,15 +203,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
       let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
       let ident = '';
       switch (req.index) {
-        case ColorIndex.FOREGROUND: // OSC 10 | 110
+        case SpecialColorIndex.FOREGROUND: // OSC 10 | 110
           acc = 'foreground';
           ident = '10';
           break;
-        case ColorIndex.BACKGROUND: // OSC 11 | 111
+        case SpecialColorIndex.BACKGROUND: // OSC 11 | 111
           acc = 'background';
           ident = '11';
           break;
-        case ColorIndex.CURSOR: // OSC 12 | 112
+        case SpecialColorIndex.CURSOR: // OSC 12 | 112
           acc = 'cursor';
           ident = '12';
           break;
@@ -267,7 +267,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _handleScreenReaderModeOptionChange(value: boolean): void {
     if (value) {
       if (!this._accessibilityManager && this._renderService) {
-        this._accessibilityManager = new AccessibilityManager(this, this._renderService);
+        this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
       }
     } else {
       this._accessibilityManager?.dispose();
@@ -419,7 +419,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.element.dir = 'ltr';   // xterm.css assumes LTR
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
-    this.element.setAttribute('tabindex', '0');
     parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
@@ -553,7 +552,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = new AccessibilityManager(this, this._renderService);
+      this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
     }
     this.register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 
@@ -918,7 +917,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker | undefined {
+  public addMarker(cursorYOffset: number): IMarker {
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 

@@ -57,7 +57,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
-  private _windowsMode: IDisposable | undefined;
+  private _windowsWrappingHeuristics: IDisposable | undefined;
 
   private readonly _onBinary = this.register(new EventEmitter<string>());
   public readonly onBinary = this._onBinary.event;
@@ -131,7 +131,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
     this.register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom()));
     this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
-    this.register(this.optionsService.onSpecificOptionChange('windowsMode', e => this._handleWindowsModeOptionChange(e)));
+    this.register(this.optionsService.onMultipleOptionChange(['windowsMode', 'windowsPty'], () => this._handleWindowsPtyOptionChange()));
     this.register(this._bufferService.onScroll(event => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
       this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
@@ -146,8 +146,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
 
     this.register(toDisposable(() => {
-      this._windowsMode?.dispose();
-      this._windowsMode = undefined;
+      this._windowsWrappingHeuristics?.dispose();
+      this._windowsWrappingHeuristics = undefined;
     }));
   }
 
@@ -250,9 +250,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   protected _setup(): void {
-    if (this.optionsService.rawOptions.windowsMode) {
-      this._enableWindowsMode();
-    }
+    this._handleWindowsPtyOptionChange();
   }
 
   public reset(): void {
@@ -263,30 +261,36 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.coreMouseService.reset();
   }
 
-  private _handleWindowsModeOptionChange(value: boolean): void {
+
+  private _handleWindowsPtyOptionChange(): void {
+    let value = false;
+    const windowsPty = this.optionsService.rawOptions.windowsPty;
+    if (windowsPty && windowsPty.buildNumber !== undefined && windowsPty.buildNumber !== undefined) {
+      value = !!(windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
+    } else if (this.optionsService.rawOptions.windowsMode) {
+      value = true;
+    }
     if (value) {
-      this._enableWindowsMode();
+      this._enableWindowsWrappingHeuristics();
     } else {
-      this._windowsMode?.dispose();
-      this._windowsMode = undefined;
+      this._windowsWrappingHeuristics?.dispose();
+      this._windowsWrappingHeuristics = undefined;
     }
   }
 
-  protected _enableWindowsMode(): void {
-    if (!this._windowsMode) {
+  protected _enableWindowsWrappingHeuristics(): void {
+    if (!this._windowsWrappingHeuristics) {
       const disposables: IDisposable[] = [];
       disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
       disposables.push(this.registerCsiHandler({ final: 'H' }, () => {
         updateWindowsModeWrappedState(this._bufferService);
         return false;
       }));
-      this._windowsMode = {
-        dispose: () => {
-          for (const d of disposables) {
-            d.dispose();
-          }
+      this._windowsWrappingHeuristics = toDisposable(() => {
+        for (const d of disposables) {
+          d.dispose();
         }
-      };
+      });
     }
   }
 }

@@ -7,7 +7,7 @@ import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } 
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -138,6 +138,12 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   public write(data: string): void {
+    throw new Error('Method not implemented.');
+  }
+  public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
+    throw new Error('Method not implemented.');
+  }
+  public registerBufferElementProvider(bufferProvider: IBufferElementProvider): IDisposable {
     throw new Error('Method not implemented.');
   }
   public bracketedPasteMode!: boolean;
@@ -308,6 +314,9 @@ export class MockViewport implements IViewport {
   }
   public syncScrollArea(): void { }
   public getLinesScrolled(ev: WheelEvent): number {
+    throw new Error('Method not implemented.');
+  }
+  public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
     throw new Error('Method not implemented.');
   }
 }

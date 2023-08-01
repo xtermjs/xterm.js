@@ -9,7 +9,6 @@ import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
@@ -19,6 +18,7 @@ export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
 export const ITALIC_CLASS = 'xterm-italic';
 export const UNDERLINE_CLASS = 'xterm-underline';
+export const OVERLINE_CLASS = 'xterm-overline';
 export const STRIKETHROUGH_CLASS = 'xterm-strikethrough';
 export const CURSOR_CLASS = 'xterm-cursor';
 export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
@@ -183,6 +183,13 @@ export class DomRendererRowFactory {
             }
             charElement.style.textDecorationColor = colors.ansi[fg].css;
           }
+        }
+      }
+
+      if (cell.isOverline()) {
+        charElement.classList.add(OVERLINE_CLASS);
+        if (charElement.textContent === ' ') {
+          charElement.textContent = '\xa0'; // = &nbsp;
         }
       }
 

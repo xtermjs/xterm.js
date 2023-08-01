@@ -8,8 +8,7 @@ import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { ColorIndex, IDisposable } from 'common/Types';
-import { ITheme } from 'common/services/Services';
+import { AllColorIndex, IDisposable } from 'common/Types';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -130,7 +129,7 @@ export interface IThemeService {
 
   readonly onChangeColors: IEvent<ReadonlyColorSet>;
 
-  restoreColor(slot?: ColorIndex): void;
+  restoreColor(slot?: AllColorIndex): void;
   /**
    * Allows external modifying of colors in the theme, this is used instead of {@link colors} to
    * prevent accidental writes.

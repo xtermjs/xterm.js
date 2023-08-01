@@ -383,10 +383,10 @@ export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   // Upper right triangle
   '\u{E0BE}': { d: 'M-.5,-.5 L1.5,1.5 L1.5,-.5', type: VectorType.FILL }
 };
-// Backslash separator redundant
-powerlineDefinitions['\u{E0BB}'] = powerlineDefinitions['\u{E0B9}'];
 // Forward slash separator redundant
-powerlineDefinitions['\u{E0BF}'] = powerlineDefinitions['\u{E0BD}'];
+powerlineDefinitions['\u{E0BB}'] = powerlineDefinitions['\u{E0BD}'];
+// Backslash separator redundant
+powerlineDefinitions['\u{E0BF}'] = powerlineDefinitions['\u{E0B9}'];
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was

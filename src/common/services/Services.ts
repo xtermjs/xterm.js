@@ -7,7 +7,7 @@ import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDecorationOptions, IDecoration, ILinkHandler } from 'xterm';
+import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from 'xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -132,17 +132,9 @@ export interface IBrandedService {
   serviceBrand: undefined;
 }
 
-type GetLeadingNonServiceArgs<Args> =
-  Args extends [...IBrandedService[]] ? []
-    : Args extends [infer A1, ...IBrandedService[]] ? [A1]
-      : Args extends [infer A1, infer A2, ...IBrandedService[]] ? [A1, A2]
-        : Args extends [infer A1, infer A2, infer A3, ...IBrandedService[]] ? [A1, A2, A3]
-          : Args extends [infer A1, infer A2, infer A3, infer A4, ...IBrandedService[]] ? [A1, A2, A3, A4]
-            : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, ...IBrandedService[]] ? [A1, A2, A3, A4, A5]
-              : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6]
-                : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7]
-                  : Args extends [infer A1, infer A2, infer A3, infer A4, infer A5, infer A6, infer A7, infer A8, ...IBrandedService[]] ? [A1, A2, A3, A4, A5, A6, A7, A8]
-                    : never;
+type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends [] ? []
+  : TArgs extends [...infer TFirst, infer TLast] ? TLast extends IBrandedService ? GetLeadingNonServiceArgs<TFirst> : TArgs
+    : never;
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
@@ -165,7 +157,7 @@ export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
 
-  logLevel: LogLevelEnum;
+  readonly logLevel: LogLevelEnum;
 
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
@@ -237,6 +229,7 @@ export interface ITerminalOptions {
   lineHeight?: number;
   linkHandler?: ILinkHandler | null;
   logLevel?: LogLevel;
+  logger?: ILogger | null;
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
@@ -250,6 +243,7 @@ export interface ITerminalOptions {
   tabStopWidth?: number;
   theme?: ITheme;
   windowsMode?: boolean;
+  windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
   overviewRulerWidth?: number;

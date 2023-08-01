@@ -104,7 +104,7 @@ export class DecorationService extends Disposable implements IDecorationService 
 class Decoration extends Disposable implements IInternalDecoration {
   public readonly marker: IMarker;
   public element: HTMLElement | undefined;
-  public isDisposed: boolean = false;
+  public get isDisposed(): boolean { return this._isDisposed; }
 
   public readonly onRenderEmitter = this.register(new EventEmitter<HTMLElement>());
   public readonly onRender = this.onRenderEmitter.event;

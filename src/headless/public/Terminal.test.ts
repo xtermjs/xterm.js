@@ -22,7 +22,7 @@ describe('Headless API Tests', function (): void {
 
   it('Proposed API check', async () => {
     term = new Terminal({ allowProposedApi: false });
-    throws(() => term.markers, (error) => error.message === 'You must set the allowProposedApi option to true to use proposed API');
+    throws(() => term.markers, (error: any) => error.message === 'You must set the allowProposedApi option to true to use proposed API');
   });
 
   it('write', async () => {
