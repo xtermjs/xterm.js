@@ -35,7 +35,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
+import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -203,15 +203,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
       let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
       let ident = '';
       switch (req.index) {
-        case ColorIndex.FOREGROUND: // OSC 10 | 110
+        case SpecialColorIndex.FOREGROUND: // OSC 10 | 110
           acc = 'foreground';
           ident = '10';
           break;
-        case ColorIndex.BACKGROUND: // OSC 11 | 111
+        case SpecialColorIndex.BACKGROUND: // OSC 11 | 111
           acc = 'background';
           ident = '11';
           break;
-        case ColorIndex.CURSOR: // OSC 12 | 112
+        case SpecialColorIndex.CURSOR: // OSC 12 | 112
           acc = 'cursor';
           ident = '12';
           break;
@@ -352,7 +352,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
       copyHandler(event, this._selectionService!);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this.coreService);
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this.coreService, this.optionsService);
     this.register(addDisposableDomListener(this.textarea!, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element!, 'paste', pasteHandlerWrapper));
 
@@ -497,11 +497,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.viewport = this._instantiationService.createInstance(Viewport,
-      (amount: number) => this.scrollLines(amount, true, ScrollSource.VIEWPORT),
-      this._viewportElement,
-      this._viewportScrollArea
-    );
+    this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
+    this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
@@ -747,8 +744,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       if (!(events & CoreMouseEventType.UP)) {
         this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
+        el.removeEventListener('mouseup', requestedEvents.mouseup!);
         requestedEvents.mouseup = null;
       } else if (!requestedEvents.mouseup) {
+        el.addEventListener('mouseup', eventListeners.mouseup);
         requestedEvents.mouseup = eventListeners.mouseup;
       }
 
@@ -870,12 +869,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public scrollLines(disp: number, suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
-    super.scrollLines(disp, suppressScrollEvent, source);
-    this.refresh(0, this.rows - 1);
+    if (source === ScrollSource.VIEWPORT) {
+      super.scrollLines(disp, suppressScrollEvent, source);
+      this.refresh(0, this.rows - 1);
+    } else {
+      this.viewport?.scrollLines(disp);
+    }
   }
 
   public paste(data: string): void {
-    paste(data, this.textarea!, this.coreService);
+    paste(data, this.textarea!, this.coreService, this.optionsService);
   }
 
   /**
@@ -1003,7 +1006,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
-        this._bufferService.scrollToBottom();
+        this.scrollToBottom();
       }
       return false;
     }

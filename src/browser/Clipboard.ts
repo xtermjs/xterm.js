@@ -4,7 +4,7 @@
  */
 
 import { ISelectionService } from 'browser/services/Services';
-import { ICoreService } from 'common/services/Services';
+import { ICoreService, IOptionsService } from 'common/services/Services';
 
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings
@@ -40,17 +40,17 @@ export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionServ
 /**
  * Redirect the clipboard's data to the terminal's input handler.
  */
-export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, coreService: ICoreService): void {
+export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, coreService: ICoreService, optionsService: IOptionsService): void {
   ev.stopPropagation();
   if (ev.clipboardData) {
     const text = ev.clipboardData.getData('text/plain');
-    paste(text, textarea, coreService);
+    paste(text, textarea, coreService, optionsService);
   }
 }
 
-export function paste(text: string, textarea: HTMLTextAreaElement, coreService: ICoreService): void {
+export function paste(text: string, textarea: HTMLTextAreaElement, coreService: ICoreService, optionsService: IOptionsService): void {
   text = prepareTextForTerminal(text);
-  text = bracketTextForPaste(text, coreService.decPrivateModes.bracketedPasteMode);
+  text = bracketTextForPaste(text, coreService.decPrivateModes.bracketedPasteMode && optionsService.rawOptions.ignoreBracketedPasteMode !== true);
   coreService.triggerDataEvent(text, true);
   textarea.value = '';
 }

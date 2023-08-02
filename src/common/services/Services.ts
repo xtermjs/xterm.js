@@ -21,11 +21,7 @@ export interface IBufferService {
   onResize: IEvent<{ cols: number, rows: number }>;
   onScroll: IEvent<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
-  scrollToBottom(): void;
-  scrollToTop(): void;
-  scrollToLine(line: number): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
-  scrollPages(pageCount: number): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }
@@ -225,6 +221,7 @@ export interface ITerminalOptions {
   fontFamily?: string;
   fontWeight?: FontWeight;
   fontWeightBold?: FontWeight;
+  ignoreBracketedPasteMode?: boolean;
   letterSpacing?: number;
   lineHeight?: number;
   linkHandler?: ILinkHandler | null;

@@ -13,6 +13,7 @@ import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
+import { ImageAddon, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
@@ -25,6 +26,7 @@ import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAdd
 // import { Terminal } from '../lib/xterm';
 // import { AttachAddon } from 'xterm-addon-attach';
 // import { FitAddon } from 'xterm-addon-fit';
+// import { ImageAddon } from 'xterm-addon-image';
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 // import { SerializeAddon } from 'xterm-addon-serialize';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
@@ -42,6 +44,7 @@ export interface IWindowWithTerminal extends Window {
   Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -58,7 +61,7 @@ let socketURL;
 let socket;
 let pid;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'search' | 'serialize' | 'unicode11' | 'unicode-graphemes' | 'web-links' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicode-graphemes' | 'web-links' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -67,26 +70,28 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'attach' ? typeof AttachAddon :
       T extends 'canvas' ? typeof CanvasAddon :
         T extends 'fit' ? typeof FitAddon :
-          T extends 'search' ? typeof SearchAddon :
-            T extends 'serialize' ? typeof SerializeAddon :
-              T extends 'web-links' ? typeof WebLinksAddon :
-                T extends 'unicode11' ? typeof Unicode11Addon :
-                  T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
-                    T extends 'ligatures' ? typeof LigaturesAddon :
-                      typeof WebglAddon
+          T extends 'image' ? typeof ImageAddon :
+            T extends 'search' ? typeof SearchAddon :
+              T extends 'serialize' ? typeof SerializeAddon :
+                T extends 'web-links' ? typeof WebLinksAddon :
+                  T extends 'unicode11' ? typeof Unicode11Addon :
+                    T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
+                      T extends 'ligatures' ? typeof LigaturesAddon :
+                        typeof WebglAddon
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
       T extends 'canvas' ? CanvasAddon :
         T extends 'fit' ? FitAddon :
-          T extends 'search' ? SearchAddon :
-            T extends 'serialize' ? SerializeAddon :
-              T extends 'web-links' ? WebLinksAddon :
-                T extends 'webgl' ? WebglAddon :
-                  T extends 'unicode11' ? typeof Unicode11Addon :
-                    T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
-                      T extends 'ligatures' ? typeof LigaturesAddon :
-                        never
+          T extends 'image' ? ImageAddon :
+            T extends 'search' ? SearchAddon :
+              T extends 'serialize' ? SerializeAddon :
+                T extends 'web-links' ? WebLinksAddon :
+                  T extends 'webgl' ? WebglAddon :
+                    T extends 'unicode11' ? typeof Unicode11Addon :
+                      T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
+                        T extends 'ligatures' ? typeof LigaturesAddon :
+                          never
   );
 }
 
@@ -94,6 +99,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
+  image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
@@ -164,6 +170,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.attach.instance = undefined;
     addons.canvas.instance = undefined;
     addons.fit.instance = undefined;
+    addons.image.instance = undefined;
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
@@ -211,6 +218,7 @@ if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
   window.FitAddon = FitAddon;
+  window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
@@ -236,7 +244,9 @@ if (document.location.pathname === '/test') {
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
+  document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
+  initImageAddonExposed();
 }
 
 function createTerminal(): void {
@@ -262,6 +272,7 @@ function createTerminal(): void {
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
+  addons.image.instance = new ImageAddon();
   addons.unicode11.instance = new Unicode11Addon();
   addons['unicode-graphemes'].instance = new UnicodeGraphemesAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
@@ -271,6 +282,7 @@ function createTerminal(): void {
   }
   addons['web-links'].instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
+  typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicode11.instance);
@@ -540,6 +552,8 @@ function initOptions(term: TerminalType): void {
             value = {
               background: '#ffffff',
               foreground: '#333333',
+              cursor: '#333333',
+              cursorAccent: '#ffffff',
               selectionBackground: '#add6ff',
               black: '#000000',
               blue: '#0451a5',
@@ -586,6 +600,19 @@ function initAddons(term: TerminalType): void {
       addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
+      if (name === 'image') {
+        if (checkbox.checked) {
+          const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
+          addon.instance = ctorOptionsJson
+            ? new addon.ctor(JSON.parse(ctorOptionsJson))
+            : new addon.ctor();
+          term.loadAddon(addon.instance);
+        } else {
+          addon.instance!.dispose();
+          addon.instance = undefined;
+        }
+        return;
+      }
       if (checkbox.checked) {
         addon.instance = new addon.ctor();
         try {
@@ -1201,6 +1228,96 @@ ipv6 https://[::1]/with/some?vars=and&a#hash aaa
 stop at final '.': This is a sentence with an url to http://example.com.
 stop at final '?': Is this the right url http://example.com/?
 stop at final '?': Maybe this one http://example.com/with?arguments=false?
-  `;
+`;
   term.write(linkExamples.split('\n').join('\r\n'));
+}
+
+
+function coloredErase(): void {
+  const data = `
+Test BG-colored Erase (BCE):
+  The color block in the following lines should look identical.
+  For newly created rows at the bottom the last color should be applied
+  for all cells to the right.
+
+ def   41   42   43   44   45   46   47\x1b[47m
+\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m     
+\x1b[m\x1b[5X\x1b[41m\x1b[5C\x1b[5X\x1b[42m\x1b[5C\x1b[5X\x1b[43m\x1b[5C\x1b[5X\x1b[44m\x1b[5C\x1b[5X\x1b[45m\x1b[5C\x1b[5X\x1b[46m\x1b[5C\x1b[5X\x1b[47m\x1b[5C\x1b[5X\x1b[m
+`;
+  term.write(data.split('\n').join('\r\n'));
+}
+
+
+function initImageAddonExposed(): void {
+  const DEFAULT_OPTIONS: IImageAddonOptions = (addons.image.instance as any)._defaultOpts;
+  const limitStorageElement = document.querySelector<HTMLInputElement>('#image-storagelimit');
+  limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
+  addDomListener(limitStorageElement, 'change', () => {
+    try {
+      addons.image.instance.storageLimit = limitStorageElement.valueAsNumber;
+      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
+      console.log('changed storageLimit to', addons.image.instance.storageLimit);
+    } catch (e) {
+      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
+      console.log('storageLimit at', addons.image.instance.storageLimit);
+      throw e;
+    }
+  });
+  const showPlaceholderElement = document.querySelector<HTMLInputElement>('#image-showplaceholder');
+  showPlaceholderElement.checked = addons.image.instance.showPlaceholder;
+  addDomListener(showPlaceholderElement, 'change', () => {
+    addons.image.instance.showPlaceholder = showPlaceholderElement.checked;
+  });
+  const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
+  ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
+
+  const sixel_demo = (url: string) => () => fetch(url)
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      term.write('\r\n');
+      term.write(new Uint8Array(buffer));
+    });
+  
+  const iip_demo = (url: string) => () => fetch(url)
+  .then(resp => resp.arrayBuffer())
+  .then(buffer => {
+    const data = new Uint8Array(buffer);
+    let sdata = '';
+    for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+    term.write('\r\n');
+    term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
+  });
+
+  document.getElementById('image-demo1').addEventListener('click',
+    sixel_demo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
+  document.getElementById('image-demo2').addEventListener('click',
+    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
+  document.getElementById('image-demo3').addEventListener('click',
+    iip_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+
+  // demo for image retrieval API
+  term.element.addEventListener('click', (ev: MouseEvent) => {
+    if (!ev.ctrlKey || !addons.image.instance) return;
+
+    // TODO...
+    // if (ev.altKey) {
+    //   const sel = term.getSelectionPosition();
+    //   if (sel) {
+    //     addons.image.instance
+    //       .extractCanvasAtBufferRange(term.getSelectionPosition())
+    //       ?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+    //     return;
+    //   }
+    // }
+
+    const pos = term._core._mouseService!.getCoords(ev, term._core.screenElement!, term.cols, term.rows);
+    const x = pos[0] - 1;
+    const y = pos[1] - 1;
+    const canvas = ev.shiftKey
+      // ctrl+shift+click: get single tile
+      ? addons.image.instance.extractTileAtBufferCell(x, term.buffer.active.viewportY + y)
+      // ctrl+click: get original image
+      : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
+    canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+  });
 }

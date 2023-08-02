@@ -368,6 +368,11 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
     this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
+
+    if (!this._charAtlas) {
+      return;
+    }
+
     let glyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
       glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
