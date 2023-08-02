@@ -69,7 +69,7 @@ export class AccessibilityManager extends Disposable {
     this._bottomBoundaryFocusListener = e => this._handleBoundaryFocus(e, BoundaryPosition.BOTTOM);
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
-    this._accessibilityContainer.tabIndex = 0;
+
     this._refreshRowsDimensions();
     this._accessibilityContainer.appendChild(this._rowContainer);
 
