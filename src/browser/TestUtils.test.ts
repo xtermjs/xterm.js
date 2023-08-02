@@ -325,7 +325,6 @@ export class MockViewport implements IViewport {
     this._onRequestScrollLines.fire({ amount: disp, suppressScrollEvent: false });
   }
   public reset(): void {
-    throw new Error('Method not implemented.');
   }
 }
 
