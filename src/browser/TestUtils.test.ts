@@ -324,6 +324,8 @@ export class MockViewport implements IViewport {
   public scrollLines(disp: number): void {
     this._onRequestScrollLines.fire({ amount: disp, suppressScrollEvent: false });
   }
+  public reset(): void {
+  }
 }
 
 export class MockCompositionHelper implements ICompositionHelper {

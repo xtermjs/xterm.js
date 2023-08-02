@@ -81,11 +81,23 @@ export class Viewport extends Disposable implements IViewport {
     this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.syncScrollArea()));
 
     // Perform this async to ensure the ICharSizeService is ready.
-    setTimeout(() => this.syncScrollArea(), 0);
+    setTimeout(() => this.syncScrollArea());
   }
 
   private _handleThemeChange(colors: ReadonlyColorSet): void {
     this._viewportElement.style.backgroundColor = colors.background.css;
+  }
+
+  public reset(): void {
+    this._currentRowHeight = 0;
+    this._currentDeviceCellHeight = 0;
+    this._lastRecordedBufferLength = 0;
+    this._lastRecordedViewportHeight = 0;
+    this._lastRecordedBufferHeight = 0;
+    this._lastTouchY = 0;
+    this._lastScrollTop = 0;
+    // Sync on next animation frame to ensure the new terminal state is used
+    this._coreBrowserService.window.requestAnimationFrame(() => this.syncScrollArea());
   }
 
   /**
