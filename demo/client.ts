@@ -241,6 +241,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
   document.getElementById('osc-hyperlinks').addEventListener('click', addAnsiHyperlink);
   document.getElementById('sgr-test').addEventListener('click', sgrTest);
+  document.getElementById('add-grapheme-clusters').addEventListener('click', addGraphemeClusters);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
@@ -1096,6 +1097,29 @@ function getRandomSgr(): string {
   return randomSgrAttributes[Math.floor(Math.random() * randomSgrAttributes.length)];
 }
 
+function addGraphemeClusters(): void {
+  term.write('\n\n\r');
+  term.writeln('Simple emoji (v6: 10 cells, v15: 20 cells)');
+  term.writeln('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣');
+  term.writeln('baby with emoji modifier fitzpatrick type-6; baby');
+  term.writeln('\u{1F476}\u{1F3FF}\u{1F476}');
+  term.writeln('woman+zwj+woman+zwj+boy');
+  term.writeln('\u{1F469}\u200d\u{1f469}\u200d\u{1f466}');
+  term.writeln('REGIONAL INDICATOR SYMBOL LETTER N and RI O');
+  term.writeln('\u{1f1f3}\u{1f1f4}_');
+  term.writeln('\u{1f1f3}_\u{1f1f4}');
+  term.writeln('letter a with acute accent');
+  term.writeln('\u0061\u0301');
+  term.writeln('Korean Jamo');
+  term.writeln('{\u1100\u1161\u11a8}');
+  term.writeln('coffin with text_presentation');
+  term.writeln('(\u26b0\ufe0e)');
+  term.writeln('coffin with Emoji_presentation');
+  term.writeln('(\u26b0\ufe0f)');
+  term.writeln('Égalité (using separate acute) emoij_presentation');
+  term.writeln('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f>');
+}
+
 function addDecoration(): void {
   term.options['overviewRulerWidth'] = 15;
   const marker = term.registerMarker(1);
@@ -1241,7 +1265,7 @@ Test BG-colored Erase (BCE):
   for all cells to the right.
 
  def   41   42   43   44   45   46   47\x1b[47m
-\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m     
+\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m
 \x1b[m\x1b[5X\x1b[41m\x1b[5C\x1b[5X\x1b[42m\x1b[5C\x1b[5X\x1b[43m\x1b[5C\x1b[5X\x1b[44m\x1b[5C\x1b[5X\x1b[45m\x1b[5C\x1b[5X\x1b[46m\x1b[5C\x1b[5X\x1b[47m\x1b[5C\x1b[5X\x1b[m
 `;
   term.write(data.split('\n').join('\r\n'));
@@ -1277,7 +1301,7 @@ function initImageAddonExposed(): void {
       term.write('\r\n');
       term.write(new Uint8Array(buffer));
     });
-  
+
   const iip_demo = (url: string) => () => fetch(url)
   .then(resp => resp.arrayBuffer())
   .then(buffer => {
