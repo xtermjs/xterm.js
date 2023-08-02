@@ -1230,8 +1230,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     for (let i = 1; i < this.rows; i++) {
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    this.refresh(0, this.rows - 1);
+    // IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
+    // scroll event and that the viewport's state will be valid for immediate writes.
     this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
+    this.viewport?.reset();
+    this.refresh(0, this.rows - 1);
   }
 
   /**
