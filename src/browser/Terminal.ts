@@ -1255,13 +1255,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     super.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
+    this.viewport?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
 
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
-    this.viewport?.syncScrollArea();
   }
 
   public clearTextureAtlas(): void {
