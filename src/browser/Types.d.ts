@@ -161,13 +161,14 @@ export interface IPartialColorSet {
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   readonly onRequestScrollLines: IEvent<{ amount: number, suppressScrollEvent: boolean }>;
-  syncScrollArea(immediate?: boolean): void;
+  syncScrollArea(immediate?: boolean, force?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[], cursorElement?: HTMLElement };
   handleWheel(ev: WheelEvent): boolean;
   handleTouchStart(ev: TouchEvent): void;
   handleTouchMove(ev: TouchEvent): boolean;
   scrollLines(disp: number): void;  // todo api name?
+  reset(): void;
 }
 
 export interface ILinkifierEvent {
