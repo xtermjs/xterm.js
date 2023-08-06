@@ -15,5 +15,5 @@
       "EscapeSequenceParser.benchmark.js.*.averageRuntime",
       "Terminal.benchmark.js.*.averageRuntime"
     ]
-  } 
+  }
 }
