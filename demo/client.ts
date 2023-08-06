@@ -1258,6 +1258,7 @@ stop at final '?': Maybe this one http://example.com/with?arguments=false?
 
 
 function coloredErase(): void {
+  const sp5 = '     ';
   const data = `
 Test BG-colored Erase (BCE):
   The color block in the following lines should look identical.
@@ -1265,7 +1266,7 @@ Test BG-colored Erase (BCE):
   for all cells to the right.
 
  def   41   42   43   44   45   46   47\x1b[47m
-\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m
+\x1b[m${sp5}\x1b[41m${sp5}\x1b[42m${sp5}\x1b[43m${sp5}\x1b[44m${sp5}\x1b[45m${sp5}\x1b[46m${sp5}\x1b[47m${sp5}
 \x1b[m\x1b[5X\x1b[41m\x1b[5C\x1b[5X\x1b[42m\x1b[5C\x1b[5X\x1b[43m\x1b[5C\x1b[5X\x1b[44m\x1b[5C\x1b[5X\x1b[45m\x1b[5C\x1b[5X\x1b[46m\x1b[5C\x1b[5X\x1b[47m\x1b[5C\x1b[5X\x1b[m
 `;
   term.write(data.split('\n').join('\r\n'));
