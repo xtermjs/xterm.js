@@ -314,9 +314,11 @@ export interface IUnicodeService {
    */
   wcwidth(codepoint: number): UnicodeCharWidth;
   getStringCellWidth(s: string): number;
-  /** Return character width, character type (for grapheme clustering).
-   * If preceding!=0, it is return code from previous character;
-   * in that case result specifies if characters should be joined. */
+  /**
+   * Return character width and type for grapheme clustering.
+   * If preceding != 0, it is the return code from the previous character;
+   * in that case the result specifies if the characters should be joined.
+   */
   charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
