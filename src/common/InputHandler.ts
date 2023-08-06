@@ -126,6 +126,10 @@ export class InputHandler extends Disposable implements IInputHandler {
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
 
+  // Cached result of getJoinProperties(..., precedingCodepoint).
+  // Only valid if precedingCodepoint !== 0
+  public precedingJoinState: number = -1; // UnicodeJoinProperties
+
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   public getAttrData(): IAttributeData { return this._curAttrData; }
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
@@ -177,7 +181,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
-    private readonly _parser: EscapeSequenceParser = new EscapeSequenceParser()
+    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
     super();
     this.register(this._parser);
@@ -518,7 +522,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     let precedingInfo = this._parser.precedingCodepoint === 0 ? 0
-      : this._parser.precedingJoinState;
+      : this.precedingJoinState;
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
@@ -632,7 +636,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
-    this._parser.precedingJoinState = precedingInfo;
+    this.precedingJoinState = precedingInfo;
     // store last char in Parser.precedingCodepoint for REP to work correctly
     // This needs to check whether:
     //  - combining: only base char gets carried on (bug in xterm?)
