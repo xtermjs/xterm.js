@@ -521,7 +521,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
-    let precedingInfo = this._parser.precedingCodepoint === 0 ? 0
+    let precedingJoinState = this._parser.precedingCodepoint === 0 ? 0
       : this.precedingJoinState;
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
@@ -536,11 +536,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
 
-      const currentInfo = this._unicodeService.charProperties(code, precedingInfo);
+      const currentInfo = this._unicodeService.charProperties(code, precedingJoinState);
       chWidth = UnicodeService.extractWidth(currentInfo);
       const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
-      const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingInfo) : 0;
-      precedingInfo = currentInfo;
+      const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingJoinState) : 0;
+      precedingJoinState = currentInfo;
 
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
@@ -636,7 +636,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
-    this.precedingJoinState = precedingInfo;
+    this.precedingJoinState = precedingJoinState;
     // store last char in Parser.precedingCodepoint for REP to work correctly
     // This needs to check whether:
     //  - combining: only base char gets carried on (bug in xterm?)
