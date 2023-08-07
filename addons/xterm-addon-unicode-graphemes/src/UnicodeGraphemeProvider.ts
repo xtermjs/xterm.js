@@ -53,7 +53,12 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
     const charInfo = UC.getInfo(codepoint);
     const w = UC.infoToWidthInfo(charInfo);
     const kind = (charInfo & UC.GRAPHEME_BREAK_MASK) >> UC.GRAPHEME_BREAK_SHIFT;
-    return (kind === UC.GRAPHEME_BREAK_Extend || kind === UC.GRAPHEME_BREAK_Prepend) ? 0
-      : (w >= 2 && (w === 3 || this.ambiguousCharsAreWide)) ? 2 : 1;
+    if (kind === UC.GRAPHEME_BREAK_Extend || kind === UC.GRAPHEME_BREAK_Prepend) {
+      return 0;
+    }
+    if (w >= 2 && (w === 3 || this.ambiguousCharsAreWide)) {
+      return 2;
+    }
+    return 1;
   }
 }
