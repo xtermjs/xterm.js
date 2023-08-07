@@ -293,8 +293,27 @@ export interface IOscLinkService {
   getLinkData(linkId: number): IOscLinkData | undefined;
 }
 
-/** Width and Grapheme_Cluster_Break properties of a character. */
+/*
+ * Width and Grapheme_Cluster_Break properties of a character as a bit mask.
+ *
+ * bit 0: shouldJoin - should combine with preceding character.
+ * bit 1..2: wcwidth - see UnicodeCharWidth.
+ * bit 3..31: class of character (currently only 4 bits are used).
+ *   This is used to determined grapheme clustering - i.e. which codepoints
+ *   are to be combined into a single compound character.
+ *
+ * Use the UnicodeService static function createPropertyValue to create a
+ * UnicodeCharProperties; use extractShouldJoin, extractWidth, and
+ * extractCharKind to extract the components.
+ */
 export type UnicodeCharProperties = number;
+
+/**
+ * Width in columns of a character.
+ * In a CJK context, "half-width" characters (such as Latin) are width 1,
+ * while "full-width" characters (such as Kanji) are 2 columns wide.
+ * Combining characters (such as accents) are width 0.
+ */
 export type UnicodeCharWidth = 0 | 1 | 2;
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
