@@ -534,6 +534,7 @@ export class TextureAtlas implements ITextureAtlas {
       const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset;
       const yMid = padding + this._config.deviceCharHeight + lineWidth - yOffset;
       const yBot = Math.ceil(padding + this._config.deviceCharHeight + lineWidth * 2) - yOffset;
+      const ySpace = lineWidth * 2;
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
@@ -542,10 +543,10 @@ export class TextureAtlas implements ITextureAtlas {
         const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
+            this._tmpCtx.moveTo(xChLeft, yTop - ySpace);
+            this._tmpCtx.lineTo(xChRight, yTop - ySpace);
             this._tmpCtx.moveTo(xChLeft, yTop);
             this._tmpCtx.lineTo(xChRight, yTop);
-            this._tmpCtx.moveTo(xChLeft, yBot);
-            this._tmpCtx.lineTo(xChRight, yBot);
             break;
           case UnderlineStyle.CURLY:
             // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
@@ -1019,13 +1020,13 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match
     if (imageData.data[offset] === r &&
-        imageData.data[offset + 1] === g &&
-        imageData.data[offset + 2] === b) {
+      imageData.data[offset + 1] === g &&
+      imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
       // Check the threshold based difference
       if (enableThresholdCheck &&
-          (Math.abs(imageData.data[offset] - r) +
+        (Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;
