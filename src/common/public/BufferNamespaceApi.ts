@@ -7,15 +7,17 @@ import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from '
 import { BufferApiView } from 'common/public/BufferApiView';
 import { EventEmitter } from 'common/EventEmitter';
 import { ICoreTerminal } from 'common/Types';
+import { Disposable } from 'common/Lifecycle';
 
-export class BufferNamespaceApi implements IBufferNamespaceApi {
+export class BufferNamespaceApi extends Disposable implements IBufferNamespaceApi {
   private _normal: BufferApiView;
   private _alternate: BufferApiView;
 
-  private readonly _onBufferChange = new EventEmitter<IBufferApi>();
+  private readonly _onBufferChange = this.register(new EventEmitter<IBufferApi>());
   public readonly onBufferChange = this._onBufferChange.event;
 
   constructor(private _core: ICoreTerminal) {
+    super();
     this._normal = new BufferApiView(this._core.buffers.normal, 'normal');
     this._alternate = new BufferApiView(this._core.buffers.alt, 'alternate');
     this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
