@@ -34,7 +34,7 @@ describe('API Integration Tests', function(): void {
 
   // fails with the grapheme injection, not sure why...
   it('Proposed API check', async () => {
-    await openTerminal(page, { allowProposedApi: false });
+    await openTerminal(page, { allowProposedApi: false }, { loadUnicodeGraphemesAddon: false });
     await page.evaluate(`
       try {
         window.term.markers;
