@@ -242,12 +242,12 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext);
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, restrictToCellHeight);
   }
 
-  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext);
+  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, restrictToCellHeight);
   }
 
   /**
@@ -258,11 +258,12 @@ export class TextureAtlas implements ITextureAtlas {
     key: string | number,
     bg: number,
     fg: number,
-    ext: number
+    ext: number,
+    restrictToCellHeight: boolean = false
   ): IRasterizedGlyph {
     $glyph = cacheMap.get(key, bg, fg, ext);
     if (!$glyph) {
-      $glyph = this._drawToCache(key, bg, fg, ext);
+      $glyph = this._drawToCache(key, bg, fg, ext, restrictToCellHeight);
       cacheMap.set(key, bg, fg, ext, $glyph);
     }
     return $glyph;
@@ -414,7 +415,7 @@ export class TextureAtlas implements ITextureAtlas {
     return color;
   }
 
-  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number): IRasterizedGlyph {
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     // Uncomment for debugging
@@ -543,10 +544,17 @@ export class TextureAtlas implements ITextureAtlas {
         const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
-            this._tmpCtx.moveTo(xChLeft, yTop - ySpace);
-            this._tmpCtx.lineTo(xChRight, yTop - ySpace);
-            this._tmpCtx.moveTo(xChLeft, yTop);
-            this._tmpCtx.lineTo(xChRight, yTop);
+            if (restrictToCellHeight) {
+              this._tmpCtx.moveTo(xChLeft, yTop - ySpace);
+              this._tmpCtx.lineTo(xChRight, yTop - ySpace);
+              this._tmpCtx.moveTo(xChLeft, yTop);
+              this._tmpCtx.lineTo(xChRight, yTop);
+            } else {
+              this._tmpCtx.moveTo(xChLeft, yTop);
+              this._tmpCtx.lineTo(xChRight, yTop);
+              this._tmpCtx.moveTo(xChLeft, yBot);
+              this._tmpCtx.lineTo(xChRight, yBot);
+            }
             break;
           case UnderlineStyle.CURLY:
             // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
@@ -1020,13 +1028,13 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match
     if (imageData.data[offset] === r &&
-      imageData.data[offset + 1] === g &&
-      imageData.data[offset + 2] === b) {
+        imageData.data[offset + 1] === g &&
+        imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
       // Check the threshold based difference
       if (enableThresholdCheck &&
-        (Math.abs(imageData.data[offset] - r) +
+          (Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;
