@@ -6,7 +6,7 @@
 import { IUnicodeVersionProvider } from 'xterm';
 import { UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
-import * as UC from './UnicodeProperties';
+import * as UC from './third-party/UnicodeProperties';
 
 export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
   public readonly version = '15-graphemes';

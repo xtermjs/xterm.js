@@ -33,7 +33,7 @@ describe('API Integration Tests', function(): void {
   });
 
   // fails with the grapheme injection, not sure why...
-  it.skip('Proposed API check', async () => {
+  it('Proposed API check', async () => {
     await openTerminal(page, { allowProposedApi: false });
     await page.evaluate(`
       try {

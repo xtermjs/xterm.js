@@ -39,9 +39,7 @@
     "sourceType": "module"
   },
   "ignorePatterns": [
-    "addons/xterm-addon-unicode-graphemes/src/tiny-inflate.ts",
-    "addons/xterm-addon-unicode-graphemes/src/unicode-trie.ts",
-    "addons/xterm-addon-unicode-graphemes/src/UnicodeProperties.ts",
+    "addons/*/src/third-party/*.ts",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
