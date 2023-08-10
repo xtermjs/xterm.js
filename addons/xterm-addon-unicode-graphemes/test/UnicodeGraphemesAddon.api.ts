@@ -42,25 +42,26 @@ describe('UnicodeGraphemesAddon', () => {
     assert.deepEqual(await page.evaluate(`window.term.unicode.versions`), ['6', ourVersion]);
     // switch should not throw
     await page.evaluate(`window.term.unicode.activeVersion = '${ourVersion}';`);
-    assert.deepEqual(await page.evaluate(`window.term.unicode.activeVersion`), ourVersion);
-    // v6: 10, V15: 20
-    assert.deepEqual(await evalWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣'), 20);
-    // baby with emoji modifier fitzpatrick type-6; baby
-    assert.deepEqual(await evalWidth('\u{1F476}\u{1F3FF}\u{1F476}'), 4);
-    // woman+zwj+woman+zwj+boy
-    assert.deepEqual(await evalWidth('\u{1F469}\u200d\u{1f469}\u200d\u{1f466}'), 2);
-    // REGIONAL INDICATOR SYMBOL LETTER N and RI O
-    assert.deepEqual(await evalWidth('\u{1f1f3}\u{1f1f4}_'), 3);
-    assert.deepEqual(await evalWidth('\u{1f1f3}_\u{1f1f4}'), 3);
-    // letter a with acute accent
-    assert.deepEqual(await evalWidth('\u0061\u0301'), 1);
-    // Korean Jamo
-    assert.deepEqual(await evalWidth('{\u1100\u1161\u11a8}'), 4);
-    // coffin with text_presentation
-    assert.deepEqual(await evalWidth('(\u26b0\ufe0e)'), 3);
-    // coffin with Emoji_presentation
-    assert.deepEqual(await evalWidth('(\u26b0\ufe0f)'), 4);
-    // Égalité (using separate acute) emoij_presentation
-    assert.deepEqual(await evalWidth('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f>'), 16);
+    assert.equal(await page.evaluate(`window.term.unicode.activeVersion`), ourVersion);
+    assert.equal(await evalWidth('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣'), 20,
+      '10 emoji - width 10 in V6; 20 in V11 or later');
+    assert.equal(await evalWidth('\u{1F476}\u{1F3FF}\u{1F476}'), 4,
+      'baby with emoji modifier fitzpatrick type-6; baby');
+    assert.equal(await evalWidth('\u{1F469}\u200d\u{1f469}\u200d\u{1f466}'), 2,
+      'woman+zwj+woman+zwj+boy');
+    assert.equal(await evalWidth('\u{1f1f3}\u{1f1f4}/'), 3,
+      'regional indicator symbol letters N and O, cluster');
+    assert.equal(await evalWidth('\u{1f1f3}/\u{1f1f4}'), 3,
+      'regional indicator symbol letters N and O, separated');
+    assert.equal(await evalWidth('\u0061\u0301'), 1,
+      'letter a with acute accent');
+    assert.equal(await evalWidth('{\u1100\u1161\u11a8}'), 4,
+      'Korean Jamo');
+    assert.equal(await evalWidth('(\u26b0\ufe0e)'), 3,
+      'coffin with text presentation');
+    assert.equal(await evalWidth('(\u26b0\ufe0f)'), 4,
+      'coffin with emoji presentation');
+    assert.equal(await evalWidth('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f>'), 16,
+      'Égalité (using separate acute) emoij_presentation');
   });
 });
