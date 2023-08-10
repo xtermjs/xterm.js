@@ -365,9 +365,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _updateCursorBlink(): void {
     if (this._terminal.options.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager = new CursorBlinkStateManager(() => {
+        this._cursorBlinkStateManager = this.register(new CursorBlinkStateManager(() => {
           this._requestRedrawCursor();
-        }, this._coreBrowserService);
+        }, this._coreBrowserService));
       }
     } else {
       this._cursorBlinkStateManager?.dispose();
