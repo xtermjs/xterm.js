@@ -70,6 +70,11 @@ declare module 'xterm' {
     cursorWidth?: number;
 
     /**
+     * The style of the inactive cursor.
+     */
+    cursorInactiveStyle?: 'outline' | 'line' | 'underline' | 'none';
+
+    /**
      * Whether to draw custom glyphs for block element and box drawing characters instead of using
      * the font. This should typically result in better rendering with continuous lines, even when
      * line height and letter spacing is used. Note that this doesn't work with the DOM renderer

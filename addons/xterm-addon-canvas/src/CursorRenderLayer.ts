@@ -150,7 +150,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.save();
       this._ctx.fillStyle = this._themeService.colors.cursor.css;
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
-      this._renderBlurCursor(cursorX, viewportRelativeCursorY, this._cell);
+      if (this._optionsService.rawOptions.cursorInactiveStyle === 'outline') {
+        this._renderBlurCursor(cursorX, viewportRelativeCursorY, this._cell);
+      } else if (this._optionsService.rawOptions.cursorInactiveStyle === 'line') {
+        this._cursorRenderers['bar'](cursorX, viewportRelativeCursorY, this._cell);
+      } else if (this._optionsService.rawOptions.cursorInactiveStyle === 'underline') {
+        this._cursorRenderers['underline'](cursorX, viewportRelativeCursorY, this._cell);
+      } else {
+      }
       this._ctx.restore();
       this._state.x = cursorX;
       this._state.y = viewportRelativeCursorY;

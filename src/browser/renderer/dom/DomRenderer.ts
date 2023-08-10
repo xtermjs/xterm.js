@@ -197,12 +197,17 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}`;
     // Cursor
     styles +=
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} ,` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} ,` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} ` +
-      `{` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_INACTIVE_STYLE_OUTLINE_CLASS} {` +
       ` outline: 1px solid ${colors.cursor.css};` +
       ` outline-offset: -1px;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_INACTIVE_STYLE_LINE_CLASS} {` +
+      ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${colors.cursor.css} inset;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_INACTIVE_STYLE_UNDERLINE_CLASS} {` +
+      ` border-bottom: 1px ${colors.cursor.css};` +
+      ` border-bottom-style: solid;` +
+      ` height: calc(100% - 1px);` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}:not(.${RowCss.CURSOR_STYLE_BLOCK_CLASS}) {` +
       ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
@@ -408,6 +413,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorX = Math.min(buffer.x, this._bufferService.cols - 1);
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._optionsService.rawOptions.cursorStyle;
+    const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
 
     for (let y = start; y <= end; y++) {
       const row = y + buffer.ydisp;
@@ -422,6 +428,7 @@ export class DomRenderer extends Disposable implements IRenderer {
           row,
           row === cursorAbsoluteY,
           cursorStyle,
+          cursorInactiveStyle,
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,
@@ -474,6 +481,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorX = Math.min(buffer.x, cols - 1);
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._optionsService.rawOptions.cursorStyle;
+    const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
 
     // refresh rows within link range
     for (let i = y; i <= y2; ++i) {
@@ -489,6 +497,7 @@ export class DomRenderer extends Disposable implements IRenderer {
           row,
           row === cursorAbsoluteY,
           cursorStyle,
+          cursorInactiveStyle,
           cursorX,
           cursorBlink,
           this.dimensions.css.cell.width,

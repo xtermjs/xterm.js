@@ -39,7 +39,7 @@ describe('DomRendererRowFactory', () => {
 
   describe('createRow', () => {
     it('should not create anything for an empty row', () => {
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         ''
       );
@@ -50,7 +50,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, '語', 2, '語'.charCodeAt(0)]));
       // There should be no element for the following "empty" cell
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '', 0, 0]));
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span>語</span>'
       );
@@ -58,7 +58,7 @@ describe('DomRendererRowFactory', () => {
 
     it('should add class for cursor and cursor style', () => {
       for (const style of ['block', 'bar', 'underline']) {
-        const spans = rowFactory.createRow(lineData, 0, true, style, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, true, style, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           `<span class="xterm-cursor xterm-cursor-${style}"> </span>`
         );
@@ -66,10 +66,19 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should add class for cursor blink', () => {
-      const spans = rowFactory.createRow(lineData, 0, true, 'block', 0, true, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, true, 'block', undefined, 0, true, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         `<span class="xterm-cursor xterm-cursor-blink xterm-cursor-block"> </span>`
       );
+    });
+
+    it('should add class for inactive cursor', () => {
+      for (const inactiveStyle of ['outline', 'line', 'underline', 'none']){
+        const spans = rowFactory.createRow(lineData, 0, true, 'block', inactiveStyle, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        assert.equal(extractHtml(spans),
+          `<span class="xterm-cursor xterm-cursor-block xterm-cursor-inactive-${inactiveStyle}"> </span>`
+        );
+      }
     });
 
     describe('attributes', () => {
@@ -77,7 +86,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.BOLD;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-bold">a</span>'
         );
@@ -87,7 +96,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.ITALIC;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-italic">a</span>'
         );
@@ -97,7 +106,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.DIM;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-dim">a</span>'
         );
@@ -110,7 +119,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.SINGLE;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             '<span class="xterm-underline-1">a</span>'
           );
@@ -121,7 +130,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.DOUBLE;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             '<span class="xterm-underline-2">a</span>'
           );
@@ -132,7 +141,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.CURLY;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             '<span class="xterm-underline-3">a</span>'
           );
@@ -143,7 +152,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.DOTTED;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             '<span class="xterm-underline-4">a</span>'
           );
@@ -154,7 +163,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.HAS_EXTENDED;
           cell.extended.underlineStyle = UnderlineStyle.DASHED;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             '<span class="xterm-underline-5">a</span>'
           );
@@ -165,7 +174,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.OVERLINE;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-overline">a</span>'
         );
@@ -175,7 +184,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.STRIKETHROUGH;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-strikethrough">a</span>'
         );
@@ -188,7 +197,7 @@ describe('DomRendererRowFactory', () => {
           cell.fg &= ~Attributes.PCOLOR_MASK;
           cell.fg |= i;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             `<span class="xterm-fg-${i}">a</span>`
           );
@@ -202,7 +211,7 @@ describe('DomRendererRowFactory', () => {
           cell.bg &= ~Attributes.PCOLOR_MASK;
           cell.bg |= i;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             `<span class="xterm-bg-${i}">a</span>`
           );
@@ -214,7 +223,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= Attributes.CM_P16 | 2 | FgFlags.INVERSE;
         cell.bg |= Attributes.CM_P16 | 1;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-bg-2 xterm-fg-1">a</span>'
         );
@@ -225,7 +234,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= FgFlags.INVERSE;
         cell.bg |= Attributes.CM_P16 | 1;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-bg-257 xterm-fg-1">a</span>'
         );
@@ -235,7 +244,7 @@ describe('DomRendererRowFactory', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg |= Attributes.CM_P16 | 1 | FgFlags.INVERSE;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-bg-1 xterm-fg-257">a</span>'
         );
@@ -248,7 +257,7 @@ describe('DomRendererRowFactory', () => {
           cell.fg &= ~Attributes.PCOLOR_MASK;
           cell.fg |= i;
           lineData.setCell(0, cell);
-          const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+          const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
           assert.equal(extractHtml(spans),
             `<span class="xterm-bold xterm-fg-${i + 8}">a</span>`
           );
@@ -260,7 +269,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= Attributes.CM_RGB | 1 << 16 | 2 << 8 | 3;
         cell.bg |= Attributes.CM_RGB | 4 << 16 | 5 << 8 | 6;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span style="background-color:#040506;color:#010203;">a</span>'
         );
@@ -271,7 +280,7 @@ describe('DomRendererRowFactory', () => {
         cell.fg |= Attributes.CM_RGB | 1 << 16 | 2 << 8 | 3 | FgFlags.INVERSE;
         cell.bg |= Attributes.CM_RGB | 4 << 16 | 5 << 8 | 6;
         lineData.setCell(0, cell);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span style="background-color:#010203;color:#040506;">a</span>'
         );
@@ -283,7 +292,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
         rowFactory.handleSelectionChanged([1, 0], [2, 0], false);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span>a</span><span class="xterm-decoration-top">b</span>'
         );
@@ -291,7 +300,7 @@ describe('DomRendererRowFactory', () => {
       it('should force whitespace cells to be rendered above the background', () => {
         lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
         rowFactory.handleSelectionChanged([0, 0], [2, 0], false);
-        const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
           '<span class="xterm-decoration-top"> </span><span class="xterm-decoration-top">a</span>'
         );
@@ -308,7 +317,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should not create anything for an empty row', () => {
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         ''
       );
@@ -318,7 +327,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span>abc</span>'
       );
@@ -329,7 +338,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '€', 1, '€'.charCodeAt(0)]));
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span>a</span><span style="letter-spacing: 3px;">€</span><span>c</span>'
       );
@@ -344,7 +353,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(1, aColor1);
       lineData.setCell(2, bColor2);
       lineData.setCell(3, bColor2);
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span class="xterm-fg-1">aa</span><span class="xterm-fg-2">bb</span>'
       );
@@ -356,7 +365,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'X', 1, 'X'.charCodeAt(0)]));
       lineData.setCell(3, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
       lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
-      const spans = rowFactory.createRow(lineData, 0, true, undefined, 2, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, true, undefined, undefined, 2, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span>aa</span><span class="xterm-cursor xterm-cursor-block">X</span><span>bb</span>'
       );
@@ -369,7 +378,7 @@ describe('DomRendererRowFactory', () => {
       nullCell.bg = Attributes.CM_P16 | 2;
       lineData.setCell(3, nullCell);
       lineData.setCell(4, nullCell);
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span>  </span><span class="xterm-bg-1"> </span><span class="xterm-bg-2">  </span>'
       );
@@ -379,23 +388,23 @@ describe('DomRendererRowFactory', () => {
       const nullCell = lineData.loadCell(0, new CellData());
       nullCell.bg = Attributes.CM_P16 | 1;
       lineData.setCell(0, nullCell);
-      let spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      let spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span class="xterm-bg-1"> </span>'
       );
       lineData.setCell(1, nullCell);
-      spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span class="xterm-bg-1">  </span>'
       );
       lineData.setCell(2, nullCell);
       lineData.setCell(3, nullCell);
-      spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span class="xterm-bg-1">    </span>'
       );
       lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
-      spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span class="xterm-bg-1">    </span><span>a</span>'
       );
@@ -410,7 +419,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
       lineData.setCell(3, CellData.fromCharData([DEFAULT_ATTR, '語', 2, 'c'.charCodeAt(0)]));
       lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, '𝄞', 1, 'c'.charCodeAt(0)]));
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span>a</span><span style="letter-spacing: 3px;">€</span><span>c語</span><span style="letter-spacing: -2px;">𝄞</span>'
       );
@@ -424,7 +433,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
       lineData.setCell(5, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
       lineData.setCell(6, CellData.fromCharData([DEFAULT_ATTR, 'b', 1, 'b'.charCodeAt(0)]));
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, 2, 4);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, 2, 4);
       assert.equal(extractHtml(spans),
         '<span>aa</span><span style="text-decoration: underline;">xxx</span><span>bb</span>'
       );
@@ -435,7 +444,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
       lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, 'x', 1, 'x'.charCodeAt(0)]));
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, 2, 4);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, 2, 4);
       assert.equal(extractHtml(spans),
         '<span>aa</span><span style="text-decoration: underline;">x x</span>'
       );
@@ -445,7 +454,7 @@ describe('DomRendererRowFactory', () => {
       for (let i = 0; i < 10; ++i) {
         lineData.setCell(i, CellData.fromCharData([DEFAULT_ATTR, 'a', 1, 'a'.charCodeAt(0)]));
       }
-      const spans = rowFactory.createRow(lineData, 0, false, undefined, 0, false, 5, EMPTY_WIDTH, -100, 100);
+      const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -100, 100);
       assert.equal(extractHtml(spans),
         '<span style="text-decoration: underline;">aaaaaaaaaa</span>'
       );

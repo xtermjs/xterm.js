@@ -461,7 +461,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
               y: this._terminal.buffer.active.cursorY,
               width: cell.getWidth(),
               style: this._coreBrowserService.isFocused ?
-                (terminal.options.cursorStyle || 'block') : 'blur',
+                (terminal.options.cursorStyle || 'block') : this._getInactiveCursorStyle(terminal.options.cursorInactiveStyle),
               cursorWidth: terminal.options.cursorWidth,
               dpr: this._devicePixelRatio
             };
@@ -599,6 +599,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _requestRedrawCursor(): void {
     const cursorY = this._terminal.buffer.active.cursorY;
     this._onRequestRedraw.fire({ start: cursorY, end: cursorY });
+  }
+
+  private _getInactiveCursorStyle(cursorInactiveStyle: 'outline' | 'line' | 'underline' | 'none'): string {
+    if (cursorInactiveStyle === 'outline') {
+      return 'blur';
+    }
+    if (cursorInactiveStyle === 'line') {
+      return 'bar';
+    }
+    if (cursorInactiveStyle === 'underline'){
+      return 'underline';
+    }
+    return 'block';
   }
 }
 

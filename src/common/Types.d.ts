@@ -38,6 +38,8 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 
 export type CursorStyle = 'block' | 'underline' | 'bar';
 
+export type CursorInactiveStyle = 'outline' | 'line' | 'underline' | 'none';
+
 export type XtermListener = (...args: any[]) => void;
 
 /**
