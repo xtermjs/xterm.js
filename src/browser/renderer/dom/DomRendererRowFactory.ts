@@ -131,6 +131,11 @@ export class DomRendererRowFactory {
       const isCursorCell = isCursorRow && x === cursorX;
       const isLinkHover = hasHover && x >= linkStart && x <= linkEnd;
 
+      let isDecorated = false;
+      this._decorationService.forEachDecorationAtCell(x, row, undefined, d => {
+        isDecorated = true;
+      });
+
       // get chars to render for this cell
       let chars = cell.getChars() || WHITESPACE_CELL_CHAR;
       if (chars === ' ' && (cell.isUnderline() || cell.isOverline())) {
@@ -160,6 +165,7 @@ export class DomRendererRowFactory {
           && spacing === oldSpacing
           && !isCursorCell
           && !isJoined
+          && !isDecorated
         ) {
           // no span alterations, thus only account chars skipping all code below
           text += chars;
@@ -386,7 +392,7 @@ export class DomRendererRowFactory {
       }
 
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isInSelection && !isJoined) {
+      if (!isCursorCell && !isInSelection && !isJoined && !isDecorated) {
         cellAmount++;
       } else {
         charElement.textContent = text;
