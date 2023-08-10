@@ -136,6 +136,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       for (const l of this._renderLayers) {
         l.dispose();
       }
+      this._cursorBlinkStateManager?.dispose();
       this._canvas.parentElement?.removeChild(this._canvas);
       removeTerminalFromCache(this._terminal);
     }));
