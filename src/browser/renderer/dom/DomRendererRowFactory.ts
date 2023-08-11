@@ -216,7 +216,9 @@ export class DomRendererRowFactory {
               case 'outline':
                 classes.push(RowCss.CURSOR_STYLE_OUTLINE_CLASS);
                 break;
-              case 'line':
+              case 'block':
+                classes.push(RowCss.CURSOR_STYLE_BLOCK_CLASS);
+              case 'bar':
                 classes.push(RowCss.CURSOR_STYLE_BAR_CLASS);
                 break;
               case 'underline':

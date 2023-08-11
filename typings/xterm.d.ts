@@ -72,7 +72,7 @@ declare module 'xterm' {
     /**
      * The style of the inactive cursor.
      */
-    cursorInactiveStyle?: 'outline' | 'line' | 'underline' | 'none';
+    cursorInactiveStyle?: 'outline' | 'block' | 'bar' | 'underline' | 'none';
 
     /**
      * Whether to draw custom glyphs for block element and box drawing characters instead of using

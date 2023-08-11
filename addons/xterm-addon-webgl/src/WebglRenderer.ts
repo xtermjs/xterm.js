@@ -455,21 +455,24 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Override colors for cursor cell
         if (isCursorVisible && row === cursorY) {
+          const inactiveCursorStyle = this._getInactiveCursorStyle(terminal.options.cursorInactiveStyle);
           if (x === cursorX) {
             this._model.cursor = {
               x: cursorX,
               y: this._terminal.buffer.active.cursorY,
               width: cell.getWidth(),
               style: this._coreBrowserService.isFocused ?
-                (terminal.options.cursorStyle || 'block') : this._getInactiveCursorStyle(terminal.options.cursorInactiveStyle),
+                (terminal.options.cursorStyle || 'block') : inactiveCursorStyle,
               cursorWidth: terminal.options.cursorWidth,
               dpr: this._devicePixelRatio
             };
             lastCursorX = cursorX + cell.getWidth() - 1;
           }
           if (x >= cursorX && x <= lastCursorX &&
-              this._coreBrowserService.isFocused &&
-              (terminal.options.cursorStyle || 'block') === 'block') {
+              ((this._coreBrowserService.isFocused &&
+              (terminal.options.cursorStyle || 'block') === 'block') ||
+              (this._coreBrowserService.isFocused === false &&
+              inactiveCursorStyle === 'block'))) {
             this._cellColorResolver.result.fg =
               Attributes.CM_RGB | (this._themeService.colors.cursorAccent.rgba >> 8 & Attributes.RGB_MASK);
             this._cellColorResolver.result.bg =
@@ -601,17 +604,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._onRequestRedraw.fire({ start: cursorY, end: cursorY });
   }
 
-  private _getInactiveCursorStyle(cursorInactiveStyle: 'outline' | 'line' | 'underline' | 'none'): string {
+  private _getInactiveCursorStyle(cursorInactiveStyle: 'outline' | 'block' | 'bar' | 'underline' | 'none'): string {
     if (cursorInactiveStyle === 'outline') {
       return 'blur';
     }
-    if (cursorInactiveStyle === 'line') {
+    if (cursorInactiveStyle === 'block') {
+      return 'block';
+    }
+    if (cursorInactiveStyle === 'bar') {
       return 'bar';
     }
-    if (cursorInactiveStyle === 'underline'){
+    if (cursorInactiveStyle === 'underline') {
       return 'underline';
     }
-    return 'block';
+    return '';
   }
 }
 
