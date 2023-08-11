@@ -255,7 +255,7 @@ export class RectangleRenderer extends Disposable {
     let offset: number;
     let rectangleCount = 0;
 
-    if (cursor.style === 'bar' || cursor.style === 'blur') {
+    if (cursor.style === 'bar' || cursor.style === 'outline') {
       // Left edge
       offset = rectangleCount++ * INDICES_PER_RECTANGLE;
       this._addRectangleFloat(
@@ -268,7 +268,7 @@ export class RectangleRenderer extends Disposable {
         this._cursorFloat
       );
     }
-    if (cursor.style === 'underline' || cursor.style === 'blur') {
+    if (cursor.style === 'underline' || cursor.style === 'outline') {
       // Bottom edge
       offset = rectangleCount++ * INDICES_PER_RECTANGLE;
       this._addRectangleFloat(
@@ -281,7 +281,7 @@ export class RectangleRenderer extends Disposable {
         this._cursorFloat
       );
     }
-    if (cursor.style === 'blur') {
+    if (cursor.style === 'outline') {
       // Top edge
       offset = rectangleCount++ * INDICES_PER_RECTANGLE;
       this._addRectangleFloat(
