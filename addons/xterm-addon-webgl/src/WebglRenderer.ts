@@ -461,15 +461,17 @@ export class WebglRenderer extends Disposable implements IRenderer {
               y: this._terminal.buffer.active.cursorY,
               width: cell.getWidth(),
               style: this._coreBrowserService.isFocused ?
-                (terminal.options.cursorStyle || 'block') : 'blur',
+                (terminal.options.cursorStyle || 'block') : terminal.options.cursorInactiveStyle,
               cursorWidth: terminal.options.cursorWidth,
               dpr: this._devicePixelRatio
             };
             lastCursorX = cursorX + cell.getWidth() - 1;
           }
           if (x >= cursorX && x <= lastCursorX &&
-              this._coreBrowserService.isFocused &&
-              (terminal.options.cursorStyle || 'block') === 'block') {
+              ((this._coreBrowserService.isFocused &&
+              (terminal.options.cursorStyle || 'block') === 'block') ||
+              (this._coreBrowserService.isFocused === false &&
+              terminal.options.cursorInactiveStyle === 'block'))) {
             this._cellColorResolver.result.fg =
               Attributes.CM_RGB | (this._themeService.colors.cursorAccent.rgba >> 8 & Attributes.RGB_MASK);
             this._cellColorResolver.result.bg =

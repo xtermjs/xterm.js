@@ -26,6 +26,7 @@ export const enum RowCss {
   CURSOR_CLASS = 'xterm-cursor',
   CURSOR_BLINK_CLASS = 'xterm-cursor-blink',
   CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block',
+  CURSOR_STYLE_OUTLINE_CLASS = 'xterm-cursor-outline',
   CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar',
   CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline'
 }
@@ -61,6 +62,7 @@ export class DomRendererRowFactory {
     row: number,
     isCursorRow: boolean,
     cursorStyle: string | undefined,
+    cursorInactiveStyle: string | undefined,
     cursorX: number,
     cursorBlink: boolean,
     cellWidth: number,
@@ -203,16 +205,37 @@ export class DomRendererRowFactory {
 
       if (!this._coreService.isCursorHidden && isCursorCell) {
         classes.push(RowCss.CURSOR_CLASS);
-        if (cursorBlink) {
-          classes.push(RowCss.CURSOR_BLINK_CLASS);
+        if (this._coreBrowserService.isFocused) {
+          if (cursorBlink) {
+            classes.push(RowCss.CURSOR_BLINK_CLASS);
+          }
+          classes.push(
+            cursorStyle === 'bar'
+              ? RowCss.CURSOR_STYLE_BAR_CLASS
+              : cursorStyle === 'underline'
+                ? RowCss.CURSOR_STYLE_UNDERLINE_CLASS
+                : RowCss.CURSOR_STYLE_BLOCK_CLASS
+          );
+        } else {
+          if (cursorInactiveStyle) {
+            switch (cursorInactiveStyle) {
+              case 'outline':
+                classes.push(RowCss.CURSOR_STYLE_OUTLINE_CLASS);
+                break;
+              case 'block':
+                classes.push(RowCss.CURSOR_STYLE_BLOCK_CLASS);
+                break;
+              case 'bar':
+                classes.push(RowCss.CURSOR_STYLE_BAR_CLASS);
+                break;
+              case 'underline':
+                classes.push(RowCss.CURSOR_STYLE_UNDERLINE_CLASS);
+                break;
+              default:
+                break;
+            }
+          }
         }
-        classes.push(
-          cursorStyle === 'bar'
-            ? RowCss.CURSOR_STYLE_BAR_CLASS
-            : cursorStyle === 'underline'
-              ? RowCss.CURSOR_STYLE_UNDERLINE_CLASS
-              : RowCss.CURSOR_STYLE_BLOCK_CLASS
-        );
       }
 
       if (cell.isBold()) {

@@ -60,7 +60,7 @@ declare module 'xterm' {
     cursorBlink?: boolean;
 
     /**
-     * The style of the cursor.
+     * The style of the cursor when the terminal is focused.
      */
     cursorStyle?: 'block' | 'underline' | 'bar';
 
@@ -68,6 +68,11 @@ declare module 'xterm' {
      * The width of the cursor in CSS pixels when `cursorStyle` is set to 'bar'.
      */
     cursorWidth?: number;
+
+    /**
+     * The style of the cursor when the terminal is not focused.
+     */
+    cursorInactiveStyle?: 'outline' | 'block' | 'bar' | 'underline' | 'none';
 
     /**
      * Whether to draw custom glyphs for block element and box drawing characters instead of using

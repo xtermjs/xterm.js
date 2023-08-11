@@ -419,6 +419,7 @@ function initOptions(term: TerminalType): void {
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],
+    cursorInactiveStyle: ['outline', 'block', 'bar', 'underline', 'none'],
     fastScrollModifier: ['none', 'alt', 'ctrl', 'shift'],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],

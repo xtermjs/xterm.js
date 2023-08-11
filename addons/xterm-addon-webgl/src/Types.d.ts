@@ -16,10 +16,12 @@ export interface ICursorRenderModel {
   x: number;
   y: number;
   width: number;
-  style: string;
+  style: CursorStyle;
   cursorWidth: number;
   dpr: number;
 }
+
+export type CursorStyle = 'outline' | 'block' | 'bar' | 'underline' | 'none';
 
 export interface IWebGL2RenderingContext extends WebGLRenderingContext {
   vertexAttribDivisor(index: number, divisor: number): void;
