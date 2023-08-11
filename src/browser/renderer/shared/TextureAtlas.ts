@@ -532,9 +532,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const yTop = restrictToCellHeight ?
-        Math.ceil(padding + this._config.deviceCharHeight) - yOffset - lineWidth * 2 :
-        Math.ceil(padding + this._config.deviceCharHeight) - yOffset;
+      const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
       const yMid = yTop + lineWidth;
       const yBot = yTop + lineWidth * 2;
 
