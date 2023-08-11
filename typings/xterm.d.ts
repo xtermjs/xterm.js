@@ -60,7 +60,7 @@ declare module 'xterm' {
     cursorBlink?: boolean;
 
     /**
-     * The style of the cursor.
+     * The style of the cursor when the terminal is focused.
      */
     cursorStyle?: 'block' | 'underline' | 'bar';
 
@@ -70,7 +70,7 @@ declare module 'xterm' {
     cursorWidth?: number;
 
     /**
-     * The style of the inactive cursor.
+     * The style of the cursor when the terminal is not focused.
      */
     cursorInactiveStyle?: 'outline' | 'block' | 'bar' | 'underline' | 'none';
 
