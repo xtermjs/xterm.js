@@ -532,10 +532,11 @@ export class TextureAtlas implements ITextureAtlas {
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset;
-      const yMid = padding + this._config.deviceCharHeight + lineWidth - yOffset;
-      const yBot = Math.ceil(padding + this._config.deviceCharHeight + lineWidth * 2) - yOffset;
-      const ySpace = lineWidth * 2;
+      const yTop = restrictToCellHeight ?
+        Math.ceil(padding + this._config.deviceCharHeight) - yOffset - lineWidth * 2 :
+        Math.ceil(padding + this._config.deviceCharHeight) - yOffset;
+      const yMid = yTop + lineWidth;
+      const yBot = yTop + lineWidth * 2;
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
@@ -544,17 +545,10 @@ export class TextureAtlas implements ITextureAtlas {
         const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
-            if (restrictToCellHeight) {
-              this._tmpCtx.moveTo(xChLeft, yTop - ySpace);
-              this._tmpCtx.lineTo(xChRight, yTop - ySpace);
-              this._tmpCtx.moveTo(xChLeft, yTop);
-              this._tmpCtx.lineTo(xChRight, yTop);
-            } else {
-              this._tmpCtx.moveTo(xChLeft, yTop);
-              this._tmpCtx.lineTo(xChRight, yTop);
-              this._tmpCtx.moveTo(xChLeft, yBot);
-              this._tmpCtx.lineTo(xChRight, yBot);
-            }
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            this._tmpCtx.moveTo(xChLeft, yBot);
+            this._tmpCtx.lineTo(xChRight, yBot);
             break;
           case UnderlineStyle.CURLY:
             // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
