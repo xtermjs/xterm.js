@@ -218,6 +218,7 @@ export class DomRendererRowFactory {
                 break;
               case 'block':
                 classes.push(RowCss.CURSOR_STYLE_BLOCK_CLASS);
+                break;
               case 'bar':
                 classes.push(RowCss.CURSOR_STYLE_BAR_CLASS);
                 break;

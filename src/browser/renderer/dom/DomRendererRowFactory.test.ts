@@ -73,11 +73,26 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should add class for inactive cursor', () => {
-      for (const inactiveStyle of ['outline', 'line', 'underline', 'none']){
+      const coreBrowserService = new MockCoreBrowserService();
+      coreBrowserService.isFocused = false;
+      const rowFactory = new DomRendererRowFactory(
+        dom.window.document,
+        new MockCharacterJoinerService(),
+        new MockOptionsService({ drawBoldTextInBrightColors: true }),
+        coreBrowserService,
+        new MockCoreService(),
+        new MockDecorationService(),
+        new MockThemeService()
+      );
+      for (const inactiveStyle of ['outline', 'block', 'bar', 'underline', 'none']){
         const spans = rowFactory.createRow(lineData, 0, true, 'block', inactiveStyle, 0, false, 5, EMPTY_WIDTH, -1, -1);
-        assert.equal(extractHtml(spans),
-          `<span class="xterm-cursor xterm-cursor-block xterm-cursor-inactive-${inactiveStyle}"> </span>`
-        );
+        if (inactiveStyle === 'none') {
+          assert.equal(extractHtml(spans),
+            `<span class="xterm-cursor"> </span>`);
+        } else {
+          assert.equal(extractHtml(spans),
+            `<span class="xterm-cursor xterm-cursor-${inactiveStyle}"> </span>`);
+        }
       }
     });
 
