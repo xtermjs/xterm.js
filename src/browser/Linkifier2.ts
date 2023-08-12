@@ -109,7 +109,8 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   }
 
   private _handleHover(position: IBufferCellPosition): void {
-    // TODO: This currently does not cache link provider results across wrapped lines, activeLine should be something like `activeRange: {startY, endY}`
+    // TODO: This currently does not cache link provider results across wrapped lines, activeLine
+    //       should be something like `activeRange: {startY, endY}`
     // Check if we need to clear the link
     if (this._activeLine !== position.y || this._wasResized) {
       this._clearCurrentLink();

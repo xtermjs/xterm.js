@@ -285,7 +285,8 @@ export class DomRendererRowFactory {
         classes.push(RowCss.STRIKETHROUGH_CLASS);
       }
 
-      // apply link hover underline late, effectively overrides any previous text-decoration settings
+      // apply link hover underline late, effectively overrides any previous text-decoration
+      // settings
       if (isLinkHover) {
         charElement.style.textDecoration = 'underline';
       }

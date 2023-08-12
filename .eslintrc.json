@@ -159,6 +159,16 @@
     "jsdoc/check-param-names": 1,
     "jsdoc/no-multi-asterisks": 1,
     "keyword-spacing": "warn",
+    "max-len": [
+      "warn",
+      {
+        "code": 1000, // Don't enforce for code
+        "comments": 100,
+        "ignoreTrailingComments": true,
+        "ignoreUrls": true,
+        "ignorePattern": "^ *((?<vt_comment>(//|\\*) @vt)|(?<table_comment>\\* \\| )|(?<commented_code>//  ))"
+      }
+    ],
     "new-parens": "warn",
     "no-duplicate-imports": "warn",
     "no-else-return": [
@@ -225,7 +235,8 @@
     {
       "files": ["**/*.test.ts"],
       "rules": {
-        "object-curly-spacing": "off"
+        "object-curly-spacing": "off",
+        "max-len": "off"
       }
     }
   ]

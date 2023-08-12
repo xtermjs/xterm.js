@@ -270,8 +270,8 @@ export class Buffer implements IBuffer {
   private _batchedMemoryCleanup(): boolean {
     let normalRun = true;
     if (this._memoryCleanupPosition >= this.lines.length) {
-      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted lines,
-      // which should finish rather quick if there are no more cleanups pending
+      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted
+      // lines, which should finish rather quick if there are no more cleanups pending
       this._memoryCleanupPosition = 0;
       normalRun = false;
     }

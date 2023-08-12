@@ -389,7 +389,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   public clear(): void {
     for (const e of this._rowElements) {
       /**
-       * NOTE: This used to be `e.innerText = '';` but that doesn't work when using `jsdom` and `@testing-library/react`
+       * NOTE: This used to be `e.innerText = '';` but that doesn't work when using `jsdom` and
+       * `@testing-library/react`
        *
        * references:
        * - https://github.com/testing-library/react-testing-library/issues/1146

@@ -131,7 +131,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _thisRowLastSecondChar: IBufferCell = this._buffer.getNullCell();
   private _nextRowFirstChar: IBufferCell = this._buffer.getNullCell();
   protected _rowEnd(row: number, isLastRow: boolean): void {
-    // if there is colorful empty cell at line end, whe must pad it back, or the the color block will missing
+    // if there is colorful empty cell at line end, whe must pad it back, or the the color block
+    // will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.
       this._currentRow += `\u001b[${this._nullCellCount}X`;
@@ -292,7 +293,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     const sgrSeq = this._diffStyle(cell, this._cursorStyle);
 
-    // the empty cell style is only assumed to be changed when background changed, because foreground is always 0.
+    // the empty cell style is only assumed to be changed when background changed, because
+    // foreground is always 0.
     const styleChanged = isEmptyCell ? !equalBg(this._cursorStyle, cell) : sgrSeq.length > 0;
 
     /**

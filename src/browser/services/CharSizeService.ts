@@ -60,7 +60,8 @@ interface IMeasureResult {
   height: number;
 }
 
-// TODO: For supporting browsers we should also provide a CanvasCharDimensionsProvider that uses ctx.measureText
+// TODO: For supporting browsers we should also provide a CanvasCharDimensionsProvider that uses
+// ctx.measureText
 class DomMeasureStrategy implements IMeasureStrategy {
   private _result: IMeasureResult = { width: 0, height: 0 };
   private _measureElement: HTMLElement;

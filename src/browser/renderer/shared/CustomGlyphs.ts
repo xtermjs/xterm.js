@@ -349,7 +349,8 @@ const enum VectorType {
  * not been patched with powerline characters and also to get pixel perfect rendering as rendering
  * issues can occur around AA/SPAA.
  *
- * The line variants draw beyond the cell and get clipped to ensure the end of the line is not visible.
+ * The line variants draw beyond the cell and get clipped to ensure the end of the line is not
+ * visible.
  *
  * Original symbols defined in https://github.com/powerline/fontpatcher
  */
