@@ -1,0 +1,104 @@
+{
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint",
+    "jsdoc"
+  ],
+  "rules": {
+    "no-extra-semi": "error",
+    "@typescript-eslint/array-type": [
+      "warn",
+      {
+        "default": "array",
+        "readonly": "generic"
+      }
+    ],
+    "@typescript-eslint/explicit-function-return-type": [
+      "warn",
+      {
+        "allowExpressions": true
+      }
+    ],
+    "@typescript-eslint/indent": [
+      "warn",
+      2
+    ],
+    "@typescript-eslint/member-delimiter-style": [
+      "warn",
+      {
+        "multiline": {
+          "delimiter": "semi",
+          "requireLast": true
+        },
+        "singleline": {
+          "delimiter": "comma",
+          "requireLast": false
+        }
+      }
+    ],
+    "@typescript-eslint/naming-convention": [
+      "warn",
+      { "selector": "typeLike", "format": ["PascalCase"] },
+      { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] }
+    ],
+    "@typescript-eslint/prefer-namespace-keyword": "warn",
+    "@typescript-eslint/type-annotation-spacing": "warn",
+    "@typescript-eslint/quotes": [
+      "warn",
+      "single",
+      { "allowTemplateLiterals": true }
+    ],
+    "@typescript-eslint/semi": [
+      "warn",
+      "always"
+    ],
+    "comma-dangle": [
+      "warn",
+      {
+        "objects": "never",
+        "arrays": "never",
+        "functions": "never"
+      }
+    ],
+    "curly": [
+      "warn",
+      "multi-line"
+    ],
+    "eol-last": "warn",
+    "eqeqeq": [
+      "warn",
+      "always"
+    ],
+    "jsdoc/check-alignment": 1,
+    "jsdoc/check-param-names": 1,
+    "keyword-spacing": "warn",
+    "max-len": [
+      "warn",
+      {
+        "code": 1000, // Don't enforce for code
+        "comments": 80,
+        "ignoreUrls": true,
+        "ignorePattern": "^ *(?<ps_description>\\* Ps=)"
+      }
+    ],
+    "no-irregular-whitespace": "warn",
+    "no-trailing-spaces": "warn",
+    "object-curly-spacing": [
+      "warn",
+      "always"
+    ],
+    "spaced-comment": [
+      "warn",
+      "always",
+      {
+        "markers": ["/"],
+        "exceptions": ["-"]
+      }
+    ]
+  }
+}
