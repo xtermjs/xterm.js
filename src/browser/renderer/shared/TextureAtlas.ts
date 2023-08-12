@@ -277,7 +277,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _getBackgroundColor(bgColorMode: number, bgColor: number, inverse: boolean, dim: boolean): IColor {
-    if (this._config.allowTransparency) {
+    if (this._config.allowTransparency || (inverse && !color.isOpaque(this._config.colors.foreground))) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
