@@ -466,8 +466,8 @@ export class TextureAtlas implements ITextureAtlas {
 
     // draw the background
     const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse, dim);
-    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
-    // transparency in backgroundColor
+    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha,
+    // regardless of transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
     this._tmpCtx.fillStyle = backgroundColor.css;
     this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
@@ -559,7 +559,8 @@ export class TextureAtlas implements ITextureAtlas {
             const clipRegion = new Path2D();
             clipRegion.rect(xChLeft, yTop, this._config.deviceCellWidth, yBot - yTop);
             this._tmpCtx.clip(clipRegion);
-            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
+            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other
+            // cells
             this._tmpCtx.moveTo(xChLeft - this._config.deviceCellWidth / 2, yMid);
             this._tmpCtx.bezierCurveTo(
               xChLeft - this._config.deviceCellWidth / 2, yCurlyTop,

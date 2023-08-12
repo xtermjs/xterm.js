@@ -104,7 +104,8 @@ export class OscLinkProvider implements ILinkProvider {
       }
     }
 
-    // TODO: Handle fetching and returning other link ranges to underline other links with the same id
+    // TODO: Handle fetching and returning other link ranges to underline other links with the same
+    //       id
     callback(result);
   }
 }

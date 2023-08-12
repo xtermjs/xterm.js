@@ -532,9 +532,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       } else {
         if (promiseResult === undefined || this._parseStack.state === ParserStackType.FAIL) {
           /**
-           * Reject further parsing on improper continuation after pausing.
-           * This is a really bad condition with screwed up execution order and prolly messed up
-           * terminal state, therefore we exit hard with an exception and reject any further parsing.
+           * Reject further parsing on improper continuation after pausing. This is a really bad
+           * condition with screwed up execution order and prolly messed up terminal state,
+           * therefore we exit hard with an exception and reject any further parsing.
            *
            * Note: With `Terminal.write` usage this exception should never occur, as the top level
            * calls are guaranteed to handle async conditions properly. If you ever encounter this
@@ -542,9 +542,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
            * `InputHandler.parse` or `EscapeSequenceParser.parse` synchronously without waiting for
            * continuation of a running async handler.
            *
-           * It is possible to get rid of this error by calling `reset`. But dont rely on that,
-           * as the pending async handler still might mess up the terminal later. Instead fix the faulty
-           * async handling, so this error will not be thrown anymore.
+           * It is possible to get rid of this error by calling `reset`. But dont rely on that, as
+           * the pending async handler still might mess up the terminal later. Instead fix the
+           * faulty async handling, so this error will not be thrown anymore.
            */
           this._parseStack.state = ParserStackType.FAIL;
           throw new Error('improper continuation due to previous async handler, giving up parsing');
