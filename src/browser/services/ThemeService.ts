@@ -81,7 +81,8 @@ export class ThemeService extends Disposable implements IThemeService {
   public serviceBrand: undefined;
 
   private _colors: IColorSet;
-  private _contrastCache: IColorContrastCache;
+  private _contrastCache: IColorContrastCache = new ColorContrastCache();
+  private _halfContrastCache: IColorContrastCache = new ColorContrastCache();
   private _restoreColors!: IRestoreColorSet;
 
   public get colors(): ReadonlyColorSet { return this._colors; }
@@ -94,7 +95,6 @@ export class ThemeService extends Disposable implements IThemeService {
   ) {
     super();
 
-    this._contrastCache = new ColorContrastCache();
     this._colors = {
       foreground: DEFAULT_FOREGROUND,
       background: DEFAULT_BACKGROUND,
@@ -106,7 +106,8 @@ export class ThemeService extends Disposable implements IThemeService {
       selectionInactiveBackgroundTransparent: DEFAULT_SELECTION,
       selectionInactiveBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       ansi: DEFAULT_ANSI_COLORS.slice(),
-      contrastCache: this._contrastCache
+      contrastCache: this._contrastCache,
+      halfContrastCache: this._halfContrastCache
     };
     this._updateRestoreColors();
     this._setTheme(this._optionsService.rawOptions.theme);
@@ -172,6 +173,7 @@ export class ThemeService extends Disposable implements IThemeService {
     }
     // Clear our the cache
     this._contrastCache.clear();
+    this._halfContrastCache.clear();
     this._updateRestoreColors();
     this._onChangeColors.fire(this.colors);
   }

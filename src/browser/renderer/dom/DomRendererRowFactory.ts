@@ -14,6 +14,7 @@ import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
+import { IColorContrastCache } from 'browser/Types';
 
 
 export const enum RowCss {
@@ -444,15 +445,19 @@ export class DomRendererRowFactory {
     }
 
     // Try get from cache first, only use the cache when there are no decoration overrides
+    const cache = this._getContrastCache(cell);
     let adjustedColor: IColor | undefined | null = undefined;
     if (!bgOverride && !fgOverride) {
-      adjustedColor = this._themeService.colors.contrastCache.getColor(bg.rgba, fg.rgba);
+      adjustedColor = cache.getColor(bg.rgba, fg.rgba);
     }
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, this._optionsService.rawOptions.minimumContrastRatio);
-      this._themeService.colors.contrastCache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
+      // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
+      // non-dim cells
+      const ratio = this._optionsService.rawOptions.minimumContrastRatio / (cell.isDim() ? 2 : 1);
+      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, ratio);
+      cache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
     }
 
     if (adjustedColor) {
@@ -461,6 +466,13 @@ export class DomRendererRowFactory {
     }
 
     return false;
+  }
+
+  private _getContrastCache(cell: ICellData): IColorContrastCache {
+    if (cell.isDim()) {
+      return this._themeService.colors.halfContrastCache;
+    }
+    return this._themeService.colors.contrastCache;
   }
 
   private _addStyle(element: HTMLElement, style: string): void {

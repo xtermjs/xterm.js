@@ -15,6 +15,7 @@ import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
+import { IColorContrastCache } from 'browser/Types';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -309,8 +310,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _getForegroundColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, dim: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor {
-    // TODO: Pass dim along to get min contrast?
-    const minimumContrastColor = this._getMinimumContrastColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, false, bold, excludeFromContrastRatioDemands);
+    const minimumContrastColor = this._getMinimumContrastColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, false, bold, dim, excludeFromContrastRatioDemands);
     if (minimumContrastColor) {
       return minimumContrastColor;
     }
@@ -385,23 +385,26 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  private _getMinimumContrastColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor | undefined {
+  private _getMinimumContrastColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, dim: boolean, excludeFromContrastRatioDemands: boolean): IColor | undefined {
     if (this._config.minimumContrastRatio === 1 || excludeFromContrastRatioDemands) {
       return undefined;
     }
 
     // Try get from cache first
-    const adjustedColor = this._config.colors.contrastCache.getColor(bg, fg);
+    const cache = this._getContrastCache(dim);
+    const adjustedColor = cache.getColor(bg, fg);
     if (adjustedColor !== undefined) {
       return adjustedColor || undefined;
     }
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, inverse, bold);
-    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio);
+    // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
+    // non-dim cells
+    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio / (dim ? 2 : 1));
 
     if (!result) {
-      this._config.colors.contrastCache.setColor(bg, fg, null);
+      cache.setColor(bg, fg, null);
       return undefined;
     }
 
@@ -410,9 +413,16 @@ export class TextureAtlas implements ITextureAtlas {
       (result >> 16) & 0xFF,
       (result >> 8) & 0xFF
     );
-    this._config.colors.contrastCache.setColor(bg, fg, color);
+    cache.setColor(bg, fg, color);
 
     return color;
+  }
+
+  private _getContrastCache(dim: boolean): IColorContrastCache {
+    if (dim) {
+      return this._config.colors.halfContrastCache;
+    }
+    return this._config.colors.contrastCache;
   }
 
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
