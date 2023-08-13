@@ -35,12 +35,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   constructor() {
     super();
 
-    this.register(toDisposable(() => {
-      for (const d of this._decorations.values()) {
-        this._onDecorationRemoved.fire(d);
-      }
-      this.reset();
-    }));
+    this.register(toDisposable(() => this.reset()));
   }
 
   public registerDecoration(options: IDecorationOptions): IDecoration | undefined {
@@ -91,13 +86,6 @@ export class DecorationService extends Disposable implements IDecorationService 
         callback(d);
       }
     });
-  }
-
-  public dispose(): void {
-    for (const d of this._decorations.values()) {
-      this._onDecorationRemoved.fire(d);
-    }
-    this.reset();
   }
 }
 
