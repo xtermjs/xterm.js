@@ -11,9 +11,9 @@ export class Marker implements IMarker {
   private static _nextId = 1;
 
   public isDisposed: boolean = false;
-  private _disposables: IDisposable[] = [];
+  private readonly _disposables: IDisposable[] = [];
 
-  private _id: number = Marker._nextId++;
+  private readonly _id: number = Marker._nextId++;
   public get id(): number { return this._id; }
 
   private readonly _onDispose = this.register(new EventEmitter<void>());

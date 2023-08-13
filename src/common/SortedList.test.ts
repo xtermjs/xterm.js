@@ -104,4 +104,18 @@ describe('SortedList', () => {
       { key: 10 }
     ]);
   });
+  describe('values', () => {
+    it('should iterate correctly when list items change during iteration', () => {
+      list.insert(1);
+      list.insert(2);
+      list.insert(3);
+      list.insert(4);
+      const visited: number[] = [];
+      for (const item of list.values()) {
+        visited.push(item);
+        list.delete(item);
+      }
+      deepStrictEqual(visited, [1, 2, 3, 4]);
+    });
+  });
 });

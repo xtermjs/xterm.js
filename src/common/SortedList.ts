@@ -89,7 +89,8 @@ export class SortedList<T> {
   }
 
   public values(): IterableIterator<T> {
-    return this._array.values();
+    // Duplicate the array to avoid issues when _array changes while iterating
+    return [...this._array].values();
   }
 
   private _search(key: number): number {

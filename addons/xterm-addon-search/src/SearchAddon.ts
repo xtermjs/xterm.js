@@ -68,8 +68,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   private _highlightDecorations: IHighlight[] = [];
   private _selectedDecoration: IHighlight | undefined;
   private _highlightLimit: number;
-  private _onDataDisposable: IDisposable | undefined;
-  private _onResizeDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
   /**
@@ -93,13 +91,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._onDataDisposable = this.register(this._terminal.onWriteParsed(() => this._updateMatches()));
-    this._onResizeDisposable = this.register(this._terminal.onResize(() => this._updateMatches()));
-    this.register(toDisposable(() => {
-      this.clearDecorations();
-      this._onDataDisposable?.dispose();
-      this._onResizeDisposable?.dispose();
-    }));
+    this.register(this._terminal.onWriteParsed(() => this._updateMatches()));
+    this.register(this._terminal.onResize(() => this._updateMatches()));
+    this.register(toDisposable(() => this.clearDecorations()));
   }
 
   private _updateMatches(): void {
