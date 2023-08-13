@@ -122,7 +122,8 @@ export class ThemeService extends Disposable implements IThemeService {
    */
   private _setTheme(theme: ITheme = {}): void {
     const colors = this._colors;
-    colors.foreground = parseColor(theme.foreground, DEFAULT_FOREGROUND);
+    colors.foreground = color.opaque(parseColor(theme.foreground, DEFAULT_FOREGROUND));
+    console.warn("xterm.js is not fully support foreground colors with transparent, so it will the foreground colors alpha channel to 255.")
     colors.background = parseColor(theme.background, DEFAULT_BACKGROUND);
     colors.cursor = parseColor(theme.cursor, DEFAULT_CURSOR);
     colors.cursorAccent = parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT);
