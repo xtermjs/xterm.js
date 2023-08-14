@@ -431,7 +431,7 @@ export class DomRendererRowFactory {
       }
 
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isJoined && !isDecorated && isInSelection === oldIsInSelection) {
+      if (!isCursorCell && !isJoined && !isDecorated) {
         cellAmount++;
       } else {
         charElement.textContent = text;
