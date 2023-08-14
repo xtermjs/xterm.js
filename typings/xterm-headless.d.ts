@@ -356,7 +356,7 @@ declare module 'xterm-headless' {
    * is trimmed and lines are added or removed. This is a single line that may
    * be part of a larger wrapped line.
    */
-  export interface IMarker extends IDisposable {
+  export interface IMarker extends IDisposableWithEvent {
     /**
      * A unique identifier for this marker.
      */
