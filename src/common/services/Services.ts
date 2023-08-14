@@ -5,7 +5,7 @@
 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, CursorInactiveStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from 'xterm';
 
@@ -212,6 +212,7 @@ export interface ITerminalOptions {
   cursorBlink?: boolean;
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
+  cursorInactiveStyle?: CursorInactiveStyle;
   customGlyphs?: boolean;
   disableStdin?: boolean;
   drawBoldTextInBrightColors?: boolean;

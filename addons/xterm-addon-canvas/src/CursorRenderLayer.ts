@@ -58,7 +58,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._cursorRenderers = {
       'bar': this._renderBarCursor.bind(this),
       'block': this._renderBlockCursor.bind(this),
-      'underline': this._renderUnderlineCursor.bind(this)
+      'underline': this._renderUnderlineCursor.bind(this),
+      'outline': this._renderOutlineCursor.bind(this)
     };
     this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
     this._handleOptionsChanged();
@@ -150,7 +151,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.save();
       this._ctx.fillStyle = this._themeService.colors.cursor.css;
       const cursorStyle = this._optionsService.rawOptions.cursorStyle;
-      this._renderBlurCursor(cursorX, viewportRelativeCursorY, this._cell);
+      const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
+      if (cursorInactiveStyle && cursorInactiveStyle !== 'none') {
+        this._cursorRenderers[cursorInactiveStyle](cursorX, viewportRelativeCursorY, this._cell);
+      }
       this._ctx.restore();
       this._state.x = cursorX;
       this._state.y = viewportRelativeCursorY;
@@ -231,7 +235,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.restore();
   }
 
-  private _renderBlurCursor(x: number, y: number, cell: ICellData): void {
+  private _renderOutlineCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.strokeStyle = this._themeService.colors.cursor.css;
     this._strokeRectAtCell(x, y, cell.getWidth(), 1);

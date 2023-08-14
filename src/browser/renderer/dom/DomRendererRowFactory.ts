@@ -14,6 +14,7 @@ import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
+import { IColorContrastCache } from 'browser/Types';
 
 
 export const enum RowCss {
@@ -26,6 +27,7 @@ export const enum RowCss {
   CURSOR_CLASS = 'xterm-cursor',
   CURSOR_BLINK_CLASS = 'xterm-cursor-blink',
   CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block',
+  CURSOR_STYLE_OUTLINE_CLASS = 'xterm-cursor-outline',
   CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar',
   CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline'
 }
@@ -61,6 +63,7 @@ export class DomRendererRowFactory {
     row: number,
     isCursorRow: boolean,
     cursorStyle: string | undefined,
+    cursorInactiveStyle: string | undefined,
     cursorX: number,
     cursorBlink: boolean,
     cellWidth: number,
@@ -86,6 +89,7 @@ export class DomRendererRowFactory {
     let oldExt = 0;
     let oldLinkHover: number | boolean = false;
     let oldSpacing = 0;
+    let oldIsInSelection: boolean = false;
     let spacing = 0;
     const classes: string[] = [];
 
@@ -151,16 +155,24 @@ export class DomRendererRowFactory {
         /**
          * chars can only be merged on existing span if:
          * - existing span only contains mergeable chars (cellAmount != 0)
-         * - fg/bg/ul did not change
-         * - char not part of a selection
+         * - bg did not change (or both are in selection)
+         * - fg did not change (or both are in selection and selection fg is set)
+         * - ext did not change
          * - underline from hover state did not change
          * - cell content renders to same letter-spacing
          * - cell is not cursor
          */
         if (
           cellAmount
-          && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext === oldExt
-          && !isInSelection
+          && (
+            (isInSelection && oldIsInSelection)
+            || (!isInSelection && cell.bg === oldBg)
+          )
+          && (
+            (isInSelection && oldIsInSelection && colors.selectionForeground)
+            || (!(isInSelection && oldIsInSelection && colors.selectionForeground) && cell.fg === oldFg)
+          )
+          && cell.extended.ext === oldExt
           && isLinkHover === oldLinkHover
           && spacing === oldSpacing
           && !isCursorCell
@@ -191,6 +203,7 @@ export class DomRendererRowFactory {
       oldExt = cell.extended.ext;
       oldLinkHover = isLinkHover;
       oldSpacing = spacing;
+      oldIsInSelection = isInSelection;
 
       if (isJoined) {
         // The DOM renderer colors the background of the cursor but for ligatures all cells are
@@ -203,16 +216,37 @@ export class DomRendererRowFactory {
 
       if (!this._coreService.isCursorHidden && isCursorCell) {
         classes.push(RowCss.CURSOR_CLASS);
-        if (cursorBlink) {
-          classes.push(RowCss.CURSOR_BLINK_CLASS);
+        if (this._coreBrowserService.isFocused) {
+          if (cursorBlink) {
+            classes.push(RowCss.CURSOR_BLINK_CLASS);
+          }
+          classes.push(
+            cursorStyle === 'bar'
+              ? RowCss.CURSOR_STYLE_BAR_CLASS
+              : cursorStyle === 'underline'
+                ? RowCss.CURSOR_STYLE_UNDERLINE_CLASS
+                : RowCss.CURSOR_STYLE_BLOCK_CLASS
+          );
+        } else {
+          if (cursorInactiveStyle) {
+            switch (cursorInactiveStyle) {
+              case 'outline':
+                classes.push(RowCss.CURSOR_STYLE_OUTLINE_CLASS);
+                break;
+              case 'block':
+                classes.push(RowCss.CURSOR_STYLE_BLOCK_CLASS);
+                break;
+              case 'bar':
+                classes.push(RowCss.CURSOR_STYLE_BAR_CLASS);
+                break;
+              case 'underline':
+                classes.push(RowCss.CURSOR_STYLE_UNDERLINE_CLASS);
+                break;
+              default:
+                break;
+            }
+          }
         }
-        classes.push(
-          cursorStyle === 'bar'
-            ? RowCss.CURSOR_STYLE_BAR_CLASS
-            : cursorStyle === 'underline'
-              ? RowCss.CURSOR_STYLE_UNDERLINE_CLASS
-              : RowCss.CURSOR_STYLE_BLOCK_CLASS
-        );
       }
 
       if (cell.isBold()) {
@@ -262,7 +296,8 @@ export class DomRendererRowFactory {
         classes.push(RowCss.STRIKETHROUGH_CLASS);
       }
 
-      // apply link hover underline late, effectively overrides any previous text-decoration settings
+      // apply link hover underline late, effectively overrides any previous text-decoration
+      // settings
       if (isLinkHover) {
         charElement.style.textDecoration = 'underline';
       }
@@ -303,20 +338,24 @@ export class DomRendererRowFactory {
         isTop = d.options.layer === 'top';
       });
 
-      // Apply selection foreground if applicable
-      if (!isTop) {
-        if (colors.selectionForeground && isInSelection) {
+      // Apply selection
+      if (!isTop && isInSelection) {
+        // If in the selection, force the element to be above the selection to improve contrast and
+        // support opaque selections. The applies background is not actually needed here as
+        // selection is drawn in a seperate container, the main purpose of this to ensuring minimum
+        // contrast ratio
+        bgOverride = this._coreBrowserService.isFocused ? colors.selectionBackgroundOpaque : colors.selectionInactiveBackgroundOpaque;
+        bg = bgOverride.rgba >> 8 & 0xFFFFFF;
+        bgColorMode = Attributes.CM_RGB;
+        // Since an opaque selection is being rendered, the selection pretends to be a decoration to
+        // ensure text is drawn above the selection.
+        isTop = true;
+        // Apply selection foreground if applicable
+        if (colors.selectionForeground) {
           fgColorMode = Attributes.CM_RGB;
           fg = colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
           fgOverride = colors.selectionForeground;
         }
-      }
-
-      // If in the selection, force the element to be above the selection to improve contrast and
-      // support opaque selections
-      if (isInSelection) {
-        bgOverride = this._coreBrowserService.isFocused ? colors.selectionBackgroundOpaque : colors.selectionInactiveBackgroundOpaque;
-        isTop = true;
       }
 
       // If it's a top decoration, render above the selection
@@ -392,7 +431,7 @@ export class DomRendererRowFactory {
       }
 
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isInSelection && !isJoined && !isDecorated) {
+      if (!isCursorCell && !isJoined && !isDecorated) {
         cellAmount++;
       } else {
         charElement.textContent = text;
@@ -420,15 +459,19 @@ export class DomRendererRowFactory {
     }
 
     // Try get from cache first, only use the cache when there are no decoration overrides
+    const cache = this._getContrastCache(cell);
     let adjustedColor: IColor | undefined | null = undefined;
     if (!bgOverride && !fgOverride) {
-      adjustedColor = this._themeService.colors.contrastCache.getColor(bg.rgba, fg.rgba);
+      adjustedColor = cache.getColor(bg.rgba, fg.rgba);
     }
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, this._optionsService.rawOptions.minimumContrastRatio);
-      this._themeService.colors.contrastCache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
+      // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
+      // non-dim cells
+      const ratio = this._optionsService.rawOptions.minimumContrastRatio / (cell.isDim() ? 2 : 1);
+      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, ratio);
+      cache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
     }
 
     if (adjustedColor) {
@@ -437,6 +480,13 @@ export class DomRendererRowFactory {
     }
 
     return false;
+  }
+
+  private _getContrastCache(cell: ICellData): IColorContrastCache {
+    if (cell.isDim()) {
+      return this._themeService.colors.halfContrastCache;
+    }
+    return this._themeService.colors.contrastCache;
   }
 
   private _addStyle(element: HTMLElement, style: string): void {

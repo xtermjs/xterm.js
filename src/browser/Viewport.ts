@@ -65,8 +65,8 @@ export class Viewport extends Disposable implements IViewport {
     super();
 
     // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
-    // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
-    // therefore we account for a standard amount to make it visible
+    // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that
+    // case, therefore we account for a standard amount to make it visible
     this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._handleScroll.bind(this)));
 

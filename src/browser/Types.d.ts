@@ -136,7 +136,10 @@ export interface IColorSet {
   selectionInactiveBackgroundTransparent: IColor;
   selectionInactiveBackgroundOpaque: IColor;
   ansi: IColor[];
+  /** Maps original colors to colors that respect minimum contrast ratio. */
   contrastCache: IColorContrastCache;
+  /** Maps original colors to colors that respect _half_ of the minimum contrast ratio. */
+  halfContrastCache: IColorContrastCache;
 }
 
 export type ReadonlyColorSet = Readonly<Omit<IColorSet, 'ansi'>> & { ansi: Readonly<Pick<IColorSet, 'ansi'>['ansi']> };

@@ -421,11 +421,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * - undefined (void):
    *   all handlers were sync, no stack save, continue normally with next chunk
    * - Promise\<boolean\>:
-   *   execution stopped at async handler, stack saved, continue with
-   *   same chunk and the promise resolve value as `promiseResult` until the method returns `undefined`
+   *   execution stopped at async handler, stack saved, continue with same chunk and the promise
+   *   resolve value as `promiseResult` until the method returns `undefined`
    *
-   * Note: This method should only be called by `Terminal.write` to ensure correct execution order and
-   * proper continuation of async parser handlers.
+   * Note: This method should only be called by `Terminal.write` to ensure correct execution order
+   * and proper continuation of async parser handlers.
    */
   public parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> {
     let result: void | Promise<boolean>;
@@ -804,12 +804,13 @@ export class InputHandler extends Disposable implements IInputHandler {
         // find last taken cell - last cell can have 3 different states:
         // - hasContent(true) + hasWidth(1): narrow char - we are done
         // - hasWidth(0): second part of wide char - we are done
-        // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one cell further back
+        // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one
+        //   cell further back
         const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
         if (line.hasWidth(this._activeBuffer.x) && !line.hasContent(this._activeBuffer.x)) {
           this._activeBuffer.x--;
-          // We do this only once, since width=1 + hasContent=false currently happens only once before
-          // early wrapping of a wide char.
+          // We do this only once, since width=1 + hasContent=false currently happens only once
+          // before early wrapping of a wide char.
           // This needs to be fixed once we support graphemes taking more than 2 cells.
         }
       }
@@ -1164,8 +1165,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
-   * Helper method to reset cells in a terminal row.
-   * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
+   * Helper method to reset cells in a terminal row. The cell gets replaced with the eraseChar of
+   * the terminal and the isWrapped property is set to false.
    * @param y row index
    */
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
@@ -1362,8 +1363,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    *
    * @vt: #Y CSI ICH  "Insert Characters"   "CSI Ps @"  "Insert `Ps` (blank) characters (default = 1)."
-   * The ICH sequence inserts `Ps` blank characters. The cursor remains at the beginning of the blank characters.
-   * Text between the cursor and right margin moves to the right. Characters moved past the right margin are lost.
+   * The ICH sequence inserts `Ps` blank characters. The cursor remains at the beginning of the
+   * blank characters. Text between the cursor and right margin moves to the right. Characters moved
+   * past the right margin are lost.
    *
    *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
@@ -1388,8 +1390,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Character(s) (default = 1) (DCH).
    *
    * @vt: #Y CSI DCH   "Delete Character"  "CSI Ps P"  "Delete `Ps` characters (default=1)."
-   * As characters are deleted, the remaining characters between the cursor and right margin move to the left.
-   * Character attributes move with the characters. The terminal adds blank characters at the right margin.
+   * As characters are deleted, the remaining characters between the cursor and right margin move to
+   * the left. Character attributes move with the characters. The terminal adds blank characters at
+   * the right margin.
    *
    *
    * FIXME: check against xterm - should not work outside of scroll margins (see VT520 manual)
@@ -1514,9 +1517,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
    *
    * @vt: #Y CSI DECIC "Insert Columns"  "CSI Ps ' }"  "Insert `Ps` columns at cursor position."
-   * DECIC inserts `Ps` times blank columns at the cursor position for all lines with the scroll margins,
-   * moving content to the right. Content at the right margin is lost.
-   * DECIC has no effect outside the scrolling margins.
+   * DECIC inserts `Ps` times blank columns at the cursor position for all lines with the scroll
+   * margins, moving content to the right. Content at the right margin is lost. DECIC has no effect
+   * outside the scrolling margins.
    */
   public insertColumns(params: IParams): boolean {
     if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
@@ -1597,12 +1600,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    - wrap around is respected
    *    - any valid sequence resets the carried forward char
    *
-   * Note: To get reset on a valid sequence working correctly without much runtime penalty,
-   * the preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
+   * Note: To get reset on a valid sequence working correctly without much runtime penalty, the
+   * preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
    *
    * @vt: #Y CSI REP   "Repeat Preceding Character"    "CSI Ps b"  "Repeat preceding character `Ps` times (default=1)."
-   * REP repeats the previous character `Ps` times advancing the cursor, also wrapping if DECAWM is set.
-   * REP has no effect if the sequence does not follow a printable ASCII character
+   * REP repeats the previous character `Ps` times advancing the cursor, also wrapping if DECAWM is
+   * set. REP has no effect if the sequence does not follow a printable ASCII character
    * (NOOP for any other sequence in between or NON ASCII characters).
    */
   public repeatPrecedingCharacter(params: IParams): boolean {
@@ -2463,7 +2466,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 5      | Dashed underline.                                             | #Y      |
    * | other  | Single underline. Same as `SGR 4 m`.                          | #Y      |
    *
-   * Extended colors are supported for foreground (Ps=38), background (Ps=48) and underline (Ps=58) as follows:
+   * Extended colors are supported for foreground (Ps=38), background (Ps=48) and underline (Ps=58)
+   * as follows:
    *
    * | Ps + 1 | Meaning                                                       | Support |
    * | ------ | ------------------------------------------------------------- | ------- |
@@ -2673,8 +2677,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * http://vt100.net/docs/vt220-rm/table4-10.html
    *
    * @vt: #Y CSI DECSTR  "Soft Terminal Reset"   "CSI ! p"   "Reset several terminal attributes to initial state."
-   * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full terminal bootstrap,
-   * DECSTR only resets certain attributes. For most needs DECSTR should be sufficient.
+   * There are two terminal reset sequences - RIS and DECSTR. While RIS performs almost a full
+   * terminal bootstrap, DECSTR only resets certain attributes. For most needs DECSTR should be
+   * sufficient.
    *
    * The following terminal attributes are reset to default values:
    * - IRM is reset (dafault = false)
@@ -2899,7 +2904,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Icon name is not supported. For Window Title see below.
    *
    * @vt: #Y     OSC    2   "Set Windows Title"  "OSC 2 ; Pt BEL"  "Set window title."
-   * xterm.js does not manipulate the title directly, instead exposes changes via the event `Terminal.onTitleChange`.
+   * xterm.js does not manipulate the title directly, instead exposes changes via the event
+   * `Terminal.onTitleChange`.
    */
   public setTitle(data: string): boolean {
     this._windowTitle = data;
@@ -2920,9 +2926,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * OSC 4; <num> ; <text> ST (set ANSI color <num> to <text>)
    *
    * @vt: #Y    OSC    4    "Set ANSI color"   "OSC 4 ; c ; spec BEL" "Change color number `c` to the color specified by `spec`."
-   * `c` is the color index between 0 and 255. The color format of `spec` is derived from `XParseColor` (see OSC 10 for supported formats).
-   * There may be multipe `c ; spec` pairs present in the same instruction.
-   * If `spec` contains `?` the terminal returns a sequence with the currently set color.
+   * `c` is the color index between 0 and 255. The color format of `spec` is derived from
+   * `XParseColor` (see OSC 10 for supported formats). There may be multipe `c ; spec` pairs present
+   * in the same instruction. If `spec` contains `?` the terminal returns a sequence with the
+   * currently set color.
    */
   public setOrReportIndexedColor(data: string): boolean {
     const event: IColorEvent = [];
@@ -2962,9 +2969,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y    OSC    8    "Create hyperlink"   "OSC 8 ; params ; uri BEL" "Create a hyperlink to `uri` using `params`."
    * `uri` is a hyperlink starting with `http://`, `https://`, `ftp://`, `file://` or `mailto://`. `params` is an
-   * optional list of key=value assignments, separated by the : character. Example: `id=xyz123:foo=bar:baz=quux`.
-   * Currently only the id key is defined. Cells that share the same ID and URI share hover feedback.
-   * Use `OSC 8 ; ; BEL` to finish the current hyperlink.
+   * optional list of key=value assignments, separated by the : character.
+   * Example: `id=xyz123:foo=bar:baz=quux`.
+   * Currently only the id key is defined. Cells that share the same ID and URI share hover
+   * feedback. Use `OSC 8 ; ; BEL` to finish the current hyperlink.
    */
   public setHyperlink(data: string): boolean {
     const args = data.split(';');
@@ -3351,8 +3359,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
    *
    * @vt: #P[Limited support, see below.]  DCS   DECRQSS   "Request Selection or Setting"  "DCS $ q Pt ST"   "Request several terminal settings."
-   * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the corresponding CSI string,
-   * `ESC P 0 ST` for invalid requests.
+   * Response is in the form `ESC P 1 $ r Pt ST` for valid requests, where `Pt` contains the
+   * corresponding CSI string, `ESC P 0 ST` for invalid requests.
    *
    * Supported requests and responses:
    *

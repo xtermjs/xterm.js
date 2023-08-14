@@ -106,7 +106,8 @@ export namespace color {
 }
 
 /**
- * Helper functions where the source type is "css" (string: '#rgb', '#rgba', '#rrggbb', '#rrggbbaa').
+ * Helper functions where the source type is "css" (string: '#rgb', '#rgba', '#rrggbb',
+ * '#rrggbbaa').
  */
 export namespace css {
   let $ctx: CanvasRenderingContext2D | undefined;

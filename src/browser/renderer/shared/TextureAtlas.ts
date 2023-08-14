@@ -15,6 +15,7 @@ import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
+import { IColorContrastCache } from 'browser/Types';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -298,7 +299,7 @@ export class TextureAtlas implements ITextureAtlas {
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          result = this._config.colors.foreground;
+          result = color.opaque(this._config.colors.foreground);
         } else {
           result = this._config.colors.background;
         }
@@ -309,8 +310,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _getForegroundColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, dim: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor {
-    // TODO: Pass dim along to get min contrast?
-    const minimumContrastColor = this._getMinimumContrastColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, false, bold, excludeFromContrastRatioDemands);
+    const minimumContrastColor = this._getMinimumContrastColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, false, bold, dim, excludeFromContrastRatioDemands);
     if (minimumContrastColor) {
       return minimumContrastColor;
     }
@@ -385,23 +385,26 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  private _getMinimumContrastColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, excludeFromContrastRatioDemands: boolean): IColor | undefined {
+  private _getMinimumContrastColor(bg: number, bgColorMode: number, bgColor: number, fg: number, fgColorMode: number, fgColor: number, inverse: boolean, bold: boolean, dim: boolean, excludeFromContrastRatioDemands: boolean): IColor | undefined {
     if (this._config.minimumContrastRatio === 1 || excludeFromContrastRatioDemands) {
       return undefined;
     }
 
     // Try get from cache first
-    const adjustedColor = this._config.colors.contrastCache.getColor(bg, fg);
+    const cache = this._getContrastCache(dim);
+    const adjustedColor = cache.getColor(bg, fg);
     if (adjustedColor !== undefined) {
       return adjustedColor || undefined;
     }
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, inverse, bold);
-    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio);
+    // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
+    // non-dim cells
+    const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio / (dim ? 2 : 1));
 
     if (!result) {
-      this._config.colors.contrastCache.setColor(bg, fg, null);
+      cache.setColor(bg, fg, null);
       return undefined;
     }
 
@@ -410,9 +413,16 @@ export class TextureAtlas implements ITextureAtlas {
       (result >> 16) & 0xFF,
       (result >> 8) & 0xFF
     );
-    this._config.colors.contrastCache.setColor(bg, fg, color);
+    cache.setColor(bg, fg, color);
 
     return color;
+  }
+
+  private _getContrastCache(dim: boolean): IColorContrastCache {
+    if (dim) {
+      return this._config.colors.halfContrastCache;
+    }
+    return this._config.colors.contrastCache;
   }
 
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
@@ -466,8 +476,8 @@ export class TextureAtlas implements ITextureAtlas {
 
     // draw the background
     const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse, dim);
-    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
-    // transparency in backgroundColor
+    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha,
+    // regardless of transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
     this._tmpCtx.fillStyle = backgroundColor.css;
     this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
@@ -532,10 +542,9 @@ export class TextureAtlas implements ITextureAtlas {
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset;
-      const yMid = padding + this._config.deviceCharHeight + lineWidth - yOffset;
-      const yBot = Math.ceil(padding + this._config.deviceCharHeight + lineWidth * 2) - yOffset;
-      const ySpace = lineWidth * 2;
+      const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
+      const yMid = yTop + lineWidth;
+      const yBot = yTop + lineWidth * 2;
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
@@ -544,17 +553,10 @@ export class TextureAtlas implements ITextureAtlas {
         const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
-            if (restrictToCellHeight) {
-              this._tmpCtx.moveTo(xChLeft, yTop - ySpace);
-              this._tmpCtx.lineTo(xChRight, yTop - ySpace);
-              this._tmpCtx.moveTo(xChLeft, yTop);
-              this._tmpCtx.lineTo(xChRight, yTop);
-            } else {
-              this._tmpCtx.moveTo(xChLeft, yTop);
-              this._tmpCtx.lineTo(xChRight, yTop);
-              this._tmpCtx.moveTo(xChLeft, yBot);
-              this._tmpCtx.lineTo(xChRight, yBot);
-            }
+            this._tmpCtx.moveTo(xChLeft, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            this._tmpCtx.moveTo(xChLeft, yBot);
+            this._tmpCtx.lineTo(xChRight, yBot);
             break;
           case UnderlineStyle.CURLY:
             // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
@@ -567,7 +569,8 @@ export class TextureAtlas implements ITextureAtlas {
             const clipRegion = new Path2D();
             clipRegion.rect(xChLeft, yTop, this._config.deviceCellWidth, yBot - yTop);
             this._tmpCtx.clip(clipRegion);
-            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other cells
+            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other
+            // cells
             this._tmpCtx.moveTo(xChLeft - this._config.deviceCellWidth / 2, yMid);
             this._tmpCtx.bezierCurveTo(
               xChLeft - this._config.deviceCellWidth / 2, yCurlyTop,

@@ -529,6 +529,8 @@ export class MockThemeService implements IThemeService{
       css.toColor('#ad7fa8'),
       css.toColor('#34e2e2'),
       css.toColor('#eeeeec')
-    ]
+    ],
+    selectionBackgroundOpaque: css.toColor('#ff0000'),
+    selectionInactiveBackgroundOpaque: css.toColor('#00ff00')
   } as any;
 }

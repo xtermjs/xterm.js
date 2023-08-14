@@ -103,6 +103,10 @@ export class BufferDecorationRenderer extends Disposable {
         decoration.element = element;
         this._decorationElements.set(decoration, element);
         this._container.appendChild(element);
+        decoration.onDispose(() => {
+          this._decorationElements.delete(decoration);
+          element!.remove();
+        });
       }
       element.style.top = `${line * this._renderService.dimensions.css.cell.height}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';

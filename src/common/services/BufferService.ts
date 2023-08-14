@@ -43,7 +43,8 @@ export class BufferService extends Disposable implements IBufferService {
     this.cols = cols;
     this.rows = rows;
     this.buffers.resize(cols, rows);
-    // TODO: This doesn't fire when scrollback changes - add a resize event to BufferSet and forward event
+    // TODO: This doesn't fire when scrollback changes - add a resize event to BufferSet and forward
+    //       event
     this._onResize.fire({ cols, rows });
   }
 

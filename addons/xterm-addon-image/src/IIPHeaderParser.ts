@@ -23,7 +23,8 @@ export interface IHeaderFields {
   height?: string;
   // Optional, defaults to 1 respecting aspect ratio (width takes precedence).
   preserveAspectRatio?: number;
-  // Optional, defaults to 0. If set to 1, the file will be displayed inline, else downloaded (download not supported).
+  // Optional, defaults to 0. If set to 1, the file will be displayed inline, else downloaded
+  // (download not supported).
   inline?: number;
 }
 
