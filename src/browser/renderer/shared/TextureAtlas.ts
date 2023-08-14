@@ -298,7 +298,7 @@ export class TextureAtlas implements ITextureAtlas {
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          result = this._config.colors.foreground;
+          result = color.opaque(this._config.colors.foreground);
         } else {
           result = this._config.colors.background;
         }
