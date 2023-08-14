@@ -309,7 +309,7 @@ describe('DomRendererRowFactory', () => {
         rowFactory.handleSelectionChanged([1, 0], [2, 0], false);
         const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
-          '<span>a</span><span class="xterm-decoration-top">b</span>'
+          '<span>a</span><span style="background-color:#ff0000;" class="xterm-decoration-top">b</span>'
         );
       });
       it('should force whitespace cells to be rendered above the background', () => {
@@ -317,7 +317,7 @@ describe('DomRendererRowFactory', () => {
         rowFactory.handleSelectionChanged([0, 0], [2, 0], false);
         const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
         assert.equal(extractHtml(spans),
-          '<span class="xterm-decoration-top"> </span><span class="xterm-decoration-top">a</span>'
+          '<span style="background-color:#ff0000;" class="xterm-decoration-top"> a</span>'
         );
       });
     });

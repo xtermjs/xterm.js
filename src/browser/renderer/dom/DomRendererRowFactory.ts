@@ -89,6 +89,7 @@ export class DomRendererRowFactory {
     let oldExt = 0;
     let oldLinkHover: number | boolean = false;
     let oldSpacing = 0;
+    let oldIsInSelection: boolean = false;
     let spacing = 0;
     const classes: string[] = [];
 
@@ -154,16 +155,24 @@ export class DomRendererRowFactory {
         /**
          * chars can only be merged on existing span if:
          * - existing span only contains mergeable chars (cellAmount != 0)
-         * - fg/bg/ul did not change
-         * - char not part of a selection
+         * - bg did not change (or both are in selection)
+         * - fg did not change (or both are in selection and selection fg is set)
+         * - ext did not change
          * - underline from hover state did not change
          * - cell content renders to same letter-spacing
          * - cell is not cursor
          */
         if (
           cellAmount
-          && cell.bg === oldBg && cell.fg === oldFg && cell.extended.ext === oldExt
-          && !isInSelection
+          && (
+            (isInSelection && oldIsInSelection)
+            || (!isInSelection && cell.bg === oldBg)
+          )
+          && (
+            (isInSelection && oldIsInSelection && colors.selectionForeground)
+            || (!(isInSelection && oldIsInSelection && colors.selectionForeground) && cell.fg === oldFg)
+          )
+          && cell.extended.ext === oldExt
           && isLinkHover === oldLinkHover
           && spacing === oldSpacing
           && !isCursorCell
@@ -194,6 +203,7 @@ export class DomRendererRowFactory {
       oldExt = cell.extended.ext;
       oldLinkHover = isLinkHover;
       oldSpacing = spacing;
+      oldIsInSelection = isInSelection;
 
       if (isJoined) {
         // The DOM renderer colors the background of the cursor but for ligatures all cells are
@@ -328,20 +338,24 @@ export class DomRendererRowFactory {
         isTop = d.options.layer === 'top';
       });
 
-      // Apply selection foreground if applicable
-      if (!isTop) {
-        if (colors.selectionForeground && isInSelection) {
+      // Apply selection
+      if (!isTop && isInSelection) {
+        // If in the selection, force the element to be above the selection to improve contrast and
+        // support opaque selections. The applies background is not actually needed here as
+        // selection is drawn in a seperate container, the main purpose of this to ensuring minimum
+        // contrast ratio
+        bgOverride = this._coreBrowserService.isFocused ? colors.selectionBackgroundOpaque : colors.selectionInactiveBackgroundOpaque;
+        bg = bgOverride.rgba >> 8 & 0xFFFFFF;
+        bgColorMode = Attributes.CM_RGB;
+        // Since an opaque selection is being rendered, the selection pretends to be a decoration to
+        // ensure text is drawn above the selection.
+        isTop = true;
+        // Apply selection foreground if applicable
+        if (colors.selectionForeground) {
           fgColorMode = Attributes.CM_RGB;
           fg = colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
           fgOverride = colors.selectionForeground;
         }
-      }
-
-      // If in the selection, force the element to be above the selection to improve contrast and
-      // support opaque selections
-      if (isInSelection) {
-        bgOverride = this._coreBrowserService.isFocused ? colors.selectionBackgroundOpaque : colors.selectionInactiveBackgroundOpaque;
-        isTop = true;
       }
 
       // If it's a top decoration, render above the selection
@@ -417,7 +431,7 @@ export class DomRendererRowFactory {
       }
 
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isInSelection && !isJoined && !isDecorated) {
+      if (!isCursorCell && !isJoined && !isDecorated && isInSelection === oldIsInSelection) {
         cellAmount++;
       } else {
         charElement.textContent = text;
