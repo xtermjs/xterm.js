@@ -24,7 +24,7 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { EventEmitter, forwardEvent, IEvent } from 'common/EventEmitter';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
 import { IMarker, ITerminalOptions, ScrollSource } from 'common/Types';
 
