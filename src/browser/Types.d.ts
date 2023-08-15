@@ -13,7 +13,7 @@ import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 /**
  * A portion of the public API that are implemented identially internally and simply passed through.
  */
-type InternalPassthroughApis = Omit<ITerminalApi, 'buffer' | 'parser' | 'unicode' | 'modes' | 'registerMarker' | 'writeln' | 'loadAddon'>;
+type InternalPassthroughApis = Omit<ITerminalApi, 'buffer' | 'parser' | 'unicode' | 'modes' | 'writeln' | 'loadAddon'>;
 
 export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   screenElement: HTMLElement | undefined;
@@ -30,7 +30,6 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   onWillOpen: IEvent<HTMLElement>;
 
   cancel(ev: Event, force?: boolean): boolean | void;
-  addMarker(cursorYOffset: number): IMarker;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;

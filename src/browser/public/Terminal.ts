@@ -161,7 +161,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
   public registerMarker(cursorYOffset: number = 0): IMarker {
     this._verifyIntegers(cursorYOffset);
-    return this._core.addMarker(cursorYOffset);
+    return this._core.registerMarker(cursorYOffset);
   }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     this._checkProposedApi();
