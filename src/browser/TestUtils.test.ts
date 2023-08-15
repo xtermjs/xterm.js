@@ -52,7 +52,7 @@ export class MockTerminal implements ITerminal {
   public coreService!: ICoreService;
   public optionsService!: IOptionsService;
   public unicodeService!: IUnicodeService;
-  public addMarker(cursorYOffset: number): IMarker {
+  public registerMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');
   }
   public selectLines(start: number, end: number): void {
