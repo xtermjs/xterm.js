@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { isElectron } from 'common/Platform';
+
 export interface IStyleSheet {
   dispose: () => void;
   setCss: (value: string) => void;
@@ -37,9 +39,12 @@ const createStyleElement = (parent: HTMLElement): IStyleSheet => {
 };
 
 export const createStyle = (parent: HTMLElement): IStyleSheet => {
-  try {
-    return createCssStyleSheet(parent.ownerDocument);
-  } catch {
-    return createStyleElement(parent);
+  // The combination of the CSP workaround and the DOM renderer can trigger a crash in electron
+  // https://github.com/microsoft/vscode/issues/189753
+  if (!isElectron) {
+    try {
+      return createCssStyleSheet(parent.ownerDocument);
+    } catch { /* Fall through */ }
   }
+  return createStyleElement(parent);
 };
