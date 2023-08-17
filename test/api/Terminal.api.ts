@@ -32,7 +32,6 @@ describe('API Integration Tests', function(): void {
     assert.equal(await page.evaluate(`window.term.rows`), 24);
   });
 
-  // fails with the grapheme injection, not sure why...
   it('Proposed API check', async () => {
     await openTerminal(page, { allowProposedApi: false }, { loadUnicodeGraphemesAddon: false });
     await page.evaluate(`
