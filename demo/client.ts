@@ -1100,25 +1100,20 @@ function getRandomSgr(): string {
 
 function addGraphemeClusters(): void {
   term.write('\n\n\r');
-  term.writeln('Simple emoji (v6: 10 cells, v15: 20 cells)');
-  term.writeln('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣');
-  term.writeln('baby with emoji modifier fitzpatrick type-6; baby');
-  term.writeln('\u{1F476}\u{1F3FF}\u{1F476}');
-  term.writeln('woman+zwj+woman+zwj+boy');
-  term.writeln('\u{1F469}\u200d\u{1f469}\u200d\u{1f466}');
-  term.writeln('REGIONAL INDICATOR SYMBOL LETTER N and RI O');
-  term.writeln('\u{1f1f3}\u{1f1f4}_');
-  term.writeln('\u{1f1f3}_\u{1f1f4}');
-  term.writeln('letter a with acute accent');
-  term.writeln('\u0061\u0301');
-  term.writeln('Korean Jamo');
-  term.writeln('{\u1100\u1161\u11a8}');
-  term.writeln('coffin with text_presentation');
-  term.writeln('(\u26b0\ufe0e)');
-  term.writeln('coffin with Emoji_presentation');
-  term.writeln('(\u26b0\ufe0f)');
-  term.writeln('Égalité (using separate acute) emoij_presentation');
-  term.writeln('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f>');
+  term.writeln('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣 [Simple emoji v6: 10 cells, v15: 20 cells]');
+  term.writeln('\u{1F476}\u{1F3FF}\u{1F476} [baby with emoji modifier fitzpatrick type-6; baby]');
+  term.writeln('\u{1F469}\u200d\u{1f469}\u200d\u{1f466} [woman+zwj+woman+zwj+boy]');
+  term.writeln('\u{1F64B}\u{1F64B}\u{200D}\u{2642}\u{FE0F} [person/man raising hand]');
+  term.writeln('\u{1F3CB}\u{FE0F}=\u{1F3CB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F} [person lifting weights emoji; woman lighting weights, medium dark]');
+  term.writeln('\u{1F469}\u{1F469}\u{200D}\u{1F393}\u{1F468}\u{1F3FF}\u{200D}\u{1F393} [woman; woman student; man student dark]');
+  term.writeln('\u{1f1f3}\u{1f1f4}_ [REGIONAL INDICATOR SYMBOL LETTER N and RI O]');
+  term.writeln('\u{1f1f3}_\u{1f1f4} {RI N; underscore; RI O]');
+  term.writeln('\u0061\u0301 [letter a with acute accent]');
+  term.writeln('\u1100\u1161\u11A8=\u1100\u1161= [Korean Jamo]');
+  term.writeln('\uAC00=\uD685= [Hangul syllables (pre-composed)]');
+  term.writeln('(\u26b0\ufe0e) [coffin with text_presentation]');
+  term.writeln('(\u26b0\ufe0f) [coffin with Emoji_presentation]');
+  term.writeln('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f> [Égalité (using separate acute) emoij_presentation]');
 }
 
 function addDecoration(): void {
