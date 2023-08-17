@@ -74,8 +74,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
 
-  // private _visualBellTimer: number;
-
   public browser: IBrowser = Browser as any;
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
@@ -146,18 +144,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _onWillOpen = this.register(new EventEmitter<HTMLElement>());
   public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
 
-  /**
-   * Creates a new `Terminal` object.
-   *
-   * @param options An object containing a set of options, the available options are:
-   *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
-   *   - `cols` (number): The number of columns of the terminal (horizontal size)
-   *   - `rows` (number): The number of rows of the terminal (vertical size)
-   *
-   * @public
-   * @class Xterm Xterm
-   * @alias module:xterm/src/xterm
-   */
   constructor(
     options: Partial<ITerminalOptions> = {}
   ) {
