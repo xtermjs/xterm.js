@@ -166,11 +166,11 @@ export class DomRendererRowFactory {
           cellAmount
           && (
             (isInSelection && oldIsInSelection)
-            || (!isInSelection && cell.bg === oldBg)
+            || (!isInSelection && !oldIsInSelection && cell.bg === oldBg)
           )
           && (
             (isInSelection && oldIsInSelection && colors.selectionForeground)
-            || (!(isInSelection && oldIsInSelection && colors.selectionForeground) && cell.fg === oldFg)
+            || cell.fg === oldFg
           )
           && cell.extended.ext === oldExt
           && isLinkHover === oldLinkHover
