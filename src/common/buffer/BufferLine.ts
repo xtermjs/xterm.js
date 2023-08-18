@@ -1100,15 +1100,38 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
   }
 
   public getTrimmedLength(): number {
-    return this._text.length; // FIXME
-      /*
-    for (let i = this.length - 1; i >= 0; --i) {
-      if ((this._data[i * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK)) {
-        return i + (this._data[i * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT);
+    let cols = 0;
+    let skipped = 0;
+    const text = this._text;
+    for (let idata = 0; idata < this._dataLength; idata++) {
+      const word = this._data[idata];
+      const kind = BufferLine.wKind(word);
+      let wlen = BufferLine.wStrLen(word);
+      const w = kind === DataKind.TEXT_w2 || kind === DataKind.CLUSTER_w2 ? 2 : 1;
+      let wcols = 0;
+      switch (kind) {
+        case DataKind.FG:
+        case DataKind.BG:
+        case DataKind.STYLE_FLAGS:
+          break;
+        case DataKind.SKIP_COLUMNS:
+          skipped += wlen;
+          break;
+        case DataKind.CLUSTER_w1:
+        case DataKind.CLUSTER_w2:
+          wcols = w;
+          break;
+        case DataKind.TEXT_w1:
+        case DataKind.TEXT_w2:
+          wcols = w * wlen;
+          break;
+      }
+      if (wcols) {
+        cols += skipped + wcols;
+        skipped = 0;
       }
     }
-    return 0;
-    */
+    return cols;
   }
 
   public getNoBgTrimmedLength(): number {
@@ -1160,19 +1183,95 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
   }
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
-    return this._text; // FIXME
-    /*
-    if (trimRight) {
-      endCol = Math.min(endCol, this.getTrimmedLength());
+    let s = '';
+    let itext = 0;
+    let col = 0;
+    let pendingStart = -1;
+    let pendingLength = 0;
+    const text = this._text;
+    function pendingForce(handleSkip = ! trimRight): void {
+      if (pendingStart >= 0 && pendingLength > 0) {
+        s += text.substring(pendingStart, pendingStart + pendingLength);
+        pendingLength = 0;
+      } else if (handleSkip && pendingLength > 0) {
+        s += WHITESPACE_CELL_CHAR.repeat(pendingLength);
+        pendingLength = 0;
+      }
+      pendingStart = -1;
     }
-    let result = '';
-    while (startCol < endCol) {
-      const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
-      const cp = content & Content.CODEPOINT_MASK;
-      result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
-      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
+    function addPendingString(start: number, length: number): void {
+      if (pendingStart >= 0 && pendingStart + pendingLength === start) {
+        pendingLength += length;
+      } else {
+        pendingForce(true);
+        pendingStart = start;
+        pendingLength = length;
+      }
     }
-    return result;
-    */
+    function addPendingSkip(length: number): void {
+      if (pendingStart >= 0) {
+        pendingForce();
+      }
+      pendingLength += length;
+    }
+    for (let idata = 0; idata < this._dataLength && col < endCol; idata++) {
+      const word = this._data[idata];
+      const kind = BufferLine.wKind(word);
+      let wlen = BufferLine.wStrLen(word);
+      const wide = kind === DataKind.TEXT_w2 || kind === DataKind.CLUSTER_w2 ? 1 : 0;
+      let wcols;
+      switch (kind) {
+        case DataKind.FG:
+        case DataKind.BG:
+        case DataKind.STYLE_FLAGS:
+          break;
+        case DataKind.SKIP_COLUMNS:
+          if (col + wlen > startCol) {
+            if (col < startCol) {
+              wlen -= startCol - col;
+              col = startCol;
+            }
+            if (col + wlen > endCol) {
+              wlen = endCol - col;
+            }
+            addPendingSkip(wlen);
+          }
+          col += wlen;
+          break;
+        case DataKind.CLUSTER_w1:
+        case DataKind.CLUSTER_w2:
+          wcols = 1 << wide;
+          if (col >= startCol && col + wcols <= endCol) {
+            addPendingString(itext, wlen);
+          }
+          itext += wlen;
+          col += wcols;
+          break;
+        case DataKind.TEXT_w1:
+        case DataKind.TEXT_w2:
+          wcols = wlen << wide;
+          if (col + wcols > startCol) {
+            if (col < startCol) {
+              const skip = (startCol - col) >> wide;
+              wlen -= skip;
+              wcols = wlen << wide;
+              col = startCol;
+              itext += skip;
+            }
+            if (col + wcols > endCol) {
+              wlen = (endCol - col) >> wide;
+            }
+          }
+          addPendingString(itext, wlen);
+          itext += wlen;
+          col += wlen << wide;
+          break;
+      }
+    }
+    if (! trimRight && col < endCol) {
+      addPendingSkip(endCol - col);
+    }
+    pendingForce();
+    return s;
   }
 }
