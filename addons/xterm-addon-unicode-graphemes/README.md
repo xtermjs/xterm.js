@@ -19,7 +19,4 @@ import { UnicodeGraphemeAddon } from 'xterm-addon-unicode-graphemes';
 const terminal = new Terminal();
 const unicodeGraphemeAddon = new UnicodeGraphemeAddon();
 terminal.loadAddon(unicodeGraphemeAddon);
-
-// activate the new version
-terminal.unicode.activeVersion = '15';
 ```
