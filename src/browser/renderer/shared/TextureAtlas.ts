@@ -122,7 +122,7 @@ export class TextureAtlas implements ITextureAtlas {
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
         if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1)) {
-          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1);
+          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 0);
           this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1, rasterizedGlyph);
         }
       });
@@ -244,12 +244,12 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, variant: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, variant, restrictToCellHeight);
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, variantOffset: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, variantOffset, restrictToCellHeight);
   }
 
-  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, variant: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, variant, restrictToCellHeight);
+  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, variantOffset: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, variantOffset, restrictToCellHeight);
   }
 
   /**
@@ -261,22 +261,14 @@ export class TextureAtlas implements ITextureAtlas {
     bg: number,
     fg: number,
     ext: number,
-    variant: number,
+    variantOffset: number,
     restrictToCellHeight: boolean = false
   ): IRasterizedGlyph {
-    // if (!!this._workAttributeData.isUnderline()) {
-    $glyph = cacheMap.get(key, bg, fg, ext, variant);
+    $glyph = cacheMap.get(key, bg, fg, ext, variantOffset);
     if (!$glyph) {
-      $glyph = this._drawToCache(key, bg, fg, ext, variant, restrictToCellHeight);
-      cacheMap.set(key, bg, fg, ext, variant, $glyph);
+      $glyph = this._drawToCache(key, bg, fg, ext, variantOffset, restrictToCellHeight);
+      cacheMap.set(key, bg, fg, ext, variantOffset, $glyph);
     }
-    // } else {
-    //   $glyph = cacheMap.get(key, bg, fg, ext);
-    //   if (!$glyph) {
-    //     $glyph = this._drawToCache(key, bg, fg, ext, variant, restrictToCellHeight);
-    //     cacheMap.set(key, bg, fg, ext, $glyph);
-    //   }
-    // }
     return $glyph;
   }
 
@@ -435,7 +427,7 @@ export class TextureAtlas implements ITextureAtlas {
     return this._config.colors.contrastCache;
   }
 
-  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number,variant: number = 1, restrictToCellHeight: boolean = false): IRasterizedGlyph {
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number,variantOffset: number = 0, restrictToCellHeight: boolean = false): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     // Uncomment for debugging
@@ -555,7 +547,7 @@ export class TextureAtlas implements ITextureAtlas {
       const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
       const yMid = yTop + lineWidth;
       const yBot = yTop + lineWidth * 2;
-
+      let nextOffset = variantOffset;
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
         // console.log('chWidth',chWidth);
@@ -605,33 +597,10 @@ export class TextureAtlas implements ITextureAtlas {
             );
             break;
           case UnderlineStyle.DOTTED:
-            if ((xChRight - xChLeft) % 2 === 1){
-              if (variant === 1) {
-                if (i % 2 === 0) {
-                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-                  this._tmpCtx.moveTo(xChLeft, yTop);
-                  this._tmpCtx.lineTo(xChRight, yTop);
-                } else {
-                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-                  this._tmpCtx.moveTo(xChLeft - lineWidth, yTop);
-                  this._tmpCtx.lineTo(xChRight, yTop);
-                }
-              } else {
-                if (i % 2 === 0) {
-                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-                  this._tmpCtx.moveTo(xChLeft - lineWidth, yTop);
-                  this._tmpCtx.lineTo(xChRight, yTop);
-                } else {
-                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-                  this._tmpCtx.moveTo(xChLeft, yTop);
-                  this._tmpCtx.lineTo(xChRight, yTop);
-                }
-              }
-            } else {
-              this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-              this._tmpCtx.moveTo(xChLeft, yTop);
-              this._tmpCtx.lineTo(xChRight, yTop);
-            }
+            this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+            this._tmpCtx.moveTo(xChLeft + nextOffset, yTop);
+            this._tmpCtx.lineTo(xChRight, yTop);
+            nextOffset = (xChRight - xChLeft - nextOffset) % (Math.round(lineWidth) * 2);
             break;
           case UnderlineStyle.DASHED:
             this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);
@@ -972,6 +941,10 @@ export class TextureAtlas implements ITextureAtlas {
         y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.deviceCellHeight - this._config.deviceCharHeight) / 2) : 0)
       }
     };
+  }
+
+  public getDeviceCellWidth(): number {
+    return this._config.deviceCellWidth;
   }
 }
 

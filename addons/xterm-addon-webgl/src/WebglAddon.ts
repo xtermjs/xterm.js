@@ -8,7 +8,7 @@ import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
 import { WebglRenderer } from './WebglRenderer';
 
@@ -52,6 +52,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
     const decorationService: IDecorationService = unsafeCore._decorationService;
     const themeService: IThemeService = unsafeCore._themeService;
+    const unicodeService: IUnicodeService = unsafeCore.unicodeService;
 
     this._renderer = this.register(new WebglRenderer(
       terminal,
@@ -62,6 +63,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
       decorationService,
       optionsService,
       themeService,
+      unicodeService,
       this._preserveDrawingBuffer
     ));
     this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
