@@ -16,8 +16,8 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { Disposable, MutableDisposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
+import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -27,10 +27,11 @@ import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { IWebGL2RenderingContext } from './Types';
+import { traceCall } from 'common/services/LogService';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
-  private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
+  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
   private _charAtlasDisposable: IDisposable | undefined;
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
@@ -202,7 +203,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleBlur(this._terminal);
     }
-    this._cursorBlinkStateManager?.pause();
+    this._cursorBlinkStateManager.value?.pause();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
@@ -211,7 +212,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleFocus(this._terminal);
     }
-    this._cursorBlinkStateManager?.resume();
+    this._cursorBlinkStateManager.value?.resume();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
@@ -228,7 +229,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleCursorMove(this._terminal);
     }
-    this._cursorBlinkStateManager?.restartBlinkAnimation();
+    this._cursorBlinkStateManager.value?.restartBlinkAnimation();
   }
 
   private _handleOptionsChanged(): void {
@@ -311,7 +312,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.reset(this._terminal);
     }
 
-    this._cursorBlinkStateManager?.restartBlinkAnimation();
+    this._cursorBlinkStateManager.value?.restartBlinkAnimation();
     this._updateCursorBlink();
   }
 
@@ -323,6 +324,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return false;
   }
 
+  @traceCall
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
       if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
@@ -357,21 +359,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Render
     this._rectangleRenderer?.renderBackgrounds();
     this._glyphRenderer?.render(this._model);
-    if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isCursorVisible) {
+    if (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isCursorVisible) {
       this._rectangleRenderer?.renderCursor();
     }
   }
 
   private _updateCursorBlink(): void {
     if (this._terminal.options.cursorBlink) {
-      if (!this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager = this.register(new CursorBlinkStateManager(() => {
-          this._requestRedrawCursor();
-        }, this._coreBrowserService));
-      }
+      this._cursorBlinkStateManager.value = new CursorBlinkStateManager(() => {
+        this._requestRedrawCursor();
+      }, this._coreBrowserService);
     } else {
-      this._cursorBlinkStateManager?.dispose();
-      this._cursorBlinkStateManager = undefined;
+      this._cursorBlinkStateManager.clear();
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal
@@ -406,7 +405,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     const isCursorVisible =
       this._coreService.isCursorInitialized &&
       !this._coreService.isCursorHidden &&
-      (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isCursorVisible);
+      (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isCursorVisible);
     this._model.cursor = undefined;
     let modelUpdated = false;
 

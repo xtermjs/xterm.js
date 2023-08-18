@@ -8,9 +8,10 @@ import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
 import { WebglRenderer } from './WebglRenderer';
+import { setTraceLogger } from 'common/services/LogService';
 
 export class WebglAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -51,7 +52,12 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     const charSizeService: ICharSizeService = unsafeCore._charSizeService;
     const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
     const decorationService: IDecorationService = unsafeCore._decorationService;
+    const logService: ILogService = unsafeCore._logService;
     const themeService: IThemeService = unsafeCore._themeService;
+
+    // Set trace logger just in case it hasn't been yet which could happen when the addon is
+    // bundled separately to the core module
+    setTraceLogger(logService);
 
     this._renderer = this.register(new WebglRenderer(
       terminal,

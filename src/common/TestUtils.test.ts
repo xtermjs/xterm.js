@@ -105,6 +105,7 @@ export class MockCoreService implements ICoreService {
 export class MockLogService implements ILogService {
   public serviceBrand: any;
   public logLevel = LogLevelEnum.DEBUG;
+  public trace(message: any, ...optionalParams: any[]): void { }
   public debug(message: any, ...optionalParams: any[]): void { }
   public info(message: any, ...optionalParams: any[]): void { }
   public warn(message: any, ...optionalParams: any[]): void { }

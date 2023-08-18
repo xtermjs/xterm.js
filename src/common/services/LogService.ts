@@ -21,6 +21,7 @@ interface IConsole {
 declare const console: IConsole;
 
 const optionsKeyToLogLevel: { [key: string]: LogLevelEnum } = {
+  trace: LogLevelEnum.TRACE,
   debug: LogLevelEnum.DEBUG,
   info: LogLevelEnum.INFO,
   warn: LogLevelEnum.WARN,
@@ -42,6 +43,9 @@ export class LogService extends Disposable implements ILogService {
     super();
     this._updateLogLevel();
     this.register(this._optionsService.onSpecificOptionChange('logLevel', () => this._updateLogLevel()));
+
+    // For trace logging, assume the latest created log service is valid
+    traceLogger = this;
   }
 
   private _updateLogLevel(): void {
@@ -59,6 +63,12 @@ export class LogService extends Disposable implements ILogService {
   private _log(type: LogType, message: string, optionalParams: any[]): void {
     this._evalLazyOptionalParams(optionalParams);
     type.call(console, (this._optionsService.options.logger ? '' : LOG_PREFIX) + message, ...optionalParams);
+  }
+
+  public trace(message: string, ...optionalParams: any[]): void {
+    if (this._logLevel <= LogLevelEnum.TRACE) {
+      this._log(this._optionsService.options.logger?.trace.bind(this._optionsService.options.logger) ?? console.log, message, optionalParams);
+    }
   }
 
   public debug(message: string, ...optionalParams: any[]): void {
@@ -84,4 +94,31 @@ export class LogService extends Disposable implements ILogService {
       this._log(this._optionsService.options.logger?.error.bind(this._optionsService.options.logger) ?? console.error, message, optionalParams);
     }
   }
+}
+
+let traceLogger: ILogService;
+export function setTraceLogger(logger: ILogService): void {
+  traceLogger = logger;
+}
+
+/**
+ * A decorator that can be used to automatically log trace calls to the decorated function.
+ */
+export function traceCall(_target: any, key: string, descriptor: any): any {
+  if (typeof descriptor.value !== 'function') {
+    throw new Error('not supported');
+  }
+  const fnKey = 'value';
+  const fn = descriptor.value;
+  descriptor[fnKey] = function (...args: any[]) {
+    // Early exit
+    if (traceLogger.logLevel !== LogLevelEnum.TRACE) {
+      return fn.apply(this, args);
+    }
+
+    traceLogger.trace(`GlyphRenderer#${fn.name}(${args.map(e => JSON.stringify(e)).join(', ')})`);
+    const result = fn.apply(this, args);
+    traceLogger.trace(`GlyphRenderer#${fn.name} return`, result);
+    return result;
+  };
 }
