@@ -14,7 +14,7 @@ import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeS
 import { ITerminal } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
@@ -25,7 +25,7 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_VARIANT_OFFSET } from './RenderModel';
 import { IWebGL2RenderingContext } from './Types';
 
 export class WebglRenderer extends Disposable implements IRenderer {
@@ -396,6 +396,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let i: number;
     let x: number;
     let j: number;
+    let lastIsUnderLineDotted: boolean = false;
+    let variant: number = 1;
     start = clamp(start, terminal.rows - 1, 0);
     end = clamp(end, terminal.rows - 1, 0);
 
@@ -415,6 +417,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
+      variant = 1;
       for (x = 0; x < terminal.cols; x++) {
         lastBg = this._cellColorResolver.result.bg;
         line.loadCell(x, cell);
@@ -468,10 +471,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
             lastCursorX = cursorX + cell.getWidth() - 1;
           }
           if (x >= cursorX && x <= lastCursorX &&
-              ((this._coreBrowserService.isFocused &&
+            ((this._coreBrowserService.isFocused &&
               (terminal.options.cursorStyle || 'block') === 'block') ||
               (this._coreBrowserService.isFocused === false &&
-              terminal.options.cursorInactiveStyle === 'block'))) {
+                terminal.options.cursorInactiveStyle === 'block'))) {
             this._cellColorResolver.result.fg =
               Attributes.CM_RGB | (this._themeService.colors.cursorAccent.rgba >> 8 & Attributes.RGB_MASK);
             this._cellColorResolver.result.bg =
@@ -481,18 +484,45 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         if (code !== NULL_CELL_CODE) {
           this._model.lineLengths[y] = x + 1;
+        } else {
+          if (cell.extended.underlineStyle !== UnderlineStyle.DOTTED) {
+            lastIsUnderLineDotted = false;
+            variant = 1;
+          }
+        }
+        if (y === 0) {
+          console.log('v',variant);
         }
 
         // Nothing has changed, no updates needed
-        if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
-            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
+        // if (code === -2147355523) {
+        //   debugger;
+        // }
+        if ((this._model.cells[i] === code /* || this._model.cells[i] === -code */) &&
+          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
+          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
+          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext &&
+          this._model.cells[i + RENDER_MODEL_VARIANT_OFFSET] === variant
+        ) {
+          if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
+            lastIsUnderLineDotted = true;
+            // if (chars.length % 2 === 1) {
+            variant = variant === 1 ? 2 : 1;
+            // }
+          } else {
+            lastIsUnderLineDotted = false;
+            variant = 1;
+          }
           continue;
         }
 
         modelUpdated = true;
-
+        if (chars === 'a') {
+          // debugger;
+          console.log('variant: ', variant);
+          console.log('bg: ',this._cellColorResolver.result.bg);
+          console.log('fg: ',this._cellColorResolver.result.fg);
+        }
         // Flag combined chars with a bit mask so they're easily identifiable
         if (chars.length > 1) {
           code |= COMBINED_CHAR_BIT_MASK;
@@ -503,8 +533,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
         this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
+        this._model.cells[i + RENDER_MODEL_VARIANT_OFFSET] = variant;
+        this._glyphRenderer!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg, variant);
 
-        this._glyphRenderer!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
+        if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
+          lastIsUnderLineDotted = true;
+          // if (chars.length % 2 === 1) {
+          variant = variant === 1 ? 2 : 1;
+          // }
+        } else {
+          lastIsUnderLineDotted = false;
+          variant = 1;
+        }
+        // console.log('lastIsUnderLineDotted', lastIsUnderLineDotted);
 
         if (isJoined) {
           // Restore work cell
@@ -513,11 +554,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
+            this._glyphRenderer!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 1);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
             this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
+            this._model.cells[i + RENDER_MODEL_VARIANT_OFFSET] = variant;
           }
         }
       }

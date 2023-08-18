@@ -11,11 +11,12 @@ import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
-import { FourKeyMap } from 'common/MultiKeyMap';
+import { FiveKeyMap, FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { IColorContrastCache } from 'browser/Types';
+import { BufferLineApiView } from 'common/public/BufferLineApiView';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -57,8 +58,8 @@ let $glyph = undefined;
 export class TextureAtlas implements ITextureAtlas {
   private _didWarmUp: boolean = false;
 
-  private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();
-  private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
+  private _cacheMap: FiveKeyMap<number, number, number, number, number, IRasterizedGlyph> = new FiveKeyMap();
+  private _cacheMapCombined: FiveKeyMap<string, number, number, number, number, IRasterizedGlyph> = new FiveKeyMap();
 
   // The texture that the atlas is drawn to
   private _pages: AtlasPage[] = [];
@@ -120,9 +121,9 @@ export class TextureAtlas implements ITextureAtlas {
     const queue = new IdleTaskQueue();
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
-        if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
-          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
-          this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
+        if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1)) {
+          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1);
+          this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1, rasterizedGlyph);
         }
       });
     }
@@ -243,30 +244,39 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, restrictToCellHeight);
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, variant: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, variant, restrictToCellHeight);
   }
 
-  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, restrictToCellHeight);
+  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, variant: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, variant, restrictToCellHeight);
   }
 
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
   private _getFromCacheMap(
-    cacheMap: FourKeyMap<string | number, number, number, number, IRasterizedGlyph>,
+    cacheMap: FiveKeyMap<string | number, number, number, number, number, IRasterizedGlyph>,
     key: string | number,
     bg: number,
     fg: number,
     ext: number,
+    variant: number,
     restrictToCellHeight: boolean = false
   ): IRasterizedGlyph {
-    $glyph = cacheMap.get(key, bg, fg, ext);
+    // if (!!this._workAttributeData.isUnderline()) {
+    $glyph = cacheMap.get(key, bg, fg, ext, variant);
     if (!$glyph) {
-      $glyph = this._drawToCache(key, bg, fg, ext, restrictToCellHeight);
-      cacheMap.set(key, bg, fg, ext, $glyph);
+      $glyph = this._drawToCache(key, bg, fg, ext, variant, restrictToCellHeight);
+      cacheMap.set(key, bg, fg, ext, variant, $glyph);
     }
+    // } else {
+    //   $glyph = cacheMap.get(key, bg, fg, ext);
+    //   if (!$glyph) {
+    //     $glyph = this._drawToCache(key, bg, fg, ext, variant, restrictToCellHeight);
+    //     cacheMap.set(key, bg, fg, ext, $glyph);
+    //   }
+    // }
     return $glyph;
   }
 
@@ -425,7 +435,7 @@ export class TextureAtlas implements ITextureAtlas {
     return this._config.colors.contrastCache;
   }
 
-  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number,variant: number = 1, restrictToCellHeight: boolean = false): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     // Uncomment for debugging
@@ -548,6 +558,7 @@ export class TextureAtlas implements ITextureAtlas {
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
+        // console.log('chWidth',chWidth);
         const xChLeft = xLeft + i * this._config.deviceCellWidth;
         const xChRight = xLeft + (i + 1) * this._config.deviceCellWidth;
         const xChMid = xChLeft + this._config.deviceCellWidth / 2;
@@ -594,9 +605,33 @@ export class TextureAtlas implements ITextureAtlas {
             );
             break;
           case UnderlineStyle.DOTTED:
-            this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-            this._tmpCtx.moveTo(xChLeft, yTop);
-            this._tmpCtx.lineTo(xChRight, yTop);
+            if ((xChRight - xChLeft) % 2 === 1){
+              if (variant === 1) {
+                if (i % 2 === 0) {
+                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+                  this._tmpCtx.moveTo(xChLeft, yTop);
+                  this._tmpCtx.lineTo(xChRight, yTop);
+                } else {
+                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+                  this._tmpCtx.moveTo(xChLeft - lineWidth, yTop);
+                  this._tmpCtx.lineTo(xChRight, yTop);
+                }
+              } else {
+                if (i % 2 === 0) {
+                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+                  this._tmpCtx.moveTo(xChLeft - lineWidth, yTop);
+                  this._tmpCtx.lineTo(xChRight, yTop);
+                } else {
+                  this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+                  this._tmpCtx.moveTo(xChLeft, yTop);
+                  this._tmpCtx.lineTo(xChRight, yTop);
+                }
+              }
+            } else {
+              this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+              this._tmpCtx.moveTo(xChLeft, yTop);
+              this._tmpCtx.lineTo(xChRight, yTop);
+            }
             break;
           case UnderlineStyle.DASHED:
             this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);

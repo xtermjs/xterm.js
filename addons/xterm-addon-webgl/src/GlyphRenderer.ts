@@ -212,15 +212,15 @@ export class GlyphRenderer extends Disposable {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number, variant: number): void {
     // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
     // should not instantiate any variables unless a new glyph is drawn to the cache where the
     // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
     // each glyph.
-    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, lastBg);
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, lastBg, variant);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number, variant: number): void {
     $i = (y * this._terminal.cols + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null character, allow space character to continue as it may have
@@ -236,9 +236,9 @@ export class GlyphRenderer extends Disposable {
 
     // Get the glyph
     if (chars && chars.length > 1) {
-      $glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext, false);
+      $glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext, variant, false);
     } else {
-      $glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext, false);
+      $glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext, variant, false);
     }
 
     $leftCellPadding = Math.floor((this._dimensions.device.cell.width - this._dimensions.device.char.width) / 2);
