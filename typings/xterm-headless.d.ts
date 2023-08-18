@@ -11,7 +11,7 @@ declare module 'xterm-headless' {
   /**
    * A string representing log level.
    */
-  export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
+  export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 
   /**
    * An object containing options for the terminal.
@@ -100,11 +100,12 @@ declare module 'xterm-headless' {
      * What log level to use, this will log for all levels below and including
      * what is set:
      *
-     * 1. debug
-     * 2. info (default)
-     * 3. warn
-     * 4. error
-     * 5. off
+     * 1. trace
+     * 2. debug
+     * 3. info (default)
+     * 4. warn
+     * 5. error
+     * 6. off
      */
     logLevel?: LogLevel;
 
@@ -315,8 +316,13 @@ declare module 'xterm-headless' {
    */
   export interface ILogger {
     /**
+     * Log a trace message, this will only be called if
+     * {@link ITerminalOptions.logLevel} is set to trace.
+     */
+    trace(message: string, ...args: any[]): void;
+    /**
      * Log a debug message, this will only be called if
-     * {@link ITerminalOptions.logLevel} is set to debug.
+     * {@link ITerminalOptions.logLevel} is set to debug or below.
      */
     debug(message: string, ...args: any[]): void;
     /**

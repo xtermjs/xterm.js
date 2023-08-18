@@ -17,7 +17,7 @@ import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -27,6 +27,7 @@ import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { IWebGL2RenderingContext } from './Types';
+import { traceCall } from 'common/services/LogService';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -323,6 +324,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return false;
   }
 
+  @traceCall
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
       if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
