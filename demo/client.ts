@@ -274,7 +274,6 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
-  addons.unicode11.instance = new Unicode11Addon();
   addons['unicode-graphemes'].instance = new UnicodeGraphemesAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
     addons.webgl.instance = new WebglAddon();
@@ -286,7 +285,6 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
-  typedTerm.loadAddon(addons.unicode11.instance);
   typedTerm.loadAddon(addons['unicode-graphemes'].instance);
   typedTerm.loadAddon(addons['web-links'].instance);
 
