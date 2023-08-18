@@ -11,6 +11,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { IRenderService } from 'browser/services/Services';
 import { addDisposableDomListener } from 'browser/Lifecycle';
+import { IBuffer } from 'common/buffer/Types';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -76,14 +77,13 @@ export class AccessibilityManager extends Disposable {
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityContainer.appendChild(this._liveRegion);
-    this._liveRegionDebouncer = this.register(new TimeBasedDebouncer(this._announceCharacters.bind(this)));
+    this._liveRegionDebouncer = this.register(new TimeBasedDebouncer(this._renderRows.bind(this)));
 
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
     }
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityContainer);
 
-    this.register(this._liveRegionDebouncer);
     this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
@@ -165,6 +165,26 @@ export class AccessibilityManager extends Disposable {
 
   private _refreshRows(start?: number, end?: number): void {
     this._liveRegionDebouncer.refresh(start, end, this._terminal.rows);
+  }
+
+  private _renderRows(start: number, end: number): void {
+    const buffer: IBuffer = this._terminal.buffer;
+    const setSize = buffer.lines.length.toString();
+    for (let i = start; i <= end; i++) {
+      const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
+      const posInSet = (buffer.ydisp + i + 1).toString();
+      const element = this._rowElements[i];
+      if (element) {
+        if (lineData.length === 0) {
+          element.innerText = '\u00a0';
+        } else {
+          element.textContent = lineData;
+        }
+        element.setAttribute('aria-posinset', posInSet);
+        element.setAttribute('aria-setsize', setSize);
+      }
+    }
+    this._announceCharacters();
   }
 
   private _announceCharacters(): void {

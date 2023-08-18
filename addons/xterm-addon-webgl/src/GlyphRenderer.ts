@@ -236,9 +236,9 @@ export class GlyphRenderer extends Disposable {
 
     // Get the glyph
     if (chars && chars.length > 1) {
-      $glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext);
+      $glyph = this._atlas.getRasterizedGlyphCombinedChar(chars, bg, fg, ext, false);
     } else {
-      $glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext);
+      $glyph = this._atlas.getRasterizedGlyph(code, bg, fg, ext, false);
     }
 
     $leftCellPadding = Math.floor((this._dimensions.device.cell.width - this._dimensions.device.char.width) / 2);
@@ -308,6 +308,7 @@ export class GlyphRenderer extends Disposable {
 
   public handleResize(): void {
     const gl = this._gl;
+    gl.useProgram(this._program);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
     this.clear();

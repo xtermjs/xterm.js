@@ -11,12 +11,13 @@ import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITer
 import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
 import { ITerminalOptions } from 'common/Types';
+import { Disposable } from 'common/Lifecycle';
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
 const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
-export class Terminal implements ITerminalApi {
+export class Terminal extends Disposable implements ITerminalApi {
   private _core: TerminalCore;
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
@@ -24,8 +25,10 @@ export class Terminal implements ITerminalApi {
   private _publicOptions: Required<ITerminalOptions>;
 
   constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
-    this._core = new TerminalCore(options);
-    this._addonManager = new AddonManager();
+    super();
+
+    this._core = this.register(new TerminalCore(options));
+    this._addonManager = this.register(new AddonManager());
 
     this._publicOptions = { ... this._core.options };
     const getter = (propName: string): any => {
@@ -94,7 +97,7 @@ export class Terminal implements ITerminalApi {
   public get buffer(): IBufferNamespaceApi {
     this._checkProposedApi();
     if (!this._buffer) {
-      this._buffer = new BufferNamespaceApi(this._core);
+      this._buffer = this.register(new BufferNamespaceApi(this._core));
     }
     return this._buffer;
   }
@@ -144,8 +147,7 @@ export class Terminal implements ITerminalApi {
     return this.registerMarker(cursorYOffset);
   }
   public dispose(): void {
-    this._addonManager.dispose();
-    this._core.dispose();
+    super.dispose();
   }
   public scrollLines(amount: number): void {
     this._verifyIntegers(amount);

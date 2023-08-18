@@ -68,8 +68,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   private _highlightDecorations: IHighlight[] = [];
   private _selectedDecoration: IHighlight | undefined;
   private _highlightLimit: number;
-  private _onDataDisposable: IDisposable | undefined;
-  private _onResizeDisposable: IDisposable | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
   /**
@@ -93,13 +91,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._onDataDisposable = this.register(this._terminal.onWriteParsed(() => this._updateMatches()));
-    this._onResizeDisposable = this.register(this._terminal.onResize(() => this._updateMatches()));
-    this.register(toDisposable(() => {
-      this.clearDecorations();
-      this._onDataDisposable?.dispose();
-      this._onResizeDisposable?.dispose();
-    }));
+    this.register(this._terminal.onWriteParsed(() => this._updateMatches()));
+    this.register(this._terminal.onResize(() => this._updateMatches()));
+    this.register(toDisposable(() => this.clearDecorations()));
   }
 
   private _updateMatches(): void {
@@ -440,7 +434,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   }
 
   /**
-   * A found substring is a whole word if it doesn't have an alphanumeric character directly adjacent to it.
+   * A found substring is a whole word if it doesn't have an alphanumeric character directly
+   * adjacent to it.
    * @param searchIndex starting indext of the potential whole word substring
    * @param line entire string in which the potential whole word was found
    * @param term the substring that starts at searchIndex
@@ -451,14 +446,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   }
 
   /**
-   * Searches a line for a search term. Takes the provided terminal line and searches the text line, which may contain
-   * subsequent terminal lines if the text is wrapped. If the provided line number is part of a wrapped text line that
-   * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
-   * text starts on is searched.
+   * Searches a line for a search term. Takes the provided terminal line and searches the text line,
+   * which may contain subsequent terminal lines if the text is wrapped. If the provided line number
+   * is part of a wrapped text line that started on an earlier line then it is skipped since it will
+   * be properly searched when the terminal line that the text starts on is searched.
    * @param term The search term.
    * @param searchPosition The position to start the search.
    * @param searchOptions Search options.
-   * @param isReverseSearch Whether the search should start from the right side of the terminal and search to the left.
+   * @param isReverseSearch Whether the search should start from the right side of the terminal and
+   * search to the left.
    * @returns The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
@@ -526,7 +522,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
         return;
       }
 
-      // Adjust the row number and search index if needed since a "line" of text can span multiple rows
+      // Adjust the row number and search index if needed since a "line" of text can span multiple
+      // rows
       let startRowOffset = 0;
       while (startRowOffset < offsets.length - 1 && resultIndex >= offsets[startRowOffset + 1]) {
         startRowOffset++;

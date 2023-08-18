@@ -33,7 +33,9 @@ jobs:
       exit $EXIT_CODE
     displayName: 'Unit tests'
   - script: yarn lint
-    displayName: 'Lint'
+    displayName: 'Lint code'
+  - script: yarn lint-api
+    displayName: 'Lint API'
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: Cobertura
@@ -58,7 +60,9 @@ jobs:
   - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: yarn lint
-    displayName: 'Lint'
+    displayName: 'Lint code'
+  - script: yarn lint-api
+    displayName: 'Lint API'
 
 - job: Windows
   pool:
@@ -78,7 +82,9 @@ jobs:
   - script: yarn test-unit --forbid-only
     displayName: 'Unit tests'
   - script: yarn lint
-    displayName: 'Lint'
+    displayName: 'Lint code'
+  - script: yarn lint-api
+    displayName: 'Lint API'
 
 - job: Linux_IntegrationTests
   pool:

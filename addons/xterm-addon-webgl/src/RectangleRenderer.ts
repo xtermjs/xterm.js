@@ -50,15 +50,20 @@ void main() {
   outColor = v_color;
 }`;
 
-interface IVertices {
-  attributes: Float32Array;
-  count: number;
-}
-
 const INDICES_PER_RECTANGLE = 8;
 const BYTES_PER_RECTANGLE = INDICES_PER_RECTANGLE * Float32Array.BYTES_PER_ELEMENT;
 
 const INITIAL_BUFFER_RECTANGLE_CAPACITY = 20 * INDICES_PER_RECTANGLE;
+
+class Vertices {
+  public attributes: Float32Array;
+  public count: number;
+
+  constructor() {
+    this.attributes = new Float32Array(INITIAL_BUFFER_RECTANGLE_CAPACITY);
+    this.count = 0;
+  }
+}
 
 // Work variables to avoid garbage collection
 let $rgba = 0;
@@ -77,11 +82,10 @@ export class RectangleRenderer extends Disposable {
   private _attributesBuffer: WebGLBuffer;
   private _projectionLocation: WebGLUniformLocation;
   private _bgFloat!: Float32Array;
+  private _cursorFloat!: Float32Array;
 
-  private _vertices: IVertices = {
-    count: 0,
-    attributes: new Float32Array(INITIAL_BUFFER_RECTANGLE_CAPACITY)
-  };
+  private _vertices: Vertices = new Vertices();
+  private _verticesCursor: Vertices = new Vertices();
 
   constructor(
     private _terminal: Terminal,
@@ -142,7 +146,15 @@ export class RectangleRenderer extends Disposable {
     }));
   }
 
-  public render(): void {
+  public renderBackgrounds(): void {
+    this._renderVertices(this._vertices);
+  }
+
+  public renderCursor(): void {
+    this._renderVertices(this._verticesCursor);
+  }
+
+  private _renderVertices(vertices: Vertices): void {
     const gl = this._gl;
 
     gl.useProgram(this._program);
@@ -153,8 +165,8 @@ export class RectangleRenderer extends Disposable {
 
     // Bind attributes buffer and draw
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this._vertices.attributes, gl.DYNAMIC_DRAW);
-    gl.drawElementsInstanced(this._gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, this._vertices.count);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices.attributes, gl.DYNAMIC_DRAW);
+    gl.drawElementsInstanced(this._gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, vertices.count);
   }
 
   public handleResize(): void {
@@ -167,6 +179,7 @@ export class RectangleRenderer extends Disposable {
 
   private _updateCachedColors(colors: ReadonlyColorSet): void {
     this._bgFloat = this._colorToFloat32Array(colors.background);
+    this._cursorFloat = this._colorToFloat32Array(colors.cursor);
   }
 
   private _updateViewportRectangle(): void {
@@ -231,7 +244,72 @@ export class RectangleRenderer extends Disposable {
     vertices.count = rectangleCount;
   }
 
-  private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
+  public updateCursor(model: IRenderModel): void {
+    const vertices = this._verticesCursor;
+    const cursor = model.cursor;
+    if (!cursor || cursor.style === 'block') {
+      vertices.count = 0;
+      return;
+    }
+
+    let offset: number;
+    let rectangleCount = 0;
+
+    if (cursor.style === 'bar' || cursor.style === 'outline') {
+      // Left edge
+      offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+      this._addRectangleFloat(
+        vertices.attributes,
+        offset,
+        cursor.x * this._dimensions.device.cell.width,
+        cursor.y * this._dimensions.device.cell.height,
+        cursor.style === 'bar' ? cursor.dpr * cursor.cursorWidth : cursor.dpr,
+        this._dimensions.device.cell.height,
+        this._cursorFloat
+      );
+    }
+    if (cursor.style === 'underline' || cursor.style === 'outline') {
+      // Bottom edge
+      offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+      this._addRectangleFloat(
+        vertices.attributes,
+        offset,
+        cursor.x * this._dimensions.device.cell.width,
+        (cursor.y + 1) * this._dimensions.device.cell.height - cursor.dpr,
+        cursor.width * this._dimensions.device.cell.width,
+        cursor.dpr,
+        this._cursorFloat
+      );
+    }
+    if (cursor.style === 'outline') {
+      // Top edge
+      offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+      this._addRectangleFloat(
+        vertices.attributes,
+        offset,
+        cursor.x * this._dimensions.device.cell.width,
+        cursor.y * this._dimensions.device.cell.height,
+        cursor.width * this._dimensions.device.cell.width,
+        cursor.dpr,
+        this._cursorFloat
+      );
+      // Right edge
+      offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+      this._addRectangleFloat(
+        vertices.attributes,
+        offset,
+        (cursor.x + cursor.width) * this._dimensions.device.cell.width - cursor.dpr,
+        cursor.y * this._dimensions.device.cell.height,
+        cursor.dpr,
+        this._dimensions.device.cell.height,
+        this._cursorFloat
+      );
+    }
+
+    vertices.count = rectangleCount;
+  }
+
+  private _updateRectangle(vertices: Vertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
     $isDefault = false;
     if (fg & FgFlags.INVERSE) {
       switch (fg & Attributes.CM_MASK) {

@@ -5,7 +5,7 @@
 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, CursorInactiveStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from 'xterm';
 
@@ -21,11 +21,7 @@ export interface IBufferService {
   onResize: IEvent<{ cols: number, rows: number }>;
   onScroll: IEvent<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
-  scrollToBottom(): void;
-  scrollToTop(): void;
-  scrollToLine(line: number): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
-  scrollPages(pageCount: number): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }
@@ -216,6 +212,7 @@ export interface ITerminalOptions {
   cursorBlink?: boolean;
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
+  cursorInactiveStyle?: CursorInactiveStyle;
   customGlyphs?: boolean;
   disableStdin?: boolean;
   drawBoldTextInBrightColors?: boolean;
@@ -225,6 +222,7 @@ export interface ITerminalOptions {
   fontFamily?: string;
   fontWeight?: FontWeight;
   fontWeightBold?: FontWeight;
+  ignoreBracketedPasteMode?: boolean;
   letterSpacing?: number;
   lineHeight?: number;
   linkHandler?: ILinkHandler | null;

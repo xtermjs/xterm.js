@@ -10,7 +10,7 @@ import { channels, color, css, NULL_COLOR } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IOptionsService, ITheme } from 'common/services/Services';
-import { ColorIndex, IColor } from 'common/Types';
+import { ColorIndex, SpecialColorIndex, IColor, AllColorIndex } from 'common/Types';
 
 interface IRestoreColorSet {
   foreground: IColor;
@@ -81,7 +81,8 @@ export class ThemeService extends Disposable implements IThemeService {
   public serviceBrand: undefined;
 
   private _colors: IColorSet;
-  private _contrastCache: IColorContrastCache;
+  private _contrastCache: IColorContrastCache = new ColorContrastCache();
+  private _halfContrastCache: IColorContrastCache = new ColorContrastCache();
   private _restoreColors!: IRestoreColorSet;
 
   public get colors(): ReadonlyColorSet { return this._colors; }
@@ -94,7 +95,6 @@ export class ThemeService extends Disposable implements IThemeService {
   ) {
     super();
 
-    this._contrastCache = new ColorContrastCache();
     this._colors = {
       foreground: DEFAULT_FOREGROUND,
       background: DEFAULT_BACKGROUND,
@@ -106,7 +106,8 @@ export class ThemeService extends Disposable implements IThemeService {
       selectionInactiveBackgroundTransparent: DEFAULT_SELECTION,
       selectionInactiveBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       ansi: DEFAULT_ANSI_COLORS.slice(),
-      contrastCache: this._contrastCache
+      contrastCache: this._contrastCache,
+      halfContrastCache: this._halfContrastCache
     };
     this._updateRestoreColors();
     this._setTheme(this._optionsService.rawOptions.theme);
@@ -172,16 +173,17 @@ export class ThemeService extends Disposable implements IThemeService {
     }
     // Clear our the cache
     this._contrastCache.clear();
+    this._halfContrastCache.clear();
     this._updateRestoreColors();
     this._onChangeColors.fire(this.colors);
   }
 
-  public restoreColor(slot?: ColorIndex): void {
+  public restoreColor(slot?: AllColorIndex): void {
     this._restoreColor(slot);
     this._onChangeColors.fire(this.colors);
   }
 
-  private _restoreColor(slot: ColorIndex | undefined): void {
+  private _restoreColor(slot: AllColorIndex | undefined): void {
     // unset slot restores all ansi colors
     if (slot === undefined) {
       for (let i = 0; i < this._restoreColors.ansi.length; ++i) {
@@ -190,13 +192,13 @@ export class ThemeService extends Disposable implements IThemeService {
       return;
     }
     switch (slot) {
-      case ColorIndex.FOREGROUND:
+      case SpecialColorIndex.FOREGROUND:
         this._colors.foreground = this._restoreColors.foreground;
         break;
-      case ColorIndex.BACKGROUND:
+      case SpecialColorIndex.BACKGROUND:
         this._colors.background = this._restoreColors.background;
         break;
-      case ColorIndex.CURSOR:
+      case SpecialColorIndex.CURSOR:
         this._colors.cursor = this._restoreColors.cursor;
         break;
       default:

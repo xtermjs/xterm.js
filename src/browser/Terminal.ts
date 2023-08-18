@@ -35,7 +35,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
+import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -73,8 +73,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _compositionView: HTMLElement | undefined;
 
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
-
-  // private _visualBellTimer: number;
 
   public browser: IBrowser = Browser as any;
 
@@ -146,18 +144,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _onWillOpen = this.register(new EventEmitter<HTMLElement>());
   public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
 
-  /**
-   * Creates a new `Terminal` object.
-   *
-   * @param options An object containing a set of options, the available options are:
-   *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
-   *   - `cols` (number): The number of columns of the terminal (horizontal size)
-   *   - `rows` (number): The number of rows of the terminal (vertical size)
-   *
-   * @public
-   * @class Xterm Xterm
-   * @alias module:xterm/src/xterm
-   */
   constructor(
     options: Partial<ITerminalOptions> = {}
   ) {
@@ -203,15 +189,15 @@ export class Terminal extends CoreTerminal implements ITerminal {
       let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
       let ident = '';
       switch (req.index) {
-        case ColorIndex.FOREGROUND: // OSC 10 | 110
+        case SpecialColorIndex.FOREGROUND: // OSC 10 | 110
           acc = 'foreground';
           ident = '10';
           break;
-        case ColorIndex.BACKGROUND: // OSC 11 | 111
+        case SpecialColorIndex.BACKGROUND: // OSC 11 | 111
           acc = 'background';
           ident = '11';
           break;
-        case ColorIndex.CURSOR: // OSC 12 | 112
+        case SpecialColorIndex.CURSOR: // OSC 12 | 112
           acc = 'cursor';
           ident = '12';
           break;
@@ -352,7 +338,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
       copyHandler(event, this._selectionService!);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this.coreService);
+    const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this.coreService, this.optionsService);
     this.register(addDisposableDomListener(this.textarea!, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element!, 'paste', pasteHandlerWrapper));
 
@@ -497,11 +483,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.viewport = this._instantiationService.createInstance(Viewport,
-      (amount: number) => this.scrollLines(amount, true, ScrollSource.VIEWPORT),
-      this._viewportElement,
-      this._viewportScrollArea
-    );
+    this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
+    this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
 
@@ -747,8 +730,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       if (!(events & CoreMouseEventType.UP)) {
         this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
+        el.removeEventListener('mouseup', requestedEvents.mouseup!);
         requestedEvents.mouseup = null;
       } else if (!requestedEvents.mouseup) {
+        el.addEventListener('mouseup', eventListeners.mouseup);
         requestedEvents.mouseup = eventListeners.mouseup;
       }
 
@@ -870,12 +855,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public scrollLines(disp: number, suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
-    super.scrollLines(disp, suppressScrollEvent, source);
-    this.refresh(0, this.rows - 1);
+    if (source === ScrollSource.VIEWPORT) {
+      super.scrollLines(disp, suppressScrollEvent, source);
+      this.refresh(0, this.rows - 1);
+    } else {
+      this.viewport?.scrollLines(disp);
+    }
   }
 
   public paste(data: string): void {
-    paste(data, this.textarea!, this.coreService);
+    paste(data, this.textarea!, this.coreService, this.optionsService);
   }
 
   /**
@@ -917,7 +906,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker {
+  public registerMarker(cursorYOffset: number): IMarker {
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
   }
 
@@ -1003,7 +992,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
-        this._bufferService.scrollToBottom();
+        this.scrollToBottom();
       }
       return false;
     }
@@ -1227,8 +1216,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     for (let i = 1; i < this.rows; i++) {
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    this.refresh(0, this.rows - 1);
+    // IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
+    // scroll event and that the viewport's state will be valid for immediate writes.
     this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
+    this.viewport?.reset();
+    this.refresh(0, this.rows - 1);
   }
 
   /**
@@ -1252,13 +1244,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     super.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
+    this.viewport?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
 
     // do a full screen refresh
     this.refresh(0, this.rows - 1);
-    this.viewport?.syncScrollArea();
   }
 
   public clearTextureAtlas(): void {

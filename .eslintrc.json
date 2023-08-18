@@ -18,6 +18,8 @@
       "addons/xterm-addon-canvas/src/tsconfig.json",
       "addons/xterm-addon-fit/src/tsconfig.json",
       "addons/xterm-addon-fit/test/tsconfig.json",
+      "addons/xterm-addon-image/src/tsconfig.json",
+      "addons/xterm-addon-image/test/tsconfig.json",
       "addons/xterm-addon-ligatures/src/tsconfig.json",
       "addons/xterm-addon-search/src/tsconfig.json",
       "addons/xterm-addon-search/test/tsconfig.json",
@@ -34,6 +36,7 @@
     "sourceType": "module"
   },
   "ignorePatterns": [
+    "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
     "**/*.js"
@@ -87,7 +90,12 @@
     ],
     "@typescript-eslint/naming-convention": [
       "warn",
-      { "selector": "default", "format": ["camelCase"] },
+      { "selector": "default", "format": ["camelCase"],
+        "filter": {
+          "regex": "^[a-z]",
+          "match": true
+        }
+      },
       // variableLike
       { "selector": "variable", "format": ["camelCase", "UPPER_CASE"] },
       { "selector": "variable", "filter": "^I.+Service$", "format": ["PascalCase"], "prefix": ["I"] },
@@ -96,7 +104,12 @@
       { "selector": "memberLike", "modifiers": ["protected"], "format": ["camelCase"], "leadingUnderscore": "require" },
       { "selector": "enumMember", "format": ["UPPER_CASE"] },
       // memberLike - Allow enum-like objects to use UPPER_CASE
-      { "selector": "property", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"] },
+      { "selector": "property", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"],
+        "filter": {
+          "regex": "^[a-z]",
+          "match": true
+        }
+      },
       // restrict on* naming for events only
       { "selector": "method", "modifiers": ["public"], "format": ["camelCase", "UPPER_CASE"], "custom": {
         "regex": "^on[A-Z].+",
@@ -146,6 +159,16 @@
     "jsdoc/check-param-names": 1,
     "jsdoc/no-multi-asterisks": 1,
     "keyword-spacing": "warn",
+    "max-len": [
+      "warn",
+      {
+        "code": 1000, // Don't enforce for code
+        "comments": 100,
+        "ignoreTrailingComments": true,
+        "ignoreUrls": true,
+        "ignorePattern": "^ *((?<vt_comment>(//|\\*) @vt)|(?<table_comment>\\* \\| )|(?<commented_code>//  ))"
+      }
+    ],
     "new-parens": "warn",
     "no-duplicate-imports": "warn",
     "no-else-return": [
@@ -212,7 +235,8 @@
     {
       "files": ["**/*.test.ts"],
       "rules": {
-        "object-curly-spacing": "off"
+        "object-curly-spacing": "off",
+        "max-len": "off"
       }
     }
   ]

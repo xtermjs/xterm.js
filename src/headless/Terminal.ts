@@ -24,14 +24,10 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { EventEmitter, forwardEvent, IEvent } from 'common/EventEmitter';
-import { ITerminalOptions as IInitializedTerminalOptions } from 'common/services/Services';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { IMarker, ITerminalOptions, ScrollSource } from 'common/Types';
 
 export class Terminal extends CoreTerminal {
-  // TODO: We should remove options once components adopt optionsService
-  public get options(): Required<IInitializedTerminalOptions> { return this.optionsService.options; }
-
   private readonly _onBell = this.register(new EventEmitter<void>());
   public readonly onBell = this._onBell.event;
   private readonly _onCursorMove = this.register(new EventEmitter<void>());
@@ -43,18 +39,6 @@ export class Terminal extends CoreTerminal {
   private readonly _onA11yTabEmitter = this.register(new EventEmitter<number>());
   public readonly onA11yTab = this._onA11yTabEmitter.event;
 
-  /**
-   * Creates a new `Terminal` object.
-   *
-   * @param options An object containing a set of options, the available options are:
-   *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
-   *   - `cols` (number): The number of columns of the terminal (horizontal size)
-   *   - `rows` (number): The number of rows of the terminal (vertical size)
-   *
-   * @public
-   * @class Xterm Xterm
-   * @alias module:xterm/src/xterm
-   */
   constructor(
     options: ITerminalOptions = {}
   ) {

@@ -181,9 +181,10 @@ export class WriteBuffer extends Disposable {
 
         /**
          * If a promise takes long to resolve, we should schedule continuation behind setTimeout.
-         * This might already be too late, if our .then enters really late (executor + prev thens took very long).
-         * This cannot be solved here for the handler itself (it is the handlers responsibility to slice hard work),
-         * but we can at least schedule a screen update as we gain control.
+         * This might already be too late, if our .then enters really late (executor + prev thens
+         * took very long). This cannot be solved here for the handler itself (it is the handlers
+         * responsibility to slice hard work), but we can at least schedule a screen update as we
+         * gain control.
          */
         const continuation: (r: boolean) => void = (r: boolean) => Date.now() - startTime >= WRITE_TIMEOUT_MS
           ? setTimeout(() => this._innerWrite(0, r))

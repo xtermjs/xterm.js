@@ -7,7 +7,12 @@ import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
-import { ITerminalOptions } from 'common/Types';
+
+
+const enum MeasureSettings {
+  REPEAT = 32
+}
+
 
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
@@ -55,7 +60,8 @@ interface IMeasureResult {
   height: number;
 }
 
-// TODO: For supporting browsers we should also provide a CanvasCharDimensionsProvider that uses ctx.measureText
+// TODO: For supporting browsers we should also provide a CanvasCharDimensionsProvider that uses
+// ctx.measureText
 class DomMeasureStrategy implements IMeasureStrategy {
   private _result: IMeasureResult = { width: 0, height: 0 };
   private _measureElement: HTMLElement;
@@ -67,8 +73,10 @@ class DomMeasureStrategy implements IMeasureStrategy {
   ) {
     this._measureElement = this._document.createElement('span');
     this._measureElement.classList.add('xterm-char-measure-element');
-    this._measureElement.textContent = 'W';
+    this._measureElement.textContent = 'W'.repeat(MeasureSettings.REPEAT);
     this._measureElement.setAttribute('aria-hidden', 'true');
+    this._measureElement.style.whiteSpace = 'pre';
+    this._measureElement.style.fontKerning = 'none';
     this._parentElement.appendChild(this._measureElement);
   }
 
@@ -77,12 +85,15 @@ class DomMeasureStrategy implements IMeasureStrategy {
     this._measureElement.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
 
     // Note that this triggers a synchronous layout
-    const geometry = this._measureElement.getBoundingClientRect();
+    const geometry = {
+      height: Number(this._measureElement.offsetHeight),
+      width: Number(this._measureElement.offsetWidth)
+    };
 
     // If values are 0 then the element is likely currently display:none, in which case we should
     // retain the previous value.
     if (geometry.width !== 0 && geometry.height !== 0) {
-      this._result.width = geometry.width;
+      this._result.width = geometry.width / MeasureSettings.REPEAT;
       this._result.height = Math.ceil(geometry.height);
     }
 

@@ -52,7 +52,7 @@ export class MockTerminal implements ITerminal {
   public coreService!: ICoreService;
   public optionsService!: IOptionsService;
   public unicodeService!: IUnicodeService;
-  public addMarker(cursorYOffset: number): IMarker {
+  public registerMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');
   }
   public selectLines(start: number, end: number): void {
@@ -296,6 +296,8 @@ export class MockRenderer implements IRenderer {
 }
 
 export class MockViewport implements IViewport {
+  private readonly _onRequestScrollLines = new EventEmitter<{ amount: number, suppressScrollEvent: boolean }>();
+  public readonly onRequestScrollLines = this._onRequestScrollLines.event;
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
@@ -318,6 +320,11 @@ export class MockViewport implements IViewport {
   }
   public getBufferElements(startLine: number, endLine?: number | undefined): { bufferElements: HTMLElement[], cursorElement?: HTMLElement | undefined } {
     throw new Error('Method not implemented.');
+  }
+  public scrollLines(disp: number): void {
+    this._onRequestScrollLines.fire({ amount: disp, suppressScrollEvent: false });
+  }
+  public reset(): void {
   }
 }
 
@@ -522,6 +529,8 @@ export class MockThemeService implements IThemeService{
       css.toColor('#ad7fa8'),
       css.toColor('#34e2e2'),
       css.toColor('#eeeeec')
-    ]
+    ],
+    selectionBackgroundOpaque: css.toColor('#ff0000'),
+    selectionInactiveBackgroundOpaque: css.toColor('#00ff00')
   } as any;
 }

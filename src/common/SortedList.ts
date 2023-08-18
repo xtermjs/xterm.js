@@ -28,7 +28,7 @@ export class SortedList<T> {
       this._array.push(value);
       return;
     }
-    i = this._search(this._getKey(value), 0, this._array.length - 1);
+    i = this._search(this._getKey(value));
     this._array.splice(i, 0, value);
   }
 
@@ -40,7 +40,7 @@ export class SortedList<T> {
     if (key === undefined) {
       return false;
     }
-    i = this._search(key, 0, this._array.length - 1);
+    i = this._search(key);
     if (i === -1) {
       return false;
     }
@@ -60,7 +60,7 @@ export class SortedList<T> {
     if (this._array.length === 0) {
       return;
     }
-    i = this._search(key, 0, this._array.length - 1);
+    i = this._search(key);
     if (i < 0 || i >= this._array.length) {
       return;
     }
@@ -76,7 +76,7 @@ export class SortedList<T> {
     if (this._array.length === 0) {
       return;
     }
-    i = this._search(key, 0, this._array.length - 1);
+    i = this._search(key);
     if (i < 0 || i >= this._array.length) {
       return;
     }
@@ -89,26 +89,30 @@ export class SortedList<T> {
   }
 
   public values(): IterableIterator<T> {
-    return this._array.values();
+    // Duplicate the array to avoid issues when _array changes while iterating
+    return [...this._array].values();
   }
 
-  private _search(key: number, min: number, max: number): number {
-    if (max < min) {
-      return min;
+  private _search(key: number): number {
+    let min = 0;
+    let max = this._array.length - 1;
+    while (max >= min) {
+      let mid = (min + max) >> 1;
+      const midKey = this._getKey(this._array[mid]);
+      if (midKey > key) {
+        max = mid - 1;
+      } else if (midKey < key) {
+        min = mid + 1;
+      } else {
+        // key in list, walk to lowest duplicate
+        while (mid > 0 && this._getKey(this._array[mid - 1]) === key) {
+          mid--;
+        }
+        return mid;
+      }
     }
-    let mid = Math.floor((min + max) / 2);
-    const midKey = this._getKey(this._array[mid]);
-    if (midKey > key) {
-      return this._search(key, min, mid - 1);
-    }
-    if (midKey < key) {
-      return this._search(key, mid + 1, max);
-    }
-    // Value found! Since keys can be duplicates, move the result index back to the lowest index
-    // that matches the key.
-    while (mid > 0 && this._getKey(this._array[mid - 1]) === key) {
-      mid--;
-    }
-    return mid;
+    // key not in list
+    // still return closest min (also used as insert position)
+    return min;
   }
 }

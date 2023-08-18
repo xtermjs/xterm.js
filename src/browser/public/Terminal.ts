@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, IModes, IDecorationOptions, IDecoration, IBufferElementProvider } from 'xterm';
+import { Terminal as ITerminalApi, IMarker, IDisposable, ILocalizableStrings, ITerminalAddon, IBufferNamespace as IBufferNamespaceApi, IParser, ILinkProvider, IUnicodeHandling, IModes, IDecorationOptions, IDecoration, IBufferElementProvider, ITerminalInitOnlyOptions } from 'xterm';
 import { IBufferRange, ITerminal } from 'browser/Types';
 import { Terminal as TerminalCore } from 'browser/Terminal';
 import * as Strings from 'browser/LocalizableStrings';
@@ -13,22 +13,25 @@ import { UnicodeApi } from 'common/public/UnicodeApi';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ITerminalOptions } from 'common/Types';
+import { Disposable } from 'common/Lifecycle';
 
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
 const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
-export class Terminal implements ITerminalApi {
+export class Terminal extends Disposable implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
   private _publicOptions: Required<ITerminalOptions>;
 
-  constructor(options?: ITerminalOptions) {
-    this._core = new TerminalCore(options);
-    this._addonManager = new AddonManager();
+  constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
+    super();
+
+    this._core = this.register(new TerminalCore(options));
+    this._addonManager = this.register(new AddonManager());
 
     this._publicOptions = { ... this._core.options };
     const getter = (propName: string): any => {
@@ -92,7 +95,7 @@ export class Terminal implements ITerminalApi {
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
     if (!this._buffer) {
-      this._buffer = new BufferNamespaceApi(this._core);
+      this._buffer = this.register(new BufferNamespaceApi(this._core));
     }
     return this._buffer;
   }
@@ -158,7 +161,7 @@ export class Terminal implements ITerminalApi {
   }
   public registerMarker(cursorYOffset: number = 0): IMarker {
     this._verifyIntegers(cursorYOffset);
-    return this._core.addMarker(cursorYOffset);
+    return this._core.registerMarker(cursorYOffset);
   }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     this._checkProposedApi();
@@ -189,8 +192,7 @@ export class Terminal implements ITerminalApi {
     this._core.selectLines(start, end);
   }
   public dispose(): void {
-    this._addonManager.dispose();
-    this._core.dispose();
+    super.dispose();
   }
   public scrollLines(amount: number): void {
     this._verifyIntegers(amount);

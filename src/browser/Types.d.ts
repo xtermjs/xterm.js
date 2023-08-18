@@ -3,15 +3,19 @@
  * @license MIT
  */
 
-import { IDecorationOptions, IDecoration, IDisposable, IMarker } from 'xterm';
+import { IDecorationOptions, IDecoration, IDisposable, IMarker, Terminal as ITerminalApi } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
 import { ICoreTerminal, CharData, ITerminalOptions, IColor } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 
-export interface ITerminal extends IPublicTerminal, ICoreTerminal {
-  element: HTMLElement | undefined;
+/**
+ * A portion of the public API that are implemented identially internally and simply passed through.
+ */
+type InternalPassthroughApis = Omit<ITerminalApi, 'buffer' | 'parser' | 'unicode' | 'modes' | 'writeln' | 'loadAddon'>;
+
+export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   screenElement: HTMLElement | undefined;
   browser: IBrowser;
   buffer: IBuffer;
@@ -26,60 +30,6 @@ export interface ITerminal extends IPublicTerminal, ICoreTerminal {
   onWillOpen: IEvent<HTMLElement>;
 
   cancel(ev: Event, force?: boolean): boolean | void;
-}
-
-// Portions of the public API that are required by the internal Terminal
-export interface IPublicTerminal extends IDisposable {
-  textarea: HTMLTextAreaElement | undefined;
-  rows: number;
-  cols: number;
-  buffer: IBuffer;
-  markers: IMarker[];
-  onCursorMove: IEvent<void>;
-  onData: IEvent<string>;
-  onBinary: IEvent<string>;
-  onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
-  onLineFeed: IEvent<void>;
-  onScroll: IEvent<number>;
-  onSelectionChange: IEvent<void>;
-  onRender: IEvent<{ start: number, end: number }>;
-  onResize: IEvent<{ cols: number, rows: number }>;
-  onWriteParsed: IEvent<void>;
-  onTitleChange: IEvent<string>;
-  onBell: IEvent<void>;
-  blur(): void;
-  focus(): void;
-  resize(columns: number, rows: number): void;
-  open(parent: HTMLElement): void;
-  attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
-  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
-  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
-  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
-  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
-  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
-  registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
-  deregisterCharacterJoiner(joinerId: number): void;
-  addMarker(cursorYOffset: number): IMarker;
-  registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
-  hasSelection(): boolean;
-  getSelection(): string;
-  getSelectionPosition(): IBufferRange | undefined;
-  clearSelection(): void;
-  select(column: number, row: number, length: number): void;
-  selectAll(): void;
-  selectLines(start: number, end: number): void;
-  dispose(): void;
-  scrollLines(amount: number): void;
-  scrollPages(pageCount: number): void;
-  scrollToTop(): void;
-  scrollToBottom(): void;
-  scrollToLine(line: number): void;
-  clear(): void;
-  write(data: string | Uint8Array, callback?: () => void): void;
-  paste(data: string): void;
-  refresh(start: number, end: number): void;
-  clearTextureAtlas(): void;
-  reset(): void;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
@@ -118,7 +68,10 @@ export interface IColorSet {
   selectionInactiveBackgroundTransparent: IColor;
   selectionInactiveBackgroundOpaque: IColor;
   ansi: IColor[];
+  /** Maps original colors to colors that respect minimum contrast ratio. */
   contrastCache: IColorContrastCache;
+  /** Maps original colors to colors that respect _half_ of the minimum contrast ratio. */
+  halfContrastCache: IColorContrastCache;
 }
 
 export type ReadonlyColorSet = Readonly<Omit<IColorSet, 'ansi'>> & { ansi: Readonly<Pick<IColorSet, 'ansi'>['ansi']> };
@@ -142,12 +95,15 @@ export interface IPartialColorSet {
 
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
-  syncScrollArea(immediate?: boolean): void;
+  readonly onRequestScrollLines: IEvent<{ amount: number, suppressScrollEvent: boolean }>;
+  syncScrollArea(immediate?: boolean, force?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[], cursorElement?: HTMLElement };
   handleWheel(ev: WheelEvent): boolean;
   handleTouchStart(ev: TouchEvent): void;
   handleTouchMove(ev: TouchEvent): boolean;
+  scrollLines(disp: number): void;  // todo api name?
+  reset(): void;
 }
 
 export interface ILinkifierEvent {

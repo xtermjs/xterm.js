@@ -5,7 +5,7 @@
 
 import { CharData, IBufferLine, ICellData, IAttributeData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, NULL_CELL_WORD, WHITESPACE_CELL_CHAR, Content, StyleFlags, BgFlags, FgFlags } from 'common/buffer/Constants';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content, StyleFlags, BgFlags, FgFlags, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 
@@ -38,6 +38,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
   abstract clone(): IBufferLine;
   abstract translateToString(trimRight: boolean, startCol: number, endCol: number): string;
   abstract getTrimmedLength(): number;
+  abstract getNoBgTrimmedLength(): number;
   abstract _getChars(cursor: CellData): string;
   abstract cleanupMemory(): number;
 
@@ -1103,6 +1104,18 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
       /*
     for (let i = this.length - 1; i >= 0; --i) {
       if ((this._data[i * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK)) {
+        return i + (this._data[i * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT);
+      }
+    }
+    return 0;
+    */
+  }
+
+  public getNoBgTrimmedLength(): number {
+    return this.getTrimmedLength(); // FIXME
+    /*
+    for (let i = this.length - 1; i >= 0; --i) {
+      if ((this._data[i * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK) || (this._data[i * CELL_SIZE + Cell.BG] & Attributes.CM_MASK)) {
         return i + (this._data[i * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT);
       }
     }

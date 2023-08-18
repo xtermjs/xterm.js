@@ -43,7 +43,8 @@ export class BufferService extends Disposable implements IBufferService {
     this.cols = cols;
     this.rows = rows;
     this.buffers.resize(cols, rows);
-    // TODO: This doesn't fire when scrollback changes - add a resize event to BufferSet and forward event
+    // TODO: This doesn't fire when scrollback changes - add a resize event to BufferSet and forward
+    //       event
     this._onResize.fire({ cols, rows });
   }
 
@@ -145,35 +146,6 @@ export class BufferService extends Disposable implements IBufferService {
 
     if (!suppressScrollEvent) {
       this._onScroll.fire(buffer.ydisp);
-    }
-  }
-
-  /**
-   * Scroll the display of the terminal by a number of pages.
-   * @param pageCount The number of pages to scroll (negative scrolls up).
-   */
-  public scrollPages(pageCount: number): void {
-    this.scrollLines(pageCount * (this.rows - 1));
-  }
-
-  /**
-   * Scrolls the display of the terminal to the top.
-   */
-  public scrollToTop(): void {
-    this.scrollLines(-this.buffer.ydisp);
-  }
-
-  /**
-   * Scrolls the display of the terminal to the bottom.
-   */
-  public scrollToBottom(): void {
-    this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
-  }
-
-  public scrollToLine(line: number): void {
-    const scrollAmount = line - this.buffer.ydisp;
-    if (scrollAmount !== 0) {
-      this.scrollLines(scrollAmount);
     }
   }
 }

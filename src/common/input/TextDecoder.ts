@@ -28,8 +28,8 @@ export function utf32ToString(data: Uint32Array, start: number = 0, end: number 
   for (let i = start; i < end; ++i) {
     let codepoint = data[i];
     if (codepoint > 0xFFFF) {
-      // JS strings are encoded as UTF16, thus a non BMP codepoint gets converted into a surrogate pair
-      // conversion rules:
+      // JS strings are encoded as UTF16, thus a non BMP codepoint gets converted into a surrogate
+      // pair conversion rules:
       //  - subtract 0x10000 from code point, leaving a 20 bit number
       //  - add high 10 bits to 0xD800  --> first surrogate
       //  - add low 10 bits to 0xDC00   --> second surrogate

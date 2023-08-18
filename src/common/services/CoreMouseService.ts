@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 

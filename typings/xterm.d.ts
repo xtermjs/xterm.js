@@ -26,7 +26,8 @@ declare module 'xterm' {
   export interface ITerminalOptions {
     /**
      * Whether to allow the use of proposed API. When false, any usage of APIs
-     * marked as experimental/proposed will throw an error. The default is false.
+     * marked as experimental/proposed will throw an error. The default is
+     * false.
      */
     allowProposedApi?: boolean;
 
@@ -60,7 +61,7 @@ declare module 'xterm' {
     cursorBlink?: boolean;
 
     /**
-     * The style of the cursor.
+     * The style of the cursor when the terminal is focused.
      */
     cursorStyle?: 'block' | 'underline' | 'bar';
 
@@ -70,10 +71,16 @@ declare module 'xterm' {
     cursorWidth?: number;
 
     /**
-     * Whether to draw custom glyphs for block element and box drawing characters instead of using
-     * the font. This should typically result in better rendering with continuous lines, even when
-     * line height and letter spacing is used. Note that this doesn't work with the DOM renderer
-     * which renders all characters using the font. The default is true.
+     * The style of the cursor when the terminal is not focused.
+     */
+    cursorInactiveStyle?: 'outline' | 'block' | 'bar' | 'underline' | 'none';
+
+    /**
+     * Whether to draw custom glyphs for block element and box drawing
+     * characters instead of using the font. This should typically result in
+     * better rendering with continuous lines, even when line height and letter
+     * spacing is used. Note that this doesn't work with the DOM renderer which
+     * renders all characters using the font. The default is true.
      */
     customGlyphs?: boolean;
 
@@ -116,6 +123,13 @@ declare module 'xterm' {
      * The font weight used to render bold text.
      */
     fontWeightBold?: FontWeight;
+
+    /**
+     * Whether to ignore the bracketed paste mode. When true, this will always
+     * paste without the `\x1b[200~` and `\x1b[201~` sequences, even when the
+     * shell enables bracketed mode.
+     */
+    ignoreBracketedPasteMode?: boolean;
 
     /**
      * The spacing in whole pixels between characters.
@@ -268,9 +282,9 @@ declare module 'xterm' {
     windowsPty?: IWindowsPty;
 
     /**
-     * A string containing all characters that are considered word separated by the
-     * double click to select work logic.
-    */
+     * A string containing all characters that are considered word separated by
+     * the double click to select work logic.
+     */
     wordSeparator?: string;
 
     /**
@@ -318,7 +332,10 @@ declare module 'xterm' {
     selectionBackground?: string;
     /** The selection foreground color */
     selectionForeground?: string;
-    /** The selection background color when the terminal does not have focus (can be transparent) */
+    /**
+     * The selection background color when the terminal does not have focus (can
+     * be transparent)
+     */
     selectionInactiveBackground?: string;
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string;
@@ -375,23 +392,23 @@ declare module 'xterm' {
    */
   export interface ILogger {
     /**
-     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
-     * debug.
+     * Log a debug message, this will only be called if
+     * {@link ITerminalOptions.logLevel} is set to debug.
      */
     debug(message: string, ...args: any[]): void;
     /**
-     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
-     * info or below.
+     * Log a debug message, this will only be called if
+     * {@link ITerminalOptions.logLevel} is set to info or below.
      */
     info(message: string, ...args: any[]): void;
     /**
-     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
-     * warn or below.
+     * Log a debug message, this will only be called if
+     * {@link ITerminalOptions.logLevel} is set to warn or below.
      */
     warn(message: string, ...args: any[]): void;
     /**
-     * Log a debug message, this will only be called if {@link ITerminalOptions.logLevel} is set to
-     * error or below.
+     * Log a debug message, this will only be called if
+     * {@link ITerminalOptions.logLevel} is set to error or below.
      */
     error(message: string | Error, ...args: any[]): void;
   }
@@ -431,8 +448,6 @@ declare module 'xterm' {
 
   /**
    * Represents a disposable that tracks is disposed state.
-   * @param onDispose event listener and
-   * @param isDisposed property.
    */
   export interface IDisposableWithEvent extends IDisposable {
     /**
@@ -447,7 +462,8 @@ declare module 'xterm' {
   }
 
   /**
-   * Represents a decoration in the terminal that is associated with a particular marker and DOM element.
+   * Represents a decoration in the terminal that is associated with a
+   * particular marker and DOM element.
    */
   export interface IDecoration extends IDisposableWithEvent {
     /*
@@ -470,9 +486,9 @@ declare module 'xterm' {
     element: HTMLElement | undefined;
 
     /**
-     * The options for the overview ruler that can be updated.
-     * This will only take effect when {@link IDecorationOptions.overviewRulerOptions}
-     * were provided initially.
+     * The options for the overview ruler that can be updated. This will only
+     * take effect when {@link IDecorationOptions.overviewRulerOptions} were
+     * provided initially.
      */
     options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
   }
@@ -519,24 +535,26 @@ declare module 'xterm' {
     readonly height?: number;
 
     /**
-     * The background color of the cell(s). When 2 decorations both set the foreground color the
-     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     * The background color of the cell(s). When 2 decorations both set the
+     * foreground color the last registered decoration will be used. Only the
+     * `#RRGGBB` format is supported.
      */
     readonly backgroundColor?: string;
 
     /**
-     * The foreground color of the cell(s). When 2 decorations both set the foreground color the
-     * last registered decoration will be used. Only the `#RRGGBB` format is supported.
+     * The foreground color of the cell(s). When 2 decorations both set the
+     * foreground color the last registered decoration will be used. Only the
+     * `#RRGGBB` format is supported.
      */
     readonly foregroundColor?: string;
 
     /**
      * What layer to render the decoration at when {@link backgroundColor} or
-     * {@link foregroundColor} are used. `'bottom'` will render under the selection, `'top`' will
-     * render above the selection\*.
+     * {@link foregroundColor} are used. `'bottom'` will render under the
+     * selection, `'top`' will render above the selection\*.
      *
-     * *\* The selection will render on top regardless of layer on the canvas renderer due to how
-     * it renders selection separately.*
+     * *\* The selection will render on top regardless of layer on the canvas
+     * renderer due to how it renders selection separately.*
      */
     readonly layer?: 'bottom' | 'top';
 
@@ -547,7 +565,7 @@ declare module 'xterm' {
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
-    overviewRulerOptions?: IDecorationOverviewRulerOptions
+    overviewRulerOptions?: IDecorationOverviewRulerOptions;
   }
 
   /**
@@ -567,7 +585,8 @@ declare module 'xterm' {
   }
 
   /**
-   * Enable various window manipulation and report features (CSI Ps ; Ps ; Ps t).
+   * Enable various window manipulation and report features
+   * (`CSI Ps ; Ps ; Ps t`).
    *
    * Most settings have no default implementation, as they heavily rely on
    * the embedding environment.
@@ -587,10 +606,10 @@ declare module 'xterm' {
    *
    * Note on security:
    * Most features are meant to deal with some information of the host machine
-   * where the terminal runs on. This is seen as a security risk possibly leaking
-   * sensitive data of the host to the program in the terminal. Therefore all options
-   * (even those without a default implementation) are guarded by the boolean flag
-   * and disabled by default.
+   * where the terminal runs on. This is seen as a security risk possibly
+   * leaking sensitive data of the host to the program in the terminal.
+   * Therefore all options (even those without a default implementation) are
+   * guarded by the boolean flag and disabled by default.
    */
   export interface IWindowOptions {
     /**
@@ -858,9 +877,9 @@ declare module 'xterm' {
     onData: IEvent<string>;
 
     /**
-     * Adds an event listener for when a key is pressed. The event value contains the
-     * string that will be sent in the data event as well as the DOM event that
-     * triggered it.
+     * Adds an event listener for when a key is pressed. The event value
+     * contains the string that will be sent in the data event as well as the
+     * DOM event that triggered it.
      * @returns an `IDisposable` to stop listening.
      */
     onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
@@ -1028,10 +1047,11 @@ declare module 'xterm' {
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using
-     *  @param decorationOptions, which takes a marker and an optional anchor,
-     *  width, height, and x offset from the anchor. Returns the decoration or
-     *  undefined if the alt buffer is active or the marker has already been disposed of.
-     *  @throws when options include a negative x offset.
+     * @param decorationOptions, which takes a marker and an optional anchor,
+     * width, height, and x offset from the anchor. Returns the decoration or
+     * undefined if the alt buffer is active or the marker has already been
+     * disposed of.
+     * @throws when options include a negative x offset.
      */
     registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 
@@ -1137,7 +1157,8 @@ declare module 'xterm' {
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
     /**
-     * Writes text to the terminal, performing the necessary transformations for pasted text.
+     * Writes text to the terminal, performing the necessary transformations for
+     * pasted text.
      * @param data The text to write to the terminal.
      */
     paste(data: string): void;
@@ -1151,10 +1172,10 @@ declare module 'xterm' {
     refresh(start: number, end: number): void;
 
     /**
-     * Clears the texture atlas of the canvas renderer if it's active. Doing this will force a
-     * redraw of all glyphs which can workaround issues causing the texture to become corrupt, for
-     * example Chromium/Nvidia has an issue where the texture gets messed up when resuming the OS
-     * from sleep.
+     * Clears the texture atlas of the canvas renderer if it's active. Doing
+     * this will force a redraw of all glyphs which can workaround issues
+     * causing the texture to become corrupt, for example Chromium/Nvidia has an
+     * issue where the texture gets messed up when resuming the OS from sleep.
      */
     clearTextureAtlas(): void;
 
@@ -1225,32 +1246,34 @@ declare module 'xterm' {
      * @param text The text of the link.
      * @param range The buffer range of the link.
      */
-     activate(event: MouseEvent, text: string, range: IBufferRange): void;
+    activate(event: MouseEvent, text: string, range: IBufferRange): void;
 
-     /**
-      * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
-      * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
-      * that will cause mouse events to not fall through and activate other links.
-      * @param event The mouse event triggering the callback.
-      * @param text The text of the link.
-      * @param range The buffer range of the link.
-      */
-     hover?(event: MouseEvent, text: string, range: IBufferRange): void;
+    /**
+     * Called when the mouse hovers the link. To use this to create a DOM-based
+     * hover tooltip, create the hover element within `Terminal.element` and
+     * add the `xterm-hover` class to it, that will cause mouse events to not
+     * fall through and activate other links.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     * @param range The buffer range of the link.
+     */
+    hover?(event: MouseEvent, text: string, range: IBufferRange): void;
 
-     /**
-      * Called when the mouse leaves the link.
-      * @param event The mouse event triggering the callback.
-      * @param text The text of the link.
-      * @param range The buffer range of the link.
-      */
-     leave?(event: MouseEvent, text: string, range: IBufferRange): void;
+    /**
+     * Called when the mouse leaves the link.
+     * @param event The mouse event triggering the callback.
+     * @param text The text of the link.
+     * @param range The buffer range of the link.
+     */
+    leave?(event: MouseEvent, text: string, range: IBufferRange): void;
 
-     /**
-      * Whether to receive non-HTTP URLs from LinkProvider. When false, any usage of non-HTTP URLs
-      * will be ignored. Enabling this option without proper protection in `activate` function
-      * may cause security issues such as XSS.
-      */
-     allowNonHttpProtocols?: boolean;
+    /**
+     * Whether to receive non-HTTP URLs from LinkProvider. When false, any
+     * usage of non-HTTP URLs will be ignored. Enabling this option without
+     * proper protection in `activate` function may cause security issues such
+     * as XSS.
+     */
+    allowNonHttpProtocols?: boolean;
   }
 
   /**
@@ -1282,9 +1305,9 @@ declare module 'xterm' {
     text: string;
 
     /**
-     * What link decorations to show when hovering the link, this property is tracked and changes
-     * made after the link is provided will trigger changes. If not set, all decroations will be
-     * enabled.
+     * What link decorations to show when hovering the link, this property is
+     * tracked and changes made after the link is provided will trigger changes.
+     * If not set, all decroations will be enabled.
      */
     decorations?: ILinkDecorations;
 
@@ -1296,9 +1319,10 @@ declare module 'xterm' {
     activate(event: MouseEvent, text: string): void;
 
     /**
-     * Called when the mouse hovers the link. To use this to create a DOM-based hover tooltip,
-     * create the hover element within `Terminal.element` and add the `xterm-hover` class to it,
-     * that will cause mouse events to not fall through and activate other links.
+     * Called when the mouse hovers the link. To use this to create a DOM-based
+     * hover tooltip, create the hover element within `Terminal.element` and add
+     * the `xterm-hover` class to it, that will cause mouse events to not fall
+     * through and activate other links.
      * @param event The mouse event triggering the callback.
      * @param text The text of the link.
      */
@@ -1422,7 +1446,8 @@ declare module 'xterm' {
 
   export interface IBufferElementProvider {
     /**
-     * Provides a document fragment or HTMLElement containing the buffer elements.
+     * Provides a document fragment or HTMLElement containing the buffer
+     * elements.
      */
     provideBufferElements(): DocumentFragment | HTMLElement;
   }
@@ -1669,43 +1694,43 @@ declare module 'xterm' {
   export interface IParser {
     /**
      * Adds a handler for CSI escape sequences.
-     * @param id Specifies the function identifier under which the callback
-     * gets registered, e.g. {final: 'm'} for SGR.
+     * @param id Specifies the function identifier under which the callback gets
+     * registered, e.g. {final: 'm'} for SGR.
      * @param callback The function to handle the sequence. The callback is
-     * called with the numerical params. If the sequence has subparams the
-     * array will contain subarrays with their numercial values.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * called with the numerical params. If the sequence has subparams the array
+     * will contain subarrays with their numercial values. Return `true` if the
+     * sequence was handled, `false` if the parser should try a previous
+     * handler. The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
     registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
-     * @param id Specifies the function identifier under which the callback
-     * gets registered, e.g. {intermediates: '$' final: 'q'} for DECRQSS.
+     * @param id Specifies the function identifier under which the callback gets
+     * registered, e.g. {intermediates: '$' final: 'q'} for DECRQSS.
      * @param callback The function to handle the sequence. Note that the
      * function will only be called once if the sequence finished sucessfully.
      * There is currently no way to intercept smaller data chunks, data chunks
-     * will be stored up until the sequence is finished. Since DCS sequences
-     * are not limited by the amount of data this might impose a problem for
-     * big payloads. Currently xterm.js limits DCS payload to 10 MB
-     * which should give enough room for most use cases.
-     * The function gets the payload and numerical parameters as arguments.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * will be stored up until the sequence is finished. Since DCS sequences are
+     * not limited by the amount of data this might impose a problem for big
+     * payloads. Currently xterm.js limits DCS payload to 10 MB which should
+     * give enough room for most use cases. The function gets the payload and
+     * numerical parameters as arguments. Return `true` if the sequence was
+     * handled, `false` if the parser should try a previous handler. The most
+     * recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
     registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
-     * @param id Specifies the function identifier under which the callback
-     * gets registered, e.g. {intermediates: '%' final: 'G'} for
-     * default charset selection.
+     * @param id Specifies the function identifier under which the callback gets
+     * registered, e.g. {intermediates: '%' final: 'G'} for default charset
+     * selection.
      * @param callback The function to handle the sequence.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * Return `true` if the sequence was handled, `false` if the parser should
+     * try a previous handler. The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
     registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
@@ -1716,13 +1741,13 @@ declare module 'xterm' {
      * @param callback The function to handle the sequence. Note that the
      * function will only be called once if the sequence finished sucessfully.
      * There is currently no way to intercept smaller data chunks, data chunks
-     * will be stored up until the sequence is finished. Since OSC sequences
-     * are not limited by the amount of data this might impose a problem for
-     * big payloads. Currently xterm.js limits OSC payload to 10 MB
-     * which should give enough room for most use cases.
-     * The callback is called with OSC data string.
-     * Return `true` if the sequence was handled, `false` if the parser should try
-     * a previous handler. The most recently added handler is tried first.
+     * will be stored up until the sequence is finished. Since OSC sequences are
+     * not limited by the amount of data this might impose a problem for big
+     * payloads. Currently xterm.js limits OSC payload to 10 MB which should
+     * give enough room for most use cases. The callback is called with OSC data
+     * string. Return `true` if the sequence was handled, `false` if the parser
+     * should try a previous handler. The most recently added handler is tried
+     * first.
      * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
@@ -1808,6 +1833,6 @@ declare module 'xterm' {
     /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */
-    readonly wraparoundMode: boolean
+    readonly wraparoundMode: boolean;
   }
 }
