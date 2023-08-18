@@ -4,7 +4,7 @@
  */
 
 import { IAttributeData, IColorRGB, IExtendedAttrs } from 'common/Types';
-import { Attributes, FgFlags, BgFlags, UnderlineStyle, ExtFlags } from 'common/buffer/Constants';
+import { Attributes, FgFlags, BgFlags, UnderlineStyle, StyleFlags, ExtFlags } from 'common/buffer/Constants';
 
 export class AttributeData implements IAttributeData {
   public static toColorRGB(value: number): IColorRGB {
@@ -48,8 +48,8 @@ export class AttributeData implements IAttributeData {
   public isStrikethrough(): number { return this.fg & FgFlags.STRIKETHROUGH; }
   public isProtected(): number     { return this.bg & BgFlags.PROTECTED; }
   public isOverline(): number      { return this.bg & BgFlags.OVERLINE; }
-  public getStyleFlags(): number {  return ((this.fg & 0xFC000000) >> 24) | ((this.bg & 0xFC000000) >> 16); }
-  public setStyleFlags(flags: number): void {
+  public getStyleFlags(): StyleFlags {  return ((this.fg & 0xFC000000) >> 24) | ((this.bg & 0xFC000000) >> 16); }
+  public setStyleFlags(flags: StyleFlags): void {
     this.fg = (this.fg & 0x03ffffff) | ((flags << 24) & 0xFC000000);
     this.bg = (this.bg & 0x03ffffff) | ((flags << 16) & 0xFC000000);
   }
@@ -59,6 +59,8 @@ export class AttributeData implements IAttributeData {
   public getBgColorMode(): number { return this.bg & Attributes.CM_MASK; }
   public getFg(): number { return this.fg & Attributes.CM_COLOR_MASK; }
   public getBg(): number { return this.bg & Attributes.CM_COLOR_MASK; }
+  public setFg(fg: number): void { this.fg = (fg & 0x3ffffff) | (this.fg & 0xfc000000); }
+  public setBg(bg: number): void { this.bg = (bg & 0x3ffffff) | (this.bg & 0xfc000000); }
   public isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
   public isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
   public isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }

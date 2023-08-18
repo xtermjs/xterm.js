@@ -9,7 +9,7 @@ import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IBufferSet } from 'common/buffer/Types';
-import { Attributes, UnderlineStyle } from 'common/buffer/Constants';
+import { Attributes, StyleFlags, UnderlineStyle } from 'common/buffer/Constants';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;
@@ -141,12 +141,12 @@ export interface IOscLinkData {
 export interface IAttributeData {
   /**
    * "fg" is a 32-bit unsigned integer that stores the foreground color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
+   * significant bits and additional flags in the remaining 8 bits. @deprecated
    */
   fg: number;
   /**
    * "bg" is a 32-bit unsigned integer that stores the background color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
+   * significant bits and additional flags in the remaining 8 bits. @deprecated
    */
   bg: number;
   /**
@@ -171,7 +171,7 @@ export interface IAttributeData {
 
   getFg(): number; // 26 bits including CM_MASK
   getBg(): number; // 26 bits including CM_MASK
-  getStyleFlags(): number;
+  getStyleFlags(): StyleFlags;
 
   /**
    * The color mode of the foreground color which determines how to decode {@link getFgColor},
@@ -218,8 +218,8 @@ export interface IAttributeData {
 /** Cell data */
 export interface ICellData extends IAttributeData {
   content: number;
-  column: number; // 0-origin; -1 if unknown
-  combinedData: string;
+  //column: number; // 0-origin; -1 if unknown
+  //combinedData: string;
   isCombined(): number;
   getWidth(): number;
   getChars(): string;
@@ -233,6 +233,7 @@ export interface ICellData extends IAttributeData {
  */
 export interface IBufferLine {
   length: number;
+  /** If the previous line wrapped (overflows) into the current line. */
   isWrapped: boolean;
   /**
    * Initialize cursot to beginning of line.
