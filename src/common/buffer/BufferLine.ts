@@ -310,6 +310,54 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     this._dataLength += count;
   }
 
+  /** for debugging */
+  getText(skipReplace: string = ' '): string {
+    return this.translateToString(true, 0, this.length, skipReplace);
+  }
+
+  /* Human-readable display of _data array, for debugging */
+  _showData(start = 0, end = this._dataLength) {
+    let s = '[';
+    let toffset = 0;
+    for (let i = 0; i < end; i++) {
+      const word = this._data[i];
+      const kind = BufferLine.wKind(word);
+      let code: string | number = kind;
+      const wnum = word & 0xfffffff;
+      switch (kind) {
+        case DataKind.FG: code = 'FG'; break;
+        case DataKind.BG: code = 'BG'; break;
+        case DataKind.STYLE_FLAGS: code = 'STYLE'; break;
+        case DataKind.SKIP_COLUMNS: code = 'SKIP'; break;
+        case DataKind.CLUSTER_w1: code = 'CL1'; break;
+        case DataKind.CLUSTER_w2: code = 'C2'; break;
+        case DataKind.TEXT_w1: code = 'T1'; break;
+        case DataKind.TEXT_w2: code = 'T1'; break;
+      }
+      const hasText = BufferLine.wKindIsText(kind);
+      if (i >= start) {
+        if (i !== start) {
+          s += ', ';
+        }
+        let value;
+        if (hasText) {
+          value = JSON.stringify(this._text.substring(toffset, toffset + wnum));
+        } else if (kind === DataKind.BG || kind === DataKind.FG) {
+          value = (wnum >> 24) + '#' + (wnum & 0xffffff).toString(16);
+        } else if (kind !== DataKind.SKIP_COLUMNS) {
+          value = '#' + wnum.toString(16);
+        } else {
+          value = wnum.toString();
+        }
+        s += code + ': ' + value;
+      }
+      if (hasText) {
+        toffset += wnum;
+      }
+    }
+    return s + ']';
+  }
+
   /** Check invariants. Useful for debugging. */
   _check(): void {
     function error(str: string) {
@@ -1182,7 +1230,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
   */
   }
 
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, skipReplace: string = WHITESPACE_CELL_CHAR): string {
     let s = '';
     let itext = 0;
     let col = 0;
@@ -1194,7 +1242,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         s += text.substring(pendingStart, pendingStart + pendingLength);
         pendingLength = 0;
       } else if (handleSkip && pendingLength > 0) {
-        s += WHITESPACE_CELL_CHAR.repeat(pendingLength);
+        s += skipReplace.repeat(pendingLength);
         pendingLength = 0;
       }
       pendingStart = -1;
