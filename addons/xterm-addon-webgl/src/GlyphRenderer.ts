@@ -11,6 +11,8 @@ import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/rend
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
+import { ILogService } from 'common/services/Services';
+import { traceCall } from 'common/services/LogService';
 
 interface IVertices {
   attributes: Float32Array;
@@ -212,6 +214,7 @@ export class GlyphRenderer extends Disposable {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
+  @traceCall
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
     // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
     // should not instantiate any variables unless a new glyph is drawn to the cache where the

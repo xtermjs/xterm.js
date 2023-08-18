@@ -424,7 +424,7 @@ function initOptions(term: TerminalType): void {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    logLevel: ['debug', 'info', 'warn', 'error', 'off'],
+    logLevel: ['trace', 'debug', 'info', 'warn', 'error', 'off'],
     theme: ['default', 'xtermjs', 'sapphire', 'light'],
     wordSeparator: null
   };
@@ -1227,7 +1227,7 @@ Test BG-colored Erase (BCE):
   for all cells to the right.
 
  def   41   42   43   44   45   46   47\x1b[47m
-\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m     
+\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m
 \x1b[m\x1b[5X\x1b[41m\x1b[5C\x1b[5X\x1b[42m\x1b[5C\x1b[5X\x1b[43m\x1b[5C\x1b[5X\x1b[44m\x1b[5C\x1b[5X\x1b[45m\x1b[5C\x1b[5X\x1b[46m\x1b[5C\x1b[5X\x1b[47m\x1b[5C\x1b[5X\x1b[m
 `;
   term.write(data.split('\n').join('\r\n'));
@@ -1263,7 +1263,7 @@ function initImageAddonExposed(): void {
       term.write('\r\n');
       term.write(new Uint8Array(buffer));
     });
-  
+
   const iip_demo = (url: string) => () => fetch(url)
   .then(resp => resp.arrayBuffer())
   .then(buffer => {

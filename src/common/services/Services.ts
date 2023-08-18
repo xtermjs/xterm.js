@@ -142,11 +142,12 @@ export interface IInstantiationService {
 }
 
 export enum LogLevelEnum {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-  OFF = 4
+  TRACE = 0,
+  DEBUG = 1,
+  INFO = 2,
+  WARN = 3,
+  ERROR = 4,
+  OFF = 5
 }
 
 export const ILogService = createDecorator<ILogService>('LogService');
@@ -155,6 +156,7 @@ export interface ILogService {
 
   readonly logLevel: LogLevelEnum;
 
+  trace(message: any, ...optionalParams: any[]): void;
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
   warn(message: any, ...optionalParams: any[]): void;
@@ -201,7 +203,7 @@ export interface IOptionsService {
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 
 export interface ITerminalOptions {
   allowProposedApi?: boolean;
