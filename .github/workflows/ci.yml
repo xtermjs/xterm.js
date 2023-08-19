@@ -87,7 +87,7 @@ jobs:
       run: unzip -v compressed-build.zip -d ${{ github.workspace }}
     - name: Unzip artifacts (Windows)
       if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -o ${{ github.workspace }}
+      run: 7z x compressed-build.zip -o${{ github.workspace }}
     - name: Use Node.js 18.x
       uses: actions/setup-node@v3
       with:
