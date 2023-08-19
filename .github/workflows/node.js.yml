@@ -11,14 +11,11 @@ on:
 
 jobs:
   build:
-
     strategy:
       matrix:
-        node-version: [16.x, 18.x] # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [16.x, 18.x]
         runs-on: [macos-latest, ubuntu-latest, windows-latest]
-
     runs-on: ${{ matrix.runs-on }}
-    
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
@@ -34,3 +31,21 @@ jobs:
       run: yarn lint
     - name: Lint API
       run: yarn lint-api
+      
+  integration-tests-chromium:
+    strategy:
+      matrix:
+        node-version: [18.x]
+        runs-on: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'yarn'
+    - name: Install dependencies and build
+      run: yarn --frozen-lockfile
+    - name: Integration tests (Chromium)
+      run: yarn test-api-chromium --headless --forbid-only
