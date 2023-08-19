@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    # If a commit reaches master, assume it has passed CI via PR and publish
+    # without running tests to save time to publish
+    branches: [ "master" ]
+  # TODO: Remove before merge
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'yarn'
+    - name: Install dependencies and build
+      run: yarn --frozen-lockfile
+    - name: Package headless
+      run: |
+        yarn package-headless
+        node ./bin/package_headless.js
+    - name: Package core and publish
+      run: node ./bin/publish.js --dry
