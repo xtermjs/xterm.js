@@ -42,7 +42,7 @@
     "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
     "build": "tsc -b ./tsconfig.all.json",
     "setup": "npm run build",
-    "presetup": "node ./bin/install-addons.js",
+    "postinstall": "node ./bin/install-addons.js",
     "postsetup": "npm run inwasm",
     "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",

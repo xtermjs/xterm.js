@@ -98,8 +98,6 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies
       run: yarn --frozen-lockfile
-    - name: Install addon dependencies
-      run: node ./bin/install-addons.js
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
