@@ -35,26 +35,32 @@ describe('WebLinksAddon', () => {
     browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
+    await page.goto(APP);
+    await openTerminal(page, { cols: 40 });
   });
 
   after(async () => await browser.close());
-  beforeEach(async () => await page.goto(APP));
-
-  it('.com', async function(): Promise<any> {
-    await testHostName('foo.com');
+  beforeEach(async () => {
+    await page.evaluate(`
+      window._linkaddon?.dispose();
+      window.term.reset();
+      window._linkaddon = new window.WebLinksAddon();
+      window.term.loadAddon(window._linkaddon);
+    `);
   });
 
-  it('.com.au', async function(): Promise<any> {
-    await testHostName('foo.com.au');
-  });
-
-  it('.io', async function(): Promise<any> {
-    await testHostName('foo.io');
-  });
+  it('.com', async () => await testHostName('foo.com'));
+  it('.com.au', async () => await testHostName('foo.com.au'));
+  it('.io', async () => await testHostName('foo.io'));
 
   describe('correct buffer offsets & uri', () => {
+    beforeEach(async () => {
+      await page.evaluate(`
+        window._linkStateData = {uri:''};
+        window._linkaddon._options.hover = (event, uri, range) => { window._linkStateData = { uri, range }; };
+      `);
+    });
     it('all half width', async () => {
-      setupCustom();
       await writeSync(page, 'aaa http://example.com aaa http://example.com aaa');
       await resetAndHover(5, 0);
       await evalLinkStateData('http://example.com', { start: { x: 5, y: 1 }, end: { x: 22, y: 1 } });
@@ -62,7 +68,6 @@ describe('WebLinksAddon', () => {
       await evalLinkStateData('http://example.com', { start: { x: 28, y: 1 }, end: { x: 5, y: 2 } });
     });
     it('url after full width', async () => {
-      setupCustom();
       await writeSync(page, '￥￥￥ http://example.com ￥￥￥ http://example.com aaa');
       await resetAndHover(8, 0);
       await evalLinkStateData('http://example.com', { start: { x: 8, y: 1 }, end: { x: 25, y: 1 } });
@@ -70,7 +75,6 @@ describe('WebLinksAddon', () => {
       await evalLinkStateData('http://example.com', { start: { x: 34, y: 1 }, end: { x: 11, y: 2 } });
     });
     it('full width within url and before', async () => {
-      setupCustom();
       await writeSync(page, '￥￥￥ https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 ￥￥￥');
       await resetAndHover(8, 0);
       await evalLinkStateData('https://ko.wikipedia.org/wiki/위키백과:대문', { start: { x: 8, y: 1 }, end: { x: 11, y: 2 } });
@@ -80,7 +84,6 @@ describe('WebLinksAddon', () => {
       await evalLinkStateData('https://ko.wikipedia.org/wiki/위키백과:대문', { start: { x: 17, y: 2 }, end: { x: 19, y: 3 } });
     });
     it('name + password url after full width and combining', async () => {
-      setupCustom();
       await writeSync(page, '￥￥￥cafe\u0301 http://test:password@example.com/some_path');
       await resetAndHover(12, 0);
       await evalLinkStateData('http://test:password@example.com/some_path', { start: { x: 12, y: 1 }, end: { x: 13, y: 2 } });
@@ -91,8 +94,6 @@ describe('WebLinksAddon', () => {
 });
 
 async function testHostName(hostname: string): Promise<void> {
-  await openTerminal(page, { cols: 40 });
-  await page.evaluate(`window.term.loadAddon(new window.WebLinksAddon())`);
   const data = `  http://${hostname}  \\r\\n` +
     `  http://${hostname}/a~b#c~d?e~f  \\r\\n` +
     `  http://${hostname}/colon:test  \\r\\n` +
@@ -115,14 +116,6 @@ async function pollForLinkAtCell(col: number, row: number, value: string): Promi
   await pollFor(page, `!!Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').length`, true);
   const text = await page.evaluate(`Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').map(el => el.textContent).join('');`);
   assert.deepEqual(text, value);
-}
-
-async function setupCustom(): Promise<void> {
-  await openTerminal(page, { cols: 40 });
-  await page.evaluate(`window._linkStateData = {uri:''};
-window._linkaddon = new window.WebLinksAddon();
-window._linkaddon._options.hover = (event, uri, range) => { window._linkStateData = { uri, range }; };
-window.term.loadAddon(window._linkaddon);`);
 }
 
 async function resetAndHover(col: number, row: number): Promise<void> {
