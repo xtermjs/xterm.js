@@ -18,7 +18,7 @@ const height = 600;
 let isChromium = false;
 
 describe('InputHandler Integration Tests', function(): void {
-  before(async function(): Promise<any> {
+  before(async () => {
     const browserType = getBrowserType();
     isChromium = browserType.name() === 'chromium';
     browser = await launchBrowser();
@@ -37,7 +37,7 @@ describe('InputHandler Integration Tests', function(): void {
       await page.evaluate(`window.term.reset()`);
     });
 
-    it('CSI Ps @ - ICH: Insert Ps (Blank) Character(s) (default = 1)', async function(): Promise<any> {
+    it('CSI Ps @ - ICH: Insert Ps (Blank) Character(s) (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('foo\\x1b[3D\\x1b[@\\n\\r')
@@ -47,7 +47,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(2), [' foo', '    bar']);
     });
 
-    it('CSI Ps A - CUU: Cursor Up Ps Times (default = 1)', async function(): Promise<any> {
+    it('CSI Ps A - CUU: Cursor Up Ps Times (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('\\n\\n\\n\\n\x1b[Aa')
@@ -57,7 +57,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['', ' b', '', 'a']);
     });
 
-    it('CSI Ps B - CUD: Cursor Down Ps Times (default = 1)', async function(): Promise<any> {
+    it('CSI Ps B - CUD: Cursor Down Ps Times (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ba')
@@ -67,7 +67,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['', 'a', '', ' b']);
     });
 
-    it('CSI Ps C - CUF: Cursor Forward Ps Times (default = 1)', async function(): Promise<any> {
+    it('CSI Ps C - CUF: Cursor Forward Ps Times (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ca')
@@ -77,7 +77,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(1), [' a  b']);
     });
 
-    it('CSI Ps D - CUB: Cursor Backward Ps Times (default = 1)', async function(): Promise<any> {
+    it('CSI Ps D - CUB: Cursor Backward Ps Times (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[Da')
@@ -87,7 +87,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(1), ['fba']);
     });
 
-    it('CSI Ps E - CNL: Cursor Next Line Ps Times (default = 1)', async function(): Promise<any> {
+    it('CSI Ps E - CNL: Cursor Next Line Ps Times (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ea')
@@ -97,7 +97,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['', 'a', '', 'b']);
     });
 
-    it('CSI Ps F - CPL: Cursor Preceding Line Ps Times (default = 1)', async function(): Promise<any> {
+    it('CSI Ps F - CPL: Cursor Preceding Line Ps Times (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('\\n\\n\\n\\n\x1b[Fa')
@@ -107,7 +107,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), ['', 'b', '', 'a', '']);
     });
 
-    it('CSI Ps G - CHA: Cursor Character Absolute [column] (default = [row,1])', async function(): Promise<any> {
+    it('CSI Ps G - CHA: Cursor Character Absolute [column] (default = [row,1])', async () => {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[Ga')
@@ -117,7 +117,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(1), ['aoo      b']);
     });
 
-    it('CSI Ps ; Ps H - CUP: Cursor Position [row;column] (default = [1,1])', async function(): Promise<any> {
+    it('CSI Ps ; Ps H - CUP: Cursor Position [row;column] (default = [1,1])', async () => {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[Ha')
@@ -127,7 +127,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(3), ['aoo', '', '  b']);
     });
 
-    it('CSI Ps I - CHT: Cursor Forward Tabulation Ps tab stops (default = 1)', async function(): Promise<any> {
+    it('CSI Ps I - CHT: Cursor Forward Tabulation Ps tab stops (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ia')
@@ -137,7 +137,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(2), ['        a', '                b']);
     });
 
-    it('CSI Ps J - ED: Erase in Display, VT100', async function(): Promise<any> {
+    it('CSI Ps J - ED: Erase in Display, VT100', async () => {
       const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
       await page.evaluate(`
         // Default: Erase Below
@@ -166,7 +166,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
-    it('CSI ? Ps J - DECSED: Erase in Display, VT220', async function(): Promise<any> {
+    it('CSI ? Ps J - DECSED: Erase in Display, VT220', async () => {
       const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
       await page.evaluate(`
         // Default: Erase Below
@@ -195,7 +195,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
-    it('CSI Ps L - IL: Insert Ps Line(s) (default = 1)', async function(): Promise<any> {
+    it('CSI Ps L - IL: Insert Ps Line(s) (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[La')
@@ -205,7 +205,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['b', '', 'a', 'foo']);
     });
 
-    it('CSI Ps M - DL: Delete Ps Line(s) (default = 1)', async function(): Promise<any> {
+    it('CSI Ps M - DL: Delete Ps Line(s) (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('a\\nb\x1b[1F\x1b[M')
@@ -215,7 +215,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), [' b', '  f', '', '', '']);
     });
 
-    it('CSI Ps P - DCH: Delete Ps Character(s) (default = 1)', async function(): Promise<any> {
+    it('CSI Ps P - DCH: Delete Ps Character(s) (default = 1)', async () => {
       await page.evaluate(`
         // Default
         window.term.write('abc\x1b[1;1H\x1b[P')
@@ -226,7 +226,7 @@ describe('InputHandler Integration Tests', function(): void {
     });
 
     describe('CSI Ps n - DSR: Device Status Report', () => {
-      it('Status Report - CSI 5 n', async function(): Promise<any> {
+      it('Status Report - CSI 5 n', async () => {
         await page.evaluate(`
           window.term.onData(e => window.result = e);
           window.term.write('\\x1b[5n');
@@ -234,7 +234,7 @@ describe('InputHandler Integration Tests', function(): void {
         await pollFor(page, () => page.evaluate(`window.result`), '\x1b[0n');
       });
 
-      it('Report Cursor Position (CPR) - CSI 6 n', async function(): Promise<any> {
+      it('Report Cursor Position (CPR) - CSI 6 n', async () => {
         await page.evaluate(`window.term.write('\\n\\nfoo')`);
         await pollFor(page, () => page.evaluate(`
           [window.term.buffer.active.cursorY, window.term.buffer.active.cursorX]
@@ -246,7 +246,7 @@ describe('InputHandler Integration Tests', function(): void {
         await pollFor(page, () => page.evaluate(`window.result`), '\x1b[3;4R');
       });
 
-      it('Report Cursor Position (DECXCPR) - CSI ? 6 n', async function(): Promise<any> {
+      it('Report Cursor Position (DECXCPR) - CSI ? 6 n', async () => {
         await page.evaluate(`window.term.write('\\n\\nfoo')`);
         await pollFor(page, () => page.evaluate(`
           [window.term.buffer.active.cursorY, window.term.buffer.active.cursorX]
@@ -286,7 +286,7 @@ describe('InputHandler Integration Tests', function(): void {
         await pollFor(page, () => page.evaluate(`window.term.getSelection().length`), 0);
         await page.mouse.up();
       });
-      (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
+      (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async () => {
         await pollFor(page, () => simulatePaste('foo'), 'foo');
         await page.evaluate(`window.term.write('\x1b[?2004h')`);
         await pollFor(page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
@@ -295,7 +295,7 @@ describe('InputHandler Integration Tests', function(): void {
       });
     });
 
-    it('CSI Ps b - REP: Repeat preceding character, ECMA48', async function(): Promise<any> {
+    it('CSI Ps b - REP: Repeat preceding character, ECMA48', async () => {
       // default to 1
       await page.evaluate(`
           window.term.resize(10, 10);
@@ -346,7 +346,7 @@ describe('InputHandler Integration Tests', function(): void {
     });
 
     describe('CSI Ps ; Ps ; Ps t - Window Options', () => {
-      it('should be disabled by default', async function(): Promise<any> {
+      it('should be disabled by default', async () => {
         await page.evaluate(`(() => {
             window._stack = [];
             const _h = window.term.onData(data => window._stack.push(data));
@@ -359,7 +359,7 @@ describe('InputHandler Integration Tests', function(): void {
           })()`);
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), []);
       });
-      it('14 - GetWinSizePixels', async function(): Promise<any> {
+      it('14 - GetWinSizePixels', async () => {
         await page.evaluate(`window.term.options.windowOptions = { getWinSizePixels: true }; `);
         await page.evaluate(`(() => {
             window._stack = [];
@@ -370,7 +370,7 @@ describe('InputHandler Integration Tests', function(): void {
         const d = await getDimensions();
         await pollFor(page, async () => await page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
       });
-      it('16 - GetCellSizePixels', async function(): Promise<any> {
+      it('16 - GetCellSizePixels', async () => {
         await page.evaluate(`window.term.options.windowOptions = { getCellSizePixels: true }; `);
         await page.evaluate(`(() => {
             window._stack = [];
