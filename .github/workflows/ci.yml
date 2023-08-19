@@ -21,8 +21,7 @@ jobs:
     - name: Zip artifacts
       run: |
         cd ${{ github.workspace }}
-        chmod -R 0777 ${{ github.workspace }}
-        zip -r build-artifacts \
+        zip -r build \
           ./out/* \
           ./out-test/* \
           ./addons/xterm-addon-attach/out/* \
@@ -50,6 +49,7 @@ jobs:
       with:
         name: build-artifacts
         path: build.zip
+        if-no-files-found: error
 
   lint:
     needs: build2
