@@ -19,22 +19,23 @@ jobs:
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
     - name: Tar files
-      run: tar -cvf build-artifacts.tar ${{ github.workspace }}
+      run: zip build-artifacts ${{ github.workspace }}
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: build-artifacts
-        path: build-artifacts.tar
+        path: build-artifacts.zip
 
   lint:
     needs: build2
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
     - name: Extract archive
-      run: tar -xvf build-artifacts.tar
+      run: zip -r build-artifacts.zip .
     - name: Display structure of downloaded files
       run: ls -R
     - name: Use Node.js 18.x
@@ -54,13 +55,12 @@ jobs:
         runs-on: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
+    - uses: actions/checkout@v3
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
     - name: Extract archive
-      run: tar -xvf build-artifacts.tar
-    - name: Display structure of downloaded files
-      run: ls -R
+      run: zip -r build-artifacts.zip .
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
     - name: Unit tests
