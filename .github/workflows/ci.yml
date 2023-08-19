@@ -19,7 +19,9 @@ jobs:
     - name: Install dependencies
       run: yarn --frozen-lockfile
     - name: Build
-      run: yarn setup
+      run: |
+        yarn setup
+        yarn inwasm
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
@@ -89,13 +91,15 @@ jobs:
       run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
     - name: Print directory structure
       run: ls -R
-    - name: Use Node.js 18.x
+    - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: ${{ matrix.node-version }}
         cache: 'yarn'
     - name: Install dependencies
       run: yarn --frozen-lockfile
+    - name: Build inwasm
+      run: yarn inwasm
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
