@@ -16,8 +16,10 @@ jobs:
       with:
         node-version: 18.x
         cache: 'yarn'
-    - name: Install dependencies and build
-      run: yarn --frozen-lockfile
+    - name: Install dependencies
+      run: yarn --frozen-lockfile --ignore-scripts
+    - name: Build
+      run: yarn setup
     - name: Zip artifacts
       run: |
         cd ${{ github.workspace }}
