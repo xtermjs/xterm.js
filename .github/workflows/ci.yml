@@ -25,6 +25,7 @@ jobs:
         path: ${{ github.workspace }}
 
   use-build2:
+    needs: build2
     strategy:
       matrix:
         node-version: [16.x, 18.x]
@@ -37,6 +38,8 @@ jobs:
         name: build-artifacts
     - name: Display structure of downloaded files
       run: ls -R
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
 
   build:
     strategy:
