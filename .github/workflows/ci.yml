@@ -87,7 +87,7 @@ jobs:
       run: |
         pwd
         cd ${{ github.workspace }}
-        unzip -v compressed-build.zip
+        unzip compressed-build.zip
     - name: Unzip artifacts (Windows)
       if: runner.os == 'Windows'
       run: 7z x compressed-build.zip -o${{ github.workspace }}
