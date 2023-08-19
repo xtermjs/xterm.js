@@ -1,7 +1,4 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Node.js CI
+name: CI
 
 on:
   push:
@@ -31,7 +28,7 @@ jobs:
       run: yarn lint
     - name: Lint API
       run: yarn lint-api
-      
+
   integration-tests-chromium:
     strategy:
       matrix:
@@ -49,3 +46,21 @@ jobs:
       run: yarn --frozen-lockfile
     - name: Integration tests (Chromium)
       run: yarn test-api-chromium --headless --forbid-only
+
+  integration-tests-firefox:
+    strategy:
+      matrix:
+        node-version: [18.x]
+        runs-on: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'yarn'
+    - name: Install dependencies and build
+      run: yarn --frozen-lockfile
+    - name: Integration tests (Chromium)
+      run: yarn test-api-firefox --headless --forbid-only
