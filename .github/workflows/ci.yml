@@ -86,7 +86,7 @@ jobs:
       run: unzip -o compressed-build.zip
     - name: Unzip artifacts (Windows)
       if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -o${{ github.workspace }}
+      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
     - name: Print directory structure
       run: ls -R
     - name: Use Node.js 18.x
