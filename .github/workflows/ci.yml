@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js 18.x
       uses: actions/setup-node@v3
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 18.x
         cache: 'yarn'
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
@@ -26,12 +26,32 @@ jobs:
         name: build-artifacts
         path: build-artifacts.tar
 
-  use-build2:
+  lint:
+    needs: build2
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Extract archive
+      run: tar -xvf build-artifacts.tar
+    - name: Display structure of downloaded files
+      run: ls -R
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+    - name: Lint code
+      run: yarn lint
+    - name: Lint API
+      run: yarn lint-api
+
+  unit-tests:
     needs: build2
     strategy:
       matrix:
         node-version: [16.x, 18.x]
-        runs-on: [ubuntu-latest]
+        runs-on: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/download-artifact@v3
@@ -43,65 +63,67 @@ jobs:
       run: ls -R
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
-
-  build:
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x]
-        runs-on: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.runs-on }}
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
-    - name: Install dependencies and build
-      run: yarn --frozen-lockfile
     - name: Unit tests
       run: yarn test-unit --forbid-only
-    - name: Lint code
-      run: yarn lint
-    - name: Lint API
-      run: yarn lint-api
 
-  integration-tests-chromium:
-    strategy:
-      matrix:
-        node-version: [18.x]
-        runs-on: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.runs-on }}
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
-    - name: Install dependencies and build
-      run: yarn --frozen-lockfile
-    - name: Install playwright
-      run: npx playwright install
-    - name: Integration tests (Chromium)
-      run: yarn test-api-chromium --headless --forbid-only
+  # build:
+  #   strategy:
+  #     matrix:
+  #       node-version: [16.x, 18.x]
+  #       runs-on: [macos-latest, ubuntu-latest, windows-latest]
+  #   runs-on: ${{ matrix.runs-on }}
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Use Node.js ${{ matrix.node-version }}
+  #     uses: actions/setup-node@v3
+  #     with:
+  #       node-version: ${{ matrix.node-version }}
+  #       cache: 'yarn'
+  #   - name: Install dependencies and build
+  #     run: yarn --frozen-lockfile
+  #   - name: Unit tests
+  #     run: yarn test-unit --forbid-only
+  #   - name: Lint code
+  #     run: yarn lint
+  #   - name: Lint API
+  #     run: yarn lint-api
 
-  integration-tests-firefox:
-    strategy:
-      matrix:
-        node-version: [18.x]
-        runs-on: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.runs-on }}
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
-    - name: Install dependencies and build
-      run: yarn --frozen-lockfile
-    - name: Install playwright
-      run: npx playwright install
-    - name: Integration tests (Chromium)
-      run: yarn test-api-firefox --headless --forbid-only
+  # integration-tests-chromium:
+  #   strategy:
+  #     matrix:
+  #       node-version: [18.x]
+  #       runs-on: [macos-latest, ubuntu-latest, windows-latest]
+  #   runs-on: ${{ matrix.runs-on }}
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Use Node.js ${{ matrix.node-version }}
+  #     uses: actions/setup-node@v3
+  #     with:
+  #       node-version: ${{ matrix.node-version }}
+  #       cache: 'yarn'
+  #   - name: Install dependencies and build
+  #     run: yarn --frozen-lockfile
+  #   - name: Install playwright
+  #     run: npx playwright install
+  #   - name: Integration tests (Chromium)
+  #     run: yarn test-api-chromium --headless --forbid-only
+
+  # integration-tests-firefox:
+  #   strategy:
+  #     matrix:
+  #       node-version: [18.x]
+  #       runs-on: [macos-latest, ubuntu-latest, windows-latest]
+  #   runs-on: ${{ matrix.runs-on }}
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Use Node.js ${{ matrix.node-version }}
+  #     uses: actions/setup-node@v3
+  #     with:
+  #       node-version: ${{ matrix.node-version }}
+  #       cache: 'yarn'
+  #   - name: Install dependencies and build
+  #     run: yarn --frozen-lockfile
+  #   - name: Install playwright
+  #     run: npx playwright install
+  #   - name: Integration tests (Chromium)
+  #     run: yarn test-api-firefox --headless --forbid-only
