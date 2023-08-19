@@ -18,37 +18,33 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
-    - name: Zip artifacts
-      run: |
-        cd ${{ github.workspace }}
-        zip -r build \
-          ./out/* \
-          ./out-test/* \
-          ./addons/xterm-addon-attach/out/* \
-          ./addons/xterm-addon-attach/out-test/* \
-          ./addons/xterm-addon-canvas/out/* \
-          ./addons/xterm-addon-canvas/out-test/* \
-          ./addons/xterm-addon-fit/out/* \
-          ./addons/xterm-addon-fit/out-test/* \
-          ./addons/xterm-addon-image/out/* \
-          ./addons/xterm-addon-image/out-test/* \
-          ./addons/xterm-addon-ligatures/out/* \
-          ./addons/xterm-addon-ligatures/out-test/* \
-          ./addons/xterm-addon-search/out/* \
-          ./addons/xterm-addon-search/out-test/* \
-          ./addons/xterm-addon-serialize/out/* \
-          ./addons/xterm-addon-serialize/out-test/* \
-          ./addons/xterm-addon-unicode11/out/* \
-          ./addons/xterm-addon-unicode11/out-test/* \
-          ./addons/xterm-addon-web-links/out/* \
-          ./addons/xterm-addon-web-links/out-test/* \
-          ./addons/xterm-addon-webgl/out/* \
-          ./addons/xterm-addon-webgl/out-test/*
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: build-artifacts
-        path: build.zip
+        path: |
+          out/
+          out-test/
+          addons/xterm-addon-attach/out/
+          addons/xterm-addon-attach/out-test/
+          addons/xterm-addon-canvas/out/
+          addons/xterm-addon-canvas/out-test/
+          addons/xterm-addon-fit/out/
+          addons/xterm-addon-fit/out-test/
+          addons/xterm-addon-image/out/
+          addons/xterm-addon-image/out-test/
+          addons/xterm-addon-ligatures/out/
+          addons/xterm-addon-ligatures/out-test/
+          addons/xterm-addon-search/out/
+          addons/xterm-addon-search/out-test/
+          addons/xterm-addon-serialize/out/
+          addons/xterm-addon-serialize/out-test/
+          addons/xterm-addon-unicode11/out/
+          addons/xterm-addon-unicode11/out-test/
+          addons/xterm-addon-web-links/out/
+          addons/xterm-addon-web-links/out-test/
+          addons/xterm-addon-webgl/out/
+          addons/xterm-addon-webgl/out-test/
         if-no-files-found: error
 
   lint:
@@ -59,12 +55,6 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
-    - name: Unzip artifacts (Linux, macOS)
-      if: runner.os != 'Windows'
-      run: unzip -l build.zip ${{ github.workspace }}
-    - name: Unzip artifacts (Windows)
-      if: runner.os == 'Windows'
-      run: 7z x build.zip -o${{ github.workspace }}
     - name: Display structure of downloaded files
       run: ls -R
     - name: Use Node.js 18.x
