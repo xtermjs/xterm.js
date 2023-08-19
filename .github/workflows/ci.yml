@@ -19,9 +19,10 @@ jobs:
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
     - name: Zip artifacts
+      shell: pwsh
       run: |
-        cd ${{ github.workspace }}
-        zip -r build-artifacts ${{ github.workspace }}
+        Compress-Archive
+        zip -r build-artifacts ${{ github.workspace }}/*
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
