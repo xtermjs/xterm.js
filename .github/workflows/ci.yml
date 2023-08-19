@@ -60,6 +60,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 18.x
+        cache: 'yarn'
     - name: Install dependencies
       run: yarn --frozen-lockfile --ignore-scripts
     - name: Lint code
@@ -91,6 +92,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 18.x
+        cache: 'yarn'
     - name: Install dependencies
       run: yarn --frozen-lockfile --ignore-scripts
     - name: Unit tests
