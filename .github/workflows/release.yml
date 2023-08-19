@@ -26,4 +26,6 @@ jobs:
         yarn package-headless
         node ./bin/package_headless.js
     - name: Publish to npm
-      run: NPM_AUTH_TOKEN="${{ secrets.NPM_TOKEN }}" node ./bin/publish.js --dry
+      env:
+        NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: node ./bin/publish.js --dry
