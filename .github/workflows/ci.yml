@@ -18,8 +18,8 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
-    - name: Tar files
-      run: zip build-artifacts ${{ github.workspace }}
+    - name: Zip artifacts
+      run: zip -r build-artifacts ${{ github.workspace }}
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
@@ -34,8 +34,8 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
-    - name: Extract archive
-      run: zip -r build-artifacts.zip .
+    - name: Unzip artifacts
+      run: unzip -l build-artifacts.zip .
     - name: Display structure of downloaded files
       run: ls -R
     - name: Use Node.js 18.x
