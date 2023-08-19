@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build2:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -53,8 +53,27 @@ jobs:
         if-no-files-found: error
 
   lint:
-    needs: build2
     runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+    - name: Install dependencies
+      run: yarn --frozen-lockfile --ignore-scripts
+    - name: Lint code
+      run: yarn lint
+    - name: Lint API
+      run: yarn lint-api
+
+  unit-tests:
+    needs: build
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x]
+        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/download-artifact@v3
@@ -74,33 +93,6 @@ jobs:
         node-version: 18.x
     - name: Install dependencies
       run: yarn --frozen-lockfile --ignore-scripts
-    - name: Lint code
-      run: yarn lint
-    - name: Lint API
-      run: yarn lint-api
-
-  unit-tests:
-    needs: build2
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x]
-        runs-on: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.runs-on }}
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
-    - name: Display structure of downloaded files
-      run: ls -R
-    - name: Unzip artifacts (Linux, macOS)
-      if: runner.os != 'Windows'
-      run: unzip compressed-build.zip -d ${{ github.workspace }}
-    - name: Unzip artifacts (Windows)
-      if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -o ${{ github.workspace }}
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
