@@ -26,23 +26,23 @@ jobs:
           ./out/* \
           ./out-test/* \
           ./addons/xterm-addon-attach/out/* \
-          ./addons/xterm-addon-attach/out-test/*
+          ./addons/xterm-addon-attach/out-test/* \
           ./addons/xterm-addon-canvas/out/* \
-          ./addons/xterm-addon-canvas/out-test/*
+          ./addons/xterm-addon-canvas/out-test/* \
           ./addons/xterm-addon-fit/out/* \
-          ./addons/xterm-addon-fit/out-test/*
+          ./addons/xterm-addon-fit/out-test/* \
           ./addons/xterm-addon-image/out/* \
-          ./addons/xterm-addon-image/out-test/*
+          ./addons/xterm-addon-image/out-test/* \
           ./addons/xterm-addon-ligatures/out/* \
-          ./addons/xterm-addon-ligatures/out-test/*
+          ./addons/xterm-addon-ligatures/out-test/* \
           ./addons/xterm-addon-search/out/* \
-          ./addons/xterm-addon-search/out-test/*
+          ./addons/xterm-addon-search/out-test/* \
           ./addons/xterm-addon-serialize/out/* \
-          ./addons/xterm-addon-serialize/out-test/*
+          ./addons/xterm-addon-serialize/out-test/* \
           ./addons/xterm-addon-unicode11/out/* \
-          ./addons/xterm-addon-unicode11/out-test/*
+          ./addons/xterm-addon-unicode11/out-test/* \
           ./addons/xterm-addon-web-links/out/* \
-          ./addons/xterm-addon-web-links/out-test/*
+          ./addons/xterm-addon-web-links/out-test/* \
           ./addons/xterm-addon-webgl/out/* \
           ./addons/xterm-addon-webgl/out-test/*
     - name: Upload artifacts
