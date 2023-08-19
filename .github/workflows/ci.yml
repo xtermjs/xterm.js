@@ -44,6 +44,8 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
+    - name: Install playwright
+      run: npx playwright install
     - name: Integration tests (Chromium)
       run: yarn test-api-chromium --headless --forbid-only
 
@@ -62,5 +64,7 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
+    - name: Install playwright
+      run: npx playwright install
     - name: Integration tests (Chromium)
       run: yarn test-api-firefox --headless --forbid-only
