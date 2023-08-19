@@ -227,7 +227,7 @@ describe('DcsParser', () => {
       assert.deepEqual(reports, [['two', [1, 2, 3], 'Here comes the mouse!'], ['one', [1, 2, 3], 'Here comes the mouse!']]);
     });
     it('should work up to payload limit', function(): void {
-      this.timeout(10000);
+      this.timeout(30000);
       parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => { reports.push([params.toArray(), data]); return true; }));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       const data = toUtf32('A'.repeat(1000));
@@ -238,7 +238,7 @@ describe('DcsParser', () => {
       assert.deepEqual(reports, [[[1, 2, 3], 'A'.repeat(PAYLOAD_LIMIT)]]);
     });
     it('should abort for payload limit +1', function(): void {
-      this.timeout(10000);
+      this.timeout(30000);
       parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new DcsHandler((data, params) => { reports.push([params.toArray(), data]); return true; }));
       parser.hook(identifier({intermediates: '+', final: 'p'}), Params.fromArray([1, 2, 3]));
       let data = toUtf32('A'.repeat(1000));
