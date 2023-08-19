@@ -64,7 +64,7 @@ jobs:
       run: ls -R
     - name: Unzip artifacts (Linux, macOS)
       if: runner.os != 'Windows'
-      run: unzip compressed-build.zip -d ${{ github.workspace }}
+      run: unzip -v compressed-build.zip -d ${{ github.workspace }}
     - name: Unzip artifacts (Windows)
       if: runner.os == 'Windows'
       run: 7z x compressed-build.zip -o ${{ github.workspace }}
