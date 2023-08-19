@@ -19,9 +19,7 @@ jobs:
     - name: Install dependencies
       run: yarn --frozen-lockfile
     - name: Build
-      run: |
-        yarn setup
-        yarn inwasm
+      run: yarn setup
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
