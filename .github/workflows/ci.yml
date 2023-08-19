@@ -110,6 +110,17 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts (Linux, macOS)
+      if: runner.os != 'Windows'
+      run: unzip -o compressed-build.zip
+    - name: Unzip artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Print directory structure
+      run: ls -R
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
@@ -131,6 +142,17 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts (Linux, macOS)
+      if: runner.os != 'Windows'
+      run: unzip -o compressed-build.zip
+    - name: Unzip artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Print directory structure
+      run: ls -R
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
