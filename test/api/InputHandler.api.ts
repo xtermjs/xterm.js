@@ -37,7 +37,7 @@ describe('InputHandler Integration Tests', function(): void {
       await page.evaluate(`window.term.reset()`);
     });
 
-    it('ICH: Insert Ps (Blank) Character(s) (default = 1) - CSI Ps @', async function(): Promise<any> {
+    it('CSI Ps @ - ICH: Insert Ps (Blank) Character(s) (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('foo\\x1b[3D\\x1b[@\\n\\r')
@@ -47,7 +47,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(2), [' foo', '    bar']);
     });
 
-    it('CUU: Cursor Up Ps Times (default = 1) - CSI Ps A', async function(): Promise<any> {
+    it('CSI Ps A - CUU: Cursor Up Ps Times (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('\\n\\n\\n\\n\x1b[Aa')
@@ -57,7 +57,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['', ' b', '', 'a']);
     });
 
-    it('CUD: Cursor Down Ps Times (default = 1) - CSI Ps B', async function(): Promise<any> {
+    it('CSI Ps B - CUD: Cursor Down Ps Times (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ba')
@@ -67,7 +67,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['', 'a', '', ' b']);
     });
 
-    it('CUF: Cursor Forward Ps Times (default = 1) - CSI Ps C', async function(): Promise<any> {
+    it('CSI Ps C - CUF: Cursor Forward Ps Times (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ca')
@@ -77,7 +77,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(1), [' a  b']);
     });
 
-    it('CUB: Cursor Backward Ps Times (default = 1) - CSI Ps D', async function(): Promise<any> {
+    it('CSI Ps D - CUB: Cursor Backward Ps Times (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[Da')
@@ -87,7 +87,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(1), ['fba']);
     });
 
-    it('CNL: Cursor Next Line Ps Times (default = 1) - CSI Ps E', async function(): Promise<any> {
+    it('CSI Ps E - CNL: Cursor Next Line Ps Times (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ea')
@@ -97,7 +97,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['', 'a', '', 'b']);
     });
 
-    it('CPL: Cursor Preceding Line Ps Times (default = 1) - CSI Ps F', async function(): Promise<any> {
+    it('CSI Ps F - CPL: Cursor Preceding Line Ps Times (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('\\n\\n\\n\\n\x1b[Fa')
@@ -107,7 +107,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), ['', 'b', '', 'a', '']);
     });
 
-    it('CHA: Cursor Character Absolute [column] (default = [row,1]) - CSI Ps G', async function(): Promise<any> {
+    it('CSI Ps G - CHA: Cursor Character Absolute [column] (default = [row,1])', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[Ga')
@@ -117,7 +117,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(1), ['aoo      b']);
     });
 
-    it('CUP: Cursor Position [row;column] (default = [1,1]) - CSI Ps ; Ps H', async function(): Promise<any> {
+    it('CSI Ps ; Ps H - CUP: Cursor Position [row;column] (default = [1,1])', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[Ha')
@@ -127,7 +127,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(3), ['aoo', '', '  b']);
     });
 
-    it('CHT: Cursor Forward Tabulation Ps tab stops (default = 1) - CSI Ps I', async function(): Promise<any> {
+    it('CSI Ps I - CHT: Cursor Forward Tabulation Ps tab stops (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('\x1b[Ia')
@@ -137,7 +137,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(2), ['        a', '                b']);
     });
 
-    it('ED: Erase in Display, VT100 - CSI Ps J', async function(): Promise<any> {
+    it('CSI Ps J - ED: Erase in Display, VT100', async function(): Promise<any> {
       const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
       await page.evaluate(`
         // Default: Erase Below
@@ -166,7 +166,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
-    it('DECSED: Erase in Display, VT220 - CSI ? Ps J', async function(): Promise<any> {
+    it('CSI ? Ps J - DECSED: Erase in Display, VT220', async function(): Promise<any> {
       const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
       await page.evaluate(`
         // Default: Erase Below
@@ -195,7 +195,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
 
-    it('IL: Insert Ps Line(s) (default = 1) - CSI Ps L', async function(): Promise<any> {
+    it('CSI Ps L - IL: Insert Ps Line(s) (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('foo\x1b[La')
@@ -205,7 +205,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(4), ['b', '', 'a', 'foo']);
     });
 
-    it('DL: Delete Ps Line(s) (default = 1) - CSI Ps M', async function(): Promise<any> {
+    it('CSI Ps M - DL: Delete Ps Line(s) (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('a\\nb\x1b[1F\x1b[M')
@@ -215,7 +215,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(5), [' b', '  f', '', '', '']);
     });
 
-    it('DCH: Delete Ps Character(s) (default = 1) - CSI Ps P', async function(): Promise<any> {
+    it('CSI Ps P - DCH: Delete Ps Character(s) (default = 1)', async function(): Promise<any> {
       await page.evaluate(`
         // Default
         window.term.write('abc\x1b[1;1H\x1b[P')
@@ -225,7 +225,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(2), ['bc', 'f']);
     });
 
-    describe('DSR: Device Status Report', () => {
+    describe('CSI Ps n - DSR: Device Status Report', () => {
       it('Status Report - CSI 5 n', async function(): Promise<any> {
         await page.evaluate(`
           window.term.onData(e => window.result = e);
@@ -259,45 +259,43 @@ describe('InputHandler Integration Tests', function(): void {
       });
     });
 
-    describe('SM: Set Mode', () => {
-      describe('CSI ? Pm h', () => {
-        it('Pm = 1003, Set Use All Motion (any event) Mouse Tracking', async () => {
-          const coords: { left: number, top: number, bottom: number, right: number } = await page.evaluate(`
-            (function() {
-              const rect = window.term.element.getBoundingClientRect();
-              return { left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right };
-            })();
-          `);
-          // Click and drag and ensure there is a selection
-          await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
-          await page.mouse.down();
-          await page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
-          assert.ok(await page.evaluate(`window.term.getSelection().length`) as number > 0, 'mouse events are off so there should be a selection');
-          await page.mouse.up();
-          // Clear selection
-          await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
-          await pollFor(page, () => page.evaluate(`window.term.getSelection().length`), 0);
-          // Enable mouse events
-          await page.evaluate(`window.term.write('\x1b[?1003h')`);
-          // Click and drag and ensure there is no selection
-          await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
-          await page.mouse.down();
-          await page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
-          // mouse events are on so there should be no selection
-          await pollFor(page, () => page.evaluate(`window.term.getSelection().length`), 0);
-          await page.mouse.up();
-        });
-        (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
-          await pollFor(page, () => simulatePaste('foo'), 'foo');
-          await page.evaluate(`window.term.write('\x1b[?2004h')`);
-          await pollFor(page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
-          await page.evaluate(`window.term.write('\x1b[?2004l')`);
-          await pollFor(page, () => simulatePaste('baz'), 'baz');
-        });
+    describe('CSI ? Pm h - DECSET: Private Mode Set', () => {
+      it('Pm = 1003, Set Use All Motion (any event) Mouse Tracking', async () => {
+        const coords: { left: number, top: number, bottom: number, right: number } = await page.evaluate(`
+          (function() {
+            const rect = window.term.element.getBoundingClientRect();
+            return { left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right };
+          })();
+        `);
+        // Click and drag and ensure there is a selection
+        await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
+        await page.mouse.down();
+        await page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
+        assert.ok(await page.evaluate(`window.term.getSelection().length`) as number > 0, 'mouse events are off so there should be a selection');
+        await page.mouse.up();
+        // Clear selection
+        await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
+        await pollFor(page, () => page.evaluate(`window.term.getSelection().length`), 0);
+        // Enable mouse events
+        await page.evaluate(`window.term.write('\x1b[?1003h')`);
+        // Click and drag and ensure there is no selection
+        await page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
+        await page.mouse.down();
+        await page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
+        // mouse events are on so there should be no selection
+        await pollFor(page, () => page.evaluate(`window.term.getSelection().length`), 0);
+        await page.mouse.up();
+      });
+      (isChromium ? it : it.skip)('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
+        await pollFor(page, () => simulatePaste('foo'), 'foo');
+        await page.evaluate(`window.term.write('\x1b[?2004h')`);
+        await pollFor(page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
+        await page.evaluate(`window.term.write('\x1b[?2004l')`);
+        await pollFor(page, () => simulatePaste('baz'), 'baz');
       });
     });
 
-    it('REP: Repeat preceding character, ECMA48 - CSI Ps b', async function(): Promise<any> {
+    it('CSI Ps b - REP: Repeat preceding character, ECMA48', async function(): Promise<any> {
       // default to 1
       await page.evaluate(`
           window.term.resize(10, 10);
@@ -347,7 +345,7 @@ describe('InputHandler Integration Tests', function(): void {
       await pollFor(page, () => getLinesAsArray(3), ['#', ' #', 'abcd####']);
     });
 
-    describe('Window Options - CSI Ps ; Ps ; Ps t', () => {
+    describe('CSI Ps ; Ps ; Ps t - Window Options', () => {
       it('should be disabled by default', async function(): Promise<any> {
         await page.evaluate(`(() => {
             window._stack = [];
