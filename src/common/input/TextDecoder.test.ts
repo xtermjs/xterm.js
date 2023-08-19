@@ -54,7 +54,7 @@ describe('text encodings', () => {
     assert.equal(utf32ToString(data), s);
   });
 
-  describe.only('StringToUtf32 decoder', () => {
+  describe('StringToUtf32 decoder', () => {
     describe('full codepoint test', () => {
       for (let min = 0; min < 65535; min += BATCH_SIZE) {
         const max = Math.min(min + BATCH_SIZE, 65536);
