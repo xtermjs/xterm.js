@@ -108,3 +108,6 @@ div:first-of-type.grid {
 .vt-button * {
   margin-right: 1em;
 }
+input#opt-cols_rows {
+    width: 6em;
+}
