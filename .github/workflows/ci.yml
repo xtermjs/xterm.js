@@ -18,11 +18,13 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies and build
       run: yarn --frozen-lockfile
+    - name: Tar files
+      run: tar -cvf build-artifacts.tar ${{ github.workspace }}
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: build-artifacts
-        path: ${{ github.workspace }}
+        path: build-artifacts.tar
 
   use-build2:
     needs: build2
@@ -32,10 +34,11 @@ jobs:
         runs-on: [ubuntu-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
-    - uses: actions/checkout@v3
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
+    - name: Extract archive
+      run: tar -xvf build-artifacts.tar
     - name: Display structure of downloaded files
       run: ls -R
     - name: Use Node.js ${{ matrix.node-version }}
