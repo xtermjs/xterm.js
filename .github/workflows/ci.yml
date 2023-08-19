@@ -21,7 +21,7 @@ jobs:
     - name: Zip artifacts
       run: |
         cd ${{ github.workspace }}
-        zip -r build \
+        zip -r compressed-build \
           ./out/* \
           ./out-test/* \
           ./addons/xterm-addon-attach/out/* \
@@ -75,6 +75,8 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 18.x
+    - name: Install dependencies
+      run: yarn --frozen-lockfile --ignore-scripts
     - name: Lint code
       run: yarn lint
     - name: Lint API
