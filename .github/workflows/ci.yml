@@ -49,7 +49,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-artifacts
-        path: build-artifacts.zip
+        path: build.zip
 
   lint:
     needs: build2
@@ -61,10 +61,10 @@ jobs:
         name: build-artifacts
     - name: Unzip artifacts (Linux, macOS)
       if: runner.os != 'Windows'
-      run: unzip -l build-artifacts.zip ${{ github.workspace }}
+      run: unzip -l build.zip ${{ github.workspace }}
     - name: Unzip artifacts (Windows)
       if: runner.os == 'Windows'
-      run: 7z x build-artifacts.zip -o${{ github.workspace }}
+      run: 7z x build.zip -o${{ github.workspace }}
     - name: Display structure of downloaded files
       run: ls -R
     - name: Use Node.js 18.x
