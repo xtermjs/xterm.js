@@ -492,7 +492,6 @@ function initOptions(term: TerminalType): void {
     const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      let ival;
       if (o === 'lineHeight') {
         term.options.lineHeight = parseFloat(input.value);
       } else if (o === 'scrollSensitivity') {
