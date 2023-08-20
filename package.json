@@ -60,7 +60,7 @@
     "esbuild-demo-watch": "node bin/esbuild.mjs --demo-client --watch",
 
     "check-types": "tsc -b ./tsconfig.all.json --emitDeclarationOnly",
-    "watch-types": "tsc -w -b ./tsconfig.all.json --emitDeclarationOnly"
+    "watch-types": "tsc -b -w ./tsconfig.all.json --emitDeclarationOnly"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",
