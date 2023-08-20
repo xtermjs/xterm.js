@@ -53,7 +53,6 @@
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts",
 
-    "types-watch": "npm run watch --emitDeclarationOnly",
     "esbuild": "node bin/esbuild_all.mjs",
     "esbuild-dev": "node bin/esbuild_all.mjs --dev",
     "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch",
