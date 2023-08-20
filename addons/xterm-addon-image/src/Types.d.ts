@@ -6,7 +6,6 @@
 import { IDisposable, IMarker, Terminal } from 'xterm';
 
 // private imports from base repo we build against
-import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from 'common/buffer/Constants';
 import type { AttributeData } from 'common/buffer/AttributeData';
 import type { IParams, IDcsHandler, IOscHandler, IEscapeSequenceParser } from 'common/parser/Types';
 import type { IBufferLine, IExtendedAttrs, IInputHandler } from 'common/Types';
@@ -14,15 +13,8 @@ import type { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import type { IRenderDimensions } from 'browser/renderer/shared/Types';
 import type { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 
-export const enum Cell {
-  CONTENT = 0,  // codepoint and wcwidth information (enum Content)
-  FG = 1,       // foreground color in lower 3 bytes (rgb), attrs in 4th byte (enum FgFlags)
-  BG = 2,       // background color in lower 3 bytes (rgb), attrs in 4th byte (enum BgFlags)
-  SIZE = 3      // size of single cell on buffer array
-}
-
 // export some privates for local usage
-export { AttributeData, IParams, IDcsHandler, IOscHandler, BgFlags, IRenderDimensions, IRenderService, Content, ExtFlags, Attributes, UnderlineStyle, ReadonlyColorSet };
+export { AttributeData, IParams, IDcsHandler, IOscHandler, IRenderDimensions, IRenderService, ReadonlyColorSet };
 
 /**
  * Plugin ctor options.

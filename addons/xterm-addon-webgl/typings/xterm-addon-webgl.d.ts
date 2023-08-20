@@ -27,6 +27,11 @@ declare module 'xterm-addon-webgl' {
      */
     public readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
+    /**
+     * An event that is fired when the a page is removed from the texture atlas.
+     */
+    public readonly onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+
     constructor(preserveDrawingBuffer?: boolean);
 
     /**

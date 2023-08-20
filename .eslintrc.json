@@ -39,7 +39,8 @@
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
-    "**/*.js"
+    "**/*.js",
+    "**/*.mjs"
   ],
   "plugins": [
     "@typescript-eslint",
