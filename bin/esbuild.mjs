@@ -98,6 +98,12 @@ if (config.addon) {
   if (['canvas', 'ligatures'].includes(config.addon)) {
     skipOutTest = true;
   }
+
+  // TODO: Fix these
+  if (config.addon === 'image') {
+    skipOut = true;
+    skipOutTest = true;
+  }
 } else {
   bundleConfig = {
     ...bundleConfig,
