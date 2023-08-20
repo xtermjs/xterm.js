@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    # If a commit reaches master, assume it has passed CI via PR and publish
+    # without running tests to save time to publish
+    branches: [ "master" ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'yarn'
+    - name: Install dependencies
+      run: yarn --frozen-lockfile
+    - name: Build
+      run: yarn setup
+    - name: Package headless
+      run: |
+        yarn package-headless
+        node ./bin/package_headless.js
+    - name: Publish to npm
+      env:
+        NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: node ./bin/publish.js
