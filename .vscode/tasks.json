@@ -18,7 +18,7 @@
       "problemMatcher": []
     },
     {
-      "label": "types-watch",
+      "label": "watch-types",
       "type": "npm",
       "script": "types-watch",
       "group": "build",
@@ -29,7 +29,31 @@
       }
     },
     {
-      "label": "esbuild-dev-watch",
+      "label": "build-addons",
+      "type": "npm",
+      "script": "esbuild-addons-dev",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "vscode"
+      }
+    },
+    {
+      "label": "build-inwasm",
+      "type": "npm",
+      "script": "inwasm",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "vscode",
+        "close": true
+      }
+    },
+    {
+      "label": "watch-esbuild",
+      "dependsOn": ["build-addons", "build-inwasm"],
       "type": "npm",
       "script": "esbuild-dev-watch",
       "group": "build",
@@ -40,7 +64,7 @@
       }
     },
     {
-      "label": "start",
+      "label": "serve-demo",
       "type": "npm",
       "script": "start",
       "group": "build",
@@ -52,7 +76,7 @@
     },
     {
       "label": "Start demo",
-      "dependsOn": ["start", "types-watch", "esbuild-dev-watch"],
+      "dependsOn": ["serve-demo", "watch-types", "watch-esbuild"],
       "group": {
         "kind": "build",
         "isDefault": true

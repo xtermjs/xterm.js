@@ -424,7 +424,7 @@ type Enumerate<N extends number, Acc extends number[] = []> = Acc['length'] exte
 type IntRange<F extends number, T extends number> = Exclude<Enumerate<T>, Enumerate<F>>;
 
 export type ColorIndex = IntRange<0, 256>; // number from 0 to 255
-type AllColorIndex = ColorIndex | SpecialColorIndex;
+export type AllColorIndex = ColorIndex | SpecialColorIndex;
 export const enum SpecialColorIndex {
   FOREGROUND = 256,
   BACKGROUND = 257,
