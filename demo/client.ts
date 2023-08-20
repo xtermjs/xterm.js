@@ -18,7 +18,7 @@ import { ImageAddon, IImageAddonOptions } from '../addons/xterm-addon-image/out/
 // import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 // import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 // import { WebglAddon } from '../addons/xterm-addon-webgl/lib/WebglAddon';
-import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
+// import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
 
 // Use packages versions
@@ -31,7 +31,7 @@ import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { SerializeAddon } from 'xterm-addon-serialize';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import { WebglAddon } from 'xterm-addon-webgl';
-// import { Unicode11Addon } from 'xterm-addon-unicode11';
+import { Unicode11Addon } from 'xterm-addon-unicode11';
 // import { LigaturesAddon } from 'xterm-addon-ligatures';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
@@ -85,8 +85,8 @@ interface IDemoAddon<T extends AddonType> {
               T extends 'serialize' ? SerializeAddon :
                 T extends 'web-links' ? WebLinksAddon :
                   T extends 'webgl' ? WebglAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'ligatures' ? typeof LigaturesAddon :
+                    T extends 'unicode11' ? Unicode11Addon :
+                      T extends 'ligatures' ? LigaturesAddon :
                         never
   );
 }
