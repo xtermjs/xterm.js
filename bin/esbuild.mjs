@@ -11,6 +11,7 @@ import { argv } from 'process';
 const config = {
   isDev: argv.includes('--dev'),
   isWatch: argv.includes('--watch'),
+  isDemoClient: argv.includes('--demo-client'),
   addon: argv.find(e => e.startsWith('--addon='))?.replace(/^--addon=/, ''),
 };
 
@@ -77,6 +78,15 @@ if (config.addon) {
     entryPoints: [`src/browser/public/Terminal.ts`],
     outfile: `lib/xterm.js`,
   };
+}
+
+if (config.isDemoClient) {
+  buildConfig = {
+    ...buildConfig,
+    entryPoints: [`demo/client.ts`],
+    outfile: 'demo/dist/client-bundle.js',
+    external: ['util', 'os', 'fs', 'path', 'stream']
+  }
 }
 
 if (config.isWatch) {

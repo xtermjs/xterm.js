@@ -4,14 +4,20 @@ import { spawn } from "child_process";
 import { readdir } from "fs/promises";
 import { argv } from "process";
 
-const addons = (await readdir('addons')).map(e => e.replace('xterm-addon-', ''));
-
 /** @type {{cp: import("child_process").ChildProcessByStdio, name: string}[]} */
 const jobs = [];
-jobs.push(createJob('xterm', undefined));
+
+// Core job
+jobs.push(createJob('xterm', []));
+
+// Addon jobs
+const addons = (await readdir('addons')).map(e => e.replace('xterm-addon-', ''));
 for (const addon of addons) {
-  jobs.push(createJob(`xterm-addon-${addon}`, addon));
+  jobs.push(createJob(`xterm-addon-${addon}`, [`--addon=${addon}`]));
 }
+
+// Demo job
+jobs.push(createJob('demo-client', [`--demo-client`]));
 
 await Promise.all(jobs.map((job, i) => {
   return new Promise(r => {
@@ -31,15 +37,15 @@ function log(message) {
 
 /**
  * @param {string} name
- * @param {string | undefined} addon
+ * @param {string[]} extraArgs
  */
-function createJob(name, addon) {
+function createJob(name, extraArgs) {
   log(`Starting \x1b[32m${name}\x1b[0m...`);
-  const args = ['bin/esbuild.mjs'];
-  if (addon) {
-    args.push(`--addon=${addon}`);
-  }
-  args.push(...argv);
+  const args = [
+    'bin/esbuild.mjs',
+    ...extraArgs,
+    ...argv
+  ];
   return {
     name,
     cp: spawn('node', args, { stdio: ["inherit", "inherit", "inherit"] })
