@@ -20,7 +20,7 @@
     {
       "label": "watch-types",
       "type": "npm",
-      "script": "watch",
+      "script": "watch-types",
       "group": "build",
       "isBackground": true,
       "problemMatcher": "$tsc-watch",

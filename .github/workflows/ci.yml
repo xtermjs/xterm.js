@@ -22,8 +22,8 @@ jobs:
       run: |
         tsc -b addons/xterm-addon-image/src/tsconfig.json
         yarn esbuild
-    - name: Build
-      run: yarn setup
+    - name: Check types # TODO: This could be its own job
+      run: yarn check-types
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
