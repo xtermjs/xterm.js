@@ -29,19 +29,9 @@
       }
     },
     {
-      "label": "build-addons",
-      "type": "npm",
-      "script": "esbuild-addons-dev",
-      "group": "build",
-      "isBackground": true,
-      "problemMatcher": [],
-      "presentation": {
-        "group": "vscode"
-      }
-    },
-    {
-      "label": "build-inwasm",
-      "dependsOn": "build-addons",
+      "label": "inwasm",
+      // TODO: inwasm can be invalidated easily (#4646)
+      "dependsOn": "esbuild-dev",
       "type": "npm",
       "script": "inwasm",
       "group": "build",
@@ -52,8 +42,33 @@
       }
     },
     {
+      "label": "esbuild-dev",
+      // TODO: Remove this when the demo imports xterm-addon-image
+      "dependsOn": ["tsc-addon-image"],
+      "type": "npm",
+      "script": "esbuild-dev",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "vscode"
+      }
+    },
+    {
+      "label": "tsc-addon-image",
+      "type": "shell",
+      "command": "node_modules/.bin/tsc -b addons/xterm-addon-image/src/tsconfig.json",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "vscode",
+        "close": true
+      }
+    },
+    {
       "label": "watch-esbuild",
-      "dependsOn": ["build"],
+      "dependsOn": ["inwasm", "esbuild-dev"],
       "type": "npm",
       "script": "esbuild-dev-watch",
       "group": "build",
@@ -73,10 +88,6 @@
       "presentation": {
         "group": "vscode"
       }
-    },
-    {
-      "label": "build",
-      "dependsOn": ["build-addons", "build-inwasm"]
     },
     {
       "label": "Start demo",
