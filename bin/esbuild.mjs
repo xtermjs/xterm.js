@@ -52,37 +52,73 @@ function getAddonEntryPoint(addon) {
 }
 
 /** @type {esbuild.BuildOptions} */
-let buildConfig = {
+let bundleConfig = {
   bundle: true,
   ...commonOptions,
   ...(config.isDev ? devOptions : prodOptions)
 };
 
+/** @type {esbuild.BuildOptions} */
+let outConfig = {
+  format: 'cjs'
+}
+let skipOut = false;
+
+/** @type {esbuild.BuildOptions} */
+let outTestConfig = {
+  format: 'cjs'
+}
+let skipOutTest = false;
+
 if (config.addon) {
-  buildConfig = {
-    ...buildConfig,
+  bundleConfig = {
+    ...bundleConfig,
     entryPoints: [`addons/xterm-addon-${config.addon}/src/${getAddonEntryPoint(config.addon)}.ts`],
     outfile: `addons/xterm-addon-${config.addon}/lib/xterm-addon-${config.addon}.js`,
   };
+  outConfig = {
+    ...outConfig,
+    entryPoints: [`addons/xterm-addon-${config.addon}/src/**/*.ts`],
+    outdir: `addons/xterm-addon-${config.addon}/out/`
+  };
+  outTestConfig = {
+    ...outConfig,
+    entryPoints: [`addons/xterm-addon-${config.addon}/test/**/*.ts`],
+    outdir: `addons/xterm-addon-${config.addon}/out-test/`
+  };
 
   if (config.addon === 'ligatures') {
-    buildConfig.platform = 'node';
+    bundleConfig.platform = 'node';
   }
 
   if (config.addon === 'serialize') {
-    buildConfig.tsconfig = 'addons/xterm-addon-serialize/src/tsconfig.json'
+    bundleConfig.tsconfig = 'addons/xterm-addon-serialize/src/tsconfig.json'
+  }
+
+  if (['canvas', 'ligatures'].includes(config.addon)) {
+    skipOutTest = true;
   }
 } else {
-  buildConfig = {
-    ...buildConfig,
+  bundleConfig = {
+    ...bundleConfig,
     entryPoints: [`src/browser/public/Terminal.ts`],
     outfile: `lib/xterm.js`,
+  };
+  outConfig = {
+    ...outConfig,
+    entryPoints: ['src/**/*.ts'],
+    outdir: 'out/'
+  };
+  outTestConfig = {
+    ...outConfig,
+    entryPoints: ['test/**/*.ts'],
+    outdir: 'out-test/'
   };
 }
 
 if (config.isDemoClient) {
-  buildConfig = {
-    ...buildConfig,
+  bundleConfig = {
+    ...bundleConfig,
     entryPoints: [`demo/client.ts`],
     outfile: 'demo/dist/client-bundle.js',
     external: ['util', 'os', 'fs', 'path', 'stream']
@@ -91,7 +127,19 @@ if (config.isDemoClient) {
 
 if (config.isWatch) {
   // TODO: This doesn't report errors?
-  (await context(buildConfig)).watch();
+  context(bundleConfig).then(e => e.watch());
+  if (!skipOut) {
+    context(outConfig).then(e => e.watch());
+  }
+  if (!skipOutTest) {
+    context(outTestConfig).then(e => e.watch());
+  }
 } else {
-  await build(buildConfig)
+  await build(bundleConfig);
+  if (!skipOut) {
+    await build(outConfig);
+  }
+  if (!skipOutTest) {
+    await build(outTestConfig);
+  }
 }

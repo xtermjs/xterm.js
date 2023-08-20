@@ -52,7 +52,6 @@
     "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/test/benchmark/*benchmark.js",
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts",
-
     "esbuild": "node bin/esbuild_all.mjs",
     "esbuild-dev": "node bin/esbuild_all.mjs --dev",
     "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch",
@@ -90,6 +89,7 @@
     "source-map-loader": "^3.0.0",
     "source-map-support": "^0.5.20",
     "ts-loader": "^9.3.1",
+    "ts-node": "^10.9.1",
     "typescript": "^5.1.6",
     "utf8": "^3.0.0",
     "webpack": "^5.61.0",

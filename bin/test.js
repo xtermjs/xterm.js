@@ -10,10 +10,10 @@ const COVERAGE_LINES_THRESHOLD = 60;
 
 // Add `out` to the NODE_PATH so absolute paths can be resolved.
 const env = { ...process.env };
-env.NODE_PATH = path.resolve(__dirname, '../out');
+env.NODE_PATH = path.resolve(__dirname, '../out-esbuild');
 
 let testFiles = [
-  './out/**/*test.js',
+  './out-esbuild/**/*test.js',
   './addons/**/out/*test.js',
 ];
 
