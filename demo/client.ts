@@ -6,8 +6,6 @@
  * This file is the entry point for browserify.
  */
 
-/// <reference path="../typings/xterm.d.ts"/>
-
 // Use tsc version (yarn watch)
 // import { Terminal } from '../out/browser/public/Terminal';
 // import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
@@ -33,10 +31,6 @@ import { WebLinksAddon } from 'xterm-addon-web-links';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { Unicode11Addon } from 'xterm-addon-unicode11';
 // import { LigaturesAddon } from 'xterm-addon-ligatures';
-
-// Pulling in the module's types relies on the <reference> above, it's looks a
-// little weird here as we're importing "this" module
-// import { Terminal as TerminalType } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: Terminal;
@@ -98,7 +92,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
-  'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
+  'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true }, // eslint-disable-line @typescript-eslint/naming-convention
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
@@ -1259,29 +1253,29 @@ function initImageAddonExposed(): void {
   const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
   ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
 
-  const sixel_demo = (url: string) => () => fetch(url)
+  const sixelDemo = (url: string) => () => fetch(url)
     .then(resp => resp.arrayBuffer())
     .then(buffer => {
       term.write('\r\n');
       term.write(new Uint8Array(buffer));
     });
 
-  const iip_demo = (url: string) => () => fetch(url)
-  .then(resp => resp.arrayBuffer())
-  .then(buffer => {
-    const data = new Uint8Array(buffer);
-    let sdata = '';
-    for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
-    term.write('\r\n');
-    term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
-  });
+  const iipDemo = (url: string) => () => fetch(url)
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      const data = new Uint8Array(buffer);
+      let sdata = '';
+      for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+      term.write('\r\n');
+      term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
+    });
 
   document.getElementById('image-demo1').addEventListener('click',
-    sixel_demo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
+    sixelDemo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
   document.getElementById('image-demo2').addEventListener('click',
-    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
+    sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
   document.getElementById('image-demo3').addEventListener('click',
-    iip_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+    iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
 
   // demo for image retrieval API
   term.element.addEventListener('click', (ev: MouseEvent) => {
