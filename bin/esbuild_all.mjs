@@ -20,7 +20,7 @@ for (const addon of addons) {
   ));
 }
 
-const exitCodes = await Promise.all(cps.map((cp, i) => {
+await Promise.all(cps.map((cp, i) => {
   return new Promise(r => {
     cp.on('exit', code => {
       log(`Finished \x1b[32mxterm-addon-${addons[i]}\x1b[0m${code ? ' \x1b[31mwith errors\x1b[0m' : ''}`);
