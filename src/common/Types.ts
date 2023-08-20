@@ -423,7 +423,7 @@ type Enumerate<N extends number, Acc extends number[] = []> = Acc['length'] exte
   : Enumerate<N, [...Acc, Acc['length']]>;
 type IntRange<F extends number, T extends number> = Exclude<Enumerate<T>, Enumerate<F>>;
 
-type ColorIndex = IntRange<0, 256>; // number from 0 to 255
+export type ColorIndex = IntRange<0, 256>; // number from 0 to 255
 type AllColorIndex = ColorIndex | SpecialColorIndex;
 export const enum SpecialColorIndex {
   FOREGROUND = 256,
@@ -544,7 +544,7 @@ export interface IInputHandler {
   /** ESC # 8 */ screenAlignmentPattern(): boolean;
 }
 
-interface IParseStack {
+export interface IParseStack {
   paused: boolean;
   cursorStartX: number;
   cursorStartY: number;

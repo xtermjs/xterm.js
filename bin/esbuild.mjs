@@ -50,14 +50,18 @@ function getAddonEntryPoint(addon) {
   return result;
 }
 
+/** @type {esbuild.BuildOptions} */
+let buildConfig = {
+  bundle: true,
+  ...commonOptions,
+  ...(config.isDev ? devOptions : prodOptions)
+};
+
 if (config.addon) {
-  /** @type {esbuild.BuildOptions} */
-  const buildConfig = {
+  buildConfig = {
+    ...buildConfig,
     entryPoints: [`addons/xterm-addon-${config.addon}/src/${getAddonEntryPoint(config.addon)}.ts`],
-    bundle: true,
     outfile: `addons/xterm-addon-${config.addon}/lib/xterm-addon-${config.addon}.js`,
-    ...commonOptions,
-    ...(config.isDev ? devOptions : prodOptions)
   };
 
   if (config.addon === 'ligatures') {
@@ -67,13 +71,17 @@ if (config.addon) {
   if (config.addon === 'serialize') {
     buildConfig.tsconfig = 'addons/xterm-addon-serialize/src/tsconfig.json'
   }
-
-  if (config.isWatch) {
-    // TODO: This doesn't report errors?
-    (await context(buildConfig)).watch();
-  } else {
-    await build(buildConfig)
-  }
 } else {
-  throw new Error('NYI');
+  buildConfig = {
+    ...buildConfig,
+    entryPoints: [`src/browser/public/Terminal.ts`],
+    outfile: `lib/xterm.js`,
+  };
+}
+
+if (config.isWatch) {
+  // TODO: This doesn't report errors?
+  (await context(buildConfig)).watch();
+} else {
+  await build(buildConfig)
 }
