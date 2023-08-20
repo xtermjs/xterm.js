@@ -6,6 +6,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
+      "xterm": [".."],
       "xterm-addon-attach": ["../addons/xterm-addon-attach"],
       "xterm-addon-canvas": ["../addons/xterm-addon-canvas"],
       "xterm-addon-fit": ["../addons/xterm-addon-fit"],

@@ -55,7 +55,9 @@
 
     "esbuild": "node bin/esbuild_all.mjs",
     "esbuild-dev": "node bin/esbuild_all.mjs --dev",
-    "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch"
+    "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch",
+    "esbuild-demo": "esbuild demo/client.ts --bundle --outfile=demo/dist/client-bundle.js --external:util --external:os --external:fs --external:path --external:stream",
+    "esbuild-demo-watch": "yarn esbuild-demo --watch"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",

@@ -9,7 +9,7 @@
 /// <reference path="../typings/xterm.d.ts"/>
 
 // Use tsc version (yarn watch)
-import { Terminal } from '../out/browser/public/Terminal';
+// import { Terminal } from '../out/browser/public/Terminal';
 // import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 // import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
 // import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
@@ -21,8 +21,8 @@ import { ImageAddon, IImageAddonOptions } from '../addons/xterm-addon-image/out/
 // import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
 
-// Use packages versions
-// import { Terminal } from '../lib/xterm';
+// Use packaged versions
+import { Terminal, ITerminalOptions } from 'xterm';
 import { AttachAddon } from 'xterm-addon-attach';
 import { CanvasAddon } from 'xterm-addon-canvas';
 import { FitAddon } from 'xterm-addon-fit';
@@ -36,11 +36,11 @@ import { Unicode11Addon } from 'xterm-addon-unicode11';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
-import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
+// import { Terminal as TerminalType } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
-  term: TerminalType;
-  Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
+  term: Terminal;
+  Terminal?: typeof Terminal; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -261,7 +261,7 @@ function createTerminal(): void {
   } as ITerminalOptions);
 
   // Load addons
-  const typedTerm = term as TerminalType;
+  const typedTerm = term as Terminal;
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
@@ -408,7 +408,7 @@ function runFakeTerminal(): void {
   });
 }
 
-function initOptions(term: TerminalType): void {
+function initOptions(term: Terminal): void {
   const blacklistedOptions = [
     // Internal only options
     'cancelEvents',
@@ -572,7 +572,7 @@ function initOptions(term: TerminalType): void {
   });
 }
 
-function initAddons(term: TerminalType): void {
+function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
   Object.keys(addons).forEach((name: AddonType) => {
     const addon = addons[name];
