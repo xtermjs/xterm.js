@@ -41,19 +41,19 @@
     },
     {
       "label": "build-inwasm",
+      "dependsOn": "build-addons",
       "type": "npm",
       "script": "inwasm",
       "group": "build",
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
-        "group": "vscode",
-        "close": true
+        "group": "vscode"
       }
     },
     {
       "label": "watch-esbuild",
-      "dependsOn": ["build-addons", "build-inwasm"],
+      "dependsOn": ["build"],
       "type": "npm",
       "script": "esbuild-dev-watch",
       "group": "build",
@@ -73,6 +73,10 @@
       "presentation": {
         "group": "vscode"
       }
+    },
+    {
+      "label": "build",
+      "dependsOn": ["build-addons", "build-inwasm"]
     },
     {
       "label": "Start demo",
