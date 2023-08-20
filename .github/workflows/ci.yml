@@ -19,7 +19,9 @@ jobs:
     - name: Install dependencies
       run: yarn --frozen-lockfile
     - name: Esbuild
-      run: yarn esbuild
+      run: |
+        tsc -b addons/xterm-addon-image/src/tsconfig.json
+        yarn esbuild
     - name: Build
       run: yarn setup
     - name: Zip artifacts

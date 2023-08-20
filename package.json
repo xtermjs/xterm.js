@@ -55,7 +55,9 @@
 
     "esbuild": "node bin/esbuild_all.mjs",
     "esbuild-dev": "node bin/esbuild_all.mjs --dev",
-    "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch"
+    "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch",
+    "esbuild-demo": "node bin/esbuild.mjs --demo-client",
+    "esbuild-demo-watch": "node bin/esbuild.mjs --demo-client --watch"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",

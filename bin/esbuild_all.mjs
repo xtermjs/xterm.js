@@ -17,7 +17,7 @@ for (const addon of addons) {
 }
 
 // Demo job
-jobs.push(createJob('demo-client', [`--demo-client`]));
+// jobs.push(createJob('demo-client', [`--demo-client`]));
 
 await Promise.all(jobs.map((job, i) => {
   return new Promise(r => {

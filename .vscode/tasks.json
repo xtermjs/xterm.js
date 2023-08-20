@@ -55,6 +55,18 @@
       }
     },
     {
+      "label": "watch-esbuild-demo",
+      "dependsOn": ["esbuild-dev"],
+      "type": "npm",
+      "script": "esbuild-demo-watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "vscode"
+      }
+    },
+    {
       "label": "tsc-addon-image",
       "type": "shell",
       "command": "node_modules/.bin/tsc -b addons/xterm-addon-image/src/tsconfig.json",
@@ -91,7 +103,7 @@
     },
     {
       "label": "Start demo",
-      "dependsOn": ["serve-demo", "watch-types", "watch-esbuild"],
+      "dependsOn": ["serve-demo", "watch-types", "watch-esbuild", "watch-esbuild-demo"],
       "group": {
         "kind": "build",
         "isDefault": true
