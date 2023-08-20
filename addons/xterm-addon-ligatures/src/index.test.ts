@@ -108,12 +108,12 @@ describe('xterm-addon-ligatures', () => {
   });
 
   it('ensures no empty errors are thrown', async () => {
-    sinon.stub(fontLigatures, 'loadFile').callsFake(async () => { throw undefined; });
+    const stub = sinon.stub(fontLigatures, 'loadFile').callsFake(async () => { throw undefined; });
     term.options.fontFamily = 'Iosevka';
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
     assert.isTrue(onRefresh.notCalled);
-    (fontLigatures.loadFile as sinon.SinonStub).restore();
+    stub.restore();
   });
 });
 
