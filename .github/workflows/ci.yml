@@ -22,6 +22,8 @@ jobs:
       run: |
         tsc -b addons/xterm-addon-image/src/tsconfig.json
         yarn esbuild
+    - name: Inwasm
+      run: yarn inwasm
     - name: Check types # TODO: This could be its own job
       run: yarn check-types
     - name: Zip artifacts
