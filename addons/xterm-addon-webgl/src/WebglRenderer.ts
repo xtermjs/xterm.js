@@ -14,7 +14,7 @@ import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeS
 import { ITerminal } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
+import { Attributes, Content, ExtFlags, NULL_CELL_CHAR, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
@@ -25,7 +25,7 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RENDER_MODEL_VARIANT_OFFSET } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { IWebGL2RenderingContext } from './Types';
 
 export class WebglRenderer extends Disposable implements IRenderer {
@@ -398,7 +398,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let x: number;
     let j: number;
     let variantOffset: number = -1;
-    let variantIndex: number = -1;
     start = clamp(start, terminal.rows - 1, 0);
     end = clamp(end, terminal.rows - 1, 0);
 
@@ -425,7 +424,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       // row start variant init
       variantOffset = 0;
-      variantIndex = 0;
       for (x = 0; x < terminal.cols; x++) {
         lastBg = this._cellColorResolver.result.bg;
         line.loadCell(x, cell);
@@ -503,24 +501,24 @@ export class WebglRenderer extends Disposable implements IRenderer {
         } else {
           if (cell.extended.underlineStyle !== UnderlineStyle.DOTTED) {
             variantOffset = 0;
-            variantIndex = 0;
           }
         }
+
+        this._cellColorResolver.result.ext &= ~ExtFlags.VARIANT_OFFSET;
+        this._cellColorResolver.result.ext |= (variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
           this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
           this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
-          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext &&
-          this._model.cells[i + RENDER_MODEL_VARIANT_OFFSET] === variantOffset
+          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext
         ) {
           if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
-            const s = this._charSizeService.width;
-            variantOffset = ((deviceCellWidth! * chWidth) - variantOffset) % (lineWidth * 2);
-            variantIndex++;
+            if (code !== NULL_CELL_CODE) {
+              variantOffset = ((deviceCellWidth! * chWidth) - ((lineWidth * 2) - variantOffset)) % (lineWidth * 2);
+            }
           } else {
             variantOffset = 0;
-            variantIndex = 0;
           }
           continue;
         }
@@ -537,16 +535,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
         this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
-        this._model.cells[i + RENDER_MODEL_VARIANT_OFFSET] = variantOffset;
         this._glyphRenderer!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg, variantOffset);
 
         if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
-          const s = this._charSizeService.width;
-          variantOffset = ((deviceCellWidth! * chWidth) - variantOffset) % (lineWidth * 2);
-          variantIndex++;
+          if (code !== NULL_CELL_CODE) {
+            variantOffset = ((deviceCellWidth! * chWidth) - ((lineWidth * 2) - variantOffset)) % (lineWidth * 2);
+          }
         } else {
           variantOffset = 0;
-          variantIndex = 0;
         }
 
         if (isJoined) {
@@ -561,7 +557,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
             this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
-            this._model.cells[i + RENDER_MODEL_VARIANT_OFFSET] = variantOffset;
           }
         }
       }

@@ -7,11 +7,10 @@ import { ICursorRenderModel, IRenderModel } from './Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 
-export const RENDER_MODEL_INDICIES_PER_CELL = 5;
+export const RENDER_MODEL_INDICIES_PER_CELL = 4;
 export const RENDER_MODEL_BG_OFFSET = 1;
 export const RENDER_MODEL_FG_OFFSET = 2;
 export const RENDER_MODEL_EXT_OFFSET = 3;
-export const RENDER_MODEL_VARIANT_OFFSET = 4;
 
 export const COMBINED_CHAR_BIT_MASK = 0x80000000;
 
