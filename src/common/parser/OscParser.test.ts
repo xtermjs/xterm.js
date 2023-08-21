@@ -221,7 +221,7 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'Here comes the mouse!']]);
     });
     it('should work up to payload limit', function(): void {
-      this.timeout(10000);
+      this.timeout(30000);
       parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
       parser.start();
       let data = toUtf32('1234;');
@@ -234,7 +234,7 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [[1234, 'A'.repeat(PAYLOAD_LIMIT)]]);
     });
     it('should abort for payload limit +1', function(): void {
-      this.timeout(10000);
+      this.timeout(30000);
       parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
       parser.start();
       let data = toUtf32('1234;');

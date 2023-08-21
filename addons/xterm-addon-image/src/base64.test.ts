@@ -45,10 +45,9 @@ describe('Base64Decoder', () => {
         assert.deepEqual(dec.data8, inp);
       }
     });
-    it('1+2 bytes', function() {
-      this.timeout(20000);
-      const dec = new Base64Decoder(0);
-      for (let a = 0; a < 256; ++a) {
+    for (let a = 0; a < 256; ++a) {
+      it(`1+2 bytes (${a})`, function() {
+        const dec = new Base64Decoder(0);
         for (let b = 0; b < 256; ++b) {
           dec.init(2);
           const inp = new Uint8Array([a, b]);
@@ -57,12 +56,11 @@ describe('Base64Decoder', () => {
           assert.strictEqual(dec.end(), 0);
           assert.deepEqual(dec.data8, inp);
         }
-      }
-    });
-    it('2+3 bytes', function() {
-      this.timeout(20000);
-      const dec = new Base64Decoder(0);
-      for (let a = 0; a < 256; ++a) {
+      });
+    }
+    for (let a = 0; a < 256; ++a) {
+      it(`2+3 bytes (${a})`, function() {
+        const dec = new Base64Decoder(0);
         for (let b = 0; b < 256; ++b) {
           dec.init(3);
           const inp = new Uint8Array([0, a, b]);
@@ -71,12 +69,11 @@ describe('Base64Decoder', () => {
           assert.strictEqual(dec.end(), 0);
           assert.deepEqual(dec.data8, inp);
         }
-      }
-    });
-    it('3+4 bytes', function() {
-      this.timeout(20000);
-      const dec = new Base64Decoder(0);
-      for (let a = 0; a < 256; ++a) {
+      });
+    }
+    for (let a = 0; a < 256; ++a) {
+      it(`3+4 bytes (${a})`, function() {
+        const dec = new Base64Decoder(0);
         for (let b = 0; b < 256; ++b) {
           dec.init(4);
           const inp = new Uint8Array([0, 0, a, b]);
@@ -85,8 +82,8 @@ describe('Base64Decoder', () => {
           assert.strictEqual(dec.end(), 0);
           assert.deepEqual(dec.data8, inp);
         }
-      }
-    });
+      });
+    }
     it('padding', () => {
       const dec = new Base64Decoder(0);
       const d = fromBs('Hello, here comes the mouse');
