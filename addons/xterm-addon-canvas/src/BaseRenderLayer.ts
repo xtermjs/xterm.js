@@ -365,7 +365,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * Draws one or more characters at a cell. If possible this will draw using
    * the character atlas to reduce draw time.
    */
-  protected _drawChars(cell: ICellData, x: number, y: number): void {
+  protected _drawChars(cell: ICellData, x: number, y: number, variantOffset: number = 0): void {
     const chars = cell.getChars();
     this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
 
@@ -375,9 +375,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
 
     let glyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, 0, true);
+      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, variantOffset, true);
     } else {
-      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, 0, true);
+      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, variantOffset, true);
     }
     if (!glyph.size.x || !glyph.size.y) {
       return;

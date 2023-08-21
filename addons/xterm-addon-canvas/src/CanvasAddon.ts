@@ -6,7 +6,7 @@
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { CanvasRenderer } from './CanvasRenderer';
-import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
@@ -45,8 +45,9 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
     const decorationService: IDecorationService = unsafeCore._decorationService;
     const themeService: IThemeService = unsafeCore._themeService;
+    const unicodeService: IUnicodeService = unsafeCore.unicodeService;
 
-    this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
+    this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService, unicodeService);
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
