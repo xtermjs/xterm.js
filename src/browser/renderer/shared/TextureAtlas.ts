@@ -11,12 +11,11 @@ import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
-import { FiveKeyMap, FourKeyMap } from 'common/MultiKeyMap';
+import { FiveKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { IColorContrastCache } from 'browser/Types';
-import { BufferLineApiView } from 'common/public/BufferLineApiView';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
