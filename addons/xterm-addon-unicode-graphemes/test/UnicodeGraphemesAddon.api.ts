@@ -39,7 +39,7 @@ describe('UnicodeGraphemesAddon', () => {
       window.term.loadAddon(window.unicode);
     `);
     // should have loaded '15-graphemes'
-    assert.deepEqual(await page.evaluate(`window.term.unicode.versions`), ['6', ourVersion]);
+    assert.deepEqual(await page.evaluate(`window.term.unicode.versions`), ['6', '15', '15-graphemes']);
     // switch should not throw
     await page.evaluate(`window.term.unicode.activeVersion = '${ourVersion}';`);
     assert.equal(await page.evaluate(`window.term.unicode.activeVersion`), ourVersion);

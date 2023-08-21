@@ -10,17 +10,22 @@ import { UnicodeGraphemeProvider } from './UnicodeGraphemeProvider';
 
 
 export class UnicodeGraphemesAddon implements ITerminalAddon {
-  private _provider?: UnicodeGraphemeProvider;
+  private _provider15Graphemes?: UnicodeGraphemeProvider;
+  private _provider15?: UnicodeGraphemeProvider;
   private _unicode?: IUnicodeHandling;
   private _oldVersion: string = '';
 
   public activate(terminal: Terminal): void {
-    if (! this._provider) {
-      this._provider = new UnicodeGraphemeProvider();
+    if (! this._provider15) {
+      this._provider15 = new UnicodeGraphemeProvider(false);
+    }
+    if (! this._provider15Graphemes) {
+      this._provider15Graphemes = new UnicodeGraphemeProvider(true);
     }
     const unicode = terminal.unicode;
     this._unicode = unicode;
-    unicode.register(this._provider);
+    unicode.register(this._provider15);
+    unicode.register(this._provider15Graphemes);
     this._oldVersion = unicode.activeVersion;
     unicode.activeVersion = '15-graphemes';
   }

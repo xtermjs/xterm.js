@@ -9,9 +9,13 @@ import { UnicodeService } from 'common/services/UnicodeService';
 import * as UC from './third-party/UnicodeProperties';
 
 export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
-  public readonly version = '15-graphemes';
+  public readonly version;
   public ambiguousCharsAreWide: boolean = false;
-  constructor() {
+  public readonly handleGraphemes: boolean;
+
+  constructor(handleGraphemes: boolean = true) {
+    this.version = handleGraphemes ? '15-graphemes' : '15';
+    this.handleGraphemes = handleGraphemes;
   }
 
   private static readonly _plainNarrowProperties: UnicodeCharProperties
@@ -36,7 +40,11 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
     }
     if (preceding !== 0) {
       const oldWidth = UnicodeService.extractWidth(preceding);
-      charInfo = UC.shouldJoin(UnicodeService.extractCharKind(preceding), charInfo);
+      if (this.handleGraphemes) {
+        charInfo = UC.shouldJoin(UnicodeService.extractCharKind(preceding), charInfo);
+      } else {
+        charInfo = w === 0 ? 1 : 0;
+      }
       shouldJoin = charInfo > 0;
       if (shouldJoin) {
         if (oldWidth > w) {
