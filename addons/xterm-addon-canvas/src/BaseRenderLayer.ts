@@ -12,7 +12,7 @@ import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRen
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
+import { ExtFlags, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';
@@ -369,15 +369,18 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     const chars = cell.getChars();
     this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
 
+    this._cellColorResolver.result.ext &= ~ExtFlags.VARIANT_OFFSET;
+    this._cellColorResolver.result.ext |= (variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
+
     if (!this._charAtlas) {
       return;
     }
 
     let glyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, variantOffset, true);
+      glyph = this._charAtlas.getRasterizedGlyphCombinedChar(chars, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, true);
     } else {
-      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, variantOffset, true);
+      glyph = this._charAtlas.getRasterizedGlyph(cell.getCode() || WHITESPACE_CELL_CODE, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, true);
     }
     if (!glyph.size.x || !glyph.size.y) {
       return;

@@ -11,7 +11,7 @@ import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
-import { FiveKeyMap } from 'common/MultiKeyMap';
+import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
@@ -58,8 +58,8 @@ let $glyph = undefined;
 export class TextureAtlas implements ITextureAtlas {
   private _didWarmUp: boolean = false;
 
-  private _cacheMap: FiveKeyMap<number, number, number, number, number, IRasterizedGlyph> = new FiveKeyMap();
-  private _cacheMapCombined: FiveKeyMap<string, number, number, number, number, IRasterizedGlyph> = new FiveKeyMap();
+  private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();
+  private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
 
   // The texture that the atlas is drawn to
   private _pages: AtlasPage[] = [];
@@ -121,9 +121,9 @@ export class TextureAtlas implements ITextureAtlas {
     const queue = new IdleTaskQueue();
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
-        if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1)) {
-          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 0);
-          this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, 1, rasterizedGlyph);
+        if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
+          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
+          this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
         }
       });
     }
@@ -244,30 +244,29 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, variantOffset: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, variantOffset, restrictToCellHeight);
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, restrictToCellHeight);
   }
 
-  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, variantOffset: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, variantOffset, restrictToCellHeight);
+  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, restrictToCellHeight);
   }
 
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
   private _getFromCacheMap(
-    cacheMap: FiveKeyMap<string | number, number, number, number, number, IRasterizedGlyph>,
+    cacheMap: FourKeyMap<string | number, number, number, number, IRasterizedGlyph>,
     key: string | number,
     bg: number,
     fg: number,
     ext: number,
-    variantOffset: number,
     restrictToCellHeight: boolean = false
   ): IRasterizedGlyph {
-    $glyph = cacheMap.get(key, bg, fg, ext, variantOffset);
+    $glyph = cacheMap.get(key, bg, fg, ext);
     if (!$glyph) {
-      $glyph = this._drawToCache(key, bg, fg, ext, variantOffset, restrictToCellHeight);
-      cacheMap.set(key, bg, fg, ext, variantOffset, $glyph);
+      $glyph = this._drawToCache(key, bg, fg, ext, restrictToCellHeight);
+      cacheMap.set(key, bg, fg, ext, $glyph);
     }
     return $glyph;
   }
@@ -428,7 +427,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   @traceCall
-  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number,variantOffset: number = 0, restrictToCellHeight: boolean = false): IRasterizedGlyph {
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     // Uncomment for debugging
@@ -548,7 +547,7 @@ export class TextureAtlas implements ITextureAtlas {
       const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
       const yMid = yTop + lineWidth;
       const yBot = yTop + lineWidth * 2;
-      let nextOffset = variantOffset;
+      let nextOffset = this._workAttributeData.getUnderlineVarinatOffset();
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
