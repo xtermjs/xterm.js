@@ -11,6 +11,8 @@ import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/rend
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
+import { ILogService } from 'common/services/Services';
+import { traceCall } from 'common/services/LogService';
 
 interface IVertices {
   attributes: Float32Array;

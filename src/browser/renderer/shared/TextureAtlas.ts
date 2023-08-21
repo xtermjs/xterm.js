@@ -16,6 +16,7 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { IColorContrastCache } from 'browser/Types';
+import { traceCall } from 'common/services/LogService';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
