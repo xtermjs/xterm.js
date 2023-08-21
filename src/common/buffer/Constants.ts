@@ -134,9 +134,14 @@ export const enum BgFlags {
 
 export const enum ExtFlags {
   /**
-   * bit 27..32 (upper 3 unused)
+   * bit 27..29
    */
-  UNDERLINE_STYLE = 0x1C000000
+  UNDERLINE_STYLE = 0x1C000000,
+
+  /**
+   * bit 30..32
+   */
+  VARIANT_OFFSET = 0xE0000000
 }
 
 export const enum UnderlineStyle {

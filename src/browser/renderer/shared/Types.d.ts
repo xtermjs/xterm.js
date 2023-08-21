@@ -103,12 +103,14 @@ export interface ITextureAtlas extends IDisposable {
    */
   beginFrame(): boolean;
 
+  getDeviceCellWidth(): number;
+
   /**
    * Clear all glyphs from the texture atlas.
    */
   clearTexture(): void;
-  getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph;
-  getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph;
+  getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, variantOffset: number, restrictToCellHeight: boolean): IRasterizedGlyph;
+  getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, variantOffset: number, restrictToCellHeight: boolean): IRasterizedGlyph;
 }
 
 /**
