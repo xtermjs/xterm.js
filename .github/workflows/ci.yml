@@ -65,7 +65,9 @@ jobs:
         node-version: 18.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - name: Lint code
       run: yarn lint
     - name: Lint API
@@ -98,7 +100,9 @@ jobs:
         node-version: ${{ matrix.node-version }}.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
@@ -107,7 +111,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [18] # just one as integration tests are about testing in browser
         runs-on: [ubuntu, windows] # macos is flaky
         browser: [chromium, firefox]
     runs-on: ${{ matrix.runs-on }}-latest
@@ -130,7 +134,9 @@ jobs:
         node-version: ${{ matrix.node-version }}.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - name: Install playwright
       run: npx playwright install
     - name: Integration tests (${{ matrix.browser }})
