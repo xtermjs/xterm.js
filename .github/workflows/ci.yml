@@ -73,7 +73,7 @@ jobs:
     - name: Lint API
       run: yarn lint-api
 
-  unit-tests*:
+  unit-tests-fast:
     timeout-minutes: 20
     strategy:
       matrix:
@@ -143,7 +143,7 @@ jobs:
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
-  integration-tests*:
+  integration-tests-fast:
     timeout-minutes: 20
     strategy:
       matrix:
