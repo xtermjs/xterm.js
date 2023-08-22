@@ -73,7 +73,7 @@ jobs:
     - name: Lint API
       run: yarn lint-api
 
-  unit-tests-fast:
+  unit-test-parallel:
     timeout-minutes: 20
     strategy:
       matrix:
@@ -110,7 +110,7 @@ jobs:
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
-  unit-tests:
+  unit-test:
     needs: build
     timeout-minutes: 20
     strategy:
@@ -143,7 +143,7 @@ jobs:
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
-  integration-tests-fast:
+  test-api-parallel:
     timeout-minutes: 20
     strategy:
       matrix:
@@ -183,7 +183,7 @@ jobs:
     - name: Integration tests (${{ matrix.browser }})
       run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
 
-  integration-tests:
+  test-api:
     needs: build
     timeout-minutes: 20
     strategy:
