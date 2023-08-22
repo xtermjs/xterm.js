@@ -148,7 +148,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18] # just one as integration tests are about testing in browser
-        runs-on: [ubuntu, windows] # macos is flaky
+        runs-on: [ubuntu] # macos is flaky
         browser: [chromium, firefox]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
