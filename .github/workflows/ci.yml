@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js 18.x
@@ -55,6 +56,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js 18.x
@@ -71,6 +73,7 @@ jobs:
 
   unit-tests:
     needs: build
+    timeout-minutes: 20
     strategy:
       matrix:
         node-version: [16, 18]
@@ -101,6 +104,7 @@ jobs:
 
   integration-tests:
     needs: build
+    timeout-minutes: 20
     strategy:
       matrix:
         node-version: [18]
