@@ -215,15 +215,15 @@ export class GlyphRenderer extends Disposable {
   }
 
   @traceCall
-  public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number, variantOffset: number): void {
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
     // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
     // should not instantiate any variables unless a new glyph is drawn to the cache where the
     // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
     // each glyph.
-    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, lastBg, variantOffset);
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, lastBg);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number, variantOffset: number): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
     $i = (y * this._terminal.cols + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null character, allow space character to continue as it may have
