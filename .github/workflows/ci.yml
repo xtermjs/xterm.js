@@ -73,12 +73,12 @@ jobs:
     - name: Lint API
       run: yarn lint-api
 
-  unit-tests:
+  unit-tests-fast:
     timeout-minutes: 20
     strategy:
       matrix:
-        node-version: [16, 18]
-        runs-on: [ubuntu, macos, windows]
+        node-version: [18]
+        runs-on: [ubuntu, macos]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
     - uses: actions/checkout@v3
@@ -96,6 +96,39 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         job: build
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts (Linux, macOS)
+      if: runner.os != 'Windows'
+      run: unzip -o compressed-build.zip
+    - name: Unzip artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Print directory structure
+      run: ls -R
+    - name: Unit tests
+      run: yarn test-unit --forbid-only
+
+  unit-tests:
+    needs: build
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        node-version: [16]
+        runs-on: [ubuntu, macos, windows]
+    runs-on: ${{ matrix.runs-on }}-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'yarn'
+    - name: Install dependencies
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
