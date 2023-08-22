@@ -86,6 +86,9 @@ jobs:
       run: yarn --frozen-lockfile
     - name: Wait for build job
       uses: NathanFirmo/wait-for-other-job@v1.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        job: build
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
@@ -120,6 +123,9 @@ jobs:
       run: npx playwright install
     - name: Wait for build job
       uses: NathanFirmo/wait-for-other-job@v1.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        job: build
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
