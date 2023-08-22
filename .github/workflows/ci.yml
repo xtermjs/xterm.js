@@ -88,7 +88,9 @@ jobs:
         node-version: ${{ matrix.node-version }}.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - name: Wait for build job
       uses: NathanFirmo/wait-for-other-job@v1.1.1
       with:
@@ -124,7 +126,9 @@ jobs:
         node-version: ${{ matrix.node-version }}.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - name: Install playwright
       run: npx playwright install
     - name: Wait for build job
