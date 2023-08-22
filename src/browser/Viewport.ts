@@ -279,6 +279,9 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   public scrollLines(disp: number): void {
+    if (disp === 0) {
+      return;
+    }
     if (!this._optionsService.rawOptions.smoothScrollDuration) {
       this._onRequestScrollLines.fire({ amount: disp, suppressScrollEvent: false });
     } else {

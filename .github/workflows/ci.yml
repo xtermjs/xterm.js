@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js 18.x
@@ -61,6 +62,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js 18.x
@@ -69,21 +71,37 @@ jobs:
         node-version: 18.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - name: Lint code
       run: yarn lint
     - name: Lint API
       run: yarn lint-api
 
-  unit-tests:
-    needs: build
+  test-unit-parallel:
+    timeout-minutes: 20
     strategy:
       matrix:
-        node-version: [16.x, 18.x]
-        runs-on: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.runs-on }}
+        node-version: [18]
+        runs-on: [ubuntu, macos, windows]
+    runs-on: ${{ matrix.runs-on }}-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'yarn'
+    - name: Install dependencies
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
+    - name: Wait for build job
+      uses: NathanFirmo/wait-for-other-job@v1.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        job: build
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
@@ -95,26 +113,28 @@ jobs:
       run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
     - name: Print directory structure
       run: ls -R
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
-    - name: Install dependencies
-      run: yarn --frozen-lockfile
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
-  integration-tests:
+  test-unit:
     needs: build
+    timeout-minutes: 20
     strategy:
       matrix:
-        node-version: [18.x]
-        runs-on: [ubuntu-latest, windows-latest] # macos-latest is flaky
-        browser: [chromium, firefox]
-    runs-on: ${{ matrix.runs-on }}
+        node-version: [16]
+        runs-on: [ubuntu, macos, windows]
+    runs-on: ${{ matrix.runs-on }}-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'yarn'
+    - name: Install dependencies
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
@@ -126,14 +146,81 @@ jobs:
       run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
     - name: Print directory structure
       run: ls -R
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Unit tests
+      run: yarn test-unit --forbid-only
+
+  test-api-parallel:
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        node-version: [18] # just one as integration tests are about testing in browser
+        runs-on: [ubuntu] # macos is flaky
+        browser: [chromium, firefox]
+    runs-on: ${{ matrix.runs-on }}-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
       uses: actions/setup-node@v3
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: ${{ matrix.node-version }}.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
     - name: Install playwright
       run: npx playwright install
+    - name: Wait for build job
+      uses: NathanFirmo/wait-for-other-job@v1.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        job: build
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts (Linux, macOS)
+      if: runner.os != 'Windows'
+      run: unzip -o compressed-build.zip
+    - name: Unzip artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Print directory structure
+      run: ls -R
+    - name: Integration tests (${{ matrix.browser }})
+      run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
+
+  test-api:
+    needs: build
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        node-version: [18] # just one as integration tests are about testing in browser
+        runs-on: [windows] # macos is flaky
+        browser: [chromium, firefox]
+    runs-on: ${{ matrix.runs-on }}-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'yarn'
+    - name: Install dependencies
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
+    - name: Install playwright
+      run: npx playwright install
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts (Linux, macOS)
+      if: runner.os != 'Windows'
+      run: unzip -o compressed-build.zip
+    - name: Unzip artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Print directory structure
+      run: ls -R
     - name: Integration tests (${{ matrix.browser }})
       run: yarn test-api-${{ matrix.browser }} --headless --forbid-only

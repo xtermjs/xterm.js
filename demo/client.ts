@@ -42,6 +42,7 @@ let protocol;
 let socketURL;
 let socket;
 let pid;
+let autoResize: boolean = true;
 
 type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
 
@@ -301,6 +302,13 @@ function createTerminal(): void {
 
   term.focus();
 
+  const resizeObserver = new ResizeObserver(entries => {
+    if (autoResize) {
+      addons.fit.instance.fit();
+    }
+  });
+  resizeObserver.observe(terminalContainer);
+
   addDomListener(paddingElement, 'change', setPadding);
 
   addDomListener(actionElements.findNext, 'keydown', (e) => {
@@ -331,9 +339,6 @@ function createTerminal(): void {
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(async () => {
     initOptions(term);
-    // TODO: Clean this up, opt-cols/rows doesn't exist anymore
-    (document.getElementById(`opt-cols`) as HTMLInputElement).value = term.cols;
-    (document.getElementById(`opt-rows`) as HTMLInputElement).value = term.rows;
     paddingElement.value = '0';
 
     // Set terminal size again to set the specific dimensions on the demo
@@ -398,6 +403,7 @@ function initOptions(term: Terminal): void {
     'cancelEvents',
     'convertEol',
     'termName',
+    'cols', 'rows', // subsumed by "size" (cols_rows) option
     // Complex option
     'theme',
     'windowOptions'
@@ -411,7 +417,8 @@ function initOptions(term: Terminal): void {
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     logLevel: ['trace', 'debug', 'info', 'warn', 'error', 'off'],
     theme: ['default', 'xtermjs', 'sapphire', 'light'],
-    wordSeparator: null
+    wordSeparator: null,
+    cols_rows: null
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
@@ -444,7 +451,9 @@ function initOptions(term: Terminal): void {
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
-    if (stringOptions[o]) {
+    if (o === 'cols_rows') {
+      html += `<div class="option"><label>size (<var>cols</var><code>x</code><var>rows</var> or <code>auto</code>) <input id="opt-${o}" type="text" value="auto"/></label></div>`;
+    } else if (stringOptions[o]) {
       const selectedOption = o === 'theme' ? 'xtermjs' : term.options[o];
       html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${v === selectedOption ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
@@ -468,11 +477,7 @@ function initOptions(term: Terminal): void {
     const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      if (o === 'rows') {
-        term.resize(term.cols, parseInt(input.value));
-      } else if (o === 'cols') {
-        term.resize(parseInt(input.value), term.rows);
-      } else if (o === 'lineHeight') {
+      if (o === 'lineHeight') {
         term.options.lineHeight = parseFloat(input.value);
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
@@ -491,7 +496,17 @@ function initOptions(term: Terminal): void {
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       let value: any = input.value;
-      if (o === 'theme') {
+      if (o === 'cols_rows') {
+        let m = input.value.match(/^([0-9]+)x([0-9]+)$/);
+        if (m) {
+          autoResize = false;
+          term.resize(parseInt(m[1]), parseInt(m[2]));
+        } else {
+          autoResize = true;
+          input.value = 'auto';
+          updateTerminalSize();
+        }
+      } else if (o === 'theme') {
         switch (input.value) {
           case 'default':
             value = undefined;
@@ -658,8 +673,10 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 }
 
 function updateTerminalSize(): void {
-  const width = (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
-  const height = (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
+  const width = autoResize ? '100%'
+    : (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
+  const height = autoResize ? '100%'
+    : (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   addons.fit.instance.fit();
