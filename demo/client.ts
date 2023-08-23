@@ -420,8 +420,11 @@ function initOptions(term: TerminalType): void {
     'termName',
     'cols', 'rows', // subsumed by "size" (cols_rows) option
     // Complex option
+    'linkHandler',
+    'logger',
     'theme',
-    'windowOptions'
+    'windowOptions',
+    'windowsPty'
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],
