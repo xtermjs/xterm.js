@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;

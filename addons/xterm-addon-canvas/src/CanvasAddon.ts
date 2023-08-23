@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { CanvasRenderer } from './CanvasRenderer';
-import { IBufferService, ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
-import { ITerminalAddon, Terminal } from 'xterm';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
+import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
+import { ITerminalAddon, Terminal } from 'xterm';
+import { CanvasRenderer } from './CanvasRenderer';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;

@@ -9,7 +9,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
-import { IDecorationOptions, IDecoration, IMarker, IEvent } from 'xterm';
+import { IDecoration, IDecorationOptions, IMarker } from 'xterm';
 
 // Work variables to avoid garbage collection
 let $xmin = 0;
