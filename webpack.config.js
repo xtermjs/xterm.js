@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+// @ts-check
+
 const path = require('path');
 
 /**
@@ -10,8 +12,10 @@ const path = require('path');
  * (via `yarn watch` or `yarn prebuild`) which are put into `out/` and webpacks them into a
  * production mode umd library module in `lib/`. The aliases are used fix up the absolute paths
  * output by tsc (because of `baseUrl` and `paths` in `tsconfig.json`.
+ *
+ * @type {import('webpack').Configuration}
  */
-module.exports = {
+const config = {
   entry: './out/browser/public/Terminal.js',
   devtool: 'source-map',
   module: {
@@ -39,3 +43,4 @@ module.exports = {
   },
   mode: 'production'
 };
+module.exports = config;
