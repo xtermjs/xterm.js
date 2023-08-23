@@ -15,8 +15,8 @@ const pty = require('node-pty');
 const USE_BINARY = os.platform() !== "win32";
 
 function startServer() {
-  var app = express();
-  expressWs(app);
+  const app = express();
+  const appWs = expressWs(app).app;
 
   var terminals = {},
     unsentOutput = {},
@@ -93,8 +93,7 @@ function startServer() {
     res.end();
   });
 
-  // @ts-ignore
-  app.ws('/terminals/:pid', function (ws, req) {
+  appWs.ws('/terminals/:pid', function (ws, req) {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
     temporaryDisposable[term.pid].dispose();
