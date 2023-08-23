@@ -5,10 +5,9 @@
  * (EXPERIMENTAL) This Addon is still under development
  */
 
-import { Terminal, ITerminalAddon, IBuffer, IBufferCell, IBufferRange } from 'xterm';
-import { IColorSet } from 'browser/Types';
-import { IAttributeData, IColor } from 'common/Types';
 import { DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
+import { IAttributeData, IColor } from 'common/Types';
+import { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from 'xterm';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));

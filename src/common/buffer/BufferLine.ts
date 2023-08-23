@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { CharData, IBufferLine, ICellData, IAttributeData, IExtendedAttrs } from 'common/Types';
-import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content, BgFlags, FgFlags, Attributes } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
+import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
+import { CellData } from 'common/buffer/CellData';
+import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
+import { stringFromCodePoint } from 'common/input/TextDecoder';
 
 /**
  * buffer memory layout:

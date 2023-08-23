@@ -3,17 +3,17 @@
  * @license MIT
  */
 
-import { IRenderLayer } from './Types';
+import { ReadonlyColorSet } from 'browser/Types';
 import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
-import { Terminal } from 'xterm';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { CellData } from 'common/buffer/CellData';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
+import { Terminal } from 'xterm';
+import { IRenderLayer } from './Types';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

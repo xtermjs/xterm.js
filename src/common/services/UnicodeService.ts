@@ -2,9 +2,10 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IUnicodeService, IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth  } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+
+import { EventEmitter } from 'common/EventEmitter';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
+import { IUnicodeService, IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
 
 export class UnicodeService implements IUnicodeService {
   public serviceBrand: any;
