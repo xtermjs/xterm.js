@@ -10,7 +10,7 @@ import { channels, color, css, NULL_COLOR } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IOptionsService, ITheme } from 'common/services/Services';
-import { SpecialColorIndex, IColor, AllColorIndex } from 'common/Types';
+import { AllColorIndex, IColor, SpecialColorIndex } from 'common/Types';
 
 interface IRestoreColorSet {
   foreground: IColor;

@@ -692,7 +692,7 @@ describe('Terminal', () => {
           isIpad: false,
           isIphone: false,
           isWindows: true
-        };;
+        };
       });
       afterEach(() => {
         term.browser = originalBrowser;

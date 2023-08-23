@@ -5,9 +5,9 @@
  * (EXPERIMENTAL) This Addon is still under development
  */
 
-import { Terminal, ITerminalAddon, IBuffer, IBufferCell, IBufferRange } from 'xterm';
-import { IAttributeData, IColor } from 'common/Types';
 import { channels, css } from 'common/Color';
+import { IAttributeData, IColor } from 'common/Types';
+import { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from 'xterm';
 
 // HACK: Duplicated from theme service as esbuild complained when referenced
 export const DEFAULT_ANSI_COLORS = Object.freeze((() => {

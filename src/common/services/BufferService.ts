@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IBufferService, IOptionsService } from 'common/services/Services';
-import { BufferSet } from 'common/buffer/BufferSet';
-import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { EventEmitter, IEventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
+import { BufferSet } from 'common/buffer/BufferSet';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;

@@ -4,30 +4,29 @@
  */
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
+import { ITerminal } from 'browser/Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
+import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
-import { createRenderDimensions, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ITerminal } from 'browser/Types';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { Disposable, MutableDisposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
+import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { Disposable, MutableDisposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
-import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { traceCall } from 'common/services/LogService';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
-import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
+import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
+import { IWebGL2RenderingContext } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { IWebGL2RenderingContext } from './Types';
-import { traceCall } from 'common/services/LogService';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];

@@ -213,6 +213,10 @@
     ],
     "no-trailing-spaces": "warn",
     "no-unsafe-finally": "warn",
+    "no-unused-vars": ["warn", {
+      "vars": "all",
+      "args": "none"
+    }],
     "no-var": "warn",
     "one-var": [
       "warn",
@@ -234,10 +238,14 @@
   },
   "overrides": [
     {
-      "files": ["**/*.test.ts"],
+      "files": [
+        "**/*.api.ts",
+        "**/*.test.ts"
+      ],
       "rules": {
         "object-curly-spacing": "off",
-        "max-len": "off"
+        "max-len": "off",
+        "no-unused-vars": "off"
       }
     }
   ]

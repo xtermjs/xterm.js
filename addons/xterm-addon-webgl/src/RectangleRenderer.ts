@@ -3,18 +3,17 @@
  * @license MIT
  */
 
-import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
-import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext } from './Types';
-import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
-import { Terminal } from 'xterm';
-import { IColor } from 'common/Types';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
-import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { DIM_OPACITY } from 'browser/renderer/shared/Constants';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { IThemeService } from 'browser/services/Services';
+import { ReadonlyColorSet } from 'browser/Types';
+import { Attributes, FgFlags } from 'common/buffer/Constants';
+import { Disposable, toDisposable } from 'common/Lifecycle';
+import { IColor } from 'common/Types';
+import { Terminal } from 'xterm';
+import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
+import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -67,7 +66,6 @@ class Vertices {
 
 // Work variables to avoid garbage collection
 let $rgba = 0;
-let $isDefault = false;
 let $x1 = 0;
 let $y1 = 0;
 let $r = 0;
@@ -310,7 +308,6 @@ export class RectangleRenderer extends Disposable {
   }
 
   private _updateRectangle(vertices: Vertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
-    $isDefault = false;
     if (fg & FgFlags.INVERSE) {
       switch (fg & Attributes.CM_MASK) {
         case Attributes.CM_P16:
@@ -336,7 +333,6 @@ export class RectangleRenderer extends Disposable {
         case Attributes.CM_DEFAULT:
         default:
           $rgba = this._themeService.colors.background.rgba;
-          $isDefault = true;
       }
     }
 
