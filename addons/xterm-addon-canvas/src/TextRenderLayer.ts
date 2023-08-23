@@ -4,18 +4,16 @@
  */
 
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
-import { CharData, ICellData } from 'common/Types';
-import { GridCache } from './GridCache';
-import { BaseRenderLayer } from './BaseRenderLayer';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { NULL_CELL_CODE, Content, UnderlineStyle } from 'common/buffer/Constants';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { CellData } from 'common/buffer/CellData';
-import { IOptionsService, IBufferService, IDecorationService, IUnicodeService } from 'common/services/Services';
-import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
-import { color, css } from 'common/Color';
+import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { CharData, ICellData } from 'common/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
+import { CellData } from 'common/buffer/CellData';
+import { Content, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
+import { IBufferService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { Terminal } from 'xterm';
+import { BaseRenderLayer } from './BaseRenderLayer';
+import { GridCache } from './GridCache';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render

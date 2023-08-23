@@ -3,12 +3,11 @@
  * @license MIT
  */
 
-import { IDecorationOptions, IDecoration, IDisposable, IMarker, Terminal as ITerminalApi } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
-import { ICoreTerminal, CharData, ITerminalOptions, IColor } from 'common/Types';
-import { IMouseService, IRenderService } from './services/Services';
+import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IFunctionIdentifier, IParams } from 'common/parser/Types';
+import { IDisposable, Terminal as ITerminalApi } from 'xterm';
+import { IMouseService, IRenderService } from './services/Services';
 
 /**
  * A portion of the public API that are implemented identially internally and simply passed through.

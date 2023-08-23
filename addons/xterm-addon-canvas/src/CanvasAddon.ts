@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { CanvasRenderer } from './CanvasRenderer';
-import { IBufferService, ICoreService, IDecorationService, ILogService, IOptionsService, IUnicodeService } from 'common/services/Services';
-import { ITerminalAddon, Terminal } from 'xterm';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
+import { IBufferService, IDecorationService, ILogService, IUnicodeService } from 'common/services/Services';
+import { ITerminalAddon, Terminal } from 'xterm';
+import { CanvasRenderer } from './CanvasRenderer';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -54,7 +54,7 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     setTraceLogger(logService);
 
     this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService, unicodeService);
-    
+
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
