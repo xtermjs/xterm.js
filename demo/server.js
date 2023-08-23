@@ -18,9 +18,9 @@ function startServer() {
   const app = express();
   const appWs = expressWs(app).app;
 
-  var terminals = {},
-    unsentOutput = {},
-    temporaryDisposable = {};
+  const terminals = {};
+  const unsentOutput = {};
+  const temporaryDisposable = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => {
@@ -94,7 +94,7 @@ function startServer() {
   });
 
   appWs.ws('/terminals/:pid', function (ws, req) {
-    var term = terminals[parseInt(req.params.pid)];
+    const term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
     temporaryDisposable[term.pid].dispose();
     delete temporaryDisposable[term.pid];
@@ -178,8 +178,8 @@ function startServer() {
     });
   });
 
-  var port = parseInt(process.env.PORT ?? '3000'),
-      host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
+  const port = parseInt(process.env.PORT ?? '3000');
+  const host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
 
   console.log('App listening to http://127.0.0.1:' + port);
   app.listen(port, host, 0);
