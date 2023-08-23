@@ -212,6 +212,7 @@
     ],
     "no-trailing-spaces": "warn",
     "no-unsafe-finally": "warn",
+    "no-unused-vars": ["warn", { "vars": "all" }],
     "no-var": "warn",
     "one-var": [
       "warn",
