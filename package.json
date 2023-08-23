@@ -72,7 +72,6 @@
     "chai": "^4.3.4",
     "cross-env": "^7.0.3",
     "deep-equal": "^2.0.5",
-    "esbuild": "^0.19.2",
     "eslint": "^8.45.0",
     "eslint-plugin-jsdoc": "^39.3.6",
     "express": "^4.17.1",
