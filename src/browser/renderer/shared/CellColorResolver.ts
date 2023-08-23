@@ -1,6 +1,6 @@
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { IDecorationService } from 'common/services/Services';
 import { ICellData } from 'common/Types';

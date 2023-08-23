@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IOptionsService, ITerminalOptions, FontWeight } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
+import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,

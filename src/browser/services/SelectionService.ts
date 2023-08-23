@@ -3,20 +3,20 @@
  * @license MIT
  */
 
-import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
-import { IBuffer } from 'common/buffer/Types';
-import { IBufferLine, IDisposable } from 'common/Types';
-import * as Browser from 'common/Platform';
-import { SelectionModel } from 'browser/selection/SelectionModel';
-import { CellData } from 'common/buffer/CellData';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IMouseService, ISelectionService, IRenderService, ICoreBrowserService } from 'browser/services/Services';
 import { IBufferRange, ILinkifier2 } from 'browser/Types';
-import { IBufferService, IOptionsService, ICoreService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
+import { SelectionModel } from 'browser/selection/SelectionModel';
+import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
+import { ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import * as Browser from 'common/Platform';
+import { IBufferLine, IDisposable } from 'common/Types';
 import { getRangeLength } from 'common/buffer/BufferRange';
+import { CellData } from 'common/buffer/CellData';
+import { IBuffer } from 'common/buffer/Types';
+import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
