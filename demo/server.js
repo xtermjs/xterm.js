@@ -4,21 +4,23 @@
  * demo to the public as is would introduce security risks for the host.
  **/
 
-var express = require('express');
-var expressWs = require('express-ws');
-var os = require('os');
-var pty = require('node-pty');
+// @ts-check
 
-// Whether to use binary transport.
+const express = require('express');
+const expressWs = require('express-ws');
+const os = require('os');
+const pty = require('node-pty');
+
+/** Whether to use binary transport. */
 const USE_BINARY = os.platform() !== "win32";
 
 function startServer() {
-  var app = express();
-  expressWs(app);
+  const app = express();
+  const appWs = expressWs(app).app;
 
-  var terminals = {},
-    unsentOutput = {},
-    temporaryDisposable = {};
+  const terminals = {};
+  const unsentOutput = {};
+  const temporaryDisposable = {};
 
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => {
@@ -41,18 +43,30 @@ function startServer() {
   app.use('/src', express.static(__dirname + '/src'));
 
   app.post('/terminals', (req, res) => {
-    const env = Object.assign({}, process.env);
+    /** @type {{ [key: string]: string }} */
+    const env = {};
+    for (const k of Object.keys(process.env)) {
+      const v = process.env[k];
+      if (v) {
+        env[k] = v;
+      }
+    }
+    // const env = Object.assign({}, process.env);
     env['COLORTERM'] = 'truecolor';
-    var cols = parseInt(req.query.cols),
-      rows = parseInt(req.query.rows),
-      term = pty.spawn(process.platform === 'win32' ? 'pwsh.exe' : 'bash', [], {
-        name: 'xterm-256color',
-        cols: cols || 80,
-        rows: rows || 24,
-        cwd: process.platform === 'win32' ? undefined : env.PWD,
-        env: env,
-        encoding: USE_BINARY ? null : 'utf8'
-      });
+    if (typeof req.query.cols !== 'string' || typeof req.query.rows !== 'string') {
+      console.error({ req });
+      throw new Error('Unexpected query args');
+    }
+    const cols = parseInt(req.query.cols);
+    const rows = parseInt(req.query.rows);
+    const term = pty.spawn(process.platform === 'win32' ? 'pwsh.exe' : 'bash', [], {
+      name: 'xterm-256color',
+      cols: cols ?? 80,
+      rows: rows ?? 24,
+      cwd: process.platform === 'win32' ? undefined : env.PWD,
+      env,
+      encoding: USE_BINARY ? null : 'utf8'
+    });
 
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
@@ -65,18 +79,22 @@ function startServer() {
   });
 
   app.post('/terminals/:pid/size', (req, res) => {
-    var pid = parseInt(req.params.pid),
-        cols = parseInt(req.query.cols),
-        rows = parseInt(req.query.rows),
-        term = terminals[pid];
+    if (typeof req.query.cols !== 'string' || typeof req.query.rows !== 'string') {
+      console.error({ req });
+      throw new Error('Unexpected query args');
+    }
+    const pid = parseInt(req.params.pid);
+    const cols = parseInt(req.query.cols);
+    const rows = parseInt(req.query.rows);
+    const term = terminals[pid];
 
     term.resize(cols, rows);
     console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
     res.end();
   });
 
-  app.ws('/terminals/:pid', function (ws, req) {
-    var term = terminals[parseInt(req.params.pid)];
+  appWs.ws('/terminals/:pid', function (ws, req) {
+    const term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
     temporaryDisposable[term.pid].dispose();
     delete temporaryDisposable[term.pid];
@@ -160,11 +178,11 @@ function startServer() {
     });
   });
 
-  var port = process.env.PORT || 3000,
-      host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
+  const port = parseInt(process.env.PORT ?? '3000');
+  const host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
 
   console.log('App listening to http://127.0.0.1:' + port);
-  app.listen(port, host);
+  app.listen(port, host, 0);
 }
 
 module.exports = startServer;
