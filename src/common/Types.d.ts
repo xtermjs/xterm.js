@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
-import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
+import { IEvent, IEventEmitter } from 'common/EventEmitter';
+import { Attributes, UnderlineStyle } from 'common/buffer/Constants'; // eslint-disable-line no-unused-vars
+import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
-import { IBufferSet } from 'common/buffer/Types';
-import { Attributes, UnderlineStyle } from 'common/buffer/Constants';
+import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;
@@ -544,7 +544,7 @@ export interface IInputHandler {
   /** ESC # 8 */ screenAlignmentPattern(): boolean;
 }
 
-interface IParseStack {
+export interface IParseStack {
   paused: boolean;
   cursorStartX: number;
   cursorStartY: number;

@@ -237,7 +237,8 @@
       "files": ["**/*.test.ts"],
       "rules": {
         "object-curly-spacing": "off",
-        "max-len": "off"
+        "max-len": "off",
+        "no-unused-vars": "off"
       }
     }
   ]
