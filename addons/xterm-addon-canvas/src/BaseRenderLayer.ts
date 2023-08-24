@@ -56,10 +56,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     protected readonly _optionsService: IOptionsService,
     protected readonly _decorationService: IDecorationService,
     protected readonly _coreBrowserService: ICoreBrowserService,
-    private readonly _unicodeService: IUnicodeService
+    unicodeService: IUnicodeService
   ) {
     super();
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService, _unicodeService);
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService, unicodeService);
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
