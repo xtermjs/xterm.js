@@ -1,4 +1,7 @@
 {
+  "files.associations": {
+    ".eslintrc.json.typings": "jsonc"
+  },
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.quoteStyle": "single",
   "mochaExplorer.envPath": ".mocha.env",
