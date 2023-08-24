@@ -66,15 +66,6 @@ export class CellColorResolver {
     if (code === NULL_CELL_CODE && cell.extended.underlineStyle !== UnderlineStyle.DOTTED) {
       $variantOffset = 0;
     }
-    const fontSize = this._terminal.options.fontSize;
-    const drp = this._coreBrowserService.dpr;
-    const lineWidth = Math.max(1, Math.floor(fontSize! * drp / 15));
-    let chWidth: number;
-    if (typeof code === 'number') {
-      chWidth = this._unicodeService.wcwidth(code);
-    } else {
-      chWidth = this._unicodeService.getStringCellWidth(code);
-    }
 
     // Apply decorations on the bottom layer
     this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
@@ -157,12 +148,22 @@ export class CellColorResolver {
     this.result.bg = $hasBg ? $bg : this.result.bg;
     this.result.fg = $hasFg ? $fg : this.result.fg;
 
+    // Reset overrides variantOffset
     this.result.ext &= ~ExtFlags.VARIANT_OFFSET;
     this.result.ext |= ($variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
 
-    // compute next varinatOffset
+    // Compute next varinatOffset
     if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
       if (code !== NULL_CELL_CODE) {
+        const fontSize = this._terminal.options.fontSize;
+        const drp = this._coreBrowserService.dpr;
+        const lineWidth = Math.max(1, Math.floor(fontSize! * drp / 15));
+        let chWidth: number;
+        if (typeof code === 'number') {
+          chWidth = this._unicodeService.wcwidth(code);
+        } else {
+          chWidth = this._unicodeService.getStringCellWidth(code);
+        }
         $variantOffset = computeVarinatOffset(deviceCellWidth * chWidth, lineWidth, $variantOffset);
       }
     } else {
