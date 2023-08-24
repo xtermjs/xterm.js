@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2023 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { computeVarinatOffset } from 'browser/renderer/shared/RendererUtils';
 import { assert } from 'chai';
 
