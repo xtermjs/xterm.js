@@ -24,8 +24,6 @@ const MINIMUM_ROWS = 1;
 export class FitAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
 
-  constructor() {}
-
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
   }
