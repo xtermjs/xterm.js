@@ -5,7 +5,7 @@
 
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Terminal } from 'xterm';
 
@@ -27,9 +27,10 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
     optionsService: IOptionsService,
-    themeService: IThemeService
+    themeService: IThemeService,
+    unicodeService: IUnicodeService
   ) {
-    super(terminal, container, 'selection', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'selection', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService, unicodeService);
     this._clearState();
   }
 

@@ -13,7 +13,7 @@ import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { ExtFlags, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
-import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
@@ -55,10 +55,11 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
     protected readonly _decorationService: IDecorationService,
-    protected readonly _coreBrowserService: ICoreBrowserService
+    protected readonly _coreBrowserService: ICoreBrowserService,
+    private readonly _unicodeService: IUnicodeService
   ) {
     super();
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService);
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService, _unicodeService);
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
@@ -365,12 +366,9 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * Draws one or more characters at a cell. If possible this will draw using
    * the character atlas to reduce draw time.
    */
-  protected _drawChars(cell: ICellData, x: number, y: number, variantOffset: number = 0): void {
+  protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
-    this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
-
-    this._cellColorResolver.result.ext &= ~ExtFlags.VARIANT_OFFSET;
-    this._cellColorResolver.result.ext |= (variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
+    this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y, this._deviceCellWidth);
 
     if (!this._charAtlas) {
       return;

@@ -16,6 +16,7 @@ import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'bro
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { color, css } from 'common/Color';
 import { Terminal } from 'xterm';
+import { computeVarinatOffset } from 'browser/renderer/shared/RendererUtils';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -42,9 +43,9 @@ export class TextRenderLayer extends BaseRenderLayer {
     decorationService: IDecorationService,
     coreBrowserService: ICoreBrowserService,
     themeService: IThemeService,
-    private readonly _unicodeService: IUnicodeService
+    unicodeService: IUnicodeService
   ) {
-    super(terminal, container, 'text', zIndex, alpha, themeService, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'text', zIndex, alpha, themeService, bufferService, optionsService, decorationService, coreBrowserService, unicodeService);
     this._state = new GridCache<CharData>();
     this.register(optionsService.onSpecificOptionChange('allowTransparency', value => this._setTransparency(value)));
   }
@@ -75,20 +76,13 @@ export class TextRenderLayer extends BaseRenderLayer {
     callback: (
       cell: ICellData,
       x: number,
-      y: number,
-      variantOffset: number
+      y: number
     ) => void
   ): void {
-    const fontSize = this._optionsService.rawOptions.fontSize;
-    const drp = this._coreBrowserService.dpr;
-    const lineWidth = Math.max(1, Math.floor(fontSize * drp / 15));
-    const deviceCellWidth = this._charAtlas?.getDeviceCellWidth();
-    let variantOffset: number = -1;
     for (let y = firstRow; y <= lastRow; y++) {
       const row = y + this._bufferService.buffer.ydisp;
       const line = this._bufferService.buffer.lines.get(row);
       const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
-      variantOffset = 0;
       for (let x = 0; x < this._bufferService.cols; x++) {
         line!.loadCell(x, this._workCell);
         let cell = this._workCell;
@@ -100,18 +94,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
         if (cell.getWidth() === 0) {
-          if (cell.extended.underlineStyle !== UnderlineStyle.DOTTED) {
-            variantOffset = 0;
-          }
           continue;
-        }
-
-        const code = cell.getCode();
-        let chWidth: number;
-        if (typeof code === 'number') {
-          chWidth = this._unicodeService.wcwidth(code);
-        } else {
-          chWidth = this._unicodeService.getStringCellWidth(code);
         }
 
         // exit early for NULL and SP
@@ -167,17 +150,8 @@ export class TextRenderLayer extends BaseRenderLayer {
         callback(
           cell,
           x,
-          y,
-          variantOffset
+          y
         );
-
-        if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
-          if (code !== NULL_CELL_CODE) {
-            variantOffset = ((deviceCellWidth! * chWidth) - ((lineWidth * 2) - variantOffset)) % (lineWidth * 2);
-          }
-        } else {
-          variantOffset = 0;
-        }
 
         x = lastCharX;
       }
@@ -263,7 +237,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(firstRow: number, lastRow: number): void {
-    this._forEachCell(firstRow, lastRow, (cell, x, y, variantOffset) => this._drawChars(cell, x, y, variantOffset ?? 0));
+    this._forEachCell(firstRow, lastRow, (cell, x, y) => this._drawChars(cell, x, y));
   }
 
   public handleGridChanged(firstRow: number, lastRow: number): void {

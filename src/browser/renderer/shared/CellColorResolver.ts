@@ -1,8 +1,9 @@
+import { computeVarinatOffset } from 'browser/renderer/shared/RendererUtils';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { Attributes, BgFlags, FgFlags } from 'common/buffer/Constants';
-import { IDecorationService } from 'common/services/Services';
+import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
+import { IDecorationService, IUnicodeService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 
@@ -13,6 +14,9 @@ let $hasFg = false;
 let $hasBg = false;
 let $isSelected = false;
 let $colors: ReadonlyColorSet | undefined;
+let $x = -1;
+let $y = -1;
+let $variantOffset = 0;
 
 export class CellColorResolver {
   /**
@@ -30,7 +34,8 @@ export class CellColorResolver {
     private readonly _selectionRenderModel: ISelectionRenderModel,
     private readonly _decorationService: IDecorationService,
     private readonly _coreBrowserService: ICoreBrowserService,
-    private readonly _themeService: IThemeService
+    private readonly _themeService: IThemeService,
+    private readonly _unicodeService: IUnicodeService
   ) {
   }
 
@@ -38,7 +43,7 @@ export class CellColorResolver {
    * Resolves colors for the cell, putting the result into the shared {@link result}. This resolves
    * overrides, inverse and selection for the cell which can then be used to feed into the renderer.
    */
-  public resolve(cell: ICellData, x: number, y: number): void {
+  public resolve(cell: ICellData, x: number, y: number,deviceCellWidth: number): void {
     this.result.bg = cell.bg;
     this.result.fg = cell.fg;
     this.result.ext = cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0;
@@ -52,6 +57,26 @@ export class CellColorResolver {
     $hasFg = false;
     $isSelected = false;
     $colors = this._themeService.colors;
+
+    if ($y !== y) {
+      $variantOffset = 0;
+    }
+    $x = x;
+    $y = y;
+
+    const code = cell.getCode();
+    if (code === NULL_CELL_CODE && cell.extended.underlineStyle !== UnderlineStyle.DOTTED) {
+      $variantOffset = 0;
+    }
+    const fontSize = this._terminal.options.fontSize;
+    const drp = this._coreBrowserService.dpr;
+    const lineWidth = Math.max(1, Math.floor(fontSize! * drp / 15));
+    let chWidth: number;
+    if (typeof code === 'number') {
+      chWidth = this._unicodeService.wcwidth(code);
+    } else {
+      chWidth = this._unicodeService.getStringCellWidth(code);
+    }
 
     // Apply decorations on the bottom layer
     this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
@@ -133,5 +158,17 @@ export class CellColorResolver {
     // Use the override if it exists
     this.result.bg = $hasBg ? $bg : this.result.bg;
     this.result.fg = $hasFg ? $fg : this.result.fg;
+
+    this.result.ext &= ~ExtFlags.VARIANT_OFFSET;
+    this.result.ext |= ($variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
+
+    // compute next varinatOffset
+    if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
+      if (code !== NULL_CELL_CODE) {
+        $variantOffset = computeVarinatOffset(deviceCellWidth * chWidth, lineWidth, $variantOffset);
+      }
+    } else {
+      $variantOffset = 0;
+    }
   }
 }

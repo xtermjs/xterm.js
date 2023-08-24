@@ -9,7 +9,7 @@ import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { computeVarinatOffset, excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IUnicodeService } from 'common/services/Services';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
@@ -597,14 +597,16 @@ export class TextureAtlas implements ITextureAtlas {
             );
             break;
           case UnderlineStyle.DOTTED:
-            const offsetWidth = nextOffset >= lineWidth ? lineWidth * 2 - nextOffset : lineWidth - nextOffset;
+            const offsetWidth = nextOffset === 0 ? 0 :
+              (nextOffset >= lineWidth ? lineWidth * 2 - nextOffset : lineWidth - nextOffset);
             if (offsetWidth === 0) {
               this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
               this._tmpCtx.moveTo(xChLeft, yTop);
               this._tmpCtx.lineTo(xChRight, yTop);
             } else {
-              const isFull = nextOffset >= lineWidth ? false : true;
-              if (isFull === false) {
+              // a line and a gap.
+              const isLineStart = nextOffset >= lineWidth ? false : true;
+              if (isLineStart === false) {
                 this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
                 this._tmpCtx.moveTo(xChLeft + offsetWidth, yTop);
                 this._tmpCtx.lineTo(xChRight, yTop);
@@ -616,7 +618,7 @@ export class TextureAtlas implements ITextureAtlas {
                 this._tmpCtx.lineTo(xChRight, yTop);
               }
             }
-            nextOffset = (xChRight - xChLeft - ((lineWidth * 2) - nextOffset)) % (Math.round(lineWidth) * 2);
+            nextOffset = computeVarinatOffset(xChRight - xChLeft, lineWidth, nextOffset);
             break;
           case UnderlineStyle.DASHED:
             this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);

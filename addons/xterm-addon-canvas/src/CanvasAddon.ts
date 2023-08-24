@@ -54,7 +54,7 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     setTraceLogger(logService);
 
     this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService, unicodeService);
-    
+
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);

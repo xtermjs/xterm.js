@@ -8,7 +8,7 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { IBufferService, IOptionsService, ICoreService, IDecorationService } from 'common/services/Services';
+import { IBufferService, IOptionsService, ICoreService, IDecorationService, IUnicodeService } from 'common/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Terminal } from 'xterm';
@@ -45,9 +45,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     private readonly _coreService: ICoreService,
     coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
-    themeService: IThemeService
+    themeService: IThemeService,
+    unicodeService: IUnicodeService
   ) {
-    super(terminal, container, 'cursor', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
+    super(terminal, container, 'cursor', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService, unicodeService);
     this._state = {
       x: 0,
       y: 0,

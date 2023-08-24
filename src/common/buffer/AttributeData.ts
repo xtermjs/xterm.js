@@ -127,9 +127,7 @@ export class AttributeData implements IAttributeData {
       : UnderlineStyle.NONE;
   }
   public getUnderlineVarinatOffset(): number {
-    return this.fg & FgFlags.UNDERLINE
-      ? (this.bg & BgFlags.HAS_EXTENDED ? this.extended.underlineVarinatOffset : 0)
-      : 0;
+    return this.extended.underlineVarinatOffset;
   }
 }
 
@@ -180,7 +178,11 @@ export class ExtendedAttrs implements IExtendedAttrs {
   }
 
   public get underlineVarinatOffset(): number {
-    return (this._ext & ExtFlags.VARIANT_OFFSET) >> 29;
+    const val = (this._ext & ExtFlags.VARIANT_OFFSET) >> 29;
+    if (val < 0) {
+      return val ^ 4294967288;
+    }
+    return val;
   }
   public set underlineVarinatOffset(value: number) {
     this._ext &= ~ExtFlags.VARIANT_OFFSET;
