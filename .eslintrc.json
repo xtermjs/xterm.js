@@ -127,6 +127,10 @@
       { "selector": "typeLike", "format": ["PascalCase"] },
       { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] }
     ],
+    "@typescript-eslint/no-confusing-void-expression": [
+      "warn",
+      { "ignoreArrowShorthand": true }
+    ],
     "@typescript-eslint/no-useless-constructor": "warn",
     "@typescript-eslint/prefer-namespace-keyword": "warn",
     "@typescript-eslint/type-annotation-spacing": "warn",
