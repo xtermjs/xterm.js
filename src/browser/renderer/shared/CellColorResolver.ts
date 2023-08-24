@@ -14,7 +14,6 @@ let $hasFg = false;
 let $hasBg = false;
 let $isSelected = false;
 let $colors: ReadonlyColorSet | undefined;
-let $x = -1;
 let $y = -1;
 let $variantOffset = 0;
 
@@ -43,7 +42,7 @@ export class CellColorResolver {
    * Resolves colors for the cell, putting the result into the shared {@link result}. This resolves
    * overrides, inverse and selection for the cell which can then be used to feed into the renderer.
    */
-  public resolve(cell: ICellData, x: number, y: number,deviceCellWidth: number): void {
+  public resolve(cell: ICellData, x: number, y: number, deviceCellWidth: number): void {
     this.result.bg = cell.bg;
     this.result.fg = cell.fg;
     this.result.ext = cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0;
@@ -61,7 +60,6 @@ export class CellColorResolver {
     if ($y !== y) {
       $variantOffset = 0;
     }
-    $x = x;
     $y = y;
 
     const code = cell.getCode();

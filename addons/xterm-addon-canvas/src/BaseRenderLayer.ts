@@ -12,7 +12,7 @@ import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRen
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
-import { ExtFlags, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
+import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';

@@ -103,8 +103,6 @@ export interface ITextureAtlas extends IDisposable {
    */
   beginFrame(): boolean;
 
-  getDeviceCellWidth(): number;
-
   /**
    * Clear all glyphs from the texture atlas.
    */

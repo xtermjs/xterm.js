@@ -17,7 +17,7 @@ import { Disposable, MutableDisposable, getDisposeArrayDisposable, toDisposable 
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, ExtFlags, NULL_CELL_CHAR, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
+import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { traceCall } from 'common/services/LogService';
 import { ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IDisposable, Terminal } from 'xterm';

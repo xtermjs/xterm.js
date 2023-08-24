@@ -960,10 +960,6 @@ export class TextureAtlas implements ITextureAtlas {
       }
     };
   }
-
-  public getDeviceCellWidth(): number {
-    return this._config.deviceCellWidth;
-  }
 }
 
 class AtlasPage {
