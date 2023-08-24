@@ -5,7 +5,7 @@
 import { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
-import { Base64Decoder } from './base64.wasm';
+import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
