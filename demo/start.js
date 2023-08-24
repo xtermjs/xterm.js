@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
- *
- * This file is the entry point for browserify.
  */
+
+// @ts-check
 
 const path = require('path');
 const webpack = require('webpack');
@@ -20,6 +20,8 @@ startServer();
  * For production builds see `webpack.config.js` in the root directory. If that is built the demo
  * can use that by switching out which `Terminal` is imported in `client.ts`, this is useful for
  * validating that the packaged version works correctly.
+ *
+ * @type {import('webpack').Configuration}
  */
 const clientConfig = {
   entry: path.resolve(__dirname, 'client.ts'),
@@ -69,12 +71,13 @@ const clientConfig = {
 const compiler = webpack(clientConfig);
 
 compiler.watch({
-  // Example watchOptions
   aggregateTimeout: 300,
   poll: undefined
 }, (err, stats) => {
-  // Print watch/build result here...
-  console.log(stats.toString({
+  if (err) {
+    console.error(err);
+  }
+  console.log(stats?.toString({
     colors: true
   }));
 });

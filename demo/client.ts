@@ -59,7 +59,7 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -71,7 +71,7 @@ interface IDemoAddon<T extends AddonType> {
           T extends 'image' ? typeof ImageAddon :
             T extends 'search' ? typeof SearchAddon :
               T extends 'serialize' ? typeof SerializeAddon :
-                T extends 'web-links' ? typeof WebLinksAddon :
+                T extends 'webLinks' ? typeof WebLinksAddon :
                   T extends 'unicode11' ? typeof Unicode11Addon :
                     T extends 'ligatures' ? typeof LigaturesAddon :
                       typeof WebglAddon
@@ -83,7 +83,7 @@ interface IDemoAddon<T extends AddonType> {
           T extends 'image' ? ImageAddon :
             T extends 'search' ? SearchAddon :
               T extends 'serialize' ? SerializeAddon :
-                T extends 'web-links' ? WebLinksAddon :
+                T extends 'webLinks' ? WebLinksAddon :
                   T extends 'webgl' ? WebglAddon :
                     T extends 'unicode11' ? typeof Unicode11Addon :
                       T extends 'ligatures' ? typeof LigaturesAddon :
@@ -98,7 +98,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
-  'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
+  webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
@@ -170,7 +170,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
     addons.ligatures.instance = undefined;
-    addons['web-links'].instance = undefined;
+    addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
     document.getElementById('dispose').innerHTML = 'Recreate Terminal';
   } else {
@@ -272,13 +272,13 @@ function createTerminal(): void {
   } catch (e) {
     console.warn(e);
   }
-  addons['web-links'].instance = new WebLinksAddon();
+  addons.webLinks.instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicode11.instance);
-  typedTerm.loadAddon(addons['web-links'].instance);
+  typedTerm.loadAddon(addons.webLinks.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -418,10 +418,13 @@ function initOptions(term: TerminalType): void {
     'cancelEvents',
     'convertEol',
     'termName',
-    'cols', 'rows', // subsumed by "size" (cols_rows) option
+    'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
+    'linkHandler',
+    'logger',
     'theme',
-    'windowOptions'
+    'windowOptions',
+    'windowsPty'
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],
@@ -433,7 +436,7 @@ function initOptions(term: TerminalType): void {
     logLevel: ['trace', 'debug', 'info', 'warn', 'error', 'off'],
     theme: ['default', 'xtermjs', 'sapphire', 'light'],
     wordSeparator: null,
-    cols_rows: null
+    colsRows: null
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
@@ -466,7 +469,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
-    if (o === 'cols_rows') {
+    if (o === 'colsRows') {
       html += `<div class="option"><label>size (<var>cols</var><code>x</code><var>rows</var> or <code>auto</code>) <input id="opt-${o}" type="text" value="auto"/></label></div>`;
     } else if (stringOptions[o]) {
       const selectedOption = o === 'theme' ? 'xtermjs' : term.options[o];
@@ -511,8 +514,8 @@ function initOptions(term: TerminalType): void {
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       let value: any = input.value;
-      if (o === 'cols_rows') {
-        let m = input.value.match(/^([0-9]+)x([0-9]+)$/);
+      if (o === 'colsRows') {
+        const m = input.value.match(/^([0-9]+)x([0-9]+)$/);
         if (m) {
           autoResize = false;
           term.resize(parseInt(m[1]), parseInt(m[2]));
@@ -1275,29 +1278,29 @@ function initImageAddonExposed(): void {
   const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
   ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
 
-  const sixel_demo = (url: string) => () => fetch(url)
+  const sixelDemo = (url: string) => () => fetch(url)
     .then(resp => resp.arrayBuffer())
     .then(buffer => {
       term.write('\r\n');
       term.write(new Uint8Array(buffer));
     });
 
-  const iip_demo = (url: string) => () => fetch(url)
-  .then(resp => resp.arrayBuffer())
-  .then(buffer => {
-    const data = new Uint8Array(buffer);
-    let sdata = '';
-    for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
-    term.write('\r\n');
-    term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
-  });
+  const iipDemo = (url: string) => () => fetch(url)
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      const data = new Uint8Array(buffer);
+      let sdata = '';
+      for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+      term.write('\r\n');
+      term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
+    });
 
   document.getElementById('image-demo1').addEventListener('click',
-    sixel_demo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
+    sixelDemo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
   document.getElementById('image-demo2').addEventListener('click',
-    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
+    sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
   document.getElementById('image-demo3').addEventListener('click',
-    iip_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+    iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
 
   // demo for image retrieval API
   term.element.addEventListener('click', (ev: MouseEvent) => {
