@@ -126,10 +126,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
 
-  // Cached result of getJoinProperties(..., precedingCodepoint).
-  // Only valid if precedingCodepoint !== 0
-  public precedingJoinState: number = -1; // UnicodeJoinProperties
-
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   public getAttrData(): IAttributeData { return this._curAttrData; }
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
@@ -521,8 +517,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
     }
 
-    let precedingJoinState = this._parser.precedingCodepoint === 0 ? 0
-      : this.precedingJoinState;
+    let precedingJoinState = this._parser.precedingJoinState;
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
@@ -636,18 +631,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
-    this.precedingJoinState = precedingJoinState;
-    // store last char in Parser.precedingCodepoint for REP to work correctly
-    // This needs to check whether:
-    //  - combining: only base char gets carried on (bug in xterm?)
-    if (end - start > 0) {
-      bufferRow.loadCell(this._activeBuffer.x - 1, this._workCell);
-      if (this._workCell.isCombined()) {
-        this._parser.precedingCodepoint = this._workCell.getChars().charCodeAt(0);
-      } else {
-        this._parser.precedingCodepoint = this._workCell.content;
-      }
-    }
+    this._parser.precedingJoinState = precedingJoinState;
 
     // handle wide chars: reset cell to the right if it is second cell of a wide char
     if (this._activeBuffer.x < cols && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x) === 0 && !bufferRow.hasContent(this._activeBuffer.x)) {
@@ -1593,9 +1577,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    If the character preceding REP is a control function or part of a control function,
    *    the effect of REP is not defined by this Standard.
    *
-   * Since we propagate the terminal as xterm-256color we have to follow xterm's behavior:
-   *    - fullwidth + surrogate chars are ignored
-   *    - for combining chars only the base char gets repeated
+   * We extend xterm's behavior to allow repeating entire grapheme clusters.
+   * This isn't 100% xterm-compatible, but it seems saner and more useful.
    *    - text attrs are applied normally
    *    - wrap around is respected
    *    - any valid sequence resets the carried forward char
@@ -1609,16 +1592,29 @@ export class InputHandler extends Disposable implements IInputHandler {
    * (NOOP for any other sequence in between or NON ASCII characters).
    */
   public repeatPrecedingCharacter(params: IParams): boolean {
-    if (!this._parser.precedingCodepoint) {
+    const joinState = this._parser.precedingJoinState;
+    if (!joinState) {
       return true;
     }
     // call print to insert the chars and handle correct wrapping
     const length = params.params[0] || 1;
-    const data = new Uint32Array(length);
-    for (let i = 0; i < length; ++i) {
-      data[i] = this._parser.precedingCodepoint;
+    const chWidth = UnicodeService.extractWidth(joinState);
+    const x = this._activeBuffer.x - chWidth;
+    const bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+    const text = bufferRow.getString(x);
+    const data = new Uint32Array(text.length * length);
+    let idata = 0;
+    for (let itext = 0; itext < text.length; ) {
+      const ch = text.codePointAt(itext) || 0;
+      data[idata++] = ch;
+      itext += ch > 0xffff ? 2 : 1;
     }
-    this.print(data, 0, data.length);
+    let tlength = idata;
+    for (let i = 1; i < length; ++i) {
+      data.copyWithin(tlength, 0, idata);
+      tlength += idata;
+    }
+    this.print(data, 0, tlength);
     return true;
   }
 

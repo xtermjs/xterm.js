@@ -272,18 +272,18 @@ describe('InputHandler Integration Tests', function(): void {
           `);
       await pollFor(page, () => getLinesAsArray(4), ['##', '##', '##', '######']);
       await pollFor(page, () => getCursor(), { col: 6, row: 3 });
-      // should not repeat on fullwidth chars
+      // do repeat on fullwidth chars (change from xterm)
       await page.evaluate(`
           window.term.reset();
           window.term.write('￥\x1b[10b');
           `);
-      await pollFor(page, () => getLinesAsArray(1), ['￥']);
-      // should repeat only base char of combining
+      await pollFor(page, () => getLinesAsArray(1), ['￥￥￥￥￥￥￥￥￥￥￥']);
+      // change from xterm: repeat grapheme cluster
       await page.evaluate(`
           window.term.reset();
-          window.term.write('e\u0301\x1b[5b');
+          window.term.write('e\u0301\x1b[2b');
           `);
-      await pollFor(page, () => getLinesAsArray(1), ['e\u0301eeeee']);
+      await pollFor(page, () => getLinesAsArray(1), ['e\u0301e\u0301e\u0301']);
       // should wrap correctly
       await page.evaluate(`
           window.term.reset();
