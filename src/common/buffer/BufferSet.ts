@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { EventEmitter } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
 import { IAttributeData } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IOptionsService, IBufferService } from 'common/services/Services';
-import { Disposable } from 'common/Lifecycle';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and

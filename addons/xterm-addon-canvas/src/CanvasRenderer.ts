@@ -3,12 +3,12 @@
  * @license MIT
  */
 
+import { ILinkifier2 } from 'browser/Types';
 import { removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, ISelectionService, IThemeService } from 'browser/services/Services';
-import { ILinkifier2 } from 'browser/Types';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
@@ -44,15 +44,15 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     private readonly _coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
     private readonly _themeService: IThemeService,
-    private readonly _unicodeService: IUnicodeService
+    unicodeService: IUnicodeService
   ) {
     super();
     const allowTransparency = this._optionsService.rawOptions.allowTransparency;
     this._renderLayers = [
-      new TextRenderLayer(this._terminal, this._screenElement, 0, allowTransparency, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService, _themeService, _unicodeService),
-      new SelectionRenderLayer(this._terminal, this._screenElement, 1, this._bufferService, this._coreBrowserService, decorationService, this._optionsService, _themeService, _unicodeService),
-      new LinkRenderLayer(this._terminal, this._screenElement, 2, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService, _themeService, _unicodeService),
-      new CursorRenderLayer(this._terminal, this._screenElement, 3, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService, _themeService, _unicodeService)
+      new TextRenderLayer(this._terminal, this._screenElement, 0, allowTransparency, this._bufferService, this._optionsService, characterJoinerService, decorationService, this._coreBrowserService, _themeService, unicodeService),
+      new SelectionRenderLayer(this._terminal, this._screenElement, 1, this._bufferService, this._coreBrowserService, decorationService, this._optionsService, _themeService, unicodeService),
+      new LinkRenderLayer(this._terminal, this._screenElement, 2, linkifier2, this._bufferService, this._optionsService, decorationService, this._coreBrowserService, _themeService, unicodeService),
+      new CursorRenderLayer(this._terminal, this._screenElement, 3, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService, _themeService, unicodeService)
     ];
     for (const layer of this._renderLayers) {
       forwardEvent(layer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);

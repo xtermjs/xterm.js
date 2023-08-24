@@ -3,18 +3,17 @@
  * @license MIT
  */
 
+import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
 import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
-import { ICellData } from 'common/Types';
-import { CellData } from 'common/buffer/CellData';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { IBufferService, IOptionsService, ICoreService, IDecorationService, IUnicodeService } from 'common/services/Services';
-import { IEventEmitter } from 'common/EventEmitter';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { Terminal } from 'xterm';
+import { IEventEmitter } from 'common/EventEmitter';
 import { toDisposable } from 'common/Lifecycle';
 import { isFirefox } from 'common/Platform';
-import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
+import { ICellData } from 'common/Types';
+import { CellData } from 'common/buffer/CellData';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { Terminal } from 'xterm';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
 interface ICursorState {
   x: number;
@@ -23,11 +22,6 @@ interface ICursorState {
   style: string;
   width: number;
 }
-
-/**
- * The time between cursor blinks.
- */
-const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;

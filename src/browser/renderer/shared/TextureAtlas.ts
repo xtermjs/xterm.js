@@ -3,20 +3,20 @@
  * @license MIT
  */
 
+import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
-import { IColor } from 'common/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { computeVarinatOffset, excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IUnicodeService } from 'common/services/Services';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { NULL_COLOR, color, rgba } from 'common/Color';
+import { EventEmitter } from 'common/EventEmitter';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { EventEmitter } from 'common/EventEmitter';
-import { IColorContrastCache } from 'browser/Types';
+import { IColor } from 'common/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
+import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { traceCall } from 'common/services/LogService';
+import { IUnicodeService } from 'common/services/Services';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.

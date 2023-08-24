@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { ICoreService, ILogService, IOptionsService, IBufferService } from 'common/services/Services';
-import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { IDecPrivateModes, IModes } from 'common/Types';
 import { clone } from 'common/Clone';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
+import { IDecPrivateModes, IModes } from 'common/Types';
+import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
 
 const DEFAULT_MODES: IModes = Object.freeze({
   insertMode: false
