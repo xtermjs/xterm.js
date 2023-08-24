@@ -414,8 +414,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
 export class SerializeAddon implements ITerminalAddon {
   private _terminal: Terminal | undefined;
 
-  constructor() { }
-
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
   }
