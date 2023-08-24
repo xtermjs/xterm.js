@@ -32,7 +32,6 @@ jobs:
           ./addons/xterm-addon-canvas/out-test/* \
           ./addons/xterm-addon-fit/out/* \
           ./addons/xterm-addon-fit/out-test/* \
-          ./addons/xterm-addon-image/inwasm-builds/out/* \
           ./addons/xterm-addon-image/out/* \
           ./addons/xterm-addon-image/out-test/* \
           ./addons/xterm-addon-ligatures/out/* \
