@@ -366,11 +366,11 @@ export const powerlineDefinitions: { [index: string]: IVectorShape } = {
   // Right semi-circle solid
   '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.FILL, rightPadding: 1 },
   // Right semi-circle line
-  '\u{E0B5}': { d: 'M0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: VectorType.STROKE, rightPadding: 1 },
+  '\u{E0B5}': { d: 'M.4,1 C.622,1,1,.676,.88,.5 C1,.324,0.622,0,.4,0', type: VectorType.STROKE, rightPadding: 1 },
   // Left semi-circle solid
   '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.FILL, leftPadding: 1 },
   // Left semi-circle line
-  '\u{E0B7}': { d: 'M1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: VectorType.STROKE, leftPadding: 1 },
+  '\u{E0B7}': { d: 'M.6,1 C0.378,1,0,.676,.12,.5 C0,0.324,0.378,0,0.6,0', type: VectorType.STROKE, leftPadding: 1 },
   // Lower left triangle
   '\u{E0B8}': { d: 'M-.5,-.5 L1.5,1.5 L-.5,1.5', type: VectorType.FILL },
   // Backslash separator
