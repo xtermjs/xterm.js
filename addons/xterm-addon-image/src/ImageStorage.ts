@@ -56,7 +56,7 @@ class ExtendedAttrsImage implements IExtendedAttrsImage {
   public get underlineVarinatOffset(): number {
     const val = (this._ext & ExtFlags.VARIANT_OFFSET) >> 29;
     if (val < 0) {
-      return val ^ 4294967288;
+      return val ^ 0xFFFFFFF8;
     }
     return val;
   }
