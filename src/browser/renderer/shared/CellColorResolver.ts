@@ -156,8 +156,7 @@ export class CellColorResolver {
     if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
       if (code !== NULL_CELL_CODE) {
         const fontSize = this._terminal.options.fontSize;
-        const drp = this._coreBrowserService.dpr;
-        const lineWidth = Math.max(1, Math.floor(fontSize! * drp / 15));
+        const lineWidth = Math.max(1, Math.floor(fontSize! * this._coreBrowserService.dpr / 15));
         let chWidth: number;
         if (typeof code === 'number') {
           chWidth = this._unicodeService.wcwidth(code);
