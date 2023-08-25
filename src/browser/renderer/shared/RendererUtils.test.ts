@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { computeVarinatOffset } from 'browser/renderer/shared/RendererUtils';
+import { computeNextVarinatOffset } from 'browser/renderer/shared/RendererUtils';
 import { assert } from 'chai';
 
 describe('RendererUtils', () => {
-  it('computeVarinatOffset', () => {
+  it('computeNextVarinatOffset', () => {
     const cellWidth = 11;
     const doubleCellWidth = 22;
     let line = 1;
@@ -19,7 +19,7 @@ describe('RendererUtils', () => {
     let result = [1, 0, 0, 0];
     for (let index = 0; index < cells.length; index++) {
       const cell = cells[index];
-      varinatOffset = computeVarinatOffset(cell, line, varinatOffset);
+      varinatOffset = computeNextVarinatOffset(cell, line, varinatOffset);
       assert.equal(varinatOffset, result[index]);
     }
 
@@ -31,7 +31,7 @@ describe('RendererUtils', () => {
     result = [3, 2, 0 ,2];
     for (let index = 0; index < cells.length; index++) {
       const cell = cells[index];
-      varinatOffset = computeVarinatOffset(cell, line, varinatOffset);
+      varinatOffset = computeNextVarinatOffset(cell, line, varinatOffset);
       assert.equal(varinatOffset, result[index]);
     }
 
@@ -43,7 +43,7 @@ describe('RendererUtils', () => {
     result = [5, 4, 2, 0];
     for (let index = 0; index < cells.length; index++) {
       const cell = cells[index];
-      varinatOffset = computeVarinatOffset(cell, line, varinatOffset);
+      varinatOffset = computeNextVarinatOffset(cell, line, varinatOffset);
       assert.equal(varinatOffset, result[index]);
     }
   });

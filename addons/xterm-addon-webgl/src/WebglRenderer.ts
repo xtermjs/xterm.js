@@ -19,7 +19,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { traceCall } from 'common/services/LogService';
-import { ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
@@ -70,14 +70,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _decorationService: IDecorationService,
     private readonly _optionsService: IOptionsService,
     private readonly _themeService: IThemeService,
-    private readonly _unicodeService: IUnicodeService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
 
     this.register(this._themeService.onChangeColors(() => this._handleColorChange()));
 
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService, this._unicodeService);
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
 
     this._core = (this._terminal as any)._core;
 

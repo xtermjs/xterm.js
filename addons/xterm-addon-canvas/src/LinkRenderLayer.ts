@@ -8,7 +8,7 @@ import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IBufferService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
@@ -24,10 +24,9 @@ export class LinkRenderLayer extends BaseRenderLayer {
     optionsService: IOptionsService,
     decorationService: IDecorationService,
     coreBrowserService: ICoreBrowserService,
-    themeService: IThemeService,
-    unicodeService: IUnicodeService
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'link', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService, unicodeService);
+    super(terminal, container, 'link', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
 
     this.register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
     this.register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));

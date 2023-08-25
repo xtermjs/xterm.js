@@ -13,7 +13,7 @@ import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
-import { IBufferService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
@@ -55,11 +55,10 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     protected readonly _bufferService: IBufferService,
     protected readonly _optionsService: IOptionsService,
     protected readonly _decorationService: IDecorationService,
-    protected readonly _coreBrowserService: ICoreBrowserService,
-    unicodeService: IUnicodeService
+    protected readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService, unicodeService);
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService);
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();

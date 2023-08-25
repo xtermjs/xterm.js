@@ -10,7 +10,7 @@ import { CharData, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { IBufferService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { GridCache } from './GridCache';
@@ -39,10 +39,9 @@ export class TextRenderLayer extends BaseRenderLayer {
     private readonly _characterJoinerService: ICharacterJoinerService,
     decorationService: IDecorationService,
     coreBrowserService: ICoreBrowserService,
-    themeService: IThemeService,
-    unicodeService: IUnicodeService
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'text', zIndex, alpha, themeService, bufferService, optionsService, decorationService, coreBrowserService, unicodeService);
+    super(terminal, container, 'text', zIndex, alpha, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = new GridCache<CharData>();
     this.register(optionsService.onSpecificOptionChange('allowTransparency', value => this._setTransparency(value)));
   }

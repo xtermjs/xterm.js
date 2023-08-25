@@ -11,7 +11,7 @@ import { toDisposable } from 'common/Lifecycle';
 import { isFirefox } from 'common/Platform';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferService, ICoreService, IDecorationService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
@@ -39,10 +39,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     private readonly _coreService: ICoreService,
     coreBrowserService: ICoreBrowserService,
     decorationService: IDecorationService,
-    themeService: IThemeService,
-    unicodeService: IUnicodeService
+    themeService: IThemeService
   ) {
-    super(terminal, container, 'cursor', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService, unicodeService);
+    super(terminal, container, 'cursor', zIndex, true, themeService, bufferService, optionsService, decorationService, coreBrowserService);
     this._state = {
       x: 0,
       y: 0,

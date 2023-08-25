@@ -8,7 +8,7 @@ import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
-import { IBufferService, IDecorationService, ILogService, IUnicodeService } from 'common/services/Services';
+import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
 import { CanvasRenderer } from './CanvasRenderer';
 
@@ -47,13 +47,12 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     const decorationService: IDecorationService = unsafeCore._decorationService;
     const logService: ILogService = unsafeCore._logService;
     const themeService: IThemeService = unsafeCore._themeService;
-    const unicodeService: IUnicodeService = unsafeCore.unicodeService;
 
     // Set trace logger just in case it hasn't been yet which could happen when the addon is
     // bundled separately to the core module
     setTraceLogger(logService);
 
-    this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService, unicodeService);
+    this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
 
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));

@@ -1,9 +1,8 @@
-import { computeVarinatOffset } from 'browser/renderer/shared/RendererUtils';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
-import { IDecorationService, IUnicodeService } from 'common/services/Services';
+import { IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from 'xterm';
 
@@ -14,7 +13,6 @@ let $hasFg = false;
 let $hasBg = false;
 let $isSelected = false;
 let $colors: ReadonlyColorSet | undefined;
-let $y = -1;
 let $variantOffset = 0;
 
 export class CellColorResolver {
@@ -30,11 +28,11 @@ export class CellColorResolver {
 
   constructor(
     private readonly _terminal: Terminal,
+    private readonly _optionService: IOptionsService,
     private readonly _selectionRenderModel: ISelectionRenderModel,
     private readonly _decorationService: IDecorationService,
     private readonly _coreBrowserService: ICoreBrowserService,
-    private readonly _themeService: IThemeService,
-    private readonly _unicodeService: IUnicodeService
+    private readonly _themeService: IThemeService
   ) {
   }
 
@@ -56,15 +54,12 @@ export class CellColorResolver {
     $hasFg = false;
     $isSelected = false;
     $colors = this._themeService.colors;
-
-    if ($y !== y) {
-      $variantOffset = 0;
-    }
-    $y = y;
+    $variantOffset = 0;
 
     const code = cell.getCode();
-    if (code === NULL_CELL_CODE && cell.extended.underlineStyle !== UnderlineStyle.DOTTED) {
-      $variantOffset = 0;
+    if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
+      const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
+      $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
     }
 
     // Apply decorations on the bottom layer
@@ -151,22 +146,5 @@ export class CellColorResolver {
     // Reset overrides variantOffset
     this.result.ext &= ~ExtFlags.VARIANT_OFFSET;
     this.result.ext |= ($variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
-
-    // Compute next variantOffset
-    if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
-      if (code !== NULL_CELL_CODE) {
-        const fontSize = this._terminal.options.fontSize;
-        const lineWidth = Math.max(1, Math.floor(fontSize! * this._coreBrowserService.dpr / 15));
-        let chWidth: number;
-        if (typeof code === 'number') {
-          chWidth = this._unicodeService.wcwidth(code);
-        } else {
-          chWidth = this._unicodeService.getStringCellWidth(code);
-        }
-        $variantOffset = computeVarinatOffset(deviceCellWidth * chWidth, lineWidth, $variantOffset);
-      }
-    } else {
-      $variantOffset = 0;
-    }
   }
 }
