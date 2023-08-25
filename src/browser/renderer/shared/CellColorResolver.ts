@@ -152,7 +152,7 @@ export class CellColorResolver {
     this.result.ext &= ~ExtFlags.VARIANT_OFFSET;
     this.result.ext |= ($variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
 
-    // Compute next varinatOffset
+    // Compute next variantOffset
     if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
       if (code !== NULL_CELL_CODE) {
         const fontSize = this._terminal.options.fontSize;
