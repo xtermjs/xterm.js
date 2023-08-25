@@ -446,7 +446,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         chars = cell.getChars();
         code = cell.getCode();
-
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
