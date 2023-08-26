@@ -152,49 +152,47 @@ export class TextureAtlas implements ITextureAtlas {
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
     if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages)) {
-      queueMicrotask(() => {
-        // Find the set of the largest 4 images, below the maximum size, with the highest
-        // percentages used
-        const pagesBySize = this._pages.filter(e => {
-          return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
-        }).sort((a, b) => {
-          if (b.canvas.width !== a.canvas.width) {
-            return b.canvas.width - a.canvas.width;
-          }
-          return b.percentageUsed - a.percentageUsed;
-        });
-        let sameSizeI = -1;
-        let size = 0;
-        for (let i = 0; i < pagesBySize.length; i++) {
-          if (pagesBySize[i].canvas.width !== size) {
-            sameSizeI = i;
-            size = pagesBySize[i].canvas.width;
-          } else if (i - sameSizeI === 3) {
-            break;
-          }
+      // Find the set of the largest 4 images, below the maximum size, with the highest
+      // percentages used
+      const pagesBySize = this._pages.filter(e => {
+        return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
+      }).sort((a, b) => {
+        if (b.canvas.width !== a.canvas.width) {
+          return b.canvas.width - a.canvas.width;
         }
-
-        // Gather details of the merge
-        const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
-        const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
-        const mergedPageIndex = sortedMergingPagesIndexes[0];
-
-        // Merge into the new page
-        const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-        mergedPage.version++;
-
-        // Replace the first _merging_ page with the _merged_ page
-        this._pages[mergedPageIndex] = mergedPage;
-
-        // Delete the other 3 pages, shifting glyph texture pages as needed
-        for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
-          this._deletePage(sortedMergingPagesIndexes[i]);
-        }
-
-        // Request the model to be cleared to refresh all texture pages.
-        this._requestClearModel = true;
-        this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
+        return b.percentageUsed - a.percentageUsed;
       });
+      let sameSizeI = -1;
+      let size = 0;
+      for (let i = 0; i < pagesBySize.length; i++) {
+        if (pagesBySize[i].canvas.width !== size) {
+          sameSizeI = i;
+          size = pagesBySize[i].canvas.width;
+        } else if (i - sameSizeI === 3) {
+          break;
+        }
+      }
+
+      // Gather details of the merge
+      const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
+      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
+      const mergedPageIndex = this.pages.length - mergingPages.length;
+
+      // Merge into the new page
+      const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
+      mergedPage.version++;
+
+      // Delete the pages, shifting glyph texture pages as needed
+      for (let i = sortedMergingPagesIndexes.length - 1; i >= 0; i--) {
+        this._deletePage(sortedMergingPagesIndexes[i]);
+      }
+
+      // Add the new merged page to the end
+      this.pages.push(mergedPage);
+
+      // Request the model to be cleared to refresh all texture pages.
+      this._requestClearModel = true;
+      this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
 
     // All new atlas pages are created small as they are highly dynamic
@@ -780,7 +778,8 @@ export class TextureAtlas implements ITextureAtlas {
             // improve texture utilization by using the available space before the page is merged
             // and becomes static.
             if (
-              TextureAtlas.maxAtlasPages === this._pages.length &&
+              TextureAtlas.maxAtlasPages &&
+              this._pages.length >= TextureAtlas.maxAtlasPages &&
               activeRow.y + rasterizedGlyph.size.y <= activePage.canvas.height &&
               activeRow.height >= rasterizedGlyph.size.y &&
               activeRow.x + rasterizedGlyph.size.x <= activePage.canvas.width
