@@ -151,7 +151,7 @@ export class TextureAtlas implements ITextureAtlas {
     // microtask to ensure it does not interrupt textures that will be rendered in the current
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
-    if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages / 2)) {
+    if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages)) {
       queueMicrotask(() => {
         // Find the set of the largest 4 images, below the maximum size, with the highest
         // percentages used
@@ -756,13 +756,13 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
-      // Create a new one if too much vertical space would be wasted or there is not enough room
+      // Create a new page if too much vertical space would be wasted or there is not enough room
       // left in the page. The previous active row will become fixed in the process as it now has a
       // fixed height
       if (activeRow.y + rasterizedGlyph.size.y >= activePage.canvas.height || activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
         // Create the new fixed height row, creating a new page if there isn't enough room on the
         // current page
-        let wasNewPageCreated = false;
+        let wasPageAndRowFound = false;
         if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
           // Find the first page with room to create the new row on
           let candidatePage: AtlasPage | undefined;
@@ -775,15 +775,29 @@ export class TextureAtlas implements ITextureAtlas {
           if (candidatePage) {
             activePage = candidatePage;
           } else {
-            // Create a new page if there is no room
-            const newPage = this._createNewPage();
-            activePage = newPage;
-            activeRow = newPage.currentRow;
-            activeRow.height = rasterizedGlyph.size.y;
-            wasNewPageCreated = true;
+            // Before creating a new atlas page that would trigger a page merge, check if the
+            // current active row is sufficient when ignoring the ROW_PIXEL_THRESHOLD. This will
+            // improve texture utilization by using the available space before the page is merged
+            // and becomes static.
+            if (
+              TextureAtlas.maxAtlasPages === this._pages.length &&
+              activeRow.y + rasterizedGlyph.size.y <= activePage.canvas.height &&
+              activeRow.height >= rasterizedGlyph.size.y &&
+              activeRow.x + rasterizedGlyph.size.x <= activePage.canvas.width
+            ) {
+              // activePage and activeRow is already valid
+              wasPageAndRowFound = true;
+            } else {
+              // Create a new page if there is no room
+              const newPage = this._createNewPage();
+              activePage = newPage;
+              activeRow = newPage.currentRow;
+              activeRow.height = rasterizedGlyph.size.y;
+              wasPageAndRowFound = true;
+            }
           }
         }
-        if (!wasNewPageCreated) {
+        if (!wasPageAndRowFound) {
           // Fix the current row as the new row is being added below
           if (activePage.currentRow.height > 0) {
             activePage.fixedRows.push(activePage.currentRow);
