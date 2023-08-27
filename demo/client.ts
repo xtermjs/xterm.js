@@ -23,7 +23,7 @@ import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAdd
 // Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
 import type { ImageAddonType, IImageAddonOptionsType } from '../addons/xterm-addon-image/out/ImageAddon';
 let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
-if (!navigator.userAgent.includes('AppleWebKit')) {
+if ('WebAssembly' in window) {
   const imageAddon = require('../addons/xterm-addon-image/out/ImageAddon');
   ImageAddon = imageAddon.ImageAddon;
 }
