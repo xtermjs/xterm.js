@@ -41,8 +41,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer?: RectangleRenderer;
-  private _glyphRenderer?: GlyphRenderer;
+  private _rectangleRenderer: MutableDisposable<RectangleRenderer> = this.register(new MutableDisposable());
+  private _glyphRenderer: MutableDisposable<GlyphRenderer> = this.register(new MutableDisposable());
 
   public readonly dimensions: IRenderDimensions;
 
@@ -128,7 +128,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    [this._rectangleRenderer, this._glyphRenderer] = this._initializeWebGLState();
+    [this._rectangleRenderer.value, this._glyphRenderer.value] = this._initializeWebGLState();
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
 
@@ -182,10 +182,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.width = `${this.dimensions.css.canvas.width}px`;
     this._core.screenElement!.style.height = `${this.dimensions.css.canvas.height}px`;
 
-    this._rectangleRenderer?.setDimensions(this.dimensions);
-    this._rectangleRenderer?.handleResize();
-    this._glyphRenderer?.setDimensions(this.dimensions);
-    this._glyphRenderer?.handleResize();
+    this._rectangleRenderer.value?.setDimensions(this.dimensions);
+    this._rectangleRenderer.value?.handleResize();
+    this._glyphRenderer.value?.setDimensions(this.dimensions);
+    this._glyphRenderer.value?.handleResize();
 
     this._refreshCharAtlas();
 
@@ -241,17 +241,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Initializes members dependent on WebGL context state.
    */
   private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
-    // Dispose any previous rectangle and glyph renderers before creating new ones.
-    this._rectangleRenderer?.dispose();
-    this._glyphRenderer?.dispose();
-
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService));
-    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions));
+    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService);
+    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
 
-    return [this._rectangleRenderer, this._glyphRenderer];
+    return [this._rectangleRenderer.value, this._glyphRenderer.value
+    ];
   }
 
   /**
@@ -284,7 +281,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
-    this._glyphRenderer?.setAtlas(this._charAtlas);
+    this._glyphRenderer.value?.setAtlas(this._charAtlas);
   }
 
   /**
@@ -340,14 +337,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.handleGridChanged(this._terminal, start, end);
     }
 
-    if (!this._glyphRenderer || !this._rectangleRenderer) {
+    if (!this._glyphRenderer.value || !this._rectangleRenderer.value) {
       return;
     }
 
     // Tell renderer the frame is beginning
     // upon a model clear also refresh the full viewport model
     // (also triggered by an atlas page merge, part of #4480)
-    if (this._glyphRenderer.beginFrame()) {
+    if (this._glyphRenderer.value.beginFrame()) {
       this._clearModel(true);
       this._updateModel(0, this._terminal.rows - 1);
     } else {
@@ -356,10 +353,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Render
-    this._rectangleRenderer?.renderBackgrounds();
-    this._glyphRenderer?.render(this._model);
+    this._rectangleRenderer.value.renderBackgrounds();
+    this._glyphRenderer.value.render(this._model);
     if (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isCursorVisible) {
-      this._rectangleRenderer?.renderCursor();
+      this._rectangleRenderer.value.renderCursor();
     }
   }
 
@@ -502,7 +499,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
         this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
 
-        this._glyphRenderer!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
+        this._glyphRenderer.value!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -511,7 +508,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
+            this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
@@ -521,9 +518,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
       }
     }
     if (modelUpdated) {
-      this._rectangleRenderer!.updateBackgrounds(this._model);
+      this._rectangleRenderer.value!.updateBackgrounds(this._model);
     }
-    this._rectangleRenderer!.updateCursor(this._model);
+    this._rectangleRenderer.value!.updateCursor(this._model);
   }
 
   /**
