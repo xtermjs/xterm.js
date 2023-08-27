@@ -24,6 +24,7 @@ jobs:
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
+          ./client/dist/* \
           ./out/* \
           ./out-test/* \
           ./addons/xterm-addon-attach/out/* \
