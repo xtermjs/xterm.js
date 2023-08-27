@@ -13,9 +13,6 @@ export abstract class Disposable implements IDisposable {
   protected _disposables: IDisposable[] = [];
   protected _isDisposed: boolean = false;
 
-  constructor() {
-  }
-
   /**
    * Disposes the object, triggering the `dispose` method on all registered IDisposables.
    */

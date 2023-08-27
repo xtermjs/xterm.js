@@ -236,7 +236,7 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._core.clearTextureAtlas();
   }
   public loadAddon(addon: ITerminalAddon): void {
-    return this._addonManager.loadAddon(this, addon);
+    this._addonManager.loadAddon(this, addon);
   }
   public static get strings(): ILocalizableStrings {
     return Strings;
