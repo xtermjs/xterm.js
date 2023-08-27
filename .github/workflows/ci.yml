@@ -72,20 +72,32 @@ jobs:
     - name: Lint API
       run: yarn lint-api
 
-  coverage:
+  test-unit-coverage:
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js 18.x
+    - name: Use Node.js ${{ matrix.node-version }}.x
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: ${{ matrix.node-version }}.x
         cache: 'yarn'
     - name: Install dependencies
       run: |
         yarn --frozen-lockfile
         yarn install-addons
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts (Linux, macOS)
+      if: runner.os != 'Windows'
+      run: unzip -o compressed-build.zip
+    - name: Unzip artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Print directory structure
+      run: ls -R
     - name: Unit test coverage
       run: |
         yarn test-unit-coverage --forbid-only
