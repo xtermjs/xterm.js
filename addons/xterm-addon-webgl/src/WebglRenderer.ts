@@ -20,7 +20,7 @@ import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { traceCall } from 'common/services/LogService';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { IDisposable, Terminal } from 'xterm';
+import { Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
 import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
@@ -31,7 +31,7 @@ import { IRenderLayer } from './renderLayer/Types';
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
-  private _charAtlasDisposable: IDisposable | undefined;
+  private _charAtlasDisposable = this.register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
 
@@ -247,8 +247,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
 
-    return [this._rectangleRenderer.value, this._glyphRenderer.value
-    ];
+    return [this._rectangleRenderer.value, this._glyphRenderer.value];
   }
 
   /**
@@ -272,9 +271,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._coreBrowserService.dpr
     );
     if (this._charAtlas !== atlas) {
-      this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
-      this._charAtlasDisposable = getDisposeArrayDisposable([
+      this._charAtlasDisposable.value = getDisposeArrayDisposable([
         forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
         forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
       ]);
@@ -292,7 +290,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _clearModel(clearGlyphRenderer: boolean): void {
     this._model.clear();
     if (clearGlyphRenderer) {
-      this._glyphRenderer?.clear();
+      this._glyphRenderer.value?.clear();
     }
   }
 

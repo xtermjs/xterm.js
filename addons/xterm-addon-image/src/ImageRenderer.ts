@@ -6,7 +6,7 @@
 import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from 'xterm';
 import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
-import { MutableDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 
 const PLACEHOLDER_LENGTH = 4096;
@@ -18,12 +18,12 @@ const PLACEHOLDER_HEIGHT = 24;
  * - add canvas layer to DOM (browser only for now)
  * - draw image tiles onRender
  */
-export class ImageRenderer implements IDisposable {
+export class ImageRenderer extends Disposable implements IDisposable {
   public canvas: HTMLCanvasElement | undefined;
   private _ctx: CanvasRenderingContext2D | null | undefined;
   private _placeholder: HTMLCanvasElement | undefined;
   private _placeholderBitmap: ImageBitmap | undefined;
-  private _optionsRefresh = new MutableDisposable();
+  private _optionsRefresh = this.register(new MutableDisposable());
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _renderService: IRenderService | undefined;
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
@@ -69,6 +69,7 @@ export class ImageRenderer implements IDisposable {
 
 
   constructor(private _terminal: ITerminalExt) {
+    super();
     this._oldOpen = this._terminal._core.open;
     this._terminal._core.open = (parent: HTMLElement): void => {
       this._oldOpen?.call(this._terminal._core, parent);
@@ -84,25 +85,23 @@ export class ImageRenderer implements IDisposable {
         this._renderService?.refreshRows(0, this._terminal.rows);
       }
     });
-  }
-
-
-  public dispose(): void {
-    this.removeLayerFromDom();
-    if (this._terminal._core && this._oldOpen) {
-      this._terminal._core.open = this._oldOpen;
-      this._oldOpen = undefined;
-    }
-    if (this._renderService && this._oldSetRenderer) {
-      this._renderService.setRenderer = this._oldSetRenderer;
-      this._oldSetRenderer = undefined;
-    }
-    this._renderService = undefined;
-    this.canvas = undefined;
-    this._ctx = undefined;
-    this._placeholderBitmap?.close();
-    this._placeholderBitmap = undefined;
-    this._placeholder = undefined;
+    this.register(toDisposable(() => {
+      this.removeLayerFromDom();
+      if (this._terminal._core && this._oldOpen) {
+        this._terminal._core.open = this._oldOpen;
+        this._oldOpen = undefined;
+      }
+      if (this._renderService && this._oldSetRenderer) {
+        this._renderService.setRenderer = this._oldSetRenderer;
+        this._oldSetRenderer = undefined;
+      }
+      this._renderService = undefined;
+      this.canvas = undefined;
+      this._ctx = undefined;
+      this._placeholderBitmap?.close();
+      this._placeholderBitmap = undefined;
+      this._placeholder = undefined;
+    }));
   }
 
   /**
