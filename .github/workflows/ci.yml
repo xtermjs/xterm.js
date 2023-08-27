@@ -221,7 +221,7 @@ jobs:
     - name: Print directory structure
       run: ls -R
     - name: Build demo
-      run: yarn start &
+      run: yarn build-demo
     - name: Integration tests
       run: yarn test-playwright --forbid-only
 
