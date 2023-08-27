@@ -37,6 +37,8 @@
     "test-api-chromium": "node ./bin/test_api.js --browser=chromium --timeout=20000",
     "test-api-firefox": "node ./bin/test_api.js --browser=firefox --timeout=20000",
     "test-api-webkit": "node ./bin/test_api.js --browser=webkit --timeout=20000",
+    "test-playwright": "playwright test -c ./out-test/playwright/playwright.config.js --workers 4",
+    "test-playwright-debug": "playwright test -c ./out-test/playwright/playwright.config.js --headed --workers 1 --timeout 30000",
     "test-unit": "node ./bin/test.js",
     "test-unit-coverage": "node ./bin/test.js --coverage",
     "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
@@ -53,6 +55,7 @@
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.37.1",
     "@types/chai": "^4.2.22",
     "@types/debug": "^4.1.7",
     "@types/deep-equal": "^1.0.1",
@@ -80,7 +83,6 @@
     "mustache": "^4.2.0",
     "node-pty": "^0.10.1",
     "nyc": "^15.1.0",
-    "playwright": "^1.37.1",
     "source-map-loader": "^3.0.0",
     "source-map-support": "^0.5.20",
     "ts-loader": "^9.3.1",

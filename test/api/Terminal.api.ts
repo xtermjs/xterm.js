@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { pollFor, timeout, writeSync, openTerminal, launchBrowser } from './TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 import { fail } from 'assert';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
