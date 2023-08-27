@@ -24,7 +24,6 @@ jobs:
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
-          ./client/dist/* \
           ./out/* \
           ./out-test/* \
           ./addons/xterm-addon-attach/out/* \
@@ -221,6 +220,8 @@ jobs:
       run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
     - name: Print directory structure
       run: ls -R
+    - name: Build demo
+      run: yarn start &
     - name: Integration tests
       run: yarn test-playwright --forbid-only
 
