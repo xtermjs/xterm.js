@@ -6,6 +6,7 @@
 import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from 'xterm';
 import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
+import { MutableDisposable } from 'common/Lifecycle';
 
 
 const PLACEHOLDER_LENGTH = 4096;
@@ -22,7 +23,7 @@ export class ImageRenderer implements IDisposable {
   private _ctx: CanvasRenderingContext2D | null | undefined;
   private _placeholder: HTMLCanvasElement | undefined;
   private _placeholderBitmap: ImageBitmap | undefined;
-  private _optionsRefresh: IDisposable | undefined;
+  private _optionsRefresh = new MutableDisposable();
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _renderService: IRenderService | undefined;
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
@@ -77,7 +78,7 @@ export class ImageRenderer implements IDisposable {
       this._open();
     }
     // hack to spot fontSize changes
-    this._optionsRefresh = this._terminal._core.optionsService.onOptionChange(option => {
+    this._optionsRefresh.value = this._terminal._core.optionsService.onOptionChange(option => {
       if (option === 'fontSize') {
         this.rescaleCanvas();
         this._renderService?.refreshRows(0, this._terminal.rows);
@@ -87,7 +88,6 @@ export class ImageRenderer implements IDisposable {
 
 
   public dispose(): void {
-    this._optionsRefresh?.dispose();
     this.removeLayerFromDom();
     if (this._terminal._core && this._oldOpen) {
       this._terminal._core.open = this._oldOpen;
