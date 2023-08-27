@@ -201,9 +201,7 @@ jobs:
         yarn --frozen-lockfile
         yarn install-addons
     - name: Install playwright
-      run: |
-        npx playwright install-deps
-        npx playwright install
+      run: npx playwright install --with-deps
     - name: Wait for build job
       uses: NathanFirmo/wait-for-other-job@v1.1.1
       with:
