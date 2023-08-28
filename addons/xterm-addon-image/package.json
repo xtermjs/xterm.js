@@ -17,8 +17,7 @@
     "xterm.js"
   ],
   "scripts": {
-    "inwasm": "inwasm out/*.wasm.js",
-    "prepackage": "../../node_modules/.bin/tsc -p . && inwasm -f out/*.wasm.js",
+    "prepackage": "../../node_modules/.bin/tsc -p .",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package"
   },
@@ -26,7 +25,7 @@
     "xterm": "^5.2.0"
   },
   "devDependencies": {
-    "inwasm": "^0.0.13",
-    "sixel": "^0.16.0"
+    "sixel": "^0.16.0",
+    "xterm-wasm-parts": "^0.1.0"
   }
 }

@@ -5,7 +5,7 @@
 
 import { Terminal, IDisposable, ITerminalAddon, IDecoration } from 'xterm';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, toDisposable, disposeArray } from 'common/Lifecycle';
+import { Disposable, toDisposable, disposeArray, MutableDisposable } from 'common/Lifecycle';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -66,7 +66,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();
   private _highlightDecorations: IHighlight[] = [];
-  private _selectedDecoration: IHighlight | undefined;
+  private _selectedDecoration: MutableDisposable<IHighlight> = this.register(new MutableDisposable());
   private _highlightLimit: number;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
@@ -110,18 +110,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   }
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
-    this.clearActiveDecoration();
+    this._selectedDecoration.clear();
     disposeArray(this._highlightDecorations);
     this._highlightDecorations = [];
     this._highlightedLines.clear();
     if (!retainCachedSearchTerm) {
       this._cachedSearchTerm = undefined;
     }
-  }
-
-  public clearActiveDecoration(): void {
-    this._selectedDecoration?.dispose();
-    this._selectedDecoration = undefined;
   }
 
   /**
@@ -320,8 +315,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
   private _fireResults(searchOptions?: ISearchOptions): void {
     if (searchOptions?.decorations) {
       let resultIndex = -1;
-      if (this._selectedDecoration) {
-        const selectedMatch = this._selectedDecoration.match;
+      if (this._selectedDecoration.value) {
+        const selectedMatch = this._selectedDecoration.value.match;
         for (let i = 0; i < this._highlightDecorations.length; i++) {
           const match = this._highlightDecorations[i].match;
           if (match.row === selectedMatch.row && match.col === selectedMatch.col && match.size === selectedMatch.size) {
@@ -642,7 +637,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
    */
   private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
     const terminal = this._terminal!;
-    this.clearActiveDecoration();
+    this._selectedDecoration.clear();
     if (!result) {
       terminal.clearSelection();
       return false;
@@ -666,7 +661,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
           disposables.push(marker);
           disposables.push(decoration.onRender((e) => this._applyStyles(e, options.activeMatchBorder, true)));
           disposables.push(decoration.onDispose(() => disposeArray(disposables)));
-          this._selectedDecoration = { decoration, match: result, dispose() { decoration.dispose(); } };
+          this._selectedDecoration.value = { decoration, match: result, dispose() { decoration.dispose(); } };
         }
       }
     }

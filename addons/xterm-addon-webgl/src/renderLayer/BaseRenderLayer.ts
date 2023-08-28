@@ -49,7 +49,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     }));
     this.register(toDisposable(() => {
       this._canvas.remove();
-      this._charAtlas?.dispose();
     }));
   }
 

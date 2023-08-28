@@ -7,7 +7,7 @@ import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStat
 import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { IEventEmitter } from 'common/EventEmitter';
-import { toDisposable } from 'common/Lifecycle';
+import { MutableDisposable } from 'common/Lifecycle';
 import { isFirefox } from 'common/Platform';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -26,7 +26,7 @@ interface ICursorState {
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
   private _cursorRenderers: {[key: string]: (x: number, y: number, cell: ICellData) => void};
-  private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
+  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = this.register(new MutableDisposable());
   private _cell: ICellData = new CellData();
 
   constructor(
@@ -57,10 +57,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
     };
     this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
     this._handleOptionsChanged();
-    this.register(toDisposable(() => {
-      this._cursorBlinkStateManager?.dispose();
-      this._cursorBlinkStateManager = undefined;
-    }));
   }
 
   public resize(dim: IRenderDimensions): void {
@@ -77,28 +73,27 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   public reset(): void {
     this._clearCursor();
-    this._cursorBlinkStateManager?.restartBlinkAnimation();
+    this._cursorBlinkStateManager.value?.restartBlinkAnimation();
     this._handleOptionsChanged();
   }
 
   public handleBlur(): void {
-    this._cursorBlinkStateManager?.pause();
+    this._cursorBlinkStateManager.value?.pause();
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   public handleFocus(): void {
-    this._cursorBlinkStateManager?.resume();
+    this._cursorBlinkStateManager.value?.resume();
     this._onRequestRedraw.fire({ start: this._bufferService.buffer.y, end: this._bufferService.buffer.y });
   }
 
   private _handleOptionsChanged(): void {
     if (this._optionsService.rawOptions.cursorBlink) {
-      if (!this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager = new CursorBlinkStateManager(() => this._render(true), this._coreBrowserService);
+      if (!this._cursorBlinkStateManager.value) {
+        this._cursorBlinkStateManager.value = new CursorBlinkStateManager(() => this._render(true), this._coreBrowserService);
       }
     } else {
-      this._cursorBlinkStateManager?.dispose();
-      this._cursorBlinkStateManager = undefined;
+      this._cursorBlinkStateManager.clear();
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal
@@ -106,14 +101,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public handleCursorMove(): void {
-    this._cursorBlinkStateManager?.restartBlinkAnimation();
+    this._cursorBlinkStateManager.value?.restartBlinkAnimation();
   }
 
   public handleGridChanged(startRow: number, endRow: number): void {
-    if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
+    if (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isPaused) {
       this._render(false);
     } else {
-      this._cursorBlinkStateManager.restartBlinkAnimation();
+      this._cursorBlinkStateManager.value.restartBlinkAnimation();
     }
   }
 
@@ -159,7 +154,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     // Don't draw the cursor if it's blinking
-    if (this._cursorBlinkStateManager && !this._cursorBlinkStateManager.isCursorVisible) {
+    if (this._cursorBlinkStateManager.value && !this._cursorBlinkStateManager.value.isCursorVisible) {
       this._clearCursor();
       return;
     }
