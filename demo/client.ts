@@ -21,7 +21,7 @@ import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Add
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
 
 // Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddonType, IImageAddonOptionsType } from '../addons/xterm-addon-image/out/ImageAddon';
+import type { ImageAddonType, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
 let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
   const imageAddon = require('../addons/xterm-addon-image/out/ImageAddon');
@@ -1263,7 +1263,7 @@ Test BG-colored Erase (BCE):
 
 
 function initImageAddonExposed(): void {
-  const DEFAULT_OPTIONS: IImageAddonOptionsType = (addons.image.instance as any)._defaultOpts;
+  const DEFAULT_OPTIONS: IImageAddonOptions = (addons.image.instance as any)._defaultOpts;
   const limitStorageElement = document.querySelector<HTMLInputElement>('#image-storagelimit');
   limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
   addDomListener(limitStorageElement, 'change', () => {
