@@ -257,11 +257,15 @@ export interface IBufferLine {
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
   setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
-  setFromCodePoint(cursor: ICellData, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
-  setAttributes(cursor: ICellData, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
+  setAttributes(cursor: ICellData, fg: number, bg: number, style: StyleFlags, eAttrs: IExtendedAttrs): void;
+  /**
+   * Add character (codePoint) following cursor position.
+   * Cursor position is moved to be after added character.
+   */
   setCodePoint(cursor: ICellData, codePoint: number, width: number): void;
   addToPrecedingGrapheme(cursor: ICellData, newText: string, width: number): void;
   insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
+  eraseAll(bg: number): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
   replaceCols(cursor: ICellData, count: number, fill: ICellData, respectProtect?: boolean): void;
@@ -285,7 +289,6 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
-  _getChars(cursor: ICellData): string;
 }
 
 export interface IMarker extends IDisposable {

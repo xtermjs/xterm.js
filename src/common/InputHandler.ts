@@ -518,7 +518,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.fixSplitWide(cursor);
     }
 
-    bufferRow.setAttributes(cursor, curAttr.fg, curAttr.bg, curAttr.extended);
+    bufferRow.setAttributes(cursor, curAttr.getFg(), curAttr.getBg(), curAttr.getStyleFlags(), curAttr.extended);
 
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
@@ -613,7 +613,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       // write current char to buffer and advance cursor
       bufferRow.setCodePoint(cursor, code, chWidth);
       this._activeBuffer.x += chWidth;
-      bufferRow.scanNext(cursor, chWidth, 0);
     }
     // store last char in Parser.precedingCodepoint for REP to work correctly
     // This needs to check whether:
@@ -1128,11 +1127,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
     const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
-    if (respectProtect) {
+    //if (respectProtect) {
       line.replaceCells(start, end, fill, respectProtect);
-    } else {
-      line.deleteCells(start, end - start, fill);
-    }
+    //} else {
+    //  line.deleteCells(start, end - start, fill);
+    //}
     if (clearWrap) {
       line.isWrapped = false;
     }
@@ -1146,11 +1145,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
     if (line) {
-      const fillData = this._activeBuffer.getNullCell(this._eraseAttrData());
       if (respectProtect) {
+        const fillData = this._activeBuffer.getNullCell(this._eraseAttrData());
         line.fill(fillData, respectProtect);
       } else {
-        line.deleteCells(0, line.length, fillData);
+        line.eraseAll(this._curAttrData.bg & ~0xFC000000);
       }
       this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
       line.isWrapped = false;
@@ -1183,12 +1182,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public eraseInDisplay(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
-    let j;
+    let j, x;
     switch (params.params[0]) {
       case 0:
         j = this._activeBuffer.y;
         this._dirtyRowTracker.markDirty(j);
-        this._eraseInBufferLine(j++, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
+        x = this._activeBuffer.x;
+        if (x > 0) {
+          this._eraseInBufferLine(j++, x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
+        }
         for (; j < this._bufferService.rows; j++) {
           this._resetBufferLine(j, respectProtect);
         }
@@ -1548,8 +1550,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor();
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
     if (line) {
-      line.deleteCells(
-        this._activeBuffer.x, params.params[0] || 1,
+      line.replaceCells(
+        this._activeBuffer.x,
+        this._activeBuffer.x + (params.params[0] || 1),
         this._activeBuffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);

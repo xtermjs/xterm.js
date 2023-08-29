@@ -18,7 +18,8 @@ export class CellData extends AttributeData implements ICellData {
     obj.setFromCharData(value);
     return obj;
   }
-  public bufferLine: IBufferLine | undefined;
+  //public bufferLine: IBufferLine | undefined;
+  textData: string = '';
 
   /** Position and state in BufferLine.
    * The actual meaning of _stateA/_stateB/_stateM/_stateN depends on
@@ -41,8 +42,23 @@ export class CellData extends AttributeData implements ICellData {
   public fg = 0;
   public bg = 0;
   public extended: IExtendedAttrs = new ExtendedAttrs();
-  public combinedData = '';
-  /** Whether cell contains a combined string. */
+
+  public copyFrom(src: CellData) {
+    //this.bufferLine = src.bufferLine;
+    this._stateA = src._stateA;
+    this._stateB = src._stateB;
+    this._stateN = src._stateM;
+    this._stateN = src._stateN;
+    this.textStart = src.textStart;
+    this.textEnd = src.textEnd;
+    this.column = src.column;
+    this.content = src.content;
+    this.fg = src.fg;
+    this.bg = src.bg;
+    this.extended = src.extended;
+  }
+
+  /** Whether cell contains a combined string. DEPRECTED */
   public isCombined(): number {
     return this.content & Content.IS_COMBINED_MASK;
   }
@@ -52,9 +68,8 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** JS string of the content. */
   public getChars(): string {
-    if (this.textStart === this.textEnd || this.bufferLine === undefined)
-      return '';
-    return this.bufferLine._getChars(this);
+    return this.textStart === this.textEnd ? ''
+      : this.textData.substring(this.textStart, this.textEnd);
   }
 
   /**
@@ -64,20 +79,19 @@ export class CellData extends AttributeData implements ICellData {
    * of the last char in string to be in line with code in CharData.
    */
   public getCode(): number {
-    return (this.isCombined())
-      ? this.combinedData.charCodeAt(this.combinedData.length - 1)
-      : this.content & Content.CODEPOINT_MASK;
+    return this.content & Content.CODEPOINT_MASK;
   }
   /** Set data from CharData */
   public setFromCharData(value: CharData): void {
     this.fg = value[CHAR_DATA_ATTR_INDEX];
     this.bg = 0;
     let combined = false;
+    const length = value[CHAR_DATA_CHAR_INDEX].length;
     // surrogates and combined strings need special treatment
-    if (value[CHAR_DATA_CHAR_INDEX].length > 2) {
-      combined = true;
+    if (length > 2) {
+      throw new Error('setFromCharData does not allow width > 2');
     }
-    else if (value[CHAR_DATA_CHAR_INDEX].length === 2) {
+    else if (length === 2) {
       const code = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
       // if the 2-char string is a surrogate create single codepoint
       // everything else is combined
@@ -98,7 +112,7 @@ export class CellData extends AttributeData implements ICellData {
       this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
     if (combined) {
-      this.combinedData = value[CHAR_DATA_CHAR_INDEX];
+      this.textData = value[CHAR_DATA_CHAR_INDEX];
       this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
   }

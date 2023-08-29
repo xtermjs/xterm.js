@@ -126,7 +126,7 @@ export const enum StyleFlags {
   OVERLINE = 0x4000
 }
 
-export const enum FgFlags {
+export const enum FgFlags { // deprecated
   /**
    * bit 27..32
    */
@@ -138,7 +138,7 @@ export const enum FgFlags {
   STRIKETHROUGH = StyleFlags.STRIKETHROUGH << 24 // 0x80000000
 }
 
-export const enum BgFlags {
+export const enum BgFlags { // deprecated
   /**
    * bit 27..32 (upper 2 unused)
    */
