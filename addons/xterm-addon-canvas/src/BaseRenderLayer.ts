@@ -3,24 +3,24 @@
  * @license MIT
  */
 
+import { ReadonlyColorSet } from 'browser/Types';
+import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ReadonlyColorSet } from 'browser/Types';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { isSafari } from 'common/Platform';
+import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICellData, IDisposable } from 'common/Types';
 import { Terminal } from 'xterm';
 import { IRenderLayer } from './Types';
-import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { isSafari } from 'common/Platform';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -37,7 +37,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   private _bitmapGenerator: (BitmapGenerator | undefined)[] = [];
 
   protected _charAtlas!: ITextureAtlas;
-  private _charAtlasDisposable?: IDisposable;
+  protected _charAtlasDisposable = this.register(new MutableDisposable());
 
   public get canvas(): HTMLCanvasElement { return this._canvas; }
   public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.pages[0].canvas!; }
@@ -74,7 +74,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
 
     this.register(toDisposable(() => {
       this._canvas.remove();
-      this._charAtlas?.dispose();
     }));
   }
 
@@ -122,9 +121,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     if (this._deviceCharWidth <= 0 && this._deviceCharHeight <= 0) {
       return;
     }
-    this._charAtlasDisposable?.dispose();
     this._charAtlas = acquireTextureAtlas(this._terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
-    this._charAtlasDisposable = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+    this._charAtlasDisposable.value = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
     for (let i = 0; i < this._charAtlas.pages.length; i++) {
       this._bitmapGenerator[i] = new BitmapGenerator(this._charAtlas.pages[i].canvas);

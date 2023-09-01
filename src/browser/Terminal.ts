@@ -44,7 +44,7 @@ import { ThemeService } from 'browser/services/ThemeService';
 import { color, rgba } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
-import { toDisposable } from 'common/Lifecycle';
+import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, ScrollSource, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
@@ -118,7 +118,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
-  private _accessibilityManager: AccessibilityManager | undefined;
+  private _accessibilityManager: MutableDisposable<AccessibilityManager> = this.register(new MutableDisposable());
 
   private readonly _onCursorMove = this.register(new EventEmitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
@@ -252,12 +252,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _handleScreenReaderModeOptionChange(value: boolean): void {
     if (value) {
-      if (!this._accessibilityManager && this._renderService) {
-        this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
+      if (!this._accessibilityManager.value && this._renderService) {
+        this._accessibilityManager.value = this._instantiationService.createInstance(AccessibilityManager, this);
       }
     } else {
-      this._accessibilityManager?.dispose();
-      this._accessibilityManager = undefined;
+      this._accessibilityManager.clear();
     }
   }
 
@@ -535,7 +534,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
+      this._accessibilityManager.value = this._instantiationService.createInstance(AccessibilityManager, this);
     }
     this.register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 

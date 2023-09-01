@@ -182,7 +182,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
   public loadAddon(addon: ITerminalAddon): void {
     // TODO: This could cause issues if the addon calls renderer apis
-    return this._addonManager.loadAddon(this as any, addon);
+    this._addonManager.loadAddon(this as any, addon);
   }
 
   private _verifyIntegers(...values: number[]): void {

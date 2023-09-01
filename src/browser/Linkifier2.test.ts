@@ -10,10 +10,6 @@ import { MockBufferService } from 'common/TestUtils.test';
 import { ILink } from 'browser/Types';
 
 class TestLinkifier2 extends Linkifier2 {
-  constructor(bufferService: IBufferService) {
-    super(bufferService);
-  }
-
   public set currentLink(link: any) {
     this._currentLink = link;
   }

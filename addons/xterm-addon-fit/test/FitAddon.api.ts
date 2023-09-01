@@ -41,9 +41,7 @@ describe('FitAddon', () => {
   });
 
   describe('proposeDimensions', () => {
-    afterEach(async () => {
-      return await unloadFit();
-    });
+    afterEach(() => unloadFit());
 
     it('default', async function(): Promise<any> {
       await loadFit();
@@ -82,9 +80,7 @@ describe('FitAddon', () => {
   });
 
   describe('fit', () => {
-    afterEach(async () => {
-      return await unloadFit();
-    });
+    afterEach(() => unloadFit());
 
     it('default', async function(): Promise<any> {
       await loadFit();

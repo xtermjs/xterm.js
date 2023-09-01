@@ -1106,7 +1106,7 @@ describe('WebGL Renderer Integration Tests', async () => {
 
 async function getCellColor(col: number, row: number): Promise<number[]> {
   await page.evaluate(`
-    window.gl = window.term._core._renderService._renderer._gl;
+    window.gl = window.term._core._renderService._renderer.value._gl;
     window.result = new Uint8Array(4);
     window.d = window.term._core._renderService.dimensions;
     window.gl.readPixels(
@@ -1120,7 +1120,7 @@ async function getCellColor(col: number, row: number): Promise<number[]> {
 
 async function getCellPixels(col: number, row: number): Promise<number[]> {
   await page.evaluate(`
-    window.gl = window.term._core._renderService._renderer._gl;
+    window.gl = window.term._core._renderService._renderer.value._gl;
     window.result = new Uint8Array(window.d.device.cell.width * window.d.device.cell.height * 4);
     window.d = window.term._core._renderService.dimensions;
     window.gl.readPixels(
