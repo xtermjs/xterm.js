@@ -10,7 +10,7 @@ import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferRange, IModes, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IModes, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
@@ -40,16 +40,34 @@ type EnsureAsyncProperties<T> = {
   [Key in keyof T]: EnsureAsync<T[Key]>
 };
 
-interface ITerminalProxy extends
-  // Interfaces that the proxy implements with async values
-  EnsureAsyncProperties<Pick<Terminal, 'cols' | 'rows'>> {
+type PromisifyMethods<T> = {
+  [K in keyof T]: T[K] extends (...args: infer Args) => infer Return
+    ? (...args: Args) => Promise<Return>
+    : T[K];
+};
 
-  // Custom proxy methods
+/**
+ * A type that proxy objects implement that enables overriding a base interface with a set of types
+ * to override as async (ie. properties that are not synced to the node side), and a set of types to
+ * omit from the interface (ie. properties that map to completely different implementations).
+ */
+type PlaywrightApiProxy<TBaseInterface, TAsyncPropOverrides extends keyof TBaseInterface, TAsyncMethodOverrides extends keyof TBaseInterface, TCustomOverrides extends keyof TBaseInterface> = (
+  // Interfaces that the proxy implements as async
+  EnsureAsyncProperties<Pick<TBaseInterface, TAsyncPropOverrides>> &
+  PromisifyMethods<Pick<TBaseInterface, TAsyncMethodOverrides>> &
+  // Interfaces that the proxy implements as is (exclude async/custom)
+  Omit<TBaseInterface, TAsyncPropOverrides | TAsyncMethodOverrides | TCustomOverrides>
+);
+
+interface ITerminalProxyCustomMethods {
   evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T>;
   write(data: string | Uint8Array): Promise<void>;
 }
 
-export class TerminalProxy implements ITerminalProxy {
+type TerminalProxyAsyncPropOverrides = 'cols' | 'rows' | 'modes';
+type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getSelectionPosition' | 'registerMarker';
+type TerminalProxyCustomOverrides = 'buffer';
+export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApiProxy<Terminal, TerminalProxyAsyncPropOverrides, TerminalProxyAsyncMethodOverrides, TerminalProxyCustomOverrides> {
   constructor(private readonly _page: Page) {
   }
 
@@ -178,7 +196,7 @@ export class TerminalProxy implements ITerminalProxy {
     }, [await this.getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
   public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const); }
-  public async registerMarker(y: number): Promise<IMarker | undefined> { return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const); }
+  public async registerMarker(y?: number | undefined): Promise<IMarker> { return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const); }
   // #endregion
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
@@ -195,7 +213,10 @@ export class TerminalProxy implements ITerminalProxy {
   }
 }
 
-class TerminalBufferNamespaceProxy {
+class TerminalBufferNamespaceProxy implements PlaywrightApiProxy<IBufferNamespace, never, 'active' | 'normal' | 'alternate'> {
+  private _onBufferChange = new EventEmitter<IBuffer>();
+  public readonly onBufferChange = this._onBufferChange.event;
+
   constructor(
     private readonly _page: Page,
     private readonly _proxy: TerminalProxy
@@ -208,7 +229,7 @@ class TerminalBufferNamespaceProxy {
   public get alternate(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.alternate)); }
 }
 
-class TerminalBufferProxy {
+class TerminalBufferProxy /* implements EnsureAsyncProperties<IBuffer>*/ {
   constructor(
     private readonly _page: Page,
     private readonly _proxy: TerminalProxy,
