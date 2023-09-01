@@ -247,6 +247,7 @@ class TerminalBufferNamespaceProxy implements PlaywrightApiProxy<IBufferNamespac
   public get alternate(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.alternate)); }
 }
 
+// TODO: Adopt PlaywrightApiProxy
 class TerminalBufferProxy /* implements EnsureAsyncProperties<IBuffer>*/ {
   constructor(
     private readonly _page: Page,
@@ -275,6 +276,7 @@ class TerminalBufferProxy /* implements EnsureAsyncProperties<IBuffer>*/ {
   }
 }
 
+// TODO: Adopt PlaywrightApiProxy
 class TerminalBufferLine {
   constructor(
     private readonly _page: Page,
@@ -305,6 +307,7 @@ class TerminalBufferLine {
   }
 }
 
+// TODO: Adopt PlaywrightApiProxy
 class TerminalBufferCell {
   constructor(
     private readonly _page: Page,
