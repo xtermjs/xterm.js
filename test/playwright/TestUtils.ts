@@ -39,8 +39,7 @@ type EnsureAsync<T> = T extends PromiseLike<any> ? T : Promise<T>;
 type EnsureAsyncProperties<T> = {
   [Key in keyof T]: EnsureAsync<T[Key]>
 };
-
-type PromisifyMethods<T> = {
+type EnsureAsyncMethods<T> = {
   [K in keyof T]: T[K] extends (...args: infer Args) => infer Return
     ? (...args: Args) => Promise<Return>
     : T[K];
@@ -54,7 +53,7 @@ type PromisifyMethods<T> = {
 type PlaywrightApiProxy<TBaseInterface, TAsyncPropOverrides extends keyof TBaseInterface, TAsyncMethodOverrides extends keyof TBaseInterface, TCustomOverrides extends keyof TBaseInterface> = (
   // Interfaces that the proxy implements as async
   EnsureAsyncProperties<Pick<TBaseInterface, TAsyncPropOverrides>> &
-  PromisifyMethods<Pick<TBaseInterface, TAsyncMethodOverrides>> &
+  EnsureAsyncMethods<Pick<TBaseInterface, TAsyncMethodOverrides>> &
   // Interfaces that the proxy implements as is (exclude async/custom)
   Omit<TBaseInterface, TAsyncPropOverrides | TAsyncMethodOverrides | TCustomOverrides>
 );
@@ -66,7 +65,26 @@ interface ITerminalProxyCustomMethods {
 
 type TerminalProxyAsyncPropOverrides = 'cols' | 'rows' | 'modes';
 type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getSelectionPosition' | 'registerMarker';
-type TerminalProxyCustomOverrides = 'buffer';
+type TerminalProxyCustomOverrides = 'buffer' | (
+  // TODO: Review and implement below if needed
+  'element' |
+  'textarea' |
+  'markers' |
+  'unicode' |
+  'parser' |
+  'options' |
+  'onWriteParsed' |
+  'open' |
+  'attachCustomKeyEventHandler' |
+  'registerLinkProvider' |
+  'registerCharacterJoiner' |
+  'deregisterCharacterJoiner' |
+  'registerDecoration' |
+  'selectLines' |
+  'refresh' |
+  'clearTextureAtlas' |
+  'loadAddon'
+);
 export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApiProxy<Terminal, TerminalProxyAsyncPropOverrides, TerminalProxyAsyncMethodOverrides, TerminalProxyCustomOverrides> {
   constructor(private readonly _page: Page) {
   }
@@ -213,7 +231,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   }
 }
 
-class TerminalBufferNamespaceProxy implements PlaywrightApiProxy<IBufferNamespace, never, 'active' | 'normal' | 'alternate'> {
+class TerminalBufferNamespaceProxy implements PlaywrightApiProxy<IBufferNamespace, never, never, 'active' | 'normal' | 'alternate'> {
   private _onBufferChange = new EventEmitter<IBuffer>();
   public readonly onBufferChange = this._onBufferChange.event;
 
