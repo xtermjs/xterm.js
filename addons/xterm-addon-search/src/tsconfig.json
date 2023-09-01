@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "es2021",
     "lib": [
       "dom",
-      "es6",
+      "es2021",
     ],
     "rootDir": ".",
     "outDir": "../out",
