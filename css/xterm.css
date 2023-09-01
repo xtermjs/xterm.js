@@ -140,7 +140,7 @@
     cursor: crosshair;
 }
 
-.xterm .xterm-accessibility,
+.xterm .xterm-accessibility:not(.debug),
 .xterm .xterm-message {
     position: absolute;
     left: 0;
@@ -150,6 +150,15 @@
     z-index: 10;
     color: transparent;
     pointer-events: none;
+}
+
+.xterm .xterm-accessibility-tree:not(.debug) *::selection {
+  color: transparent;
+}
+
+.xterm .xterm-accessibility-tree {
+  user-select: text;
+  white-space: pre;
 }
 
 .xterm .live-region {
