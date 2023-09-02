@@ -221,6 +221,7 @@ jobs:
       matrix:
         node-version: [18] # just one as integration tests are about testing in browser
         runs-on: [ubuntu] # macos is flaky
+        browser: [chromium, firefox]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
     - uses: actions/checkout@v3
@@ -234,7 +235,7 @@ jobs:
         yarn --frozen-lockfile
         yarn install-addons
     - name: Install playwright
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps ${{ matrix.browser }}
     - name: Wait for build job
       uses: NathanFirmo/wait-for-other-job@v1.1.1
       with:
@@ -254,7 +255,7 @@ jobs:
     - name: Build demo
       run: yarn build-demo
     - name: Integration tests
-      run: yarn test-playwright --forbid-only
+      run: yarn test-playwright-${{ matrix.browser }} --forbid-only
 
   test-api:
     needs: build
