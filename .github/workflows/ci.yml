@@ -98,8 +98,7 @@ jobs:
         else
           unzip -o compressed-build.zip
         fi
-    - name: Print directory structure
-      run: ls -R
+        ls -R
     - name: Unit test coverage
       run: |
         yarn test-unit-coverage --forbid-only
@@ -141,8 +140,7 @@ jobs:
         else
           unzip -o compressed-build.zip
         fi
-    - name: Print directory structure
-      run: ls -R
+        ls -R
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
@@ -176,8 +174,7 @@ jobs:
         else
           unzip -o compressed-build.zip
         fi
-    - name: Print directory structure
-      run: ls -R
+        ls -R
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
@@ -218,8 +215,7 @@ jobs:
         else
           unzip -o compressed-build.zip
         fi
-    - name: Print directory structure
-      run: ls -R
+        ls -R
     - name: Integration tests (${{ matrix.browser }})
       run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
 
@@ -260,8 +256,7 @@ jobs:
         else
           unzip -o compressed-build.zip
         fi
-    - name: Print directory structure
-      run: ls -R
+        ls -R
     - name: Build demo
       run: yarn build-demo
     - name: Integration tests
@@ -300,7 +295,6 @@ jobs:
         else
           unzip -o compressed-build.zip
         fi
-    - name: Print directory structure
-      run: ls -R
+        ls -R
     - name: Integration tests (${{ matrix.browser }})
       run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
