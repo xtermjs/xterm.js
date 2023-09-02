@@ -15,7 +15,7 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => await ctx.page.close());
 
 
-test.describe.only('API Integration Tests', () => {
+test.describe('API Integration Tests', () => {
   test('Default options', async () => {
     strictEqual(await ctx.proxy.cols, 80);
     strictEqual(await ctx.proxy.rows, 24);
