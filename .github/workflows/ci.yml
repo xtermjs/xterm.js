@@ -92,7 +92,7 @@ jobs:
         name: build-artifacts
     - name: Unzip artifacts
       if: runner.os != 'Windows'
-      run:
+      run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
           7z x compressed-build.zip -aoa -o${{ github.workspace }}
         else
