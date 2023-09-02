@@ -133,12 +133,14 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
-    - name: Unzip artifacts (Linux, macOS)
+    - name: Unzip artifacts
       if: runner.os != 'Windows'
-      run: unzip -o compressed-build.zip
-    - name: Unzip artifacts (Windows)
-      if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+        else
+          unzip -o compressed-build.zip
+        fi
     - name: Print directory structure
       run: ls -R
     - name: Unit tests
