@@ -91,7 +91,6 @@ jobs:
       with:
         name: build-artifacts
     - name: Unzip artifacts
-      if: runner.os != 'Windows'
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
           7z x compressed-build.zip -aoa -o${{ github.workspace }}
@@ -134,7 +133,6 @@ jobs:
       with:
         name: build-artifacts
     - name: Unzip artifacts
-      if: runner.os != 'Windows'
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
           7z x compressed-build.zip -aoa -o${{ github.workspace }}
@@ -168,12 +166,13 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
-    - name: Unzip artifacts (Linux, macOS)
-      if: runner.os != 'Windows'
-      run: unzip -o compressed-build.zip
-    - name: Unzip artifacts (Windows)
-      if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Unzip artifacts
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+        else
+          unzip -o compressed-build.zip
+        fi
     - name: Print directory structure
       run: ls -R
     - name: Unit tests
@@ -208,12 +207,13 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
-    - name: Unzip artifacts (Linux, macOS)
-      if: runner.os != 'Windows'
-      run: unzip -o compressed-build.zip
-    - name: Unzip artifacts (Windows)
-      if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Unzip artifacts
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+        else
+          unzip -o compressed-build.zip
+        fi
     - name: Print directory structure
       run: ls -R
     - name: Integration tests (${{ matrix.browser }})
@@ -248,12 +248,13 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
-    - name: Unzip artifacts (Linux, macOS)
-      if: runner.os != 'Windows'
-      run: unzip -o compressed-build.zip
-    - name: Unzip artifacts (Windows)
-      if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Unzip artifacts
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+        else
+          unzip -o compressed-build.zip
+        fi
     - name: Print directory structure
       run: ls -R
     - name: Build demo
@@ -286,12 +287,13 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
-    - name: Unzip artifacts (Linux, macOS)
-      if: runner.os != 'Windows'
-      run: unzip -o compressed-build.zip
-    - name: Unzip artifacts (Windows)
-      if: runner.os == 'Windows'
-      run: 7z x compressed-build.zip -aoa -o${{ github.workspace }}
+    - name: Unzip artifacts
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+        else
+          unzip -o compressed-build.zip
+        fi
     - name: Print directory structure
       run: ls -R
     - name: Integration tests (${{ matrix.browser }})
