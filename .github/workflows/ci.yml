@@ -94,7 +94,7 @@ jobs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
         else
           unzip -o compressed-build.zip
         fi
@@ -136,7 +136,7 @@ jobs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
         else
           unzip -o compressed-build.zip
         fi
@@ -170,7 +170,7 @@ jobs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
         else
           unzip -o compressed-build.zip
         fi
@@ -211,7 +211,7 @@ jobs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
         else
           unzip -o compressed-build.zip
         fi
@@ -252,7 +252,7 @@ jobs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
         else
           unzip -o compressed-build.zip
         fi
@@ -291,7 +291,7 @@ jobs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          7z x compressed-build.zip -aoa -o${{ github.workspace }}
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
         else
           unzip -o compressed-build.zip
         fi
