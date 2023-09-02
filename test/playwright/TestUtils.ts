@@ -16,6 +16,7 @@ import { EventEmitter } from '../../out/common/EventEmitter';
 import deepEqual = require('deep-equal');
 
 export interface ITestContext {
+  browser: Browser;
   page: Page;
   termHandle: JSHandle<Terminal>;
   proxy: TerminalProxy;
@@ -29,6 +30,7 @@ export async function createTestContext(browser: Browser): Promise<ITestContext>
   const proxy = new TerminalProxy(page);
   proxy.initPage();
   return {
+    browser,
     page,
     termHandle: await page.evaluateHandle('window.term'),
     proxy
@@ -366,14 +368,15 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
 
 
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number): Promise<void> {
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
+  stack ??= new Error().stack;
   if (preFn) {
     await preFn();
   }
   const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
 
   if (process.env.DEBUG) {
-    console.log('pollFor result: ', result);
+    console.log('pollFor result: ', JSON.stringify(result));
   }
 
   if (!deepEqual(result, val)) {
@@ -381,10 +384,16 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
       maxDuration = 2000;
     }
     if (maxDuration <= 0) {
-      deepStrictEqual(result, val, 'pollFor max duration exceeded');
+      deepStrictEqual(result, val, ([
+        `pollFor max duration exceeded.`,
+        (`Last comparison: ` +
+          `${typeof result === 'object' ? JSON.stringify(result) : result} !== ` +
+          `${typeof val === 'object' ? JSON.stringify(val) : val}`),
+        `Stack: ${stack}`
+      ].join('\n')));
     }
     return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10)), 10);
+      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10, stack)), 10);
     });
   }
 }
