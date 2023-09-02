@@ -378,7 +378,7 @@ test.describe('API Integration Tests', () => {
       await pollFor(ctx.page, `window.callCount`, 2);
     });
 
-    test('onRender', async function(): Promise<void> {
+    test('onRender', async () => {
       await openTerminal(ctx);
       await timeout(20); // Ensure all init events are fired
       await ctx.page.evaluate(`

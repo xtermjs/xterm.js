@@ -164,8 +164,8 @@ function parseReport(encoding: string, msg: number[]): { state: any, row: number
   }
 }
 
-test.describe('Mouse Tracking Tests', function (): void {
-  test.beforeAll(async function(): Promise<void> {
+test.describe('Mouse Tracking Tests', () => {
+  test.beforeAll(async () => {
     await ctx.page.setViewportSize({ width, height });
     // patch terminal to get the onData calls
     // we encode the msg here to an array of codes to not lose bytes

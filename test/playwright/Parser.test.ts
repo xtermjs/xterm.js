@@ -26,7 +26,7 @@ declare global {
   }
 }
 
-test.describe('Parser Integration Tests', function (): void {
+test.describe('Parser Integration Tests', () => {
   test.beforeEach(async () => await ctx.proxy.reset());
   test.afterEach(async () => {
     await ctx.page.evaluate(() => {

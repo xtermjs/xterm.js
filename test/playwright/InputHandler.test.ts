@@ -15,7 +15,7 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => await ctx.page.close());
 
 
-test.describe('InputHandler Integration Tests', function (): void {
+test.describe('InputHandler Integration Tests', () => {
 
   test.describe('CSI', () => {
     test.beforeEach(async () => await ctx.proxy.reset());
