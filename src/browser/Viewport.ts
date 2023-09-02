@@ -118,6 +118,7 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   private _innerRefresh(): void {
+    debugger;
     if (this._charSizeService.height > 0) {
       this._currentRowHeight = this._renderService.dimensions.device.cell.height / this._coreBrowserService.dpr;
       this._currentDeviceCellHeight = this._renderService.dimensions.device.cell.height;

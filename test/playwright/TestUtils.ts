@@ -4,13 +4,13 @@
  */
 
 import { Browser, JSHandle, Page } from '@playwright/test';
-import { deepStrictEqual } from 'assert';
+import { deepStrictEqual, strictEqual } from 'assert';
 import type { IRenderDimensions } from 'browser/renderer/shared/Types';
 import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
@@ -353,12 +353,19 @@ class TerminalCoreProxy {
   }
 }
 
-export async function openTerminal(ctx: ITestContext, options: ITerminalOptions = {}): Promise<void> {
+export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}): Promise<void> {
   await ctx.page.evaluate(`
-    if ('term' in window) {
+  if ('term' in window) {
+    try {
       window.term.dispose();
-    }
-    window.term = new Terminal(${JSON.stringify(options)});
+    } catch {}
+  }
+  `);
+  // HACK: Tests may have side effects that could cause the terminal not to be removed. This
+  //       assertion catches this case early.
+  strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
+  await ctx.page.evaluate(`
+    window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
     window.term.open(document.querySelector('#terminal-container'));
   `);
   await ctx.page.waitForSelector('.xterm-rows');

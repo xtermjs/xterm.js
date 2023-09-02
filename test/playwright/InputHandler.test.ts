@@ -3,10 +3,9 @@
  * @license MIT
  */
 import { test } from '@playwright/test';
-import { deepStrictEqual, ok, strictEqual } from 'assert';
-import type { IDisposable } from 'xterm';
-import { createTestContext, ITestContext, openTerminal, pollFor } from './TestUtils';
+import { deepStrictEqual, ok } from 'assert';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { ITestContext, createTestContext, openTerminal, pollFor } from './TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
