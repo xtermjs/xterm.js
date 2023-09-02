@@ -10,7 +10,7 @@ import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IModes, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 // TODO: We could avoid needing this
 import deepEqual = require('deep-equal');
@@ -64,9 +64,9 @@ interface ITerminalProxyCustomMethods {
 }
 
 type TerminalProxyAsyncPropOverrides = 'cols' | 'rows' | 'modes';
-type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getSelectionPosition' | 'registerMarker';
+type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getSelectionPosition' | 'registerMarker' | 'registerDecoration';
 type TerminalProxyCustomOverrides = 'buffer' | (
-  // TODO: Review and implement below if needed
+  // The below are not implemented yet
   'element' |
   'textarea' |
   'markers' |
@@ -78,10 +78,6 @@ type TerminalProxyCustomOverrides = 'buffer' | (
   'registerLinkProvider' |
   'registerCharacterJoiner' |
   'deregisterCharacterJoiner' |
-  'registerDecoration' |
-  'selectLines' |
-  'refresh' |
-  'clearTextureAtlas' |
   'loadAddon'
 );
 export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApiProxy<Terminal, TerminalProxyAsyncPropOverrides, TerminalProxyAsyncMethodOverrides, TerminalProxyCustomOverrides> {
@@ -192,9 +188,11 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public async getSelection(): Promise<string> { return this.evaluate(([term]) => term.getSelection()); }
   public async getSelectionPosition(): Promise<IBufferRange | undefined> { return this.evaluate(([term]) => term.getSelectionPosition()); }
   public async selectAll(): Promise<void> { return this.evaluate(([term]) => term.selectAll()); }
+  public async selectLines(start: number, end: number): Promise<void> { return this._page.evaluate(([term, start, end]) => term.selectLines(start, end), [await this.getHandle(), start, end] as const); }
   public async clearSelection(): Promise<void> { return this.evaluate(([term]) => term.clearSelection()); }
   public async select(column: number, row: number, length: number): Promise<void> { return this._page.evaluate(([term, column, row, length]) => term.select(column, row, length), [await this.getHandle(), column, row, length] as const); }
   public async paste(data: string): Promise<void> { return this._page.evaluate(([term, data]) => term.paste(data), [await this.getHandle(), data] as const); }
+  public async refresh(start: number, end: number): Promise<void> { return this._page.evaluate(([term, start, end]) => term.refresh(start, end), [await this.getHandle(), start, end] as const); }
   public async getOption<T extends keyof ITerminalOptions>(key: T): Promise<ITerminalOptions[T]> { return this._page.evaluate(([term, key]) => term.options[key as T], [await this.getHandle(), key] as const); }
   public async setOption<T extends keyof ITerminalOptions>(key: T, value: ITerminalOptions[T]): Promise<any> { return this._page.evaluate(([term, key, value]) => term.options[key as T] = (value as ITerminalOptions[T]), [await this.getHandle(), key, value] as const); }
   public async setOptions(value: Partial<ITerminalOptions>): Promise<any> {
@@ -219,6 +217,8 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   }
   public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const); }
   public async registerMarker(y?: number | undefined): Promise<IMarker> { return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const); }
+  public async registerDecoration(decorationOptions: IDecorationOptions): Promise<IDecoration | undefined> { return this._page.evaluate(([term, decorationOptions]) => term.registerDecoration(decorationOptions), [await this.getHandle(), decorationOptions] as const); }
+  public async clearTextureAtlas(): Promise<void> { return this.evaluate(([term]) => term.clearTextureAtlas()); }
   // #endregion
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
