@@ -221,7 +221,7 @@ jobs:
       matrix:
         node-version: [18] # just one as integration tests are about testing in browser
         runs-on: [ubuntu] # macos is flaky
-        browser: [chromium, firefox]
+        browser: [chromium, firefox, webkit]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
     - uses: actions/checkout@v3
