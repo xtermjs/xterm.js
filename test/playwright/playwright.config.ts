@@ -24,6 +24,7 @@ const config: PlaywrightTestConfig = {
       }
     }
   ],
+  reporter: 'list',
   webServer: {
     command: 'npm start',
     port: 3000,
