@@ -73,7 +73,6 @@ type TerminalProxyCustomOverrides = 'buffer' | (
   'unicode' |
   'parser' |
   'options' |
-  'onWriteParsed' |
   'open' |
   'attachCustomKeyEventHandler' |
   'registerLinkProvider' |
@@ -104,6 +103,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this._page.exposeFunction('onScroll', (e: number) => this._onScroll.fire(e));
     await this._page.exposeFunction('onSelectionChange', () => this._onSelectionChange.fire());
     await this._page.exposeFunction('onTitleChange', (e: string) => this._onTitleChange.fire(e));
+    await this._page.exposeFunction('onWriteParsed', () => this._onWriteParsed.fire());
   }
 
   /**
@@ -121,7 +121,8 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
       this._onResize,
       this._onScroll,
       this._onSelectionChange,
-      this._onTitleChange
+      this._onTitleChange,
+      this._onWriteParsed
     ]) {
       emitter.clearListeners();
     }
@@ -136,6 +137,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this.evaluate(([term]) => term.onScroll((window as any).onScroll));
     await this.evaluate(([term]) => term.onSelectionChange((window as any).onSelectionChange));
     await this.evaluate(([term]) => term.onTitleChange((window as any).onTitleChange));
+    await this.evaluate(([term]) => term.onWriteParsed((window as any).onWriteParsed));
   }
 
   // #region Events
@@ -161,6 +163,8 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public readonly onSelectionChange = this._onSelectionChange.event;
   private _onTitleChange = new EventEmitter<string>();
   public readonly onTitleChange = this._onTitleChange.event;
+  private _onWriteParsed = new EventEmitter<void>();
+  public readonly onWriteParsed = this._onWriteParsed.event;
   // #endregion
 
   // #region Simple properties
