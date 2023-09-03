@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { openTerminal, launchBrowser } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 
 const APP = 'http://127.0.0.1:3001/test';
 

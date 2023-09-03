@@ -13,6 +13,7 @@
       "src/headless/tsconfig.json",
       "test/api/tsconfig.json",
       "test/benchmark/tsconfig.json",
+      "test/playwright/tsconfig.json",
       "addons/xterm-addon-attach/src/tsconfig.json",
       "addons/xterm-addon-attach/test/tsconfig.json",
       "addons/xterm-addon-canvas/src/tsconfig.json",
