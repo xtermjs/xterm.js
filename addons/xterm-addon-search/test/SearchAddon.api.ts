@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { readFile } from 'fs';
 import { resolve } from 'path';
 import { openTerminal, writeSync, launchBrowser, timeout } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 
 const APP = 'http://127.0.0.1:3001/test';
 

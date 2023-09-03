@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import * as playwright from 'playwright';
+import * as playwright from '@playwright/test';
 import deepEqual = require('deep-equal');
 import { ITerminalInitOnlyOptions, ITerminalOptions } from 'xterm';
-import { deepStrictEqual, fail } from 'assert';
+import { deepStrictEqual } from 'assert';
 
 export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number): Promise<void> {
   if (preFn) {
