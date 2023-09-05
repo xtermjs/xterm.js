@@ -191,7 +191,7 @@ export class AccessibilityManager extends Disposable {
       if (element) {
         if (lineData.length === 0) {
           element.innerText = '\u00a0';
-          this._rowColumns.set(element, [0]);
+          this._rowColumns.set(element, [0, 1]);
         } else {
           element.textContent = lineData;
           this._rowColumns.set(element, columns);

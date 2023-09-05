@@ -333,9 +333,9 @@ describe('BufferLine', function(): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       const columns: number[] = [];
       assert.equal(line.translateToString(false, undefined, undefined, columns), '          ');
-      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), '');
-      assert.deepEqual(columns, []);
+      assert.deepEqual(columns, [0]);
     });
     it('ASCII', function(): void {
       const columns: number[] = [];
@@ -345,16 +345,16 @@ describe('BufferLine', function(): void {
       line.setCell(4, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(5, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a a aa    ');
-      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a a aa');
-      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5]);
+      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6]);
       for (const trimRight of [true, false]) {
         assert.equal(line.translateToString(trimRight, 0, 5, columns), 'a a a');
-        assert.deepEqual(columns, [0, 1, 2, 3, 4]);
+        assert.deepEqual(columns, [0, 1, 2, 3, 4, 5]);
         assert.equal(line.translateToString(trimRight, 0, 4, columns), 'a a ');
-        assert.deepEqual(columns, [0, 1, 2, 3]);
+        assert.deepEqual(columns, [0, 1, 2, 3, 4]);
         assert.equal(line.translateToString(trimRight, 0, 3, columns), 'a a');
-        assert.deepEqual(columns, [0, 1, 2]);
+        assert.deepEqual(columns, [0, 1, 2, 3]);
       }
 
     });
@@ -366,16 +366,16 @@ describe('BufferLine', function(): void {
       line.setCell(4, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
       line.setCell(5, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a 𝄞 𝄞𝄞    ');
-      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 8, 9]);
+      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a 𝄞 𝄞𝄞');
-      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5]);
+      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6]);
       for (const trimRight of [true, false]) {
         assert.equal(line.translateToString(trimRight, 0, 5, columns), 'a 𝄞 𝄞');
-        assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4]);
+        assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5]);
         assert.equal(line.translateToString(trimRight, 0, 4, columns), 'a 𝄞 ');
-        assert.deepEqual(columns, [0, 1, 2, 2, 3]);
+        assert.deepEqual(columns, [0, 1, 2, 2, 3, 4]);
         assert.equal(line.translateToString(trimRight, 0, 3, columns), 'a 𝄞');
-        assert.deepEqual(columns, [0, 1, 2, 2]);
+        assert.deepEqual(columns, [0, 1, 2, 2, 3]);
       }
     });
     it('combining', function(): void {
@@ -386,16 +386,16 @@ describe('BufferLine', function(): void {
       line.setCell(4, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
       line.setCell(5, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a e\u0301 e\u0301e\u0301    ');
-      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 8, 9]);
+      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a e\u0301 e\u0301e\u0301');
-      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5]);
+      assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6]);
       for (const trimRight of [true, false]) {
         assert.equal(line.translateToString(trimRight, 0, 5, columns), 'a e\u0301 e\u0301');
-        assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4]);
+        assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5]);
         assert.equal(line.translateToString(trimRight, 0, 4, columns), 'a e\u0301 ');
-        assert.deepEqual(columns, [0, 1, 2, 2, 3]);
+        assert.deepEqual(columns, [0, 1, 2, 2, 3, 4]);
         assert.equal(line.translateToString(trimRight, 0, 3, columns), 'a e\u0301');
-        assert.deepEqual(columns, [0, 1, 2, 2]);
+        assert.deepEqual(columns, [0, 1, 2, 2, 3]);
       }
     });
     it('fullwidth', function(): void {
@@ -409,22 +409,22 @@ describe('BufferLine', function(): void {
       line.setCell(7, CellData.fromCharData([1, '１', 2, '１'.charCodeAt(0)]));
       line.setCell(8, CellData.fromCharData([0, '', 0, 0]));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a １ １１ ');
-      assert.deepEqual(columns, [0, 1, 2, 4, 5, 7, 9]);
+      assert.deepEqual(columns, [0, 1, 2, 4, 5, 7, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a １ １１');
-      assert.deepEqual(columns, [0, 1, 2, 4, 5, 7]);
+      assert.deepEqual(columns, [0, 1, 2, 4, 5, 7, 9]);
       for (const trimRight of [true, false]) {
         assert.equal(line.translateToString(trimRight, 0, 7, columns), 'a １ １');
-        assert.deepEqual(columns, [0, 1, 2, 4, 5]);
+        assert.deepEqual(columns, [0, 1, 2, 4, 5, 7]);
         assert.equal(line.translateToString(trimRight, 0, 6, columns), 'a １ １');
-        assert.deepEqual(columns, [0, 1, 2, 4, 5]);
+        assert.deepEqual(columns, [0, 1, 2, 4, 5, 7]);
         assert.equal(line.translateToString(trimRight, 0, 5, columns), 'a １ ');
-        assert.deepEqual(columns, [0, 1, 2, 4]);
+        assert.deepEqual(columns, [0, 1, 2, 4, 5]);
         assert.equal(line.translateToString(trimRight, 0, 4, columns), 'a １');
-        assert.deepEqual(columns, [0, 1, 2]);
+        assert.deepEqual(columns, [0, 1, 2, 4]);
         assert.equal(line.translateToString(trimRight, 0, 3, columns), 'a １');
-        assert.deepEqual(columns, [0, 1, 2]);
+        assert.deepEqual(columns, [0, 1, 2, 4]);
         assert.equal(line.translateToString(trimRight, 0, 2, columns), 'a ');
-        assert.deepEqual(columns, [0, 1]);
+        assert.deepEqual(columns, [0, 1, 2]);
       }
     });
     it('space at end', function(): void {
@@ -436,9 +436,9 @@ describe('BufferLine', function(): void {
       line.setCell(5, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(6, CellData.fromCharData([1, ' ', 1, ' '.charCodeAt(0)]));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a a aa    ');
-      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a a aa ');
-      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6]);
+      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7]);
     });
     it('should always return some sane value', function(): void {
       const columns: number[] = [];
@@ -447,16 +447,16 @@ describe('BufferLine', function(): void {
       // fullwidth pairs --> needs to be fixed after settling BufferLine impl
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
       assert.equal(line.translateToString(false, undefined, undefined, columns), '          ');
-      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), '');
-      assert.deepEqual(columns, []);
+      assert.deepEqual(columns, [0]);
     });
     it('should work with endCol=0', () => {
       const columns: number[] = [];
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       assert.equal(line.translateToString(true, 0, 0, columns), '');
-      assert.deepEqual(columns, []);
+      assert.deepEqual(columns, [0]);
     });
   });
   describe('addCharToCell', () => {
