@@ -247,6 +247,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
   initImageAddonExposed();
+  testEvents();
 }
 
 function createTerminal(): void {
@@ -1334,4 +1335,9 @@ function initImageAddonExposed(): void {
       : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
     canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
   });
+}
+
+function testEvents(): void {
+  document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
+  document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
 }
