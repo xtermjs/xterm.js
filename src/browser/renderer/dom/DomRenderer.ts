@@ -303,6 +303,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleFocus(): void {
     this._rowContainer.classList.add(FOCUS_CLASS);
+    this.renderRows(this._bufferService.buffer.y, this._bufferService.buffer.y);
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
