@@ -258,9 +258,9 @@ test.describe('InputHandler Integration Tests', () => {
       // repeat on fullwidth chars
       await ctx.page.evaluate(`
           window.term.reset();
-          window.term.write('￥\x1b[10b');
+          window.term.write('￥\x1b[8b');
           `);
-      await pollFor(ctx.page, () => getLinesAsArray(1), ['￥￥￥￥￥￥￥￥￥￥￥']);
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['￥￥￥￥￥']);
       // change from xterm: repeat grapheme cluster
       await ctx.page.evaluate(`
           window.term.reset();
