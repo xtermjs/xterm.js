@@ -16,7 +16,7 @@ test.beforeAll(async ({ browser }) => {
   await openTerminal(ctx);
   ctxWrapper.value = ctx;
   await ctx.page.evaluate(`
-    window.addon = new WebglAddon(true);
+    window.addon = new window.WebglAddon(true);
     window.term.loadAddon(window.addon);
   `);
 });
@@ -35,7 +35,7 @@ test.describe('WebGL Renderer Integration Tests', async () => {
     strictEqual(await ctx.page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 0);
     // Re-create webgl addon to avoid side effects impacting other tests
     await ctx.page.evaluate(`
-      window.addon = new WebglAddon(true);
+      window.addon = new window.WebglAddon(true);
       window.term.loadAddon(window.addon);
     `);
   });
