@@ -383,7 +383,7 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
   const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
 
   if (process.env.DEBUG) {
-    console.log('pollFor result: ', JSON.stringify(result));
+    console.log('pollFor\n  actual: ', JSON.stringify(result), '  expected: ', JSON.stringify(val));
   }
 
   if (!deepEqual(result, val)) {
