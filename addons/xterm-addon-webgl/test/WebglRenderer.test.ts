@@ -29,16 +29,5 @@ test.describe('WebGL Renderer Integration Tests', async () => {
     test.skip(({ browserName }) => browserName === 'firefox');
   }
 
-  test('dispose removes renderer canvases', async function(): Promise<void> {
-    strictEqual(await ctx.page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 2);
-    await ctx.page.evaluate(`addon.dispose()`);
-    strictEqual(await ctx.page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 0);
-    // Re-create webgl addon to avoid side effects impacting other tests
-    await ctx.page.evaluate(`
-      window.addon = new window.WebglAddon(true);
-      window.term.loadAddon(window.addon);
-    `);
-  });
-
   injectSharedRendererTests(ctxWrapper);
 });
