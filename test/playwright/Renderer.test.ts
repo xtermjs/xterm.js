@@ -724,6 +724,344 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       }
     }
   });
+
+  test.describe.skip('minimumContrastRatio', async () => {
+    test('should adjust 0-15 colors on black background', async () => {
+      const theme: ITheme = {
+        black: '#2e3436',
+        red: '#cc0000',
+        green: '#4e9a06',
+        yellow: '#c4a000',
+        blue: '#3465a4',
+        magenta: '#75507b',
+        cyan: '#06989a',
+        white: '#d3d7cf',
+        brightBlack: '#555753',
+        brightRed: '#ef2929',
+        brightGreen: '#8ae234',
+        brightYellow: '#fce94f',
+        brightBlue: '#729fcf',
+        brightMagenta: '#ad7fa8',
+        brightCyan: '#34e2e2',
+        brightWhite: '#eeeeec'
+      };
+      await ctx.page.evaluate(`
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.minimumContrastRatio = 1;
+      `);
+      // Block characters ignore block elements so a different char is used here
+      await ctx.proxy.write(
+        `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
+        `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
+      );
+      // Validate before minimumContrastRatio is applied
+      await pollFor(ctx.page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [0xcc, 0x00, 0x00, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [0x4e, 0x9a, 0x06, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 1), [0xc4, 0xa0, 0x00, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 1), [0x34, 0x65, 0xa4, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 1), [0x75, 0x50, 0x7b, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 1), [0x06, 0x98, 0x9a, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 1), [0xd3, 0xd7, 0xcf, 255]);
+      await pollFor(ctx.page, () => getCellColor(1, 2), [0x55, 0x57, 0x53, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 2), [0xef, 0x29, 0x29, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 2), [0x8a, 0xe2, 0x34, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 2), [0xfc, 0xe9, 0x4f, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 2), [0x72, 0x9f, 0xcf, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 2), [0xad, 0x7f, 0xa8, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
+      // Setting and check for minimum contrast values, note that these are not
+      // exact to the contrast ratio, if the increase luminance algorithm
+      // changes then these will probably fail
+      await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [176, 180, 180, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [238, 158, 158, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [152, 198, 110, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 1), [208, 179, 49, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 1), [161, 183, 215, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 1), [191, 174, 194, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 1), [110, 197, 198, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 1), [211, 215, 207, 255]);
+      await pollFor(ctx.page, () => getCellColor(1, 2), [183, 185, 183, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 2), [249, 156, 156, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 2), [138, 226, 52, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 2), [252, 233, 79, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 2), [154, 186, 221, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 2), [203, 173, 199, 255]);
+      // Unchanged
+      await pollFor(ctx.page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
+    });
+
+    test('should adjust 0-15 colors on white background', async () => {
+      const theme: ITheme = {
+        background: '#ffffff',
+        black: '#2e3436',
+        red: '#cc0000',
+        green: '#4e9a06',
+        yellow: '#c4a000',
+        blue: '#3465a4',
+        magenta: '#75507b',
+        cyan: '#06989a',
+        white: '#d3d7cf',
+        brightBlack: '#555753',
+        brightRed: '#ef2929',
+        brightGreen: '#8ae234',
+        brightYellow: '#fce94f',
+        brightBlue: '#729fcf',
+        brightMagenta: '#ad7fa8',
+        brightCyan: '#34e2e2',
+        brightWhite: '#eeeeec'
+      };
+      await ctx.page.evaluate(`
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.minimumContrastRatio = 1;
+      `);
+      // Block characters ignore block elements so a different char is used here
+      await ctx.proxy.write(
+        `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
+        `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
+      );
+      // Validate before minimumContrastRatio is applied
+      await pollFor(ctx.page, () => getCellColor(1, 1), [0x2e, 0x34, 0x36, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [0xcc, 0x00, 0x00, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [0x4e, 0x9a, 0x06, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 1), [0xc4, 0xa0, 0x00, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 1), [0x34, 0x65, 0xa4, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 1), [0x75, 0x50, 0x7b, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 1), [0x06, 0x98, 0x9a, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 1), [0xd3, 0xd7, 0xcf, 255]);
+      await pollFor(ctx.page, () => getCellColor(1, 2), [0x55, 0x57, 0x53, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 2), [0xef, 0x29, 0x29, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 2), [0x8a, 0xe2, 0x34, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 2), [0xfc, 0xe9, 0x4f, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 2), [0x72, 0x9f, 0xcf, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 2), [0xad, 0x7f, 0xa8, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 2), [0x34, 0xe2, 0xe2, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 2), [0xee, 0xee, 0xec, 255]);
+      // Setting and check for minimum contrast values, note that these are not
+      // exact to the contrast ratio, if the increase luminance algorithm
+      // changes then these will probably fail
+      await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [46, 52, 54, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [132, 0, 0, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [36, 72, 0, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 1), [72, 59, 0, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 1), [32, 64, 106, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 1), [75, 51, 80, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 1), [0, 71, 72, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 1), [64, 64, 63, 255]);
+      await pollFor(ctx.page, () => getCellColor(1, 2), [61, 63, 59, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 2), [125, 19, 19, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 2), [40, 67, 13, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 2), [67, 63, 19, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 2), [45, 65, 87, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 2), [81, 57, 78, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 2), [13, 67, 67, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 2), [64, 64, 64, 255]);
+    });
+
+    test('should enforce half the contrast for dim cells', async () => {
+      const theme: ITheme = {
+        background: '#ffffff',
+        black: '#2e3436',
+        red: '#cc0000',
+        green: '#4e9a06',
+        yellow: '#c4a000',
+        blue: '#3465a4',
+        magenta: '#75507b',
+        cyan: '#06989a',
+        white: '#d3d7cf',
+        brightBlack: '#555753',
+        brightRed: '#ef2929',
+        brightGreen: '#8ae234',
+        brightYellow: '#fce94f',
+        brightBlue: '#729fcf',
+        brightMagenta: '#ad7fa8',
+        brightCyan: '#34e2e2',
+        brightWhite: '#eeeeec'
+      };
+      await ctx.page.evaluate(`
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.minimumContrastRatio = 1;
+      `);
+      // Block characters ignore block elements so a different char is used here
+      await ctx.proxy.write(
+        '\x1b[2m' +
+        `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
+        `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
+      );
+      // Validate before minimumContrastRatio is applied
+      await pollFor(ctx.page, () => getCellColor(1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 1), [Math.floor((255 + 0xc4) / 2), Math.floor((255 + 0xa0) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 1), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x65) / 2), Math.floor((255 + 0xa4) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 1), [Math.floor((255 + 0x75) / 2), Math.floor((255 + 0x50) / 2), Math.floor((255 + 0x7b) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 1), [Math.floor((255 + 0x06) / 2), Math.floor((255 + 0x98) / 2), Math.floor((255 + 0x9a) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 1), [Math.floor((255 + 0xd3) / 2), Math.floor((255 + 0xd7) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(1, 2), [Math.floor((255 + 0x55) / 2), Math.floor((255 + 0x57) / 2), Math.floor((255 + 0x53) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 2), [Math.floor((255 + 0xef) / 2), Math.floor((255 + 0x29) / 2), Math.floor((255 + 0x29) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 2), [Math.floor((255 + 0x8a) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0x34) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 2), [Math.floor((255 + 0xfc) / 2), Math.floor((255 + 0xe9) / 2), Math.floor((255 + 0x4f) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 2), [Math.floor((255 + 0x72) / 2), Math.floor((255 + 0x9f) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
+      // Setting and check for minimum contrast values, note that these are not
+      // exact to the contrast ratio, if the increase luminance algorithm
+      // changes then these will probably fail
+      await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [150, 153, 154, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [229, 127, 127, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [63, 124, 4, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 1), [127, 104, 0, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 1), [153, 178, 209, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 1), [186, 167, 189, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 1), [4, 122, 124, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 1), [110, 112, 108, 255]);
+      await pollFor(ctx.page, () => getCellColor(1, 2), [170, 171, 169, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 2), [215, 36, 36, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 2), [72, 117, 25, 255]);
+      await pollFor(ctx.page, () => getCellColor(4, 2), [117, 109, 36, 255]);
+      await pollFor(ctx.page, () => getCellColor(5, 2), [72, 103, 135, 255]);
+      await pollFor(ctx.page, () => getCellColor(6, 2), [125, 91, 121, 255]);
+      await pollFor(ctx.page, () => getCellColor(7, 2), [25, 117, 117, 255]);
+      await pollFor(ctx.page, () => getCellColor(8, 2), [111, 111, 110, 255]);
+    });
+  });
+
+  test.describe.skip('selectionBackground', async () => {
+    test('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
+      const theme: ITheme = {
+        foreground: '#FF0000',
+        background: '#00FF00',
+        selectionBackground: '#0000FF'
+      };
+      await ctx.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.proxy.write( ` █\x1b[7m█\x1b[0m`);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [0, 255, 0, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [0, 255, 0, 255]);
+      await ctx.page.evaluate(`window.term.selectAll()`);
+      // Selection only cell needs to be first to ensure renderer has kicked in
+      await pollFor(ctx.page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+      await pollFor(ctx.page, () => getCellColor(2, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.page, () => getCellColor(3, 1), [0, 255, 0, 255]);
+    });
+  });
+
+  test.describe('allowTransparency', async () => {
+    test.beforeEach(() => ctx.page.evaluate(`term.options.allowTransparency = true`));
+
+    test('transparent background inverse', async () => {
+      const theme: ITheme = {
+        background: '#ff000080'
+      };
+      await ctx.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      const data = `\x1b[7m█\x1b[0m`;
+      await ctx.proxy.write( data);
+      // Inverse background should be opaque
+      await pollFor(ctx.page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+  });
+
+  test.describe('selectionForeground', () => {
+    test('transparent background inverse', async () => {
+      const theme: ITheme = {
+        selectionForeground: '#ff0000'
+      };
+      await ctx.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      const data = `\x1b[7m█\x1b[0m`;
+      await ctx.proxy.write( data);
+      await ctx.page.evaluate(`window.term.selectAll()`);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+  });
+
+  test.describe('decoration color overrides', async () => {
+    test('foregroundColor', async () => {
+      await ctx.page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `█`;
+      await ctx.proxy.write( data);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+    test('foregroundColor should ignore inverse', async () => {
+      await ctx.page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `\x1b[7m█\x1b[0m`;
+      await ctx.proxy.write( data);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [255, 0, 0, 255]);
+    });
+    test('foregroundColor should ignore inverse (only fg on decoration)', async () => {
+      await ctx.page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          width: 2,
+          foregroundColor: '#ff0000'
+        });
+      `);
+      const data = `\x1b[7m█ \x1b[0m`;
+      await ctx.proxy.write( data);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [255, 0, 0, 255]); // inverse foreground of '█' should be decoration fg override
+      await pollFor(ctx.page, () => getCellColor(2, 1), [255, 255, 255, 255]); // inverse background of ' ' should be default foreground
+    });
+    test('backgroundColor', async () => {
+      await ctx.page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = ` `;
+      await ctx.proxy.write( data);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+    });
+    test('backgroundColor should ignore inverse', async () => {
+      await ctx.page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          foregroundColor: '#ff0000',
+          backgroundColor: '#0000ff'
+        });
+      `);
+      const data = `\x1b[7m \x1b[0m`;
+      await ctx.proxy.write( data);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [0, 0, 255, 255]);
+    });
+    test('backgroundColor should ignore inverse (only bg on decoration)', async () => {
+      const data = `\x1b[7m█ \x1b[0m`;
+      await ctx.proxy.write( data);
+      await ctx.page.evaluate(`
+        const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
+        window.term.registerDecoration({
+          marker,
+          width: 2,
+          backgroundColor: '#0000ff'
+        });
+      `);
+      await pollFor(ctx.page, () => getCellColor(1, 1), [0, 0, 0, 255]); // inverse foreground of '█' should be default
+      await pollFor(ctx.page, () => getCellColor(2, 1), [0, 0, 255, 255]); // inverse background of ' ' should be decoration bg override
+    });
+  });
 });
 
 /**
