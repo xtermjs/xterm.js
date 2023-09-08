@@ -25,11 +25,5 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => await ctx.page.close());
 
 test.describe('Canvas Renderer Integration Tests', async () => {
-  // HACK: webgl2 is often not supported in headless firefox on Linux
-  // https://github.com/microsoft/playwright/issues/11566
-  if (platform() === 'linux') {
-    test.skip(({ browserName }) => browserName === 'firefox');
-  }
-
   injectSharedRendererTests(ctxWrapper);
 });
