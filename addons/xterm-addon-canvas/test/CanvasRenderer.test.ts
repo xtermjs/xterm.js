@@ -17,7 +17,7 @@ test.beforeAll(async ({ browser }) => {
   await openTerminal(ctx);
   ctxWrapper.value = ctx;
   await ctx.page.evaluate(`
-    window.addon = new CanvasAddon(true);
+    window.addon = new window.CanvasAddon(true);
     window.term.loadAddon(window.addon);
   `);
 });
