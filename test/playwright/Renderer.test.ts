@@ -16,7 +16,7 @@ test.beforeAll(async ({ browser }) => {
 });
 test.afterAll(async () => await ctx.page.close());
 
-test.describe('DOM Renderer Integration Tests', async () => {
+test.describe('DOM Renderer Integration Tests', () => {
   injectSharedRendererTests(ctxWrapper);
 });
 
