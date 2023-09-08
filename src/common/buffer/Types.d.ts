@@ -11,8 +11,17 @@ export type BufferIndex = [number, number];
 
 export interface IBuffer {
   readonly lines: ICircularList<IBufferLine>;
+  /** Number of rows above top visible row.
+   * Similar to scrollTop (i.e. affected by scrollbar), but in rows.
+   * FUTURE: We want to handle variable-height rows. Maybe just use scrollTop.
+   */
   ydisp: number;
+  /** Number of rows in the scrollback buffer, above the home row. */
   ybase: number;
+  /** Row number relative to the "home" row.
+   * This is the row number changed/reported by cursor escape sequences,
+   * except that y is 0-origin: y=0 when we're at the home row.
+   */
   y: number;
   x: number;
   tabs: any;
