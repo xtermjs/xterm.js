@@ -9,7 +9,7 @@ const cp = require('child_process');
 const path = require('path');
 
 const configs = [
-  // { name: 'core', path: 'out-test/playwright/playwright.config.js' },
+  { name: 'core', path: 'out-test/playwright/playwright.config.js' },
   { name: 'xterm-addon-canvas', path: 'addons/xterm-addon-canvas/out-test/playwright.config.js' },
   { name: 'xterm-addon-webgl', path: 'addons/xterm-addon-webgl/out-test/playwright.config.js' }
 ];
