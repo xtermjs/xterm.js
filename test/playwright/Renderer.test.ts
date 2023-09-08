@@ -15,9 +15,13 @@ test.beforeAll(async ({ browser }) => {
 });
 test.afterAll(async () => await ctx.page.close());
 
-test.describe.only('WebGL Renderer Integration Tests', async () => {
+test.describe.only('DOM Renderer Integration Tests', async () => {
   test.beforeEach(async () => {
     await ctx.proxy.reset();
+    ctx.page.evaluate([
+      `window.term.options.minimumContrastRatio = 1`,
+      `window.term.options.allowTransparency = false`
+    ].join('\n'));
     // Clear the cached screenshot before each test
     frameDetails = undefined;
   });
@@ -722,7 +726,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
     }
   });
 
-  test.describe.only('minimumContrastRatio', async () => {
+  test.describe('minimumContrastRatio', async () => {
     test('should adjust 0-15 colors on black background', async () => {
       const theme: ITheme = {
         black: '#2e3436',
@@ -932,7 +936,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
     });
   });
 
-  test.describe.skip('selectionBackground', async () => {
+  test.describe('selectionBackground', async () => {
     test('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
@@ -945,6 +949,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       await pollFor(ctx.page, () => getCellColor(2, 1), [255, 0, 0, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [0, 255, 0, 255]);
       await ctx.page.evaluate(`window.term.selectAll()`);
+      frameDetails = undefined;
       // Selection only cell needs to be first to ensure renderer has kicked in
       await pollFor(ctx.page, () => getCellColor(1, 1), [0, 0, 255, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [255, 0, 0, 255]);
