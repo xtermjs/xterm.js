@@ -374,8 +374,9 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
 }
 
 
+export type MaybeAsync<T> = Promise<T> | T;
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
   stack ??= new Error().stack;
   if (preFn) {
     await preFn();
