@@ -9,8 +9,7 @@ h1 {
 }
 
 #terminal-container {
-    width: 800px;
-    height: 450px;
+    height: 60%;
     margin: 0 auto;
     padding: 2px;
 }
@@ -46,11 +45,16 @@ pre {
 #container {
     display: flex;
 }
-#grid {
+.grid {
     flex: 1;
     /* max-height: 80vh;
     overflow-y: auto; */
     width: 100%;
+    min-width: 100px;
+}
+div:first-of-type.grid {
+    flex: 2;
+    height: 60vh;
 }
 .tab {
     overflow: hidden;
@@ -86,8 +90,6 @@ pre {
     padding: 6px 12px;
     border: 1px solid #ccc;
     border-top: none;
-    max-height: 100vh;
-    overflow-y: auto;
 }
 
 #texture-atlas-zoom:checked + label + #texture-atlas canvas {
@@ -105,4 +107,7 @@ pre {
 
 .vt-button * {
   margin-right: 1em;
+}
+input#opt-cols_rows {
+    width: 6em;
 }

@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IColorSet, IViewport, ReadonlyColorSet } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { IBufferService, IOptionsService } from 'common/services/Services';
-import { IBuffer } from 'common/buffer/Types';
+import { IViewport, ReadonlyColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
+import { Disposable } from 'common/Lifecycle';
+import { IBuffer } from 'common/buffer/Types';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -279,6 +279,9 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   public scrollLines(disp: number): void {
+    if (disp === 0) {
+      return;
+    }
     if (!this._optionsService.rawOptions.smoothScrollDuration) {
       this._onRequestScrollLines.fire({ amount: disp, suppressScrollEvent: false });
     } else {

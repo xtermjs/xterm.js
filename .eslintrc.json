@@ -13,6 +13,7 @@
       "src/headless/tsconfig.json",
       "test/api/tsconfig.json",
       "test/benchmark/tsconfig.json",
+      "test/playwright/tsconfig.json",
       "addons/xterm-addon-attach/src/tsconfig.json",
       "addons/xterm-addon-attach/test/tsconfig.json",
       "addons/xterm-addon-canvas/src/tsconfig.json",
@@ -127,6 +128,11 @@
       { "selector": "typeLike", "format": ["PascalCase"] },
       { "selector": "interface", "format": ["PascalCase"], "prefix": ["I"] }
     ],
+    "@typescript-eslint/no-confusing-void-expression": [
+      "warn",
+      { "ignoreArrowShorthand": true }
+    ],
+    "@typescript-eslint/no-useless-constructor": "warn",
     "@typescript-eslint/prefer-namespace-keyword": "warn",
     "@typescript-eslint/type-annotation-spacing": "warn",
     "@typescript-eslint/quotes": [
@@ -212,6 +218,10 @@
     ],
     "no-trailing-spaces": "warn",
     "no-unsafe-finally": "warn",
+    "no-unused-vars": ["warn", {
+      "vars": "all",
+      "args": "none"
+    }],
     "no-var": "warn",
     "one-var": [
       "warn",
@@ -233,10 +243,14 @@
   },
   "overrides": [
     {
-      "files": ["**/*.test.ts"],
+      "files": [
+        "**/*.api.ts",
+        "**/*.test.ts"
+      ],
       "rules": {
         "object-curly-spacing": "off",
-        "max-len": "off"
+        "max-len": "off",
+        "no-unused-vars": "off"
       }
     }
   ]

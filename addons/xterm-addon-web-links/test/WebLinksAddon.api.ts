@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { openTerminal, pollFor, writeSync, launchBrowser } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 
 const APP = 'http://127.0.0.1:3001/test';
 
@@ -35,26 +35,57 @@ describe('WebLinksAddon', () => {
     browser = await launchBrowser();
     page = await (await browser.newContext()).newPage();
     await page.setViewportSize({ width, height });
+    await page.goto(APP);
+    await openTerminal(page, { cols: 40 });
   });
 
   after(async () => await browser.close());
-  beforeEach(async () => await page.goto(APP));
-
-  it('.com', async function(): Promise<any> {
-    await testHostName('foo.com');
+  beforeEach(async () => {
+    await page.evaluate(`
+      window._linkaddon?.dispose();
+      window.term.reset();
+      window._linkaddon = new window.WebLinksAddon();
+      window.term.loadAddon(window._linkaddon);
+    `);
   });
 
-  it('.com.au', async function(): Promise<any> {
-    await testHostName('foo.com.au');
-  });
-
-  it('.io', async function(): Promise<any> {
-    await testHostName('foo.io');
-  });
+  const countryTlds = [
+    '.ac', '.ad', '.ae', '.af', '.ag', '.ai', '.al', '.am', '.ao', '.aq', '.ar', '.as', '.at',
+    '.au', '.aw', '.ax', '.az', '.ba', '.bb', '.bd', '.be', '.bf', '.bg', '.bh', '.bi', '.bj',
+    '.bm', '.bn', '.bo', '.bq', '.br', '.bs', '.bt', '.bw', '.by', '.bz', '.ca', '.cc', '.cd',
+    '.cf', '.cg', '.ch', '.ci', '.ck', '.cl', '.cm', '.cn', '.co', '.cr', '.cu', '.cv', '.cw',
+    '.cx', '.cy', '.cz', '.de', '.dj', '.dk', '.dm', '.do', '.dz', '.ec', '.ee', '.eg', '.eh',
+    '.er', '.es', '.et', '.eu', '.fi', '.fj', '.fk', '.fm', '.fo', '.fr', '.ga', '.gd', '.ge',
+    '.gf', '.gg', '.gh', '.gi', '.gl', '.gm', '.gn', '.gp', '.gq', '.gr', '.gs', '.gt', '.gu',
+    '.gw', '.gy', '.hk', '.hm', '.hn', '.hr', '.ht', '.hu', '.id', '.ie', '.il', '.im', '.in',
+    '.io', '.iq', '.ir', '.is', '.it', '.je', '.jm', '.jo', '.jp', '.ke', '.kg', '.kh', '.ki',
+    '.km', '.kn', '.kp', '.kr', '.kw', '.ky', '.kz', '.la', '.lb', '.lc', '.li', '.lk', '.lr',
+    '.ls', '.lt', '.lu', '.lv', '.ly', '.ma', '.mc', '.md', '.me', '.mg', '.mh', '.mk', '.ml',
+    '.mm', '.mn', '.mo', '.mp', '.mq', '.mr', '.ms', '.mt', '.mu', '.mv', '.mw', '.mx', '.my',
+    '.mz', '.na', '.nc', '.ne', '.nf', '.ng', '.ni', '.nl', '.no', '.np', '.nr', '.nu', '.nz',
+    '.om', '.pa', '.pe', '.pf', '.pg', '.ph', '.pk', '.pl', '.pm', '.pn', '.pr', '.ps', '.pt',
+    '.pw', '.py', '.qa', '.re', '.ro', '.rs', '.ru', '.rw', '.sa', '.sb', '.sc', '.sd', '.se',
+    '.sg', '.sh', '.si', '.sk', '.sl', '.sm', '.sn', '.so', '.sr', '.ss', '.st', '.su', '.sv',
+    '.sx', '.sy', '.sz', '.tc', '.td', '.tf', '.tg', '.th', '.tj', '.tk', '.tl', '.tm', '.tn',
+    '.to', '.tr', '.tt', '.tv', '.tw', '.tz', '.ua', '.ug', '.uk', '.us', '.uy', '.uz', '.va',
+    '.vc', '.ve', '.vg', '.vi', '.vn', '.vu', '.wf', '.ws', '.ye', '.yt', '.za', '.zm', '.zw'
+  ];
+  for (const tld of countryTlds) {
+    it(tld, async () => await testHostName(`foo${tld}`));
+  }
+  it(`.com`, async () => await testHostName(`foo.com`));
+  for (const tld of countryTlds) {
+    it(`.com${tld}`, async () => await testHostName(`foo.com${tld}`));
+  }
 
   describe('correct buffer offsets & uri', () => {
+    beforeEach(async () => {
+      await page.evaluate(`
+        window._linkStateData = {uri:''};
+        window._linkaddon._options.hover = (event, uri, range) => { window._linkStateData = { uri, range }; };
+      `);
+    });
     it('all half width', async () => {
-      setupCustom();
       await writeSync(page, 'aaa http://example.com aaa http://example.com aaa');
       await resetAndHover(5, 0);
       await evalLinkStateData('http://example.com', { start: { x: 5, y: 1 }, end: { x: 22, y: 1 } });
@@ -62,7 +93,6 @@ describe('WebLinksAddon', () => {
       await evalLinkStateData('http://example.com', { start: { x: 28, y: 1 }, end: { x: 5, y: 2 } });
     });
     it('url after full width', async () => {
-      setupCustom();
       await writeSync(page, '￥￥￥ http://example.com ￥￥￥ http://example.com aaa');
       await resetAndHover(8, 0);
       await evalLinkStateData('http://example.com', { start: { x: 8, y: 1 }, end: { x: 25, y: 1 } });
@@ -70,7 +100,6 @@ describe('WebLinksAddon', () => {
       await evalLinkStateData('http://example.com', { start: { x: 34, y: 1 }, end: { x: 11, y: 2 } });
     });
     it('full width within url and before', async () => {
-      setupCustom();
       await writeSync(page, '￥￥￥ https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 ￥￥￥');
       await resetAndHover(8, 0);
       await evalLinkStateData('https://ko.wikipedia.org/wiki/위키백과:대문', { start: { x: 8, y: 1 }, end: { x: 11, y: 2 } });
@@ -80,7 +109,6 @@ describe('WebLinksAddon', () => {
       await evalLinkStateData('https://ko.wikipedia.org/wiki/위키백과:대문', { start: { x: 17, y: 2 }, end: { x: 19, y: 3 } });
     });
     it('name + password url after full width and combining', async () => {
-      setupCustom();
       await writeSync(page, '￥￥￥cafe\u0301 http://test:password@example.com/some_path');
       await resetAndHover(12, 0);
       await evalLinkStateData('http://test:password@example.com/some_path', { start: { x: 12, y: 1 }, end: { x: 13, y: 2 } });
@@ -91,8 +119,6 @@ describe('WebLinksAddon', () => {
 });
 
 async function testHostName(hostname: string): Promise<void> {
-  await openTerminal(page, { cols: 40 });
-  await page.evaluate(`window.term.loadAddon(new window.WebLinksAddon())`);
   const data = `  http://${hostname}  \\r\\n` +
     `  http://${hostname}/a~b#c~d?e~f  \\r\\n` +
     `  http://${hostname}/colon:test  \\r\\n` +
@@ -115,14 +141,6 @@ async function pollForLinkAtCell(col: number, row: number, value: string): Promi
   await pollFor(page, `!!Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').length`, true);
   const text = await page.evaluate(`Array.from(document.querySelectorAll('.xterm-rows > :nth-child(${row+1}) > span[style]')).filter(el => el.style.textDecoration == 'underline').map(el => el.textContent).join('');`);
   assert.deepEqual(text, value);
-}
-
-async function setupCustom(): Promise<void> {
-  await openTerminal(page, { cols: 40 });
-  await page.evaluate(`window._linkStateData = {uri:''};
-window._linkaddon = new window.WebLinksAddon();
-window._linkaddon._options.hover = (event, uri, range) => { window._linkStateData = { uri, range }; };
-window.term.loadAddon(window._linkaddon);`);
 }
 
 async function resetAndHover(col: number, row: number): Promise<void> {

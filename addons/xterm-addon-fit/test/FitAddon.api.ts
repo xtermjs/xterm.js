@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { openTerminal, launchBrowser } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 
 const APP = 'http://127.0.0.1:3001/test';
 
@@ -41,9 +41,7 @@ describe('FitAddon', () => {
   });
 
   describe('proposeDimensions', () => {
-    afterEach(async () => {
-      return await unloadFit();
-    });
+    afterEach(() => unloadFit());
 
     it('default', async function(): Promise<any> {
       await loadFit();
@@ -82,9 +80,7 @@ describe('FitAddon', () => {
   });
 
   describe('fit', () => {
-    afterEach(async () => {
-      return await unloadFit();
-    });
+    afterEach(() => unloadFit());
 
     it('default', async function(): Promise<any> {
       await loadFit();

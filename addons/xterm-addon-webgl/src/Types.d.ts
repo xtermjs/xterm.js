@@ -4,6 +4,7 @@
  */
 
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
+import { CursorInactiveStyle, CursorStyle } from 'common/Types';
 
 export interface IRenderModel {
   cells: Uint32Array;
@@ -16,12 +17,10 @@ export interface ICursorRenderModel {
   x: number;
   y: number;
   width: number;
-  style: CursorStyle;
+  style: CursorStyle | CursorInactiveStyle;
   cursorWidth: number;
   dpr: number;
 }
-
-export type CursorStyle = 'outline' | 'block' | 'bar' | 'underline' | 'none';
 
 export interface IWebGL2RenderingContext extends WebGLRenderingContext {
   vertexAttribDivisor(index: number, divisor: number): void;

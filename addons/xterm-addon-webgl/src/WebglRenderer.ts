@@ -4,34 +4,34 @@
  */
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
+import { ITerminal } from 'browser/Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
+import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
-import { createRenderDimensions, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ITerminal } from 'browser/Types';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { Disposable, MutableDisposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
+import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
+import { traceCall } from 'common/services/LogService';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/Types';
-import { IDisposable, Terminal } from 'xterm';
+import { Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
-import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
+import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
+import { IWebGL2RenderingContext } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { COMBINED_CHAR_BIT_MASK, RenderModel, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
-import { IWebGL2RenderingContext } from './Types';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
-  private _cursorBlinkStateManager: CursorBlinkStateManager | undefined;
-  private _charAtlasDisposable: IDisposable | undefined;
+  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
+  private _charAtlasDisposable = this.register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
 
@@ -41,8 +41,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer?: RectangleRenderer;
-  private _glyphRenderer?: GlyphRenderer;
+  private _rectangleRenderer: MutableDisposable<RectangleRenderer> = this.register(new MutableDisposable());
+  private _glyphRenderer: MutableDisposable<GlyphRenderer> = this.register(new MutableDisposable());
 
   public readonly dimensions: IRenderDimensions;
 
@@ -128,7 +128,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    [this._rectangleRenderer, this._glyphRenderer] = this._initializeWebGLState();
+    [this._rectangleRenderer.value, this._glyphRenderer.value] = this._initializeWebGLState();
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
 
@@ -182,10 +182,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.width = `${this.dimensions.css.canvas.width}px`;
     this._core.screenElement!.style.height = `${this.dimensions.css.canvas.height}px`;
 
-    this._rectangleRenderer?.setDimensions(this.dimensions);
-    this._rectangleRenderer?.handleResize();
-    this._glyphRenderer?.setDimensions(this.dimensions);
-    this._glyphRenderer?.handleResize();
+    this._rectangleRenderer.value?.setDimensions(this.dimensions);
+    this._rectangleRenderer.value?.handleResize();
+    this._glyphRenderer.value?.setDimensions(this.dimensions);
+    this._glyphRenderer.value?.handleResize();
 
     this._refreshCharAtlas();
 
@@ -202,7 +202,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleBlur(this._terminal);
     }
-    this._cursorBlinkStateManager?.pause();
+    this._cursorBlinkStateManager.value?.pause();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
@@ -211,7 +211,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleFocus(this._terminal);
     }
-    this._cursorBlinkStateManager?.resume();
+    this._cursorBlinkStateManager.value?.resume();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
   }
@@ -228,7 +228,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleCursorMove(this._terminal);
     }
-    this._cursorBlinkStateManager?.restartBlinkAnimation();
+    this._cursorBlinkStateManager.value?.restartBlinkAnimation();
   }
 
   private _handleOptionsChanged(): void {
@@ -241,17 +241,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Initializes members dependent on WebGL context state.
    */
   private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
-    // Dispose any previous rectangle and glyph renderers before creating new ones.
-    this._rectangleRenderer?.dispose();
-    this._glyphRenderer?.dispose();
-
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService));
-    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions));
+    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService);
+    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
 
-    return [this._rectangleRenderer, this._glyphRenderer];
+    return [this._rectangleRenderer.value, this._glyphRenderer.value];
   }
 
   /**
@@ -275,16 +271,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._coreBrowserService.dpr
     );
     if (this._charAtlas !== atlas) {
-      this._charAtlasDisposable?.dispose();
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
-      this._charAtlasDisposable = getDisposeArrayDisposable([
+      this._charAtlasDisposable.value = getDisposeArrayDisposable([
         forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
         forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
       ]);
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
-    this._glyphRenderer?.setAtlas(this._charAtlas);
+    this._glyphRenderer.value?.setAtlas(this._charAtlas);
   }
 
   /**
@@ -295,7 +290,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _clearModel(clearGlyphRenderer: boolean): void {
     this._model.clear();
     if (clearGlyphRenderer) {
-      this._glyphRenderer?.clear();
+      this._glyphRenderer.value?.clear();
     }
   }
 
@@ -311,7 +306,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.reset(this._terminal);
     }
 
-    this._cursorBlinkStateManager?.restartBlinkAnimation();
+    this._cursorBlinkStateManager.value?.restartBlinkAnimation();
     this._updateCursorBlink();
   }
 
@@ -323,6 +318,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return false;
   }
 
+  @traceCall
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
       if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
@@ -339,14 +335,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.handleGridChanged(this._terminal, start, end);
     }
 
-    if (!this._glyphRenderer || !this._rectangleRenderer) {
+    if (!this._glyphRenderer.value || !this._rectangleRenderer.value) {
       return;
     }
 
     // Tell renderer the frame is beginning
     // upon a model clear also refresh the full viewport model
     // (also triggered by an atlas page merge, part of #4480)
-    if (this._glyphRenderer.beginFrame()) {
+    if (this._glyphRenderer.value.beginFrame()) {
       this._clearModel(true);
       this._updateModel(0, this._terminal.rows - 1);
     } else {
@@ -355,23 +351,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     // Render
-    this._rectangleRenderer?.renderBackgrounds();
-    this._glyphRenderer?.render(this._model);
-    if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isCursorVisible) {
-      this._rectangleRenderer?.renderCursor();
+    this._rectangleRenderer.value.renderBackgrounds();
+    this._glyphRenderer.value.render(this._model);
+    if (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isCursorVisible) {
+      this._rectangleRenderer.value.renderCursor();
     }
   }
 
   private _updateCursorBlink(): void {
     if (this._terminal.options.cursorBlink) {
-      if (!this._cursorBlinkStateManager) {
-        this._cursorBlinkStateManager = this.register(new CursorBlinkStateManager(() => {
-          this._requestRedrawCursor();
-        }, this._coreBrowserService));
-      }
+      this._cursorBlinkStateManager.value = new CursorBlinkStateManager(() => {
+        this._requestRedrawCursor();
+      }, this._coreBrowserService);
     } else {
-      this._cursorBlinkStateManager?.dispose();
-      this._cursorBlinkStateManager = undefined;
+      this._cursorBlinkStateManager.clear();
     }
     // Request a refresh from the terminal as management of rendering is being
     // moved back to the terminal
@@ -406,7 +399,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     const isCursorVisible =
       this._coreService.isCursorInitialized &&
       !this._coreService.isCursorHidden &&
-      (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isCursorVisible);
+      (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isCursorVisible);
     this._model.cursor = undefined;
     let modelUpdated = false;
 
@@ -505,7 +498,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
         this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
 
-        this._glyphRenderer!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
+        this._glyphRenderer.value!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -514,7 +507,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x < lastCharX; x++) {
             j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
+            this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
@@ -524,9 +517,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
       }
     }
     if (modelUpdated) {
-      this._rectangleRenderer!.updateBackgrounds(this._model);
+      this._rectangleRenderer.value!.updateBackgrounds(this._model);
     }
-    this._rectangleRenderer!.updateCursor(this._model);
+    this._rectangleRenderer.value!.updateCursor(this._model);
   }
 
   /**

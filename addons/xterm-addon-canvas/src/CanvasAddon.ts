@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { CanvasRenderer } from './CanvasRenderer';
-import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { ITerminalAddon, Terminal } from 'xterm';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { setTraceLogger } from 'common/services/LogService';
+import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
+import { ITerminalAddon, Terminal } from 'xterm';
+import { CanvasRenderer } from './CanvasRenderer';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -44,7 +45,12 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
     const charSizeService: ICharSizeService = unsafeCore._charSizeService;
     const coreBrowserService: ICoreBrowserService = unsafeCore._coreBrowserService;
     const decorationService: IDecorationService = unsafeCore._decorationService;
+    const logService: ILogService = unsafeCore._logService;
     const themeService: IThemeService = unsafeCore._themeService;
+
+    // Set trace logger just in case it hasn't been yet which could happen when the addon is
+    // bundled separately to the core module
+    setTraceLogger(logService);
 
     this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
     this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));

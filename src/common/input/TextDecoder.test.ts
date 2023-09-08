@@ -29,6 +29,8 @@ function fromByteString(s: string): Uint8Array {
   return result;
 }
 
+const BATCH_SIZE = 2048;
+
 const TEST_STRINGS = [
   'Лорем ипсум долор сит амет, ех сеа аццусам диссентиет. Ан еос стет еирмод витуперата. Иус дицерет урбанитас ет. Ан при алтера долорес сплендиде, цу яуо интегре денияуе, игнота волуптариа инструцтиор цу вим.',
   'ლორემ იფსუმ დოლორ სით ამეთ, ფაცერ მუციუს ცონსეთეთურ ყუო იდ, ფერ ვივენდუმ ყუაერენდუმ ეა, ესთ ამეთ მოვეთ სუავითათე ცუ. ვითაე სენსიბუს ან ვიხ. ეხერცი დეთერრუისსეთ უთ ყუი. ვოცენთ დებითის ადიფისცი ეთ ფერ. ნეც ან ფეუგაით ფორენსიბუს ინთერესსეთ. იდ დიცო რიდენს იუს. დისსენთიეთ ცონსეყუუნთურ სედ ნე, ნოვუმ მუნერე ეუმ ათ, ნე ეუმ ნიჰილ ირაცუნდია ურბანითას.',
@@ -54,36 +56,40 @@ describe('text encodings', () => {
 
   describe('StringToUtf32 decoder', () => {
     describe('full codepoint test', () => {
-      it('0..65535', () => {
-        const decoder = new StringToUtf32();
-        const target = new Uint32Array(5);
-        for (let i = 0; i < 65536; ++i) {
-          // skip surrogate pairs and a BOM
-          if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
-            continue;
+      for (let min = 0; min < 65535; min += BATCH_SIZE) {
+        const max = Math.min(min + BATCH_SIZE, 65536);
+        it(`${formatRange(min, max)}`, () => {
+          const decoder = new StringToUtf32();
+          const target = new Uint32Array(5);
+          for (let i = min; i < max; ++i) {
+            // skip surrogate pairs and a BOM
+            if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
+              continue;
+            }
+            const length = decoder.decode(String.fromCharCode(i), target);
+            assert.equal(length, 1);
+            assert.equal(target[0], i);
+            assert.equal(utf32ToString(target, 0, length), String.fromCharCode(i));
+            decoder.clear();
           }
-          const length = decoder.decode(String.fromCharCode(i), target);
-          assert.equal(length, 1);
-          assert.equal(target[0], i);
-          assert.equal(utf32ToString(target, 0, length), String.fromCharCode(i));
-          decoder.clear();
-        }
-      });
-
-      it('65536..0x10FFFF (surrogates)', function (): void {
-        this.timeout(20000);
-        const decoder = new StringToUtf32();
-        const target = new Uint32Array(5);
-        for (let i = 65536; i < 0x10FFFF; ++i) {
-          const codePoint = i - 0x10000;
-          const s = String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
-          const length = decoder.decode(s, target);
-          assert.equal(length, 1);
-          assert.equal(target[0], i);
-          assert.equal(utf32ToString(target, 0, length), s);
-          decoder.clear();
-        }
-      });
+        });
+      }
+      for (let min = 65536; min < 0x10FFFF; min += BATCH_SIZE) {
+        const max = Math.min(min + BATCH_SIZE, 0x10FFFF);
+        it(`${formatRange(min, max)} (surrogates)`, () => {
+          const decoder = new StringToUtf32();
+          const target = new Uint32Array(5);
+          for (let i = min; i < max; ++i) {
+            const codePoint = i - 0x10000;
+            const s = String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
+            const length = decoder.decode(s, target);
+            assert.equal(length, 1);
+            assert.equal(target[0], i);
+            assert.equal(utf32ToString(target, 0, length), s);
+            decoder.clear();
+          }
+        });
+      }
 
       it('0xFEFF(BOM)', () => {
         const decoder = new StringToUtf32();
@@ -121,11 +127,8 @@ describe('text encodings', () => {
 
   describe('Utf8ToUtf32 decoder', () => {
     describe('full codepoint test', () => {
-      function formatRange(min: number, max: number): string {
-        return `${min}..${max} (0x${min.toString(16).toUpperCase()}..0x${max.toString(16).toUpperCase()})`;
-      }
-      for (let min = 0; min < 65535; min += 10000) {
-        const max = Math.min(min + 10000, 65536);
+      for (let min = 0; min < 65535; min += BATCH_SIZE) {
+        const max = Math.min(min + BATCH_SIZE, 65536);
         it(`${formatRange(min, max)} (1/2/3 byte sequences)`, () => {
           const decoder = new Utf8ToUtf32();
           const target = new Uint32Array(5);
@@ -142,9 +145,9 @@ describe('text encodings', () => {
           }
         });
       }
-      for (let minRaw = 60000; minRaw < 0x10FFFF; minRaw += 10000) {
+      for (let minRaw = 60000; minRaw < 0x10FFFF; minRaw += BATCH_SIZE) {
         const min = Math.max(minRaw, 65536);
-        const max = Math.min(minRaw + 10000, 0x10FFFF);
+        const max = Math.min(minRaw + BATCH_SIZE, 0x10FFFF);
         it(`${formatRange(min, max)} (4 byte sequences)`, function (): void {
           const decoder = new Utf8ToUtf32();
           const target = new Uint32Array(5);
@@ -265,3 +268,7 @@ describe('text encodings', () => {
     });
   });
 });
+
+function formatRange(min: number, max: number): string {
+  return `${min}..${max} (0x${min.toString(16).toUpperCase()}..0x${max.toString(16).toUpperCase()})`;
+}

@@ -4,7 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable } from 'common/Lifecycle';
+import { IDisposable } from 'common/Types';
 
 class TestDisposable extends Disposable {
   public get isDisposed(): boolean {
@@ -40,6 +41,55 @@ describe('Disposable', () => {
       assert.isFalse(d.isDisposed);
       d.dispose();
       assert.isTrue(d.isDisposed);
+    });
+  });
+});
+
+describe('MutableDisposable', () => {
+  const mutable = new MutableDisposable();
+  class TrackedDisposable extends Disposable {
+    public get isDisposed(): boolean { return this._isDisposed; }
+  }
+  describe('value', () => {
+    it('should set the value', () => {
+      const d1 = new TrackedDisposable();
+      mutable.value = d1;
+      assert.strictEqual(mutable.value, d1);
+      assert.isFalse(d1.isDisposed);
+    });
+    it('should dispose of any previous value', () => {
+      const d1 = new TrackedDisposable();
+      const d2 = new TrackedDisposable();
+      mutable.value = d1;
+      mutable.value = d2;
+      assert.strictEqual(mutable.value, d2);
+      assert.isTrue(d1.isDisposed);
+      assert.isFalse(d2.isDisposed);
+    });
+  });
+  describe('clear', () => {
+    it('should clear and dispose of the object', () => {
+      const d1 = new TrackedDisposable();
+      mutable.value = d1;
+      mutable.clear();
+      assert.strictEqual(mutable.value, undefined);
+      assert.isTrue(d1.isDisposed);
+    });
+  });
+  it('dispose', () => {
+    it('should dispose of the object', () => {
+      const d1 = new TrackedDisposable();
+      mutable.value = d1;
+      mutable.dispose();
+      assert.strictEqual(mutable.value, undefined);
+      assert.isTrue(d1.isDisposed);
+    });
+    it('should prevent using the MutableDisposable again', () => {
+      const d1 = new TrackedDisposable();
+      mutable.value = d1;
+      mutable.dispose();
+      mutable.value = new TrackedDisposable();
+      assert.strictEqual(mutable.value, undefined);
     });
   });
 });

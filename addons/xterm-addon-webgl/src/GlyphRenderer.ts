@@ -3,14 +3,15 @@
  * @license MIT
  */
 
-import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
-import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel } from './Types';
-import { NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Terminal } from 'xterm';
-import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { Disposable, toDisposable } from 'common/Lifecycle';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
+import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Disposable, toDisposable } from 'common/Lifecycle';
+import { traceCall } from 'common/services/LogService';
+import { Terminal } from 'xterm';
+import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
+import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
 
 interface IVertices {
   attributes: Float32Array;
@@ -212,6 +213,7 @@ export class GlyphRenderer extends Disposable {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
+  @traceCall
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
     // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
     // should not instantiate any variables unless a new glyph is drawn to the cache where the

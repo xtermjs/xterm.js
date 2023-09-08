@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { openTerminal, writeSync, launchBrowser } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 
 const APP = 'http://127.0.0.1:3001/test';
 
@@ -204,7 +204,6 @@ describe('SerializeAddon', () => {
       sgr(NO_INVISIBLE) + line,
       sgr(NO_STRIKETHROUGH) + line
     ];
-    const rows = lines.length;
     await writeSync(page, lines.join('\\r\\n'));
     assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
   });
@@ -592,7 +591,6 @@ const FG_RGB_RED = '38;2;255;0;0';
 const FG_RGB_GREEN = '38;2;0;255;0';
 const FG_RGB_YELLOW = '38;2;255;255;0';
 const FG_RESET = '39';
-
 
 const BG_P16_RED = '41';
 const BG_P16_GREEN = '42';

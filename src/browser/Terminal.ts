@@ -21,42 +21,42 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICompositionHelper, ITerminal, IBrowser, CustomKeyEventHandler, IViewport, ILinkifier2, CharacterJoinerHandler, IBufferRange, IBufferElementProvider } from 'browser/Types';
-import { IRenderer } from 'browser/renderer/shared/Types';
-import { CompositionHelper } from 'browser/input/CompositionHelper';
-import { Viewport } from 'browser/Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, handlePasteEvent, copyHandler, paste } from 'browser/Clipboard';
-import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
-import { WindowsOptionsReportType } from '../common/InputHandler';
-import { SelectionService } from 'browser/services/SelectionService';
-import * as Browser from 'common/Platform';
+import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import * as Strings from 'browser/LocalizableStrings';
-import { AccessibilityManager } from './AccessibilityManager';
-import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
-import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
-import { evaluateKeyboardEvent } from 'common/input/Keyboard';
-import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { RenderService } from 'browser/services/RenderService';
-import { ICharSizeService, IRenderService, IMouseService, ISelectionService, ICoreBrowserService, ICharacterJoinerService, IThemeService } from 'browser/services/Services';
-import { CharSizeService } from 'browser/services/CharSizeService';
-import { IBuffer } from 'common/buffer/Types';
-import { MouseService } from 'browser/services/MouseService';
 import { Linkifier2 } from 'browser/Linkifier2';
-import { CoreBrowserService } from 'browser/services/CoreBrowserService';
-import { CoreTerminal } from 'common/CoreTerminal';
-import { color, rgba } from 'common/Color';
-import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
-import { toRgbString } from 'common/input/XParseColor';
+import * as Strings from 'browser/LocalizableStrings';
+import { OscLinkProvider } from 'browser/OscLinkProvider';
+import { CharacterJoinerHandler, CustomKeyEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal, IViewport } from 'browser/Types';
+import { Viewport } from 'browser/Viewport';
 import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
 import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
+import { CompositionHelper } from 'browser/input/CompositionHelper';
+import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
+import { IRenderer } from 'browser/renderer/shared/Types';
+import { CharSizeService } from 'browser/services/CharSizeService';
+import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
+import { CoreBrowserService } from 'browser/services/CoreBrowserService';
+import { MouseService } from 'browser/services/MouseService';
+import { RenderService } from 'browser/services/RenderService';
+import { SelectionService } from 'browser/services/SelectionService';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ThemeService } from 'browser/services/ThemeService';
+import { color, rgba } from 'common/Color';
+import { CoreTerminal } from 'common/CoreTerminal';
+import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
+import { MutableDisposable, toDisposable } from 'common/Lifecycle';
+import * as Browser from 'common/Platform';
+import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, ScrollSource, SpecialColorIndex } from 'common/Types';
+import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { IBuffer } from 'common/buffer/Types';
+import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
+import { evaluateKeyboardEvent } from 'common/input/Keyboard';
+import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
-import { OscLinkProvider } from 'browser/OscLinkProvider';
-import { toDisposable } from 'common/Lifecycle';
-import { ThemeService } from 'browser/services/ThemeService';
+import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from 'xterm';
+import { WindowsOptionsReportType } from '../common/InputHandler';
+import { AccessibilityManager } from './AccessibilityManager';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -118,7 +118,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
-  private _accessibilityManager: AccessibilityManager | undefined;
+  private _accessibilityManager: MutableDisposable<AccessibilityManager> = this.register(new MutableDisposable());
 
   private readonly _onCursorMove = this.register(new EventEmitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
@@ -252,12 +252,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _handleScreenReaderModeOptionChange(value: boolean): void {
     if (value) {
-      if (!this._accessibilityManager && this._renderService) {
-        this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
+      if (!this._accessibilityManager.value && this._renderService) {
+        this._accessibilityManager.value = this._instantiationService.createInstance(AccessibilityManager, this);
       }
     } else {
-      this._accessibilityManager?.dispose();
-      this._accessibilityManager = undefined;
+      this._accessibilityManager.clear();
     }
   }
 
@@ -535,7 +534,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = this._instantiationService.createInstance(AccessibilityManager, this);
+      this._accessibilityManager.value = this._instantiationService.createInstance(AccessibilityManager, this);
     }
     this.register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 

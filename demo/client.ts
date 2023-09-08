@@ -13,13 +13,20 @@ import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
-import { ImageAddon, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
+
+// Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
+import type { ImageAddonType, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
+let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
+if ('WebAssembly' in window) {
+  const imageAddon = require('../addons/xterm-addon-image/out/ImageAddon');
+  ImageAddon = imageAddon.ImageAddon;
+}
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -42,7 +49,7 @@ export interface IWindowWithTerminal extends Window {
   Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -57,8 +64,9 @@ let protocol;
 let socketURL;
 let socket;
 let pid;
+let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'web-links' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -67,10 +75,10 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'attach' ? typeof AttachAddon :
       T extends 'canvas' ? typeof CanvasAddon :
         T extends 'fit' ? typeof FitAddon :
-          T extends 'image' ? typeof ImageAddon :
+          T extends 'image' ? typeof ImageAddonType :
             T extends 'search' ? typeof SearchAddon :
               T extends 'serialize' ? typeof SerializeAddon :
-                T extends 'web-links' ? typeof WebLinksAddon :
+                T extends 'webLinks' ? typeof WebLinksAddon :
                   T extends 'unicode11' ? typeof Unicode11Addon :
                     T extends 'ligatures' ? typeof LigaturesAddon :
                       typeof WebglAddon
@@ -79,10 +87,10 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'attach' ? AttachAddon :
       T extends 'canvas' ? CanvasAddon :
         T extends 'fit' ? FitAddon :
-          T extends 'image' ? ImageAddon :
+          T extends 'image' ? ImageAddonType :
             T extends 'search' ? SearchAddon :
               T extends 'serialize' ? SerializeAddon :
-                T extends 'web-links' ? WebLinksAddon :
+                T extends 'webLinks' ? WebLinksAddon :
                   T extends 'webgl' ? WebglAddon :
                     T extends 'unicode11' ? typeof Unicode11Addon :
                       T extends 'ligatures' ? typeof LigaturesAddon :
@@ -97,7 +105,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
-  'web-links': { name: 'web-links', ctor: WebLinksAddon, canChange: true },
+  webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
@@ -169,7 +177,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
     addons.ligatures.instance = undefined;
-    addons['web-links'].instance = undefined;
+    addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
     document.getElementById('dispose').innerHTML = 'Recreate Terminal';
   } else {
@@ -239,6 +247,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
   initImageAddonExposed();
+  testEvents();
 }
 
 function createTerminal(): void {
@@ -271,13 +280,13 @@ function createTerminal(): void {
   } catch (e) {
     console.warn(e);
   }
-  addons['web-links'].instance = new WebLinksAddon();
+  addons.webLinks.instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicode11.instance);
-  typedTerm.loadAddon(addons['web-links'].instance);
+  typedTerm.loadAddon(addons.webLinks.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -316,6 +325,13 @@ function createTerminal(): void {
 
   term.focus();
 
+  const resizeObserver = new ResizeObserver(entries => {
+    if (autoResize) {
+      addons.fit.instance.fit();
+    }
+  });
+  resizeObserver.observe(terminalContainer);
+
   addDomListener(paddingElement, 'change', setPadding);
 
   addDomListener(actionElements.findNext, 'keydown', (e) => {
@@ -346,9 +362,6 @@ function createTerminal(): void {
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(async () => {
     initOptions(term);
-    // TODO: Clean this up, opt-cols/rows doesn't exist anymore
-    (document.getElementById(`opt-cols`) as HTMLInputElement).value = term.cols;
-    (document.getElementById(`opt-rows`) as HTMLInputElement).value = term.rows;
     paddingElement.value = '0';
 
     // Set terminal size again to set the specific dimensions on the demo
@@ -413,9 +426,13 @@ function initOptions(term: TerminalType): void {
     'cancelEvents',
     'convertEol',
     'termName',
+    'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
+    'linkHandler',
+    'logger',
     'theme',
-    'windowOptions'
+    'windowOptions',
+    'windowsPty'
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],
@@ -424,9 +441,10 @@ function initOptions(term: TerminalType): void {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    logLevel: ['debug', 'info', 'warn', 'error', 'off'],
+    logLevel: ['trace', 'debug', 'info', 'warn', 'error', 'off'],
     theme: ['default', 'xtermjs', 'sapphire', 'light'],
-    wordSeparator: null
+    wordSeparator: null,
+    colsRows: null
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
@@ -459,7 +477,9 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
-    if (stringOptions[o]) {
+    if (o === 'colsRows') {
+      html += `<div class="option"><label>size (<var>cols</var><code>x</code><var>rows</var> or <code>auto</code>) <input id="opt-${o}" type="text" value="auto"/></label></div>`;
+    } else if (stringOptions[o]) {
       const selectedOption = o === 'theme' ? 'xtermjs' : term.options[o];
       html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${v === selectedOption ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
@@ -483,11 +503,7 @@ function initOptions(term: TerminalType): void {
     const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      if (o === 'rows') {
-        term.resize(term.cols, parseInt(input.value));
-      } else if (o === 'cols') {
-        term.resize(parseInt(input.value), term.rows);
-      } else if (o === 'lineHeight') {
+      if (o === 'lineHeight') {
         term.options.lineHeight = parseFloat(input.value);
       } else if (o === 'scrollSensitivity') {
         term.options.scrollSensitivity = parseFloat(input.value);
@@ -506,7 +522,17 @@ function initOptions(term: TerminalType): void {
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       let value: any = input.value;
-      if (o === 'theme') {
+      if (o === 'colsRows') {
+        const m = input.value.match(/^([0-9]+)x([0-9]+)$/);
+        if (m) {
+          autoResize = false;
+          term.resize(parseInt(m[1]), parseInt(m[2]));
+        } else {
+          autoResize = true;
+          input.value = 'auto';
+          updateTerminalSize();
+        }
+      } else if (o === 'theme') {
         switch (input.value) {
           case 'default':
             value = undefined;
@@ -673,8 +699,10 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 }
 
 function updateTerminalSize(): void {
-  const width = (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
-  const height = (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
+  const width = autoResize ? '100%'
+    : (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
+  const height = autoResize ? '100%'
+    : (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   addons.fit.instance.fit();
@@ -1220,6 +1248,7 @@ stop at final '?': Maybe this one http://example.com/with?arguments=false?
 
 
 function coloredErase(): void {
+  const sp5 = '     ';
   const data = `
 Test BG-colored Erase (BCE):
   The color block in the following lines should look identical.
@@ -1227,7 +1256,7 @@ Test BG-colored Erase (BCE):
   for all cells to the right.
 
  def   41   42   43   44   45   46   47\x1b[47m
-\x1b[m     \x1b[41m     \x1b[42m     \x1b[43m     \x1b[44m     \x1b[45m     \x1b[46m     \x1b[47m     
+\x1b[m${sp5}\x1b[41m${sp5}\x1b[42m${sp5}\x1b[43m${sp5}\x1b[44m${sp5}\x1b[45m${sp5}\x1b[46m${sp5}\x1b[47m${sp5}
 \x1b[m\x1b[5X\x1b[41m\x1b[5C\x1b[5X\x1b[42m\x1b[5C\x1b[5X\x1b[43m\x1b[5C\x1b[5X\x1b[44m\x1b[5C\x1b[5X\x1b[45m\x1b[5C\x1b[5X\x1b[46m\x1b[5C\x1b[5X\x1b[47m\x1b[5C\x1b[5X\x1b[m
 `;
   term.write(data.split('\n').join('\r\n'));
@@ -1257,29 +1286,29 @@ function initImageAddonExposed(): void {
   const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
   ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
 
-  const sixel_demo = (url: string) => () => fetch(url)
+  const sixelDemo = (url: string) => () => fetch(url)
     .then(resp => resp.arrayBuffer())
     .then(buffer => {
       term.write('\r\n');
       term.write(new Uint8Array(buffer));
     });
-  
-  const iip_demo = (url: string) => () => fetch(url)
-  .then(resp => resp.arrayBuffer())
-  .then(buffer => {
-    const data = new Uint8Array(buffer);
-    let sdata = '';
-    for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
-    term.write('\r\n');
-    term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
-  });
+
+  const iipDemo = (url: string) => () => fetch(url)
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      const data = new Uint8Array(buffer);
+      let sdata = '';
+      for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+      term.write('\r\n');
+      term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
+    });
 
   document.getElementById('image-demo1').addEventListener('click',
-    sixel_demo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
+    sixelDemo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
   document.getElementById('image-demo2').addEventListener('click',
-    sixel_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
+    sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
   document.getElementById('image-demo3').addEventListener('click',
-    iip_demo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+    iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
 
   // demo for image retrieval API
   term.element.addEventListener('click', (ev: MouseEvent) => {
@@ -1306,4 +1335,9 @@ function initImageAddonExposed(): void {
       : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
     canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
   });
+}
+
+function testEvents(): void {
+  document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
+  document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
 }

@@ -13,9 +13,6 @@ export abstract class Disposable implements IDisposable {
   protected _disposables: IDisposable[] = [];
   protected _isDisposed: boolean = false;
 
-  constructor() {
-  }
-
   /**
    * Disposes the object, triggering the `dispose` method on all registered IDisposables.
    */
@@ -47,6 +44,42 @@ export abstract class Disposable implements IDisposable {
     if (index !== -1) {
       this._disposables.splice(index, 1);
     }
+  }
+}
+
+export class MutableDisposable<T extends IDisposable> implements IDisposable {
+  private _value?: T;
+  private _isDisposed = false;
+
+  /**
+   * Gets the value if it exists.
+   */
+  public get value(): T | undefined {
+    return this._isDisposed ? undefined : this._value;
+  }
+
+  /**
+   * Sets the value, disposing of the old value if it exists.
+   */
+  public set value(value: T | undefined) {
+    if (this._isDisposed || value === this._value) {
+      return;
+    }
+    this._value?.dispose();
+    this._value = value;
+  }
+
+  /**
+   * Resets the stored value and disposes of the previously stored value.
+   */
+  public clear(): void {
+    this.value = undefined;
+  }
+
+  public dispose(): void {
+    this._isDisposed = true;
+    this._value?.dispose();
+    this._value = undefined;
   }
 }
 

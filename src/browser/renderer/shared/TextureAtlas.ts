@@ -3,19 +3,20 @@
  * @license MIT
  */
 
+import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { DEFAULT_COLOR, Attributes, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
-import { IColor } from 'common/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { color, NULL_COLOR, rgba } from 'common/Color';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IUnicodeService } from 'common/services/Services';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { NULL_COLOR, color, rgba } from 'common/Color';
+import { EventEmitter } from 'common/EventEmitter';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { EventEmitter } from 'common/EventEmitter';
-import { IColorContrastCache } from 'browser/Types';
+import { IColor } from 'common/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
+import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
+import { traceCall } from 'common/services/LogService';
+import { IUnicodeService } from 'common/services/Services';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -150,50 +151,48 @@ export class TextureAtlas implements ITextureAtlas {
     // microtask to ensure it does not interrupt textures that will be rendered in the current
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
-    if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages / 2)) {
-      queueMicrotask(() => {
-        // Find the set of the largest 4 images, below the maximum size, with the highest
-        // percentages used
-        const pagesBySize = this._pages.filter(e => {
-          return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
-        }).sort((a, b) => {
-          if (b.canvas.width !== a.canvas.width) {
-            return b.canvas.width - a.canvas.width;
-          }
-          return b.percentageUsed - a.percentageUsed;
-        });
-        let sameSizeI = -1;
-        let size = 0;
-        for (let i = 0; i < pagesBySize.length; i++) {
-          if (pagesBySize[i].canvas.width !== size) {
-            sameSizeI = i;
-            size = pagesBySize[i].canvas.width;
-          } else if (i - sameSizeI === 3) {
-            break;
-          }
+    if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages)) {
+      // Find the set of the largest 4 images, below the maximum size, with the highest
+      // percentages used
+      const pagesBySize = this._pages.filter(e => {
+        return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
+      }).sort((a, b) => {
+        if (b.canvas.width !== a.canvas.width) {
+          return b.canvas.width - a.canvas.width;
         }
-
-        // Gather details of the merge
-        const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
-        const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
-        const mergedPageIndex = sortedMergingPagesIndexes[0];
-
-        // Merge into the new page
-        const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-        mergedPage.version++;
-
-        // Replace the first _merging_ page with the _merged_ page
-        this._pages[mergedPageIndex] = mergedPage;
-
-        // Delete the other 3 pages, shifting glyph texture pages as needed
-        for (let i = sortedMergingPagesIndexes.length - 1; i >= 1; i--) {
-          this._deletePage(sortedMergingPagesIndexes[i]);
-        }
-
-        // Request the model to be cleared to refresh all texture pages.
-        this._requestClearModel = true;
-        this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
+        return b.percentageUsed - a.percentageUsed;
       });
+      let sameSizeI = -1;
+      let size = 0;
+      for (let i = 0; i < pagesBySize.length; i++) {
+        if (pagesBySize[i].canvas.width !== size) {
+          sameSizeI = i;
+          size = pagesBySize[i].canvas.width;
+        } else if (i - sameSizeI === 3) {
+          break;
+        }
+      }
+
+      // Gather details of the merge
+      const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
+      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
+      const mergedPageIndex = this.pages.length - mergingPages.length;
+
+      // Merge into the new page
+      const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
+      mergedPage.version++;
+
+      // Delete the pages, shifting glyph texture pages as needed
+      for (let i = sortedMergingPagesIndexes.length - 1; i >= 0; i--) {
+        this._deletePage(sortedMergingPagesIndexes[i]);
+      }
+
+      // Add the new merged page to the end
+      this.pages.push(mergedPage);
+
+      // Request the model to be cleared to refresh all texture pages.
+      this._requestClearModel = true;
+      this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
 
     // All new atlas pages are created small as they are highly dynamic
@@ -425,6 +424,7 @@ export class TextureAtlas implements ITextureAtlas {
     return this._config.colors.contrastCache;
   }
 
+  @traceCall
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
@@ -754,13 +754,13 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
-      // Create a new one if too much vertical space would be wasted or there is not enough room
+      // Create a new page if too much vertical space would be wasted or there is not enough room
       // left in the page. The previous active row will become fixed in the process as it now has a
       // fixed height
       if (activeRow.y + rasterizedGlyph.size.y >= activePage.canvas.height || activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
         // Create the new fixed height row, creating a new page if there isn't enough room on the
         // current page
-        let wasNewPageCreated = false;
+        let wasPageAndRowFound = false;
         if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
           // Find the first page with room to create the new row on
           let candidatePage: AtlasPage | undefined;
@@ -773,15 +773,30 @@ export class TextureAtlas implements ITextureAtlas {
           if (candidatePage) {
             activePage = candidatePage;
           } else {
-            // Create a new page if there is no room
-            const newPage = this._createNewPage();
-            activePage = newPage;
-            activeRow = newPage.currentRow;
-            activeRow.height = rasterizedGlyph.size.y;
-            wasNewPageCreated = true;
+            // Before creating a new atlas page that would trigger a page merge, check if the
+            // current active row is sufficient when ignoring the ROW_PIXEL_THRESHOLD. This will
+            // improve texture utilization by using the available space before the page is merged
+            // and becomes static.
+            if (
+              TextureAtlas.maxAtlasPages &&
+              this._pages.length >= TextureAtlas.maxAtlasPages &&
+              activeRow.y + rasterizedGlyph.size.y <= activePage.canvas.height &&
+              activeRow.height >= rasterizedGlyph.size.y &&
+              activeRow.x + rasterizedGlyph.size.x <= activePage.canvas.width
+            ) {
+              // activePage and activeRow is already valid
+              wasPageAndRowFound = true;
+            } else {
+              // Create a new page if there is no room
+              const newPage = this._createNewPage();
+              activePage = newPage;
+              activeRow = newPage.currentRow;
+              activeRow.height = rasterizedGlyph.size.y;
+              wasPageAndRowFound = true;
+            }
           }
         }
-        if (!wasNewPageCreated) {
+        if (!wasPageAndRowFound) {
           // Fix the current row as the new row is being added below
           if (activePage.currentRow.height > 0) {
             activePage.fixedRows.push(activePage.currentRow);

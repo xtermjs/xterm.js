@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
@@ -57,7 +57,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   protected _inputHandler: InputHandler;
   private _writeBuffer: WriteBuffer;
-  private _windowsWrappingHeuristics: IDisposable | undefined;
+  private _windowsWrappingHeuristics = this.register(new MutableDisposable());
 
   private readonly _onBinary = this.register(new EventEmitter<string>());
   public readonly onBinary = this._onBinary.event;
@@ -144,11 +144,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Setup WriteBuffer
     this._writeBuffer = this.register(new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult)));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
-
-    this.register(toDisposable(() => {
-      this._windowsWrappingHeuristics?.dispose();
-      this._windowsWrappingHeuristics = undefined;
-    }));
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
@@ -267,20 +262,19 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     if (value) {
       this._enableWindowsWrappingHeuristics();
     } else {
-      this._windowsWrappingHeuristics?.dispose();
-      this._windowsWrappingHeuristics = undefined;
+      this._windowsWrappingHeuristics.clear();
     }
   }
 
   protected _enableWindowsWrappingHeuristics(): void {
-    if (!this._windowsWrappingHeuristics) {
+    if (!this._windowsWrappingHeuristics.value) {
       const disposables: IDisposable[] = [];
       disposables.push(this.onLineFeed(updateWindowsModeWrappedState.bind(null, this._bufferService)));
       disposables.push(this.registerCsiHandler({ final: 'H' }, () => {
         updateWindowsModeWrappedState(this._bufferService);
         return false;
       }));
-      this._windowsWrappingHeuristics = toDisposable(() => {
+      this._windowsWrappingHeuristics.value = toDisposable(() => {
         for (const d of disposables) {
           d.dispose();
         }

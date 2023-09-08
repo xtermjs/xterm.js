@@ -30,7 +30,7 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/xterm-addon-attach'),
   path.resolve(__dirname, '../addons/xterm-addon-canvas'),
   path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  path.resolve(__dirname, '../addons/xterm-addon-image'),
+  // path.resolve(__dirname, '../addons/xterm-addon-image'),
   path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
   path.resolve(__dirname, '../addons/xterm-addon-search'),
   path.resolve(__dirname, '../addons/xterm-addon-serialize'),
@@ -67,25 +67,24 @@ function checkAndPublishPackage(packageDir) {
   const packageJsonFile = path.join(packageDir, 'package.json');
   packageJson.version = nextVersion;
   console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
-  if (!isDryRun) {
-    fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
-  }
+  fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
   // Publish
   const args = ['publish'];
   if (!isStableRelease) {
     args.push('--tag', 'beta');
   }
+  if (isDryRun) {
+    args.push('--dry-run');
+  }
   console.log(`Spawn: npm ${args.join(' ')}`);
-  if (!isDryRun) {
-    const result = cp.spawnSync('npm', args, {
-      cwd: packageDir,
-      stdio: 'inherit'
-    });
-    if (result.status) {
-      console.error(`Spawn exited with code ${result.status}`);
-      process.exit(result.status);
-    }
+  const result = cp.spawnSync('npm', args, {
+    cwd: packageDir,
+    stdio: 'inherit'
+  });
+  if (result.status) {
+    console.error(`Spawn exited with code ${result.status}`);
+    process.exit(result.status);
   }
 
   console.groupEnd();
