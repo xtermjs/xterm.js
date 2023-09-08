@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2015",
+    "lib": [
+      "es6",
+    ],
+    "rootDir": ".",
+    "outDir": "../out-test",
+    "sourceMap": true,
+    "removeComments": true,
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
+      "browser/*": [
+        "../../../src/browser/*"
+      ]
+    },
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/node",
+      "../../../node_modules/@lunapaint/png-codec",
+      "../../../out-test/playwright/TestUtils",
+      "../../../out-test/playwright/SharedRendererTests"
+    ]
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/browser"
+    }
+  ]
+}
