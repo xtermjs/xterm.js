@@ -7,6 +7,7 @@
 
 const cp = require('child_process');
 const path = require('path');
+const { setTimeout } = require('timers/promises');
 
 const configs = [
   { name: 'core', path: 'out-test/playwright/playwright.config.js' },
@@ -19,17 +20,22 @@ function npmBinScript(script) {
     `${script}.cmd` : script));
 }
 
-for (const config of configs) {
-  const command = npmBinScript('playwright');
-  const args = ['test', '-c', config.path, ...process.argv.slice(2)];
-  console.log(`Running suite \x1b[1;34m${config.name}...\x1b[0m`);
-  console.log(`\n\x1b[32m${command}\x1b[0m`, args);
-  const run = cp.spawnSync(command, args, {
-      cwd: path.resolve(__dirname, '..'),
-      stdio: 'inherit'
+async function run() {
+  for (const config of configs) {
+    const command = npmBinScript('playwright');
+    const args = ['test', '-c', config.path, ...process.argv.slice(2)];
+    console.log(`Running suite \x1b[1;34m${config.name}...\x1b[0m`);
+    console.log(`\n\x1b[32m${command}\x1b[0m`, args);
+    const run = cp.spawnSync(command, args, {
+        cwd: path.resolve(__dirname, '..'),
+        stdio: 'inherit'
+      }
+    );
+    if (run.status) {
+      process.exit(run.status);
     }
-  );
-  if (run.status) {
-    process.exit(run.status);
+    // Space out test runs to ensure servers don't step on each other
+    await setTimeout(1000);
   }
 }
+run();

@@ -4,7 +4,6 @@
  */
 
 import test from '@playwright/test';
-import { strictEqual } from 'assert';
 import { ISharedRendererTestContext, injectSharedRendererTests } from '../../../out-test/playwright/SharedRendererTests';
 import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
 import { platform } from 'os';
