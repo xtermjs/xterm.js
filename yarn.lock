@@ -326,6 +326,13 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
+"@lunapaint/png-codec@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@lunapaint/png-codec/-/png-codec-0.2.0.tgz#b9fe0a0728889af280c31239b061eb3f8c848816"
+  integrity sha512-S2Fk8+I27j8ZL585PlEK9hhljZcp6j+JWB5ZHAeePdufJMYHxXD2zlatLRaiy5riXRFqkCi/gong7yP9kSsEZg==
+  dependencies:
+    pako "^2.0.4"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -3001,6 +3008,11 @@ package-hash@^4.0.0:
     hasha "^5.0.0"
     lodash.flattendeep "^4.4.0"
     release-zalgo "^1.0.0"
+
+pako@^2.0.4:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/pako/-/pako-2.1.0.tgz#266cc37f98c7d883545d11335c00fbd4062c9a86"
+  integrity sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==
 
 parent-module@^1.0.0:
   version "1.0.1"
