@@ -20,7 +20,7 @@
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
-    "start": "node ../../demo/start"
+    "start-server-only": "node ../../demo/start-server-only"
   },
   "peerDependencies": {
     "xterm": "^5.0.0"

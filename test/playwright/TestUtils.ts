@@ -363,7 +363,7 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
   //       assertion catches this case early.
   strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
   await ctx.page.evaluate(`
-    window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
+    window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
     window.term.open(document.querySelector('#terminal-container'));
   `);
   await ctx.page.waitForSelector('.xterm-rows');

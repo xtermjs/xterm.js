@@ -8,7 +8,12 @@ import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from 'xterm';
 import { ITestContext, MaybeAsync, pollFor } from './TestUtils';
 
-export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
+export interface ISharedRendererTestContext {
+  value: ITestContext;
+  skipCanvasExceptions?: boolean;
+}
+
+export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void {
   test.beforeEach(async () => {
     await ctx.value.proxy.reset();
     ctx.value.page.evaluate(`
@@ -934,7 +939,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     });
   });
 
-  test.describe('selectionBackground', async () => {
+  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionBackground', async () => {
     test('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
@@ -970,7 +975,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     });
   });
 
-  test.describe('selectionForeground', () => {
+  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionForeground', () => {
     test('transparent background inverse', async () => {
       const theme: ITheme = {
         selectionForeground: '#ff0000'
@@ -1050,7 +1055,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
-    test('backgroundColor should ignore inverse (only bg on decoration)', async () => {
+    (ctx.skipCanvasExceptions ? test.skip : test)('backgroundColor should ignore inverse (only bg on decoration)', async () => {
       const data = `\x1b[7m█ \x1b[0m`;
       await ctx.value.proxy.write( data);
       await ctx.value.page.evaluate(`
