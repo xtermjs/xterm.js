@@ -28,6 +28,7 @@
     "package-headless": "webpack --config ./webpack.config.headless.js",
     "postpackage-headless": "node ./bin/package_headless.js",
     "start": "node demo/start",
+    "start-server-only": "node demo/start-server-only",
     "build-demo": "webpack --config ./demo/webpack.config.js",
     "start-debug": "node --inspect-brk demo/start",
     "lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts src/ addons/",
