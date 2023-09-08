@@ -12,8 +12,6 @@ import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
 import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
-// TODO: We could avoid needing this
-import deepEqual = require('deep-equal');
 
 export interface ITestContext {
   browser: Browser;
@@ -387,7 +385,14 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
     console.log('pollFor\n  actual: ', JSON.stringify(result), '  expected: ', JSON.stringify(val));
   }
 
-  if (!deepEqual(result, val)) {
+  let equalityCheck = true;
+  try {
+    deepStrictEqual(result, val);
+  } catch (e) {
+    equalityCheck = false;
+  }
+
+  if (!equalityCheck) {
     if (maxDuration === undefined) {
       maxDuration = 2000;
     }
