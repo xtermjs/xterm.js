@@ -180,7 +180,11 @@ export class DomRendererRowFactory {
           && !isDecorated
         ) {
           // no span alterations, thus only account chars skipping all code below
-          text += chars;
+          if (cell.isInvisible()) {
+            text += WHITESPACE_CELL_CHAR;
+          } else {
+            text += chars;
+          }
           cellAmount++;
           continue;
         } else {
