@@ -59,6 +59,7 @@
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts"
   },
   "devDependencies": {
+    "@lunapaint/png-codec": "^0.2.0",
     "@playwright/test": "^1.37.1",
     "@types/chai": "^4.2.22",
     "@types/debug": "^4.1.7",
