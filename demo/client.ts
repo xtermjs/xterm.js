@@ -119,6 +119,8 @@ const actionElements = {
   findResults: document.querySelector('#find-results')
 };
 const paddingElement = document.getElementById('padding') as HTMLInputElement;
+const selectionBackgroundElement = document.getElementById('selectionBackground') as HTMLInputElement;
+const selectionInactiveBackgroundElement = document.getElementById('selectionInactiveBackground') as HTMLInputElement;
 
 const xtermjsTheme = {
   foreground: '#F8F8F8',
@@ -144,6 +146,18 @@ const xtermjsTheme = {
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   addons.fit.instance.fit();
+}
+
+function setSelectionInactiveBackground(): void {
+  const theme = { ...term.options.theme };
+  theme.selectionInactiveBackground = selectionInactiveBackgroundElement.value;
+  term.options.theme = theme;
+}
+
+function setSelectionBackground(): void {
+  const theme = { ...term.options.theme };
+  theme.selectionBackground = selectionBackgroundElement.value;
+  term.options.theme = theme;
 }
 
 function getSearchOptions(): ISearchOptions {
@@ -333,6 +347,8 @@ function createTerminal(): void {
   resizeObserver.observe(terminalContainer);
 
   addDomListener(paddingElement, 'change', setPadding);
+  addDomListener(selectionInactiveBackgroundElement, 'change', setSelectionInactiveBackground);
+  addDomListener(selectionBackgroundElement, 'change', setSelectionBackground);
 
   addDomListener(actionElements.findNext, 'keydown', (e) => {
     if (e.key === 'Enter') {
