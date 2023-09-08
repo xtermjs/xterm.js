@@ -4,9 +4,10 @@
  */
 
 import { assert } from 'chai';
-import test from '@playwright/test';
+import test, { LocatorScreenshotOptions } from '@playwright/test';
 import { ITheme } from 'xterm';
-import { ITestContext, createTestContext, openTerminal, pollFor } from '../../../out-test/playwright/TestUtils';
+import { ITestContext, MaybeAsync, createTestContext, openTerminal, pollFor } from '../../../out-test/playwright/TestUtils';
+import { IImage32, decodePng } from '@lunapaint/png-codec';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
@@ -28,7 +29,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
     `);
     // TODO: Introduce frame caching
     // Clear the cached screenshot before each test
-    // frameDetails = undefined;
+    frameDetails = undefined;
   });
 
   test('dispose removes renderer canvases', async function(): Promise<void> {
@@ -792,6 +793,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
       await pollFor(ctx.page, () => getCellColor(1, 1), [176, 180, 180, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [238, 158, 158, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [152, 198, 110, 255]);
@@ -861,6 +863,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
       await pollFor(ctx.page, () => getCellColor(1, 1), [46, 52, 54, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [132, 0, 0, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [36, 72, 0, 255]);
@@ -935,6 +938,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
       await pollFor(ctx.page, () => getCellColor(1, 1), [150, 153, 154, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [229, 127, 127, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [63, 124, 4, 255]);
@@ -967,6 +971,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       await pollFor(ctx.page, () => getCellColor(2, 1), [255, 0, 0, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [0, 255, 0, 255]);
       await ctx.page.evaluate(`window.term.selectAll()`);
+      frameDetails = undefined;
       // Selection only cell needs to be first to ensure renderer has kicked in
       await pollFor(ctx.page, () => getCellColor(1, 1), [0, 0, 255, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [255, 0, 0, 255]);
@@ -1086,33 +1091,40 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
   });
 });
 
-async function getCellColor(col: number, row: number): Promise<number[]> {
-  await ctx.page.evaluate(`
-    window.gl = window.term._core._renderService._renderer.value._gl;
-    window.result = new Uint8Array(4);
-    window.d = window.term._core._renderService.dimensions;
-    window.gl.readPixels(
-      Math.floor((${col - 0.5}) * window.d.device.cell.width),
-      Math.floor(window.gl.drawingBufferHeight - 1 - (${row - 0.5}) * window.d.device.cell.height),
-      1, 1, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
-    );
-  `);
-  return await ctx.page.evaluate(`Array.from(window.result)`);
+/**
+ * Gets the color of the pixel in the center of a cell.
+ * @param col The 1-based column index to get the color for.
+ * @param row The 1-based row index to get the color for.
+ */
+function getCellColor(col: number, row: number): MaybeAsync<[red: number, green: number, blue: number, alpha: number]> {
+  if (!frameDetails) {
+    return getFrameDetails().then(frameDetails => getCellColorInner(frameDetails, col, row));
+  }
+  return getCellColorInner(frameDetails, col, row);
 }
 
-// async function getCellPixels(col: number, row: number): Promise<number[]> {
-//   await ctx.page.evaluate(`
-//     window.gl = window.term._core._renderService._renderer.value._gl;
-//     window.result = new Uint8Array(window.d.device.cell.width * window.d.device.cell.height * 4);
-//     window.d = window.term._core._renderService.dimensions;
-//     window.gl.readPixels(
-//       Math.floor(${col - 1} * window.d.device.cell.width),
-//       Math.floor(window.gl.drawingBufferHeight - ${row} * window.d.device.cell.height),
-//       window.d.device.cell.width, window.d.device.cell.height, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result
-//     );
-//   `);
-//   return await ctx.page.evaluate(`Array.from(window.result)`);
-// }
+let frameDetails: { cols: number, rows: number, decoded: IImage32 } | undefined = undefined;
+async function getFrameDetails(): Promise<{ cols: number, rows: number, decoded: IImage32 }> {
+  const screenshotOptions: LocatorScreenshotOptions | undefined = process.env.DEBUG ? { path: 'out-test/playwright/screenshot.png' } : undefined;
+  const buffer = await ctx.page.locator('#terminal-container .xterm-screen').screenshot(screenshotOptions);
+  frameDetails = {
+    cols: await ctx.proxy.cols,
+    rows: await ctx.proxy.rows,
+    decoded: (await decodePng(buffer, { force32: true })).image
+  };
+  return frameDetails;
+}
+
+function getCellColorInner(frameDetails: { cols: number, rows: number, decoded: IImage32 }, col: number, row: number): [red: number, green: number, blue: number, alpha: number] {
+  const cellSize = {
+    width: frameDetails.decoded.width / frameDetails.cols,
+    height: frameDetails.decoded.height / frameDetails.rows
+  };
+  const x = Math.floor((col - 1/* 1- to 0-based index */ + 0.5/* middle of cell */) * cellSize.width);
+  const y = Math.floor((row - 1/* 1- to 0-based index */ + 0.5/* middle of cell */) * cellSize.height);
+  const i = (y * frameDetails.decoded.width + x) * 4/* 4 channels per pixel */;
+  return Array.from(frameDetails.decoded.data.slice(i, i + 4)) as [number, number, number, number];
+}
 
 const COLORS_16_TO_255 = [
   '#000000', '#00005f', '#000087', '#0000af', '#0000d7', '#0000ff', '#005f00', '#005f5f', '#005f87', '#005faf', '#005fd7', '#005fff', '#008700', '#00875f', '#008787', '#0087af',
