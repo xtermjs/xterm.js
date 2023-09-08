@@ -6,6 +6,7 @@
 import test from '@playwright/test';
 import { ISharedRendererTestContext, injectSharedRendererTests } from '../../../out-test/playwright/SharedRendererTests';
 import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
+import { platform } from 'os';
 
 let ctx: ITestContext;
 const ctxWrapper: ISharedRendererTestContext = { value: undefined } as any;
@@ -23,7 +24,9 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('WebGL Renderer Integration Tests', async () => {
   // HACK: webgl2 is often not supported in headless firefox on Linux
   // https://github.com/microsoft/playwright/issues/11566
-  test.skip(({ browserName, userAgent }) => (userAgent?.includes('Linux') ?? false) && browserName === 'firefox');
+  if (platform() === 'linux') {
+    test.skip(({ browserName }) => browserName === 'firefox');
+  }
 
   injectSharedRendererTests(ctxWrapper);
 });
