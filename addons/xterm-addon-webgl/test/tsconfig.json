@@ -22,7 +22,8 @@
     "types": [
       "../../../node_modules/@types/node",
       "../../../node_modules/@lunapaint/png-codec",
-      "../../../out-test/playwright/TestUtils"
+      "../../../out-test/playwright/TestUtils",
+      "../../../out-test/playwright/SharedRendererTests"
     ]
   },
   "include": [
