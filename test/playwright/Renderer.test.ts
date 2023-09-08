@@ -6,7 +6,7 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from 'xterm';
-import { createTestContext, ITestContext, MaybeAsync, openTerminal, pollFor } from './TestUtils';
+import { createTestContext, ITestContext, MaybeAsync, openTerminal, pollFor, timeout } from './TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
@@ -16,9 +16,6 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => await ctx.page.close());
 
 test.describe.only('WebGL Renderer Integration Tests', async () => {
-  // TODO: Speed up tests
-  test.setTimeout(30000);
-
   test.beforeEach(async () => {
     await ctx.proxy.reset();
     // Clear the cached screenshot before each test
@@ -725,7 +722,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
     }
   });
 
-  test.describe.skip('minimumContrastRatio', async () => {
+  test.describe.only('minimumContrastRatio', async () => {
     test('should adjust 0-15 colors on black background', async () => {
       const theme: ITheme = {
         black: '#2e3436',
@@ -749,7 +746,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block characters ignore block elements so a different char is used here
+      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.proxy.write(
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
@@ -775,6 +772,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
       await pollFor(ctx.page, () => getCellColor(1, 1), [176, 180, 180, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [238, 158, 158, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [152, 198, 110, 255]);
@@ -818,7 +816,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block characters ignore block elements so a different char is used here
+      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.proxy.write(
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
@@ -844,6 +842,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
       await pollFor(ctx.page, () => getCellColor(1, 1), [46, 52, 54, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [132, 0, 0, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [36, 72, 0, 255]);
@@ -886,7 +885,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block characters ignore block elements so a different char is used here
+      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.proxy.write(
         '\x1b[2m' +
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
@@ -913,6 +912,7 @@ test.describe.only('WebGL Renderer Integration Tests', async () => {
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
       await pollFor(ctx.page, () => getCellColor(1, 1), [150, 153, 154, 255]);
       await pollFor(ctx.page, () => getCellColor(2, 1), [229, 127, 127, 255]);
       await pollFor(ctx.page, () => getCellColor(3, 1), [63, 124, 4, 255]);
