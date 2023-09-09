@@ -970,8 +970,8 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await ctx.value.proxy.focus();
       // Check both the cursor line and another line
-      await ctx.value.proxy.writeln('_');
-      await ctx.value.proxy.write('_');
+      await ctx.value.proxy.writeln('_ ');
+      await ctx.value.proxy.write('_ ');
       await ctx.value.page.evaluate(`window.term.selectAll()`);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [128, 0, 0, 255]);
