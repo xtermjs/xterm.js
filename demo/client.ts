@@ -48,6 +48,7 @@ export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -218,6 +219,7 @@ const createNewWindowButtonHandler: () => void = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
+  window.CanvasAddon = CanvasAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
@@ -247,6 +249,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
   initImageAddonExposed();
+  testEvents();
 }
 
 function createTerminal(): void {
@@ -1334,4 +1337,9 @@ function initImageAddonExposed(): void {
       : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
     canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
   });
+}
+
+function testEvents(): void {
+  document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
+  document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
 }

@@ -259,8 +259,12 @@ jobs:
         ls -R
     - name: Build demo
       run: yarn build-demo
-    - name: Integration tests
-      run: yarn test-playwright-${{ matrix.browser }} --forbid-only
+    - name: Integration tests (core)
+      run: yarn test-playwright-${{ matrix.browser }} --forbid-only --workers 4 --suite=core
+    - name: Integration tests (xterm-addon-canvas)
+      run: yarn test-playwright-${{ matrix.browser }} --forbid-only --workers 4 --suite=xterm-addon-canvas
+    - name: Integration tests (xterm-addon-webgl)
+      run: yarn test-playwright-${{ matrix.browser }} --forbid-only --workers 4 --suite=xterm-addon-webgl
 
   test-api:
     needs: build
