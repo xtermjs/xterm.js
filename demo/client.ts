@@ -125,6 +125,7 @@ const xtermjsTheme = {
   foreground: '#F8F8F8',
   background: '#2D2E2C',
   selectionBackground: '#5DA5D533',
+  selectionInactiveBackground: '#444444',
   black: '#1E1E1D',
   brightBlack: '#262625',
   red: '#CE5C5C',
