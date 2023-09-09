@@ -1102,6 +1102,19 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 0, 255]);
     });
+    test.only('#4759: minimum contrast ratio should be respected on inverse text', async () => {
+      const theme: ITheme = {
+        foreground: '#aaaaaa',
+        background: '#333333'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.write(`\x1b[7m■■`);
+      // Validate before minimumContrastRatio is applied
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0x33, 0x33, 0x33, 255]);
+      await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+    });
   });
 }
 
