@@ -374,8 +374,17 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
 
 export type MaybeAsync<T> = Promise<T> | T;
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
-  stack ??= new Error().stack;
+interface IPollForOptions<T> {
+  equalityFn?: (a: T, b: T) => boolean;
+  maxDuration?: number;
+  stack?: string;
+}
+
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, options?: IPollForOptions<T>): Promise<void> {
+  if (!options) {
+    options = {};
+  }
+  options.stack ??= new Error().stack;
   if (preFn) {
     await preFn();
   }
@@ -385,30 +394,64 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
     console.log('pollFor\n  actual: ', JSON.stringify(result), '  expected: ', JSON.stringify(val));
   }
 
-  let equalityCheck = true;
-  try {
-    deepStrictEqual(result, val);
-  } catch (e) {
-    equalityCheck = false;
+  let equalityCheck: boolean;
+  if (options.equalityFn) {
+    equalityCheck = options.equalityFn(result as T, val);
+  } else {
+    equalityCheck = true;
+    try {
+      deepStrictEqual(result, val);
+    } catch (e) {
+      equalityCheck = false;
+    }
   }
 
   if (!equalityCheck) {
-    if (maxDuration === undefined) {
-      maxDuration = 2000;
+    if (options.maxDuration === undefined) {
+      options.maxDuration = 2000;
     }
-    if (maxDuration <= 0) {
+    if (options.maxDuration <= 0) {
       deepStrictEqual(result, val, ([
         `pollFor max duration exceeded.`,
         (`Last comparison: ` +
           `${typeof result === 'object' ? JSON.stringify(result) : result} (actual) !== ` +
           `${typeof val === 'object' ? JSON.stringify(val) : val} (expected)`),
-        `Stack: ${stack}`
+        `Stack: ${options.stack}`
       ].join('\n')));
     }
     return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10, stack)), 10);
+      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, {
+        ...options,
+        maxDuration: options!.maxDuration! - 10,
+        stack: options!.stack
+      })), 10);
     });
   }
+}
+
+export async function pollForApproximate<T>(page: playwright.Page, marginOfError: number, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
+  await pollFor(page, evalOrFn, val, preFn, {
+    maxDuration,
+    stack,
+    equalityFn: (a, b) => {
+      if (a === b) {
+        return true;
+      }
+      if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+        let success = true;
+        for (let i = 0 ; i < a.length; i++) {
+          if (Math.abs(a[i] - b[i]) > marginOfError) {
+            success = false;
+            break;
+          }
+        }
+        if (success) {
+          return true;
+        }
+      }
+      return false;
+    }
+  });
 }
 
 export async function writeSync(page: playwright.Page, data: string): Promise<void> {
