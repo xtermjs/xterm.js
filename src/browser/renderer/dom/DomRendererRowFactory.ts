@@ -419,7 +419,7 @@ export class DomRendererRowFactory {
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, resolvedBg, colors.foreground, cell, bgOverride, undefined)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, colors.foreground, cell, bgOverride, fgOverride)) {
             if (isInverse) {
               classes.push(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
