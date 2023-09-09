@@ -19,6 +19,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     ctx.value.page.evaluate(`
       window.term.options.minimumContrastRatio = 1;
       window.term.options.allowTransparency = false;
+      window.term.options.theme = undefined;
     `);
     // Clear the cached screenshot before each test
     frameDetails = undefined;
@@ -144,7 +145,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [22, 23, 24, 255]);
   });
 
-  test('foreground 0-15 inivisible', async () => {
+  test('foreground 0-15 invisible', async () => {
     const theme: ITheme = {
       black: '#010203',
       red: '#040506',
@@ -167,7 +168,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [0, 0, 0, 255]);
   });
 
-  test('background 0-15 inivisible', async () => {
+  test('background 0-15 invisible', async () => {
     const theme: ITheme = {
       black: '#010203',
       red: '#040506',
@@ -1068,6 +1069,19 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       `);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]); // inverse foreground of '█' should be default
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 255, 255]); // inverse background of ' ' should be decoration bg override
+    });
+  });
+
+  test.describe('regression tests', () => {
+    test('#4758: multiple invisible text characters without SGR change should not be rendered', async () => {
+      // Regression test: #4758 when multiple invisible characters are used
+      await ctx.value.proxy.writeln(`■\x1b[8m■■`);
+      // Full refresh as the before result is the same as after
+      await ctx.value.proxy.refresh(0, await ctx.value.proxy.rows - 1);
+      // Control to ensure rendering has occurred
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 255, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 0, 255]);
     });
   });
 }
