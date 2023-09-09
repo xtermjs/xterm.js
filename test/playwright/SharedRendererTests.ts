@@ -19,6 +19,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     ctx.value.page.evaluate(`
       window.term.options.minimumContrastRatio = 1;
       window.term.options.allowTransparency = false;
+      window.term.options.theme = undefined;
     `);
     // Clear the cached screenshot before each test
     frameDetails = undefined;
