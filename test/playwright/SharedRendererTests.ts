@@ -1074,11 +1074,13 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   test.describe('regression tests', () => {
     test('#4758: multiple invisible text characters without SGR change should not be rendered', async () => {
       // Regression test: #4758 when multiple invisible characters are used
-      await ctx.value.proxy.writeln(`\x1b[8m■■`);
+      await ctx.value.proxy.writeln(`■\x1b[8m■■`);
       // Full refresh as the before result is the same as after
       await ctx.value.proxy.refresh(0, await ctx.value.proxy.rows - 1);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      // Control to ensure rendering has occurred
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 255, 255, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 0, 255]);
     });
   });
 }
