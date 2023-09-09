@@ -961,7 +961,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 
   (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionInactiveBackground', async () => {
-    test.only('should render the the inactive selection when not focused', async () => {
+    test('should render the the inactive selection when not focused', async () => {
       const theme: ITheme = {
         selectionBackground: '#FF000080',
         selectionInactiveBackground: '#0000FF80'
