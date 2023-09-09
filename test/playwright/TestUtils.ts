@@ -12,8 +12,6 @@ import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
 import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
-// TODO: We could avoid needing this
-import deepEqual = require('deep-equal');
 
 export interface ITestContext {
   browser: Browser;
@@ -365,7 +363,7 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
   //       assertion catches this case early.
   strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
   await ctx.page.evaluate(`
-    window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
+    window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
     window.term.open(document.querySelector('#terminal-container'));
   `);
   await ctx.page.waitForSelector('.xterm-rows');
@@ -374,8 +372,9 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
 }
 
 
+export type MaybeAsync<T> = Promise<T> | T;
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
   stack ??= new Error().stack;
   if (preFn) {
     await preFn();
@@ -383,10 +382,17 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
   const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
 
   if (process.env.DEBUG) {
-    console.log('pollFor result: ', JSON.stringify(result));
+    console.log('pollFor\n  actual: ', JSON.stringify(result), '  expected: ', JSON.stringify(val));
   }
 
-  if (!deepEqual(result, val)) {
+  let equalityCheck = true;
+  try {
+    deepStrictEqual(result, val);
+  } catch (e) {
+    equalityCheck = false;
+  }
+
+  if (!equalityCheck) {
     if (maxDuration === undefined) {
       maxDuration = 2000;
     }

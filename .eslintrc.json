@@ -17,6 +17,7 @@
       "addons/xterm-addon-attach/src/tsconfig.json",
       "addons/xterm-addon-attach/test/tsconfig.json",
       "addons/xterm-addon-canvas/src/tsconfig.json",
+      "addons/xterm-addon-canvas/test/tsconfig.json",
       "addons/xterm-addon-fit/src/tsconfig.json",
       "addons/xterm-addon-fit/test/tsconfig.json",
       "addons/xterm-addon-image/src/tsconfig.json",
