@@ -299,6 +299,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
+    this.renderRows(0, this._bufferService.rows - 1);
   }
 
   public handleFocus(): void {
