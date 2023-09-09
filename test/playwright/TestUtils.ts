@@ -400,8 +400,8 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
       deepStrictEqual(result, val, ([
         `pollFor max duration exceeded.`,
         (`Last comparison: ` +
-          `${typeof result === 'object' ? JSON.stringify(result) : result} !== ` +
-          `${typeof val === 'object' ? JSON.stringify(val) : val}`),
+          `${typeof result === 'object' ? JSON.stringify(result) : result} (actual) !== ` +
+          `${typeof val === 'object' ? JSON.stringify(val) : val} (expected)`),
         `Stack: ${stack}`
       ].join('\n')));
     }

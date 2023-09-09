@@ -960,6 +960,32 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
+  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionInactiveBackground', async () => {
+    test.only('should render the the inactive selection when not focused', async () => {
+      const theme: ITheme = {
+        selectionBackground: '#FF000080',
+        selectionInactiveBackground: '#0000FF80'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      // Check both the cursor line and another line
+      await ctx.value.proxy.writeln('_');
+      await ctx.value.proxy.write('_');
+      await ctx.value.page.evaluate(`window.term.selectAll()`);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [128, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [128, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [128, 0, 0, 255]);
+      await ctx.value.page.evaluate(`document.activeElement.blur()`);
+      frameDetails = undefined;
+      // Selection only cell needs to be first to ensure renderer has kicked in
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [0, 0, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [0, 0, 128, 255]);
+    });
+  });
+
   test.describe('allowTransparency', async () => {
     test.beforeEach(() => ctx.value.page.evaluate(`term.options.allowTransparency = true`));
 
