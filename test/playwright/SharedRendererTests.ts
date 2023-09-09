@@ -38,7 +38,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         white: '#161718'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      await ctx.value.proxy.write(`\x1b[30m█\x1b[31m█\x1b[32m█\x1b[33m█\x1b[34m█\x1b[35m█\x1b[36m█\x1b[37m█`);
+      await ctx.value.proxy.write(`\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■`);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -65,7 +65,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       window.term.options.theme = ${JSON.stringify(theme)};
       window.term.options.drawBoldTextInBrightColors = true;
     `);
-    await ctx.value.proxy.write(`\x1b[1;30m█\x1b[1;31m█\x1b[1;32m█\x1b[1;33m█\x1b[1;34m█\x1b[1;35m█\x1b[1;36m█\x1b[1;37m█`);
+    await ctx.value.proxy.write(`\x1b[1;30m■\x1b[1;31m■\x1b[1;32m■\x1b[1;33m■\x1b[1;34m■\x1b[1;35m■\x1b[1;36m■\x1b[1;37m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -134,7 +134,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       white: '#161718'
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-    await ctx.value.proxy.write(`\x1b[7;40m█\x1b[7;41m█\x1b[7;42m█\x1b[7;43m█\x1b[7;44m█\x1b[7;45m█\x1b[7;46m█\x1b[7;47m█`);
+    await ctx.value.proxy.write(`\x1b[7;40m■\x1b[7;41m■\x1b[7;42m■\x1b[7;43m■\x1b[7;44m■\x1b[7;45m■\x1b[7;46m■\x1b[7;47m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -180,7 +180,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       white: '#161718'
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-    await ctx.value.proxy.write(`\x1b[8;40m█\x1b[8;41m█\x1b[8;42m█\x1b[8;43m█\x1b[8;44m█\x1b[8;45m█\x1b[8;46m█\x1b[8;47m█`);
+    await ctx.value.proxy.write(`\x1b[8;40m■\x1b[8;41m■\x1b[8;42m■\x1b[8;43m■\x1b[8;44m■\x1b[8;45m■\x1b[8;46m■\x1b[8;47m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -203,7 +203,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       brightWhite: '#161718'
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-    await ctx.value.proxy.write(`\x1b[90m█\x1b[91m█\x1b[92m█\x1b[93m█\x1b[94m█\x1b[95m█\x1b[96m█\x1b[97m█`);
+    await ctx.value.proxy.write(`\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -241,7 +241,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[38;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[38;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -301,7 +301,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[7;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[7;48;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -337,7 +337,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[8;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[8;48;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -357,7 +357,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[2;38;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[2;38;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -407,7 +407,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;${i};0;0m█\x1b[0m`;
+        data += `\x1b[38;2;${i};0;0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -443,7 +443,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;0;${i};0m█\x1b[0m`;
+        data += `\x1b[38;2;0;${i};0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -479,7 +479,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;0;0;${i}m█\x1b[0m`;
+        data += `\x1b[38;2;0;0;${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -515,7 +515,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;${i};${i};${i}m█\x1b[0m`;
+        data += `\x1b[38;2;${i};${i};${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -569,7 +569,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;${i};0;0m█\x1b[0m`;
+        data += `\x1b[7;48;2;${i};0;0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -605,7 +605,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;0;${i};0m█\x1b[0m`;
+        data += `\x1b[7;48;2;0;${i};0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -641,7 +641,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;0;0;${i}m█\x1b[0m`;
+        data += `\x1b[7;48;2;0;0;${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -677,7 +677,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;${i};${i};${i}m█\x1b[0m`;
+        data += `\x1b[7;48;2;${i};${i};${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -712,7 +712,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[8;48;2;${i};${i};${i}m█\x1b[0m`;
+        data += `\x1b[8;48;2;${i};${i};${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -749,7 +749,6 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.value.proxy.write(
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
@@ -819,7 +818,6 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.value.proxy.write(
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
@@ -893,7 +891,6 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.value.proxy.write(
         '\x1b[2m' +
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
@@ -948,7 +945,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         selectionBackground: '#0000FF'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      await ctx.value.proxy.write( ` █\x1b[7m█\x1b[0m`);
+      await ctx.value.proxy.write( ` ■\x1b[7m■\x1b[0m`);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 255, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 255, 0, 255]);
@@ -995,7 +992,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         background: '#ff000080'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      const data = `\x1b[7m█\x1b[0m`;
+      const data = `\x1b[7m■\x1b[0m`;
       await ctx.value.proxy.write( data);
       // Inverse background should be opaque
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
@@ -1008,7 +1005,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         selectionForeground: '#ff0000'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      const data = `\x1b[7m█\x1b[0m`;
+      const data = `\x1b[7m■\x1b[0m`;
       await ctx.value.proxy.write( data);
       await ctx.value.page.evaluate(`window.term.selectAll()`);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
@@ -1025,7 +1022,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
           backgroundColor: '#0000ff'
         });
       `);
-      const data = `█`;
+      const data = `■`;
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
@@ -1038,7 +1035,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
           backgroundColor: '#0000ff'
         });
       `);
-      const data = `\x1b[7m█\x1b[0m`;
+      const data = `\x1b[7m■\x1b[0m`;
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
@@ -1051,9 +1048,9 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
           foregroundColor: '#ff0000'
         });
       `);
-      const data = `\x1b[7m█ \x1b[0m`;
+      const data = `\x1b[7m■ \x1b[0m`;
       await ctx.value.proxy.write( data);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]); // inverse foreground of '█' should be decoration fg override
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]); // inverse foreground of '■' should be decoration fg override
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 255, 255, 255]); // inverse background of ' ' should be default foreground
     });
     test('backgroundColor', async () => {
@@ -1083,7 +1080,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
     (ctx.skipCanvasExceptions ? test.skip : test)('backgroundColor should ignore inverse (only bg on decoration)', async () => {
-      const data = `\x1b[7m█ \x1b[0m`;
+      const data = `\x1b[7m■ \x1b[0m`;
       await ctx.value.proxy.write( data);
       await ctx.value.page.evaluate(`
         const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
@@ -1093,7 +1090,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
           backgroundColor: '#0000ff'
         });
       `);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]); // inverse foreground of '█' should be default
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]); // inverse foreground of '■' should be default
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 255, 255]); // inverse background of ' ' should be decoration bg override
     });
   });
