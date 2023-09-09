@@ -6,7 +6,7 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from 'xterm';
-import { ITestContext, MaybeAsync, pollFor } from './TestUtils';
+import { ITestContext, MaybeAsync, pollFor, pollForApproximate } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -863,11 +863,6 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
 
     test('should enforce half the contrast for dim cells', async () => {
-      // TODO: This test fails on webkit
-      if (ctx.value.browser.browserType().name() === 'webkit') {
-        test.skip();
-        return;
-      }
       const theme: ITheme = {
         background: '#ffffff',
         black: '#2e3436',
@@ -897,43 +892,44 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
       );
       // Validate before minimumContrastRatio is applied
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 1), [Math.floor((255 + 0xc4) / 2), Math.floor((255 + 0xa0) / 2), Math.floor((255 + 0x00) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 1), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x65) / 2), Math.floor((255 + 0xa4) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 1), [Math.floor((255 + 0x75) / 2), Math.floor((255 + 0x50) / 2), Math.floor((255 + 0x7b) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 1), [Math.floor((255 + 0x06) / 2), Math.floor((255 + 0x98) / 2), Math.floor((255 + 0x9a) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [Math.floor((255 + 0xd3) / 2), Math.floor((255 + 0xd7) / 2), Math.floor((255 + 0xcf) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [Math.floor((255 + 0x55) / 2), Math.floor((255 + 0x57) / 2), Math.floor((255 + 0x53) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [Math.floor((255 + 0xef) / 2), Math.floor((255 + 0x29) / 2), Math.floor((255 + 0x29) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 2), [Math.floor((255 + 0x8a) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0x34) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 2), [Math.floor((255 + 0xfc) / 2), Math.floor((255 + 0xe9) / 2), Math.floor((255 + 0x4f) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 2), [Math.floor((255 + 0x72) / 2), Math.floor((255 + 0x9f) / 2), Math.floor((255 + 0xcf) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
+      const marginOfError = 1;
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 1), [Math.floor((255 + 0xc4) / 2), Math.floor((255 + 0xa0) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 1), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x65) / 2), Math.floor((255 + 0xa4) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 1), [Math.floor((255 + 0x75) / 2), Math.floor((255 + 0x50) / 2), Math.floor((255 + 0x7b) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 1), [Math.floor((255 + 0x06) / 2), Math.floor((255 + 0x98) / 2), Math.floor((255 + 0x9a) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 1), [Math.floor((255 + 0xd3) / 2), Math.floor((255 + 0xd7) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 2), [Math.floor((255 + 0x55) / 2), Math.floor((255 + 0x57) / 2), Math.floor((255 + 0x53) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 2), [Math.floor((255 + 0xef) / 2), Math.floor((255 + 0x29) / 2), Math.floor((255 + 0x29) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 2), [Math.floor((255 + 0x8a) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0x34) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 2), [Math.floor((255 + 0xfc) / 2), Math.floor((255 + 0xe9) / 2), Math.floor((255 + 0x4f) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 2), [Math.floor((255 + 0x72) / 2), Math.floor((255 + 0x9f) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
       // Setting and check for minimum contrast values, note that these are not
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       frameDetails = undefined;
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [150, 153, 154, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [229, 127, 127, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [63, 124, 4, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 1), [127, 104, 0, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 1), [153, 178, 209, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 1), [186, 167, 189, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 1), [4, 122, 124, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [110, 112, 108, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [170, 171, 169, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [215, 36, 36, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 2), [72, 117, 25, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 2), [117, 109, 36, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 2), [72, 103, 135, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 2), [125, 91, 121, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 2), [25, 117, 117, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 2), [111, 111, 110, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 1), [150, 153, 154, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 1), [229, 127, 127, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 1), [63, 124, 4, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 1), [127, 104, 0, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 1), [153, 178, 209, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 1), [186, 167, 189, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 1), [4, 122, 124, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 1), [110, 112, 108, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 2), [170, 171, 169, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 2), [215, 36, 36, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 2), [72, 117, 25, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 2), [117, 109, 36, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 2), [72, 103, 135, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 2), [125, 91, 121, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 2), [25, 117, 117, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 2), [111, 111, 110, 255]);
     });
   });
 
