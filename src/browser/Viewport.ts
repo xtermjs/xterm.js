@@ -119,10 +119,10 @@ export class Viewport extends Disposable implements IViewport {
 
   private _innerRefresh(): void {
     if (this._charSizeService.height > 0) {
-      this._currentRowHeight = this._renderService.dimensions.device.cell.height / this._coreBrowserService.dpr;
-      this._currentDeviceCellHeight = this._renderService.dimensions.device.cell.height;
+      this._currentRowHeight = this._renderDimensions.device.cell.height / this._coreBrowserService.dpr;
+      this._currentDeviceCellHeight = this._renderDimensions.device.cell.height;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
-      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderService.dimensions.css.canvas.height);
+      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderDimensions.css.canvas.height);
       if (this._lastRecordedBufferHeight !== newBufferHeight) {
         this._lastRecordedBufferHeight = newBufferHeight;
         this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
