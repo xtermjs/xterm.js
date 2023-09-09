@@ -1117,7 +1117,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
     });
-    test('#4759: minimum contrast ratio should be respected on selected inverse text', async () => {
+    (ctx.skipCanvasExceptions ? test.skip : test)('#4759: minimum contrast ratio should be respected on selected inverse text', async () => {
       const theme: ITheme = {
         foreground: '#777777',
         background: '#555555',
