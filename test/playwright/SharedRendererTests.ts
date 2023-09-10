@@ -1137,6 +1137,16 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 255, 255, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [102, 102, 102, 255]);
     });
+    test('#4773: block cursor should render when the cell is selected', async () => {
+      const theme: ITheme = {
+        cursor: '#0000FF',
+        selectionBackground: '#FF0000'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.selectAll();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+    });
   });
 }
 

@@ -205,8 +205,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
-      ` background-color: ${colors.cursor.css};` +
-      ` color: ${colors.cursorAccent.css};` +
+      ` background-color: ${colors.cursor.css} !important;` +
+      ` color: ${colors.cursorAccent.css} !important;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_OUTLINE_CLASS} {` +
       ` outline: 1px solid ${colors.cursor.css};` +
