@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "es2021",
     "rootDir": ".",
 
     "sourceMap": true,
