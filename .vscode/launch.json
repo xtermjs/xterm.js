@@ -59,11 +59,9 @@
       "request": "launch",
       "name": "Demo Server",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "start-debug"
-      ],
-      "port": 9229,
+      "runtimeArgs": ["start"],
+      "stopOnEntry": true,
+      "runtimeVersion": "16",
       "serverReadyAction": {
         "action": "openExternally",
         "pattern": "App listening to (http://.*?:[0-9]+)"
