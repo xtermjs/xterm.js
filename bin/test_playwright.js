@@ -35,7 +35,7 @@ function npmBinScript(script) {
 async function run() {
   for (const config of configs) {
     const command = npmBinScript('playwright');
-    const args = ['test', '-c', config.path, ...argv.slice(2)];
+    const args = ['test', '-c', config.path, ...argv];
     console.log(`Running suite \x1b[1;34m${config.name}...\x1b[0m`);
     console.log(`\n\x1b[32m${command}\x1b[0m`, args);
     const run = cp.spawnSync(command, args, {
