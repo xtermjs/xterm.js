@@ -42,6 +42,8 @@ jobs:
           ./addons/xterm-addon-serialize/out-test/* \
           ./addons/xterm-addon-unicode11/out/* \
           ./addons/xterm-addon-unicode11/out-test/* \
+          ./addons/xterm-addon-unicode-graphemes/out/* \
+          ./addons/xterm-addon-unicode-graphemes/out-test/* \
           ./addons/xterm-addon-web-links/out/* \
           ./addons/xterm-addon-web-links/out-test/* \
           ./addons/xterm-addon-webgl/out/* \
