@@ -68,6 +68,8 @@ jobs:
         yarn --frozen-lockfile
         yarn install-addons
     - name: Lint code
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096
       run: yarn lint
     - name: Lint API
       run: yarn lint-api
