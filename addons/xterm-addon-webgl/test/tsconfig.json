@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "es2021",
     "lib": [
-      "es6",
+      "es2021",
     ],
     "rootDir": ".",
     "outDir": "../out-test",
@@ -20,9 +20,10 @@
     },
     "strict": true,
     "types": [
-      "../../../node_modules/@types/mocha",
       "../../../node_modules/@types/node",
-      "../../../out-test/api/TestUtils"
+      "../../../node_modules/@lunapaint/png-codec",
+      "../../../out-test/playwright/TestUtils",
+      "../../../out-test/playwright/SharedRendererTests"
     ]
   },
   "include": [

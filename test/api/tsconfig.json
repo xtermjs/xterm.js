@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es6"
+      "es2021"
     ],
     "rootDir": ".",
     "outDir": "../../out-test/api",

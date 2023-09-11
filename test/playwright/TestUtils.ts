@@ -12,8 +12,6 @@ import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
 import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from 'xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
-// TODO: We could avoid needing this
-import deepEqual = require('deep-equal');
 
 export interface ITestContext {
   browser: Browser;
@@ -365,7 +363,7 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
   //       assertion catches this case early.
   strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
   await ctx.page.evaluate(`
-    window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
+    window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
     window.term.open(document.querySelector('#terminal-container'));
   `);
   // See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
@@ -382,35 +380,86 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
 }
 
 
+export type MaybeAsync<T> = Promise<T> | T;
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
-  stack ??= new Error().stack;
+interface IPollForOptions<T> {
+  equalityFn?: (a: T, b: T) => boolean;
+  maxDuration?: number;
+  stack?: string;
+}
+
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, options?: IPollForOptions<T>): Promise<void> {
+  if (!options) {
+    options = {};
+  }
+  options.stack ??= new Error().stack;
   if (preFn) {
     await preFn();
   }
   const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
 
   if (process.env.DEBUG) {
-    console.log('pollFor result: ', JSON.stringify(result));
+    console.log('pollFor\n  actual: ', JSON.stringify(result), '  expected: ', JSON.stringify(val));
   }
 
-  if (!deepEqual(result, val)) {
-    if (maxDuration === undefined) {
-      maxDuration = 2000;
+  let equalityCheck: boolean;
+  if (options.equalityFn) {
+    equalityCheck = options.equalityFn(result as T, val);
+  } else {
+    equalityCheck = true;
+    try {
+      deepStrictEqual(result, val);
+    } catch (e) {
+      equalityCheck = false;
     }
-    if (maxDuration <= 0) {
+  }
+
+  if (!equalityCheck) {
+    if (options.maxDuration === undefined) {
+      options.maxDuration = 2000;
+    }
+    if (options.maxDuration <= 0) {
       deepStrictEqual(result, val, ([
         `pollFor max duration exceeded.`,
         (`Last comparison: ` +
-          `${typeof result === 'object' ? JSON.stringify(result) : result} !== ` +
-          `${typeof val === 'object' ? JSON.stringify(val) : val}`),
-        `Stack: ${stack}`
+          `${typeof result === 'object' ? JSON.stringify(result) : result} (actual) !== ` +
+          `${typeof val === 'object' ? JSON.stringify(val) : val} (expected)`),
+        `Stack: ${options.stack}`
       ].join('\n')));
     }
     return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10, stack)), 10);
+      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, {
+        ...options,
+        maxDuration: options!.maxDuration! - 10,
+        stack: options!.stack
+      })), 10);
     });
   }
+}
+
+export async function pollForApproximate<T>(page: playwright.Page, marginOfError: number, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
+  await pollFor(page, evalOrFn, val, preFn, {
+    maxDuration,
+    stack,
+    equalityFn: (a, b) => {
+      if (a === b) {
+        return true;
+      }
+      if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+        let success = true;
+        for (let i = 0 ; i < a.length; i++) {
+          if (Math.abs(a[i] - b[i]) > marginOfError) {
+            success = false;
+            break;
+          }
+        }
+        if (success) {
+          return true;
+        }
+      }
+      return false;
+    }
+  });
 }
 
 export async function writeSync(page: playwright.Page, data: string): Promise<void> {

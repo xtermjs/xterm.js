@@ -50,6 +50,7 @@ export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -130,6 +131,7 @@ const xtermjsTheme = {
   foreground: '#F8F8F8',
   background: '#2D2E2C',
   selectionBackground: '#5DA5D533',
+  selectionInactiveBackground: '#555555AA',
   black: '#1E1E1D',
   brightBlack: '#262625',
   red: '#CE5C5C',
@@ -225,6 +227,7 @@ const createNewWindowButtonHandler: () => void = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
+  window.CanvasAddon = CanvasAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
