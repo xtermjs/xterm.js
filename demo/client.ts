@@ -70,7 +70,7 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicode-graphemes' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -84,7 +84,7 @@ interface IDemoAddon<T extends AddonType> {
               T extends 'serialize' ? typeof SerializeAddon :
                 T extends 'webLinks' ? typeof WebLinksAddon :
                   T extends 'unicode11' ? typeof Unicode11Addon :
-                    T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
+                    T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
                       T extends 'ligatures' ? typeof LigaturesAddon :
                         typeof WebglAddon
   );
@@ -98,7 +98,7 @@ interface IDemoAddon<T extends AddonType> {
                 T extends 'webLinks' ? WebLinksAddon :
                   T extends 'webgl' ? WebglAddon :
                     T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'unicode-graphemes' ? typeof UnicodeGraphemesAddon :
+                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
                         T extends 'ligatures' ? typeof LigaturesAddon :
                           never
   );
@@ -114,7 +114,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
-  'unicode-graphemes': { name: 'unicode-graphemes', ctor: UnicodeGraphemesAddon, canChange: true },
+  unicodeGraphemes: { name: 'unicodeGraphemes', ctor: UnicodeGraphemesAddon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
 };
 
@@ -184,7 +184,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
-    addons['unicode-graphemes'].instance = undefined;
+    addons.unicodeGraphemes.instance = undefined;
     addons.ligatures.instance = undefined;
     addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
@@ -286,7 +286,7 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
-  addons['unicode-graphemes'].instance = new UnicodeGraphemesAddon();
+  addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
     addons.webgl.instance = new WebglAddon();
   } catch (e) {
@@ -297,7 +297,7 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
-  typedTerm.loadAddon(addons['unicode-graphemes'].instance);
+  typedTerm.loadAddon(addons.unicodeGraphemes.instance);
   typedTerm.loadAddon(addons.webLinks.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
@@ -622,7 +622,7 @@ function initAddons(term: TerminalType): void {
     if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
     }
-    if (name === 'unicode-graphemes' && checkbox.checked) {
+    if (name === 'unicodeGraphemes' && checkbox.checked) {
       term.unicode.activeVersion = '15-graphemes';
     }
     if (name === 'search' && checkbox.checked) {
@@ -660,7 +660,7 @@ function initAddons(term: TerminalType): void {
             }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
-          } else if (name === 'unicode-graphemes') {
+          } else if (name === 'unicodeGraphemes') {
             term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
             addon.instance.onDidChangeResults(e => updateFindResults(e));
@@ -676,7 +676,7 @@ function initAddons(term: TerminalType): void {
           addons.webgl.instance.textureAtlas.remove();
         } else if (name === 'canvas') {
           addons.canvas.instance.textureAtlas.remove();
-        } else if (name === 'unicode11' || name === 'unicode-graphemes') {
+        } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
