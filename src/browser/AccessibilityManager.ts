@@ -5,7 +5,6 @@
 
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
-import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
