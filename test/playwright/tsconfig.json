@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "es6"
+    ],
+    "rootDir": ".",
+    "outDir": "../../out-test/playwright",
+    "types": [
+      "../../node_modules/@types/node",
+      "../../node_modules/@lunapaint/png-codec"
+    ],
+    "sourceMap": true,
+    "removeComments": true,
+    "pretty": true,
+    "strict": true,
+    "declaration": true,
+    "baseUrl": ".",
+    "paths": {
+      "browser/*": [
+        "../../src/browser/*"
+      ],
+      "common/*": [
+        "../../src/common/*"
+      ]
+    },
+    "target": "es2016",
+    "module": "commonjs",
+  },
+  "include": [
+    "./**/*",
+    "../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../src/browser"
+    },
+    {
+      "path": "../../src/common"
+    }
+  ]
+}

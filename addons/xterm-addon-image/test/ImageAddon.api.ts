@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { openTerminal, launchBrowser, pollFor } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from 'playwright';
+import { Browser, Page } from '@playwright/test';
 import { IImageAddonOptions } from '../src/Types';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { readFileSync } from 'fs';

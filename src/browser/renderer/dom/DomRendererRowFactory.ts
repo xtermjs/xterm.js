@@ -180,7 +180,11 @@ export class DomRendererRowFactory {
           && !isDecorated
         ) {
           // no span alterations, thus only account chars skipping all code below
-          text += chars;
+          if (cell.isInvisible()) {
+            text += WHITESPACE_CELL_CHAR;
+          } else {
+            text += chars;
+          }
           cellAmount++;
           continue;
         } else {
@@ -415,7 +419,7 @@ export class DomRendererRowFactory {
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, resolvedBg, colors.foreground, cell, bgOverride, undefined)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, colors.foreground, cell, bgOverride, fgOverride)) {
             if (isInverse) {
               classes.push(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }

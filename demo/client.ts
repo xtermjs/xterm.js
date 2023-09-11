@@ -13,13 +13,20 @@ import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
-import { ImageAddon, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
+
+// Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
+import type { ImageAddonType, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
+let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
+if ('WebAssembly' in window) {
+  const imageAddon = require('../addons/xterm-addon-image/out/ImageAddon');
+  ImageAddon = imageAddon.ImageAddon;
+}
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -41,8 +48,9 @@ export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -68,7 +76,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'attach' ? typeof AttachAddon :
       T extends 'canvas' ? typeof CanvasAddon :
         T extends 'fit' ? typeof FitAddon :
-          T extends 'image' ? typeof ImageAddon :
+          T extends 'image' ? typeof ImageAddonType :
             T extends 'search' ? typeof SearchAddon :
               T extends 'serialize' ? typeof SerializeAddon :
                 T extends 'webLinks' ? typeof WebLinksAddon :
@@ -80,7 +88,7 @@ interface IDemoAddon<T extends AddonType> {
     T extends 'attach' ? AttachAddon :
       T extends 'canvas' ? CanvasAddon :
         T extends 'fit' ? FitAddon :
-          T extends 'image' ? ImageAddon :
+          T extends 'image' ? ImageAddonType :
             T extends 'search' ? SearchAddon :
               T extends 'serialize' ? SerializeAddon :
                 T extends 'webLinks' ? WebLinksAddon :
@@ -117,6 +125,7 @@ const xtermjsTheme = {
   foreground: '#F8F8F8',
   background: '#2D2E2C',
   selectionBackground: '#5DA5D533',
+  selectionInactiveBackground: '#555555AA',
   black: '#1E1E1D',
   brightBlack: '#262625',
   red: '#CE5C5C',
@@ -211,6 +220,7 @@ const createNewWindowButtonHandler: () => void = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
+  window.CanvasAddon = CanvasAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
@@ -240,6 +250,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
   initImageAddonExposed();
+  testEvents();
 }
 
 function createTerminal(): void {
@@ -1327,4 +1338,9 @@ function initImageAddonExposed(): void {
       : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
     canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
   });
+}
+
+function testEvents(): void {
+  document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
+  document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
 }
