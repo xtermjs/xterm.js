@@ -43,9 +43,19 @@ export async function timeout(ms: number): Promise<void> {
   return new Promise<void>(r => setTimeout(r, ms));
 }
 
-export async function openTerminal(page: playwright.Page, options: ITerminalOptions & ITerminalInitOnlyOptions = {}): Promise<void> {
+export async function openTerminal(page: playwright.Page, options: ITerminalOptions & ITerminalInitOnlyOptions = {}, testOptions: { loadUnicodeGraphemesAddon: boolean } = { loadUnicodeGraphemesAddon: true }): Promise<void> {
   await page.evaluate(`window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })})`);
   await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
+
+  // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
+  // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
+  if (testOptions.loadUnicodeGraphemesAddon) {
+    await page.evaluate(`
+      window.unicode = new UnicodeGraphemesAddon();
+      window.term.loadAddon(window.unicode);
+      window.term.unicode.activeVersion = '15-graphemes';
+    `);
+  }
   await page.waitForSelector('.xterm-rows');
 }
 

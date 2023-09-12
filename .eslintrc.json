@@ -30,6 +30,9 @@
       "addons/xterm-addon-serialize/benchmark/tsconfig.json",
       "addons/xterm-addon-unicode11/src/tsconfig.json",
       "addons/xterm-addon-unicode11/test/tsconfig.json",
+      "addons/xterm-addon-unicode-graphemes/src/tsconfig.json",
+      "addons/xterm-addon-unicode-graphemes/test/tsconfig.json",
+      "addons/xterm-addon-unicode-graphemes/benchmark/tsconfig.json",
       "addons/xterm-addon-web-links/src/tsconfig.json",
       "addons/xterm-addon-web-links/test/tsconfig.json",
       "addons/xterm-addon-webgl/src/tsconfig.json",
@@ -38,6 +41,7 @@
     "sourceType": "module"
   },
   "ignorePatterns": [
+    "addons/*/src/third-party/*.ts",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",

@@ -1,0 +1,29 @@
+{
+  "name": "xterm-addon-unicode-graphemes",
+  "version": "0.1.0",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/xterm-addon-unicode-graphemes.js",
+  "types": "typings/xterm-addon-unicode-graphemes.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-unicode-graphemes",
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "xterm",
+    "xterm.js"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc -p .",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package",
+    "benchmark": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json out-benchmark/benchmark/*benchmark.js",
+    "benchmark-baseline": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --baseline out-benchmark/benchmark/*benchmark.js",
+    "benchmark-eval": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --eval out-benchmark/benchmark/*benchmark.js"
+  },
+  "peerDependencies": {
+    "xterm": "^5.0.0"
+  }
+}

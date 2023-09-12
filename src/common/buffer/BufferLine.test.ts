@@ -431,7 +431,7 @@ describe('BufferLine', function(): void {
   describe('addCharToCell', () => {
     it('should set width to 1 for empty cell', () => {
       const line = new TestBufferLine(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.addCodepointToCell(0, '\u0301'.charCodeAt(0));
+      line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);
       const cell = line.loadCell(0, new CellData());
       // chars contains single combining char
       // width is set to 1
@@ -444,7 +444,7 @@ describe('BufferLine', function(): void {
       const cell = line .loadCell(0, new CellData());
       cell.setFromCharData([123, 'e\u0301', 1, 'e\u0301'.charCodeAt(1)]);
       line.setCell(0, cell);
-      line.addCodepointToCell(0, '\u0301'.charCodeAt(0));
+      line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);
       line.loadCell(0, cell);
       // chars contains 3 chars
       // width is set to 1
@@ -457,7 +457,7 @@ describe('BufferLine', function(): void {
       const cell = line .loadCell(0, new CellData());
       cell.setFromCharData([123, 'e', 1, 'e'.charCodeAt(1)]);
       line.setCell(0, cell);
-      line.addCodepointToCell(0, '\u0301'.charCodeAt(0));
+      line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);
       line.loadCell(0, cell);
       // chars contains 2 chars
       // width is set to 1

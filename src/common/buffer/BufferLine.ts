@@ -227,7 +227,7 @@ export class BufferLine implements IBufferLine {
    * onto a leading char. Since we already set the attrs
    * by the previous `setDataFromCodePoint` call, we can omit it here.
    */
-  public addCodepointToCell(index: number, codePoint: number): void {
+  public addCodepointToCell(index: number, codePoint: number, width: number): void {
     let content = this._data[index * CELL_SIZE + Cell.CONTENT];
     if (content & Content.IS_COMBINED_MASK) {
       // we already have a combined string, simply add
@@ -245,8 +245,12 @@ export class BufferLine implements IBufferLine {
         // simply set the data in the cell buffer with a width of 1
         content = codePoint | (1 << Content.WIDTH_SHIFT);
       }
-      this._data[index * CELL_SIZE + Cell.CONTENT] = content;
     }
+    if (width) {
+      content &= ~Content.WIDTH_MASK;
+      content |= width << Content.WIDTH_SHIFT;
+    }
+    this._data[index * CELL_SIZE + Cell.CONTENT] = content;
   }
 
   public insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {

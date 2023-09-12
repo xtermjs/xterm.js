@@ -2,9 +2,8 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IUnicodeVersionProvider } from 'common/services/Services';
-
-type CharWidth = 0 | 1 | 2;
+import { IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
+import { UnicodeService } from 'common/services/UnicodeService';
 
 const BMP_COMBINING = [
   [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
@@ -121,12 +120,26 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
     }
   }
 
-  public wcwidth(num: number): CharWidth {
+  public wcwidth(num: number): UnicodeCharWidth {
     if (num < 32) return 0;
     if (num < 127) return 1;
-    if (num < 65536) return table[num] as CharWidth;
+    if (num < 65536) return table[num] as UnicodeCharWidth;
     if (bisearch(num, HIGH_COMBINING)) return 0;
     if ((num >= 0x20000 && num <= 0x2fffd) || (num >= 0x30000 && num <= 0x3fffd)) return 2;
     return 1;
+  }
+
+  public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
+    let width = this.wcwidth(codepoint);
+    let shouldJoin = width === 0 && preceding !== 0;
+    if (shouldJoin) {
+      const oldWidth = UnicodeService.extractWidth(preceding);
+      if (oldWidth === 0) {
+        shouldJoin = false;
+      } else if (oldWidth > width) {
+        width = oldWidth;
+      }
+    }
+    return UnicodeService.createPropertyValue(0, width, shouldJoin);
   }
 }

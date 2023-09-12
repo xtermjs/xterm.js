@@ -12,6 +12,9 @@ class DummyProvider implements IUnicodeVersionProvider {
   public wcwidth(n: number): 0 | 1 | 2 {
     return 2;
   }
+  public charProperties(codepoint: number): number {
+    return UnicodeService.createPropertyValue(0, this.wcwidth(codepoint));
+  }
 }
 
 describe('unicode provider', () => {
