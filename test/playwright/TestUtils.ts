@@ -351,7 +351,7 @@ class TerminalCoreProxy {
   }
 }
 
-export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}, testOptions: any = { loadUnicodeGraphemesAddon: true}): Promise<void> {
+export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}, testOptions: { loadUnicodeGraphemesAddon: boolean } = { loadUnicodeGraphemesAddon: true }): Promise<void> {
   await ctx.page.evaluate(`
   if ('term' in window) {
     try {
@@ -366,7 +366,8 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
     window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
     window.term.open(document.querySelector('#terminal-container'));
   `);
-  // See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
+  // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
+  // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
   if (testOptions.loadUnicodeGraphemesAddon) {
     await ctx.page.evaluate(`
       window.unicode = new UnicodeGraphemesAddon();
