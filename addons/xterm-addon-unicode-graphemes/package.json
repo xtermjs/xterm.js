@@ -7,7 +7,7 @@
   },
   "main": "lib/xterm-addon-unicode-graphemes.js",
   "types": "typings/xterm-addon-unicode-graphemes.d.ts",
-  "repository": "https://github.com/xtermjs/xterm.js",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-unicode-graphemes",
   "license": "MIT",
   "keywords": [
     "terminal",
