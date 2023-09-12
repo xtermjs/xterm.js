@@ -7,7 +7,7 @@
   },
   "main": "lib/xterm-addon-search.js",
   "types": "typings/xterm-addon-search.d.ts",
-  "repository": "https://github.com/xtermjs/xterm.js",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-search",
   "license": "MIT",
   "keywords": [
     "terminal",

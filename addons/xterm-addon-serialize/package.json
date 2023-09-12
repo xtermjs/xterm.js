@@ -7,7 +7,7 @@
   },
   "main": "lib/xterm-addon-serialize.js",
   "types": "typings/xterm-addon-serialize.d.ts",
-  "repository": "https://github.com/xtermjs/xterm.js",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-serialize",
   "license": "MIT",
   "keywords": [
     "terminal",
