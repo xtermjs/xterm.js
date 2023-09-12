@@ -18,7 +18,6 @@ import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { traceCall } from 'common/services/LogService';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -318,7 +317,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return false;
   }
 
-  @traceCall
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
       if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
