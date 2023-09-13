@@ -6,7 +6,7 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from 'xterm';
-import { ITestContext, MaybeAsync, pollFor, pollForApproximate } from './TestUtils';
+import { ITestContext, MaybeAsync, createTestContext, openTerminal, pollFor, pollForApproximate } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -1151,12 +1151,18 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       const theme: ITheme = {
         cursor: '#0000FF'
       };
-      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 0]);
-      await ctx.value.proxy.focus();
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
-      await ctx.value.proxy.blur();
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+      const octx = await createTestContext(ctx.value.browser);
+      await openTerminal(octx);
+      await octx.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      frameDetails = undefined;
+      await pollFor(octx.page, () => getCellColor(octx, 1, 1), [0, 0, 0, 255]);
+      await octx.proxy.focus();
+      frameDetails = undefined;
+      await pollFor(octx.page, () => getCellColor(octx, 1, 1), [0, 0, 255, 255]);
+      await octx.proxy.blur();
+      frameDetails = undefined;
+      await pollFor(octx.page, () => getCellColor(octx, 1, 1), [0, 0, 0, 255]);
+      octx.page.close();
     });
   });
 }
