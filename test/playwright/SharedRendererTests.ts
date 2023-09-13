@@ -1147,22 +1147,38 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.selectAll();
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
+  });
+}
+
+export function injectSharedRendererOnceTests(inctx: ISharedRendererTestContext): void {
+  let ctx: ITestContext;
+  test.beforeEach(async () => {
+    ctx = await createTestContext(inctx.value.browser);
+    await openTerminal(ctx);
+    ctx.page.evaluate(`
+      window.term.options.minimumContrastRatio = 1;
+      window.term.options.allowTransparency = false;
+      window.term.options.theme = undefined;
+    `);
+    // Clear the cached screenshot before each test
+    frameDetails = undefined;
+  });
+  test.afterEach(async () => {
+    ctx.page.close();
+  });
+  test.describe('regression tests', () => {
     test('#4790: cursor should not be displayed before focusing', async () => {
       const theme: ITheme = {
         cursor: '#0000FF'
       };
-      const octx = await createTestContext(ctx.value.browser);
-      await openTerminal(octx);
-      await octx.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await pollFor(ctx.page, () => getCellColor(ctx, 1, 1), [0, 0, 0, 255]);
+      await ctx.proxy.focus();
       frameDetails = undefined;
-      await pollFor(octx.page, () => getCellColor(octx, 1, 1), [0, 0, 0, 255]);
-      await octx.proxy.focus();
+      await pollFor(ctx.page, () => getCellColor(ctx, 1, 1), [0, 0, 255, 255]);
+      await ctx.proxy.blur();
       frameDetails = undefined;
-      await pollFor(octx.page, () => getCellColor(octx, 1, 1), [0, 0, 255, 255]);
-      await octx.proxy.blur();
-      frameDetails = undefined;
-      await pollFor(octx.page, () => getCellColor(octx, 1, 1), [0, 0, 0, 255]);
-      octx.page.close();
+      await pollFor(ctx.page, () => getCellColor(ctx, 1, 1), [0, 0, 0, 255]);
     });
   });
 }

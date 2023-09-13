@@ -5,7 +5,7 @@
 
 import { test } from '@playwright/test';
 import { ITestContext, createTestContext, openTerminal } from './TestUtils';
-import { ISharedRendererTestContext, injectSharedRendererTests } from './SharedRendererTests';
+import { ISharedRendererTestContext, injectSharedRendererOnceTests, injectSharedRendererTests } from './SharedRendererTests';
 
 let ctx: ITestContext;
 const ctxWrapper: ISharedRendererTestContext = { value: undefined } as any;
@@ -18,5 +18,5 @@ test.afterAll(async () => await ctx.page.close());
 
 test.describe('DOM Renderer Integration Tests', () => {
   injectSharedRendererTests(ctxWrapper);
+  injectSharedRendererOnceTests(ctxWrapper);
 });
-
