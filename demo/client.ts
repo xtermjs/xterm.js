@@ -460,9 +460,7 @@ function initOptions(term: TerminalType): void {
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
-  const numberOptions = [
-    'overviewRulerWidth'
-  ];
+  const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
     switch (typeof term.options[o]) {
       case 'boolean':
