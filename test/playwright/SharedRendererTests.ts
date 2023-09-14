@@ -6,7 +6,7 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from 'xterm';
-import { ITestContext, MaybeAsync, createTestContext, openTerminal, pollFor, pollForApproximate } from './TestUtils';
+import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -1150,12 +1150,11 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 }
 
-export function injectSharedRendererOnceTests(inctx: ISharedRendererTestContext): void {
-  let ctx: ITestContext;
+export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext): void {
   test.beforeEach(async () => {
-    ctx = await createTestContext(inctx.value.browser);
-    await openTerminal(ctx);
-    ctx.page.evaluate(`
+    // Recreate terminal
+    await openTerminal(ctx.value);
+    ctx.value.page.evaluate(`
       window.term.options.minimumContrastRatio = 1;
       window.term.options.allowTransparency = false;
       window.term.options.theme = undefined;
@@ -1163,22 +1162,19 @@ export function injectSharedRendererOnceTests(inctx: ISharedRendererTestContext)
     // Clear the cached screenshot before each test
     frameDetails = undefined;
   });
-  test.afterEach(async () => {
-    ctx.page.close();
-  });
   test.describe('regression tests', () => {
     test('#4790: cursor should not be displayed before focusing', async () => {
       const theme: ITheme = {
         cursor: '#0000FF'
       };
-      await ctx.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      await pollFor(ctx.page, () => getCellColor(ctx, 1, 1), [0, 0, 0, 255]);
-      await ctx.proxy.focus();
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await ctx.value.proxy.focus();
       frameDetails = undefined;
-      await pollFor(ctx.page, () => getCellColor(ctx, 1, 1), [0, 0, 255, 255]);
-      await ctx.proxy.blur();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+      await ctx.value.proxy.blur();
       frameDetails = undefined;
-      await pollFor(ctx.page, () => getCellColor(ctx, 1, 1), [0, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
     });
   });
 }
