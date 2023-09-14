@@ -218,7 +218,7 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (!this._coreService.isCursorHidden && isCursorCell) {
+      if (!this._coreService.isCursorHidden && isCursorCell && this._coreService.isCursorInitialized) {
         classes.push(RowCss.CURSOR_CLASS);
         if (this._coreBrowserService.isFocused) {
           if (cursorBlink) {

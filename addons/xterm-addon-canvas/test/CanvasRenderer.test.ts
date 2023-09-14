@@ -4,7 +4,7 @@
  */
 
 import test from '@playwright/test';
-import { ISharedRendererTestContext, injectSharedRendererTests } from '../../../out-test/playwright/SharedRendererTests';
+import { ISharedRendererTestContext, injectSharedRendererTests, injectSharedRendererTestsStandalone } from '../../../out-test/playwright/SharedRendererTests';
 import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
 
 let ctx: ITestContext;
@@ -28,4 +28,5 @@ test.describe('Canvas Renderer Integration Tests', () => {
   test.skip(({ browserName }) => browserName === 'webkit');
 
   injectSharedRendererTests(ctxWrapper);
+  injectSharedRendererTestsStandalone(ctxWrapper);
 });

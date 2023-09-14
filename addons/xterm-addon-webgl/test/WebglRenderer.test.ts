@@ -4,7 +4,7 @@
  */
 
 import test from '@playwright/test';
-import { ISharedRendererTestContext, injectSharedRendererTests } from '../../../out-test/playwright/SharedRendererTests';
+import { ISharedRendererTestContext, injectSharedRendererTests, injectSharedRendererTestsStandalone } from '../../../out-test/playwright/SharedRendererTests';
 import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
 import { platform } from 'os';
 
@@ -29,4 +29,5 @@ test.describe('WebGL Renderer Integration Tests', async () => {
   }
 
   injectSharedRendererTests(ctxWrapper);
+  injectSharedRendererTestsStandalone(ctxWrapper);
 });

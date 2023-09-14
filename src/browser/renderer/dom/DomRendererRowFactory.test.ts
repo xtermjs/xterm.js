@@ -96,6 +96,24 @@ describe('DomRendererRowFactory', () => {
       }
     });
 
+    it('should not display cursor for before initializing', () => {
+      const coreService = new MockCoreService();
+      coreService.isCursorInitialized = false;
+      const rowFactory = new DomRendererRowFactory(
+        dom.window.document,
+        new MockCharacterJoinerService(),
+        new MockOptionsService(),
+        new MockCoreBrowserService(),
+        coreService,
+        new MockDecorationService(),
+        new MockThemeService()
+      );
+      const spans = rowFactory.createRow(lineData, 0, true, 'block', undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      assert.equal(extractHtml(spans),
+        `<span> </span>`
+      );
+    });
+
     describe('attributes', () => {
       it('should add class for bold', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);

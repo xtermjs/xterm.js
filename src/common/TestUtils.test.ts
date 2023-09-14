@@ -78,7 +78,7 @@ export class MockCharsetService implements ICharsetService {
 
 export class MockCoreService implements ICoreService {
   public serviceBrand: any;
-  public isCursorInitialized: boolean = false;
+  public isCursorInitialized: boolean = true;
   public isCursorHidden: boolean = false;
   public isFocused: boolean = false;
   public modes: IModes = {

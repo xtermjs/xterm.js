@@ -6,7 +6,7 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from 'xterm';
-import { ITestContext, MaybeAsync, pollFor, pollForApproximate } from './TestUtils';
+import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -1146,6 +1146,40 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.focus();
       await ctx.value.proxy.selectAll();
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+    });
+  });
+}
+
+/**
+ * Injects shared renderer tests where it's required to re-initialize the terminal for each test.
+ * This is much slower than just calling `Terminal.reset` but testing some features needs this
+ * treatment.
+ */
+export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext): void {
+  test.beforeEach(async () => {
+    // Recreate terminal
+    await openTerminal(ctx.value);
+    ctx.value.page.evaluate(`
+      window.term.options.minimumContrastRatio = 1;
+      window.term.options.allowTransparency = false;
+      window.term.options.theme = undefined;
+    `);
+    // Clear the cached screenshot before each test
+    frameDetails = undefined;
+  });
+  test.describe('regression tests', () => {
+    test('#4790: cursor should not be displayed before focusing', async () => {
+      const theme: ITheme = {
+        cursor: '#0000FF'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await ctx.value.proxy.focus();
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+      await ctx.value.proxy.blur();
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
     });
   });
 }
