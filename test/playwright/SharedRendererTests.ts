@@ -1150,6 +1150,11 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 }
 
+/**
+ * Injects shared renderer tests where it's required to re-initialize the terminal for each test.
+ * This is much slower than just calling `Terminal.reset` but testing some features needs this
+ * treatment.
+ */
 export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext): void {
   test.beforeEach(async () => {
     // Recreate terminal
