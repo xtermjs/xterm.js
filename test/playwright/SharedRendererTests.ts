@@ -1147,6 +1147,30 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.selectAll();
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
+    test('#4736: checking inactive selection background is drawn _below_ cell background color', async () => {
+      const theme: ITheme = {
+        selectionBackground: '#FF0000',
+        selectionInactiveBackground: '#0000FF'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.writeln(' ');
+      await ctx.value.proxy.writeln(' O ');
+      await ctx.value.proxy.writeln(' ');
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.selectAll();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 3), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 3), [255, 0, 0, 255]);
+      await ctx.value.proxy.blur();
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 3), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 3), [0, 0, 255, 255]);
+    });
   });
 }
 
