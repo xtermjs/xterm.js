@@ -14,8 +14,8 @@ import { MockCoreService, MockDecorationService, MockOptionsService } from 'comm
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
 import { TestWidthCache } from 'browser/renderer/dom/WidthCache.test';
 
-
-const EMPTY_WIDTH = new TestWidthCache(new jsdom.JSDOM('').window.document);
+const dom = new jsdom.JSDOM('');
+const EMPTY_WIDTH = new TestWidthCache(dom.window.document, dom.window.document.createElement('div'));
 
 
 describe('DomRendererRowFactory', () => {
