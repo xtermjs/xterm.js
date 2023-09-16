@@ -6,7 +6,7 @@
 import { Terminal, ITerminalAddon } from 'xterm';
 
 declare module 'xterm-addon-unicode-graphemes' {
-  export class Unicode11Addon implements ITerminalAddon {
+  export class UnicodeGraphemesAddon implements ITerminalAddon {
     constructor();
     public activate(terminal: Terminal): void;
     public dispose(): void;

@@ -16,9 +16,9 @@ npm install --save xterm-addon-unicode-graphemes
 
 ```ts
 import { Terminal } from 'xterm';
-import { UnicodeGraphemeAddon } from 'xterm-addon-unicode-graphemes';
+import { UnicodeGraphemesAddon } from 'xterm-addon-unicode-graphemes';
 
 const terminal = new Terminal();
-const unicodeGraphemeAddon = new UnicodeGraphemeAddon();
-terminal.loadAddon(unicodeGraphemeAddon);
+const unicodeGraphemesAddon = new UnicodeGraphemesAddon();
+terminal.loadAddon(unicodeGraphemesAddon);
 ```
