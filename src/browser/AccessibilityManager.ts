@@ -5,7 +5,6 @@
 
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
-import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
@@ -133,26 +132,12 @@ export class AccessibilityManager extends Disposable {
           this._liveRegion.textContent += Strings.tooMuchOutput;
         }
       }
-
-      // Only detach/attach on mac as otherwise messages can go unaccounced
-      if (isMac) {
-        if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
-          setTimeout(() => {
-            this._accessibilityContainer.appendChild(this._liveRegion);
-          }, 0);
-        }
-      }
     }
   }
 
   private _clearLiveRegion(): void {
     this._liveRegion.textContent = '';
     this._liveRegionLineCount = 0;
-
-    // Only detach/attach on mac as otherwise messages can go unaccounced
-    if (isMac) {
-      this._liveRegion.remove();
-    }
   }
 
   private _handleKey(keyChar: string): void {

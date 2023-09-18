@@ -1,7 +1,7 @@
 {
   "env": {
     "browser": true,
-    "es6": true,
+    "es2021": true,
     "node": true
   },
   "parser": "@typescript-eslint/parser",
@@ -17,6 +17,7 @@
       "addons/xterm-addon-attach/src/tsconfig.json",
       "addons/xterm-addon-attach/test/tsconfig.json",
       "addons/xterm-addon-canvas/src/tsconfig.json",
+      "addons/xterm-addon-canvas/test/tsconfig.json",
       "addons/xterm-addon-fit/src/tsconfig.json",
       "addons/xterm-addon-fit/test/tsconfig.json",
       "addons/xterm-addon-image/src/tsconfig.json",
@@ -29,6 +30,9 @@
       "addons/xterm-addon-serialize/benchmark/tsconfig.json",
       "addons/xterm-addon-unicode11/src/tsconfig.json",
       "addons/xterm-addon-unicode11/test/tsconfig.json",
+      "addons/xterm-addon-unicode-graphemes/src/tsconfig.json",
+      "addons/xterm-addon-unicode-graphemes/test/tsconfig.json",
+      "addons/xterm-addon-unicode-graphemes/benchmark/tsconfig.json",
       "addons/xterm-addon-web-links/src/tsconfig.json",
       "addons/xterm-addon-web-links/test/tsconfig.json",
       "addons/xterm-addon-webgl/src/tsconfig.json",
@@ -37,6 +41,7 @@
     "sourceType": "module"
   },
   "ignorePatterns": [
+    "addons/*/src/third-party/*.ts",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",

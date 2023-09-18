@@ -42,6 +42,8 @@ jobs:
           ./addons/xterm-addon-serialize/out-test/* \
           ./addons/xterm-addon-unicode11/out/* \
           ./addons/xterm-addon-unicode11/out-test/* \
+          ./addons/xterm-addon-unicode-graphemes/out/* \
+          ./addons/xterm-addon-unicode-graphemes/out-test/* \
           ./addons/xterm-addon-web-links/out/* \
           ./addons/xterm-addon-web-links/out-test/* \
           ./addons/xterm-addon-webgl/out/* \
@@ -68,6 +70,8 @@ jobs:
         yarn --frozen-lockfile
         yarn install-addons
     - name: Lint code
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096
       run: yarn lint
     - name: Lint API
       run: yarn lint-api
@@ -259,8 +263,12 @@ jobs:
         ls -R
     - name: Build demo
       run: yarn build-demo
-    - name: Integration tests
-      run: yarn test-playwright-${{ matrix.browser }} --forbid-only
+    - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
+      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
+    - name: Integration tests (xterm-addon-canvas)
+      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=xterm-addon-canvas
+    - name: Integration tests (xterm-addon-webgl)
+      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=xterm-addon-webgl
 
   test-api:
     needs: build

@@ -14,8 +14,8 @@ import { MockCoreService, MockDecorationService, MockOptionsService } from 'comm
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
 import { TestWidthCache } from 'browser/renderer/dom/WidthCache.test';
 
-
-const EMPTY_WIDTH = new TestWidthCache(new jsdom.JSDOM('').window.document);
+const dom = new jsdom.JSDOM('');
+const EMPTY_WIDTH = new TestWidthCache(dom.window.document, dom.window.document.createElement('div'));
 
 
 describe('DomRendererRowFactory', () => {
@@ -94,6 +94,24 @@ describe('DomRendererRowFactory', () => {
             `<span class="xterm-cursor xterm-cursor-${inactiveStyle}"> </span>`);
         }
       }
+    });
+
+    it('should not display cursor for before initializing', () => {
+      const coreService = new MockCoreService();
+      coreService.isCursorInitialized = false;
+      const rowFactory = new DomRendererRowFactory(
+        dom.window.document,
+        new MockCharacterJoinerService(),
+        new MockOptionsService(),
+        new MockCoreBrowserService(),
+        coreService,
+        new MockDecorationService(),
+        new MockThemeService()
+      );
+      const spans = rowFactory.createRow(lineData, 0, true, 'block', undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
+      assert.equal(extractHtml(spans),
+        `<span> </span>`
+      );
     });
 
     describe('attributes', () => {

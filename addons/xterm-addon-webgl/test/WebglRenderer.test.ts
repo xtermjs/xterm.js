@@ -4,19 +4,18 @@
  */
 
 import test from '@playwright/test';
-import { strictEqual } from 'assert';
-import { injectSharedRendererTests } from '../../../out-test/playwright/SharedRendererTests';
+import { ISharedRendererTestContext, injectSharedRendererTests, injectSharedRendererTestsStandalone } from '../../../out-test/playwright/SharedRendererTests';
 import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
 import { platform } from 'os';
 
 let ctx: ITestContext;
-const ctxWrapper: { value: ITestContext } = { value: undefined } as any;
+const ctxWrapper: ISharedRendererTestContext = { value: undefined } as any;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
   await openTerminal(ctx);
   ctxWrapper.value = ctx;
   await ctx.page.evaluate(`
-    window.addon = new WebglAddon(true);
+    window.addon = new window.WebglAddon(true);
     window.term.loadAddon(window.addon);
   `);
 });
@@ -29,16 +28,6 @@ test.describe('WebGL Renderer Integration Tests', async () => {
     test.skip(({ browserName }) => browserName === 'firefox');
   }
 
-  test('dispose removes renderer canvases', async function(): Promise<void> {
-    strictEqual(await ctx.page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 2);
-    await ctx.page.evaluate(`addon.dispose()`);
-    strictEqual(await ctx.page.evaluate(`document.querySelectorAll('.xterm canvas').length`), 0);
-    // Re-create webgl addon to avoid side effects impacting other tests
-    await ctx.page.evaluate(`
-      window.addon = new WebglAddon(true);
-      window.term.loadAddon(window.addon);
-    `);
-  });
-
   injectSharedRendererTests(ctxWrapper);
+  injectSharedRendererTestsStandalone(ctxWrapper);
 });

@@ -7,7 +7,7 @@
   },
   "main": "lib/xterm-addon-webgl.js",
   "types": "typings/xterm-addon-webgl.d.ts",
-  "repository": "https://github.com/xtermjs/xterm.js",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-webgl",
   "license": "MIT",
   "keywords": [
     "terminal",
@@ -20,7 +20,7 @@
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
-    "start": "node ../../demo/start"
+    "start-server-only": "node ../../demo/start-server-only"
   },
   "peerDependencies": {
     "xterm": "^5.0.0"

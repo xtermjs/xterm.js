@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "es6"],
+    "lib": [
+      "dom",
+      "es2021"
+    ],
     "outDir": "../out-benchmark",
     "types": ["../../../node_modules/@types/node"],
     "moduleResolution": "node",
     "strict": false,
-    "target": "es2015",
+    "target": "es2021",
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {

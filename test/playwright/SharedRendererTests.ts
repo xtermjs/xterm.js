@@ -6,14 +6,20 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from 'xterm';
-import { ITestContext, MaybeAsync, pollFor } from './TestUtils';
+import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
 
-export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
+export interface ISharedRendererTestContext {
+  value: ITestContext;
+  skipCanvasExceptions?: boolean;
+}
+
+export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void {
   test.beforeEach(async () => {
     await ctx.value.proxy.reset();
     ctx.value.page.evaluate(`
       window.term.options.minimumContrastRatio = 1;
       window.term.options.allowTransparency = false;
+      window.term.options.theme = undefined;
     `);
     // Clear the cached screenshot before each test
     frameDetails = undefined;
@@ -32,7 +38,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
         white: '#161718'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      await ctx.value.proxy.write(`\x1b[30m█\x1b[31m█\x1b[32m█\x1b[33m█\x1b[34m█\x1b[35m█\x1b[36m█\x1b[37m█`);
+      await ctx.value.proxy.write(`\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■`);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -59,7 +65,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
       window.term.options.theme = ${JSON.stringify(theme)};
       window.term.options.drawBoldTextInBrightColors = true;
     `);
-    await ctx.value.proxy.write(`\x1b[1;30m█\x1b[1;31m█\x1b[1;32m█\x1b[1;33m█\x1b[1;34m█\x1b[1;35m█\x1b[1;36m█\x1b[1;37m█`);
+    await ctx.value.proxy.write(`\x1b[1;30m■\x1b[1;31m■\x1b[1;32m■\x1b[1;33m■\x1b[1;34m■\x1b[1;35m■\x1b[1;36m■\x1b[1;37m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -128,7 +134,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
       white: '#161718'
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-    await ctx.value.proxy.write(`\x1b[7;40m█\x1b[7;41m█\x1b[7;42m█\x1b[7;43m█\x1b[7;44m█\x1b[7;45m█\x1b[7;46m█\x1b[7;47m█`);
+    await ctx.value.proxy.write(`\x1b[7;40m■\x1b[7;41m■\x1b[7;42m■\x1b[7;43m■\x1b[7;44m■\x1b[7;45m■\x1b[7;46m■\x1b[7;47m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -139,7 +145,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [22, 23, 24, 255]);
   });
 
-  test('foreground 0-15 inivisible', async () => {
+  test('foreground 0-15 invisible', async () => {
     const theme: ITheme = {
       black: '#010203',
       red: '#040506',
@@ -162,7 +168,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [0, 0, 0, 255]);
   });
 
-  test('background 0-15 inivisible', async () => {
+  test('background 0-15 invisible', async () => {
     const theme: ITheme = {
       black: '#010203',
       red: '#040506',
@@ -174,7 +180,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
       white: '#161718'
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-    await ctx.value.proxy.write(`\x1b[8;40m█\x1b[8;41m█\x1b[8;42m█\x1b[8;43m█\x1b[8;44m█\x1b[8;45m█\x1b[8;46m█\x1b[8;47m█`);
+    await ctx.value.proxy.write(`\x1b[8;40m■\x1b[8;41m■\x1b[8;42m■\x1b[8;43m■\x1b[8;44m■\x1b[8;45m■\x1b[8;46m■\x1b[8;47m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -197,7 +203,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
       brightWhite: '#161718'
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-    await ctx.value.proxy.write(`\x1b[90m█\x1b[91m█\x1b[92m█\x1b[93m█\x1b[94m█\x1b[95m█\x1b[96m█\x1b[97m█`);
+    await ctx.value.proxy.write(`\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
@@ -235,7 +241,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[38;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[38;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -295,7 +301,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[7;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[7;48;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -331,7 +337,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[8;48;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[8;48;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -351,7 +357,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
-        data += `\x1b[2;38;5;${16 + y * 16 + x}m█\x1b[0m`;
+        data += `\x1b[2;38;5;${16 + y * 16 + x}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -401,7 +407,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;${i};0;0m█\x1b[0m`;
+        data += `\x1b[38;2;${i};0;0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -437,7 +443,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;0;${i};0m█\x1b[0m`;
+        data += `\x1b[38;2;0;${i};0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -473,7 +479,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;0;0;${i}m█\x1b[0m`;
+        data += `\x1b[38;2;0;0;${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -509,7 +515,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[38;2;${i};${i};${i}m█\x1b[0m`;
+        data += `\x1b[38;2;${i};${i};${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -563,7 +569,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;${i};0;0m█\x1b[0m`;
+        data += `\x1b[7;48;2;${i};0;0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -599,7 +605,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;0;${i};0m█\x1b[0m`;
+        data += `\x1b[7;48;2;0;${i};0m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -635,7 +641,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;0;0;${i}m█\x1b[0m`;
+        data += `\x1b[7;48;2;0;0;${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -671,7 +677,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[7;48;2;${i};${i};${i}m█\x1b[0m`;
+        data += `\x1b[7;48;2;${i};${i};${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -706,7 +712,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        data += `\x1b[8;48;2;${i};${i};${i}m█\x1b[0m`;
+        data += `\x1b[8;48;2;${i};${i};${i}m■\x1b[0m`;
       }
       data += '\r\n';
     }
@@ -743,7 +749,6 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.value.proxy.write(
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
@@ -813,7 +818,6 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.value.proxy.write(
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
@@ -859,11 +863,6 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     });
 
     test('should enforce half the contrast for dim cells', async () => {
-      // TODO: This test fails on webkit
-      if (ctx.value.browser.browserType().name() === 'webkit') {
-        test.skip();
-        return;
-      }
       const theme: ITheme = {
         background: '#ffffff',
         black: '#2e3436',
@@ -887,54 +886,54 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      // Block elements ignore minimum contrast ratio so a different char is used here
       await ctx.value.proxy.write(
         '\x1b[2m' +
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
       );
       // Validate before minimumContrastRatio is applied
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 1), [Math.floor((255 + 0xc4) / 2), Math.floor((255 + 0xa0) / 2), Math.floor((255 + 0x00) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 1), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x65) / 2), Math.floor((255 + 0xa4) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 1), [Math.floor((255 + 0x75) / 2), Math.floor((255 + 0x50) / 2), Math.floor((255 + 0x7b) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 1), [Math.floor((255 + 0x06) / 2), Math.floor((255 + 0x98) / 2), Math.floor((255 + 0x9a) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [Math.floor((255 + 0xd3) / 2), Math.floor((255 + 0xd7) / 2), Math.floor((255 + 0xcf) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [Math.floor((255 + 0x55) / 2), Math.floor((255 + 0x57) / 2), Math.floor((255 + 0x53) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [Math.floor((255 + 0xef) / 2), Math.floor((255 + 0x29) / 2), Math.floor((255 + 0x29) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 2), [Math.floor((255 + 0x8a) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0x34) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 2), [Math.floor((255 + 0xfc) / 2), Math.floor((255 + 0xe9) / 2), Math.floor((255 + 0x4f) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 2), [Math.floor((255 + 0x72) / 2), Math.floor((255 + 0x9f) / 2), Math.floor((255 + 0xcf) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
+      const marginOfError = 1;
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 1), [Math.floor((255 + 0xc4) / 2), Math.floor((255 + 0xa0) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 1), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x65) / 2), Math.floor((255 + 0xa4) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 1), [Math.floor((255 + 0x75) / 2), Math.floor((255 + 0x50) / 2), Math.floor((255 + 0x7b) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 1), [Math.floor((255 + 0x06) / 2), Math.floor((255 + 0x98) / 2), Math.floor((255 + 0x9a) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 1), [Math.floor((255 + 0xd3) / 2), Math.floor((255 + 0xd7) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 2), [Math.floor((255 + 0x55) / 2), Math.floor((255 + 0x57) / 2), Math.floor((255 + 0x53) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 2), [Math.floor((255 + 0xef) / 2), Math.floor((255 + 0x29) / 2), Math.floor((255 + 0x29) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 2), [Math.floor((255 + 0x8a) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0x34) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 2), [Math.floor((255 + 0xfc) / 2), Math.floor((255 + 0xe9) / 2), Math.floor((255 + 0x4f) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 2), [Math.floor((255 + 0x72) / 2), Math.floor((255 + 0x9f) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
       // Setting and check for minimum contrast values, note that these are not
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
       await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       frameDetails = undefined;
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [150, 153, 154, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [229, 127, 127, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [63, 124, 4, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 1), [127, 104, 0, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 1), [153, 178, 209, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 1), [186, 167, 189, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 1), [4, 122, 124, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [110, 112, 108, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [170, 171, 169, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [215, 36, 36, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 2), [72, 117, 25, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 2), [117, 109, 36, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 2), [72, 103, 135, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 2), [125, 91, 121, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 2), [25, 117, 117, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 2), [111, 111, 110, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 1), [150, 153, 154, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 1), [229, 127, 127, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 1), [63, 124, 4, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 1), [127, 104, 0, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 1), [153, 178, 209, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 1), [186, 167, 189, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 1), [4, 122, 124, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 1), [110, 112, 108, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 2), [170, 171, 169, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 2), [215, 36, 36, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 2), [72, 117, 25, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 2), [117, 109, 36, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 2), [72, 103, 135, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 2), [125, 91, 121, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 2), [25, 117, 117, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 2), [111, 111, 110, 255]);
     });
   });
 
-  test.describe('selectionBackground', async () => {
+  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionBackground', async () => {
     test('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
@@ -942,7 +941,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
         selectionBackground: '#0000FF'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      await ctx.value.proxy.write( ` █\x1b[7m█\x1b[0m`);
+      await ctx.value.proxy.write( ` ■\x1b[7m■\x1b[0m`);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 255, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 255, 0, 255]);
@@ -955,6 +954,32 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
     });
   });
 
+  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionInactiveBackground', async () => {
+    test('should render the the inactive selection when not focused', async () => {
+      const theme: ITheme = {
+        selectionBackground: '#FF000080',
+        selectionInactiveBackground: '#0000FF80'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      // Check both the cursor line and another line
+      await ctx.value.proxy.writeln('_ ');
+      await ctx.value.proxy.write('_ ');
+      await ctx.value.page.evaluate(`window.term.selectAll()`);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [128, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [128, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [128, 0, 0, 255]);
+      await ctx.value.page.evaluate(`document.activeElement.blur()`);
+      frameDetails = undefined;
+      // Selection only cell needs to be first to ensure renderer has kicked in
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [0, 0, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [0, 0, 128, 255]);
+    });
+  });
+
   test.describe('allowTransparency', async () => {
     test.beforeEach(() => ctx.value.page.evaluate(`term.options.allowTransparency = true`));
 
@@ -963,20 +988,20 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
         background: '#ff000080'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      const data = `\x1b[7m█\x1b[0m`;
+      const data = `\x1b[7m■\x1b[0m`;
       await ctx.value.proxy.write( data);
       // Inverse background should be opaque
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
   });
 
-  test.describe('selectionForeground', () => {
+  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionForeground', () => {
     test('transparent background inverse', async () => {
       const theme: ITheme = {
         selectionForeground: '#ff0000'
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-      const data = `\x1b[7m█\x1b[0m`;
+      const data = `\x1b[7m■\x1b[0m`;
       await ctx.value.proxy.write( data);
       await ctx.value.page.evaluate(`window.term.selectAll()`);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
@@ -993,7 +1018,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
           backgroundColor: '#0000ff'
         });
       `);
-      const data = `█`;
+      const data = `■`;
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
@@ -1006,7 +1031,7 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
           backgroundColor: '#0000ff'
         });
       `);
-      const data = `\x1b[7m█\x1b[0m`;
+      const data = `\x1b[7m■\x1b[0m`;
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
@@ -1019,9 +1044,9 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
           foregroundColor: '#ff0000'
         });
       `);
-      const data = `\x1b[7m█ \x1b[0m`;
+      const data = `\x1b[7m■ \x1b[0m`;
       await ctx.value.proxy.write( data);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]); // inverse foreground of '█' should be decoration fg override
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]); // inverse foreground of '■' should be decoration fg override
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 255, 255, 255]); // inverse background of ' ' should be default foreground
     });
     test('backgroundColor', async () => {
@@ -1050,8 +1075,8 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
-    test('backgroundColor should ignore inverse (only bg on decoration)', async () => {
-      const data = `\x1b[7m█ \x1b[0m`;
+    (ctx.skipCanvasExceptions ? test.skip : test)('backgroundColor should ignore inverse (only bg on decoration)', async () => {
+      const data = `\x1b[7m■ \x1b[0m`;
       await ctx.value.proxy.write( data);
       await ctx.value.page.evaluate(`
         const marker = window.term.registerMarker(-window.term.buffer.active.cursorY);
@@ -1061,8 +1086,124 @@ export function injectSharedRendererTests(ctx: { value: ITestContext }): void {
           backgroundColor: '#0000ff'
         });
       `);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]); // inverse foreground of '█' should be default
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]); // inverse foreground of '■' should be default
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 255, 255]); // inverse background of ' ' should be decoration bg override
+    });
+  });
+
+  test.describe('regression tests', () => {
+    test('#4736: inactive selection background should replace regular cell background color', async () => {
+      const theme: ITheme = {
+        selectionBackground: '#FF0000',
+        selectionInactiveBackground: '#0000FF'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.writeln(' ');
+      await ctx.value.proxy.writeln(' O ');
+      await ctx.value.proxy.writeln(' ');
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.selectAll();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 3), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 3), [255, 0, 0, 255]);
+      await ctx.value.proxy.blur();
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 2), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 3), [0, 0, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 3), [0, 0, 255, 255]);
+    });
+    test('#4758: multiple invisible text characters without SGR change should not be rendered', async () => {
+      // Regression test: #4758 when multiple invisible characters are used
+      await ctx.value.proxy.writeln(`■\x1b[8m■■`);
+      // Full refresh as the before result is the same as after
+      await ctx.value.proxy.refresh(0, await ctx.value.proxy.rows - 1);
+      // Control to ensure rendering has occurred
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 255, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 0, 255]);
+    });
+    test('#4759: minimum contrast ratio should be respected on inverse text', async () => {
+      const theme: ITheme = {
+        foreground: '#aaaaaa',
+        background: '#333333'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.write(`\x1b[7m■■`);
+      // Validate before minimumContrastRatio is applied
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [51, 51, 51, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [51, 51, 51, 255]);
+      await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
+    });
+    (ctx.skipCanvasExceptions ? test.skip : test)('#4759: minimum contrast ratio should be respected on selected inverse text', async () => {
+      const theme: ITheme = {
+        foreground: '#777777',
+        background: '#555555',
+        selectionBackground: '#666666' // Slightly more contrast needed for selection
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.write(`\x1b[7m■■`);
+      await ctx.value.proxy.selectAll();
+      // Validate before minimumContrastRatio is applied
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [85, 85, 85, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [85, 85, 85, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [102, 102, 102, 255]);
+      await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
+      await ctx.value.proxy.selectAll();
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 255, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [255, 255, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [102, 102, 102, 255]);
+    });
+    test('#4773: block cursor should render when the cell is selected', async () => {
+      const theme: ITheme = {
+        cursor: '#0000FF',
+        selectionBackground: '#FF0000'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.selectAll();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+    });
+  });
+}
+
+/**
+ * Injects shared renderer tests where it's required to re-initialize the terminal for each test.
+ * This is much slower than just calling `Terminal.reset` but testing some features needs this
+ * treatment.
+ */
+export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext): void {
+  test.beforeEach(async () => {
+    // Recreate terminal
+    await openTerminal(ctx.value);
+    ctx.value.page.evaluate(`
+      window.term.options.minimumContrastRatio = 1;
+      window.term.options.allowTransparency = false;
+      window.term.options.theme = undefined;
+    `);
+    // Clear the cached screenshot before each test
+    frameDetails = undefined;
+  });
+  test.describe('regression tests', () => {
+    test('#4790: cursor should not be displayed before focusing', async () => {
+      const theme: ITheme = {
+        cursor: '#0000FF'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await ctx.value.proxy.focus();
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
+      await ctx.value.proxy.blur();
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
     });
   });
 }

@@ -18,6 +18,7 @@ import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAdd
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
 import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
+import { UnicodeGraphemesAddon } from '../addons/xterm-addon-unicode-graphemes/out/UnicodeGraphemesAddon';
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
 
 // Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
@@ -38,6 +39,7 @@ if ('WebAssembly' in window) {
 // import { WebLinksAddon } from 'xterm-addon-web-links';
 // import { WebglAddon } from 'xterm-addon-webgl';
 // import { Unicode11Addon } from 'xterm-addon-unicode11';
+// import { UnicodeGraphemesAddon } from 'xterm-addon-unicode-graphemes';
 // import { LigaturesAddon } from 'xterm-addon-ligatures';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
@@ -48,6 +50,7 @@ export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -55,6 +58,7 @@ export interface IWindowWithTerminal extends Window {
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebglAddon?: typeof WebglAddon; // eslint-disable-line @typescript-eslint/naming-convention
   Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
+  UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon; // eslint-disable-line @typescript-eslint/naming-convention
   LigaturesAddon?: typeof LigaturesAddon; // eslint-disable-line @typescript-eslint/naming-convention
 }
 declare let window: IWindowWithTerminal;
@@ -66,7 +70,7 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -80,8 +84,9 @@ interface IDemoAddon<T extends AddonType> {
               T extends 'serialize' ? typeof SerializeAddon :
                 T extends 'webLinks' ? typeof WebLinksAddon :
                   T extends 'unicode11' ? typeof Unicode11Addon :
-                    T extends 'ligatures' ? typeof LigaturesAddon :
-                      typeof WebglAddon
+                    T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                      T extends 'ligatures' ? typeof LigaturesAddon :
+                        typeof WebglAddon
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -93,8 +98,9 @@ interface IDemoAddon<T extends AddonType> {
                 T extends 'webLinks' ? WebLinksAddon :
                   T extends 'webgl' ? WebglAddon :
                     T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'ligatures' ? typeof LigaturesAddon :
-                        never
+                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                        T extends 'ligatures' ? typeof LigaturesAddon :
+                          never
   );
 }
 
@@ -108,6 +114,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
+  unicodeGraphemes: { name: 'unicodeGraphemes', ctor: UnicodeGraphemesAddon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
 };
 
@@ -124,6 +131,7 @@ const xtermjsTheme = {
   foreground: '#F8F8F8',
   background: '#2D2E2C',
   selectionBackground: '#5DA5D533',
+  selectionInactiveBackground: '#555555AA',
   black: '#1E1E1D',
   brightBlack: '#262625',
   red: '#CE5C5C',
@@ -176,6 +184,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
+    addons.unicodeGraphemes.instance = undefined;
     addons.ligatures.instance = undefined;
     addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
@@ -218,11 +227,13 @@ const createNewWindowButtonHandler: () => void = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
+  window.CanvasAddon = CanvasAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
+  window.UnicodeGraphemesAddon = UnicodeGraphemesAddon;
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
@@ -241,6 +252,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
   document.getElementById('osc-hyperlinks').addEventListener('click', addAnsiHyperlink);
   document.getElementById('sgr-test').addEventListener('click', sgrTest);
+  document.getElementById('add-grapheme-clusters').addEventListener('click', addGraphemeClusters);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
@@ -274,7 +286,7 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
-  addons.unicode11.instance = new Unicode11Addon();
+  addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
     addons.webgl.instance = new WebglAddon();
   } catch (e) {
@@ -285,7 +297,7 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
-  typedTerm.loadAddon(addons.unicode11.instance);
+  typedTerm.loadAddon(addons.unicodeGraphemes.instance);
   typedTerm.loadAddon(addons.webLinks.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
@@ -448,9 +460,7 @@ function initOptions(term: TerminalType): void {
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
-  const numberOptions = [
-    'overviewRulerWidth'
-  ];
+  const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
     switch (typeof term.options[o]) {
       case 'boolean':
@@ -610,6 +620,9 @@ function initAddons(term: TerminalType): void {
     if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
     }
+    if (name === 'unicodeGraphemes' && checkbox.checked) {
+      term.unicode.activeVersion = '15-graphemes';
+    }
     if (name === 'search' && checkbox.checked) {
       addon.instance.onDidChangeResults(e => updateFindResults(e));
     }
@@ -645,6 +658,8 @@ function initAddons(term: TerminalType): void {
             }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
+          } else if (name === 'unicodeGraphemes') {
+            term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
             addon.instance.onDidChangeResults(e => updateFindResults(e));
           }
@@ -659,7 +674,7 @@ function initAddons(term: TerminalType): void {
           addons.webgl.instance.textureAtlas.remove();
         } else if (name === 'canvas') {
           addons.canvas.instance.textureAtlas.remove();
-        } else if (name === 'unicode11') {
+        } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
@@ -1108,6 +1123,24 @@ const randomSgrAttributes = [
 ];
 function getRandomSgr(): string {
   return randomSgrAttributes[Math.floor(Math.random() * randomSgrAttributes.length)];
+}
+
+function addGraphemeClusters(): void {
+  term.write('\n\n\r');
+  term.writeln('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣 [Simple emoji v6: 10 cells, v15: 20 cells]');
+  term.writeln('\u{1F476}\u{1F3FF}\u{1F476} [baby with emoji modifier fitzpatrick type-6; baby]');
+  term.writeln('\u{1F469}\u200d\u{1f469}\u200d\u{1f466} [woman+zwj+woman+zwj+boy]');
+  term.writeln('\u{1F64B}\u{1F64B}\u{200D}\u{2642}\u{FE0F} [person/man raising hand]');
+  term.writeln('\u{1F3CB}\u{FE0F}=\u{1F3CB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F} [person lifting weights emoji; woman lighting weights, medium dark]');
+  term.writeln('\u{1F469}\u{1F469}\u{200D}\u{1F393}\u{1F468}\u{1F3FF}\u{200D}\u{1F393} [woman; woman student; man student dark]');
+  term.writeln('\u{1f1f3}\u{1f1f4}_ [REGIONAL INDICATOR SYMBOL LETTER N and RI O]');
+  term.writeln('\u{1f1f3}_\u{1f1f4} {RI N; underscore; RI O]');
+  term.writeln('\u0061\u0301 [letter a with acute accent]');
+  term.writeln('\u1100\u1161\u11A8=\u1100\u1161= [Korean Jamo]');
+  term.writeln('\uAC00=\uD685= [Hangul syllables (pre-composed)]');
+  term.writeln('(\u26b0\ufe0e) [coffin with text_presentation]');
+  term.writeln('(\u26b0\ufe0f) [coffin with Emoji_presentation]');
+  term.writeln('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f> [Égalité (using separate acute) emoij_presentation]');
 }
 
 function addDecoration(): void {

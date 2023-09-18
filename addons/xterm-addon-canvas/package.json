@@ -7,7 +7,7 @@
   },
   "main": "lib/xterm-addon-canvas.js",
   "types": "typings/xterm-addon-canvas.d.ts",
-  "repository": "https://github.com/xtermjs/xterm.js",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-canvas",
   "license": "MIT",
   "keywords": [
     "terminal",
@@ -19,7 +19,8 @@
     "build": "../../node_modules/.bin/tsc -p .",
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
-    "prepublishOnly": "npm run package"
+    "prepublishOnly": "npm run package",
+    "start-server-only": "node ../../demo/start-server-only"
   },
   "peerDependencies": {
     "xterm": "^5.0.0"

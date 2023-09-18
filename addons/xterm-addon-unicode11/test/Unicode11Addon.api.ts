@@ -36,7 +36,7 @@ describe('Unicode11Addon', () => {
       window.term.loadAddon(window.unicode11);
     `);
     // should have loaded '11'
-    assert.deepEqual(await page.evaluate(`window.term.unicode.versions`), ['6', '11']);
+    assert.deepEqual((await page.evaluate(`window.term.unicode.versions`) as string[]).includes('11'), true);
     // switch should not throw
     await page.evaluate(`window.term.unicode.activeVersion = '11';`);
     assert.deepEqual(await page.evaluate(`window.term.unicode.activeVersion`), '11');

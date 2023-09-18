@@ -43,7 +43,14 @@
     {
       "type": "chrome",
       "request": "launch",
-      "name": "Demo Client",
+      "name": "Demo Client (Chrome)",
+      "url": "http://127.0.0.1:3000",
+      "webRoot": "${workspaceFolder}/"
+    },
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "Demo Client (Edge)",
       "url": "http://127.0.0.1:3000",
       "webRoot": "${workspaceFolder}/"
     },
@@ -52,11 +59,9 @@
       "request": "launch",
       "name": "Demo Server",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "start-debug"
-      ],
-      "port": 9229,
+      "runtimeArgs": ["start"],
+      "stopOnEntry": true,
+      "runtimeVersion": "16",
       "serverReadyAction": {
         "action": "openExternally",
         "pattern": "App listening to (http://.*?:[0-9]+)"

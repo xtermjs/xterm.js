@@ -3,8 +3,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es2015",
-      "es2016.Array.Include"
+      "es2021"
     ],
     "outDir": "../../out",
     "types": [

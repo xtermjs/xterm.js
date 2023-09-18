@@ -290,6 +290,10 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
       const ch = this._text.codePointAt(textStart);
       if (ch && (numUnits === 1) === (ch <= 0xffff)) // single-character cluster
         cell.content |= ch;
+      else
+        cell.content |= Content.IS_COMBINED_MASK;
+    } else if (numUnits !== 0) {
+      cell.content |= Content.IS_COMBINED_MASK;
     }
   }
 
@@ -597,10 +601,10 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     let oldWidth =
       (kind === DataKind.TEXT_w2 || kind === DataKind.CLUSTER_w2) ? 2 : 1;
     const newWidth = Math.max(oldWidth, width);
-    const at = itext + colOffset;
+    const wlen = BufferLine.wStrLen(word);
+    const at = itext + (colOffset === oldWidth ? wlen : colOffset);
     this._text = this._text.substring(0, at) + newText
           + this._text.substring(at);
-    const wlen = BufferLine.wStrLen(word);
     const newLength = newText.length;
     if (kind === DataKind.CLUSTER_w1 || kind === DataKind.CLUSTER_w2) {
       if (colOffset !== oldWidth) {
@@ -641,7 +645,6 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         // simply set the data in the cell buffer with a width of 1
         content = codePoint | (1 << Content.WIDTH_SHIFT);
       }
-      this._data[index * CELL_SIZE + Cell.CONTENT] = content;
     }
     */
   }

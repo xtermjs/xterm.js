@@ -79,6 +79,10 @@ export class CellData extends AttributeData implements ICellData {
    * of the last char in string to be in line with code in CharData.
    */
   public getCode(): number {
+    if (this.isCombined()) {
+      const chars = this.getChars();
+      return chars.charCodeAt(chars.length - 1);
+    }
     return this.content & Content.CODEPOINT_MASK;
   }
   /** Set data from CharData */
