@@ -1147,6 +1147,34 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.selectAll();
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
+    test('#4799: cursor should be in the correct position', async () => {
+      const theme: ITheme = {
+        cursor: '#0000FF'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      for (let index = 0; index < 160; index++) {
+        await ctx.value.proxy.writeln(``);
+      }
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.write('\x1b[A');
+      await ctx.value.proxy.write('\x1b[A');
+      await ctx.value.proxy.scrollLines(-2);
+      await ctx.value.proxy.blur();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1 , 24), [0, 0, 0, 255]);
+
+      if (frameDetails) {
+        const cellSize = {
+          width: frameDetails.decoded.width / frameDetails.cols,
+          height: frameDetails.decoded.height / frameDetails.rows
+        };
+        // First point of cell
+        const x = Math.floor((1 - 1/* 1- to 0-based index */) * cellSize.width);
+        const y = Math.floor((24 - 1/* 1- to 0-based index */) * cellSize.height);
+        const i = (y * frameDetails.decoded.width + x) * 4/* 4 channels per pixel */;
+        const firstPoint = Array.from(frameDetails.decoded.data.slice(i, i + 4)) as [number, number, number, number];
+        await pollFor(ctx.value.page, () => firstPoint, [0, 0, 255, 255]);
+      }
+    });
   });
 }
 
