@@ -1159,10 +1159,13 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.write('\x1b[A');
       await ctx.value.proxy.write('\x1b[A');
       await ctx.value.proxy.scrollLines(-2);
-      await ctx.value.proxy.blur();
       const rows = await ctx.value.proxy.rows;
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1 , rows), [0, 0, 0, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value ,1 , rows, CellColorPosition.FIRST), [0, 0, 255, 255]);
+      // block cursor style
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows), [0, 0, 0, 255]);
+      await ctx.value.proxy.blur();
+      // other cursor style
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows), [0, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows, CellColorPosition.FIRST), [0, 0, 255, 255]);
     });
   });
 }
