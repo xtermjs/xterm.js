@@ -127,23 +127,12 @@ export class DomRenderer extends Disposable implements IRenderer {
       element.style.width = `${this.dimensions.css.canvas.width}px`;
       element.style.height = `${this.dimensions.css.cell.height}px`;
       element.style.lineHeight = `${this.dimensions.css.cell.height}px`;
-      // Make sure rows don't overflow onto following row
-      element.style.overflow = 'hidden';
     }
 
     if (!this._dimensionsStyleElement) {
       this._dimensionsStyleElement = this._document.createElement('style');
       this._screenElement.appendChild(this._dimensionsStyleElement);
     }
-
-    const styles =
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
-      ` display: inline-block;` +   // TODO: find workaround for inline-block (creates ~20% render penalty)
-      ` height: 100%;` +
-      ` vertical-align: top;` +
-      `}`;
-
-    this._dimensionsStyleElement.textContent = styles;
 
     this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;

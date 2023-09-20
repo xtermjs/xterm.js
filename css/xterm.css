@@ -160,6 +160,20 @@
     overflow: hidden;
 }
 
+.xterm .xterm-rows div {
+    position: relative;
+}
+
+.xterm .xterm-rows span {
+    position: relative;
+}
+
+.xterm .xterm-rows span.xterm-bg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+
 .xterm-dim {
     /* Dim should not apply to background, so the opacity of the foreground color is applied
      * explicitly in the generated class and reset to 1 here */
