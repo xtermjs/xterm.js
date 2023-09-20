@@ -9,6 +9,7 @@
     { "path": "./test/playwright" },
     { "path": "./addons/xterm-addon-attach" },
     { "path": "./addons/xterm-addon-canvas" },
+    { "path": "./addons/xterm-addon-clipboard" },
     { "path": "./addons/xterm-addon-fit" },
     { "path": "./addons/xterm-addon-image" },
     { "path": "./addons/xterm-addon-ligatures" },

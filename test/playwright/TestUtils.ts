@@ -77,6 +77,8 @@ type TerminalProxyCustomOverrides = 'buffer' | (
   'attachCustomKeyEventHandler' |
   'registerLinkProvider' |
   'registerCharacterJoiner' |
+  'registerClipboardProvider' |
+  'deregisterClipboardProvider' |
   'deregisterCharacterJoiner' |
   'loadAddon'
 );

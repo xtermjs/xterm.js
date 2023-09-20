@@ -206,6 +206,7 @@ export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '50
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 
 export interface ITerminalOptions {
+  allowClipboardAccess?: boolean;
   allowProposedApi?: boolean;
   allowTransparency?: boolean;
   altClickMovesCursor?: boolean;

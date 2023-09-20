@@ -46,7 +46,7 @@ import { CoreTerminal } from 'common/CoreTerminal';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
-import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, ScrollSource, SpecialColorIndex } from 'common/Types';
+import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IClipboardEvent, IColorEvent, ITerminalOptions, KeyboardResultType, ScrollSource, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
@@ -54,7 +54,7 @@ import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
-import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from 'xterm';
+import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker, IClipboardProvider } from 'xterm';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 
@@ -119,6 +119,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this.register(new MutableDisposable());
+  private _clipboardProvider: IClipboardProvider | undefined;
 
   private readonly _onCursorMove = this.register(new EventEmitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
@@ -163,6 +164,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
+    this.register(this._inputHandler.onClipboard((event) => this._handleClipboardEvent(event)));
     this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
     this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
     this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
@@ -881,6 +883,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.linkifier2.registerLinkProvider(linkProvider);
   }
 
+  public registerClipboardProvider(provider: IClipboardProvider): void {
+    this._clipboardProvider = provider;
+  }
+
+  public deregisterClipboardProvider(): void {
+    this._clipboardProvider = undefined;
+  }
+
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
     if (!this._characterJoinerService) {
       throw new Error('Terminal must be opened first');
@@ -1279,6 +1289,18 @@ export class Terminal extends CoreTerminal implements ITerminal {
         this.coreService.triggerDataEvent(`${C0.ESC}[6;${cellHeight};${cellWidth}t`);
         break;
     }
+  }
+
+  private _handleClipboardEvent(ev: IClipboardEvent): void {
+    if (!this._clipboardProvider) {
+      return;
+    }
+    if (ev.data === '?') {
+      this._clipboardProvider.readText(ev.selection).then(data =>
+        this.coreService.triggerDataEvent(data));
+      return;
+    }
+    this._clipboardProvider.writeText(ev.selection, ev.data);
   }
 
   // TODO: Remove cancel function and cancelEvents option

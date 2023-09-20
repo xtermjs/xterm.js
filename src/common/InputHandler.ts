@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex, IClipboardEvent, ClipboardEventType } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -22,6 +22,7 @@ import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
+import { ClipboardSelection } from 'xterm';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -159,6 +160,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public readonly onTitleChange = this._onTitleChange.event;
   private readonly _onColor = this.register(new EventEmitter<IColorEvent>());
   public readonly onColor = this._onColor.event;
+  private readonly _onClipboard = this.register(new EventEmitter<IClipboardEvent>());
+  public readonly onClipboard = this._onClipboard.event;
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -320,6 +323,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  50 - Set Font to Pt.
     //  51 - reserved for Emacs shell.
     //  52 - Manipulate Selection Data.
+    this._parser.registerOscHandler(52, new OscHandler(data => this.setOrReportClipboard(data)));
     // 104 ; c - Reset Color Number c.
     this._parser.registerOscHandler(104, new OscHandler(data => this.restoreIndexedColor(data)));
     // 105 ; c - Reset Special Color Number c.
@@ -3079,6 +3083,60 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setOrReportCursorColor(data: string): boolean {
     return this._setOrReportSpecialColor(data, 2);
+  }
+
+  private _setOrReportClipboard(data: string): boolean {
+    if (!this._optionsService.options.allowClipboardAccess) {
+      return true;
+    }
+    const args = data.split(';');
+    if (args.length < 2) {
+      return true;
+    }
+    const pc = args[0];
+    const pd = args[1];
+    if (pd.length === 0) {
+      return true;
+    }
+    switch (pc) {
+      case ClipboardSelection.SYSTEM:
+      case ClipboardSelection.PRIMARY:
+        this._onClipboard.fire({
+          type: pd === '?' ? ClipboardEventType.REPORT : ClipboardEventType.SET,
+          selection: pc,
+          data: pd
+        });
+        break;
+    }
+    return true;
+  }
+
+  /**
+   * OSC 52 ; <selection name> ; <base64 data>|<?> ST - set or query selection and clipboard data
+   *
+   * Test case:
+   *
+   * ```sh
+   * printf "\e]52;c;%s\a" "$(echo -n "Hello, World" | base64)"
+   * ```
+   *
+   * @vt: #Y    OSC    52    "Manipulate Selection Data"   "OSC 52 ; Pc ; Pd BEL" "Set or query selection and clipboard data."
+   * Pc is the selection name. Can be one of:
+   * - `c` - clipboard
+   * - `p` - primary
+   * - `q` - secondary
+   * - `s` - select
+   * - `0-7` - cut-buffers 0-7
+   *
+   * Only the `c` selection (clipboard) is supported by xterm.js. The browser
+   * Clipboard API only supports the clipboard selection.
+   *
+   * Pd is the base64 encoded data.
+   * If Pd is `?`, the terminal returns the current clipboard contents.
+   * If Pd is neither base64 encoded nor `?`, then the clipboard is cleared.
+   */
+  public setOrReportClipboard(data: string): boolean {
+    return this._setOrReportClipboard(data);
   }
 
   /**

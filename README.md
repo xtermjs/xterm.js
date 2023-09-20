@@ -77,6 +77,7 @@ terminal.loadAddon(new WebLinksAddon());
 The xterm.js team maintains the following addons, but anyone can build them:
 
 - [`xterm-addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-attach): Attaches to a server running a process via a websocket
+- [`xterm-addon-clipboard`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-clipboard): Access the browser's clipboard
 - [`xterm-addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-fit): Fits the terminal to the containing element
 - [`xterm-addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-search): Adds search functionality
 - [`xterm-addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-web-links): Adds web link detection and interaction

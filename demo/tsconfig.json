@@ -7,6 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "xterm-addon-attach": ["../addons/xterm-addon-attach"],
+      "xterm-addon-clipboard": ["../addons/xterm-addon-clipboard"],
       "xterm-addon-fit": ["../addons/xterm-addon-fit"],
       "xterm-addon-image": ["../addons/xterm-addon-image"],
       "xterm-addon-search": ["../addons/xterm-addon-search"],

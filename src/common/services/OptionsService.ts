@@ -52,7 +52,8 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false,
-  overviewRulerWidth: 0
+  overviewRulerWidth: 0,
+  allowClipboardAccess: false
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
@@ -160,7 +161,7 @@ export class OptionsService extends Disposable implements IOptionsService {
         break;
       case 'cursorWidth':
         value = Math.floor(value);
-        // Fall through for bounds check
+      // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {

@@ -18,6 +18,8 @@
       "addons/xterm-addon-attach/test/tsconfig.json",
       "addons/xterm-addon-canvas/src/tsconfig.json",
       "addons/xterm-addon-canvas/test/tsconfig.json",
+      "addons/xterm-addon-clipboard/src/tsconfig.json",
+      "addons/xterm-addon-clipboard/test/tsconfig.json",
       "addons/xterm-addon-fit/src/tsconfig.json",
       "addons/xterm-addon-fit/test/tsconfig.json",
       "addons/xterm-addon-image/src/tsconfig.json",

@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
+import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex, IClipboardEvent, ClipboardEventType } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
@@ -17,7 +17,7 @@ import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
-
+import { ClipboardSelection } from 'xterm';
 
 function getCursor(bufferService: IBufferService): number[] {
   return [
@@ -1982,6 +1982,88 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0, color: [170, 187, 204] }, { type: ColorRequestType.SET, index: 123, color: [0, 17, 34] }]]);
       stack.length = 0;
     });
+    describe('52: manipulate selection data', async () => {
+      const testDataRaw = 'hello world';
+      const testDataB64 = 'aGVsbG8gd29ybGQ=';
+      optionsService.options.allowClipboardAccess = true;
+      const stack: IClipboardEvent[] = [];
+      inputHandler.onClipboard(ev => stack.push(ev));
+      await inputHandler.parseP(`\x1b]52;c;\x07`);
+      await inputHandler.parseP(`\x1b]52;c;${testDataRaw}\x07`);
+      await inputHandler.parseP(`\x1b]52;c;${testDataB64}\x07`);
+      await inputHandler.parseP(`\x1b]52;c;${testDataB64}invalid\x07`);
+      await inputHandler.parseP(`\x1b]52;c;!\x07`);
+      await inputHandler.parseP(`\x1b]52;c;?\x07`);
+      await inputHandler.parseP(`\x1b]52;p;\x07`);
+      await inputHandler.parseP(`\x1b]52;p;${testDataRaw}\x07`);
+      await inputHandler.parseP(`\x1b]52;p;${testDataB64}\x07`);
+      await inputHandler.parseP(`\x1b]52;p;${testDataB64}invalid\x07`);
+      await inputHandler.parseP(`\x1b]52;p;!\x07`);
+      await inputHandler.parseP(`\x1b]52;p;?\x07`);
+      assert.deepEqual(stack, [
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.SYSTEM,
+          data: ''
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.SYSTEM,
+          data: testDataRaw
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.SYSTEM,
+          data: testDataB64
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.SYSTEM,
+          data: testDataB64+'invalid'
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.SYSTEM,
+          data: '!'
+        },
+        {
+          type: ClipboardEventType.REPORT,
+          selection: ClipboardSelection.SYSTEM,
+          data: '?'
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.PRIMARY,
+          data: ''
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.PRIMARY,
+          data: testDataRaw
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.PRIMARY,
+          data: testDataB64
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.PRIMARY,
+          data: testDataB64+'invalid'
+        },
+        {
+          type: ClipboardEventType.SET,
+          selection: ClipboardSelection.PRIMARY,
+          data: '!'
+        },
+        {
+          type: ClipboardEventType.REPORT,
+          selection: ClipboardSelection.PRIMARY,
+          data: '?'
+        }
+      ]);
+      stack.length = 0;
+    });
     it('104: restore events', async () => {
       const stack: IColorEvent[] = [];
       inputHandler.onColor(ev => stack.push(ev));
@@ -1994,7 +2076,7 @@ describe('InputHandler', () => {
       stack.length = 0;
       // full ANSI table restore
       await inputHandler.parseP('\x1b]104\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE}]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE }]]);
     });
 
     it('10: FG set & query events', async () => {

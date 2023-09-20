@@ -74,9 +74,10 @@ export function getBrowserType(): playwright.BrowserType<playwright.WebKitBrowse
   return browserType;
 }
 
-export function launchBrowser(): Promise<playwright.Browser> {
+export function launchBrowser(opts?: playwright.LaunchOptions): Promise<playwright.Browser> {
   const browserType = getBrowserType();
-  const options: Record<string, unknown> = {
+  const options: playwright.LaunchOptions = {
+    ...opts,
     headless: process.argv.includes('--headless')
   };
 

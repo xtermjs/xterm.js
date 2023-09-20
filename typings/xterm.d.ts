@@ -25,6 +25,12 @@ declare module 'xterm' {
    */
   export interface ITerminalOptions {
     /**
+     * Whether to allow clipboard access. When false, any access to the
+     * clipboard is ignored. The default is false.
+     */
+    allowClipboardAccess?: boolean;
+
+    /**
      * Whether to allow the use of proposed API. When false, any usage of APIs
      * marked as experimental/proposed will throw an error. The default is
      * false.
@@ -1062,6 +1068,19 @@ declare module 'xterm' {
     registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 
     /**
+     * Registers a clipboard provider, allowing custom handling of clipboard
+     * selection events. This is used primarily to enable accessing the
+     * clipboard to read/write clipboard data.
+     * @param provider The provider to register.
+     */
+    registerClipboardProvider(provider: IClipboardProvider): void;
+
+    /**
+     * Deregisters the active clipboard provider.
+     */
+    deregisterClipboardProvider(): void;
+
+    /**
      * Gets whether the terminal has an active selection.
      */
     hasSelection(): boolean;
@@ -1841,5 +1860,30 @@ declare module 'xterm' {
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */
     readonly wraparoundMode: boolean;
+  }
+
+  export interface IClipboardProvider {
+    /**
+     * Gets the clipboard content.
+     * @param selection The clipboard selection to read.
+     * @returns A promise that resolves with the base64 encoded data.
+     */
+    readText(selection: ClipboardSelection): Promise<string>;
+
+    /**
+     * Sets the clipboard content.
+     * @param selection The clipboard selection to set.
+     * @param data The base64 encoded data to set. If the data is invalid base64, the clipboard is
+     * cleared.
+     */
+    writeText(selection: ClipboardSelection, data: string): Promise<void>;
+  }
+
+  /**
+   * Clipboard selection type.
+   */
+  export const enum ClipboardSelection {
+    SYSTEM = 'c',
+    PRIMARY = 'p',
   }
 }

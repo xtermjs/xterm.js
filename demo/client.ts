@@ -12,6 +12,7 @@
 import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
+import { ClipboardAddon } from '../addons/xterm-addon-clipboard/out/ClipboardAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
@@ -32,6 +33,7 @@ if ('WebAssembly' in window) {
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
 // import { AttachAddon } from 'xterm-addon-attach';
+// import { ClipboardAddon } from 'xterm-addon-clipboard';
 // import { FitAddon } from 'xterm-addon-fit';
 // import { ImageAddon } from 'xterm-addon-image';
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
@@ -51,6 +53,7 @@ export interface IWindowWithTerminal extends Window {
   Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -70,7 +73,7 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'canvas' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -78,35 +81,38 @@ interface IDemoAddon<T extends AddonType> {
   ctor: (
     T extends 'attach' ? typeof AttachAddon :
       T extends 'canvas' ? typeof CanvasAddon :
-        T extends 'fit' ? typeof FitAddon :
-          T extends 'image' ? typeof ImageAddonType :
-            T extends 'search' ? typeof SearchAddon :
-              T extends 'serialize' ? typeof SerializeAddon :
-                T extends 'webLinks' ? typeof WebLinksAddon :
-                  T extends 'unicode11' ? typeof Unicode11Addon :
-                    T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                      T extends 'ligatures' ? typeof LigaturesAddon :
+        T extends 'clipboard' ? typeof ClipboardAddon :
+          T extends 'fit' ? typeof FitAddon :
+            T extends 'image' ? typeof ImageAddonType :
+              T extends 'search' ? typeof SearchAddon :
+                T extends 'serialize' ? typeof SerializeAddon :
+                  T extends 'webLinks' ? typeof WebLinksAddon :
+                    T extends 'unicode11' ? typeof Unicode11Addon :
+                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                        T extends 'ligatures' ? typeof LigaturesAddon :
                         typeof WebglAddon
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
       T extends 'canvas' ? CanvasAddon :
-        T extends 'fit' ? FitAddon :
-          T extends 'image' ? ImageAddonType :
-            T extends 'search' ? SearchAddon :
-              T extends 'serialize' ? SerializeAddon :
-                T extends 'webLinks' ? WebLinksAddon :
-                  T extends 'webgl' ? WebglAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                        T extends 'ligatures' ? typeof LigaturesAddon :
-                          never
+        T extends 'clipboard' ? ClipboardAddon :
+          T extends 'fit' ? FitAddon :
+            T extends 'image' ? ImageAddonType :
+              T extends 'search' ? SearchAddon :
+                T extends 'serialize' ? SerializeAddon :
+                  T extends 'webLinks' ? WebLinksAddon :
+                    T extends 'webgl' ? WebglAddon :
+                      T extends 'unicode11' ? typeof Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                          T extends 'ligatures' ? typeof LigaturesAddon :
+                            never
   );
 }
 
 const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
+  clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
@@ -179,6 +185,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     socket = null;
     addons.attach.instance = undefined;
     addons.canvas.instance = undefined;
+    addons.clipboard.instance = undefined;
     addons.fit.instance = undefined;
     addons.image.instance = undefined;
     addons.search.instance = undefined;
@@ -228,6 +235,7 @@ if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
   window.CanvasAddon = CanvasAddon;
+  window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
@@ -287,6 +295,7 @@ function createTerminal(): void {
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
+  addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
     addons.webgl.instance = new WebglAddon();
   } catch (e) {
@@ -299,6 +308,7 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicodeGraphemes.instance);
   typedTerm.loadAddon(addons.webLinks.instance);
+  typedTerm.loadAddon(addons.clipboard.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
