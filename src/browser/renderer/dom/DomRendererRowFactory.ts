@@ -7,7 +7,7 @@ import { IBufferLine, ICellData, IColor } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IInternalDecoration, IOptionsService } from 'common/services/Services';
 import { color, rgba } from 'common/Color';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
@@ -93,6 +93,7 @@ export class DomRendererRowFactory {
     let oldLinkHover: number | boolean = false;
     let oldSpacing = 0;
     let oldIsInSelection: boolean = false;
+    let oldDecorations: IInternalDecoration[] = [];
     let spacing = 0;
     const classes: string[] = [];
 
@@ -138,10 +139,11 @@ export class DomRendererRowFactory {
       const isCursorCell = isCursorRow && x === cursorX;
       const isLinkHover = hasHover && x >= linkStart && x <= linkEnd;
 
-      let isDecorated = false;
+      let decorations: IInternalDecoration[] = [];
       this._decorationService.forEachDecorationAtCell(x, row, undefined, d => {
-        isDecorated = true;
+        decorations.push(d);
       });
+      const isSameDecorations = this._isSameDecorations(decorations, oldDecorations);
 
       // get chars to render for this cell
       let chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -172,26 +174,24 @@ export class DomRendererRowFactory {
         )
         && cell.extended.ext === oldExt
         && isLinkHover === oldLinkHover
+        && isSameDecorations
         && spacing === oldSpacing
         && !isCursorCell
         && !isJoined
-        && !isDecorated;
 
       /**
        * background can only be merged on existing span if:
        * - existing span only contains mergeable chars (cellAmount != 0)
        * - bg did not change (or both are in selection)
-       * - cell is not cursor
        * - cell is not decorated
        */
       const canMergeBackground = backgroundElement
         && backgroundCellAmount
+        && isSameDecorations
         && (
           (isInSelection && oldIsInSelection)
           || (!isInSelection && !oldIsInSelection && cell.bg === oldBg)
-        )
-        && !isCursorCell
-        && !isDecorated;
+        );
 
       // if the background related cell attributes have not changed
       // from the previous cell then we simply extend the existing span
@@ -216,6 +216,7 @@ export class DomRendererRowFactory {
         oldLinkHover = isLinkHover;
         oldSpacing = spacing;
         oldIsInSelection = isInSelection;
+        oldDecorations = decorations;
 
         let fg = cell.getFgColor();
         let fgColorMode = cell.getFgColorMode();
@@ -322,11 +323,7 @@ export class DomRendererRowFactory {
               }
           }
           // exclude conditions for cell merging - never merge these
-          if (!isCursorCell && !isDecorated) {
-            backgroundCellAmount += width;
-          } else {
-            backgroundElement.style.width = `${backgroundCellAmount * cellWidth}px`;
-          }
+          backgroundCellAmount += width;
           backgroundElements.push(backgroundElement);
         }
 
@@ -480,7 +477,7 @@ export class DomRendererRowFactory {
           }
 
           // exclude conditions for cell merging - never merge these
-          if (!isCursorCell && !isJoined && !isDecorated) {
+          if (!isCursorCell && !isJoined) {
             charCellAmount++;
           } else {
             charElement.textContent = charText;
@@ -573,6 +570,24 @@ export class DomRendererRowFactory {
         (start[1] < end[1] && y === end[1] && x < end[0]) ||
         (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
+
+  private _isSameDecorations(decos1: IInternalDecoration[], decos2: IInternalDecoration[]): boolean {
+    const decos1Length = decos1.length;
+    const decos2Length = decos2.length;
+    if (!decos1Length && !decos2Length) {
+      return true;
+    }
+    if (decos1Length !== decos2Length) {
+      return false;
+    }
+    for (let i = 0; i < decos1Length; i++) {
+      if (decos1[i] !== decos2[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
 }
 
 function padStart(text: string, padChar: string, length: number): string {
