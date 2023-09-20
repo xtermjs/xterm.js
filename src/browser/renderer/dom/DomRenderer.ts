@@ -39,7 +39,6 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _dimensionsStyleElement!: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
-  private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
 
   public dimensions: IRenderDimensions;
@@ -66,9 +65,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowContainer.style.lineHeight = 'normal';
     this._rowContainer.setAttribute('aria-hidden', 'true');
     this._refreshRowElements(this._bufferService.cols, this._bufferService.rows);
-    this._selectionContainer = this._document.createElement('div');
-    this._selectionContainer.classList.add(SELECTION_CLASS);
-    this._selectionContainer.setAttribute('aria-hidden', 'true');
 
     this.dimensions = createRenderDimensions();
     this._updateDimensions();
@@ -81,7 +77,6 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
-    this._screenElement.appendChild(this._selectionContainer);
 
     this.register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
     this.register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
@@ -92,7 +87,6 @@ export class DomRenderer extends Disposable implements IRenderer {
       // Outside influences such as React unmounts may manipulate the DOM before our disposal.
       // https://github.com/xtermjs/xterm.js/issues/2960
       this._rowContainer.remove();
-      this._selectionContainer.remove();
       this._widthCache.dispose();
       this._themeStyleElement.remove();
       this._dimensionsStyleElement.remove();
@@ -134,7 +128,6 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._screenElement.appendChild(this._dimensionsStyleElement);
     }
 
-    this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
     this._screenElement.style.height = `${this.dimensions.css.canvas.height}px`;
   }
@@ -299,66 +292,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
-    // Remove all selections
-    this._selectionContainer.replaceChildren();
     this._rowFactory.handleSelectionChanged(start, end, columnSelectMode);
     this.renderRows(0, this._bufferService.rows - 1);
-
-    // Selection does not exist
-    if (!start || !end) {
-      return;
-    }
-
-    // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._bufferService.buffer.ydisp;
-    const viewportEndRow = end[1] - this._bufferService.buffer.ydisp;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, this._bufferService.rows - 1);
-
-    // No need to draw the selection
-    if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
-      return;
-    }
-
-    // Create the selections
-    const documentFragment = this._document.createDocumentFragment();
-
-    if (columnSelectMode) {
-      const isXFlipped = start[0] > end[0];
-      documentFragment.appendChild(
-        this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
-      );
-    } else {
-      // Draw first row
-      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const endCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
-      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
-      // Draw middle rows
-      const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
-      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._bufferService.cols, middleRowsCount));
-      // Draw final row
-      if (viewportCappedStartRow !== viewportCappedEndRow) {
-        // Only draw viewportEndRow if it's not the same as viewporttartRow
-        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
-        documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
-      }
-    }
-    this._selectionContainer.appendChild(documentFragment);
-  }
-
-  /**
-   * Creates a selection element at the specified position.
-   * @param row The row of the selection.
-   * @param colStart The start column.
-   * @param colEnd The end columns.
-   */
-  private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
-    const element = this._document.createElement('div');
-    element.style.height = `${rowCount * this.dimensions.css.cell.height}px`;
-    element.style.top = `${row * this.dimensions.css.cell.height}px`;
-    element.style.left = `${colStart * this.dimensions.css.cell.width}px`;
-    element.style.width = `${this.dimensions.css.cell.width * (colEnd - colStart)}px`;
-    return element;
   }
 
   public handleCursorMove(): void {

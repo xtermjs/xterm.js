@@ -77,7 +77,7 @@ export class DomRendererRowFactory {
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
     const colors = this._themeService.colors;
 
-    let lineLength = lineData.getNoBgTrimmedLength();
+    let lineLength = this._isRowInSelection(row) ? lineData.length : lineData.getNoBgTrimmedLength();
     if (isCursorRow && lineLength < cursorX + 1) {
       lineLength = cursorX + 1;
     }
@@ -206,7 +206,7 @@ export class DomRendererRowFactory {
         charCellAmount++;
       }
 
-      // character or background attributes have changed - we need to do more work
+      // character / background attributes have changed - we need to do more work
       if (!canMergeCharacters || !canMergeBackground) {
 
         // preserve conditions for next merger eval round
@@ -256,9 +256,7 @@ export class DomRendererRowFactory {
         // Apply selection
         if (!isTop && isInSelection) {
           // If in the selection, force the element to be above the selection to improve contrast and
-          // support opaque selections. The applies background is not actually needed here as
-          // selection is drawn in a seperate container, the main purpose of this to ensuring minimum
-          // contrast ratio
+          // support opaque selections.
           bgOverride = this._coreBrowserService.isFocused ? colors.selectionBackgroundOpaque : colors.selectionInactiveBackgroundOpaque;
           bg = bgOverride.rgba >> 8 & 0xFFFFFF;
           bgColorMode = Attributes.CM_RGB;
@@ -334,7 +332,6 @@ export class DomRendererRowFactory {
 
         // character span
         if (!canMergeCharacters) {
-          console.log('create span', row, x, charCellAmount, charText, chars);
           if (charCellAmount) {
             charElement!.textContent = charText;
           }
@@ -534,7 +531,7 @@ export class DomRendererRowFactory {
     }
 
     if (adjustedColor) {
-      this._addStyle(element, `color:${adjustedColor.css}`);
+      element.style.color = adjustedColor.css;
       return true;
     }
 
@@ -548,8 +545,13 @@ export class DomRendererRowFactory {
     return this._themeService.colors.contrastCache;
   }
 
-  private _addStyle(element: HTMLElement, style: string): void {
-    element.setAttribute('style', `${element.getAttribute('style') || ''}${style};`);
+  private _isRowInSelection(y: number): boolean {
+    const start = this._selectionStart;
+    const end = this._selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    return y >= start[1] && y <= end[1];
   }
 
   private _isCellInSelection(x: number, y: number): boolean {
