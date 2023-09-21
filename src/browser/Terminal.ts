@@ -883,12 +883,13 @@ export class Terminal extends CoreTerminal implements ITerminal {
     return this.linkifier2.registerLinkProvider(linkProvider);
   }
 
-  public registerClipboardProvider(provider: IClipboardProvider): void {
+  public registerClipboardProvider(provider: IClipboardProvider): IDisposable {
     this._clipboardProvider = provider;
-  }
-
-  public deregisterClipboardProvider(): void {
-    this._clipboardProvider = undefined;
+    return {
+      dispose: () => {
+        this._clipboardProvider = undefined;
+      }
+    };
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {

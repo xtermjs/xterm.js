@@ -104,10 +104,7 @@ export class MockTerminal implements ITerminal {
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
     throw new Error('Method not implemented.');
   }
-  public registerClipboardProvider(provider: IClipboardProvider): void {
-    throw new Error('Method not implemented.');
-  }
-  public deregisterClipboardProvider(): void {
+  public registerClipboardProvider(provider: IClipboardProvider): IDisposable {
     throw new Error('Method not implemented.');
   }
   public hasSelection(): boolean {

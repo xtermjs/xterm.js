@@ -168,11 +168,8 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._verifyPositiveIntegers(decorationOptions.x ?? 0, decorationOptions.width ?? 0, decorationOptions.height ?? 0);
     return this._core.registerDecoration(decorationOptions);
   }
-  public registerClipboardProvider(provider: IClipboardProvider): void {
-    this._core.registerClipboardProvider(provider);
-  }
-  public deregisterClipboardProvider(): void {
-    this._core.deregisterClipboardProvider();
+  public registerClipboardProvider(provider: IClipboardProvider): IDisposable {
+    return this._core.registerClipboardProvider(provider);
   }
   public hasSelection(): boolean {
     return this._core.hasSelection();

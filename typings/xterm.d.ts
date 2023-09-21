@@ -1073,12 +1073,7 @@ declare module 'xterm' {
      * clipboard to read/write clipboard data.
      * @param provider The provider to register.
      */
-    registerClipboardProvider(provider: IClipboardProvider): void;
-
-    /**
-     * Deregisters the active clipboard provider.
-     */
-    deregisterClipboardProvider(): void;
+    registerClipboardProvider(provider: IClipboardProvider): IDisposable;
 
     /**
      * Gets whether the terminal has an active selection.
@@ -1873,14 +1868,18 @@ declare module 'xterm' {
     /**
      * Sets the clipboard content.
      * @param selection The clipboard selection to set.
-     * @param data The base64 encoded data to set. If the data is invalid base64, the clipboard is
-     * cleared.
+     * @param data The base64 encoded data to set. If the data is invalid
+     * base64, the clipboard is cleared.
      */
     writeText(selection: ClipboardSelection, data: string): Promise<void>;
   }
 
   /**
-   * Clipboard selection type.
+   * Clipboard selection type. This is used to specify which selection buffer to
+   * read or write to.
+   * - SYSTEM `c`: The system clipboard.
+   * - PRIMARY `p`: The primary clipboard. This is provided for compatibility
+   *  with Linux X11.
    */
   export const enum ClipboardSelection {
     SYSTEM = 'c',

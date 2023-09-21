@@ -4,18 +4,17 @@
  */
 
 import { ClipboardProvider } from './ClipboardProvider';
-import { IClipboardProvider, ITerminalAddon, Terminal } from 'xterm';
+import { IClipboardProvider, IDisposable, ITerminalAddon, Terminal } from 'xterm';
 
 export class ClipboardAddon implements ITerminalAddon {
-  private _terminal: Terminal | undefined;
+  private _disposable: IDisposable | undefined;
   constructor(private _provider: IClipboardProvider = new ClipboardProvider()) {}
 
   public activate(terminal: Terminal): void {
-    this._terminal = terminal;
-    terminal.registerClipboardProvider(this._provider);
+    this._disposable = terminal.registerClipboardProvider(this._provider);
   }
 
   public dispose(): void {
-    this._terminal?.deregisterClipboardProvider();
+    return this._disposable?.dispose();
   }
 }
