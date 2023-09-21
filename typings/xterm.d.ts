@@ -1863,7 +1863,7 @@ declare module 'xterm' {
      * @param selection The clipboard selection to read.
      * @returns A promise that resolves with the base64 encoded data.
      */
-    readText(selection: ClipboardSelection): Promise<string>;
+    readText(selection: ClipboardSelectionType): Promise<string>;
 
     /**
      * Sets the clipboard content.
@@ -1871,7 +1871,7 @@ declare module 'xterm' {
      * @param data The base64 encoded data to set. If the data is invalid
      * base64, the clipboard is cleared.
      */
-    writeText(selection: ClipboardSelection, data: string): Promise<void>;
+    writeText(selection: ClipboardSelectionType, data: string): Promise<void>;
   }
 
   /**
@@ -1881,7 +1881,7 @@ declare module 'xterm' {
    * - PRIMARY `p`: The primary clipboard. This is provided for compatibility
    *  with Linux X11.
    */
-  export const enum ClipboardSelection {
+  export const enum ClipboardSelectionType {
     SYSTEM = 'c',
     PRIMARY = 'p',
   }

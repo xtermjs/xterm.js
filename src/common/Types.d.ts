@@ -9,7 +9,7 @@ import { Attributes, UnderlineStyle } from 'common/buffer/Constants'; // eslint-
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
-import { ClipboardSelection as ClipboardSelection, IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
+import { ClipboardSelectionType as ClipboardSelectionType, IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;
@@ -452,7 +452,7 @@ export const enum ClipboardEventType {
 
 export interface IClipboardEvent {
   type: ClipboardEventType;
-  selection: ClipboardSelection;
+  selection: ClipboardSelectionType;
   data: string;
 }
 

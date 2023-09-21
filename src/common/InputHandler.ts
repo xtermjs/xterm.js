@@ -22,7 +22,7 @@ import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
-import { ClipboardSelection } from 'xterm';
+import { ClipboardSelectionType } from 'xterm';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -3099,8 +3099,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       return true;
     }
     switch (pc) {
-      case ClipboardSelection.SYSTEM:
-      case ClipboardSelection.PRIMARY:
+      case ClipboardSelectionType.SYSTEM:
+      case ClipboardSelectionType.PRIMARY:
         this._onClipboard.fire({
           type: pd === '?' ? ClipboardEventType.REPORT : ClipboardEventType.SET,
           selection: pc,

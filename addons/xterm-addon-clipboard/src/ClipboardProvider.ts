@@ -4,7 +4,7 @@
  */
 
 import { Base64 } from 'js-base64';
-import { ClipboardSelection, IClipboardProvider } from 'xterm';
+import { ClipboardSelectionType, IClipboardProvider } from 'xterm';
 
 export class ClipboardProvider implements IClipboardProvider {
   constructor(
@@ -14,14 +14,14 @@ export class ClipboardProvider implements IClipboardProvider {
      */
     public limit = 1000000 // 1MB
   ){}
-  public readText(selection: ClipboardSelection): Promise<string> {
+  public readText(selection: ClipboardSelectionType): Promise<string> {
     if (selection !== 'c') {
       return Promise.resolve('');
     }
     return navigator.clipboard.readText().then((text) =>
       Base64.encode(text));
   }
-  public writeText(selection: ClipboardSelection, data: string): Promise<void> {
+  public writeText(selection: ClipboardSelectionType, data: string): Promise<void> {
     if (selection !== 'c' || (this.limit > 0 && data.length > this.limit)) {
       return Promise.resolve();
     }

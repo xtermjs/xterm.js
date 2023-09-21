@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IClipboardProvider, ClipboardSelection } from 'xterm';
+import { Terminal, ITerminalAddon, IClipboardProvider, ClipboardSelection as ClipboardSelectionType } from 'xterm';
 
 declare module 'xterm-addon-clipboard' {
   export class ClipboardProvider implements IClipboardProvider{
-    public readText(selection: ClipboardSelection): Promise<string>;
-    public writeText(selection: ClipboardSelection, data: string): Promise<void>;
+    public readText(selection: ClipboardSelectionType): Promise<string>;
+    public writeText(selection: ClipboardSelectionType, data: string): Promise<void>;
   }
 
   /**

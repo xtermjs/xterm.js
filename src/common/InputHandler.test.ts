@@ -17,7 +17,7 @@ import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
-import { ClipboardSelection } from 'xterm';
+import { ClipboardSelectionType } from 'xterm';
 
 function getCursor(bufferService: IBufferService): number[] {
   return [
@@ -2003,62 +2003,62 @@ describe('InputHandler', () => {
       assert.deepEqual(stack, [
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.SYSTEM,
+          selection: ClipboardSelectionType.SYSTEM,
           data: ''
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.SYSTEM,
+          selection: ClipboardSelectionType.SYSTEM,
           data: testDataRaw
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.SYSTEM,
+          selection: ClipboardSelectionType.SYSTEM,
           data: testDataB64
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.SYSTEM,
+          selection: ClipboardSelectionType.SYSTEM,
           data: testDataB64+'invalid'
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.SYSTEM,
+          selection: ClipboardSelectionType.SYSTEM,
           data: '!'
         },
         {
           type: ClipboardEventType.REPORT,
-          selection: ClipboardSelection.SYSTEM,
+          selection: ClipboardSelectionType.SYSTEM,
           data: '?'
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.PRIMARY,
+          selection: ClipboardSelectionType.PRIMARY,
           data: ''
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.PRIMARY,
+          selection: ClipboardSelectionType.PRIMARY,
           data: testDataRaw
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.PRIMARY,
+          selection: ClipboardSelectionType.PRIMARY,
           data: testDataB64
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.PRIMARY,
+          selection: ClipboardSelectionType.PRIMARY,
           data: testDataB64+'invalid'
         },
         {
           type: ClipboardEventType.SET,
-          selection: ClipboardSelection.PRIMARY,
+          selection: ClipboardSelectionType.PRIMARY,
           data: '!'
         },
         {
           type: ClipboardEventType.REPORT,
-          selection: ClipboardSelection.PRIMARY,
+          selection: ClipboardSelectionType.PRIMARY,
           data: '?'
         }
       ]);
