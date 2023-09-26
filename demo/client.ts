@@ -364,12 +364,6 @@ function createTerminal(): void {
   addDomListener(actionElements.findPrevious, 'input', (e) => {
     addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
   });
-  addDomListener(actionElements.findNext, 'blur', (e) => {
-    addons.search.instance.clearActiveDecoration();
-  });
-  addDomListener(actionElements.findPrevious, 'blur', (e) => {
-    addons.search.instance.clearActiveDecoration();
-  });
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(async () => {
