@@ -256,7 +256,7 @@ export interface IBufferLine {
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
-  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
+  setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
   setAttributes(cursor: ICellData, fg: number, bg: number, style: StyleFlags, eAttrs: IExtendedAttrs): void;
   /**
    * Add character (codePoint) following cursor position.
@@ -264,7 +264,8 @@ export interface IBufferLine {
    */
   setCodePoint(cursor: ICellData, codePoint: number, width: number): void;
   addToPrecedingGrapheme(cursor: ICellData, newCode: number, width: number): void;
-  insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
+  //addCodepointToCell(index: number, codePoint: number, width: number): void;
+  insertCells(pos: number, n: number, ch: ICellData): void;
   eraseAll(bg: number): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;

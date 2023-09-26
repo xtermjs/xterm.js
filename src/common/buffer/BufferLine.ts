@@ -4,7 +4,7 @@
  */
 
 import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
-import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
+import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, StyleFlags, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
@@ -84,10 +84,10 @@ export abstract class AbstractBufferLine implements IBufferLine {
     return cursor.getAsCharData();
   }
 
- /**
+ /* *
    * Set cell data from CharData.
    * @deprecated
-   */
+   * /
   public set(index: number, value: CharData): void {
     // ???
     this.setCellFromCodePoint(index,
@@ -95,7 +95,6 @@ export abstract class AbstractBufferLine implements IBufferLine {
                               value[CHAR_DATA_WIDTH_INDEX],
                               value[CHAR_DATA_ATTR_INDEX],
                               0, new ExtendedAttrs());
-    /*
     this._data[index * CELL_SIZE + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
     if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
       //this._combined[index] = value[1]; FIXME
@@ -103,8 +102,8 @@ export abstract class AbstractBufferLine implements IBufferLine {
     } else {
       this._data[index * CELL_SIZE + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
-    */
   }
+  */
 
   /**
    * primitive getters
@@ -138,16 +137,16 @@ export abstract class AbstractBufferLine implements IBufferLine {
     return this.loadCell(index, new CellData()).content & Content.HAS_CONTENT_MASK;
   }
 
-  public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
+  public setCellFromCodePoint(index: number, codePoint: number, width: number,  attrs: IAttributeData): void {
     const cursor = new CellData();
     this.scanInit(cursor);
     this.scanNext(cursor, index, 0);
-    let fg_flags = fg & 0xFC000000;
-    let bg_flags = bg & 0xFC000000;
+    let fg_flags = attrs.fg & 0xFC000000;
+    let bg_flags = attrs.bg & 0xFC000000;
     let style_flags = (fg_flags >> 24) | (bg_flags >> 16);
     fg -= fg_flags;
     bg -= bg_flags;
-    this.setAttributes(cursor, fg, bg, style_flags, eAttrs);
+    this.setAttributes(cursor, fg, bg, style_flags, attrs.extended);
     this.setCodePoint(cursor, codePoint, width);
   }
 
@@ -155,7 +154,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
    * Set data at `index` to `cell`.
    */
   public setCell(index: number, cell: ICellData): void {
-    this.setCellFromCodePoint(index, cell.content, cell.getWidth(), cell.fg, cell.bg, cell.extended);
+    this.setCellFromCodePoint(index, cell.content, cell.getWidth(), cell);
   }
 
   abstract setAttributes(cursor: ICellData, fg: number, bg: number, style: StyleFlags, eAttrs: IExtendedAttrs): void;
@@ -645,14 +644,14 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     */
   }
 
-  public insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
+  public insertCells(pos: number, n: number, fillCellData: ICellData): void {
     alert("insertCells");
     /*
     pos %= this.length;
 
     // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
     if (pos && this.getWidth(pos - 1) === 2) {
-      this.setCellFromCodePoint(pos - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(pos - 1, 0, 1, fillCellData);
     }
 
     if (n < this.length - pos) {
@@ -671,7 +670,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
 
     // handle fullwidth at line end: reset last cell if it is first cell of a wide char
     if (this.getWidth(this.length - 1) === 2) {
-      this.setCellFromCodePoint(this.length - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(this.length - 1, 0, 1, fillCellData);
     }
     */
   }
@@ -738,10 +737,10 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
     if (respectProtect) {
       if (start && this.getWidth(start - 1) === 2 && !this.isProtected(start - 1)) {
-        this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+        this.setCellFromCodepoint(start - 1, 0, 1, fillCellData);
       }
       if (end < this.length && this.getWidth(end - 1) === 2 && !this.isProtected(end)) {
-        this.setCellFromCodePoint(end, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+        this.setCellFromCodepoint(end, 0, 1, fillCellData);
       }
       while (start < end  && start < this.length) {
         if (!this.isProtected(start)) {
@@ -754,11 +753,11 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
 
     // handle fullwidth at start: reset cell one to the left if start is second cell of a wide char
     if (start && this.getWidth(start - 1) === 2) {
-      this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || newU733 ExtendedAttrs());
+      this.setCellFromCodepoint(start - 1, 0, 1, fillCellData);
     }
     // handle fullwidth at last cell + 1: reset to empty cell if it is second part of a wide char
     if (end < this.length && this.getWidth(end - 1) === 2) {
-      this.setCellFromCodePoint(end, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(end, 0, 1, fillCellData);
     }
 
     while (start < end  && start < this.length) {
