@@ -560,7 +560,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // since an empty cell is only set by fullwidth chars
           bufferRow.addCodepointToCell(this._activeBuffer.x - 2, code);
         } else*/ {
-          bufferRow.addToPrecedingGrapheme(cursor, stringFromCodePoint(code), chWidth);
+          bufferRow.addToPrecedingGrapheme(cursor, code, chWidth);
           //bufferRow.addCodepointToCell(this._activeBuffer.x - 1, code);
           this._activeBuffer.x += chWidth - oldWidth;
         }

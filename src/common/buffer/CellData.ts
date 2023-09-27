@@ -42,6 +42,7 @@ export class CellData extends AttributeData implements ICellData {
   public fg = 0;
   public bg = 0;
   public extended: IExtendedAttrs = new ExtendedAttrs();
+  public combinedData = '';
 
   public copyFrom(src: CellData) {
     //this.bufferLine = src.bufferLine;
@@ -68,8 +69,15 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** JS string of the content. */
   public getChars(): string {
-    return this.textStart === this.textEnd ? ''
-      : this.textData.substring(this.textStart, this.textEnd);
+    if (this.content & Content.IS_COMBINED_MASK) {
+      return this.combinedData;
+    }
+    if (this.content & Content.CODEPOINT_MASK) {
+      return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
+    }
+    return '';
+    //return this.textStart === this.textEnd ? ''
+    //  : this.textData.substring(this.textStart, this.textEnd);
   }
 
   /**

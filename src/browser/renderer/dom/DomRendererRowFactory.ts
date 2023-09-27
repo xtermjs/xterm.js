@@ -81,7 +81,6 @@ export class DomRendererRowFactory {
       lineLength = cursorX + 1;
     }
 
-    lineData.scanInit(cell);
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
     let text = '';
@@ -96,9 +95,8 @@ export class DomRendererRowFactory {
 
     const hasHover = linkStart !== -1 && linkEnd !== -1;
 
-    let x = 0;
-    for (; x < lineLength; x++) {
-      lineData.scanNext(cell, 1, 0);
+    for (let x = 0; x < lineLength; x++) {
+      lineData.loadCell(x, this._workCell);
       let width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1

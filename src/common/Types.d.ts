@@ -263,7 +263,7 @@ export interface IBufferLine {
    * Cursor position is moved to be after added character.
    */
   setCodePoint(cursor: ICellData, codePoint: number, width: number): void;
-  addToPrecedingGrapheme(cursor: ICellData, newText: string, width: number): void;
+  addToPrecedingGrapheme(cursor: ICellData, newCode: number, width: number): void;
   insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
   eraseAll(bg: number): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
@@ -278,7 +278,6 @@ export interface IBufferLine {
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
-  previousCodePoint(cursor: ICellData): number;
 
   /* direct access to cell attrs */
   getWidth(index: number): number;
