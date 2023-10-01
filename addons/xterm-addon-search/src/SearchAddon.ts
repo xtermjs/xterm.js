@@ -134,9 +134,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    const isOptionsChanged = this._lastSearchOptions ? this._isOptionsChange(this._lastSearchOptions, searchOptions) : true;
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
+      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm || isOptionsChanged) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
@@ -302,9 +303,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
+    const isOptionsChanged = this._lastSearchOptions ? this._isOptionsChange(this._lastSearchOptions, searchOptions) : true;
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm) {
+      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm || isOptionsChanged) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
@@ -314,6 +316,22 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     this._cachedSearchTerm = term;
 
     return found;
+  }
+
+  private _isOptionsChange(lastSearchOptions: ISearchOptions, searchOptions?: ISearchOptions): boolean {
+    if (!searchOptions) {
+      return false;
+    }
+    if (lastSearchOptions.caseSensitive !== searchOptions.caseSensitive) {
+      return true;
+    }
+    if (lastSearchOptions.regex !== searchOptions.regex) {
+      return true;
+    }
+    if (lastSearchOptions.wholeWord !== searchOptions.wholeWord) {
+      return true;
+    }
+    return false;
   }
 
   private _fireResults(searchOptions?: ISearchOptions): void {
