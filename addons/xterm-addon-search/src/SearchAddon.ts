@@ -119,6 +119,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     }
   }
 
+  public clearActiveDecoration(): void {
+    this._selectedDecoration.clear();
+  }
+
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
