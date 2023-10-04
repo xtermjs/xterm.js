@@ -594,7 +594,6 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     return idata + 1 + ((this._data[idata] >> 21) & 0x3F);
   }
 
-  // MERGE INTO setCluster
   /**
    * Add a codepoint to a cell from input handler.
    * During input stage combining chars with a width of 0 follow and stack
@@ -644,26 +643,6 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
       }
     }
     */
-  }
-
-  // MERGE INTO addToPrecedingGrapheme
-  public setCluster(cursor: ICellData, addToPrevious: boolean, newText: string, width: number): void {
-    const cell = cursor as CellData;
-    const kind = width === 2 ? DataKind.CLUSTER_w2 : DataKind.CLUSTER_w1;
-    this.deleteCols(cell, width, cell.getBg(), -1);
-    this.splitWord(cell, addToPrevious ? 0 : 1);
-    let idata = BufferLine.dataIndex(cell);
-    if (addToPrevious && idata < this._data.length) {
-      const word = this._data[idata];
-      const kind = BufferLine.wKind(word);
-      if (kind === DataKind.CLUSTER_w1 || kind === DataKind.CLUSTER_w2) {
-        this._data[idata] = BufferLine.wSet1(kind, BufferLine.wStrLen(word) + newText.length);
-      } else if (kind === DataKind.TEXT_w1 || kind === DataKind.TEXT_w2){
-      }
-      // FIXME
-    } else {
-      this._data[idata] = BufferLine.wSet1(kind, newText.length);
-    }
   }
 
   public insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
@@ -1040,7 +1019,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
           break;
         case DataKind.CHAR_w1:
         case DataKind.CHAR_w2:
-          w = kind - DataKind.TEXT_w1; // 0, or 1 if wide characters
+          w = kind - DataKind.CHAR_w1; // 0, or 1 if wide characters
           if (colOffset === 0 && (1 << w) <= todo) {
             dskip_last = idata;
             todo -= 1 << w;
