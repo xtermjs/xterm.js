@@ -84,26 +84,13 @@ export abstract class AbstractBufferLine implements IBufferLine {
     return cursor.getAsCharData();
   }
 
- /* *
+ /**
    * Set cell data from CharData.
    * @deprecated
-   * /
+   */
   public set(index: number, value: CharData): void {
-    // ???
-    this.setCellFromCodePoint(index,
-                              value[CHAR_DATA_CHAR_INDEX].charCodeAt(0),
-                              value[CHAR_DATA_WIDTH_INDEX],
-                              value[CHAR_DATA_ATTR_INDEX],
-                              0, new ExtendedAttrs());
-    this._data[index * CELL_SIZE + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
-    if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
-      //this._combined[index] = value[1]; FIXME
-      this._data[index * CELL_SIZE + Cell.CONTENT] = index | Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
-    } else {
-      this._data[index * CELL_SIZE + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
-    }
+      this.setCell(index, CellData.fromCharData(value));
   }
-  */
 
   /**
    * primitive getters
@@ -137,12 +124,14 @@ export abstract class AbstractBufferLine implements IBufferLine {
     return this.loadCell(index, new CellData()).content & Content.HAS_CONTENT_MASK;
   }
 
-  public setCellFromCodePoint(index: number, codePoint: number, width: number,  attrs: IAttributeData): void {
+  public setCellFromCodepoint(index: number, codePoint: number, width: number,  attrs: IAttributeData): void {
     const cursor = new CellData();
     this.scanInit(cursor);
     this.scanNext(cursor, index, 0);
-    let fg_flags = attrs.fg & 0xFC000000;
-    let bg_flags = attrs.bg & 0xFC000000;
+    let fg = attrs.fg;
+    let bg = attrs.bg;
+    let fg_flags = fg & 0xFC000000;
+    let bg_flags = bg & 0xFC000000;
     let style_flags = (fg_flags >> 24) | (bg_flags >> 16);
     fg -= fg_flags;
     bg -= bg_flags;
@@ -154,7 +143,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
    * Set data at `index` to `cell`.
    */
   public setCell(index: number, cell: ICellData): void {
-    this.setCellFromCodePoint(index, cell.content, cell.getWidth(), cell);
+    this.setCellFromCodepoint(index, cell.content, cell.getWidth(), cell);
   }
 
   abstract setAttributes(cursor: ICellData, fg: number, bg: number, style: StyleFlags, eAttrs: IExtendedAttrs): void;
@@ -767,14 +756,13 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
   }
 
 
-  public loadCell(index: number, cell: ICellData): ICellData {
+  public moveToColumn(index: number): number {
     let curColumn = this._cachedColumn();
     if (index < curColumn) {
       // FIXME can sometimes do better
       this._cacheReset();
       curColumn = 0;
     }
-    let cursor = cell as CellData;
     let idata = this._cachedDataIndex();
     let fg = this._cachedFg();
     let bg = this._cachedBg();
@@ -820,15 +808,12 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         case DataKind.CLUSTER_START_w1:
         case DataKind.CLUSTER_START_w2:
           w = kind + 1 - DataKind.CLUSTER_START_w1;
-          let clEnd = this.clusterEnd(idata);
           if (todo >= w) {
+            const clEnd = this.clusterEnd(idata);
             todo -= w;
             curColumn += w;
             idata = clEnd;
           } else {
-            // FIXME do this lazily, in CellData.getChars
-            const str = utf32ToString(this._data, idata, clEnd);
-            cursor.combinedData = str;
             content = index !== curColumn ? 0
               : (w << Content.WIDTH_SHIFT) | Content.IS_COMBINED_MASK;
             todo = -1;
@@ -852,14 +837,26 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     this._cacheSetColumnDataIndex(curColumn, idata);
     this._cacheSetFgBg(fg, bg);
     this._cacheSetStyleFlagsIndex(styleFlagsIndex);
+    return content;
+  }
 
+  public loadCell(index: number, cell: ICellData): ICellData {
+    const cursor = cell as CellData;
+    const content = this.moveToColumn(index);
     cursor.content = content;
-    cursor.setFg(fg);
-    cursor.setBg(bg);
-    word = styleFlagsIndex > 0 ? this._data[styleFlagsIndex - 1] : 0;
+    cursor.setFg(this._cachedFg());
+    cursor.setBg(this._cachedBg());
+    let styleFlagsIndex = this._cachedStyleFlagsIndex();
+    const word = styleFlagsIndex > 0 ? this._data[styleFlagsIndex - 1] : 0;
     cursor.setStyleFlags(word);
     if (word & StyleFlags.HAS_EXTENDED) {
       cursor.extended = this._extendedAttrs[styleFlagsIndex - 1]!;
+    }
+    if (content & Content.IS_COMBINED_MASK) {
+      // FIXME do this lazily, in CellData.getChars
+      let idata = this._cachedDataIndex();
+      const str = utf32ToString(this._data, idata, this.clusterEnd(idata));
+      cursor.combinedData = str;
     }
     return cell;
   }
