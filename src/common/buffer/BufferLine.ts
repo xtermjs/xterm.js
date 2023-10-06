@@ -199,19 +199,7 @@ const enum DataKind { // 4 bits
   // CLUSTER_START_xx have a 7=bit for number of CONTINUED entries
   CLUSTER_START_w1 = 10, // start of non-trivial cluster, 1 column wide
   CLUSTER_START_w2 = 11, // start of non-trivial cluster, 2 columns wide
-  CLUSTER_CONTINUED = 12, // continuation of cluster
-
-  // THE FOLLOWING ARE DEPRECATED
-  // The following have 20 bits length (number of 16-bit code units).
-  // Narrow vs wide assumes a monospace font.
-  // Future: maybe support variable-width fonts; then treat all as narrow.
-  TEXT_w1 = 13, // Text in basic plane, narrow, 1 character per grapheme
-  TEXT_w2 = 14, // Text in basic plane, wide, 1 character per grapheme
-  // The following have 20 bits length and 8 bits (high-order)
-  // Grapheme-Cluster-Break Property Value (of the last codepoint).
-  CLUSTER_w1 = 15, // single grapheme cluster, narrow (1 column)
-  CLUSTER_w2 = 16, // single grapheme cluster, wide (2 columns)
-  //GENERIC_TEXT = 4, // Text has not been checked for wide or clusters MAYBE UNNEEDED
+  CLUSTER_CONTINUED = 12 // continuation of cluster
 }
 
 const NULL_DATA_WORD = DataKind.SKIP_COLUMNS << 28;
@@ -250,7 +238,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
 
   /** The "current position" is this many columns into the current chunk.
    * 0..1 (if CHAR_w1); 0..1 (if CHAR_w2); 0..1 (if CLUSTER_stART_w1);
-   * 0..2 (if CLUSTER_START_w2). (Odd values of TEXT_w2 or CLUSTER_w2 are only
+   * 0..2 (if CLUSTER_START_w2). (Odd values of CHAR_w2 or CLUSTER_START_w2 are only
    * allowed as temporary intermediate positions; except for appending, it is
    * an error to try modify *part* of a cluster or a wide character,
    * the effect will that the entire cluster or wide character is cleared.)
@@ -268,12 +256,11 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
 
   /** From a Uint23 in _data, extract the DataKind bits. */
   private static wKind(word: number): DataKind { return word >>> 28; }
-  private static wKindIsText(kind: DataKind): boolean { return kind >= DataKind.CHAR_w1 && kind <= DataKind.CLUSTER_w2; }
-  private static wKindIsTextOrSkip(kind: DataKind): boolean { return kind >= DataKind.SKIP_COLUMNS && kind <= DataKind.CLUSTER_w2; }
+  private static wKindIsText(kind: DataKind): boolean { return kind >= DataKind.CHAR_w1 && kind <= DataKind.CLUSTER_CONTINUED; }
+  private static wKindIsTextOrSkip(kind: DataKind): boolean { return kind >= DataKind.SKIP_COLUMNS && kind <= DataKind.CLUSTER_CONTINUED; }
   /** From a Uint23 in _data, extract length of string within _text.
-    * Only SKIP_COLUMNS?
-    * Assumes kind is TEXT_w1, TEXT_w2, CLUSTER_w1, CLUSTER W2. */
-  private static wStrLen(word: number): number { return word & 0xfffff; }
+    * Only for SKIP_COLUMNS. */
+  private static wSkipCount(word: number): number { return word & 0xfffff; }
   private static wSet1(kind: DataKind, value: number): number {
     return (kind << 28) | (value & 0x0fffffff);
   }
@@ -377,13 +364,9 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         case DataKind.BG: code = 'BG'; break;
         case DataKind.STYLE_FLAGS: code = 'STYLE'; break;
         case DataKind.SKIP_COLUMNS: code = 'SKIP'; break;
-        case DataKind.CLUSTER_w1: code = 'CL1'; break;
-        case DataKind.CLUSTER_w2: code = 'CL2'; break;
         case DataKind.CLUSTER_START_w1: code = 'CL1'; break;
         case DataKind.CLUSTER_START_w2: code = 'CL2'; break;
         case DataKind.CLUSTER_CONTINUED: code = 'CL_CONT'; break;
-        case DataKind.TEXT_w1: code = 'T1'; break;
-        case DataKind.TEXT_w2: code = 'T1'; break;
         case DataKind.CHAR_w1: code = 'C1'; break;
         case DataKind.CHAR_w2: code = 'C2'; break;
       }
@@ -469,9 +452,8 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     if (idata < this._dataLength) {
       let word = this._data[idata];
       let kind = BufferLine.wKind(word);
-      let wwidth = kind === DataKind.CLUSTER_w2 || kind === DataKind.TEXT_w2 ? 2 : 1;
       /*
-      const wlen = BufferLine.wStrLen(word);
+      const wlen = BufferLine.wSkipCount(word);
       let colOffset = BufferLine.columnOffset(cell);
       if (BufferLine.wKindIsTextOrSkip(kind)) {
         if (colOffset > wwidth * wlen)
@@ -493,10 +475,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     const kind = BufferLine.wKind(word);
     if (kind <= DataKind.SKIP_COLUMNS)
         return true;
-    let colOffset = BufferLine.columnOffset(cursor);
-    // FIXME handle new DataKind kinds
-    let wwidth = kind === DataKind.CLUSTER_w2 || kind === DataKind.TEXT_w2 ? 2 : 1;
-    return colOffset === wwidth;
+    return false;
   }
 
   /**
@@ -565,7 +544,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     let idata = BufferLine.dataIndex(cell);
     let word = idata < this._dataLength ? this._data[idata] : NULL_DATA_WORD;
     let kind = BufferLine.wKind(word);
-    const wlen = 1; // BufferLine.wStrLen(word);
+    const wlen = 1;
     let colOffset = BufferLine.columnOffset(cell);
     codePoint &= Content.HAS_CONTENT_MASK;
     if (codePoint === 0) {
@@ -584,22 +563,6 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
       return;
     }
 
-    /*const newGlyph = stringFromCodePoint(codePoint);
-    const newLength = newGlyph.length;
-    if (newLength === 1
-        && ((kind === DataKind.TEXT_w1 && width === 1)
-            || (kind === DataKind.TEXT_w2 && width === 2
-                && (colOffset & 1) === 0))) {
-        if (width * colOffset >= wlen) {
-          this.deleteCols(cell, width, cell.getBg(), -1);
-          this._data[idata] = BufferLine.wSet1(kind, wlen+1);
-        }
-        const charOffset = itext + (width == 2 ? colOffset >> 1 : colOffset);
-        this._text = this._text.substring(0, charOffset)
-            + newGlyph
-            + this._text.substring(charOffset + 1);
-      BufferLine.setPosition(cell, idata, itext, colOffset + width);
-    } else*/ {
       if (idata < this._dataLength && BufferLine.wKindIsTextOrSkip(kind)) {
         this.splitWord(cell, 1);
         idata = BufferLine.dataIndex(cell);
@@ -610,14 +573,10 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         this.addEmptyDataElements(idata, 1);
       }
       kind = width == 2 ? DataKind.CHAR_w2 : DataKind.CHAR_w1;
-      //kind = newLength === 1
-      //  ? (width == 2 ? DataKind.TEXT_w2 : DataKind.TEXT_w1)
-      //  : (width == 2 ? DataKind.CLUSTER_w2 : DataKind.CLUSTER_w1);
       this._data[idata] = BufferLine.wSet1(kind, codePoint);
       colOffset = 0;
       BufferLine.setPosition(cell, idata, -1, colOffset + width);
       //this.deleteCols(cell, width, cell.getBg(), -1);
-    }
   }
 
   public clusterEnd(idata: number): number {
@@ -642,7 +601,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     let word = this._data[idata];
     let kind = BufferLine.wKind(word);
     let oldWidth =
-      (kind === DataKind.CHAR_w2 || kind === DataKind.TEXT_w2 || kind === DataKind.CLUSTER_w2 || kind === DataKind.CLUSTER_START_w2) ? 2 : 1;
+      (kind === DataKind.CHAR_w2 || kind === DataKind.CLUSTER_START_w2) ? 2 : 1;
     const newWidth = Math.max(oldWidth, width);
     const newKind = newWidth === 2 ? DataKind.CLUSTER_START_w2 : DataKind.CLUSTER_START_w1;
     let clEnd = kind === DataKind.CLUSTER_START_w1 || kind === DataKind.CLUSTER_START_w2 ? this.clusterEnd(idata) : idata + 1;
@@ -732,7 +691,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
             ? colOffset === (kind - DataKind.CHAR_w1 + 1)
             : (kind | 1) === DataKind.CLUSTER_START_w2
             ? colOffset === (kind & 1) + 1
-            : colOffset === (kind - DataKind.CLUSTER_w1 + 1);
+            : false;
       if (atEnd) {
         if ((kind | 1) === DataKind.CLUSTER_START_w2)
             idata = this.clusterEnd(idata);
@@ -838,7 +797,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
           styleFlagsIndex = idata;
           break;
         case DataKind.SKIP_COLUMNS:
-          let wlen = BufferLine.wStrLen(word);
+          let wlen = BufferLine.wSkipCount(word);
           if (todo >= wlen) {
             todo -= wlen;
             idata++;
@@ -934,7 +893,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
           idata++;
           break;
         case DataKind.SKIP_COLUMNS:
-          let wlen = BufferLine.wStrLen(word);
+          let wlen = BufferLine.wSkipCount(word);
           if (col + todo > wlen) {
             todo -= wlen - col;
             col = 0;
@@ -1046,7 +1005,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
           // handle ExtendedAttrs FIXME
           break;
         case DataKind.SKIP_COLUMNS:
-          let wlen = BufferLine.wStrLen(word);
+          let wlen = BufferLine.wSkipCount(word);
           if (colOffset === 0 && wlen <= todo) {
             dskip_last = idata;
             todo -= wlen;
@@ -1082,10 +1041,12 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
           colOffset = 0;
           */
           break;
-        case DataKind.CLUSTER_w1:
-        case DataKind.CLUSTER_w2:
-          w = kind - DataKind.CLUSTER_w1; // 0, or 1 if wide characters
+        case DataKind.CLUSTER_START_w1:
+        case DataKind.CLUSTER_START_w2:
+          w = kind - DataKind.CLUSTER_START_w1; // 0, or 1 if wide characters
+          const clEnd = this.clusterEnd(idata);
           if (colOffset < (1 << w)) {
+            idata = clEnd;
             dskip_last = idata;
             todo -= (1 << w);
           } else {
@@ -1134,12 +1095,12 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
       let word0 = this._data[idata];
         let kind0 = BufferLine.wKind(word0);
 
-      //const wlen = BufferLine.wStrLen(word0);
+      //const wlen = BufferLine.wSkipCount(word0);
       // if kind of idata is SKIP_COLUMN, add deleted
       // if kind of idata-1 is SKIP_COLUMN, add deleted, adjust coloffset.
       if (kind0 === DataKind.SKIP_COLUMNS) {
         this._data[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS,
-                                             BufferLine.wStrLen(word0) + deleted);
+                                             BufferLine.wSkipCount(word0) + deleted);
       } else {
         this.splitWord(cursor, 1);
         idata = BufferLine.dataIndex(cursor);
@@ -1201,22 +1162,12 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     const wkind = BufferLine.wKind(word);
     // replace wide character by SKIP_COLUMNS for 2 columns
     if (wkind === DataKind.CHAR_w2) {
-      const beforeLen = colOffset >> 1;
-      const afterLen = 1;
-      const expand = (beforeLen > 0 ? 1 : 0) + (afterLen > 0 ? 1 : 0);
-      if (expand > 0)
-        this.addEmptyDataElements(idata, expand);
-      if (beforeLen > 0) {
-        this._data[idata++] = BufferLine.wSet1(DataKind.TEXT_w2, beforeLen);
-      }
-      this._data[idata++] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 2);
-      if (afterLen > 0) {
-        this._data[idata] = BufferLine.wSet1(DataKind.TEXT_w2, afterLen);
-      }
-      BufferLine.setPosition(cursor, idata - 1, beforeLen, 1);
-    } else if (wkind === DataKind.CLUSTER_START_w2) {
-      //const wlen = BufferLine.wStrLen(word);
       this._data[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 2);
+    } else if (wkind === DataKind.CLUSTER_START_w2) {
+      this._data[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 2);
+      const clEnd = this.clusterEnd(idata);
+      const shrink = clEnd - idata - 1;
+      this.addEmptyDataElements(idata + 1, - shrink);
     }
     // Ideally, if _data[idata-1] or _data[idata+1] is also SKIP_COLUMNS
     // we should merge the SKIP_COLUMNS ("normalize").
@@ -1328,8 +1279,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     for (let idata = 0; idata < this._dataLength; idata++) {
       const word = this._data[idata];
       const kind = BufferLine.wKind(word);
-      let wlen = BufferLine.wStrLen(word);
-      const w = kind === DataKind.CHAR_w2 || kind === DataKind.TEXT_w2 || kind === DataKind.CLUSTER_w2 ? 2 : 1;
+      const w = kind === DataKind.CHAR_w2 || kind === DataKind.CLUSTER_START_w2 ? 2 : 1;
       let wcols = 0;
       switch (kind) {
         case DataKind.FG:
@@ -1337,14 +1287,12 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         case DataKind.STYLE_FLAGS:
           break;
         case DataKind.SKIP_COLUMNS:
-          skipped += wlen;
+          skipped += BufferLine.wSkipCount(word);
           break;
         case DataKind.CLUSTER_START_w1:
         case DataKind.CLUSTER_START_w2:
           wcols = w;
           break;
-        case DataKind.TEXT_w1:
-        case DataKind.TEXT_w2:
         case DataKind.CHAR_w1:
         case DataKind.CHAR_w2:
           wcols = w * 1;
@@ -1444,8 +1392,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     for (let idata = 0; idata < this._dataLength && col < endCol; idata++) {
       const word = this._data[idata];
       const kind = BufferLine.wKind(word);
-      let wlen = BufferLine.wStrLen(word);
-      const wide = kind === DataKind.CHAR_w2 || kind === DataKind.TEXT_w2 || kind === DataKind.CLUSTER_w2 || kind === DataKind.CLUSTER_START_w2 ? 1 : 0;
+      const wide = kind === DataKind.CHAR_w2 || kind === DataKind.CLUSTER_START_w2 ? 1 : 0;
       let wcols;
       switch (kind) {
         case DataKind.FG:
@@ -1453,6 +1400,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
         case DataKind.STYLE_FLAGS:
           break;
         case DataKind.SKIP_COLUMNS:
+          let wlen = BufferLine.wSkipCount(word);
           if (col + wlen > startCol) {
             if (col < startCol) {
               wlen -= startCol - col;
