@@ -36,6 +36,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     alpha: boolean,
     bufferService: IBufferService,
     optionsService: IOptionsService,
+    private readonly _characterJoinerService: ICharacterJoinerService,
     decorationService: IDecorationService,
     coreBrowserService: ICoreBrowserService,
     themeService: IThemeService
@@ -77,12 +78,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     for (let y = firstRow; y <= lastRow; y++) {
       const row = y + this._bufferService.buffer.ydisp;
       const line = this._bufferService.buffer.lines.get(row);
-      if (! line)
-        continue;
-      line.scanInit(this._workCell);
+      const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (let x = 0; x < this._bufferService.cols; x++) {
-        line.scanNext(this._workCell, 1, 0);
-        let cell = this._workCell;
+        line!.loadCell(x, this._workCell);
+        let cell: ICellData = this._workCell;
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -104,7 +103,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
         // and attributes of our input.
-        /*
         if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
           isJoined = true;
           const range = joinedRanges.shift()!;
@@ -120,7 +118,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           // Skip over the cells occupied by this range in the loop
           lastCharX = range[1] - 1;
         }
-        */
+
         // If the character is an overlapping char and the character to the
         // right is a space, take ownership of the cell to the right. We skip
         // this check for joined characters because their rendering likely won't

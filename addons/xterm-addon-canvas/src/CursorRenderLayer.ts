@@ -25,9 +25,9 @@ interface ICursorState {
 
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
-  private _cursorRenderers: {[key: string]: (x: number, y: number, cell: CellData) => void};
+  private _cursorRenderers: {[key: string]: (x: number, y: number, cell: ICellData) => void};
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = this.register(new MutableDisposable());
-  private _cell: CellData = new CellData();
+  private _cell: ICellData = new CellData();
 
   constructor(
     terminal: Terminal,
@@ -201,14 +201,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _renderBarCursor(x: number, y: number, cell: CellData): void {
+  private _renderBarCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillLeftLineAtCell(x, y, this._optionsService.rawOptions.cursorWidth);
     this._ctx.restore();
   }
 
-  private _renderBlockCursor(x: number, y: number, cell: CellData): void {
+  private _renderBlockCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillCells(x, y, cell.getWidth(), 1);
@@ -217,7 +217,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.restore();
   }
 
-  private _renderUnderlineCursor(x: number, y: number, cell: CellData): void {
+  private _renderUnderlineCursor(x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._themeService.colors.cursor.css;
     this._fillBottomLineAtCells(x, y);
