@@ -94,18 +94,18 @@ export abstract class AbstractBufferLine implements IBufferLine {
 
   /**
    * primitive getters
-   * @deprecated use these when only one value is needed, otherwise use `loadCell`
+   * use these when only one value is needed, otherwise use `loadCell`
    */
   public getWidth(index: number): number {
     return this.loadCell(index, new CellData()).content >>> Content.WIDTH_SHIFT;
   }
 
-  /** Test whether content has width. @deprecated */
+  /** Test whether content has width. */
   public hasWidth(index: number): number {
     return this.loadCell(index, new CellData()).content & Content.WIDTH_MASK;
   }
 
-  /** Get FG cell component. @deprecated */
+  /** Get FG cell component. */
   public getFg(index: number): number {
     return this.loadCell(index, new CellData()).fg;
   }
@@ -313,6 +313,49 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     this.resizeData(this._dataLength + count);
     this._data.copyWithin(position + count, position, this._dataLength);
     this._dataLength += count;
+  }
+
+  /**
+   * primitive getters
+   * use these when only one value is needed, otherwise use `loadCell`
+   */
+  public getWidth(index: number): number {
+    return this.moveToColumn(index) >>> Content.WIDTH_SHIFT;
+  }
+
+  /** Test whether content has width. */
+  public hasWidth(index: number): number {
+    return this.moveToColumn(index) & Content.WIDTH_MASK;
+  }
+
+  /** Get FG cell component. */
+  public getFg(index: number): number {
+    this.moveToColumn(index);
+    const styleIndex = this._cachedStyleFlagsIndex();
+    const styleWord = styleIndex > 0 ? this._data[styleIndex - 1] : 0;
+    return this._cachedFg() | ((styleWord << 24) & Attributes.STYLE_BITS_MASK);
+  }
+
+  /** Get BG cell component. @deprecated */
+  public getBg(index: number): number {
+    this.moveToColumn(index);
+    const styleIndex = this._cachedStyleFlagsIndex();
+    const styleWord = styleIndex > 0 ? this._data[styleIndex - 1] : 0;
+    return this._cachedBg() | ((styleWord << 16) & Attributes.STYLE_BITS_MASK);
+  }
+
+  /**
+   * Test whether contains any chars. @deprecated
+   * Basically an empty has no content, but other cells might differ in FG/BG
+   * from real empty cells.
+   */
+  public hasContent(index: number): number {
+    return this.moveToColumn(index) & Content.HAS_CONTENT_MASK;
+  }
+
+  /** Test whether the cell contains a combined string. */
+  public isCombined(index: number): number {
+    return this.moveToColumn(index) & Content.IS_COMBINED_MASK;
   }
 
   /** for debugging */
@@ -915,6 +958,8 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
             const str = utf32ToString(this._data, idata, clEnd);
             cursor.combinedData = str;
             BufferLine.setPosition(cursor, clEnd, -1, col + todo);
+            cursor.content = col !== 0 ? 0
+              : (w << Content.WIDTH_SHIFT) | Content.IS_COMBINED_MASK;
             return 0;
           }
           break;
@@ -926,17 +971,17 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
             idata++;
             col = 0;
           } else {
-            col += todo;
             const wshift = w > 1 ? 1 : 0;
-            cell.content = w << Content.WIDTH_SHIFT
-              | (word & 0x1fffff);
+            cell.content = col !== 0 ? 0
+              : w << Content.WIDTH_SHIFT | (word & 0x1fffff);
+            col += todo;
             BufferLine.setPosition(cursor, idata, -1, col);
             return 0;
           }
           break;
       }
     }
-    //this._setChars(cursor, 0, 0, 1);
+    cursor.content = (NULL_CELL_WIDTH << Content.WIDTH_SHIFT) | NULL_CELL_CODE;
     BufferLine.setPosition(cursor, idata, -1, todo);
     cursor.setBg(this.lineEndBg);
     return todo;

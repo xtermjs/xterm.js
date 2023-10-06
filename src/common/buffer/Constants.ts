@@ -109,7 +109,13 @@ export const enum Attributes {
   /**
    * bit 1..24  RGB room
    */
-  RGB_MASK = 0xFFFFFF
+  RGB_MASK = 0xFFFFFF,
+
+  /**
+   * bit 27..32 in bg/fg are used for FgFlags/BgFlags (style bits).
+   * This will probably change.
+   */
+  STYLE_BITS_MASK = 0xFC000000
 }
 
 export const enum StyleFlags {
