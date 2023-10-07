@@ -519,7 +519,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.fixSplitWide(cursor);
     }
 
-    bufferRow.setAttributes(cursor, curAttr.getFg(), curAttr.getBg(), curAttr.getStyleFlags(), curAttr.extended);
+    bufferRow.setAttributes(cursor, curAttr);
 
     let precedingJoinState = this._parser.precedingJoinState;
 

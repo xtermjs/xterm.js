@@ -257,7 +257,7 @@ export interface IBufferLine {
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
   setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
-  setAttributes(cursor: ICellData, fg: number, bg: number, style: StyleFlags, eAttrs: IExtendedAttrs): void;
+  setAttributes(cursor: ICellData, attrs: IAttributeData): void;
   /**
    * Add character (codePoint) following cursor position.
    * Cursor position is moved to be after added character.

@@ -128,14 +128,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
     const cursor = new CellData();
     this.scanInit(cursor);
     this.scanNext(cursor, index, 0);
-    let fg = attrs.fg;
-    let bg = attrs.bg;
-    let fg_flags = fg & 0xFC000000;
-    let bg_flags = bg & 0xFC000000;
-    let style_flags = (fg_flags >> 24) | (bg_flags >> 16);
-    fg -= fg_flags;
-    bg -= bg_flags;
-    this.setAttributes(cursor, fg, bg, style_flags, attrs.extended);
+    this.setAttributes(cursor, attrs);
     this.setCodePoint(cursor, codePoint, width);
   }
 
@@ -146,7 +139,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
     this.setCellFromCodepoint(index, cell.content, cell.getWidth(), cell);
   }
 
-  abstract setAttributes(cursor: ICellData, fg: number, bg: number, style: StyleFlags, eAttrs: IExtendedAttrs): void;
+  abstract setAttributes(cursor: ICellData, attrs: IAttributeData): void;
   abstract setCodePoint(cursor: ICellData, codePoint: number, width: number): void;
 
   /**
@@ -486,17 +479,20 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     return this.loadCell(index, new CellData()).getAsCharData();
   }
 
-  public setAttributes(cursor: ICellData, fg: number, bg: number, style_flags: StyleFlags, eAttrs: IExtendedAttrs): void {
+  public setAttributes(cursor: ICellData, attrs: IAttributeData): void {
     const cell = cursor as CellData;
     this.fixSplitWide(cell);
+    const newFg = attrs.getFg();
+    const newBg = attrs.getBg();
+    const newStyle = attrs.getStyleFlags();
     const oldFg = cell.getFg();
     const oldBg = cell.getBg();
     const oldStyle = cell.getStyleFlags();
-    const needFg = fg !== oldFg;
-    const needBg = bg !== oldBg
+    const needFg = newFg !== oldFg;
+    const needBg = newBg !== oldBg
     let oldExt = cell.hasExtendedAttrs() && cell.extended;
-    let newExt = (style_flags & StyleFlags.HAS_EXTENDED) && eAttrs;
-    const needStyle = style_flags !== oldStyle || oldExt !== newExt;
+    let newExt = (newStyle & StyleFlags.HAS_EXTENDED) && attrs.extended;
+    const needStyle = newStyle !== oldStyle || oldExt !== newExt;
     let idata = BufferLine.dataIndex(cell);
     const atEnd = this.atLineEnd(cell);
     let add1 = atEnd ? 1 : 2;
@@ -506,18 +502,18 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
       this.splitWord(cell, add);
       idata = BufferLine.dataIndex(cell);
       if (needFg) {
-        this._data[idata++] = BufferLine.wSet1(DataKind.FG, fg);
-        cell.fg = fg;
+        this._data[idata++] = BufferLine.wSet1(DataKind.FG, newFg);
+        cell.setFg(newFg);
       }
       if (needBg) {
-        this._data[idata++] = BufferLine.wSet1(DataKind.BG, bg);
-        cell.bg = bg;
+        this._data[idata++] = BufferLine.wSet1(DataKind.BG, newBg);
+        cell.setBg(newBg);
       }
       if (needStyle) {
-        if (style_flags & StyleFlags.HAS_EXTENDED)
-          this._extendedAttrs[idata] = eAttrs;
-        this._data[idata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, style_flags);
-        cell.setStyleFlags(style_flags);
+        if (newStyle & StyleFlags.HAS_EXTENDED)
+          this._extendedAttrs[idata] = attrs.extended;
+        this._data[idata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, newStyle);
+        cell.setStyleFlags(newStyle);
       }
       let xdata = idata;
       if (! atEnd) {
@@ -717,7 +713,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     const width = fill.getWidth();
     if (count <= 0)
       return;
-    this.setAttributes(cursor, fill.getFg(), fill.getBg(), fill.getStyleFlags(), fill.extended);
+    this.setAttributes(cursor, fill);
     for (;;) {
       // FIXME check protected
       this.setCodePoint(cursor, code, width);
