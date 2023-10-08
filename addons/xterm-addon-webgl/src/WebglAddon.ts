@@ -10,6 +10,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
+import { IWebGL2RenderingContext } from './Types';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
 
@@ -30,7 +31,16 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     private _preserveDrawingBuffer?: boolean
   ) {
     if (isSafari && getSafariVersion() < 16) {
-      throw new Error('Webgl2 is only supported on Safari 16 and above');
+      // Perform an extra check to determine if Webgl2 is manually enabled in developer settings
+      const contextAttributes = {
+        antialias: false,
+        depth: false,
+        preserveDrawingBuffer: true
+      };
+      const gl = document.createElement('canvas').getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
+      if (!gl) {
+        throw new Error('Webgl2 is only supported on Safari 16 and above');
+      }
     }
     super();
   }
