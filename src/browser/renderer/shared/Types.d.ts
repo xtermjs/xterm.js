@@ -4,7 +4,7 @@
  */
 
 import { FontWeight, Terminal } from 'xterm';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, ITerminal } from 'browser/Types';
 import { IDisposable } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 
@@ -168,6 +168,6 @@ export interface ISelectionRenderModel {
   readonly selectionStart: [number, number] | undefined;
   readonly selectionEnd: [number, number] | undefined;
   clear(): void;
-  update(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode?: boolean): void;
+  update(terminal: ITerminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode?: boolean): void;
   isCellSelected(terminal: Terminal, x: number, y: number): boolean;
 }

@@ -7,9 +7,10 @@ import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererR
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
+import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ILinkifier2, ILinkifierEvent, ReadonlyColorSet } from 'browser/Types';
+import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
@@ -24,12 +25,6 @@ const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 
 let nextTerminalId = 1;
-
-interface ISelectionState {
-  columnSelectMode: boolean;
-  selectionStart: [number, number]| undefined;
-  selectionEnd: [number, number]| undefined;
-}
 
 /**
  * A fallback renderer for when canvas is slow. This is not meant to be
@@ -46,17 +41,14 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
-  private _selectionState: ISelectionState = {
-    columnSelectMode: false,
-    selectionStart: undefined,
-    selectionEnd: undefined
-  };
+  private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
 
   public dimensions: IRenderDimensions;
 
   public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
 
   constructor(
+    private readonly _terminal: ITerminal,
     private readonly _document: Document,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
@@ -301,9 +293,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public handleResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
-    if (this._selectionState.selectionStart && this._selectionState.selectionEnd) {
-      this.handleSelectionChanged(this._selectionState.selectionStart, this._selectionState.selectionEnd, this._selectionState.columnSelectMode);
-    }
+    this.handleSelectionChanged(this._selectionRenderModel.selectionStart, this._selectionRenderModel.selectionEnd, this._selectionRenderModel.columnSelectMode);
   }
 
   public handleCharSizeChanged(): void {
@@ -323,10 +313,6 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
-    this._selectionState.selectionStart = start;
-    this._selectionState.selectionEnd = end;
-    this._selectionState.columnSelectMode = columnSelectMode;
-
     // Remove all selections
     this._selectionContainer.replaceChildren();
     this._rowFactory.handleSelectionChanged(start, end, columnSelectMode);
@@ -337,11 +323,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       return;
     }
 
+    this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
+
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._bufferService.buffer.ydisp;
-    const viewportEndRow = end[1] - this._bufferService.buffer.ydisp;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, this._bufferService.rows - 1);
+    const viewportStartRow = this._selectionRenderModel.viewportStartRow;
+    const viewportEndRow = this._selectionRenderModel.viewportEndRow;
+    const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
+    const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
 
     // No need to draw the selection
     if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
