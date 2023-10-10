@@ -25,6 +25,11 @@ const SELECTION_CLASS = 'xterm-selection';
 
 let nextTerminalId = 1;
 
+interface ISelectionState {
+  columnSelectMode: boolean;
+  selectionStart: [number, number]| undefined;
+  selectionEnd: [number, number]| undefined;
+}
 
 /**
  * A fallback renderer for when canvas is slow. This is not meant to be
@@ -41,6 +46,11 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
+  private _selectionState: ISelectionState = {
+    columnSelectMode: false,
+    selectionStart: undefined,
+    selectionEnd: undefined
+  };
 
   public dimensions: IRenderDimensions;
 
@@ -291,6 +301,9 @@ export class DomRenderer extends Disposable implements IRenderer {
   public handleResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
+    if (this._selectionState.selectionStart && this._selectionState.selectionEnd) {
+      this.handleSelectionChanged(this._selectionState.selectionStart, this._selectionState.selectionEnd, this._selectionState.columnSelectMode);
+    }
   }
 
   public handleCharSizeChanged(): void {
@@ -310,6 +323,10 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    this._selectionState.selectionStart = start;
+    this._selectionState.selectionEnd = end;
+    this._selectionState.columnSelectMode = columnSelectMode;
+
     // Remove all selections
     this._selectionContainer.replaceChildren();
     this._rowFactory.handleSelectionChanged(start, end, columnSelectMode);
@@ -365,10 +382,16 @@ export class DomRenderer extends Disposable implements IRenderer {
    */
   private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
     const element = this._document.createElement('div');
+    const left = colStart * this.dimensions.css.cell.width;
+    let width = this.dimensions.css.cell.width * (colEnd - colStart);
+    if (left + width > this.dimensions.css.canvas.width) {
+      width = this.dimensions.css.canvas.width - left;
+    }
+
     element.style.height = `${rowCount * this.dimensions.css.cell.height}px`;
     element.style.top = `${row * this.dimensions.css.cell.height}px`;
-    element.style.left = `${colStart * this.dimensions.css.cell.width}px`;
-    element.style.width = `${this.dimensions.css.cell.width * (colEnd - colStart)}px`;
+    element.style.left = `${left}px`;
+    element.style.width = `${width}px`;
     return element;
   }
 
