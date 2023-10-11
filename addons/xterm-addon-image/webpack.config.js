@@ -21,6 +21,12 @@ const addon = {
       }
     ]
   },
+  resolve: {
+    extensions: [ '.js' ],
+    alias: {
+      common: path.resolve('../../out/common')
+    }
+  },
   output: {
     filename: mainFile,
     path: path.resolve('./lib'),
