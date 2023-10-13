@@ -58,7 +58,7 @@ describe('CompositionHelper', () => {
           // Second character 'ㅇ'
           compositionHelper.compositionstart();
           compositionHelper.compositionupdate({ data: 'ㅇ' });
-          textarea.value = 'ㅇㅇ';
+          textarea.value = 'ㅇ';
           setTimeout(() => { // wait for any textarea updates
             compositionHelper.compositionend();
             setTimeout(() => { // wait for any textarea updates
@@ -76,10 +76,11 @@ describe('CompositionHelper', () => {
       compositionHelper.compositionupdate({ data: 'ㅇ' });
       textarea.value = 'ㅇ';
       setTimeout(() => { // wait for any textarea updates
-        compositionHelper.compositionupdate({ data: '아' });
+        compositionHelper.compositionupdate({ data: 'ㅏ' });
         textarea.value = '아';
+        console.log(textarea.value);
         setTimeout(() => { // wait for any textarea updates
-          compositionHelper.compositionupdate({ data: '앙' });
+          compositionHelper.compositionupdate({ data: 'ㅇ' });
           textarea.value = '앙';
           setTimeout(() => { // wait for any textarea updates
             compositionHelper.compositionend();
@@ -88,13 +89,13 @@ describe('CompositionHelper', () => {
               // Second character '앙'
               compositionHelper.compositionstart();
               compositionHelper.compositionupdate({ data: 'ㅇ' });
-              textarea.value = '앙ㅇ';
+              textarea.value = 'ㅇ';
               setTimeout(() => { // wait for any textarea updates
-                compositionHelper.compositionupdate({ data: '아' });
-                textarea.value = '앙아';
+                compositionHelper.compositionupdate({ data: 'ㅏ' });
+                textarea.value = '아';
                 setTimeout(() => { // wait for any textarea updates
-                  compositionHelper.compositionupdate({ data: '앙' });
-                  textarea.value = '앙앙';
+                  compositionHelper.compositionupdate({ data: 'ㅇ' });
+                  textarea.value = '앙';
                   setTimeout(() => { // wait for any textarea updates
                     compositionHelper.compositionend();
                     setTimeout(() => { // wait for any textarea updates
@@ -116,22 +117,25 @@ describe('CompositionHelper', () => {
       compositionHelper.compositionupdate({ data: 'ㅇ' });
       textarea.value = 'ㅇ';
       setTimeout(() => { // wait for any textarea updates
-        compositionHelper.compositionupdate({ data: '아' });
+        compositionHelper.compositionupdate({ data: 'ㅏ' });
         textarea.value = '아';
         setTimeout(() => { // wait for any textarea updates
           // Start second character '아' in first character
-          compositionHelper.compositionupdate({ data: '앙' });
+          compositionHelper.compositionupdate({ data: 'ㅇ' });
           textarea.value = '앙';
           setTimeout(() => { // wait for any textarea updates
             compositionHelper.compositionend();
-            compositionHelper.compositionstart();
-            compositionHelper.compositionupdate({ data: '아' });
-            textarea.value = '아아';
-            setTimeout(() => { // wait for any textarea updates
-              compositionHelper.compositionend();
+            setTimeout(() => {
+              assert.equal(handledText, '앙');
+              compositionHelper.compositionstart();
+              compositionHelper.compositionupdate({ data: '아' });
+              textarea.value = '아';
               setTimeout(() => { // wait for any textarea updates
-                assert.equal(handledText, '아아');
-                done();
+                compositionHelper.compositionend();
+                setTimeout(() => { // wait for any textarea updates
+                  assert.equal(handledText, '앙아');
+                  done();
+                }, 0);
               }, 0);
             }, 0);
           }, 0);
