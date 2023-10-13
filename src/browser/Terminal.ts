@@ -398,6 +398,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     this._document = parent.ownerDocument!;
+    if (this.options.documentOverride && this.options.documentOverride instanceof Document) {
+      this._document = this.optionsService.rawOptions.documentOverride as Document;
+    }
 
     // Create main element container
     this.element = this._document.createElement('div');

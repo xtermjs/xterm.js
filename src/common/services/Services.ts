@@ -217,6 +217,7 @@ export interface ITerminalOptions {
   cursorInactiveStyle?: CursorInactiveStyle;
   customGlyphs?: boolean;
   disableStdin?: boolean;
+  documentOverride?: any | null;
   drawBoldTextInBrightColors?: boolean;
   fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
   fastScrollSensitivity?: number;
