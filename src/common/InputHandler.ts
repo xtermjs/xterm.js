@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
+import { IInputHandler, IBufferLine, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
@@ -125,6 +125,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _dirtyRowTracker: IDirtyRowTracker;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
+  public get precedingJoinState(): number { return this._parser.precedingJoinState; }
+  public set precedingJoinState(value: number) { this._parser.precedingJoinState = value; }
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   public getAttrData(): IAttributeData { return this._curAttrData; }
@@ -176,7 +178,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _optionsService: IOptionsService,
     private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
-    private readonly _unicodeService: IUnicodeService,
+    readonly unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
     super();
@@ -500,6 +502,28 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
+    const curAttr = this._curAttrData;
+    let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+    if (true) {  // FUTURE: if (bufferRow instanceof BufferLineNew) ...
+      this.printNew(data, start, end, bufferRow, curAttr);
+    } else {
+      this.printOld(data, start, end, bufferRow, curAttr);
+    }
+  }
+
+  private printNew(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
+    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
+    // if (charset) replace character; FIXME ok to do it in-place?
+    let col = (bufferRow as BufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this);
+    //if (insertMode)
+      // deleteCols at end of line
+    // else
+    //  deleteCols following inserted characters
+    //check for line wrap;
+    this._activeBuffer.x = col;
+  }
+
+  private printOld(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
     let code: number;
     let chWidth: number;
     const charset = this._charsetService.charset;
@@ -507,8 +531,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     const cols = this._bufferService.cols;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._coreService.modes.insertMode;
-    const curAttr = this._curAttrData;
-    let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
 
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     const cursor = this._workCell;
@@ -535,8 +557,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           code = ch.charCodeAt(0);
         }
       }
-
-      const currentInfo = this._unicodeService.charProperties(code, precedingJoinState);
+      const currentInfo = this.unicodeService.charProperties(code, precedingJoinState);
       chWidth = UnicodeService.extractWidth(currentInfo);
       const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
       const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingJoinState) : 0;

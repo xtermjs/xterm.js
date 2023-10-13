@@ -3,11 +3,12 @@
  * @license MIT
  */
 
-import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
+import { CharData, IInputHandler, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, StyleFlags, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
+import { UnicodeService } from 'common/services/UnicodeService';
 
 export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 
@@ -214,14 +215,20 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
   private _cache2: number = 0;
   private _cache3: number = 0;
   private _cache4: number = 0;
-  private _cachedColumn(): number { return this._cache1 & 0xFFFF; }
+
+  /** The "current" index into the _data array.
+   * The index must be either _dataLength or wKindIsTextOrSkip must be true.
+   * (The index never points to a CLUSTER_CONTINUED item.)
+   */
   private _cachedDataIndex(): number { return this._cache1 >>> 16; }
+  /** The column number corresponding to _cachedDataIndex(). */
+  private _cachedColumn(): number { return this._cache1 & 0xFFFF; }
   //private _cachedColOffset(): number { return this._cache3 >> 24; } // UNUSED
   private _cachedBg(): number { return this._cache2; }
   private _cachedFg(): number { return this._cache3; }
   // One more than index (in _data) of STYLE_FLAGS; 0 if none.
   private _cachedStyleFlagsIndex(): number { return this._cache4; }
-    private _cacheReset(): void { this._cache1 = 0; this._cache2 = 0; this._cache3 = 0; this._cache4 = 0; }
+  private _cacheReset(): void { this._cache1 = 0; this._cache2 = 0; this._cache3 = 0; this._cache4 = 0; }
   private _cacheSetFgBg(fg: number, bg: number): void { this._cache2 = bg; this._cache3 = fg; }
     private _cacheSetStyleFlagsIndex(index: number): void { this._cache4 = index; }
   private _cacheSetColumnDataIndex(column: number, dataIndex: number): void { this._cache1 = (dataIndex << 16) | (column & 0xFFFF); }
@@ -289,7 +296,9 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
       }
   }
 
+  // count can be negative
   addEmptyDataElements(position: number, count: number): void {
+    // FIXME also adjust _extendedAttr indexes
     this.resizeData(this._dataLength + count);
     this._data.copyWithin(position + count, position, this._dataLength);
     this._dataLength += count;
@@ -940,6 +949,125 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     BufferLine.setPosition(cursor, idata, -1, todo);
     cursor.setBg(this.lineEndBg);
     return todo;
+  }
+
+  public insertText(index: number, data: Uint32Array, start: number, end: number, attrs: IAttributeData, inputHandler: IInputHandler): number {
+    let content = this.moveToColumn(index);
+    let curColumn = this._cachedColumn();
+    let idata = this._cachedDataIndex();
+
+    // CASES:
+    // 1. idata === _dataLength - easy.
+    // 2. _data[idata] is SKIP_COLUMNS
+    // -- split if curColumnn > 0 && curColumn < wlen
+    // 3. kind is wKindIsText:
+    // a. curColumn===index
+    // b. index === curColumn + width
+    // c. otherwise - in middle of wide char
+
+    // split if in middle of wide FIXME
+    if ((content >> Content.WIDTH_SHIFT) === 2
+      && index === curColumn + 1) {
+      // In the middle of a wide character. Well-behaved applications are
+      // unlikely to do this, so it's not worth optimizing.
+      const clEnd = this.clusterEnd(idata);
+      this.addEmptyDataElements(idata, idata - clEnd - 1);
+      this._data[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 2);
+    }
+    // FIXME handle after _dataLength or in SKIP_COILUMNS
+
+    // set attributes
+    const newFg = attrs.getFg();
+    const newBg = attrs.getBg();
+    const newStyle = attrs.getStyleFlags();
+    const oldFg = this._cachedFg();
+    const oldBg = this._cachedBg();
+    let styleFlagsIndex = this._cachedStyleFlagsIndex();
+    const oldStyle = styleFlagsIndex > 0 ? this._data[styleFlagsIndex - 1] : 0;
+    const needFg = newFg !== oldFg;
+    const needBg = newBg !== oldBg
+    // FIXME let oldExt = (oldStyle & StyleFlags.HAS_EXTENDED) && cell.extended;
+    //let newExt = (newStyle & StyleFlags.HAS_EXTENDED) && attrs.extended;
+    const needStyle = newStyle !== oldStyle // FIXME || oldExt !== newExt;
+    const atEnd = idata === this._dataLength;
+    let add1 = atEnd ? 1 : 2;
+    let add = (needBg?add1:0) + (needFg?add1:0) + (needStyle?add1:0);
+
+    if (add) {
+      this.addEmptyDataElements(idata, add);
+      if (needFg) {
+        this._data[idata++] = BufferLine.wSet1(DataKind.FG, newFg);
+      }
+      if (needBg) {
+        this._data[idata++] = BufferLine.wSet1(DataKind.BG, newBg);
+      }
+      if (needStyle) {
+        if (newStyle & StyleFlags.HAS_EXTENDED)
+          this._extendedAttrs[idata] = attrs.extended;
+        this._cacheSetStyleFlagsIndex(idata);
+        this._data[idata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, newStyle);
+      }
+      let xdata = idata; // FIXME
+      if (! atEnd) {
+        if (needFg) {
+          this._data[xdata++] = BufferLine.wSet1(DataKind.FG, oldFg);
+        }
+        if (needStyle) {
+          this._data[xdata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, oldStyle);
+        }
+        if (needBg) {
+          this._data[xdata++] = BufferLine.wSet1(DataKind.BG, oldBg);
+        }
+      }
+      this._cacheSetFgBg(newFg, newBg);
+    }
+
+    let precedingJoinState = inputHandler.precedingJoinState;
+    let inext;
+    if (add || idata === this._dataLength || index === curColumn)
+        inext = idata;
+    else {
+        const kind = BufferLine.wKind(this._data[idata]);
+        if (BufferLine.wKindIsText(kind))
+            inext = this.clusterEnd(idata);
+        else
+            inext = idata;
+    }
+    this.addEmptyDataElements(inext, end - start);
+    let cellColumn = curColumn;
+    for (let i = start; i < end; i++) {
+      // inext is the insertion point for the current codepoint
+      // idata is the start of the most recent character or cluster,
+      // assuming all codepoints from idata until inext are the same cluster.
+      // If there is no preceding character/cluster that can be added to,
+      // then idata === inext.
+      const code = data[i];
+      const currentInfo = inputHandler.unicodeService.charProperties(code, precedingJoinState);
+      const chWidth = UnicodeService.extractWidth(currentInfo);
+      const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
+      const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingJoinState) : 0;
+      precedingJoinState = currentInfo;
+      let kind;
+      if (shouldJoin) {
+        kind = chWidth === 2 ? DataKind.CLUSTER_START_w2 : DataKind.CLUSTER_START_w1;
+        const oldCount = (this._data[idata] >> 21) & 0x3F;
+        const startChar = this._data[idata] & 0x1FFFFF;
+        // FIXME check for count overflow;
+        this._data[idata] = BufferLine.wSet1(kind,
+          startChar + ((oldCount + 1) << 21));
+        kind = DataKind.CLUSTER_CONTINUED;
+        curColumn += chWidth - oldWidth;
+      } else {
+        kind = chWidth === 2 ? DataKind.CHAR_w2 : DataKind.CHAR_w1;
+        idata = inext;
+        cellColumn = curColumn;
+        curColumn += chWidth;
+      }
+      this._data[inext++] = BufferLine.wSet1(kind, code);
+    }
+    inputHandler.precedingJoinState = precedingJoinState;
+    this._cacheSetColumnDataIndex(cellColumn, idata);
+    return curColumn;
   }
 
   public eraseAll(bg: number): void {
