@@ -5,7 +5,6 @@
 
 import { ITerminal } from 'browser/Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { Terminal } from 'xterm';
 
 class SelectionRenderModel implements ISelectionRenderModel {
@@ -19,7 +18,6 @@ class SelectionRenderModel implements ISelectionRenderModel {
   public endCol!: number;
   public selectionStart: [number, number] | undefined;
   public selectionEnd: [number, number] | undefined;
-  private _buffer: BufferNamespaceApi | undefined;
 
   constructor() {
     this.clear();
@@ -39,10 +37,6 @@ class SelectionRenderModel implements ISelectionRenderModel {
   }
 
   public update(terminal: ITerminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
-    if (!this._buffer) {
-      this._buffer = new BufferNamespaceApi(terminal);
-    }
-
     this.selectionStart = start;
     this.selectionEnd = end;
     // Selection does not exist
@@ -52,8 +46,9 @@ class SelectionRenderModel implements ISelectionRenderModel {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._buffer.active.viewportY;
-    const viewportEndRow = end[1] - this._buffer.active.viewportY;
+    const viewportY = terminal.buffers.active.ydisp;
+    const viewportStartRow = start[1] - viewportY;
+    const viewportEndRow = end[1] - viewportY;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
 
