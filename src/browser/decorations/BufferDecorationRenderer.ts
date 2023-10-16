@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IRenderService } from 'browser/services/Services';
+import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration } from 'common/services/Services';
 
@@ -19,6 +19,7 @@ export class BufferDecorationRenderer extends Disposable {
   constructor(
     private readonly _screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IDecorationService private readonly _decorationService: IDecorationService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
@@ -70,7 +71,7 @@ export class BufferDecorationRenderer extends Disposable {
   }
 
   private _createElement(decoration: IInternalDecoration): HTMLElement {
-    const element = document.createElement('div');
+    const element = this._coreBrowserService.mainDocument.createElement('div');
     element.classList.add('xterm-decoration');
     element.classList.toggle('xterm-decoration-top-layer', decoration?.options?.layer === 'top');
     element.style.width = `${Math.round((decoration.options.width || 1) * this._renderService.dimensions.css.cell.width)}px`;

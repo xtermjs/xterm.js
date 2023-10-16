@@ -35,6 +35,11 @@ export interface ICoreBrowserService {
    */
   readonly window: Window & typeof globalThis;
   /**
+   * The document of the primary window if working with multiple windows. This
+   * is set by the documentOverride setting.
+   */
+  readonly mainDocument: Document;
+  /**
    * Helper for getting the devicePixelRatio of the parent window.
    */
   readonly dpr: number;

@@ -355,6 +355,9 @@ export class MockCoreBrowserService implements ICoreBrowserService {
   public get window(): Window & typeof globalThis {
     throw Error('Window object not available in tests');
   }
+  public get mainDocument(): Document {
+    throw Error('Document object not available in tests');
+  }
   public dpr: number = 1;
 }
 

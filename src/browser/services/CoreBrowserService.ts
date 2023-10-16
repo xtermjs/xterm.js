@@ -13,7 +13,8 @@ export class CoreBrowserService implements ICoreBrowserService {
 
   constructor(
     private _textarea: HTMLTextAreaElement,
-    public readonly window: Window & typeof globalThis
+    public readonly window: Window & typeof globalThis,
+    public readonly mainDocument: Document
   ) {
     this._textarea.addEventListener('focus', () => this._isFocused = true);
     this._textarea.addEventListener('blur', () => this._isFocused = false);
