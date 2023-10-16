@@ -30,12 +30,6 @@ export abstract class AbstractBufferLine implements IBufferLine {
 
   abstract scanNext(cursor: ICellData, n: number, flags: number): number;
   abstract eraseAll(bg: number): void;
-  /**
-   * Delete n colums, sliding following columns "left".
-   * If endCols >= 0, replace vacated columns (the n columns before endCol)
-   * with null cells with bg color.
-   */
-  abstract deleteCols(cursor: CellData, n: number, bg: number, endCol: number): void;
   abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
   abstract replaceCols(cursor: ICellData, count: number, fillCellData: ICellData, respectProtect?: boolean): void;
  // abstract addCodepointToCell(index: number, codePoint: number): void;
@@ -157,13 +151,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
     return this.loadCell(index, new CellData()).isCombined();
   }
 
-  public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
-    pos %= this.length;
-    let cursor = new CellData();
-    this.scanInit(cursor);
-    this.scanNext(cursor, pos, 0);
-    this.deleteCols(cursor, n, fillCellData.bg, -1); // FIXME set endCols
-  }
+  abstract deleteCells(pos: number, n: number, fillCellData: ICellData): void;
 
   /** Returns the string content of the cell. @deprecated  */
   public getString(index: number): string {
@@ -868,6 +856,118 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     return cell;
   }
 
+  public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
+    const content = this.moveToColumn(pos);
+    let idata = this._cachedDataIndex();
+    let curColumn = this._cachedColumn();
+    this.deleteCellsOnly(idata, 0, n);
+    // FIXME
+    this.lineEndBg = fillCellData.bg;
+  }
+
+  // FIXME doesn't properly handle if delete range starts or ends in middle
+  // of wide character
+  /** Internal - delete n columns, with adjust at end of line. */
+  public deleteCellsOnly(idata0: number, colOffset0: number, n: number): void {
+    let todo = n;
+    let idata = idata0;
+    let colOffset = colOffset0;
+    let word0 = this._data[idata];
+    let dskip_first = idata, dskip_last = -1, tskip_first = -1, tskip_last = -1, w;
+    let fgValue = -1; //cursor.getFg();
+    let bgValue = -1; //cursor.getBg();
+    let styleValue = -1; //cursor.getStyleFlags(); // FIXME handle extendedattrs
+    /*
+    if (colOffset === 0) {
+      while (idata > 0) {
+        let skipItem = true;
+        switch (BufferLine.wKind(this._data[idata-1])) {
+          case DataKind.BG: cursor.setBg(-1); break;
+          case DataKind.FG: cursor.setFg(-1); break;
+          case DataKind.STYLE_FLAGS: cursor.setStyleFlags(-1 as StyleFlags); break;
+          default: skipItem = false;
+        }
+        if (skipItem) {
+          idata--;
+          dskip_first = idata;
+          dskip_last = idata0-1;
+        } else {
+          break;
+        }
+      }
+    }
+    */
+    for (; todo > 0 && idata < this._dataLength; idata++) {
+      let word = this._data[idata];
+      const kind = BufferLine.wKind(word);
+      switch (kind) {
+        case DataKind.FG: fgValue = word; break;
+        case DataKind.BG: bgValue = word; break;
+        case DataKind.STYLE_FLAGS:
+          styleValue = word;
+          // handle ExtendedAttrs FIXME
+          break;
+        case DataKind.SKIP_COLUMNS:
+          let wlen = BufferLine.wSkipCount(word);
+          if (colOffset === 0 && wlen <= todo) {
+            dskip_last = idata;
+            todo -= wlen;
+          } else {
+            let delta = Math.min(todo,  wlen - colOffset);
+            this._data[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, wlen - delta);
+            dskip_first = idata + 1;
+            todo -= delta;
+          }
+          colOffset = 0;
+          break;
+        case DataKind.CHAR_w1:
+        case DataKind.CHAR_w2:
+          w = kind - DataKind.CHAR_w1; // 0, or 1 if wide characters
+          if (colOffset === 0 && (1 << w) <= todo) {
+            dskip_last = idata;
+            todo -= 1 << w;
+          } else {
+            dskip_first = idata + 1;
+            /*
+            const delta = tend - tstart;
+            this._data[idata] = BufferLine.wSet1(kind, wlen - delta);
+            todo -= delta << w;
+            */
+          }
+          break;
+        case DataKind.CLUSTER_START_w1:
+        case DataKind.CLUSTER_START_w2:
+          w = kind - DataKind.CLUSTER_START_w1; // 0, or 1 if wide characters
+          const clEnd = this.clusterEnd(idata);
+          if (colOffset < (1 << w)) {
+            idata = clEnd;
+            dskip_last = idata;
+            todo -= (1 << w);
+          } else {
+            dskip_first = idata + 1;
+          }
+          colOffset = 0;
+          break;
+      }
+    }
+    idata0 = dskip_first;
+    if (bgValue >= 0) {
+      this._data[idata0++] = BufferLine.wSet1(DataKind.BG, bgValue);
+    }
+    if (fgValue >= 0) {
+      this._data[idata0++] = BufferLine.wSet1(DataKind.FG, fgValue);
+    }
+    if (styleValue >= 0) {
+      this._data[idata0++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, styleValue);
+    }
+    if (dskip_last >= 0) {
+      // FIXME maybe use addEmptyDataElements with negative count
+      this._data.copyWithin(idata0, dskip_last + 1, this._dataLength);
+      // FIXME also adjust _extendedAttr indexes
+      this._dataLength -= dskip_last + 1 - idata0;
+    }
+  }
+
   /**
    * Move cursor forward the specified number of columns.
    * After, getChars() is the last character whose start edge is traversed.
@@ -951,9 +1051,10 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     return todo;
   }
 
-  public insertText(index: number, data: Uint32Array, start: number, end: number, attrs: IAttributeData, inputHandler: IInputHandler): number {
+  public insertText(index: number, data: Uint32Array, start: number, end: number, attrs: IAttributeData, inputHandler: IInputHandler, insertMode: boolean): number {
     let content = this.moveToColumn(index);
     let curColumn = this._cachedColumn();
+    const startColumn = curColumn;
     let idata = this._cachedDataIndex();
 
     // CASES:
@@ -1067,6 +1168,9 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     }
     inputHandler.precedingJoinState = precedingJoinState;
     this._cacheSetColumnDataIndex(cellColumn, idata);
+    if (! insertMode && idata < this._dataLength) {
+      this.deleteCellsOnly(inext, 0, curColumn - startColumn);
+    }
     return curColumn;
   }
 
@@ -1077,6 +1181,7 @@ export class BufferLine extends AbstractBufferLine implements IBufferLine {
     this.lineEndBg = bg;
   }
 
+  // deprecated
   public deleteCols(cursor: CellData, n: number, bg: number, endCol: number): void {
     this.fixSplitWide(cursor);
     let todo = n;

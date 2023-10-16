@@ -514,12 +514,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   private printNew(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     // if (charset) replace character; FIXME ok to do it in-place?
-    let col = (bufferRow as BufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this);
-    //if (insertMode)
-      // deleteCols at end of line
-    // else
-    //  deleteCols following inserted characters
-    //check for line wrap;
+    const insertMode = this._coreService.modes.insertMode;
+    let col = (bufferRow as BufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, insertMode);
+    //FIXME check for line wrap;
     this._activeBuffer.x = col;
   }
 
