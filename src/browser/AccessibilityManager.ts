@@ -7,7 +7,6 @@ import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IBuffer } from 'common/buffer/Types';
@@ -29,8 +28,6 @@ export class AccessibilityManager extends Disposable {
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
   private _liveRegionDebouncer: IRenderDebouncer;
-
-  private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
@@ -97,8 +94,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
 
-    this._screenDprMonitor = this.register(instantiationService.createInstance(ScreenDprMonitor));
-    this.register(this._screenDprMonitor.onDprChange(() => this._refreshRowsDimensions()));
+    this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
     // TODO: Listen to window change

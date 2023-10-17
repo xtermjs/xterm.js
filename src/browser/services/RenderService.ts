@@ -5,7 +5,6 @@
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
-import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
@@ -25,7 +24,6 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderer: MutableDisposable<IRenderer> = this.register(new MutableDisposable());
   private _renderDebouncer: IRenderDebouncerWithCallback;
-  private _screenDprMonitor: ScreenDprMonitor;
   private _pausedResizeTask = new DebouncedIdleTask();
 
   private _isPaused: boolean = false;
@@ -67,8 +65,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderDebouncer = new RenderDebouncer(coreBrowserService.window, (start, end) => this._renderRows(start, end));
     this.register(this._renderDebouncer);
 
-    this._screenDprMonitor = this.register(instantiationService.createInstance(ScreenDprMonitor));
-    this.register(this._screenDprMonitor.onDprChange(() => this.handleDevicePixelRatioChange()));
+    this.register(coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
 
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer.value?.clear()));

@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ICoreBrowserService } from 'browser/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 
@@ -21,15 +20,12 @@ export class ScreenDprMonitor extends Disposable {
   private _currentDevicePixelRatio: number;
   private _outerListener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | undefined;
   private _resolutionMediaMatchList: MediaQueryList | undefined;
-  private _parentWindow: Window;
 
   private readonly _onDprChange = this.register(new EventEmitter<number>());
   public readonly onDprChange = this._onDprChange.event;
 
-  constructor(@ICoreBrowserService coreBrowserService: ICoreBrowserService) {
+  constructor(private _parentWindow: Window) {
     super();
-
-    this._parentWindow = coreBrowserService.window;
 
     // Initialize listener and dpr value
     this._outerListener = () => {
@@ -41,20 +37,16 @@ export class ScreenDprMonitor extends Disposable {
     this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
     this._updateDpr();
 
-    // Listen for window changes
-    this.register(coreBrowserService.onWindowChange(w => {
-      this._parentWindow = w;
-      if (this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
-        this._onDprChange.fire(this._parentWindow.devicePixelRatio);
-      }
-      this._updateDpr();
-    }));
-
     // Setup additional disposables
     this.register(toDisposable(() => this.clearListener()));
   }
 
-  public setListener(): void {
+  public setWindow(parentWindow: Window): void {
+    this._parentWindow = parentWindow;
+    if (this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
+      this._onDprChange.fire(this._parentWindow.devicePixelRatio);
+    }
+    this._updateDpr();
   }
 
   private _updateDpr(): void {

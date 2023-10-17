@@ -5,24 +5,30 @@
 
 import { Disposable } from 'common/Lifecycle';
 import { ICoreBrowserService } from './Services';
-import { EventEmitter } from 'common/EventEmitter';
+import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 
 export class CoreBrowserService extends Disposable implements ICoreBrowserService {
   public serviceBrand: undefined;
 
   private _isFocused = false;
   private _cachedIsFocused: boolean | undefined = undefined;
+  private _screenDprMonitor = new ScreenDprMonitor(this._window);
 
+  private readonly _onDprChange = this.register(new EventEmitter<number>());
+  public readonly onDprChange = this._onDprChange.event;
   private readonly _onWindowChange = this.register(new EventEmitter<Window & typeof globalThis>());
   public readonly onWindowChange = this._onWindowChange.event;
 
   constructor(
     private _textarea: HTMLTextAreaElement,
-    // TODO: Add getter and setter and event
     private _window: Window & typeof globalThis,
     public readonly mainDocument: Document
   ) {
     super();
+
+    this.register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
+    this.register(forwardEvent(this._screenDprMonitor.onDprChange, this._onDprChange));
 
     this._textarea.addEventListener('focus', () => this._isFocused = true);
     this._textarea.addEventListener('blur', () => this._isFocused = false);

@@ -350,6 +350,7 @@ export class MockCompositionHelper implements ICompositionHelper {
 }
 
 export class MockCoreBrowserService implements ICoreBrowserService {
+  public onDprChange = new EventEmitter<number>().event;
   public onWindowChange = new EventEmitter<Window & typeof globalThis, void>().event;
   public serviceBrand: undefined;
   public isFocused: boolean = true;

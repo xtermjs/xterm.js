@@ -29,7 +29,9 @@ export interface ICoreBrowserService {
 
   readonly isFocused: boolean;
 
-  onWindowChange: IEvent<Window & typeof globalThis>;
+  readonly onDprChange: IEvent<number>;
+  readonly onWindowChange: IEvent<Window & typeof globalThis>;
+
   /**
    * Gets or sets the parent window that the terminal is rendered into. DOM and rendering APIs (e.g.
    * requestAnimationFrame) should be invoked in the context of this window. This should be set when
