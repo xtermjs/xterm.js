@@ -34,6 +34,7 @@ export class BufferDecorationRenderer extends Disposable {
       this._dimensionsChanged = true;
       this._queueRefresh();
     }));
+    // TODO: Listen to window change
     this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._altBufferIsActive = this._bufferService.buffer === this._bufferService.buffers.alt;

@@ -4,9 +4,8 @@
  */
 
 import { ICoreBrowserService } from 'browser/services/Services';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-
-export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRatio?: number) => void;
 
 /**
  * The screen device pixel ratio monitor allows listening for when the
@@ -21,39 +20,41 @@ export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRat
 export class ScreenDprMonitor extends Disposable {
   private _currentDevicePixelRatio: number;
   private _outerListener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | undefined;
-  private _listener: ScreenDprListener | undefined;
   private _resolutionMediaMatchList: MediaQueryList | undefined;
   private _parentWindow: Window;
 
+  private readonly _onDprChange = this.register(new EventEmitter<number>());
+  public readonly onDprChange = this._onDprChange.event;
+
   constructor(@ICoreBrowserService coreBrowserService: ICoreBrowserService) {
     super();
-    this._parentWindow = coreBrowserService.window;
-    this.register(coreBrowserService.onWindowChange(w => {
-      this._parentWindow = w;
-      if (this._listener && this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
-        this._listener(this._parentWindow.devicePixelRatio, this._currentDevicePixelRatio);
-      }
-      this._updateDpr();
-    }));
-    this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
-    this.register(toDisposable(() => {
-      this.clearListener();
-    }));
-  }
 
-  public setListener(listener: ScreenDprListener): void {
-    if (this._listener) {
-      this.clearListener();
-    }
-    this._listener = listener;
+    this._parentWindow = coreBrowserService.window;
+
+    // Initialize listener and dpr value
     this._outerListener = () => {
-      if (!this._listener) {
-        return;
+      if (this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
+        this._onDprChange.fire(this._parentWindow.devicePixelRatio);
       }
-      this._listener(this._parentWindow.devicePixelRatio, this._currentDevicePixelRatio);
       this._updateDpr();
     };
+    this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
     this._updateDpr();
+
+    // Listen for window changes
+    this.register(coreBrowserService.onWindowChange(w => {
+      this._parentWindow = w;
+      if (this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
+        this._onDprChange.fire(this._parentWindow.devicePixelRatio);
+      }
+      this._updateDpr();
+    }));
+
+    // Setup additional disposables
+    this.register(toDisposable(() => this.clearListener()));
+  }
+
+  public setListener(): void {
   }
 
   private _updateDpr(): void {
@@ -71,12 +72,11 @@ export class ScreenDprMonitor extends Disposable {
   }
 
   public clearListener(): void {
-    if (!this._resolutionMediaMatchList || !this._listener || !this._outerListener) {
+    if (!this._resolutionMediaMatchList || !this._outerListener) {
       return;
     }
     this._resolutionMediaMatchList.removeListener(this._outerListener);
     this._resolutionMediaMatchList = undefined;
-    this._listener = undefined;
     this._outerListener = undefined;
   }
 }

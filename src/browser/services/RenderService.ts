@@ -68,7 +68,7 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(this._renderDebouncer);
 
     this._screenDprMonitor = this.register(instantiationService.createInstance(ScreenDprMonitor));
-    this._screenDprMonitor.setListener(() => this.handleDevicePixelRatioChange());
+    this.register(this._screenDprMonitor.onDprChange(() => this.handleDevicePixelRatioChange()));
 
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer.value?.clear()));
@@ -106,6 +106,7 @@ export class RenderService extends Disposable implements IRenderService {
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
+    // TODO: Listen to window change
     this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.handleDevicePixelRatioChange()));
 
     this.register(themeService.onChangeColors(() => this._fullRefresh()));

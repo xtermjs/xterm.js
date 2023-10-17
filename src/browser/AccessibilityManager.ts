@@ -98,10 +98,10 @@ export class AccessibilityManager extends Disposable {
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
 
     this._screenDprMonitor = this.register(instantiationService.createInstance(ScreenDprMonitor));
-    this.register(this._screenDprMonitor);
-    this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
+    this.register(this._screenDprMonitor.onDprChange(() => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
+    // TODO: Listen to window change
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
 
     this._refreshRows();
