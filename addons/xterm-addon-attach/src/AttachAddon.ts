@@ -6,12 +6,13 @@
  */
 
 import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
+import { AttachAddon as IAttachApi } from 'xterm-addon-attach';
 
 interface IAttachOptions {
   bidirectional?: boolean;
 }
 
-export class AttachAddon implements ITerminalAddon {
+export class AttachAddon implements ITerminalAddon , IAttachApi {
   private _socket: WebSocket;
   private _bidirectional: boolean;
   private _disposables: IDisposable[] = [];

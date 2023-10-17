@@ -17,6 +17,9 @@
       ],
       "browser/*": [
         "../../../src/browser/*"
+      ],
+      "xterm-addon-webgl": [
+        "../typings/xterm-addon-webgl.d.ts"
       ]
     },
     "strict": true,

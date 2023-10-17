@@ -13,7 +13,12 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ]
+    ],
+    "paths": {
+      "xterm-addon-attach": [
+        "../typings/xterm-addon-attach.d.ts"
+      ]
+    }
   },
   "include": [
     "./**/*",

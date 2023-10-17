@@ -15,8 +15,7 @@
     "xterm.js"
   ],
   "scripts": {
-    "build": "../../node_modules/.bin/tsc -p .",
-    "prepackage": "npm run build",
+    "prepackage": "../../node_modules/.bin/tsc -p .",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package"
   },

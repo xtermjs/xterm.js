@@ -17,6 +17,9 @@
     "paths": {
       "browser/*": [
         "../../../src/browser/*"
+      ],
+      "xterm-addon-fit": [
+        "../typings/xterm-addon-fit.d.ts"
       ]
     }
   },

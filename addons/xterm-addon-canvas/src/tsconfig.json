@@ -17,6 +17,9 @@
       ],
       "browser/*": [
         "../../../src/browser/*"
+      ],
+      "xterm-addon-canvas": [
+        "../typings/xterm-addon-canvas.d.ts"
       ]
     },
     "strict": true,

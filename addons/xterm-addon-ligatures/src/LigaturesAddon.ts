@@ -6,13 +6,14 @@
 import { Terminal } from 'xterm';
 import { enableLigatures } from '.';
 import { ILigatureOptions } from './Types';
+import { LigaturesAddon as ILigaturesApi } from 'xterm-addon-ligatures';
 
 export interface ITerminalAddon {
   activate(terminal: Terminal): void;
   dispose(): void;
 }
 
-export class LigaturesAddon implements ITerminalAddon {
+export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
   private readonly _fallbackLigatures: string[];
 
   private _terminal: Terminal | undefined;

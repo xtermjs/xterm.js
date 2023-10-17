@@ -11,8 +11,9 @@ import { setTraceLogger } from 'common/services/LogService';
 import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
 import { ITerminalAddon, Terminal } from 'xterm';
 import { CanvasRenderer } from './CanvasRenderer';
+import { CanvasAddon as ICanvasApi } from 'xterm-addon-canvas';
 
-export class CanvasAddon extends Disposable implements ITerminalAddon {
+export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasApi {
   private _terminal?: Terminal;
   private _renderer?: CanvasRenderer;
 
@@ -64,5 +65,9 @@ export class CanvasAddon extends Disposable implements ITerminalAddon {
       this._renderer?.dispose();
       this._renderer = undefined;
     }));
+  }
+
+  public clearTextureAtlas(): void {
+    this._renderer?.clearTextureAtlas();
   }
 }
