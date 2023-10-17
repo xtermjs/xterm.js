@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService } from './Services';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { addDisposableDomListener } from 'browser/Lifecycle';
 
 export class CoreBrowserService extends Disposable implements ICoreBrowserService {
   public serviceBrand: undefined;
@@ -26,6 +27,7 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
   ) {
     super();
 
+    // Monitor device pixel ratio
     this.register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
     this.register(forwardEvent(this._screenDprMonitor.onDprChange, this._onDprChange));
 
@@ -72,6 +74,7 @@ class ScreenDprMonitor extends Disposable {
   private _currentDevicePixelRatio: number;
   private _outerListener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | undefined;
   private _resolutionMediaMatchList: MediaQueryList | undefined;
+  private _windowResizeListener = this.register(new MutableDisposable());
 
   private readonly _onDprChange = this.register(new EventEmitter<number>());
   public readonly onDprChange = this._onDprChange.event;
@@ -80,21 +83,29 @@ class ScreenDprMonitor extends Disposable {
     super();
 
     // Initialize listener and dpr value
-    this._outerListener = () => {
-      if (this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
-        this._onDprChange.fire(this._parentWindow.devicePixelRatio);
-      }
-      this._updateDpr();
-    };
+    this._outerListener = () => this._setDprAndFireIfDiffers();
     this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
     this._updateDpr();
+
+    // Monitor active window resize
+    this._setWindowResizeListener();
 
     // Setup additional disposables
     this.register(toDisposable(() => this.clearListener()));
   }
 
+
   public setWindow(parentWindow: Window): void {
     this._parentWindow = parentWindow;
+    this._setWindowResizeListener();
+    this._setDprAndFireIfDiffers();
+  }
+
+  private _setWindowResizeListener(): void {
+    this._windowResizeListener.value = addDisposableDomListener(this._parentWindow, 'resize', () => this._setDprAndFireIfDiffers());
+  }
+
+  private _setDprAndFireIfDiffers(): void {
     if (this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
       this._onDprChange.fire(this._parentWindow.devicePixelRatio);
     }

@@ -94,14 +94,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
-
     this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
-    // This shouldn't be needed on modern browsers but is present in case the
-    // media query that drives the ScreenDprMonitor isn't supported
-    const windowResizeListener = this.register(new MutableDisposable());
-    this.register(runAndSubscribe(this._coreBrowserService.onWindowChange, () => {
-      windowResizeListener.value = addDisposableDomListener(this._coreBrowserService.window, 'resize', () => this._refreshRowsDimensions());
-    }));
 
     this._refreshRows();
     this.register(toDisposable(() => {

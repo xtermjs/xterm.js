@@ -3,12 +3,11 @@
  * @license MIT
  */
 
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { EventEmitter, runAndSubscribe } from 'common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, MutableDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
 import { IBufferService, IDecorationService, IInstantiationService, IOptionsService } from 'common/services/Services';
@@ -100,15 +99,6 @@ export class RenderService extends Disposable implements IRenderService {
       'cursorBlink',
       'cursorStyle'
     ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, true)));
-
-    // dprchange should handle this case, we need this as well for browsers that don't support the
-    // matchMedia query.
-    // TODO: Merge this into onDprChange?
-    const windowResizeListener = this.register(new MutableDisposable());
-    this.register(runAndSubscribe(coreBrowserService.onWindowChange, () => {
-      windowResizeListener.value = addDisposableDomListener(coreBrowserService.window, 'resize', () => this.handleDevicePixelRatioChange());
-    }));
-    this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.handleDevicePixelRatioChange()));
 
     this.register(themeService.onChangeColors(() => this._fullRefresh()));
 
