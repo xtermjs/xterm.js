@@ -7,9 +7,9 @@
 
 import { Terminal, ITerminalAddon, IUnicodeHandling } from 'xterm';
 import { UnicodeGraphemeProvider } from './UnicodeGraphemeProvider';
+import { UnicodeGraphemesAddon as PublicApi } from 'xterm-addon-unicode-graphemes';
 
-
-export class UnicodeGraphemesAddon implements ITerminalAddon {
+export class UnicodeGraphemesAddon implements ITerminalAddon , PublicApi {
   private _provider15Graphemes?: UnicodeGraphemeProvider;
   private _provider15?: UnicodeGraphemeProvider;
   private _unicode?: IUnicodeHandling;

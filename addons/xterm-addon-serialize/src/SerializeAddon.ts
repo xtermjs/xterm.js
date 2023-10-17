@@ -8,6 +8,7 @@
 import { DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
 import { IAttributeData, IColor } from 'common/Types';
 import { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from 'xterm';
+import { SerializeAddon as ISerializeApi } from 'xterm-addon-serialize';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -411,7 +412,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   }
 }
 
-export class SerializeAddon implements ITerminalAddon {
+export class SerializeAddon implements ITerminalAddon , ISerializeApi {
   private _terminal: Terminal | undefined;
 
   public activate(terminal: Terminal): void {
