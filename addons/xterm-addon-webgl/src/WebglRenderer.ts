@@ -88,7 +88,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateCursorBlink();
     this.register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
-    this._canvas = document.createElement('canvas');
+    this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
 
     const contextAttributes = {
       antialias: false,
