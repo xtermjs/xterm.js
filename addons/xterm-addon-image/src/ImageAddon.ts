@@ -9,7 +9,7 @@ import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
-import { ImageAddon as IImageApi } from 'xterm-addon-image'
+import { ImageAddon as IImageApi } from 'xterm-addon-image';
 
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
