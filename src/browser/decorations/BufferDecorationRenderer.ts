@@ -5,7 +5,8 @@
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { runAndSubscribe } from 'common/EventEmitter';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration } from 'common/services/Services';
 
 export class BufferDecorationRenderer extends Disposable {
@@ -34,8 +35,10 @@ export class BufferDecorationRenderer extends Disposable {
       this._dimensionsChanged = true;
       this._queueRefresh();
     }));
-    // TODO: Listen to window change
-    this.register(addDisposableDomListener(window, 'resize', () => this._queueRefresh()));
+    const windowResizeListener = this.register(new MutableDisposable());
+    this.register(runAndSubscribe(this._coreBrowserService.onWindowChange, () => {
+      windowResizeListener.value = addDisposableDomListener(this._coreBrowserService.window, 'resize', () => this._queueRefresh());
+    }));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._altBufferIsActive = this._bufferService.buffer === this._bufferService.buffers.alt;
     }));

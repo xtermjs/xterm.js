@@ -6,7 +6,8 @@
 import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { runAndSubscribe } from 'common/EventEmitter';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
 // Helper objects to avoid excessive calculation and garbage collection during rendering. These are
@@ -112,8 +113,10 @@ export class OverviewRulerRenderer extends Disposable {
     // overview ruler width changed
     this.register(this._optionsService.onSpecificOptionChange('overviewRulerWidth', () => this._queueRefresh(true)));
     // device pixel ratio changed
-    // TODO: Observe DPR instead / listen to window change
-    this.register(addDisposableDomListener(this._coreBrowserService.window, 'resize', () => this._queueRefresh(true)));
+    const windowResizeListener = this.register(new MutableDisposable());
+    this.register(runAndSubscribe(this._coreBrowserService.onWindowChange, () => {
+      windowResizeListener.value = addDisposableDomListener(this._coreBrowserService.window, 'resize', () => this._queueRefresh(true));
+    }));
     // set the canvas dimensions
     this._queueRefresh(true);
   }

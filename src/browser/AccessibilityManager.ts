@@ -6,11 +6,12 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IBuffer } from 'common/buffer/Types';
 import { IInstantiationService } from 'common/services/Services';
+import { runAndSubscribe } from 'common/EventEmitter';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -97,8 +98,10 @@ export class AccessibilityManager extends Disposable {
     this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
-    // TODO: Listen to window change
-    this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+    const windowResizeListener = this.register(new MutableDisposable());
+    this.register(runAndSubscribe(this._coreBrowserService.onWindowChange, () => {
+      windowResizeListener.value = addDisposableDomListener(this._coreBrowserService.window, 'resize', () => this._refreshRowsDimensions());
+    }));
 
     this._refreshRows();
     this.register(toDisposable(() => {
