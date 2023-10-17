@@ -58,9 +58,6 @@ import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } 
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 
-// Let it work inside Node.js for automated testing purposes.
-const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
-
 export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
   public element: HTMLElement | undefined;
@@ -397,7 +394,16 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._logService.debug('Terminal.open was called on an element that was not attached to the DOM');
     }
 
-    this._document = parent.ownerDocument!;
+    // If the terminal is already opened
+    if (this.element?.ownerDocument.defaultView && this._coreBrowserService) {
+      // Adjust the window if needed
+      if (this.element.ownerDocument.defaultView !== this._coreBrowserService.window) {
+        this._coreBrowserService.window = this.element.ownerDocument.defaultView;
+      }
+      return;
+    }
+
+    this._document = parent.ownerDocument;
     if (this.options.documentOverride && this.options.documentOverride instanceof Document) {
       this._document = this.optionsService.rawOptions.documentOverride as Document;
     }
@@ -444,7 +450,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Register the core browser service before the generic textarea handlers are registered so it
     // handles them first. Otherwise the renderers may use the wrong focus state.
-    this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea, parent.ownerDocument.defaultView ?? window, this._document ?? window.document);
+    this._coreBrowserService = this.register(this._instantiationService.createInstance(CoreBrowserService,
+      this.textarea,
+      parent.ownerDocument.defaultView ?? window,
+      // Force unsafe null in node.js environment for tests
+      this._document ?? (typeof window !== 'undefined') ? window.document : null as any
+    ));
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
     this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._handleTextAreaFocus(ev)));

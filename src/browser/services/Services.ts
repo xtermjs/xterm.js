@@ -28,15 +28,17 @@ export interface ICoreBrowserService {
   serviceBrand: undefined;
 
   readonly isFocused: boolean;
+
+  onWindowChange: IEvent<Window & typeof globalThis>;
   /**
-   * Parent window that the terminal is rendered into. DOM and rendering APIs
-   * (e.g. requestAnimationFrame) should be invoked in the context of this
-   * window.
+   * Gets or sets the parent window that the terminal is rendered into. DOM and rendering APIs (e.g.
+   * requestAnimationFrame) should be invoked in the context of this window. This should be set when
+   * the window hosting the xterm.js instance changes.
    */
-  readonly window: Window & typeof globalThis;
+  window: Window & typeof globalThis;
   /**
-   * The document of the primary window if working with multiple windows. This
-   * is set by the documentOverride setting.
+   * The document of the primary window to be used to create elements when working with multiple
+   * windows. This is defined by the documentOverride setting.
    */
   readonly mainDocument: Document;
   /**

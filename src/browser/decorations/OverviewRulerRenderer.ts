@@ -112,6 +112,7 @@ export class OverviewRulerRenderer extends Disposable {
     // overview ruler width changed
     this.register(this._optionsService.onSpecificOptionChange('overviewRulerWidth', () => this._queueRefresh(true)));
     // device pixel ratio changed
+    // TODO: Observe DPR instead
     this.register(addDisposableDomListener(this._coreBrowserService.window, 'resize', () => this._queueRefresh(true)));
     // set the canvas dimensions
     this._queueRefresh(true);

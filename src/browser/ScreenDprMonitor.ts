@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { ICoreBrowserService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 
 export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRatio?: number) => void;
@@ -22,9 +23,18 @@ export class ScreenDprMonitor extends Disposable {
   private _outerListener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | undefined;
   private _listener: ScreenDprListener | undefined;
   private _resolutionMediaMatchList: MediaQueryList | undefined;
+  private _parentWindow: Window;
 
-  constructor(private _parentWindow: Window) {
+  constructor(@ICoreBrowserService coreBrowserService: ICoreBrowserService) {
     super();
+    this._parentWindow = coreBrowserService.window;
+    this.register(coreBrowserService.onWindowChange(w => {
+      this._parentWindow = w;
+      if (this._listener && this._parentWindow.devicePixelRatio !== this._currentDevicePixelRatio) {
+        this._listener(this._parentWindow.devicePixelRatio, this._currentDevicePixelRatio);
+      }
+      this._updateDpr();
+    }));
     this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
     this.register(toDisposable(() => {
       this.clearListener();

@@ -12,7 +12,7 @@ import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } 
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, MutableDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
-import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IInstantiationService, IOptionsService } from 'common/services/Services';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -59,6 +59,7 @@ export class RenderService extends Disposable implements IRenderService {
     @IDecorationService decorationService: IDecorationService,
     @IBufferService bufferService: IBufferService,
     @ICoreBrowserService coreBrowserService: ICoreBrowserService,
+    @IInstantiationService instantiationService: IInstantiationService,
     @IThemeService themeService: IThemeService
   ) {
     super();
@@ -66,9 +67,8 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderDebouncer = new RenderDebouncer(coreBrowserService.window, (start, end) => this._renderRows(start, end));
     this.register(this._renderDebouncer);
 
-    this._screenDprMonitor = new ScreenDprMonitor(coreBrowserService.window);
+    this._screenDprMonitor = this.register(instantiationService.createInstance(ScreenDprMonitor));
     this._screenDprMonitor.setListener(() => this.handleDevicePixelRatioChange());
-    this.register(this._screenDprMonitor);
 
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer.value?.clear()));

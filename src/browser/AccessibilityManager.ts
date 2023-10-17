@@ -11,6 +11,7 @@ import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IBuffer } from 'common/buffer/Types';
+import { IInstantiationService } from 'common/services/Services';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -49,6 +50,7 @@ export class AccessibilityManager extends Disposable {
 
   constructor(
     private readonly _terminal: ITerminal,
+    @IInstantiationService instantiationService: IInstantiationService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
@@ -95,7 +97,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
 
-    this._screenDprMonitor = new ScreenDprMonitor(window);
+    this._screenDprMonitor = this.register(instantiationService.createInstance(ScreenDprMonitor));
     this.register(this._screenDprMonitor);
     this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
     // This shouldn't be needed on modern browsers but is present in case the
