@@ -6,12 +6,10 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IBuffer } from 'common/buffer/Types';
 import { IInstantiationService } from 'common/services/Services';
-import { runAndSubscribe } from 'common/EventEmitter';
 
 const MAX_ROWS_TO_READ = 20;
 
