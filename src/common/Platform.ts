@@ -12,6 +12,7 @@ interface INavigator {
 // We're declaring a navigator global here as we expect it in all runtimes (node and browser), but
 // we want this module to live in common.
 declare const navigator: INavigator;
+declare const process: unknown;
 
 export const isNode = (typeof process !== 'undefined') ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
