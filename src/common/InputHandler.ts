@@ -530,18 +530,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     const insertMode = this._coreService.modes.insertMode;
 
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
-    const cursor = this._workCell;
-    bufferRow.scanMove(cursor, this._activeBuffer.x);
 
-      // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
-    if (this._activeBuffer.x && end - start > 0) {
-      bufferRow.fixSplitWide(cursor);
+    // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
+    if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x - 1, 0, 1, curAttr);
     }
 
-    bufferRow.setAttributes(cursor, curAttr);
-
     let precedingJoinState = this._parser.precedingJoinState;
-
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
@@ -554,6 +549,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           code = ch.charCodeAt(0);
         }
       }
+
       const currentInfo = this.unicodeService.charProperties(code, precedingJoinState);
       chWidth = UnicodeService.extractWidth(currentInfo);
       const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
@@ -565,24 +561,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
       if (this._getCurrentLinkId()) {
         this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
-      }
-
-      // insert combining char at last cursor position
-      // this._activeBuffer.x should never be 0 for a combining char
-      // since they always follow a cell consuming char
-      // therefore we can test for this._activeBuffer.x to avoid overflow left
-      if (shouldJoin && this._activeBuffer.x) {
-        /*if (!bufferRow.getWidth(this._activeBuffer.x - 1)) {
-          // found empty cell after fullwidth, need to go 2 cells back
-          // it is save to step 2 cells back here
-          // since an empty cell is only set by fullwidth chars
-          bufferRow.addCodepointToCell(this._activeBuffer.x - 2, code);
-        } else*/ {
-          bufferRow.addToPrecedingGrapheme(cursor, code, chWidth);
-          //bufferRow.addCodepointToCell(this._activeBuffer.x - 1, code);
-          this._activeBuffer.x += chWidth - oldWidth;
-        }
-        continue;
       }
 
       // goto next line if ch would overflow
@@ -609,7 +587,16 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           // row changed, get it again
           bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
-          bufferRow.scanMove(cursor, 0);
+          if (oldWidth > 0 && bufferRow instanceof BufferLine) {
+            // Combining character widens 1 column to 2.
+            // Move old character to next line.
+            bufferRow.copyCellsFrom(oldRow as BufferLine,
+              oldCol, 0, oldWidth, false);
+          }
+          // clear left over cells to the right
+          while (oldCol < cols) {
+            oldRow.setCellFromCodepoint(oldCol++, 0, 1, curAttr);
+          }
         } else {
           this._activeBuffer.x = cols - 1;
           if (chWidth === 2) {
@@ -618,6 +605,23 @@ export class InputHandler extends Disposable implements IInputHandler {
             continue;
           }
         }
+      }
+
+      // insert combining char at last cursor position
+      // this._activeBuffer.x should never be 0 for a combining char
+      // since they always follow a cell consuming char
+      // therefore we can test for this._activeBuffer.x to avoid overflow left
+      if (shouldJoin && this._activeBuffer.x) {
+        const offset = bufferRow.getWidth(this._activeBuffer.x - 1) ? 1 : 2;
+        // if empty cell after fullwidth, need to go 2 cells back
+        // it is save to step 2 cells back here
+        // since an empty cell is only set by fullwidth chars
+        bufferRow.addCodepointToCell(this._activeBuffer.x - offset,
+          code, chWidth);
+        for (let delta = chWidth - oldWidth; --delta >= 0; ) {
+          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
+        }
+        continue;
       }
 
       // insert mode: move characters to right
@@ -633,8 +637,17 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCodePoint(cursor, code, chWidth);
-      this._activeBuffer.x += chWidth;
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x++, code, chWidth, curAttr);
+
+      // fullwidth char - also set next cell to placeholder stub and advance cursor
+      // for graphemes bigger than fullwidth we can simply loop to zero
+      // we already made sure above, that this._activeBuffer.x + chWidth will not overflow right
+      if (chWidth > 0) {
+        while (--chWidth) {
+          // other than a regular empty cell a cell following a wide char has no width
+          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
+        }
+      }
     }
 
     this._parser.precedingJoinState = precedingJoinState;

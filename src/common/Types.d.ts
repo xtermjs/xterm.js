@@ -251,25 +251,16 @@ export interface IBufferLine {
    * TODO: Define handling of wide characters,
    */
   scanNext(cursor: ICellData, n: number, flags: number): number;
-  scanMove(cursor: ICellData, column: number): void;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
   setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
-  setAttributes(cursor: ICellData, attrs: IAttributeData): void;
-  /**
-   * Add character (codePoint) following cursor position.
-   * Cursor position is moved to be after added character.
-   */
-  setCodePoint(cursor: ICellData, codePoint: number, width: number): void;
-  addToPrecedingGrapheme(cursor: ICellData, newCode: number, width: number): void;
-  //addCodepointToCell(index: number, codePoint: number, width: number): void;
+  addCodepointToCell(index: number, codePoint: number, width: number): void;
   insertCells(pos: number, n: number, ch: ICellData): void;
   eraseAll(bg: number): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
-  replaceCols(cursor: ICellData, count: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;
   fixSplitWide(cell: ICellData): void;
   cleanupMemory(): number;
