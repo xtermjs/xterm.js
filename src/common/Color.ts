@@ -113,6 +113,7 @@ export namespace css {
   let $ctx: CanvasRenderingContext2D | undefined;
   let $litmusColor: CanvasGradient | undefined;
   if (!isNode) {
+    // This is guaranteed to run in the first window, so document should be correct
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;

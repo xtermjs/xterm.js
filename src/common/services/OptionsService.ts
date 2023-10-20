@@ -18,6 +18,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cursorInactiveStyle: 'outline',
   customGlyphs: true,
   drawBoldTextInBrightColors: true,
+  documentOverride: null,
   fastScrollModifier: 'alt',
   fastScrollSensitivity: 5,
   fontFamily: 'courier-new, courier, monospace',

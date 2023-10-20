@@ -38,7 +38,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     protected readonly _themeService: IThemeService
   ) {
     super();
-    this._canvas = document.createElement('canvas');
+    this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
