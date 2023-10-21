@@ -235,22 +235,6 @@ export interface IBufferLine {
   length: number;
   /** If the previous line wrapped (overflows) into the current line. */
   isWrapped: boolean;
-  /**
-   * Initialize cursot to beginning of line.
-   */
-  scanInit(cursor: ICellData): void;
-  /**
-   * Scan to n'th next position, filling in character data in cursor.
-   * FUTURE: Negative n moves backward (left in left-to-right text).
-   * Special case n==0 is a "peek" operation: Fill in cursor with
-   * data from the nextcharacter - return -1 if there is no next character.
-   * The cursor properties are set from the last character over over.
-   * By default the next positon is the next column, but this may
-   * be modified by the flags (future: codepoints, graphemes, words, etc).
-   * Return 0 on sucess, otherwise the number of characters we couldn't move.
-   * TODO: Define handling of wide characters,
-   */
-  scanNext(cursor: ICellData, n: number, flags: number): number;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
@@ -262,7 +246,6 @@ export interface IBufferLine {
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;
-  fixSplitWide(cell: ICellData): void;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
   copyFrom(line: IBufferLine): void;
