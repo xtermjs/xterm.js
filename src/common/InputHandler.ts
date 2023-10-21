@@ -10,7 +10,7 @@ import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, NewBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
@@ -504,7 +504,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public print(data: Uint32Array, start: number, end: number): void {
     const curAttr = this._curAttrData;
     let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
-    if (true) {  // FUTURE: if (bufferRow instanceof BufferLineNew) ...
+    if (bufferRow instanceof NewBufferLine) {
       this.printNew(data, start, end, bufferRow, curAttr);
     } else {
       this.printOld(data, start, end, bufferRow, curAttr);
@@ -515,7 +515,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     // if (charset) replace character; FIXME ok to do it in-place?
     const insertMode = this._coreService.modes.insertMode;
-    let col = (bufferRow as BufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, insertMode);
+    let col = (bufferRow as NewBufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, insertMode);
     //FIXME check for line wrap;
     this._activeBuffer.x = col;
   }
@@ -1174,11 +1174,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
     if (line) {
-      if (respectProtect) {
+      if (line instanceof NewBufferLine && ! respectProtect) {
+        line.eraseAll(this._curAttrData.bg & ~0xFC000000);
+      } else {
         const fillData = this._activeBuffer.getNullCell(this._eraseAttrData());
         line.fill(fillData, respectProtect);
-      } else {
-        line.eraseAll(this._curAttrData.bg & ~0xFC000000);
       }
       this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
       line.isWrapped = false;

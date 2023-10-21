@@ -3,14 +3,14 @@
  * @license MIT
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
-import { BufferLine } from 'common/buffer//BufferLine';
+import { BufferLine, NewBufferLine } from 'common/buffer//BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { CharData, IBufferLine } from '../Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
 
 
-class TestBufferLine extends BufferLine {
+class TestBufferLine extends NewBufferLine/*FIXME*/ {
   //public get combined(): {[index: number]: string} {
   //  return this._combined;
   //}

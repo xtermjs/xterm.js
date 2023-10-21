@@ -218,8 +218,7 @@ export interface IAttributeData {
 /** Cell data */
 export interface ICellData extends IAttributeData {
   content: number;
-  //column: number; // 0-origin; -1 if unknown
-  //combinedData: string;
+  combinedData: string; // FIXME only if using OldBufferLine
   isCombined(): number;
   getWidth(): number;
   getChars(): string;
@@ -242,7 +241,7 @@ export interface IBufferLine {
   setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
   addCodepointToCell(index: number, codePoint: number, width: number): void;
   insertCells(pos: number, n: number, ch: ICellData): void;
-  eraseAll(bg: number): void;
+  //eraseAll(bg: number): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;

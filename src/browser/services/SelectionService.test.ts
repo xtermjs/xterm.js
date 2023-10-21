@@ -55,7 +55,7 @@ describe('SelectionService', () => {
   });
 
   function stringToRow(text: string): IBufferLine {
-    const result = new BufferLine(text.length);
+    const result = BufferLine.make(text.length);
     for (let i = 0; i < text.length; i++) {
       result.setCell(i, CellData.fromCharData([0, text.charAt(i), 1, text.charCodeAt(i)]));
     }
@@ -63,7 +63,7 @@ describe('SelectionService', () => {
   }
 
   function stringArrayToRow(chars: string[]): IBufferLine {
-    const line = new BufferLine(chars.length);
+    const line = BufferLine.make(chars.length);
     chars.map((c, idx) => line.setCell(idx, CellData.fromCharData([0, c, 1, c.charCodeAt(0)])));
     return line;
   }
@@ -118,7 +118,7 @@ describe('SelectionService', () => {
         [0, 'o', 1, 'o'.charCodeAt(0)],
         [0, 'o', 1, 'o'.charCodeAt(0)]
       ];
-      const line = new BufferLine(data.length);
+      const line = BufferLine.make(data.length);
       for (let i = 0; i < data.length; ++i) line.setCell(i, CellData.fromCharData(data[i]));
       buffer.lines.set(0, line);
       // Ensure wide characters take up 2 columns

@@ -85,7 +85,7 @@ export class Buffer implements IBuffer {
   }
 
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
+    return BufferLine.make(this._bufferService.cols, this.getNullCell(attr), isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -180,7 +180,7 @@ export class Buffer implements IBuffer {
             if (this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
-              this.lines.push(new BufferLine(newCols, nullCell));
+              this.lines.push(BufferLine.make(newCols, nullCell));
             } else {
               if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
                 // There is room above the buffer and there are no empty elements below the line,
@@ -194,7 +194,7 @@ export class Buffer implements IBuffer {
               } else {
                 // Add a blank line if there is no buffer left at the top to scroll to, or if there
                 // are blank lines after the cursor
-                this.lines.push(new BufferLine(newCols, nullCell));
+                this.lines.push(BufferLine.make(newCols, nullCell));
               }
             }
           }
@@ -330,7 +330,7 @@ export class Buffer implements IBuffer {
         }
         if (this.lines.length < newRows) {
           // Add an extra row at the bottom of the viewport
-          this.lines.push(new BufferLine(newCols, nullCell));
+          this.lines.push(BufferLine.make(newCols, nullCell));
         }
       } else {
         if (this.ydisp === this.ybase) {
