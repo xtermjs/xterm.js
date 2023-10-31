@@ -134,10 +134,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    const isOptionsChanged = this._lastSearchOptions ? this._isOptionsChange(this._lastSearchOptions, searchOptions) : true;
+    const didOptionsChanged = this._lastSearchOptions ? this._didOptionsChange(this._lastSearchOptions, searchOptions) : true;
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm || isOptionsChanged) {
+      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm || didOptionsChanged) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
@@ -303,10 +303,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
-    const isOptionsChanged = this._lastSearchOptions ? this._isOptionsChange(this._lastSearchOptions, searchOptions) : true;
+    const didOptionsChanged = this._lastSearchOptions ? this._didOptionsChange(this._lastSearchOptions, searchOptions) : true;
     this._lastSearchOptions = searchOptions;
     if (searchOptions?.decorations) {
-      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm || isOptionsChanged) {
+      if (this._cachedSearchTerm === undefined || term !== this._cachedSearchTerm || didOptionsChanged) {
         this._highlightAllMatches(term, searchOptions);
       }
     }
@@ -318,7 +318,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon {
     return found;
   }
 
-  private _isOptionsChange(lastSearchOptions: ISearchOptions, searchOptions?: ISearchOptions): boolean {
+  private _didOptionsChange(lastSearchOptions: ISearchOptions, searchOptions?: ISearchOptions): boolean {
     if (!searchOptions) {
       return false;
     }
