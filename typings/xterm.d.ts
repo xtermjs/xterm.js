@@ -90,6 +90,17 @@ declare module 'xterm' {
     disableStdin?: boolean;
 
     /**
+     * A {@link Document} to use instead of the one that xterm.js was attached
+     * to. The purpose of this is to improve support in multi-window
+     * applications where HTML elements may be references across multiple
+     * windows which can cause problems with `instanceof`.
+     *
+     * The type is `any` because using `Document` can cause TS to have
+     * performance/compiler problems.
+     */
+    documentOverride?: any | null;
+
+    /**
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
@@ -962,7 +973,8 @@ declare module 'xterm' {
     resize(columns: number, rows: number): void;
 
     /**
-     * Opens the terminal within an element.
+     * Opens the terminal within an element. This should also be called if the
+     * xterm.js element ever changes browser window.
      * @param parent The element to create the terminal within. This element
      * must be visible (have dimensions) when `open` is called as several DOM-
      * based measurements need to be performed when this function is called.

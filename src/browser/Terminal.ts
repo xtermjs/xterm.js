@@ -58,9 +58,6 @@ import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } 
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 
-// Let it work inside Node.js for automated testing purposes.
-const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
-
 export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
   public element: HTMLElement | undefined;
@@ -397,7 +394,19 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._logService.debug('Terminal.open was called on an element that was not attached to the DOM');
     }
 
-    this._document = parent.ownerDocument!;
+    // If the terminal is already opened
+    if (this.element?.ownerDocument.defaultView && this._coreBrowserService) {
+      // Adjust the window if needed
+      if (this.element.ownerDocument.defaultView !== this._coreBrowserService.window) {
+        this._coreBrowserService.window = this.element.ownerDocument.defaultView;
+      }
+      return;
+    }
+
+    this._document = parent.ownerDocument;
+    if (this.options.documentOverride && this.options.documentOverride instanceof Document) {
+      this._document = this.optionsService.rawOptions.documentOverride as Document;
+    }
 
     // Create main element container
     this.element = this._document.createElement('div');
@@ -408,25 +417,25 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Performance: Use a document fragment to build the terminal
     // viewport and helper elements detached from the DOM
-    const fragment = document.createDocumentFragment();
-    this._viewportElement = document.createElement('div');
+    const fragment = this._document.createDocumentFragment();
+    this._viewportElement = this._document.createElement('div');
     this._viewportElement.classList.add('xterm-viewport');
     fragment.appendChild(this._viewportElement);
 
-    this._viewportScrollArea = document.createElement('div');
+    this._viewportScrollArea = this._document.createElement('div');
     this._viewportScrollArea.classList.add('xterm-scroll-area');
     this._viewportElement.appendChild(this._viewportScrollArea);
 
-    this.screenElement = document.createElement('div');
+    this.screenElement = this._document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
-    this._helperContainer = document.createElement('div');
+    this._helperContainer = this._document.createElement('div');
     this._helperContainer.classList.add('xterm-helpers');
     this.screenElement.appendChild(this._helperContainer);
     fragment.appendChild(this.screenElement);
 
-    this.textarea = document.createElement('textarea');
+    this.textarea = this._document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel);
     if (!Browser.isChromeOS) {
@@ -441,7 +450,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     // Register the core browser service before the generic textarea handlers are registered so it
     // handles them first. Otherwise the renderers may use the wrong focus state.
-    this._coreBrowserService = this._instantiationService.createInstance(CoreBrowserService, this.textarea, this._document.defaultView ?? window);
+    this._coreBrowserService = this.register(this._instantiationService.createInstance(CoreBrowserService,
+      this.textarea,
+      parent.ownerDocument.defaultView ?? window,
+      // Force unsafe null in node.js environment for tests
+      this._document ?? (typeof window !== 'undefined') ? window.document : null as any
+    ));
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
     this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._handleTextAreaFocus(ev)));
@@ -463,7 +477,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this._renderService.onRenderedViewportChange(e => this._onRender.fire(e)));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
-    this._compositionView = document.createElement('div');
+    this._compositionView = this._document.createElement('div');
     this._compositionView.classList.add('composition-view');
     this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
     this._helperContainer.appendChild(this._compositionView);
