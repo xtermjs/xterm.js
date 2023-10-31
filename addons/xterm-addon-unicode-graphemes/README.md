@@ -8,9 +8,7 @@ The file `src/UnicodeProperties.ts` is generated and depends on the Unicode vers
 
 ### Install
 
-```bash
-npm install --save xterm-addon-unicode-graphemes
-```
+This addon is not yet published to npm
 
 ### Usage
 
