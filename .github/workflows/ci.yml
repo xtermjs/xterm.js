@@ -308,18 +308,36 @@ jobs:
       run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
 
   release-dry-run:
+    needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js 18.x
+    - name: Use Node.js ${{ matrix.node-version }}.x
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: ${{ matrix.node-version }}.x
         cache: 'yarn'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
-    - name: Build
-      run: yarn setup
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
+    - name: Install playwright
+      run: npx playwright install
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
+        else
+          unzip -o compressed-build.zip
+        fi
+        ls -R
     - name: Package headless
       run: |
         yarn package-headless
