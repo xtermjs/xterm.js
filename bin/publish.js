@@ -9,7 +9,7 @@ const os = require('os');
 const path = require('path');
 
 // Setup auth
-// fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
+fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
 
 const isDryRun = process.argv.includes('--dry');
 if (isDryRun) {
