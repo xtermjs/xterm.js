@@ -9,7 +9,7 @@ const os = require('os');
 const path = require('path');
 
 // Setup auth
-fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
+// fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
 
 const isDryRun = process.argv.includes('--dry');
 if (isDryRun) {
@@ -128,7 +128,9 @@ function getPublishedVersions(packageJson, version, tag) {
     throw new Error('Could not get published versions\n' + err);
   }
   const output = JSON.parse(versionsProcess.stdout);
-  if (typeof output === 'object') {
+  console.log('output', output);
+  console.log('typeof output', typeof output);
+  if (typeof output === 'object' && !Array.isArray(output)) {
     if (output.error?.code === 'E404')  {
       return [];
     }
