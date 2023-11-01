@@ -77,9 +77,14 @@ terminal.loadAddon(new WebLinksAddon());
 The xterm.js team maintains the following addons, but anyone can build them:
 
 - [`@xterm/addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-attach): Attaches to a server running a process via a websocket
+- [`@xterm/addon-canvas`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-canvas): Renders xterm.js using a `canvas` element's 2d context
 - [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
+- [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
 - [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality
+- [`@xterm/addon-serialize`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize): Serializes the terminal's buffer to a VT sequences or HTML
+- [`@xterm/addon-unicode11`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-unicode11): Updates character widths to their unicode11 values
 - [`@xterm/addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-links): Adds web link detection and interaction
+- [`@xterm/addon-webgl`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-webgl): Renders xterm.js using a `canvas` element's webgl2 context
 
 ## Browser Support
 
