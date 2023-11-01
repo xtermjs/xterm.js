@@ -128,8 +128,6 @@ function getPublishedVersions(packageJson, version, tag) {
     throw new Error('Could not get published versions\n' + err);
   }
   const output = JSON.parse(versionsProcess.stdout);
-  console.log('output', output);
-  console.log('typeof output', typeof output);
   if (typeof output === 'object' && !Array.isArray(output)) {
     if (output.error?.code === 'E404')  {
       return [];
@@ -139,9 +137,7 @@ function getPublishedVersions(packageJson, version, tag) {
   if (!output || Array.isArray(output) && output.length === 0) {
     return [];
   }
-  console.log('output', output);
   const versionsJson = asArray(output);
-  console.log('versionsJson', versionsJson);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
