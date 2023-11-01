@@ -56,7 +56,7 @@ function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
-  const publishedVersions = getPublishedVersions(packageJson);
+  // const publishedVersions = getPublishedVersions(packageJson);
   const isStableRelease = false; // !publishedVersions.includes(packageJson.version);
 
   // Get the next version
@@ -119,7 +119,7 @@ function getPublishedVersions(packageJson, version, tag) {
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
-  return versionsJson;
+  return versionsJson ?? [];
 }
 
 function getChangedFilesInCommit(commit) {
