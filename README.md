@@ -49,7 +49,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 The recommended way to load xterm.js is via the ES6 module syntax:
 
 ```javascript
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 ```
 
 ### Addons
@@ -59,14 +59,14 @@ import { Terminal } from 'xterm';
 Addons are separate modules that extend the `Terminal` by building on the [xterm.js API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts). To use an addon, you first need to install it in your project:
 
 ```bash
-npm i -S xterm-addon-web-links
+npm i -S @xterm/addon-web-links
 ```
 
 Then import the addon, instantiate it and call `Terminal.loadAddon`:
 
 ```ts
-import { Terminal } from 'xterm';
-import { WebLinksAddon } from 'xterm-addon-web-links';
+import { Terminal } from '@xterm/xterm';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 
 const terminal = new Terminal();
 // Load WebLinksAddon on terminal, this is all that's needed to get web links
@@ -76,10 +76,15 @@ terminal.loadAddon(new WebLinksAddon());
 
 The xterm.js team maintains the following addons, but anyone can build them:
 
-- [`xterm-addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-attach): Attaches to a server running a process via a websocket
-- [`xterm-addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-fit): Fits the terminal to the containing element
-- [`xterm-addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-search): Adds search functionality
-- [`xterm-addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-web-links): Adds web link detection and interaction
+- [`@xterm/addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-attach): Attaches to a server running a process via a websocket
+- [`@xterm/addon-canvas`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-canvas): Renders xterm.js using a `canvas` element's 2d context
+- [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
+- [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
+- [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality
+- [`@xterm/addon-serialize`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize): Serializes the terminal's buffer to a VT sequences or HTML
+- [`@xterm/addon-unicode11`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-unicode11): Updates character widths to their unicode11 values
+- [`@xterm/addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-links): Adds web link detection and interaction
+- [`@xterm/addon-webgl`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-webgl): Renders xterm.js using a `canvas` element's webgl2 context
 
 ## Browser Support
 

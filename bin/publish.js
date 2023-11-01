@@ -27,24 +27,26 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
-  path.resolve(__dirname, '../addons/xterm-addon-attach'),
-  path.resolve(__dirname, '../addons/xterm-addon-canvas'),
-  path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  // path.resolve(__dirname, '../addons/xterm-addon-image'),
-  path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
-  path.resolve(__dirname, '../addons/xterm-addon-search'),
-  path.resolve(__dirname, '../addons/xterm-addon-serialize'),
-  path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
-  path.resolve(__dirname, '../addons/xterm-addon-web-links'),
-  path.resolve(__dirname, '../addons/xterm-addon-webgl')
+  path.resolve(__dirname, '../addons/addon-attach'),
+  path.resolve(__dirname, '../addons/addon-canvas'),
+  path.resolve(__dirname, '../addons/addon-fit'),
+  // path.resolve(__dirname, '../addons/addon-image'),
+  path.resolve(__dirname, '../addons/addon-ligatures'),
+  path.resolve(__dirname, '../addons/addon-search'),
+  path.resolve(__dirname, '../addons/addon-serialize'),
+  path.resolve(__dirname, '../addons/addon-unicode11'),
+  // path.resolve(__dirname, '../addons/addon-unicode-graphemes'),
+  path.resolve(__dirname, '../addons/addon-web-links'),
+  path.resolve(__dirname, '../addons/addon-webgl')
 ];
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
   const addon = path.basename(p);
-  if (changedFiles.some(e => e.includes(addon))) {
+  // TODO: Uncomment after first publish
+  // if (changedFiles.some(e => e.includes(addon))) {
     console.log(`Try publish ${addon}`);
     checkAndPublishPackage(p);
-  }
+  // }
 }
 
 // Publish website if it's a stable release
@@ -56,8 +58,9 @@ function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
-  const publishedVersions = getPublishedVersions(packageJson);
-  const isStableRelease = !publishedVersions.includes(packageJson.version);
+  // TODO: Uncomment after first publish
+  // const publishedVersions = getPublishedVersions(packageJson);
+  const isStableRelease = false; // !publishedVersions.includes(packageJson.version);
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
@@ -70,7 +73,7 @@ function checkAndPublishPackage(packageDir) {
   fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
   // Publish
-  const args = ['publish'];
+  const args = ['publish', '--access', 'public'];
   if (!isStableRelease) {
     args.push('--tag', 'beta');
   }
@@ -94,8 +97,7 @@ function checkAndPublishPackage(packageDir) {
 
 function getNextBetaVersion(packageJson) {
   if (!/^\d+\.\d+\.\d+$/.exec(packageJson.version)) {
-    console.error('The package.json version must be of the form x.y.z');
-    process.exit(1);
+    throw new Error('The package.json version must be of the form x.y.z');
   }
   const tag = 'beta';
   const stableVersion = packageJson.version.split('.');
@@ -116,6 +118,9 @@ function getNextBetaVersion(packageJson) {
 function getPublishedVersions(packageJson, version, tag) {
   const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
   const versionsJson = JSON.parse(versionsProcess.stdout);
+  if (!versionsJson || !Array.isArray(versionsJson) || versionsJson.length === 0) {
+    return [];
+  }
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
