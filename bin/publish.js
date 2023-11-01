@@ -30,7 +30,7 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-attach'),
   path.resolve(__dirname, '../addons/addon-canvas'),
   path.resolve(__dirname, '../addons/addon-fit'),
-  // path.resolve(__dirname, '../addons/addon-image'),
+  path.resolve(__dirname, '../addons/addon-image'),
   path.resolve(__dirname, '../addons/addon-ligatures'),
   path.resolve(__dirname, '../addons/addon-search'),
   path.resolve(__dirname, '../addons/addon-serialize'),
