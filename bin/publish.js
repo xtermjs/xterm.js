@@ -30,7 +30,7 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-attach'),
   path.resolve(__dirname, '../addons/addon-canvas'),
   path.resolve(__dirname, '../addons/addon-fit'),
-  // path.resolve(__dirname, '../addons/addon-image'),
+  path.resolve(__dirname, '../addons/addon-image'),
   path.resolve(__dirname, '../addons/addon-ligatures'),
   path.resolve(__dirname, '../addons/addon-search'),
   path.resolve(__dirname, '../addons/addon-serialize'),
@@ -127,7 +127,17 @@ function getPublishedVersions(packageJson, version, tag) {
     }
     throw new Error('Could not get published versions\n' + err);
   }
-  const versionsJson = asArray(JSON.parse(versionsProcess.stdout));
+  const output = JSON.parse(versionsProcess.stdout);
+  if (typeof output === 'object' && !Array.isArray(output)) {
+    if (output.error?.code === 'E404')  {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + output);
+  }
+  if (!output || Array.isArray(output) && output.length === 0) {
+    return [];
+  }
+  const versionsJson = asArray(output);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
