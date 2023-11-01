@@ -29,4 +29,4 @@ jobs:
     - name: Publish to npm
       env:
         NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: node ./bin/publish.js --dry
+      run: node ./bin/publish.js
