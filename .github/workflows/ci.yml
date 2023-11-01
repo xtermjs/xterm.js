@@ -306,3 +306,23 @@ jobs:
         ls -R
     - name: Integration tests (${{ matrix.browser }})
       run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
+
+  release-dry-run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'yarn'
+    - name: Install dependencies
+      run: yarn --frozen-lockfile
+    - name: Build
+      run: yarn setup
+    - name: Package headless
+      run: |
+        yarn package-headless
+        node ./bin/package_headless.js
+    - name: Publish to npm (dry run)
+      run: node ./bin/publish.js --dry
