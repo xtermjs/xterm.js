@@ -474,7 +474,7 @@ function drawPatternChar(
   if (!pattern) {
     const width = charDefinition[0].length;
     const height = charDefinition.length;
-    const tmpCanvas = document.createElement('canvas');
+    const tmpCanvas = ctx.canvas.ownerDocument.createElement('canvas');
     tmpCanvas.width = width;
     tmpCanvas.height = height;
     const tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d'));

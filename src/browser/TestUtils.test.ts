@@ -350,10 +350,15 @@ export class MockCompositionHelper implements ICompositionHelper {
 }
 
 export class MockCoreBrowserService implements ICoreBrowserService {
+  public onDprChange = new EventEmitter<number>().event;
+  public onWindowChange = new EventEmitter<Window & typeof globalThis, void>().event;
   public serviceBrand: undefined;
   public isFocused: boolean = true;
   public get window(): Window & typeof globalThis {
     throw Error('Window object not available in tests');
+  }
+  public get mainDocument(): Document {
+    throw Error('Document object not available in tests');
   }
   public dpr: number = 1;
 }
