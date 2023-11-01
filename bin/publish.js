@@ -57,7 +57,7 @@ function checkAndPublishPackage(packageDir) {
 
   // Determine if this is a stable or beta release
   const publishedVersions = getPublishedVersions(packageJson);
-  const isStableRelease = !publishedVersions.includes(packageJson.version);
+  const isStableRelease = false; // !publishedVersions.includes(packageJson.version);
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
