@@ -12,7 +12,7 @@ import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {

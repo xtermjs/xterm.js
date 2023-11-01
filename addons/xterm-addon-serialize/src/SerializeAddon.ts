@@ -7,7 +7,7 @@
 
 import { DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
 import { IAttributeData, IColor } from 'common/Types';
-import { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));

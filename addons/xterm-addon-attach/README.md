@@ -11,7 +11,7 @@ npm install --save xterm-addon-attach
 ### Usage
 
 ```ts
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { AttachAddon } from 'xterm-addon-attach';
 
 const terminal = new Terminal();

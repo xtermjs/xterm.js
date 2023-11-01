@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, Terminal } from 'xterm';
+import { IDisposable, IMarker, Terminal } from '@xterm/xterm';
 
 // private imports from base repo we build against
 import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from 'common/buffer/Constants';

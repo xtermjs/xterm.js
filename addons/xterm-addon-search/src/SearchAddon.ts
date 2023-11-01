@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon, IDecoration } from 'xterm';
+import { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable, disposeArray, MutableDisposable } from 'common/Lifecycle';
 

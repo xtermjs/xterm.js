@@ -4,7 +4,7 @@
  */
 
 import { IIPHandler } from './IIPHandler';
-import { ITerminalAddon, IDisposable } from 'xterm';
+import { ITerminalAddon, IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';

@@ -9,7 +9,7 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class LinkRenderLayer extends BaseRenderLayer {

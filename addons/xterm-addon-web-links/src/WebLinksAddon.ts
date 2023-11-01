@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IDisposable } from 'xterm';
+import { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
 // consider everthing starting with http:// or https://

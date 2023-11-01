@@ -9,7 +9,7 @@ import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
-import { ITerminalAddon, Terminal } from 'xterm';
+import { ITerminalAddon, Terminal } from '@xterm/xterm';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
 

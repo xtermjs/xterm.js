@@ -11,7 +11,7 @@ npm install --save xterm-addon-unicode11
 ### Usage
 
 ```ts
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { Unicode11Addon } from 'xterm-addon-unicode11';
 
 const terminal = new Terminal();

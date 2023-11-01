@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from 'xterm';
+import { IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ITerminalExt, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize, ExtFlags, Attributes, UnderlineStyle } from './Types';
 

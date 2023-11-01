@@ -8,7 +8,7 @@
  * which is intended to be stable and consumed by external programs.
  */
 
-import { Terminal, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon } from '@xterm/xterm';
 
 declare module 'xterm-addon-ligatures' {
   /**

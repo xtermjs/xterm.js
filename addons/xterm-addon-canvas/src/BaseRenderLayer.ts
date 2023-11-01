@@ -19,7 +19,7 @@ import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {

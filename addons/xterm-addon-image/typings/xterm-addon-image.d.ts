@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon } from 'xterm';
+import { Terminal, ITerminalAddon } from '@xterm/xterm';
 
 declare module 'xterm-addon-image' {
   export interface IImageAddonOptions {
@@ -37,7 +37,7 @@ declare module 'xterm-addon-image' {
      *
      * Note: `storageLimit` bytes are calculated from images by multiplying the pixels with 4
      * (4 channels with one byte, images are stored as RGBA8888).
-     * 
+     *
      * Default is 2^16 (4096 x 4096 pixels).
      */
     pixelLimit?: number;

@@ -49,7 +49,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 The recommended way to load xterm.js is via the ES6 module syntax:
 
 ```javascript
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 ```
 
 ### Addons
@@ -65,7 +65,7 @@ npm i -S xterm-addon-web-links
 Then import the addon, instantiate it and call `Terminal.loadAddon`:
 
 ```ts
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 const terminal = new Terminal();

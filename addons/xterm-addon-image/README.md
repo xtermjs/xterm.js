@@ -16,7 +16,7 @@ npm install --save xterm-addon-image
 ### Usage
 
 ```ts
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { ImageAddon, IImageAddonOptions } from 'xterm-addon-image';
 
 // customize as needed (showing addon defaults)

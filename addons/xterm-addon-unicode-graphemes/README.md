@@ -13,7 +13,7 @@ This addon is not yet published to npm
 ### Usage
 
 ```ts
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { UnicodeGraphemesAddon } from 'xterm-addon-unicode-graphemes';
 
 const terminal = new Terminal();

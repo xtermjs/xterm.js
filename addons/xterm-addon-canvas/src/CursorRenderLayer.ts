@@ -12,7 +12,7 @@ import { isFirefox } from 'common/Platform';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 interface ICursorState {

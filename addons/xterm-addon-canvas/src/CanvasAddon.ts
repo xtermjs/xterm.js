@@ -9,7 +9,7 @@ import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
 import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
-import { ITerminalAddon, Terminal } from 'xterm';
+import { ITerminalAddon, Terminal } from '@xterm/xterm';
 import { CanvasRenderer } from './CanvasRenderer';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon {

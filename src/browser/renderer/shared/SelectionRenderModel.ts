@@ -4,7 +4,7 @@
  */
 
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 
 class SelectionRenderModel implements ISelectionRenderModel {
   public hasSelection!: boolean;

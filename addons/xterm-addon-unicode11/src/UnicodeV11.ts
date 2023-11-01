@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IUnicodeVersionProvider } from 'xterm';
+import { IUnicodeVersionProvider } from '@xterm/xterm';
 import { UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 

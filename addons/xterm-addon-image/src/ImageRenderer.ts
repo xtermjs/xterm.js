@@ -4,7 +4,7 @@
  */
 
 import { toRGBA8888 } from 'sixel/lib/Colors';
-import { IDisposable } from 'xterm';
+import { IDisposable } from '@xterm/xterm';
 import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 

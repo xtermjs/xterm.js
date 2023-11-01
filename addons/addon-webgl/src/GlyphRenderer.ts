@@ -8,7 +8,7 @@ import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
 
