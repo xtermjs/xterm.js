@@ -26,26 +26,26 @@ jobs:
         zip -r compressed-build \
           ./out/* \
           ./out-test/* \
-          ./addons/xterm-addon-attach/out/* \
-          ./addons/xterm-addon-attach/out-test/* \
-          ./addons/xterm-addon-canvas/out/* \
-          ./addons/xterm-addon-canvas/out-test/* \
-          ./addons/xterm-addon-fit/out/* \
-          ./addons/xterm-addon-fit/out-test/* \
-          ./addons/xterm-addon-image/out/* \
-          ./addons/xterm-addon-image/out-test/* \
-          ./addons/xterm-addon-ligatures/out/* \
-          ./addons/xterm-addon-ligatures/out-test/* \
-          ./addons/xterm-addon-search/out/* \
-          ./addons/xterm-addon-search/out-test/* \
-          ./addons/xterm-addon-serialize/out/* \
-          ./addons/xterm-addon-serialize/out-test/* \
-          ./addons/xterm-addon-unicode11/out/* \
-          ./addons/xterm-addon-unicode11/out-test/* \
-          ./addons/xterm-addon-unicode-graphemes/out/* \
-          ./addons/xterm-addon-unicode-graphemes/out-test/* \
-          ./addons/xterm-addon-web-links/out/* \
-          ./addons/xterm-addon-web-links/out-test/* \
+          ./addons/addon-attach/out/* \
+          ./addons/addon-attach/out-test/* \
+          ./addons/addon-canvas/out/* \
+          ./addons/addon-canvas/out-test/* \
+          ./addons/addon-fit/out/* \
+          ./addons/addon-fit/out-test/* \
+          ./addons/addon-image/out/* \
+          ./addons/addon-image/out-test/* \
+          ./addons/addon-ligatures/out/* \
+          ./addons/addon-ligatures/out-test/* \
+          ./addons/addon-search/out/* \
+          ./addons/addon-search/out-test/* \
+          ./addons/addon-serialize/out/* \
+          ./addons/addon-serialize/out-test/* \
+          ./addons/addon-unicode11/out/* \
+          ./addons/addon-unicode11/out-test/* \
+          ./addons/addon-unicode-graphemes/out/* \
+          ./addons/addon-unicode-graphemes/out-test/* \
+          ./addons/addon-web-links/out/* \
+          ./addons/addon-web-links/out-test/* \
           ./addons/addon-webgl/out/* \
           ./addons/addon-webgl/out-test/*
     - name: Upload artifacts
@@ -265,8 +265,8 @@ jobs:
       run: yarn build-demo
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
       run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
-    - name: Integration tests (xterm-addon-canvas)
-      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=xterm-addon-canvas
+    - name: Integration tests (addon-canvas)
+      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-canvas
     - name: Integration tests (addon-webgl)
       run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
 

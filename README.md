@@ -59,14 +59,14 @@ import { Terminal } from '@xterm/xterm';
 Addons are separate modules that extend the `Terminal` by building on the [xterm.js API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts). To use an addon, you first need to install it in your project:
 
 ```bash
-npm i -S xterm-addon-web-links
+npm i -S @xterm/addon-web-links
 ```
 
 Then import the addon, instantiate it and call `Terminal.loadAddon`:
 
 ```ts
 import { Terminal } from '@xterm/xterm';
-import { WebLinksAddon } from 'xterm-addon-web-links';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 
 const terminal = new Terminal();
 // Load WebLinksAddon on terminal, this is all that's needed to get web links
@@ -76,10 +76,10 @@ terminal.loadAddon(new WebLinksAddon());
 
 The xterm.js team maintains the following addons, but anyone can build them:
 
-- [`xterm-addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-attach): Attaches to a server running a process via a websocket
-- [`xterm-addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-fit): Fits the terminal to the containing element
-- [`xterm-addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-search): Adds search functionality
-- [`xterm-addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-web-links): Adds web link detection and interaction
+- [`@xterm/addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-attach): Attaches to a server running a process via a websocket
+- [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
+- [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality
+- [`@xterm/addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-links): Adds web link detection and interaction
 
 ## Browser Support
 

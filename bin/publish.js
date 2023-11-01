@@ -27,15 +27,16 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
-  // path.resolve(__dirname, '../addons/xterm-addon-attach'),
-  // path.resolve(__dirname, '../addons/xterm-addon-canvas'),
-  // path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  // // path.resolve(__dirname, '../addons/xterm-addon-image'),
-  // path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
-  // path.resolve(__dirname, '../addons/xterm-addon-search'),
-  // path.resolve(__dirname, '../addons/xterm-addon-serialize'),
-  // path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
-  // path.resolve(__dirname, '../addons/xterm-addon-web-links'),
+  path.resolve(__dirname, '../addons/addon-attach'),
+  path.resolve(__dirname, '../addons/addon-canvas'),
+  path.resolve(__dirname, '../addons/addon-fit'),
+  // path.resolve(__dirname, '../addons/addon-image'),
+  path.resolve(__dirname, '../addons/addon-ligatures'),
+  path.resolve(__dirname, '../addons/addon-search'),
+  path.resolve(__dirname, '../addons/addon-serialize'),
+  path.resolve(__dirname, '../addons/addon-unicode11'),
+  // path.resolve(__dirname, '../addons/addon-unicode-graphemes'),
+  path.resolve(__dirname, '../addons/addon-web-links'),
   path.resolve(__dirname, '../addons/addon-webgl')
 ];
 console.log(`Checking if addons need to be published`);
