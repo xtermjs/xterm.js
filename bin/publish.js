@@ -41,10 +41,10 @@ const addonPackageDirs = [
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
   const addon = path.basename(p);
-  if (changedFiles.some(e => e.includes(addon))) {
+  // if (changedFiles.some(e => e.includes(addon))) {
     console.log(`Try publish ${addon}`);
     checkAndPublishPackage(p);
-  }
+  // }
 }
 
 // Publish website if it's a stable release
@@ -94,8 +94,7 @@ function checkAndPublishPackage(packageDir) {
 
 function getNextBetaVersion(packageJson) {
   if (!/^\d+\.\d+\.\d+$/.exec(packageJson.version)) {
-    console.error('The package.json version must be of the form x.y.z');
-    process.exit(1);
+    throw new Error('The package.json version must be of the form x.y.z');
   }
   const tag = 'beta';
   const stableVersion = packageJson.version.split('.');
