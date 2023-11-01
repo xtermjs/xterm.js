@@ -42,11 +42,10 @@ const addonPackageDirs = [
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
   const addon = path.basename(p);
-  // TODO: Uncomment after first publish
-  // if (changedFiles.some(e => e.includes(addon))) {
+  if (changedFiles.some(e => e.includes(addon))) {
     console.log(`Try publish ${addon}`);
     checkAndPublishPackage(p);
-  // }
+  }
 }
 
 // Publish website if it's a stable release
@@ -58,9 +57,8 @@ function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
-  // TODO: Uncomment after first publish
-  // const publishedVersions = getPublishedVersions(packageJson);
-  const isStableRelease = false; // !publishedVersions.includes(packageJson.version);
+  const publishedVersions = getPublishedVersions(packageJson);
+  const isStableRelease = !publishedVersions.includes(packageJson.version);
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
