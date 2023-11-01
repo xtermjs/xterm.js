@@ -116,7 +116,7 @@ function getNextBetaVersion(packageJson) {
 function getPublishedVersions(packageJson, version, tag) {
   const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
   const versionsJson = JSON.parse(versionsProcess.stdout);
-  if (!versions || versions.length === 0) {
+  if (!versionsJson || versionsJson.length === 0) {
     return [];
   }
   if (tag) {
