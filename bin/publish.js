@@ -116,10 +116,13 @@ function getNextBetaVersion(packageJson) {
 function getPublishedVersions(packageJson, version, tag) {
   const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
   const versionsJson = JSON.parse(versionsProcess.stdout);
+  if (!versions || versions.length === 0) {
+    return [];
+  }
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
-  return versionsJson ?? [];
+  return versionsJson;
 }
 
 function getChangedFilesInCommit(commit) {
