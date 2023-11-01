@@ -13,7 +13,7 @@ npm install --save @xterm/addon-serialize
 ### Usage
 
 ```ts
-import { Terminal } from "xterm";
+import { Terminal } from "@xterm/xterm";
 import { SerializeAddon } from "@xterm/addon-serialize";
 
 const terminal = new Terminal();

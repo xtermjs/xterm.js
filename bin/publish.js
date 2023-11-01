@@ -42,11 +42,10 @@ const addonPackageDirs = [
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
   const addon = path.basename(p);
-  // TODO: Uncomment after first publish
-  // if (changedFiles.some(e => e.includes(addon))) {
+  if (changedFiles.some(e => e.includes(addon))) {
     console.log(`Try publish ${addon}`);
     checkAndPublishPackage(p);
-  // }
+  }
 }
 
 // Publish website if it's a stable release
@@ -58,9 +57,9 @@ function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
-  // TODO: Uncomment after first publish
+  // TODO: Uncomment when publishing 5.4
   // const publishedVersions = getPublishedVersions(packageJson);
-  const isStableRelease = false; // !publishedVersions.includes(packageJson.version);
+  const isStableRelease = false; //!publishedVersions.includes(packageJson.version);
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
@@ -115,12 +114,20 @@ function getNextBetaVersion(packageJson) {
   return `${nextStableVersion}-${tag}.${latestTagVersion + 1}`;
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [value];
+}
+
 function getPublishedVersions(packageJson, version, tag) {
-  const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
-  const versionsJson = JSON.parse(versionsProcess.stdout);
-  if (!versionsJson || !Array.isArray(versionsJson) || versionsJson.length === 0) {
-    return [];
+  const versionsProcess = cp.spawnSync(os.platform === 'win32' ? 'npm.cmd' : 'npm', ['view', packageJson.name, 'versions', '--json']);
+  if (versionsProcess.stdout.length === 0 && versionsProcess.stderr) {
+    const err = versionsProcess.stderr.toString();
+    if (err.indexOf('404 Not Found - GET https://registry.npmjs.org/@xterm') > 0) {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + err);
   }
+  const versionsJson = asArray(JSON.parse(versionsProcess.stdout));
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
