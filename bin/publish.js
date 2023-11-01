@@ -127,10 +127,11 @@ function getPublishedVersions(packageJson, version, tag) {
     }
     throw new Error('Could not get published versions\n' + err);
   }
-  const versionsJson = asArray(JSON.parse(versionsProcess.stdout));
-  if (!versionsJson) {
+  const output = JSON.parse(versionsProcess.stdout);
+  if (!output || Array.isArray(output) && output.length === 0) {
     return [];
   }
+  const versionsJson = asArray(output);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
