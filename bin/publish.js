@@ -128,6 +128,12 @@ function getPublishedVersions(packageJson, version, tag) {
     throw new Error('Could not get published versions\n' + err);
   }
   const output = JSON.parse(versionsProcess.stdout);
+  if (typeof output === 'object') {
+    if (output.error?.code === 'E404')  {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + output);
+  }
   if (!output || Array.isArray(output) && output.length === 0) {
     return [];
   }
