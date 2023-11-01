@@ -27,16 +27,16 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
-  path.resolve(__dirname, '../addons/xterm-addon-attach'),
-  path.resolve(__dirname, '../addons/xterm-addon-canvas'),
-  path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  // path.resolve(__dirname, '../addons/xterm-addon-image'),
-  path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
-  path.resolve(__dirname, '../addons/xterm-addon-search'),
-  path.resolve(__dirname, '../addons/xterm-addon-serialize'),
-  path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
-  path.resolve(__dirname, '../addons/xterm-addon-web-links'),
-  path.resolve(__dirname, '../addons/xterm-addon-webgl')
+  // path.resolve(__dirname, '../addons/xterm-addon-attach'),
+  // path.resolve(__dirname, '../addons/xterm-addon-canvas'),
+  // path.resolve(__dirname, '../addons/xterm-addon-fit'),
+  // // path.resolve(__dirname, '../addons/xterm-addon-image'),
+  // path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
+  // path.resolve(__dirname, '../addons/xterm-addon-search'),
+  // path.resolve(__dirname, '../addons/xterm-addon-serialize'),
+  // path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
+  // path.resolve(__dirname, '../addons/xterm-addon-web-links'),
+  path.resolve(__dirname, '../addons/addon-webgl')
 ];
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
@@ -70,7 +70,7 @@ function checkAndPublishPackage(packageDir) {
   fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
   // Publish
-  const args = ['publish'];
+  const args = ['publish', '--access', 'public'];
   if (!isStableRelease) {
     args.push('--tag', 'beta');
   }

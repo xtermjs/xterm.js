@@ -5,7 +5,7 @@
 
 import { Terminal, ITerminalAddon, IEvent } from 'xterm';
 
-declare module 'xterm-addon-webgl' {
+declare module '@xterm/addon-webgl' {
   /**
    * An xterm.js addon that provides search functionality.
    */

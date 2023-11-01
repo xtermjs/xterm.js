@@ -6,7 +6,7 @@
 const path = require('path');
 
 const addonName = 'WebglAddon';
-const mainFile = 'xterm-addon-webgl.js';
+const mainFile = 'addon-webgl.js';
 
 module.exports = {
   entry: `./out/${addonName}.js`,

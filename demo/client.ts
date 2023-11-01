@@ -16,7 +16,7 @@ import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
-import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
+import { WebglAddon } from '../addons/addon-webgl/out/WebglAddon';
 import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
 import { UnicodeGraphemesAddon } from '../addons/xterm-addon-unicode-graphemes/out/UnicodeGraphemesAddon';
 import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
@@ -37,7 +37,7 @@ if ('WebAssembly' in window) {
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 // import { SerializeAddon } from 'xterm-addon-serialize';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
-// import { WebglAddon } from 'xterm-addon-webgl';
+// import { WebglAddon } from '@xterm/addon-webgl';
 // import { Unicode11Addon } from 'xterm-addon-unicode11';
 // import { UnicodeGraphemesAddon } from 'xterm-addon-unicode-graphemes';
 // import { LigaturesAddon } from 'xterm-addon-ligatures';

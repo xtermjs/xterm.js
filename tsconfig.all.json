@@ -17,6 +17,6 @@
     { "path": "./addons/xterm-addon-unicode11" },
     { "path": "./addons/xterm-addon-unicode-graphemes" },
     { "path": "./addons/xterm-addon-web-links" },
-    { "path": "./addons/xterm-addon-webgl" }
+    { "path": "./addons/addon-webgl" }
   ]
 }

@@ -35,8 +35,8 @@
       "addons/xterm-addon-unicode-graphemes/benchmark/tsconfig.json",
       "addons/xterm-addon-web-links/src/tsconfig.json",
       "addons/xterm-addon-web-links/test/tsconfig.json",
-      "addons/xterm-addon-webgl/src/tsconfig.json",
-      "addons/xterm-addon-webgl/test/tsconfig.json"
+      "addons/addon-webgl/src/tsconfig.json",
+      "addons/addon-webgl/test/tsconfig.json"
     ],
     "sourceType": "module"
   },

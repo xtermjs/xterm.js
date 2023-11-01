@@ -46,8 +46,8 @@ jobs:
           ./addons/xterm-addon-unicode-graphemes/out-test/* \
           ./addons/xterm-addon-web-links/out/* \
           ./addons/xterm-addon-web-links/out-test/* \
-          ./addons/xterm-addon-webgl/out/* \
-          ./addons/xterm-addon-webgl/out-test/*
+          ./addons/addon-webgl/out/* \
+          ./addons/addon-webgl/out-test/*
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
@@ -267,8 +267,8 @@ jobs:
       run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (xterm-addon-canvas)
       run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=xterm-addon-canvas
-    - name: Integration tests (xterm-addon-webgl)
-      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=xterm-addon-webgl
+    - name: Integration tests (addon-webgl)
+      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
 
   test-api:
     needs: build
