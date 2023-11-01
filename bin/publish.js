@@ -115,10 +115,9 @@ function getNextBetaVersion(packageJson) {
 function getPublishedVersions(packageJson, version, tag) {
   const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
   const versionsJson = JSON.parse(versionsProcess.stdout);
-  if (!versionsJson || versionsJson.length === 0) {
+  if (!versionsJson || !Array.isArray(versionsJson) || versionsJson.length === 0) {
     return [];
   }
-  console.log('versionsJson', versionsJson);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
