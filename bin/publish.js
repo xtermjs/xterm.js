@@ -114,12 +114,20 @@ function getNextBetaVersion(packageJson) {
   return `${nextStableVersion}-${tag}.${latestTagVersion + 1}`;
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [value];
+}
+
 function getPublishedVersions(packageJson, version, tag) {
-  const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
-  const versionsJson = JSON.parse(versionsProcess.stdout);
-  if (!versionsJson || !Array.isArray(versionsJson) || versionsJson.length === 0) {
-    return [];
+  const versionsProcess = cp.spawnSync(os.platform === 'win32' ? 'npm.cmd' : 'npm', ['view', packageJson.name, 'versions', '--json']);
+  if (versionsProcess.stdout.length === 0 && versionsProcess.stderr) {
+    const err = versionsProcess.stderr.toString();
+    if (err.indexOf('404 Not Found - GET https://registry.npmjs.org/@xterm') > 0) {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + err);
   }
+  const versionsJson = asArray(JSON.parse(versionsProcess.stdout));
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
