@@ -118,6 +118,7 @@ function getPublishedVersions(packageJson, version, tag) {
   if (!versionsJson || versionsJson.length === 0) {
     return [];
   }
+  console.log('versionsJson', versionsJson);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
