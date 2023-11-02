@@ -26,26 +26,28 @@ jobs:
         zip -r compressed-build \
           ./out/* \
           ./out-test/* \
-          ./addons/xterm-addon-attach/out/* \
-          ./addons/xterm-addon-attach/out-test/* \
-          ./addons/xterm-addon-canvas/out/* \
-          ./addons/xterm-addon-canvas/out-test/* \
-          ./addons/xterm-addon-fit/out/* \
-          ./addons/xterm-addon-fit/out-test/* \
-          ./addons/xterm-addon-image/out/* \
-          ./addons/xterm-addon-image/out-test/* \
-          ./addons/xterm-addon-ligatures/out/* \
-          ./addons/xterm-addon-ligatures/out-test/* \
-          ./addons/xterm-addon-search/out/* \
-          ./addons/xterm-addon-search/out-test/* \
-          ./addons/xterm-addon-serialize/out/* \
-          ./addons/xterm-addon-serialize/out-test/* \
-          ./addons/xterm-addon-unicode11/out/* \
-          ./addons/xterm-addon-unicode11/out-test/* \
-          ./addons/xterm-addon-web-links/out/* \
-          ./addons/xterm-addon-web-links/out-test/* \
-          ./addons/xterm-addon-webgl/out/* \
-          ./addons/xterm-addon-webgl/out-test/*
+          ./addons/addon-attach/out/* \
+          ./addons/addon-attach/out-test/* \
+          ./addons/addon-canvas/out/* \
+          ./addons/addon-canvas/out-test/* \
+          ./addons/addon-fit/out/* \
+          ./addons/addon-fit/out-test/* \
+          ./addons/addon-image/out/* \
+          ./addons/addon-image/out-test/* \
+          ./addons/addon-ligatures/out/* \
+          ./addons/addon-ligatures/out-test/* \
+          ./addons/addon-search/out/* \
+          ./addons/addon-search/out-test/* \
+          ./addons/addon-serialize/out/* \
+          ./addons/addon-serialize/out-test/* \
+          ./addons/addon-unicode11/out/* \
+          ./addons/addon-unicode11/out-test/* \
+          ./addons/addon-unicode-graphemes/out/* \
+          ./addons/addon-unicode-graphemes/out-test/* \
+          ./addons/addon-web-links/out/* \
+          ./addons/addon-web-links/out-test/* \
+          ./addons/addon-webgl/out/* \
+          ./addons/addon-webgl/out-test/*
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
@@ -68,6 +70,8 @@ jobs:
         yarn --frozen-lockfile
         yarn install-addons
     - name: Lint code
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096
       run: yarn lint
     - name: Lint API
       run: yarn lint-api
@@ -261,10 +265,10 @@ jobs:
       run: yarn build-demo
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
       run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
-    - name: Integration tests (xterm-addon-canvas)
-      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=xterm-addon-canvas
-    - name: Integration tests (xterm-addon-webgl)
-      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=xterm-addon-webgl
+    - name: Integration tests (addon-canvas)
+      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-canvas
+    - name: Integration tests (addon-webgl)
+      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
 
   test-api:
     needs: build
@@ -302,3 +306,41 @@ jobs:
         ls -R
     - name: Integration tests (${{ matrix.browser }})
       run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
+
+  release-dry-run:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'yarn'
+    - name: Install dependencies
+      run: |
+        yarn --frozen-lockfile
+        yarn install-addons
+    - name: Install playwright
+      run: npx playwright install
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
+        else
+          unzip -o compressed-build.zip
+        fi
+        ls -R
+    - name: Package headless
+      run: |
+        yarn package-headless
+        node ./bin/package_headless.js
+    - name: Publish to npm (dry run)
+      run: node ./bin/publish.js --dry

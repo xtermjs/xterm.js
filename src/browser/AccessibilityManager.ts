@@ -5,13 +5,11 @@
 
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
-import { isMac } from 'common/Platform';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
-import { IRenderService } from 'browser/services/Services';
-import { addDisposableDomListener } from 'browser/Lifecycle';
+import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IBuffer } from 'common/buffer/Types';
+import { IInstantiationService } from 'common/services/Services';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -29,8 +27,6 @@ export class AccessibilityManager extends Disposable {
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
   private _liveRegionDebouncer: IRenderDebouncer;
-
-  private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
@@ -50,13 +46,15 @@ export class AccessibilityManager extends Disposable {
 
   constructor(
     private readonly _terminal: ITerminal,
+    @IInstantiationService instantiationService: IInstantiationService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
-    this._accessibilityContainer = document.createElement('div');
+    this._accessibilityContainer = this._coreBrowserService.mainDocument.createElement('div');
     this._accessibilityContainer.classList.add('xterm-accessibility');
 
-    this._rowContainer = document.createElement('div');
+    this._rowContainer = this._coreBrowserService.mainDocument.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
     this._rowContainer.classList.add('xterm-accessibility-tree');
     this._rowElements = [];
@@ -73,7 +71,7 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowsDimensions();
     this._accessibilityContainer.appendChild(this._rowContainer);
 
-    this._liveRegion = document.createElement('div');
+    this._liveRegion = this._coreBrowserService.mainDocument.createElement('div');
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityContainer.appendChild(this._liveRegion);
@@ -94,13 +92,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
-
-    this._screenDprMonitor = new ScreenDprMonitor(window);
-    this.register(this._screenDprMonitor);
-    this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
-    // This shouldn't be needed on modern browsers but is present in case the
-    // media query that drives the ScreenDprMonitor isn't supported
-    this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+    this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
 
     this._refreshRows();
     this.register(toDisposable(() => {
@@ -133,26 +125,12 @@ export class AccessibilityManager extends Disposable {
           this._liveRegion.textContent += Strings.tooMuchOutput;
         }
       }
-
-      // Only detach/attach on mac as otherwise messages can go unaccounced
-      if (isMac) {
-        if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
-          setTimeout(() => {
-            this._accessibilityContainer.appendChild(this._liveRegion);
-          }, 0);
-        }
-      }
     }
   }
 
   private _clearLiveRegion(): void {
     this._liveRegion.textContent = '';
     this._liveRegionLineCount = 0;
-
-    // Only detach/attach on mac as otherwise messages can go unaccounced
-    if (isMac) {
-      this._liveRegion.remove();
-    }
   }
 
   private _handleKey(keyChar: string): void {
@@ -276,7 +254,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _createAccessibilityTreeNode(): HTMLElement {
-    const element = document.createElement('div');
+    const element = this._coreBrowserService.mainDocument.createElement('div');
     element.setAttribute('role', 'listitem');
     element.tabIndex = -1;
     this._refreshRowDimensions(element);

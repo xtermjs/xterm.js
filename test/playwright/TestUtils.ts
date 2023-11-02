@@ -10,7 +10,7 @@ import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 
 export interface ITestContext {
@@ -351,7 +351,7 @@ class TerminalCoreProxy {
   }
 }
 
-export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}): Promise<void> {
+export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}, testOptions: { loadUnicodeGraphemesAddon: boolean } = { loadUnicodeGraphemesAddon: true }): Promise<void> {
   await ctx.page.evaluate(`
   if ('term' in window) {
     try {
@@ -366,6 +366,15 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
     window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
     window.term.open(document.querySelector('#terminal-container'));
   `);
+  // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
+  // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
+  if (testOptions.loadUnicodeGraphemesAddon) {
+    await ctx.page.evaluate(`
+      window.unicode = new UnicodeGraphemesAddon();
+      window.term.loadAddon(window.unicode);
+      window.term.unicode.activeVersion = '15-graphemes';
+    `);
+  }
   await ctx.page.waitForSelector('.xterm-rows');
   ctx.termHandle = await ctx.page.evaluateHandle('window.term');
   await ctx.proxy.initTerm();

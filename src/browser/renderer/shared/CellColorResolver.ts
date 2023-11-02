@@ -4,7 +4,7 @@ import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
 import { IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 
 // Work variables to avoid garbage collection
 let $fg = 0;

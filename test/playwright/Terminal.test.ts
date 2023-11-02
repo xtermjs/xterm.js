@@ -22,7 +22,7 @@ test.describe('API Integration Tests', () => {
   });
 
   test('Proposed API check', async () => {
-    await openTerminal(ctx, { allowProposedApi: false });
+    await openTerminal(ctx, { allowProposedApi: false }, { loadUnicodeGraphemesAddon: false });
     await ctx.page.evaluate(`
       try {
         window.term.markers;

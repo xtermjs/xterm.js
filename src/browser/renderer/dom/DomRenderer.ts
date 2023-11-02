@@ -7,9 +7,10 @@ import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererR
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
+import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ILinkifier2, ILinkifierEvent, ReadonlyColorSet } from 'browser/Types';
+import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
@@ -24,7 +25,6 @@ const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 
 let nextTerminalId = 1;
-
 
 /**
  * A fallback renderer for when canvas is slow. This is not meant to be
@@ -41,15 +41,19 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
+  private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
 
   public dimensions: IRenderDimensions;
 
   public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
 
   constructor(
+    private readonly _terminal: ITerminal,
+    private readonly _document: Document,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
+    private readonly _helperContainer: HTMLElement,
     private readonly _linkifier2: ILinkifier2,
     @IInstantiationService instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
@@ -59,12 +63,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     @IThemeService private readonly _themeService: IThemeService
   ) {
     super();
-    this._rowContainer = document.createElement('div');
+    this._rowContainer = this._document.createElement('div');
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
     this._rowContainer.style.lineHeight = 'normal';
     this._rowContainer.setAttribute('aria-hidden', 'true');
     this._refreshRowElements(this._bufferService.cols, this._bufferService.rows);
-    this._selectionContainer = document.createElement('div');
+    this._selectionContainer = this._document.createElement('div');
     this._selectionContainer.classList.add(SELECTION_CLASS);
     this._selectionContainer.setAttribute('aria-hidden', 'true');
 
@@ -96,7 +100,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._dimensionsStyleElement.remove();
     }));
 
-    this._widthCache = new WidthCache(document);
+    this._widthCache = new WidthCache(this._document, this._helperContainer);
     this._widthCache.setFont(
       this._optionsService.rawOptions.fontFamily,
       this._optionsService.rawOptions.fontSize,
@@ -130,7 +134,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     if (!this._dimensionsStyleElement) {
-      this._dimensionsStyleElement = document.createElement('style');
+      this._dimensionsStyleElement = this._document.createElement('style');
       this._screenElement.appendChild(this._dimensionsStyleElement);
     }
 
@@ -150,7 +154,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   private _injectCss(colors: ReadonlyColorSet): void {
     if (!this._themeStyleElement) {
-      this._themeStyleElement = document.createElement('style');
+      this._themeStyleElement = this._document.createElement('style');
       this._screenElement.appendChild(this._themeStyleElement);
     }
 
@@ -276,7 +280,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _refreshRowElements(cols: number, rows: number): void {
     // Add missing elements
     for (let i = this._rowElements.length; i <= rows; i++) {
-      const row = document.createElement('div');
+      const row = this._document.createElement('div');
       this._rowContainer.appendChild(row);
       this._rowElements.push(row);
     }
@@ -289,6 +293,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public handleResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
+    this.handleSelectionChanged(this._selectionRenderModel.selectionStart, this._selectionRenderModel.selectionEnd, this._selectionRenderModel.columnSelectMode);
   }
 
   public handleCharSizeChanged(): void {
@@ -318,11 +323,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       return;
     }
 
+    this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
+
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._bufferService.buffer.ydisp;
-    const viewportEndRow = end[1] - this._bufferService.buffer.ydisp;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, this._bufferService.rows - 1);
+    const viewportStartRow = this._selectionRenderModel.viewportStartRow;
+    const viewportEndRow = this._selectionRenderModel.viewportEndRow;
+    const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
+    const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
 
     // No need to draw the selection
     if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
@@ -330,7 +337,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     // Create the selections
-    const documentFragment = document.createDocumentFragment();
+    const documentFragment = this._document.createDocumentFragment();
 
     if (columnSelectMode) {
       const isXFlipped = start[0] > end[0];
@@ -362,11 +369,17 @@ export class DomRenderer extends Disposable implements IRenderer {
    * @param colEnd The end columns.
    */
   private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
-    const element = document.createElement('div');
+    const element = this._document.createElement('div');
+    const left = colStart * this.dimensions.css.cell.width;
+    let width = this.dimensions.css.cell.width * (colEnd - colStart);
+    if (left + width > this.dimensions.css.canvas.width) {
+      width = this.dimensions.css.canvas.width - left;
+    }
+
     element.style.height = `${rowCount * this.dimensions.css.cell.height}px`;
     element.style.top = `${row * this.dimensions.css.cell.height}px`;
-    element.style.left = `${colStart * this.dimensions.css.cell.width}px`;
-    element.style.width = `${this.dimensions.css.cell.width * (colEnd - colStart)}px`;
+    element.style.left = `${left}px`;
+    element.style.width = `${width}px`;
     return element;
   }
 

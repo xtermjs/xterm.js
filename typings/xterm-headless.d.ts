@@ -7,7 +7,7 @@
  * to be stable and consumed by external programs.
  */
 
-declare module 'xterm-headless' {
+declare module '@xterm/headless' {
   /**
    * A string representing log level.
    */
@@ -1240,6 +1240,7 @@ declare module 'xterm-headless' {
      * Unicode version dependent wcwidth implementation.
      */
     wcwidth(codepoint: number): 0 | 1 | 2;
+    charProperties(codepoint: number, preceding: number): number;
   }
 
   /**

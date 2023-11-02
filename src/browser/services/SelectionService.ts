@@ -644,7 +644,9 @@ export class SelectionService extends Disposable implements ISelectionService {
     if (this._model.selectionEnd[1] < buffer.lines.length) {
       const line = buffer.lines.get(this._model.selectionEnd[1]);
       if (line && line.hasWidth(this._model.selectionEnd[0]) === 0) {
-        this._model.selectionEnd[0]++;
+        if (this._model.selectionEnd[0] < this._bufferService.cols) {
+          this._model.selectionEnd[0]++;
+        }
       }
     }
 
