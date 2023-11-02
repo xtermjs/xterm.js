@@ -12,8 +12,8 @@
       "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],
       "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"],
-      "xterm-addon-unicode-graphemes": [
-        "../typings/xterm-addon-unicode-graphemes.d.ts"
+      "@xterm/addon-unicode-graphemes": [
+        "../typings/addon-unicode-graphemes.d.ts"
       ]
     }
   },
