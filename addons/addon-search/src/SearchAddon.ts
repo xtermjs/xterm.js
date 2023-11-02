@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
-import { SearchAddon as ISearchApi } from '@xterm/addon-search';
+import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
+import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable, disposeArray, MutableDisposable } from 'common/Lifecycle';
 

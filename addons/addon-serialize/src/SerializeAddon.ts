@@ -5,8 +5,8 @@
  * (EXPERIMENTAL) This Addon is still under development
  */
 
-import { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
-import { SerializeAddon as ISerializeApi } from '@xterm/addon-serialize';
+import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
+import type { SerializeAddon as ISerializeApi } from '@xterm/addon-serialize';
 import { DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
 import { IAttributeData, IColor } from 'common/Types';
 

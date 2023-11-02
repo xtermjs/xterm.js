@@ -3,15 +3,15 @@
  * @license MIT
  */
 
+import type { ITerminalAddon, Terminal } from '@xterm/xterm';
+import type { CanvasAddon as ICanvasApi } from '@xterm/addon-canvas';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
 import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
-import { ITerminalAddon, Terminal } from '@xterm/xterm';
 import { CanvasRenderer } from './CanvasRenderer';
-import { CanvasAddon as ICanvasApi } from '@xterm/addon-canvas';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasApi {
   private _terminal?: Terminal;

@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
-import { WebLinksAddon as IWebLinksApi } from '@xterm/addon-web-links';
+import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
+import type { WebLinksAddon as IWebLinksApi } from '@xterm/addon-web-links';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
 // consider everthing starting with http:// or https://
