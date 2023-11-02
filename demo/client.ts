@@ -10,41 +10,41 @@
 
 // Use tsc version (yarn watch)
 import { Terminal } from '../out/browser/public/Terminal';
-import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
-import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
-import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
-import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
-import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
-import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
-import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
-import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
-import { UnicodeGraphemesAddon } from '../addons/xterm-addon-unicode-graphemes/out/UnicodeGraphemesAddon';
-import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
+import { AttachAddon } from '../addons/addon-attach/out/AttachAddon';
+import { CanvasAddon } from '../addons/addon-canvas/out/CanvasAddon';
+import { FitAddon } from '../addons/addon-fit/out/FitAddon';
+import { SearchAddon, ISearchOptions } from '../addons/addon-search/out/SearchAddon';
+import { SerializeAddon } from '../addons/addon-serialize/out/SerializeAddon';
+import { WebLinksAddon } from '../addons/addon-web-links/out/WebLinksAddon';
+import { WebglAddon } from '../addons/addon-webgl/out/WebglAddon';
+import { Unicode11Addon } from '../addons/addon-unicode11/out/Unicode11Addon';
+import { UnicodeGraphemesAddon } from '../addons/addon-unicode-graphemes/out/UnicodeGraphemesAddon';
+import { LigaturesAddon } from '../addons/addon-ligatures/out/LigaturesAddon';
 
 // Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddonType, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
+import type { ImageAddonType, IImageAddonOptions } from '../addons/addon-image/out/ImageAddon';
 let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
-  const imageAddon = require('../addons/xterm-addon-image/out/ImageAddon');
+  const imageAddon = require('../addons/addon-image/out/ImageAddon');
   ImageAddon = imageAddon.ImageAddon;
 }
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
-// import { AttachAddon } from 'xterm-addon-attach';
-// import { FitAddon } from 'xterm-addon-fit';
-// import { ImageAddon } from 'xterm-addon-image';
-// import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
-// import { SerializeAddon } from 'xterm-addon-serialize';
-// import { WebLinksAddon } from 'xterm-addon-web-links';
-// import { WebglAddon } from 'xterm-addon-webgl';
-// import { Unicode11Addon } from 'xterm-addon-unicode11';
-// import { UnicodeGraphemesAddon } from 'xterm-addon-unicode-graphemes';
-// import { LigaturesAddon } from 'xterm-addon-ligatures';
+// import { AttachAddon } from '@xterm/addon-attach';
+// import { FitAddon } from '@xterm/addon-fit';
+// import { ImageAddon } from '@xterm/addon-image';
+// import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
+// import { SerializeAddon } from '@xterm/addon-serialize';
+// import { WebLinksAddon } from '@xterm/addon-web-links';
+// import { WebglAddon } from '@@xterm/addon-webgl';
+// import { Unicode11Addon } from '@xterm/addon-unicode11';
+// import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
+// import { LigaturesAddon } from '@xterm/addon-ligatures';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
-import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
+import { Terminal as TerminalType, ITerminalOptions } from '@xterm/xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;

@@ -17,7 +17,7 @@
   },
   "include": [
     "./**/*",
-    "../../typings/xterm.d.ts", // common/Types.d.ts imports from 'xterm'
+    "../../typings/xterm.d.ts", // common/Types.d.ts imports from '@xterm/xterm'
     "../../typings/xterm-headless.d.ts"
   ],
   "references": [

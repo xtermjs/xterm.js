@@ -9,7 +9,7 @@ import { Attributes, UnderlineStyle } from 'common/buffer/Constants'; // eslint-
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
-import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
+import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;
@@ -119,6 +119,7 @@ export interface IExtendedAttrs {
   ext: number;
   underlineStyle: UnderlineStyle;
   underlineColor: number;
+  underlineVariantOffset: number;
   urlId: number;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
@@ -209,6 +210,7 @@ export interface IAttributeData {
   isUnderlineColorPalette(): boolean;
   isUnderlineColorDefault(): boolean;
   getUnderlineStyle(): number;
+  getUnderlineVariantOffset(): number;
 }
 
 /** Cell data */

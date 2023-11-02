@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "es6"],
+    "outDir": "../out-benchmark",
+    "types": ["../../../node_modules/@types/node"],
+    "moduleResolution": "node",
+    "strict": false,
+    "target": "es2015",
+    "module": "commonjs",
+    "baseUrl": ".",
+    "paths": {
+      "common/*": ["../../../src/common/*"],
+      "browser/*": ["../../../src/browser/*"],
+      "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"],
+      "@xterm/addon-unicode-graphemes": [
+        "../typings/addon-unicode-graphemes.d.ts"
+      ]
+    }
+  },
+  "include": ["../**/*", "../../../typings/xterm.d.ts"],
+  "exclude": ["../../../**/*test.ts", "../../**/*api.ts"],
+  "references": [
+    { "path": "../../../src/common" },
+    { "path": "../../../src/browser" }
+  ]
+}
