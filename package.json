@@ -1,5 +1,5 @@
 {
-  "name": "xterm",
+  "name": "@xterm/xterm",
   "description": "Full xterm terminal, in your browser",
   "version": "5.3.0",
   "main": "lib/xterm.js",
@@ -86,7 +86,7 @@
     "jsdom": "^18.0.1",
     "mocha": "^10.1.0",
     "mustache": "^4.2.0",
-    "node-pty": "^0.10.1",
+    "node-pty": "1.1.0-beta5",
     "nyc": "^15.1.0",
     "source-map-loader": "^3.0.0",
     "source-map-support": "^0.5.20",
