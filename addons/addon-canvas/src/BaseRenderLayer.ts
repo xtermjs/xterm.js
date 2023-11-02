@@ -58,7 +58,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     protected readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService);
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._selectionModel, this._decorationService, this._coreBrowserService, this._themeService);
     this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
@@ -365,7 +365,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
-    this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y);
+    this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y, this._deviceCellWidth);
 
     if (!this._charAtlas) {
       return;

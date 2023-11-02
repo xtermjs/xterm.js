@@ -53,6 +53,18 @@ class ExtendedAttrsImage implements IExtendedAttrsImage {
     this._ext |= value & (Attributes.CM_MASK | Attributes.RGB_MASK);
   }
 
+  public get underlineVariantOffset(): number {
+    const val = (this._ext & ExtFlags.VARIANT_OFFSET) >> 29;
+    if (val < 0) {
+      return val ^ 0xFFFFFFF8;
+    }
+    return val;
+  }
+  public set underlineVariantOffset(value: number) {
+    this._ext &= ~ExtFlags.VARIANT_OFFSET;
+    this._ext |= (value << 29) & ExtFlags.VARIANT_OFFSET;
+  }
+
   private _urlId: number = 0;
   public get urlId(): number {
     return this._urlId;

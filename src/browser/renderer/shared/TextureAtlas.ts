@@ -6,7 +6,7 @@
 import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { computeNextVariantOffset, excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_COLOR, color, rgba } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
@@ -545,6 +545,7 @@ export class TextureAtlas implements ITextureAtlas {
       const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
       const yMid = yTop + lineWidth;
       const yBot = yTop + lineWidth * 2;
+      let nextOffset = this._workAttributeData.getUnderlineVariantOffset();
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
@@ -594,9 +595,22 @@ export class TextureAtlas implements ITextureAtlas {
             );
             break;
           case UnderlineStyle.DOTTED:
-            this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-            this._tmpCtx.moveTo(xChLeft, yTop);
-            this._tmpCtx.lineTo(xChRight, yTop);
+            const offsetWidth = nextOffset === 0 ? 0 :
+              (nextOffset >= lineWidth ? lineWidth * 2 - nextOffset : lineWidth - nextOffset);
+              // a line and a gap.
+            const isLineStart = nextOffset >= lineWidth ? false : true;
+            if (isLineStart === false || offsetWidth === 0) {
+              this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+              this._tmpCtx.moveTo(xChLeft + offsetWidth, yTop);
+              this._tmpCtx.lineTo(xChRight, yTop);
+            } else {
+              this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+              this._tmpCtx.moveTo(xChLeft, yTop);
+              this._tmpCtx.lineTo(xChLeft + offsetWidth, yTop);
+              this._tmpCtx.moveTo(xChLeft + offsetWidth + lineWidth, yTop);
+              this._tmpCtx.lineTo(xChRight, yTop);
+            }
+            nextOffset = computeNextVariantOffset(xChRight - xChLeft, lineWidth, nextOffset);
             break;
           case UnderlineStyle.DASHED:
             this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);

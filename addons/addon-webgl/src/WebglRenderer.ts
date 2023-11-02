@@ -75,7 +75,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this.register(this._themeService.onChangeColors(() => this._handleColorChange()));
 
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
+    this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
 
     this._core = (this._terminal as any)._core;
 
@@ -442,7 +442,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
-        this._cellColorResolver.resolve(cell, x, row);
+        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
 
         // Override colors for cursor cell
         if (isCursorVisible && row === cursorY) {
