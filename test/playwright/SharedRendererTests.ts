@@ -1171,7 +1171,33 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.selectAll();
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
+    test('#4799: cursor should be in the correct position', async () => {
+      const theme: ITheme = {
+        cursor: '#0000FF'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      for (let index = 0; index < 160; index++) {
+        await ctx.value.proxy.writeln(``);
+      }
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.write('\x1b[A');
+      await ctx.value.proxy.write('\x1b[A');
+      await ctx.value.proxy.scrollLines(-2);
+      const rows = await ctx.value.proxy.rows;
+      // block cursor style
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows), [0, 0, 255, 255]);
+      await ctx.value.proxy.blur();
+      frameDetails = undefined;
+      // outlink cursor style
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows), [0, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows, CellColorPosition.FIRST), [0, 0, 255, 255]);
+    });
   });
+}
+
+enum CellColorPosition {
+  CENTER = 0,
+  FIRST = 1
 }
 
 /**
@@ -1214,11 +1240,16 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
  * @param col The 1-based column index to get the color for.
  * @param row The 1-based row index to get the color for.
  */
-function getCellColor(ctx: ITestContext, col: number, row: number): MaybeAsync<[red: number, green: number, blue: number, alpha: number]> {
+function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): MaybeAsync<[red: number, green: number, blue: number, alpha: number]> {
   if (!frameDetails) {
     return getFrameDetails(ctx).then(frameDetails => getCellColorInner(frameDetails, col, row));
   }
-  return getCellColorInner(frameDetails, col, row);
+  switch (position) {
+    case CellColorPosition.CENTER:
+      return getCellColorInner(frameDetails, col, row);
+    case CellColorPosition.FIRST:
+      return getCellColorFirstPoint(frameDetails, col, row);
+  }
 }
 
 let frameDetails: { cols: number, rows: number, decoded: IImage32 } | undefined = undefined;
@@ -1240,6 +1271,17 @@ function getCellColorInner(frameDetails: { cols: number, rows: number, decoded: 
   };
   const x = Math.floor((col - 1/* 1- to 0-based index */ + 0.5/* middle of cell */) * cellSize.width);
   const y = Math.floor((row - 1/* 1- to 0-based index */ + 0.5/* middle of cell */) * cellSize.height);
+  const i = (y * frameDetails.decoded.width + x) * 4/* 4 channels per pixel */;
+  return Array.from(frameDetails.decoded.data.slice(i, i + 4)) as [number, number, number, number];
+}
+
+function getCellColorFirstPoint(frameDetails: { cols: number, rows: number, decoded: IImage32 }, col: number, row: number): [red: number, green: number, blue: number, alpha: number] {
+  const cellSize = {
+    width: frameDetails.decoded.width / frameDetails.cols,
+    height: frameDetails.decoded.height / frameDetails.rows
+  };
+  const x = Math.floor((col - 1/* 1- to 0-based index */) * cellSize.width);
+  const y = Math.floor((row - 1/* 1- to 0-based index */) * cellSize.height);
   const i = (y * frameDetails.decoded.width + x) * 4/* 4 channels per pixel */;
   return Array.from(frameDetails.decoded.data.slice(i, i + 4)) as [number, number, number, number];
 }

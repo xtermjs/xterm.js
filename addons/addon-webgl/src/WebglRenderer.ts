@@ -391,6 +391,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     end = clamp(end, terminal.rows - 1, 0);
 
     const cursorY = this._terminal.buffer.active.baseY + this._terminal.buffer.active.cursorY;
+    const viewportRelativeCursorY = cursorY - terminal.buffer.ydisp;
     // in case cursor.x == cols adjust visual cursor to cols - 1
     const cursorX = Math.min(this._terminal.buffer.active.cursorX, terminal.cols - 1);
     let lastCursorX = -1;
@@ -449,7 +450,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
           if (x === cursorX) {
             this._model.cursor = {
               x: cursorX,
-              y: this._terminal.buffer.active.cursorY,
+              y: viewportRelativeCursorY,
               width: cell.getWidth(),
               style: this._coreBrowserService.isFocused ?
                 (terminal.options.cursorStyle || 'block') : terminal.options.cursorInactiveStyle,
