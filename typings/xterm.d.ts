@@ -9,7 +9,7 @@
 
 /// <reference lib="dom"/>
 
-declare module 'xterm' {
+declare module '@xterm/xterm' {
   /**
    * A string or number representing text font weight.
    */
@@ -973,7 +973,8 @@ declare module 'xterm' {
     resize(columns: number, rows: number): void;
 
     /**
-     * Opens the terminal within an element.
+     * Opens the terminal within an element. This should also be called if the
+     * xterm.js element ever changes browser window.
      * @param parent The element to create the terminal within. This element
      * must be visible (have dimensions) when `open` is called as several DOM-
      * based measurements need to be performed when this function is called.
