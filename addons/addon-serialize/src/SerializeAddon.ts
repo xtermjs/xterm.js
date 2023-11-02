@@ -605,7 +605,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
         (color >>  8) & 255,
         (color      ) & 255
       ];
-      return rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
+      return '#' + rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
     }
     if (isFg ? cell.isFgPalette() : cell.isBgPalette()) {
       return this._ansiColors[color].css;
