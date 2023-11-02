@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
+import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
+import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable, disposeArray, MutableDisposable } from 'common/Lifecycle';
 
@@ -61,7 +62,7 @@ const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 const DEFAULT_HIGHLIGHT_LIMIT = 1000;
 
-export class SearchAddon extends Disposable implements ITerminalAddon {
+export class SearchAddon extends Disposable implements ITerminalAddon , ISearchApi {
   private _terminal: Terminal | undefined;
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();

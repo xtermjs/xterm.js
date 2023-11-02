@@ -11,7 +11,10 @@
     "paths": {
       "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],
-      "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"]
+      "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"],
+      "@xterm/addon-unicode-graphemes": [
+        "../typings/addon-unicode-graphemes.d.ts"
+      ]
     }
   },
   "include": ["../**/*", "../../../typings/xterm.d.ts"],

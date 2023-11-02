@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { Terminal } from '@xterm/xterm';
+import type { Terminal } from '@xterm/xterm';
+import type { LigaturesAddon as ILigaturesApi } from '@xterm/addon-ligatures';
 import { enableLigatures } from '.';
 import { ILigatureOptions } from './Types';
 
@@ -12,7 +13,7 @@ export interface ITerminalAddon {
   dispose(): void;
 }
 
-export class LigaturesAddon implements ITerminalAddon {
+export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
   private readonly _fallbackLigatures: string[];
 
   private _terminal: Terminal | undefined;

@@ -3,13 +3,13 @@
  * @license MIT
  */
 
+import type { ITerminalAddon, IDisposable } from '@xterm/xterm';
+import type { ImageAddon as IImageApi } from '@xterm/addon-image';
 import { IIPHandler } from './IIPHandler';
-import { ITerminalAddon, IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
-
 
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
@@ -48,7 +48,7 @@ const enum GaStatus {
 }
 
 
-export class ImageAddon implements ITerminalAddon {
+export class ImageAddon implements ITerminalAddon , IImageApi {
   private _opts: IImageAddonOptions;
   private _defaultOpts: IImageAddonOptions;
   private _storage: ImageStorage | undefined;

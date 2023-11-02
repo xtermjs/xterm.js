@@ -17,6 +17,9 @@
     "paths": {
       "common/*": [
         "../../../src/common/*"
+      ],
+      "@xterm/addon-search" : [
+        "../typings/addon-search.d.ts"
       ]
     }
   },

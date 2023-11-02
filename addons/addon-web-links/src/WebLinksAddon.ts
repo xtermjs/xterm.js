@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
+import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
+import type { WebLinksAddon as IWebLinksApi } from '@xterm/addon-web-links';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
 // consider everthing starting with http:// or https://
@@ -34,7 +35,7 @@ function handleLink(event: MouseEvent, uri: string): void {
   }
 }
 
-export class WebLinksAddon implements ITerminalAddon {
+export class WebLinksAddon implements ITerminalAddon , IWebLinksApi {
   private _terminal: Terminal | undefined;
   private _linkProvider: IDisposable | undefined;
 

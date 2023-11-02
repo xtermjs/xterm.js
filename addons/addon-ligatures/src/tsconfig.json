@@ -10,7 +10,12 @@
     "preserveWatchOutput": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ]
+    ],
+    "paths": {
+      "@xterm/addon-ligatures" : [
+        "../typings/addon-ligatures.d.ts"
+      ]
+    }
   },
   "include": [
     "./**/*",

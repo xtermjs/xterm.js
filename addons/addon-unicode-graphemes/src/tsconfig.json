@@ -15,6 +15,9 @@
     "paths": {
       "common/*": [
         "../../../src/common/*"
+      ],
+      "@xterm/addon-unicode-graphemes": [
+        "../typings/addon-unicode-graphemes.d.ts"
       ]
     },
     "types": [
