@@ -126,8 +126,8 @@ export class AttributeData implements IAttributeData {
       ? (this.bg & BgFlags.HAS_EXTENDED ? this.extended.underlineStyle : UnderlineStyle.SINGLE)
       : UnderlineStyle.NONE;
   }
-  public getUnderlineVarinatOffset(): number {
-    return this.extended.underlineVarinatOffset;
+  public getUnderlineVariantOffset(): number {
+    return this.extended.underlineVariantOffset;
   }
 }
 
@@ -177,14 +177,14 @@ export class ExtendedAttrs implements IExtendedAttrs {
     this._urlId = value;
   }
 
-  public get underlineVarinatOffset(): number {
+  public get underlineVariantOffset(): number {
     const val = (this._ext & ExtFlags.VARIANT_OFFSET) >> 29;
     if (val < 0) {
       return val ^ 0xFFFFFFF8;
     }
     return val;
   }
-  public set underlineVarinatOffset(value: number) {
+  public set underlineVariantOffset(value: number) {
     this._ext &= ~ExtFlags.VARIANT_OFFSET;
     this._ext |= (value << 29) & ExtFlags.VARIANT_OFFSET;
   }

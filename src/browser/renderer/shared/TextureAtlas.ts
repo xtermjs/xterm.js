@@ -6,7 +6,7 @@
 import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { computeNextVarinatOffset, excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { computeNextVariantOffset, excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_COLOR, color, rgba } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
@@ -545,7 +545,7 @@ export class TextureAtlas implements ITextureAtlas {
       const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
       const yMid = yTop + lineWidth;
       const yBot = yTop + lineWidth * 2;
-      let nextOffset = this._workAttributeData.getUnderlineVarinatOffset();
+      let nextOffset = this._workAttributeData.getUnderlineVariantOffset();
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
@@ -610,7 +610,7 @@ export class TextureAtlas implements ITextureAtlas {
               this._tmpCtx.moveTo(xChLeft + offsetWidth + lineWidth, yTop);
               this._tmpCtx.lineTo(xChRight, yTop);
             }
-            nextOffset = computeNextVarinatOffset(xChRight - xChLeft, lineWidth, nextOffset);
+            nextOffset = computeNextVariantOffset(xChRight - xChLeft, lineWidth, nextOffset);
             break;
           case UnderlineStyle.DASHED:
             this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);

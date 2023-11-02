@@ -119,7 +119,7 @@ export interface IExtendedAttrs {
   ext: number;
   underlineStyle: UnderlineStyle;
   underlineColor: number;
-  underlineVarinatOffset: number;
+  underlineVariantOffset: number;
   urlId: number;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
@@ -210,7 +210,7 @@ export interface IAttributeData {
   isUnderlineColorPalette(): boolean;
   isUnderlineColorDefault(): boolean;
   getUnderlineStyle(): number;
-  getUnderlineVarinatOffset(): number;
+  getUnderlineVariantOffset(): number;
 }
 
 /** Cell data */
