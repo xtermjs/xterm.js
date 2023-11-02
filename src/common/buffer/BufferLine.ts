@@ -1148,7 +1148,6 @@ export class NewBufferLine extends BufferLine implements IBufferLine {
     // b. index === curColumn + width
     // c. otherwise - in middle of wide char
 
-    // split if in middle of wide FIXME
     if ((content >> Content.WIDTH_SHIFT) === 2
       && index === curColumn + 1) {
       // In the middle of a wide character. Well-behaved applications are
@@ -1267,12 +1266,9 @@ export class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   public setCellFromCodepoint(index: number, codePoint: number, width: number,  attrs: IAttributeData): void {
-    if (codePoint === NULL_CELL_CODE) {
-      if (width === 0) { // i.e. combining character
-        // FIXME - usually a no-open
-      } else { // width === 1 - i.e spacing
-        // FIXME
-      }
+    if (codePoint === NULL_CELL_CODE && width === 0) {
+      // i.e. combining character
+      // FIXME - usually a no-open
       return;
     }
     const add = this.preInsert(index, attrs);
@@ -1280,14 +1276,21 @@ export class NewBufferLine extends BufferLine implements IBufferLine {
     const startColumn = curColumn;
     let idata = this._cachedDataIndex();
     let inext;
-    if (add || idata === this._dataLength || index === curColumn)
-        inext = idata;
-    else {
+    if (codePoint === NULL_CELL_CODE && width > 0) {
+        if (idata === this._dataLength)
+            return; // maybe set bg FIXME
         const kind = BufferLine.wKind(this._data[idata]);
-        if (BufferLine.wKindIsText(kind))
-            inext = this.clusterEnd(idata);
-        else
-            inext = idata;
+        if (kind === DataKind.SKIP_COLUMNS)
+            return; // maybe set bg FIXME
+    }
+    if (add || idata === this._dataLength || index === curColumn)
+      inext = idata;
+    else {
+      const kind = BufferLine.wKind(this._data[idata]);
+      if (BufferLine.wKindIsText(kind))
+        inext = this.clusterEnd(idata);
+      else
+        inext = idata;
     }
     // FIXME optimize of overwriting simple text in-place
     this.addEmptyDataElements(inext, 1);
@@ -1297,7 +1300,10 @@ export class NewBufferLine extends BufferLine implements IBufferLine {
     idata = inext;
     cellColumn = curColumn;
     curColumn += width;
-    this._data[inext++] = BufferLine.wSet1(kind, codePoint);
+    this._data[inext++] =
+      codePoint === NULL_CELL_CODE ?
+      BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1) :
+      BufferLine.wSet1(kind, codePoint);
     this._cacheSetColumnDataIndex(cellColumn, idata);
     if (idata < this._dataLength) {
       this.deleteCellsOnly(inext, 0, curColumn - startColumn);
@@ -1340,6 +1346,7 @@ export class NewBufferLine extends BufferLine implements IBufferLine {
    * excess memory (true after shrinking > CLEANUP_THRESHOLD).
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
+      console.log("BufferLineNew.resize");
     /*
     if (cols === this.length) {
       return this._data.length * 4 * CLEANUP_THRESHOLD < this._data.buffer.byteLength;
@@ -1482,38 +1489,18 @@ export class NewBufferLine extends BufferLine implements IBufferLine {
 
   public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void {
     // This is used by reflow (window resize). FUTURE: Integrate with pretty-printing.
-    console.log('NOT IMPLEMENTED copyCellsFrom');
-    /*
-    const srcData = src._data;
+    const cell = new CellData();
     if (applyInReverse) {
-      for (let cell = length - 1; cell >= 0; cell--) {
-        for (let i = 0; i < CELL_SIZE; i++) {
-          this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
-        }
-        if (srcData[(srcCol + cell) * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
-          this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
-        }
+      for (let i = length - 1; i >= 0; i--) {
+          src.loadCell(srcCol + i, cell);
+          this.setCell(destCol + i, cell);
       }
     } else {
-      for (let cell = 0; cell < length; cell++) {
-        for (let i = 0; i < CELL_SIZE; i++) {
-          this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
-        }
-        if (srcData[(srcCol + cell) * CELL_SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
-          this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
-        }
+      for (let i = 0; i < length; i++) {
+        src.loadCell(srcCol + i, cell);
+        this.setCell(destCol + i, cell);
       }
     }
-
-    // Move any combined data over as needed, FIXME: repeat for extended attrs
-    const srcCombinedKeys = Object.keys(src._combined);
-    for (let i = 0; i < srcCombinedKeys.length; i++) {
-      const key = parseInt(srcCombinedKeys[i], 10);
-      if (key >= srcCol) {
-        this._combined[key - srcCol + destCol] = src._combined[key];
-      }
-    }
-  */
   }
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, skipReplace: string = WHITESPACE_CELL_CHAR): string {
