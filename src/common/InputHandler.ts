@@ -320,6 +320,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  50 - Set Font to Pt.
     //  51 - reserved for Emacs shell.
     //  52 - Manipulate Selection Data.
+    this._parser.registerOscHandler(52, new OscHandler(data => this.manipulateSelectionData(data)));
     // 104 ; c - Reset Color Number c.
     this._parser.registerOscHandler(104, new OscHandler(data => this.restoreIndexedColor(data)));
     // 105 ; c - Reset Special Color Number c.
@@ -3079,6 +3080,79 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setOrReportCursorColor(data: string): boolean {
     return this._setOrReportSpecialColor(data, 2);
+  }
+
+  /**
+   * OSC 52 ; <clipboard> ; <data> ST - restore ANSI color <num>
+   */
+  public manipulateSelectionData(data: string): boolean {
+    const args = data.split(';');
+    if (args.length < 2) {
+      return false;
+    }
+    
+    // parse clipboard argument
+    const _clipboard = args[0];
+    // TODO
+
+    const payloadArg = args[1];
+    if (payloadArg == '?') {
+        _readClipboard();
+    } else {
+        _writeClipboard(payloadArg);
+    }
+
+    // XXX: These async functions probably should not be here,
+    // but it does implement the behavior that we'd want.
+
+    async function _writeClipboard(payloadArg: string) {
+        let byteArray: Uint8Array;
+        try {
+            // try decoding
+            byteArray = await _base64ToUInt8Array(payloadArg);
+        } catch {
+            // if payload is not base64, clear the clipboard
+            byteArray = new Uint8Array([]);
+        }
+        const blob = new Blob([byteArray], { type: 'text/plain' });
+
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                [blob.type]: blob,
+            }),
+        ]);
+    }
+
+    async function _readClipboard() {
+        const [item] = await navigator.clipboard.read();
+
+        const blob = await item.getType(item.types[0]);
+        const base64 = await _blobToBase64(blob);
+        console.log(base64);
+
+        // TODO: write base64 back to the process
+    }
+
+    // TODO: we have have common utitlies for this?
+    async function _base64ToUInt8Array(base64encoded: string): Promise<Uint8Array> {
+        const dataUrl = "data:application/octet-stream;base64," + base64encoded;
+        const res = await fetch(dataUrl);
+        return new Uint8Array(await res.arrayBuffer());
+    }
+
+    // TODO: we have have common utitlies for this?
+    async function _blobToBase64(blob: Blob): Promise<string> {
+        const res: string = await new Promise((resolve, _) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+
+        const [_, base64] = res.split('base64,');
+        return base64;
+      }
+
+    return true;
   }
 
   /**
