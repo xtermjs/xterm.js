@@ -9,7 +9,7 @@ import { Attributes, UnderlineStyle } from 'common/buffer/Constants'; // eslint-
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
-import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from 'xterm';
+import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;
