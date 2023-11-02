@@ -3,8 +3,9 @@
  * @license MIT
  */
 
+import { ITerminal } from 'browser/Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 
 class SelectionRenderModel implements ISelectionRenderModel {
   public hasSelection!: boolean;
@@ -35,7 +36,7 @@ class SelectionRenderModel implements ISelectionRenderModel {
     this.selectionEnd = undefined;
   }
 
-  public update(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
+  public update(terminal: ITerminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
     this.selectionStart = start;
     this.selectionEnd = end;
     // Selection does not exist
@@ -45,8 +46,9 @@ class SelectionRenderModel implements ISelectionRenderModel {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.active.viewportY;
-    const viewportEndRow = end[1] - terminal.buffer.active.viewportY;
+    const viewportY = terminal.buffers.active.ydisp;
+    const viewportStartRow = start[1] - viewportY;
+    const viewportEndRow = end[1] - viewportY;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
 

@@ -12,7 +12,7 @@ import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
-import { IDecorationOptions, IDecoration } from 'xterm';
+import { IDecorationOptions, IDecoration } from '@xterm/xterm';
 
 export class MockBufferService implements IBufferService {
   public serviceBrand: any;
@@ -78,7 +78,7 @@ export class MockCharsetService implements ICharsetService {
 
 export class MockCoreService implements ICoreService {
   public serviceBrand: any;
-  public isCursorInitialized: boolean = false;
+  public isCursorInitialized: boolean = true;
   public isCursorHidden: boolean = false;
   public isFocused: boolean = false;
   public modes: IModes = {

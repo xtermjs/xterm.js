@@ -27,16 +27,17 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
-  path.resolve(__dirname, '../addons/xterm-addon-attach'),
-  path.resolve(__dirname, '../addons/xterm-addon-canvas'),
-  path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  // path.resolve(__dirname, '../addons/xterm-addon-image'),
-  path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
-  path.resolve(__dirname, '../addons/xterm-addon-search'),
-  path.resolve(__dirname, '../addons/xterm-addon-serialize'),
-  path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
-  path.resolve(__dirname, '../addons/xterm-addon-web-links'),
-  path.resolve(__dirname, '../addons/xterm-addon-webgl')
+  path.resolve(__dirname, '../addons/addon-attach'),
+  path.resolve(__dirname, '../addons/addon-canvas'),
+  path.resolve(__dirname, '../addons/addon-fit'),
+  path.resolve(__dirname, '../addons/addon-image'),
+  path.resolve(__dirname, '../addons/addon-ligatures'),
+  path.resolve(__dirname, '../addons/addon-search'),
+  path.resolve(__dirname, '../addons/addon-serialize'),
+  path.resolve(__dirname, '../addons/addon-unicode11'),
+  // path.resolve(__dirname, '../addons/addon-unicode-graphemes'),
+  path.resolve(__dirname, '../addons/addon-web-links'),
+  path.resolve(__dirname, '../addons/addon-webgl')
 ];
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
@@ -56,8 +57,9 @@ function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
-  const publishedVersions = getPublishedVersions(packageJson);
-  const isStableRelease = !publishedVersions.includes(packageJson.version);
+  // TODO: Uncomment when publishing 5.4
+  // const publishedVersions = getPublishedVersions(packageJson);
+  const isStableRelease = false; //!publishedVersions.includes(packageJson.version);
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
@@ -70,7 +72,7 @@ function checkAndPublishPackage(packageDir) {
   fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
   // Publish
-  const args = ['publish'];
+  const args = ['publish', '--access', 'public'];
   if (!isStableRelease) {
     args.push('--tag', 'beta');
   }
@@ -94,8 +96,7 @@ function checkAndPublishPackage(packageDir) {
 
 function getNextBetaVersion(packageJson) {
   if (!/^\d+\.\d+\.\d+$/.exec(packageJson.version)) {
-    console.error('The package.json version must be of the form x.y.z');
-    process.exit(1);
+    throw new Error('The package.json version must be of the form x.y.z');
   }
   const tag = 'beta';
   const stableVersion = packageJson.version.split('.');
@@ -113,9 +114,30 @@ function getNextBetaVersion(packageJson) {
   return `${nextStableVersion}-${tag}.${latestTagVersion + 1}`;
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [value];
+}
+
 function getPublishedVersions(packageJson, version, tag) {
-  const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
-  const versionsJson = JSON.parse(versionsProcess.stdout);
+  const versionsProcess = cp.spawnSync(os.platform === 'win32' ? 'npm.cmd' : 'npm', ['view', packageJson.name, 'versions', '--json']);
+  if (versionsProcess.stdout.length === 0 && versionsProcess.stderr) {
+    const err = versionsProcess.stderr.toString();
+    if (err.indexOf('404 Not Found - GET https://registry.npmjs.org/@xterm') > 0) {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + err);
+  }
+  const output = JSON.parse(versionsProcess.stdout);
+  if (typeof output === 'object' && !Array.isArray(output)) {
+    if (output.error?.code === 'E404')  {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + output);
+  }
+  if (!output || Array.isArray(output) && output.length === 0) {
+    return [];
+  }
+  const versionsJson = asArray(output);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }

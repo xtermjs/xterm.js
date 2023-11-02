@@ -9,7 +9,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as pty from 'node-pty';
 import { Terminal } from 'browser/Terminal';
-import { IDisposable } from 'xterm';
+import { IDisposable } from '@xterm/xterm';
 
 // all test files expect terminal in 80x25
 const COLS = 80;
