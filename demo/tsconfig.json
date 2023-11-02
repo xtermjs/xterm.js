@@ -6,13 +6,13 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "xterm-addon-attach": ["../addons/xterm-addon-attach"],
-      "xterm-addon-fit": ["../addons/xterm-addon-fit"],
-      "xterm-addon-image": ["../addons/xterm-addon-image"],
-      "xterm-addon-search": ["../addons/xterm-addon-search"],
-      "xterm-addon-serialize": ["../addons/xterm-addon-serialize"],
-      "xterm-addon-web-links": ["../addons/xterm-addon-web-links"],
-      "xterm-addon-webgl": ["../addons/xterm-addon-webgl"]
+      "addon-attach": ["../addons/addon-attach"],
+      "addon-fit": ["../addons/addon-fit"],
+      "addon-image": ["../addons/addon-image"],
+      "addon-search": ["../addons/addon-search"],
+      "addon-serialize": ["../addons/addon-serialize"],
+      "addon-web-links": ["../addons/addon-web-links"],
+      "addon-webgl": ["../addons/addon-webgl"]
     }
   },
   "include": [

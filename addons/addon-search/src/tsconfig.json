@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "dom",
+      "es2021",
+    ],
+    "rootDir": ".",
+    "outDir": "../out",
+    "sourceMap": true,
+    "removeComments": true,
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ],
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
+      "@xterm/addon-search" : [
+        "../typings/addon-search.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/common"
+    }
+  ]
+}

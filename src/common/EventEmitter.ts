@@ -71,3 +71,8 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
 export function forwardEvent<T>(from: IEvent<T>, to: IEventEmitter<T>): IDisposable {
   return from(e => to.fire(e));
 }
+
+export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T | undefined) => any): IDisposable {
+  handler(undefined);
+  return event(e => handler(e));
+}

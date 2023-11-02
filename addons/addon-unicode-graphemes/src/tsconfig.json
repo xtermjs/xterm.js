@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "dom",
+      "es2021"
+    ],
+    "rootDir": ".",
+    "outDir": "../out",
+    "sourceMap": true,
+    "removeComments": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
+      "@xterm/addon-unicode-graphemes": [
+        "../typings/addon-unicode-graphemes.d.ts"
+      ]
+    },
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ]
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/common"
+    }
+  ]
+}
