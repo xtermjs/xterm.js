@@ -17,6 +17,9 @@
       ],
       "browser/*": [
         "../../../src/browser/*"
+      ],
+      "@xterm/addon-serialize": [
+        "../typings/addon-serialize.d.ts"
       ]
     },
     "strict": true,

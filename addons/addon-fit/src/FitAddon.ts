@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon } from '@xterm/xterm';
+import type { Terminal, ITerminalAddon } from '@xterm/xterm';
+import type { FitAddon as IFitApi } from '@xterm/addon-fit';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 
 interface ITerminalDimensions {
@@ -21,7 +22,7 @@ interface ITerminalDimensions {
 const MINIMUM_COLS = 2;
 const MINIMUM_ROWS = 1;
 
-export class FitAddon implements ITerminalAddon {
+export class FitAddon implements ITerminalAddon , IFitApi {
   private _terminal: Terminal | undefined;
 
   public activate(terminal: Terminal): void {

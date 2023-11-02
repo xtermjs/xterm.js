@@ -3,17 +3,18 @@
  * @license MIT
  */
 
+import type { ITerminalAddon, Terminal } from '@xterm/xterm';
+import type { WebglAddon as IWebglApi } from '@xterm/addon-webgl';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
-import { ITerminalAddon, Terminal } from '@xterm/xterm';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
 
-export class WebglAddon extends Disposable implements ITerminalAddon {
+export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
 
