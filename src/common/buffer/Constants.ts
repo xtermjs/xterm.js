@@ -140,6 +140,9 @@ export const enum ExtFlags {
 
   /**
    * bit 30..32
+   *
+   * An optional variant for the glyph, this can be used for example to offset underlines by a
+   * number of pixels to create a perfect pattern.
    */
   VARIANT_OFFSET = 0xE0000000
 }
