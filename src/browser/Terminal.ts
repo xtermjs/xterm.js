@@ -575,7 +575,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    return this._instantiationService.createInstance(DomRenderer, this._document!, this.element!, this.screenElement!, this._viewportElement!, this._helperContainer!, this.linkifier2);
+    return this._instantiationService.createInstance(DomRenderer, this, this._document!, this.element!, this.screenElement!, this._viewportElement!, this._helperContainer!, this.linkifier2);
   }
 
   /**

@@ -91,7 +91,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   public handleGridChanged(startRow: number, endRow: number): void {}
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {
-    this._selectionModel.update(this._terminal, start, end, columnSelectMode);
+    this._selectionModel.update((this._terminal as any)._core, start, end, columnSelectMode);
   }
 
   protected _setTransparency(alpha: boolean): void {

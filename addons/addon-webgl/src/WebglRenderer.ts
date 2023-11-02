@@ -219,7 +219,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.handleSelectionChanged(this._terminal, start, end, columnSelectMode);
     }
-    this._model.selection.update(this._terminal, start, end, columnSelectMode);
+    this._model.selection.update(this._core, start, end, columnSelectMode);
     this._requestRedrawViewport();
   }
 
