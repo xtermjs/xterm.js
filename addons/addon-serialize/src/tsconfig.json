@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "dom",
+      "es2015"
+    ],
+    "rootDir": ".",
+    "outDir": "../out",
+    "sourceMap": true,
+    "removeComments": true,
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
+      "browser/*": [
+        "../../../src/browser/*"
+      ],
+      "@xterm/addon-serialize": [
+        "../typings/addon-serialize.d.ts"
+      ]
+    },
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ]
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/browser"
+    }
+  ]
+}

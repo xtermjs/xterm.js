@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, IClipboardProvider } from 'xterm';
+import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, IClipboardProvider } from '@xterm/xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';

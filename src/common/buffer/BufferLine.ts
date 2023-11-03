@@ -4,7 +4,7 @@
  */
 
 import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
-import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
+import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
@@ -212,13 +212,13 @@ export class BufferLine implements IBufferLine {
    * Since the input handler see the incoming chars as UTF32 codepoints,
    * it gets an optimized access method.
    */
-  public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void {
-    if (bg & BgFlags.HAS_EXTENDED) {
-      this._extendedAttrs[index] = eAttrs;
+  public setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
+    if (attrs.bg & BgFlags.HAS_EXTENDED) {
+      this._extendedAttrs[index] = attrs.extended;
     }
     this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
-    this._data[index * CELL_SIZE + Cell.FG] = fg;
-    this._data[index * CELL_SIZE + Cell.BG] = bg;
+    this._data[index * CELL_SIZE + Cell.FG] = attrs.fg;
+    this._data[index * CELL_SIZE + Cell.BG] = attrs.bg;
   }
 
   /**
@@ -253,12 +253,12 @@ export class BufferLine implements IBufferLine {
     this._data[index * CELL_SIZE + Cell.CONTENT] = content;
   }
 
-  public insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
+  public insertCells(pos: number, n: number, fillCellData: ICellData): void {
     pos %= this.length;
 
     // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
     if (pos && this.getWidth(pos - 1) === 2) {
-      this.setCellFromCodePoint(pos - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(pos - 1, 0, 1, fillCellData);
     }
 
     if (n < this.length - pos) {
@@ -277,11 +277,11 @@ export class BufferLine implements IBufferLine {
 
     // handle fullwidth at line end: reset last cell if it is first cell of a wide char
     if (this.getWidth(this.length - 1) === 2) {
-      this.setCellFromCodePoint(this.length - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(this.length - 1, 0, 1, fillCellData);
     }
   }
 
-  public deleteCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void {
+  public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
     pos %= this.length;
     if (n < this.length - pos) {
       const cell = new CellData();
@@ -301,21 +301,21 @@ export class BufferLine implements IBufferLine {
     // - reset pos-1 if wide char
     // - reset pos if width==0 (previous second cell of a wide char)
     if (pos && this.getWidth(pos - 1) === 2) {
-      this.setCellFromCodePoint(pos - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(pos - 1, 0, 1, fillCellData);
     }
     if (this.getWidth(pos) === 0 && !this.hasContent(pos)) {
-      this.setCellFromCodePoint(pos, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(pos, 0, 1, fillCellData);
     }
   }
 
-  public replaceCells(start: number, end: number, fillCellData: ICellData, eraseAttr?: IAttributeData, respectProtect: boolean = false): void {
+  public replaceCells(start: number, end: number, fillCellData: ICellData, respectProtect: boolean = false): void {
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
     if (respectProtect) {
       if (start && this.getWidth(start - 1) === 2 && !this.isProtected(start - 1)) {
-        this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+        this.setCellFromCodepoint(start - 1, 0, 1, fillCellData);
       }
       if (end < this.length && this.getWidth(end - 1) === 2 && !this.isProtected(end)) {
-        this.setCellFromCodePoint(end, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+        this.setCellFromCodepoint(end, 0, 1, fillCellData);
       }
       while (start < end  && start < this.length) {
         if (!this.isProtected(start)) {
@@ -328,11 +328,11 @@ export class BufferLine implements IBufferLine {
 
     // handle fullwidth at start: reset cell one to the left if start is second cell of a wide char
     if (start && this.getWidth(start - 1) === 2) {
-      this.setCellFromCodePoint(start - 1, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(start - 1, 0, 1, fillCellData);
     }
     // handle fullwidth at last cell + 1: reset to empty cell if it is second part of a wide char
     if (end < this.length && this.getWidth(end - 1) === 2) {
-      this.setCellFromCodePoint(end, 0, 1, eraseAttr?.fg || 0, eraseAttr?.bg || 0, eraseAttr?.extended || new ExtendedAttrs());
+      this.setCellFromCodepoint(end, 0, 1, fillCellData);
     }
 
     while (start < end  && start < this.length) {
@@ -508,16 +508,43 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
+  /**
+   * Translates the buffer line to a string.
+   *
+   * @param trimRight Whether to trim any empty cells on the right.
+   * @param startCol The column to start the string (0-based inclusive).
+   * @param endCol The column to end the string (0-based exclusive).
+   * @param outColumns if specified, this array will be filled with column numbers such that
+   * `returnedString[i]` is displayed at `outColumns[i]` column. `outColumns[returnedString.length]`
+   * is where the character following `returnedString` will be displayed.
+   *
+   * When a single cell is translated to multiple UTF-16 code units (e.g. surrogate pair) in the
+   * returned string, the corresponding entries in `outColumns` will have the same column number.
+   */
+  public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
+    startCol = startCol ?? 0;
+    endCol = endCol ?? this.length;
     if (trimRight) {
       endCol = Math.min(endCol, this.getTrimmedLength());
+    }
+    if (outColumns) {
+      outColumns.length = 0;
     }
     let result = '';
     while (startCol < endCol) {
       const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
       const cp = content & Content.CODEPOINT_MASK;
-      result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
-      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
+      const chars = (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
+      result += chars;
+      if (outColumns) {
+        for (let i = 0; i < chars.length; ++i) {
+          outColumns.push(startCol);
+        }
+      }
+      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by at least 1
+    }
+    if (outColumns) {
+      outColumns.push(startCol);
     }
     return result;
   }

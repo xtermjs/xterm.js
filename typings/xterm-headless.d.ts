@@ -7,7 +7,7 @@
  * to be stable and consumed by external programs.
  */
 
-declare module 'xterm-headless' {
+declare module '@xterm/headless' {
   /**
    * A string representing log level.
    */

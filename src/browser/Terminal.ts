@@ -54,7 +54,7 @@ import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
-import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker, IClipboardProvider } from 'xterm';
+import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker, IClipboardProvider } from '@xterm/xterm';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 
@@ -577,7 +577,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    return this._instantiationService.createInstance(DomRenderer, this._document!, this.element!, this.screenElement!, this._viewportElement!, this._helperContainer!, this.linkifier2);
+    return this._instantiationService.createInstance(DomRenderer, this, this._document!, this.element!, this.screenElement!, this._viewportElement!, this._helperContainer!, this.linkifier2);
   }
 
   /**
