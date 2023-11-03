@@ -4,7 +4,7 @@
  */
 
 import { ClipboardProvider } from './ClipboardProvider';
-import { IClipboardProvider, IDisposable, ITerminalAddon, Terminal } from 'xterm';
+import { IClipboardProvider, IDisposable, ITerminalAddon, Terminal } from '@xterm/xterm';
 
 export class ClipboardAddon implements ITerminalAddon {
   private _disposable: IDisposable | undefined;

@@ -78,7 +78,7 @@ The xterm.js team maintains the following addons, but anyone can build them:
 
 - [`@xterm/addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-attach): Attaches to a server running a process via a websocket
 - [`@xterm/addon-canvas`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-canvas): Renders xterm.js using a `canvas` element's 2d context
-- [`xterm-addon-clipboard`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-clipboard): Access the browser's clipboard
+- [`@xterm/addon-clipboard`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-clipboard): Access the browser's clipboard
 - [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
 - [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
 - [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality

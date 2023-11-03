@@ -1,13 +1,13 @@
 {
-  "name": "xterm-addon-clipboard",
+  "name": "@xterm/addon-clipboard",
   "version": "0.1.0",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
   },
-  "main": "lib/xterm-addon-clipboard.js",
-  "types": "typings/xterm-addon-clipboard.d.ts",
-  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-clipboard",
+  "main": "lib/addon-clipboard.js",
+  "types": "typings/addon-clipboard.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-clipboard",
   "license": "MIT",
   "keywords": [
     "terminal",

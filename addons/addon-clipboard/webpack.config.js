@@ -6,7 +6,7 @@
 const path = require('path');
 
 const addonName = 'ClipboardAddon';
-const mainFile = 'xterm-addon-clipboard.js';
+const mainFile = 'addon-clipboard.js';
 
 module.exports = {
   entry: `./out/${addonName}.js`,

@@ -4,7 +4,7 @@
  */
 
 import { Base64 } from 'js-base64';
-import { ClipboardSelectionType, IClipboardProvider } from 'xterm';
+import { ClipboardSelectionType, IClipboardProvider } from '@xterm/xterm';
 
 export class ClipboardProvider implements IClipboardProvider {
   constructor(

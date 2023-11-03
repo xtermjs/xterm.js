@@ -17,7 +17,7 @@ import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
-import { ClipboardSelectionType } from 'xterm';
+import { ClipboardSelectionType } from '@xterm/xterm';
 
 function getCursor(bufferService: IBufferService): number[] {
   return [

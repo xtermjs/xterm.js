@@ -12,7 +12,7 @@
 import { Terminal } from '../out/browser/public/Terminal';
 import { AttachAddon } from '../addons/addon-attach/out/AttachAddon';
 import { CanvasAddon } from '../addons/addon-canvas/out/CanvasAddon';
-import { ClipboardAddon } from '../addons/xterm-addon-clipboard/out/ClipboardAddon';
+import { ClipboardAddon } from '../addons/addon-clipboard/out/ClipboardAddon';
 import { FitAddon } from '../addons/addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/addon-search/out/SearchAddon';
 import { SerializeAddon } from '../addons/addon-serialize/out/SerializeAddon';
@@ -33,7 +33,7 @@ if ('WebAssembly' in window) {
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
 // import { AttachAddon } from '@xterm/addon-attach';
-// import { ClipboardAddon } from 'xterm-addon-clipboard';
+// import { ClipboardAddon } from '@xterm/addon-clipboard';
 // import { FitAddon } from '@xterm/addon-fit';
 // import { ImageAddon } from '@xterm/addon-image';
 // import { SearchAddon, ISearchOptions } from '@xterm/addon-search';

@@ -22,7 +22,7 @@ import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
-import { ClipboardSelectionType } from 'xterm';
+import { ClipboardSelectionType } from '@xterm/xterm';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
