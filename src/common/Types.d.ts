@@ -235,11 +235,11 @@ export interface IBufferLine {
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
-  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number, eAttrs: IExtendedAttrs): void;
+  setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
   addCodepointToCell(index: number, codePoint: number, width: number): void;
-  insertCells(pos: number, n: number, ch: ICellData, eraseAttr?: IAttributeData): void;
-  deleteCells(pos: number, n: number, fill: ICellData, eraseAttr?: IAttributeData): void;
-  replaceCells(start: number, end: number, fill: ICellData, eraseAttr?: IAttributeData, respectProtect?: boolean): void;
+  insertCells(pos: number, n: number, ch: ICellData): void;
+  deleteCells(pos: number, n: number, fill: ICellData): void;
+  replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
