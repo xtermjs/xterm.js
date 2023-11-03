@@ -247,7 +247,7 @@ export interface IBufferLine {
   clone(): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
-  translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
+  translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
 
   /* direct access to cell attrs */
   getWidth(index: number): number;

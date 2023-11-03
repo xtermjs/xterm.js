@@ -508,16 +508,43 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
+  /**
+   * Translates the buffer line to a string.
+   *
+   * @param trimRight Whether to trim any empty cells on the right.
+   * @param startCol The column to start the string (0-based inclusive).
+   * @param endCol The column to end the string (0-based exclusive).
+   * @param outColumns if specified, this array will be filled with column numbers such that
+   * `returnedString[i]` is displayed at `outColumns[i]` column. `outColumns[returnedString.length]`
+   * is where the character following `returnedString` will be displayed.
+   *
+   * When a single cell is translated to multiple UTF-16 code units (e.g. surrogate pair) in the
+   * returned string, the corresponding entries in `outColumns` will have the same column number.
+   */
+  public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
+    startCol = startCol ?? 0;
+    endCol = endCol ?? this.length;
     if (trimRight) {
       endCol = Math.min(endCol, this.getTrimmedLength());
+    }
+    if (outColumns) {
+      outColumns.length = 0;
     }
     let result = '';
     while (startCol < endCol) {
       const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
       const cp = content & Content.CODEPOINT_MASK;
-      result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
-      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
+      const chars = (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
+      result += chars;
+      if (outColumns) {
+        for (let i = 0; i < chars.length; ++i) {
+          outColumns.push(startCol);
+        }
+      }
+      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by at least 1
+    }
+    if (outColumns) {
+      outColumns.push(startCol);
     }
     return result;
   }
