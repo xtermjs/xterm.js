@@ -49,7 +49,7 @@ const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-':
 /**
  * Document xterm VT features here that are currently unsupported
  */
-// @vt: #E[Supported via xterm-addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
+// @vt: #E[Supported via @xterm/addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
 // @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
 // @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
 // @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
@@ -519,7 +519,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
     if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x - 1, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x - 1, 0, 1, curAttr);
     }
 
     let precedingJoinState = this._parser.precedingJoinState;
@@ -581,7 +581,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           // clear left over cells to the right
           while (oldCol < cols) {
-            oldRow.setCellFromCodePoint(oldCol++, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+            oldRow.setCellFromCodepoint(oldCol++, 0, 1, curAttr);
           }
         } else {
           this._activeBuffer.x = cols - 1;
@@ -605,7 +605,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         bufferRow.addCodepointToCell(this._activeBuffer.x - offset,
           code, chWidth);
         for (let delta = chWidth - oldWidth; --delta >= 0; ) {
-          bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
+          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
         }
         continue;
       }
@@ -613,17 +613,17 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(this._activeBuffer.x, chWidth - oldWidth, this._activeBuffer.getNullCell(curAttr), curAttr);
+        bufferRow.insertCells(this._activeBuffer.x, chWidth - oldWidth, this._activeBuffer.getNullCell(curAttr));
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
         if (bufferRow.getWidth(cols - 1) === 2) {
-          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg, curAttr.extended);
+          bufferRow.setCellFromCodepoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x++, code, chWidth, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x++, code, chWidth, curAttr);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
@@ -631,7 +631,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodePoint(this._activeBuffer.x++, 0, 0, curAttr.fg, curAttr.bg, curAttr.extended);
+          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
         }
       }
     }
@@ -640,7 +640,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // handle wide chars: reset cell to the right if it is second cell of a wide char
     if (this._activeBuffer.x < cols && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x) === 0 && !bufferRow.hasContent(this._activeBuffer.x)) {
-      bufferRow.setCellFromCodePoint(this._activeBuffer.x, 0, 1, curAttr.fg, curAttr.bg, curAttr.extended);
+      bufferRow.setCellFromCodepoint(this._activeBuffer.x, 0, 1, curAttr);
     }
 
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
@@ -1145,7 +1145,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       start,
       end,
       this._activeBuffer.getNullCell(this._eraseAttrData()),
-      this._eraseAttrData(),
       respectProtect
     );
     if (clearWrap) {
@@ -1366,8 +1365,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(
         this._activeBuffer.x,
         params.params[0] || 1,
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
@@ -1393,8 +1391,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(
         this._activeBuffer.x,
         params.params[0] || 1,
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }
@@ -1461,7 +1458,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
@@ -1494,7 +1491,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
@@ -1517,7 +1514,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
@@ -1540,7 +1537,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
-      line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()), this._eraseAttrData());
+      line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
@@ -1562,8 +1559,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.replaceCells(
         this._activeBuffer.x,
         this._activeBuffer.x + (params.params[0] || 1),
-        this._activeBuffer.getNullCell(this._eraseAttrData()),
-        this._eraseAttrData()
+        this._activeBuffer.getNullCell(this._eraseAttrData())
       );
       this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     }

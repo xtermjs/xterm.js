@@ -56,3 +56,7 @@ function createDimension(): IDimensions {
     height: 0
   };
 }
+
+export function computeNextVariantOffset(cellWidth: number, lineWidth: number, currentOffset: number = 0): number {
+  return (cellWidth - (Math.round(lineWidth) * 2 - currentOffset)) % (Math.round(lineWidth) * 2);
+}

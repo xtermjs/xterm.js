@@ -6,7 +6,7 @@
 import { IEvent } from 'common/EventEmitter';
 import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IDisposable, Terminal as ITerminalApi } from 'xterm';
+import { IDisposable, Terminal as ITerminalApi } from '@xterm/xterm';
 import { IMouseService, IRenderService } from './services/Services';
 
 /**

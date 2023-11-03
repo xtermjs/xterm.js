@@ -119,6 +119,18 @@ describe('AttributeData', () => {
       attrs.fg &= ~FgFlags.UNDERLINE;
       assert.equal(attrs.getUnderlineStyle(), UnderlineStyle.NONE);
     });
+    it('getUnderlineVariantOffset', () => {
+      const attrs = new AttributeData();
+
+      // defaults to no offset
+      assert.equal(attrs.getUnderlineVariantOffset(), 0);
+
+      // should return 0 - 7
+      for (let i = 0; i < 8; ++i) {
+        attrs.extended.underlineVariantOffset = i;
+        assert.equal(attrs.getUnderlineVariantOffset(), i);
+      }
+    });
   });
 });
 
