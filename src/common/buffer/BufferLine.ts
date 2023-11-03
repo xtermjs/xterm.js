@@ -509,14 +509,17 @@ export class BufferLine implements IBufferLine {
   }
 
   /**
-   * If outColumns is specified, it will be filled with column numbers such that
-   * returnedString[i] is display at outColumns[i] column.
-   * outColumns[returnedString.length] is where the character following
-   * returnedString will be displayed.
+   * Translates the buffer line to a string.
    *
-   * When a single cell is translated to multiple UTF-16 code units (e.g.
-   * surrogate pair) in the returned string, the corresponding entries in
-   * outColumns will have the same column number.
+   * @param trimRight Whether to trim any empty cells on the right.
+   * @param startCol The column to start the string (0-based inclusive).
+   * @param endCol The column to end the string (0-based exclusive).
+   * @param outColumns if specified, this array will be filled with column numbers such that
+   * `returnedString[i]` is displayed at `outColumns[i]` column. `outColumns[returnedString.length]`
+   * is where the character following `returnedString` will be displayed.
+   *
+   * When a single cell is translated to multiple UTF-16 code units (e.g. surrogate pair) in the
+   * returned string, the corresponding entries in `outColumns` will have the same column number.
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
     startCol = startCol ?? 0;
