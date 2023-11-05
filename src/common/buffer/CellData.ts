@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
+import { CharData, ICellData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
@@ -18,26 +18,7 @@ export class CellData extends AttributeData implements ICellData {
     obj.setFromCharData(value);
     return obj;
   }
-  //public bufferLine: IBufferLine | undefined;
-  textData: string = '';
-
-  /** Position and state in BufferLine.
-   * The actual meaning of _stateA/_stateB/_stateM/_stateN depends on
-   * on the actual class that implements bufferLine.
-   * See the BufferLine class for the "default" implementation.
-   * We use these place-holder fields in order to not have to allocate a
-   * a specfic CellData object depending on the bufferLine class.
-   */
-  public _stateA: any;
-  public _stateB: any;
-  public _stateM: number = 0;
-  public _stateN: number = 0;
-
-  public textStart: number = 0;
-  public textEnd: number = 0;
-
   /** Primitives from terminal buffer. */
-  public column = -1;
   public content = 0;
   public fg = 0;
   public bg = 0;
@@ -45,14 +26,6 @@ export class CellData extends AttributeData implements ICellData {
   public combinedData = '';
 
   public copyFrom(src: CellData) {
-    //this.bufferLine = src.bufferLine;
-    this._stateA = src._stateA;
-    this._stateB = src._stateB;
-    this._stateN = src._stateM;
-    this._stateN = src._stateN;
-    this.textStart = src.textStart;
-    this.textEnd = src.textEnd;
-    this.column = src.column;
     this.content = src.content;
     this.fg = src.fg;
     this.bg = src.bg;
@@ -76,10 +49,7 @@ export class CellData extends AttributeData implements ICellData {
       return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
     }
     return '';
-    //return this.textStart === this.textEnd ? ''
-    //  : this.textData.substring(this.textStart, this.textEnd);
   }
-
   /**
    * Codepoint of cell
    * Note this returns the UTF32 codepoint of single chars,
@@ -124,7 +94,7 @@ export class CellData extends AttributeData implements ICellData {
       this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
     if (combined) {
-      this.textData = value[CHAR_DATA_CHAR_INDEX];
+      this.combinedData = value[CHAR_DATA_CHAR_INDEX];
       this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
   }
