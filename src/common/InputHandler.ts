@@ -497,8 +497,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._onCursorMove.fire();
     }
 
-    // Refresh any dirty rows accumulated as part of parsing
-    this._onRequestRefreshRows.fire(this._dirtyRowTracker.start, this._dirtyRowTracker.end);
+    // Refresh any dirty rows accumulated as part of parsing, fire only for rows within the
+    // _viewport_ which is relative to ydisp, not relative to ybase.
+    const viewportEnd = this._dirtyRowTracker.end + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    const viewportStart = this._dirtyRowTracker.start + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    if (viewportStart < this._bufferService.rows) {
+      this._onRequestRefreshRows.fire(Math.min(viewportStart, this._bufferService.rows - 1), Math.min(viewportEnd, this._bufferService.rows - 1));
+    }
   }
 
   public print(data: Uint32Array, start: number, end: number): void {
