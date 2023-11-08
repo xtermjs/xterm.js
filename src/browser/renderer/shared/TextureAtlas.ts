@@ -613,7 +613,14 @@ export class TextureAtlas implements ITextureAtlas {
             nextOffset = computeNextVariantOffset(xChRight - xChLeft, lineWidth, nextOffset);
             break;
           case UnderlineStyle.DASHED:
-            this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);
+            const lineRatio = 0.6;
+            const gapRatio = 0.3;
+            // End line ratio is approximately equal to 0.1
+            const xChWidth = xChRight - xChLeft;
+            const line = Math.floor(lineRatio * xChWidth);
+            const gap = Math.floor(gapRatio * xChWidth);
+            const end = xChWidth - line - gap;
+            this._tmpCtx.setLineDash([line, gap, end]);
             this._tmpCtx.moveTo(xChLeft, yTop);
             this._tmpCtx.lineTo(xChRight, yTop);
             break;
