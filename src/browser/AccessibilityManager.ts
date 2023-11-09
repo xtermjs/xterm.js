@@ -58,10 +58,11 @@ export class AccessibilityManager extends Disposable {
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
-    this._accessibilityContainer = this._coreBrowserService.mainDocument.createElement('div');
+    const doc = this._coreBrowserService.mainDocument;
+    this._accessibilityContainer = doc.createElement('div');
     this._accessibilityContainer.classList.add('xterm-accessibility');
 
-    this._rowContainer = this._coreBrowserService.mainDocument.createElement('div');
+    this._rowContainer = doc.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
     this._rowContainer.classList.add('xterm-accessibility-tree');
     this._rowElements = [];
@@ -78,7 +79,7 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowsDimensions();
     this._accessibilityContainer.appendChild(this._rowContainer);
 
-    this._liveRegion = this._coreBrowserService.mainDocument.createElement('div');
+    this._liveRegion = doc.createElement('div');
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityContainer.appendChild(this._liveRegion);
@@ -93,12 +94,12 @@ export class AccessibilityManager extends Disposable {
       this._rowContainer.classList.add('debug');
 
       // Use a `<div class="xterm">` container so that the css will still apply.
-      this._debugRootContainer = document.createElement('div');
+      this._debugRootContainer = doc.createElement('div');
       this._debugRootContainer.classList.add('xterm');
 
-      this._debugRootContainer.appendChild(document.createTextNode('------start a11y------'));
+      this._debugRootContainer.appendChild(doc.createTextNode('------start a11y------'));
       this._debugRootContainer.appendChild(this._accessibilityContainer);
-      this._debugRootContainer.appendChild(document.createTextNode('------end a11y------'));
+      this._debugRootContainer.appendChild(doc.createTextNode('------end a11y------'));
 
       this._terminal.element.insertAdjacentElement('afterend', this._debugRootContainer);
     } else {
@@ -115,7 +116,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
-    this.register(addDisposableDomListener(document, 'selectionchange', () => this._handleSelectionChange()));
+    this.register(addDisposableDomListener(doc, 'selectionchange', () => this._handleSelectionChange()));
     this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
 
     this._refreshRows();
@@ -270,7 +271,7 @@ export class AccessibilityManager extends Disposable {
       return;
     }
 
-    const selection = document.getSelection();
+    const selection = this._coreBrowserService.mainDocument.getSelection();
     if (!selection) {
       return;
     }
