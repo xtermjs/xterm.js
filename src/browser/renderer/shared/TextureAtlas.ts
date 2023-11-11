@@ -560,6 +560,8 @@ export class TextureAtlas implements ITextureAtlas {
             this._tmpCtx.lineTo(xChRight, yBot);
             break;
           case UnderlineStyle.CURLY:
+            // [TODO] Up or down offset, To be verified.
+            const yMidOffset = Math.floor(yMid);
             let upDown: 'Up' | 'Down' = 'Up';
             let segmentOffset = 0;
             if (nextOffset >= 0 && nextOffset <= 2) {
@@ -578,15 +580,15 @@ export class TextureAtlas implements ITextureAtlas {
               }
               if (upDown === 'Up') {
                 if (segmentOffset === 0) {
-                  this._tmpCtx.fillRect(xChLeft + index, yMid - 0.5, 1, 1);
+                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset, 1, 1);
                 } else if (segmentOffset === 1 || segmentOffset === 2) {
-                  this._tmpCtx.fillRect(xChLeft + index, yMid -0.5 - 1, 1, 1);
+                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset - 1, 1, 1);
                 }
               } else if (upDown === 'Down') {
                 if (segmentOffset === 0) {
-                  this._tmpCtx.fillRect(xChLeft + index, yMid - 0.5, 1, 1);
+                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset, 1, 1);
                 } else if (segmentOffset === 1 || segmentOffset === 2) {
-                  this._tmpCtx.fillRect(xChLeft + index, yMid -0.5 + 1, 1, 1);
+                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset + 1, 1, 1);
                 }
               }
               segmentOffset++;
