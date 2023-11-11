@@ -12,3 +12,5 @@ export const DIM_OPACITY = 0.5;
 // would result in truncated text (Issue 3353). Using 'bottom' for Chrome would result in slightly
 // unaligned Powerline fonts (PR 3356#issuecomment-850928179).
 export const TEXT_BASELINE: CanvasTextBaseline = isFirefox || isLegacyEdge ? 'bottom' : 'ideographic';
+
+export const UNDERLINE_CURLY_SEGMENT_SIZE = 4;

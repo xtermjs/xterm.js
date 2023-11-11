@@ -171,3 +171,5 @@ export interface ISelectionRenderModel {
   update(terminal: ITerminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode?: boolean): void;
   isCellSelected(terminal: Terminal, x: number, y: number): boolean;
 }
+
+export type UnderlineCurlySegmentType = 'up' | 'down';

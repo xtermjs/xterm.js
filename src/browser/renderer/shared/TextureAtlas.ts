@@ -4,10 +4,10 @@
  */
 
 import { IColorContrastCache } from 'browser/Types';
-import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
+import { DIM_OPACITY, TEXT_BASELINE, UNDERLINE_CURLY_SEGMENT_SIZE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { computeNextVariantOffset, excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas, UnderlineCurlySegmentType } from 'browser/renderer/shared/Types';
 import { NULL_COLOR, color, rgba } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { FourKeyMap } from 'common/MultiKeyMap';
@@ -560,52 +560,59 @@ export class TextureAtlas implements ITextureAtlas {
             this._tmpCtx.lineTo(xChRight, yBot);
             break;
           case UnderlineStyle.CURLY:
+            // Draw Curly through segments.
+            // Segments are distinguished from up to down
+            // up:
+            //     ***
+            //    *
+            // down:
+            //    *
+            //     ***
+
             // [TODO] Up or down offset, To be verified.
             const yMidOffset = Math.floor(yMid);
-            let upDown: 'Up' | 'Down' = 'Up';
+            let segmentType: UnderlineCurlySegmentType = 'up';
             let segmentOffset = 0;
-            if (nextOffset >= 0 && nextOffset <= 2) {
-              // Up
-              upDown = 'Up';
+            if (nextOffset >= 0 && nextOffset <= UNDERLINE_CURLY_SEGMENT_SIZE - 1) {
+              segmentType = 'up';
               segmentOffset = nextOffset;
             } else {
-              // Dowm
-              upDown = 'Down';
-              segmentOffset = nextOffset - 3;
+              segmentType = 'down';
+              segmentOffset = nextOffset - UNDERLINE_CURLY_SEGMENT_SIZE;
             }
             for (let index = 0; index < this._config.deviceCellWidth; index++) {
-              if (segmentOffset >= 3) {
-                upDown = upDown === 'Down' ? 'Up' : 'Down';
+              if (segmentOffset >= UNDERLINE_CURLY_SEGMENT_SIZE) {
+                segmentType = segmentType === 'down' ? 'up' : 'down';
                 segmentOffset = 0;
               }
-              if (upDown === 'Up') {
+              if (segmentType === 'up') {
                 if (segmentOffset === 0) {
                   this._tmpCtx.fillRect(xChLeft + index, yMidOffset, 1, 1);
-                } else if (segmentOffset === 1 || segmentOffset === 2) {
+                } else {
                   this._tmpCtx.fillRect(xChLeft + index, yMidOffset - 1, 1, 1);
                 }
-              } else if (upDown === 'Down') {
+              } else if (segmentType === 'down') {
                 if (segmentOffset === 0) {
                   this._tmpCtx.fillRect(xChLeft + index, yMidOffset, 1, 1);
-                } else if (segmentOffset === 1 || segmentOffset === 2) {
+                } else {
                   this._tmpCtx.fillRect(xChLeft + index, yMidOffset + 1, 1, 1);
                 }
               }
               segmentOffset++;
             }
             // handle next
-            if (segmentOffset >= 3) {
-              const nextUpDown: 'Up' | 'Down' = upDown === 'Up' ? 'Down' : 'Up';
-              if (nextUpDown === 'Up') {
+            if (segmentOffset >= UNDERLINE_CURLY_SEGMENT_SIZE) {
+              const nextUpDown: UnderlineCurlySegmentType = segmentType === 'up' ? 'down' : 'up';
+              if (nextUpDown === 'up') {
                 nextOffset = 0;
               } else {
-                nextOffset = 3;
+                nextOffset = UNDERLINE_CURLY_SEGMENT_SIZE;
               }
             } else {
-              if (upDown === 'Up') {
+              if (segmentType === 'up') {
                 nextOffset = segmentOffset;
               } else {
-                nextOffset = segmentOffset + 3;
+                nextOffset = segmentOffset + UNDERLINE_CURLY_SEGMENT_SIZE;
               }
             }
             break;

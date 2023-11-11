@@ -1,10 +1,11 @@
-import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
+import { ISelectionRenderModel, UnderlineCurlySegmentType } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
 import { IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from '@xterm/xterm';
+import { UNDERLINE_CURLY_SEGMENT_SIZE } from 'browser/renderer/shared/Constants';
 
 // Work variables to avoid garbage collection
 let $fg = 0;
@@ -61,15 +62,15 @@ export class CellColorResolver {
       const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
       $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
     } else if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.CURLY) {
-      // 3px per segment
-      // 0-2 forward, 3-5 reverse
-      const offset = x * deviceCellWidth % 3;
-      const fullSegmentCount = (x * deviceCellWidth) / (3 * 2);
-      const forwardReverse = fullSegmentCount - Math.floor(fullSegmentCount) >= 0.5 ? 1 : 0;
-      if (forwardReverse === 0) {
+      // 4px per segment
+      // 0-3 forward (Up), 4-7 reverse (Down)
+      const offset = x * deviceCellWidth % UNDERLINE_CURLY_SEGMENT_SIZE;
+      const fullSegmentCount = (x * deviceCellWidth) / (UNDERLINE_CURLY_SEGMENT_SIZE * 2);
+      const forwardReverse: UnderlineCurlySegmentType = fullSegmentCount - Math.floor(fullSegmentCount) >= 0.5 ? 'down' : 'up';
+      if (forwardReverse === 'up') {
         $variantOffset = offset;
       } else {
-        $variantOffset = offset + 3;
+        $variantOffset = offset + UNDERLINE_CURLY_SEGMENT_SIZE;
       }
     }
 
