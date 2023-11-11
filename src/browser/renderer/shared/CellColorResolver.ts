@@ -60,6 +60,17 @@ export class CellColorResolver {
     if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
       const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
       $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
+    } else if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.CURLY) {
+      // 3px per segment
+      // 0-2 forward, 3-5 reverse
+      const offset = x * deviceCellWidth % 3;
+      const fullSegmentCount = (x * deviceCellWidth) / (3 * 2);
+      const forwardReverse = fullSegmentCount - Math.floor(fullSegmentCount) >= 0.5 ? 1 : 0;
+      if (forwardReverse === 0) {
+        $variantOffset = offset;
+      } else {
+        $variantOffset = offset + 3;
+      }
     }
 
     // Apply decorations on the bottom layer

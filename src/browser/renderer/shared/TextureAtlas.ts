@@ -551,7 +551,7 @@ export class TextureAtlas implements ITextureAtlas {
         this._tmpCtx.save();
         const xChLeft = xLeft + i * this._config.deviceCellWidth;
         const xChRight = xLeft + (i + 1) * this._config.deviceCellWidth;
-        const xChMid = xChLeft + this._config.deviceCellWidth / 2;
+        // const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
             this._tmpCtx.moveTo(xChLeft, yTop);
@@ -560,39 +560,52 @@ export class TextureAtlas implements ITextureAtlas {
             this._tmpCtx.lineTo(xChRight, yBot);
             break;
           case UnderlineStyle.CURLY:
-            // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
-            // made taller when the line width is  as otherwise it's not very clear otherwise.
-            const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.deviceCharHeight - lineWidth / 2) - yOffset;
-            const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.deviceCharHeight + lineWidth / 2) - yOffset;
-            // Clip the left and right edges of the underline such that it can be drawn just outside
-            // the edge of the cell to ensure a continuous stroke when there are multiple underlined
-            // glyphs adjacent to one another.
-            const clipRegion = new Path2D();
-            clipRegion.rect(xChLeft, yTop, this._config.deviceCellWidth, yBot - yTop);
-            this._tmpCtx.clip(clipRegion);
-            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other
-            // cells
-            this._tmpCtx.moveTo(xChLeft - this._config.deviceCellWidth / 2, yMid);
-            this._tmpCtx.bezierCurveTo(
-              xChLeft - this._config.deviceCellWidth / 2, yCurlyTop,
-              xChLeft, yCurlyTop,
-              xChLeft, yMid
-            );
-            this._tmpCtx.bezierCurveTo(
-              xChLeft, yCurlyBot,
-              xChMid, yCurlyBot,
-              xChMid, yMid
-            );
-            this._tmpCtx.bezierCurveTo(
-              xChMid, yCurlyTop,
-              xChRight, yCurlyTop,
-              xChRight, yMid
-            );
-            this._tmpCtx.bezierCurveTo(
-              xChRight, yCurlyBot,
-              xChRight + this._config.deviceCellWidth / 2, yCurlyBot,
-              xChRight + this._config.deviceCellWidth / 2, yMid
-            );
+            let upDown: 'Up' | 'Down' = 'Up';
+            let segmentOffset = 0;
+            if (nextOffset >= 0 && nextOffset <= 2) {
+              // Up
+              upDown = 'Up';
+              segmentOffset = nextOffset;
+            } else {
+              // Dowm
+              upDown = 'Down';
+              segmentOffset = nextOffset - 3;
+            }
+            for (let index = 0; index < this._config.deviceCellWidth; index++) {
+              if (segmentOffset >= 3) {
+                upDown = upDown === 'Down' ? 'Up' : 'Down';
+                segmentOffset = 0;
+              }
+              if (upDown === 'Up') {
+                if (segmentOffset === 0) {
+                  this._tmpCtx.fillRect(xChLeft + index, yMid - 0.5, 1, 1);
+                } else if (segmentOffset === 1 || segmentOffset === 2) {
+                  this._tmpCtx.fillRect(xChLeft + index, yMid -0.5 - 1, 1, 1);
+                }
+              } else if (upDown === 'Down') {
+                if (segmentOffset === 0) {
+                  this._tmpCtx.fillRect(xChLeft + index, yMid - 0.5, 1, 1);
+                } else if (segmentOffset === 1 || segmentOffset === 2) {
+                  this._tmpCtx.fillRect(xChLeft + index, yMid -0.5 + 1, 1, 1);
+                }
+              }
+              segmentOffset++;
+            }
+            // handle next
+            if (segmentOffset >= 3) {
+              const nextUpDown: 'Up' | 'Down' = upDown === 'Up' ? 'Down' : 'Up';
+              if (nextUpDown === 'Up') {
+                nextOffset = 0;
+              } else {
+                nextOffset = 3;
+              }
+            } else {
+              if (upDown === 'Up') {
+                nextOffset = segmentOffset;
+              } else {
+                nextOffset = segmentOffset + 3;
+              }
+            }
             break;
           case UnderlineStyle.DOTTED:
             const offsetWidth = nextOffset === 0 ? 0 :
