@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { computeNextVariantOffset } from 'browser/renderer/shared/RendererUtils';
+import { computeNextVariantOffset, createDrawCurlyPlan } from 'browser/renderer/shared/RendererUtils';
 import { assert } from 'chai';
 
 describe('RendererUtils', () => {
@@ -28,7 +28,7 @@ describe('RendererUtils', () => {
     line = 2;
     variantOffset = 0;
     cells = [cellWidth, cellWidth, doubleCellWidth, doubleCellWidth];
-    result = [3, 2, 0 ,2];
+    result = [3, 2, 0, 2];
     for (let index = 0; index < cells.length; index++) {
       const cell = cells[index];
       variantOffset = computeNextVariantOffset(cell, line, variantOffset);
@@ -47,4 +47,11 @@ describe('RendererUtils', () => {
       assert.equal(variantOffset, result[index]);
     }
   });
+
+  // it('createDrawCurlyPlan', () => {
+  //   const cellWidth = 11;
+  //   const lineWidth = 2;
+  //   const result = createDrawCurlyPlan(cellWidth,lineWidth);
+  //   console.log(result);
+  // });
 });

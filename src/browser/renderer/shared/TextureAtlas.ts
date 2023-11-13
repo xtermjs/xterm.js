@@ -4,10 +4,10 @@
  */
 
 import { IColorContrastCache } from 'browser/Types';
-import { DIM_OPACITY, TEXT_BASELINE, UNDERLINE_CURLY_SEGMENT_SIZE } from 'browser/renderer/shared/Constants';
+import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { computeNextVariantOffset, excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas, UnderlineCurlySegmentType } from 'browser/renderer/shared/Types';
+import { computeNextVariantOffset, excludeFromContrastRatioDemands, getCurlyVariant, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_COLOR, color, rgba } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { FourKeyMap } from 'common/MultiKeyMap';
@@ -568,58 +568,45 @@ export class TextureAtlas implements ITextureAtlas {
             // down:
             //    *
             //     ***
-
             // [TODO] Up or down offset, To be verified.
-            const yMidOffset = Math.floor(yMid);
-            let segmentType: UnderlineCurlySegmentType = 'up';
-            let segmentOffset = 0;
-            if (nextOffset >= 0 && nextOffset <= UNDERLINE_CURLY_SEGMENT_SIZE - 1) {
-              segmentType = 'up';
-              segmentOffset = nextOffset;
-            } else {
-              segmentType = 'down';
-              segmentOffset = nextOffset - UNDERLINE_CURLY_SEGMENT_SIZE;
-            }
-            for (let index = 0; index < this._config.deviceCellWidth; index++) {
-              if (segmentOffset >= UNDERLINE_CURLY_SEGMENT_SIZE) {
-                segmentType = segmentType === 'down' ? 'up' : 'down';
-                segmentOffset = 0;
-              }
-              if (segmentType === 'up') {
-                if (segmentOffset === 0) {
-                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset, 1, 1);
-                } else {
-                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset - 1, 1, 1);
+            const yMidRectOffset = Math.floor(yMid) - lineWidth + 1;
+
+            const plan = getCurlyVariant(this._config.deviceCellWidth, lineWidth, nextOffset) as string;
+            const steps = plan.split(' ');
+            let xOffset = 0;
+            steps.forEach(step => {
+              const d = step.substring(0, 1);
+              const px = Number.parseInt(step.substring(1));
+              if (d === 'M') {
+                if (lineWidth > 1) {
+                  this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset - 1, px, lineWidth + 1);
+                  xOffset += px;
+                  return;
                 }
-              } else if (segmentType === 'down') {
-                if (segmentOffset === 0) {
-                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset, 1, 1);
-                } else {
-                  this._tmpCtx.fillRect(xChLeft + index, yMidOffset + 1, 1, 1);
-                }
+                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset, px, 1);
+                xOffset += px;
+                return;
               }
-              segmentOffset++;
-            }
+
+              if (d === 'U') {
+                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset - lineWidth, px, lineWidth);
+                xOffset += px;
+                return;
+              }
+
+              if (d === 'D') {
+                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset + 1, px, lineWidth);
+                xOffset += px;
+                return;
+              }
+            });
             // handle next
-            if (segmentOffset >= UNDERLINE_CURLY_SEGMENT_SIZE) {
-              const nextUpDown: UnderlineCurlySegmentType = segmentType === 'up' ? 'down' : 'up';
-              if (nextUpDown === 'up') {
-                nextOffset = 0;
-              } else {
-                nextOffset = UNDERLINE_CURLY_SEGMENT_SIZE;
-              }
-            } else {
-              if (segmentType === 'up') {
-                nextOffset = segmentOffset;
-              } else {
-                nextOffset = segmentOffset + UNDERLINE_CURLY_SEGMENT_SIZE;
-              }
-            }
+            nextOffset++;
             break;
           case UnderlineStyle.DOTTED:
             const offsetWidth = nextOffset === 0 ? 0 :
               (nextOffset >= lineWidth ? lineWidth * 2 - nextOffset : lineWidth - nextOffset);
-              // a line and a gap.
+            // a line and a gap.
             const isLineStart = nextOffset >= lineWidth ? false : true;
             if (isLineStart === false || offsetWidth === 0) {
               this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
@@ -1089,13 +1076,13 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match
     if (imageData.data[offset] === r &&
-        imageData.data[offset + 1] === g &&
-        imageData.data[offset + 2] === b) {
+      imageData.data[offset + 1] === g &&
+      imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
       // Check the threshold based difference
       if (enableThresholdCheck &&
-          (Math.abs(imageData.data[offset] - r) +
+        (Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;
