@@ -97,22 +97,26 @@ export function createDrawCurlyPlan(cellWidth: number, lineWidth: number): any[]
   const defaultFullSegmentWidth = UNDERLINE_CURLY_SEGMENT_SIZE * lineWidth * 2;
   // 8 for variant size
   if (defaultFullSegmentWidth <= 8) {
-    return decrement(cellWidth, 8, 1, 3, 8);
+    return createVariantSequences(cellWidth, 8, 1, 3, 8);
   }
 
+  // x * 18 = y * 16 (full segment width)
+  // x <= 8 (variants)
+  // When the balance cannot be reached, decrease the full segment width
+  // As follows, use 12
   if (cellWidth === 18 && lineWidth === 2) {
-    return decrement(cellWidth, 12, 2, 4, 2);
+    return createVariantSequences(cellWidth, 12, 2, 4, 2);
   }
 
   if (cellWidth === 20 && lineWidth === 2) {
-    return decrement(cellWidth, 16, 2, 6, 4);
+    return createVariantSequences(cellWidth, 16, 2, 6, 4);
   }
 
   return [];
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function decrement(cellWidth: number, fullSegmentWidth: number, point: number, line: number, cellNum: number = 0) {
+function createVariantSequences(cellWidth: number, fullSegmentWidth: number, point: number, line: number, cellNum: number = 0) {
   let countPx = cellWidth * cellNum ?? fullSegmentWidth;
   const result: any[] = [];
   let midOrLine: 0 | 1 = 0;
