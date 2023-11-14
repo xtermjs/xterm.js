@@ -4,7 +4,7 @@
  */
 
 import { UNDERLINE_CURLY_SEGMENT_SIZE } from 'browser/renderer/shared/Constants';
-import { IDimensions, IRenderDimensions, UnderlineCurlySegmentType } from 'browser/renderer/shared/Types';
+import { IDimensions, IRenderDimensions } from 'browser/renderer/shared/Types';
 import { TwoKeyMap } from 'common/MultiKeyMap';
 
 export function throwIfFalsy<T>(value: T | undefined | null): T {
@@ -95,41 +95,59 @@ export function getCurlyVariantOffset(x: number, cellWidth: number, lineWidth: n
 
 export function createDrawCurlyPlan(cellWidth: number, lineWidth: number): any[] {
   const defaultFullSegmentWidth = UNDERLINE_CURLY_SEGMENT_SIZE * lineWidth * 2;
-  // 8 for variant size
-  if (defaultFullSegmentWidth <= 8) {
-    return createVariantSequences(cellWidth, 8, 1, 3, 8);
+
+  if (lineWidth === 2) {
+    // 12 look better
+    return createVariantSequences(cellWidth, 12, lineWidth, 4);
   }
 
-  // x * 18 = y * 16 (full segment width)
-  // x <= 8 (variants)
-  // When the balance cannot be reached, decrease the full segment width
-  // As follows, use 12
-  if (cellWidth === 18 && lineWidth === 2) {
-    return createVariantSequences(cellWidth, 12, 2, 4, 2);
+  if (lineWidth === 3) {
+    return createVariantSequences(cellWidth, 16, lineWidth, 5);
   }
 
-  if (cellWidth === 20 && lineWidth === 2) {
-    return createVariantSequences(cellWidth, 16, 2, 6, 4);
-  }
-
-  return [];
+  return createVariantSequences(cellWidth, defaultFullSegmentWidth , lineWidth, 3 * lineWidth);
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function createVariantSequences(cellWidth: number, fullSegmentWidth: number, point: number, line: number, cellNum: number = 0) {
-  let countPx = cellWidth * cellNum ?? fullSegmentWidth;
+function createVariantSequences(cellWidth: number, fullSegmentWidth: number, point: number, line: number, cellNum: number = 0, vague: boolean = false): string[] {
+  let countPx = cellWidth * ((cellNum !== 0 ? cellNum : fullSegmentWidth));
   const result: any[] = [];
   let midOrLine: 0 | 1 = 0;
   let waitHandleLinePx = 0;
   let upOrDown: 0 | 1 = 0;
+  let lastUpOrDown: 0 | 1 = 0;
   while (countPx > 0) {
     const cellResult: any[] = [];
     let cellCurrentWidth = cellWidth;
     while (cellCurrentWidth > 0) {
       if (midOrLine === 0) {
-        cellResult.push(`M${point}`);
-        cellCurrentWidth -= point;
-        midOrLine = 1;
+        let tag = vague ? 'M' : upOrDown === 0 ? 'A' : 'B';
+        if (waitHandleLinePx > 0) {
+          // right
+          tag = lastUpOrDown === 0 ? 'M' : 'P';
+          cellResult.push(`${tag}${waitHandleLinePx}`);
+          cellCurrentWidth -= waitHandleLinePx;
+          waitHandleLinePx = 0;
+          midOrLine = 1;
+        } else {
+          // left
+          tag = lastUpOrDown === 0 ? 'Z' : 'Q';
+          const usingWidth = point;
+          if (usingWidth > cellCurrentWidth) {
+            cellResult.push(`${tag}${cellCurrentWidth}`);
+            waitHandleLinePx = usingWidth - cellCurrentWidth;
+            cellCurrentWidth = 0;
+          } else {
+            if (upOrDown === 0) {
+              cellResult.push(`Y${point}`);
+              cellCurrentWidth -= point;
+              midOrLine = 1;
+            } else if (upOrDown === 1) {
+              cellResult.push(`B${point}`);
+              cellCurrentWidth -= point;
+              midOrLine = 1;
+            }
+          }
+        }
       } else if (midOrLine === 1) {
         if (waitHandleLinePx > 0) {
           const tag = upOrDown === 0 ? 'U' : 'D';
@@ -137,6 +155,7 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
           cellCurrentWidth -= waitHandleLinePx;
           waitHandleLinePx = 0;
           midOrLine = 0;
+          lastUpOrDown = upOrDown;
           upOrDown = upOrDown === 0 ? 1 : 0;
         } else {
           const usingWidth = line;
@@ -150,6 +169,7 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
             cellResult.push(`${tag}${line}`);
             cellCurrentWidth -= line;
             midOrLine = 0;
+            lastUpOrDown = upOrDown;
             upOrDown = upOrDown === 0 ? 1 : 0;
           }
         }

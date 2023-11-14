@@ -40,3 +40,22 @@ export class FourKeyMap<TFirst extends string | number, TSecond extends string |
     this._data.clear();
   }
 }
+
+export class FiveKeyMap<TFirst extends string | number, TSecond extends string | number, TThird extends string | number, TFourth extends string | number, TFive extends string | number, TValue> {
+  private _data: { [bg: string | number]: FourKeyMap<TSecond, TThird, TFourth, TFive, TValue> | undefined } = {};
+
+  public set(first: TFirst, second: TSecond, third: TThird, fourth: TFourth, five: TFive, value: TValue): void {
+    if (!this._data[first]) {
+      this._data[first] = new FourKeyMap();
+    }
+    this._data[first as string | number]!.set(second, third, fourth, five, value);
+  }
+
+  public get(first: TFirst, second: TSecond, third: TThird, fourth: TFourth, five: TFive): TValue | undefined {
+    return this._data[first as string | number] ? this._data[first as string | number]?.get(second, third, fourth, five) : undefined;
+  }
+
+  public clear(): void {
+    this._data = {};
+  }
+}

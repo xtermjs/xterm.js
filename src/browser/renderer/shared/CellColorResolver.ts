@@ -15,16 +15,18 @@ let $hasBg = false;
 let $isSelected = false;
 let $colors: ReadonlyColorSet | undefined;
 let $variantOffset = 0;
+let $underlineVariantOffset = 0;
 
 export class CellColorResolver {
   /**
    * The shared result of the {@link resolve} call. This is only safe to use immediately after as
    * any other calls will share object.
    */
-  public readonly result: { fg: number, bg: number, ext: number } = {
+  public readonly result: { fg: number, bg: number, ext: number, underlineVariantOffset: number } = {
     fg: 0,
     bg: 0,
-    ext: 0
+    ext: 0,
+    underlineVariantOffset: 0
   };
 
   constructor(
@@ -56,6 +58,7 @@ export class CellColorResolver {
     $isSelected = false;
     $colors = this._themeService.colors;
     $variantOffset = 0;
+    $underlineVariantOffset = 0;
 
     const code = cell.getCode();
     if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
@@ -63,7 +66,7 @@ export class CellColorResolver {
       $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
     } else if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.CURLY) {
       const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
-      $variantOffset = getCurlyVariantOffset(x, deviceCellWidth, lineWidth);
+      $underlineVariantOffset = getCurlyVariantOffset(x, deviceCellWidth, lineWidth);
     }
 
     // Apply decorations on the bottom layer
@@ -150,5 +153,6 @@ export class CellColorResolver {
     // Reset overrides variantOffset
     this.result.ext &= ~ExtFlags.VARIANT_OFFSET;
     this.result.ext |= ($variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
+    this.result.underlineVariantOffset = $underlineVariantOffset;
   }
 }
