@@ -7,7 +7,7 @@ import { CircularList, IInsertEvent } from 'common/CircularList';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, USE_NewBufferLine, NewBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
 import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
@@ -111,6 +111,37 @@ export class Buffer implements IBuffer {
     const correctBufferLength = rows + this._optionsService.rawOptions.scrollback;
 
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
+  }
+
+  public splitLine(row: number, col: number): void {
+    const bufferService = this._bufferService;
+    const curRow = this.lines.get(this.ybase + row - 1) as NewBufferLine;
+    const nextRow = this.lines.get(this.ybase + row) as NewBufferLine;
+    curRow.moveToColumn(bufferService.cols);
+    // FIXME: nextRow.logicalLine().deleteCellsOnly(bufferService.cols - col);
+    let newRow;
+    if (nextRow.isWrapped) {
+      newRow = nextRow as WrappedBufferLine;
+    } else {
+      newRow = new WrappedBufferLine(curRow.logicalLine());
+      // append nextRow contents to end of curRow.logicalLine()
+      this.lines.set(this.ybase + row, newRow);
+      curRow.nextRowSameLine = newRow;
+    }
+    curRow.setStartFromCache(newRow);
+  }
+
+  public setWrapped(row: number, value: boolean): void {
+    const line = this.lines.get(row);
+    if (! line || line.isWrapped === value)
+      return;
+    if (! USE_NewBufferLine) {
+      line!._isWrapped = value;
+    } else if (value) {
+      // make wrapped FIXME
+    } else {
+      // clear wrapped FIXME
+    }
   }
 
   /**

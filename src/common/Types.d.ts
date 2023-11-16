@@ -233,7 +233,8 @@ export interface ICellData extends IAttributeData {
 export interface IBufferLine {
   length: number;
   /** If the previous line wrapped (overflows) into the current line. */
-  isWrapped: boolean;
+  readonly isWrapped: boolean;
+  _isWrapped: boolean; // should only be used OldBufferLine
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;

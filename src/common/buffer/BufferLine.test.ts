@@ -3,17 +3,22 @@
  * @license MIT
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
-import { BufferLine, NewBufferLine } from 'common/buffer//BufferLine';
+import { BufferLine, LogicalBufferLine } from 'common/buffer//BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { CharData, IBufferLine } from '../Types';
+import { CharData, IAttributeData, IBufferLine } from '../Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
 
 
-class TestBufferLine extends NewBufferLine/*FIXME*/ {
+class TestBufferLine extends LogicalBufferLine/*FIXME*/ {
   //public get combined(): {[index: number]: string} {
   //  return this._combined;
   //}
+
+    constructor(cols: number, fillCellData?: IAttributeData, isWrapped?: boolean) {
+    super(cols, fillCellData);
+    if (isWrapped) alert("TestBufferLine with isWrapped set not supported");
+  }
 
   public toArray(): CharData[] {
     const result = [];

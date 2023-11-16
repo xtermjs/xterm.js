@@ -35,6 +35,7 @@ export interface IBuffer {
   isCursorInViewport: boolean;
   markers: IMarker[];
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+  splitLine(row: number, col: number): void;
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
@@ -44,6 +45,7 @@ export interface IBuffer {
   addMarker(y: number): IMarker;
   clearMarkers(y: number): void;
   clearAllMarkers(): void;
+  setWrapped(row: number, value: boolean): void;
 }
 
 export interface IBufferSet extends IDisposable {

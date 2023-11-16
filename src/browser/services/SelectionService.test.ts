@@ -193,7 +193,7 @@ describe('SelectionService', () => {
     it('should expand upwards or downards for wrapped lines', () => {
       buffer.lines.set(0, stringToRow('                 foo'));
       buffer.lines.set(1, stringToRow('bar                 '));
-      buffer.lines.get(1)!.isWrapped = true;
+      buffer.setWrapped(1, true);
       selectionService.selectWordAt([1, 1]);
       assert.equal(selectionService.selectionText, 'foobar');
       selectionService.model.clearSelection();
@@ -207,10 +207,10 @@ describe('SelectionService', () => {
       buffer.lines.set(2, stringToRow('bbbbbbbbbbbbbbbbbbbb'));
       buffer.lines.set(3, stringToRow('cccccccccccccccccccc'));
       buffer.lines.set(4, stringToRow('bar                 '));
-      buffer.lines.get(1)!.isWrapped = true;
-      buffer.lines.get(2)!.isWrapped = true;
-      buffer.lines.get(3)!.isWrapped = true;
-      buffer.lines.get(4)!.isWrapped = true;
+      buffer.setWrapped(1, true);
+      buffer.setWrapped(2, true);
+      buffer.setWrapped(3, true);
+      buffer.setWrapped(4, true);
       selectionService.selectWordAt([18, 0]);
       assert.equal(selectionService.selectionText, expectedText);
       selectionService.model.clearSelection();
@@ -349,8 +349,8 @@ describe('SelectionService', () => {
     it('should select the entire wrapped line', () => {
       buffer.lines.set(0, stringToRow('foo'));
       const line2 = stringToRow('bar');
-      line2.isWrapped = true;
       buffer.lines.set(1, line2);
+      buffer.setWrapped(1, true);
       selectionService.selectLineAt(0);
       assert.equal(selectionService.selectionText, 'foobar', 'The selected text is correct');
       assert.deepEqual(selectionService.model.selectionStart, [0, 0]);

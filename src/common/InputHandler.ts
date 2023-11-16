@@ -517,11 +517,58 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   private printNew(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
+    const wraparoundMode = this._coreService.decPrivateModes.wraparound;
+    const cols = this._bufferService.cols;
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     // if (charset) replace character; FIXME ok to do it in-place?
     const insertMode = this._coreService.modes.insertMode;
     let col = (bufferRow as NewBufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, insertMode);
-    //FIXME check for line wrap;
+    while (col > cols) {
+      // autowrap - DECAWM
+      // automatically wraps to the beginning of the next line
+      if (wraparoundMode) {
+        const oldRow = bufferRow;
+        let oldCol = this._activeBuffer.x;
+        //this._activeBuffer.x = oldWidth;
+        this._activeBuffer.y++;
+        if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
+          this._activeBuffer.y--;
+          this._bufferService.scroll(this._eraseAttrData(), true);
+          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+        } else {
+          if (this._activeBuffer.y >= this._bufferService.rows) {
+            this._activeBuffer.y = this._bufferService.rows - 1;
+          }
+          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+          // The line already exists (eg. the initial viewport), mark it as a
+          // wrapped line
+          if (bufferRow.isWrapped) {
+            // FIXME
+          } else {
+            this._activeBuffer.splitLine(this._activeBuffer.y, col);
+            col = col - cols;
+          }
+        }
+        // row changed, get it again
+        /*
+        if (oldWidth > 0 && bufferRow instanceof BufferLine) {
+          // Combining character widens 1 column to 2.
+          // Move old character to next line.
+          bufferRow.copyCellsFrom(oldRow as BufferLine,
+            oldCol, 0, oldWidth, false);
+        }
+        // clear left over cells to the right
+        while (oldCol < cols) {
+          oldRow.setCellFromCodepoint(oldCol++, 0, 1, curAttr);
+        }
+        */
+        //  col = ...;
+        break; // FIXME
+      } else {
+        // FIXME delete excess
+        break;
+      }
+    }
     this._activeBuffer.x = col;
   }
 
@@ -588,7 +635,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = true;
+            this._activeBuffer.setWrapped(this._activeBuffer.ybase + this._activeBuffer.y, true);
           }
           // row changed, get it again
           bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
@@ -742,7 +789,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // reprint is common, especially on resize. Note that the windowsMode wrapped line heuristics
       // can mess with this so windowsMode should be disabled, which is recommended on Windows build
       // 21376 and above.
-      this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
+      this._activeBuffer.setWrapped(this._activeBuffer.ybase + this._activeBuffer.y, false);
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._activeBuffer.x >= this._bufferService.cols) {
@@ -806,7 +853,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         && this._activeBuffer.y > this._activeBuffer.scrollTop
         && this._activeBuffer.y <= this._activeBuffer.scrollBottom
         && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped) {
-        this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
+        this._activeBuffer.setWrapped(this._activeBuffer.ybase + this._activeBuffer.y, false);
         this._activeBuffer.y--;
         this._activeBuffer.x = this._bufferService.cols - 1;
         // find last taken cell - last cell can have 3 different states:
@@ -1159,7 +1206,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param respectProtect Whether to respect the protection attribute (DECSCA).
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
-    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+    const row = this._activeBuffer.ybase + y;
+    const line = this._activeBuffer.lines.get(row)!;
     const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
     //if (respectProtect) {
       line.replaceCells(start, end, fill, respectProtect);
@@ -1167,7 +1215,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  line.deleteCells(start, end - start, fill);
     //}
     if (clearWrap) {
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(row, false);
     }
   }
 
@@ -1177,16 +1225,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
-    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
+    const buffer = this._activeBuffer;
+    const row = buffer.ybase + y;
+    const line = buffer.lines.get(row);
     if (line) {
-      if (line instanceof NewBufferLine && ! respectProtect) {
+      /*if (line instanceof NewBufferLine && ! respectProtect) {
         line.eraseAll(this._curAttrData.bg & ~0xFC000000);
-      } else {
+      } else*/ {
         const fillData = this._activeBuffer.getNullCell(this._eraseAttrData());
         line.fill(fillData, respectProtect);
       }
-      this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
-      line.isWrapped = false;
+      buffer.clearMarkers(this._activeBuffer.ybase + y);
+      buffer.setWrapped(row, false);
     }
   }
 
@@ -1237,7 +1287,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
-          this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
+          this._activeBuffer.setWrapped(j + 1, false);
         }
         while (j--) {
           this._resetBufferLine(j, respectProtect);
@@ -1484,9 +1534,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      const line = this._activeBuffer.lines.get(row)!;
       line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1517,9 +1568,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      const line = this._activeBuffer.lines.get(row)!;
       line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1540,9 +1592,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      const line = this._activeBuffer.lines.get(row)!;
       line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1563,9 +1616,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      const line = this._activeBuffer.lines.get(row)!;
       line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -3367,7 +3421,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const line = this._activeBuffer.lines.get(row);
       if (line) {
         line.fill(cell);
-        line.isWrapped = false;
+        this._activeBuffer.setWrapped(row, false);
       }
     }
     this._dirtyRowTracker.markAllDirty();

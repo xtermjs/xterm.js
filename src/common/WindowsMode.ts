@@ -20,8 +20,9 @@ export function updateWindowsModeWrappedState(bufferService: IBufferService): vo
   const line = bufferService.buffer.lines.get(bufferService.buffer.ybase + bufferService.buffer.y - 1);
   const lastChar = line?.get(bufferService.cols - 1);
 
-  const nextLine = bufferService.buffer.lines.get(bufferService.buffer.ybase + bufferService.buffer.y);
+  const nextRow = bufferService.buffer.ybase + bufferService.buffer.y;
+  const nextLine = bufferService.buffer.lines.get(nextRow);
   if (nextLine && lastChar) {
-    nextLine.isWrapped = (lastChar[CHAR_DATA_CODE_INDEX] !== NULL_CELL_CODE && lastChar[CHAR_DATA_CODE_INDEX] !== WHITESPACE_CELL_CODE);
+    bufferService.buffer.setWrapped(nextRow, lastChar[CHAR_DATA_CODE_INDEX] !== NULL_CELL_CODE && lastChar[CHAR_DATA_CODE_INDEX] !== WHITESPACE_CELL_CODE);
   }
 }
