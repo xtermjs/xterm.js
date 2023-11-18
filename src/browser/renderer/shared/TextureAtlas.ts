@@ -569,91 +569,86 @@ export class TextureAtlas implements ITextureAtlas {
             // down:
             //    *
             //     ***
+
             // [TODO] Up or down offset, To be verified.
-            const yMidRectOffset = Math.floor(yMid) - lineWidth + 1;
+            const yMidRectOffset = Math.floor(yMid) - lineWidth;
 
             const plan = getCurlyVariant(this._config.deviceCellWidth, lineWidth, nextOffset) as string;
             const steps = plan.split(' ');
             let xOffset = 0;
-            // const midHeight = yBot - yTop - 2;
+
             steps.forEach(step => {
-              const d = step.substring(0, 1);
-              const px = Number.parseInt(step.substring(1));
-              if (d === 'A' || d === 'Y' || d === 'B' || d === 'M' || d === 'Q' || d === 'P' || d === 'Z') {
-                if (lineWidth > 1) {
-                  if (px < lineWidth) {
-                    if (d === 'Q') {
-                      for (let index = 0; index < px; index++) {
-                        this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - index, 1, lineWidth);
-                      }
-                      xOffset += px;
-                      return;
-                    }
+              const token = step.substring(0, 1);
+              const pixels = Number.parseInt(step.substring(1));
 
-                    if (d === 'P') {
-                      for (let index = 0; index < px; index++) {
-                        this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - px) - index, 1, lineWidth);
-                      }
-                      xOffset += px;
-                      return;
+              // draw join
+              if (token === 'Y' || token === 'B' || token === 'M' || token === 'Q' || token === 'P' || token === 'Z') {
+                if (pixels < lineWidth) {
+                  if (token === 'Q') {
+                    for (let index = 0; index < pixels; index++) {
+                      this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - index, 1, lineWidth);
                     }
+                    xOffset += pixels;
+                    return;
+                  }
 
-                    if (d === 'Z') {
-                      for (let index = 0; index < px; index++) {
-                        this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + index, 1, lineWidth);
-                      }
-                      xOffset += px;
-                      return;
+                  if (token === 'P') {
+                    for (let index = 0; index < pixels; index++) {
+                      this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - pixels) - index, 1, lineWidth);
                     }
+                    xOffset += pixels;
+                    return;
+                  }
 
-                    if (d === 'M') {
-                      for (let index = 0; index < px; index++) {
-                        this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + (lineWidth - px) - index, 1, lineWidth);
-                      }
-                      xOffset += px;
-                      return;
+                  if (token === 'Z') {
+                    for (let index = 0; index < pixels; index++) {
+                      this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + index, 1, lineWidth);
                     }
-                  } else {
-                    if (d === 'Y') {
-                      for (let index = 0; index < px; index++) {
-                        this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - index, 1, lineWidth);
-                      }
-                      xOffset += px;
-                      return;
-                    }
+                    xOffset += pixels;
+                    return;
+                  }
 
-                    if (d === 'B') {
-                      for (let index = 0; index < px; index++) {
-                        this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + index, 1, lineWidth);
-                      }
-                      xOffset += px;
-                      return;
+                  if (token === 'M') {
+                    for (let index = 0; index < pixels; index++) {
+                      this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + (lineWidth - pixels) + index, 1, lineWidth);
                     }
+                    xOffset += pixels;
+                    return;
+                  }
+                } else {
+                  if (token === 'Y') {
+                    for (let index = 0; index < pixels; index++) {
+                      this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - index, 1, lineWidth);
+                    }
+                    xOffset += pixels;
+                    return;
+                  }
+
+                  if (token === 'B') {
+                    for (let index = 0; index < pixels; index++) {
+                      this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + index, 1, lineWidth);
+                    }
+                    xOffset += pixels;
+                    return;
                   }
                 }
-                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset, px, 1);
-                xOffset += px;
                 return;
               }
 
-              if (d === 'U') {
-                // if (lineWidth > 1) {
-                //   this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset - lineWidth, px, 1);
-                //   this._tmpCtx.fillRect(xChLeft + xOffset + 1, yMidRectOffset - lineWidth + 1, px - 2, 1);
-                //   xOffset += px;
-                // } else {
-                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset - lineWidth, px, lineWidth);
-                xOffset += px;
-                // }
+              // draw line
+              if (token === 'U') {
+                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset - lineWidth, pixels, lineWidth);
+                xOffset += pixels;
                 return;
               }
 
-              if (d === 'D') {
-                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset + 1, px, lineWidth);
-                xOffset += px;
+              if (token === 'D') {
+                this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset + 1, pixels, lineWidth);
+                xOffset += pixels;
                 return;
               }
             });
+
             // handle next
             nextOffset++;
             break;

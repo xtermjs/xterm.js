@@ -4,7 +4,7 @@
  */
 
 import { UNDERLINE_CURLY_SEGMENT_SIZE } from 'browser/renderer/shared/Constants';
-import { IDimensions, IRenderDimensions } from 'browser/renderer/shared/Types';
+import { IDimensions, IRenderDimensions, UnderlineCurlyJoinOrLine, UnderlineCurlyLineType, UnderlineDrawCurlyOp } from 'browser/renderer/shared/Types';
 import { TwoKeyMap } from 'common/MultiKeyMap';
 
 export function throwIfFalsy<T>(value: T | undefined | null): T {
@@ -81,13 +81,13 @@ export function getCurlyVariant(cellWidth: number, lineWidth: number, offset: nu
 }
 
 export function getCurlyVariantOffset(x: number, cellWidth: number, lineWidth: number): number {
+  if (_curlyVariantCache.get(cellWidth, lineWidth)) {
+    const curlyVariants = _curlyVariantCache.get(cellWidth, lineWidth) as any[];
+    return x % curlyVariants.length;
+  }
   if (!_curlyVariantCache.get(cellWidth, lineWidth)) {
     const curlyVariants = createDrawCurlyPlan(cellWidth, lineWidth);
     _curlyVariantCache.set(cellWidth, lineWidth, curlyVariants);
-    return x % curlyVariants.length;
-  }
-  if (_curlyVariantCache.get(cellWidth, lineWidth)) {
-    const curlyVariants = _curlyVariantCache.get(cellWidth, lineWidth) as any[];
     return x % curlyVariants.length;
   }
   return 0;
@@ -105,77 +105,74 @@ export function createDrawCurlyPlan(cellWidth: number, lineWidth: number): any[]
     return createVariantSequences(cellWidth, 16, lineWidth, 5);
   }
 
+  // if (lineWidth === 4) {
+  //   return createVariantSequences(cellWidth, 20 , lineWidth, 6);
+  // }
+
   return createVariantSequences(cellWidth, defaultFullSegmentWidth , lineWidth, 3 * lineWidth);
 }
 
-function createVariantSequences(cellWidth: number, fullSegmentWidth: number, point: number, line: number, cellNum: number = 0, vague: boolean = false): string[] {
-  let countPx = cellWidth * ((cellNum !== 0 ? cellNum : fullSegmentWidth));
-  const result: any[] = [];
-  let midOrLine: 0 | 1 = 0;
-  let waitHandleLinePx = 0;
-  let upOrDown: 0 | 1 = 0;
-  let lastUpOrDown: 0 | 1 = 0;
-  while (countPx > 0) {
+function createVariantSequences(cellWidth: number, fullSegmentWidth: number, point: number, line: number): string[] {
+  const result: string[] = [];
+  let totalPixels = cellWidth * fullSegmentWidth;
+  let joinOrLine: UnderlineCurlyJoinOrLine = 'join';
+  let upOrDown: UnderlineCurlyLineType = 'up';
+  let lastUpOrDown: UnderlineCurlyLineType = 'up';
+  // Split between cells to be processed
+  let waitHandleLinePixels = 0;
+  while (totalPixels > 0) {
     const cellResult: any[] = [];
     let cellCurrentWidth = cellWidth;
     while (cellCurrentWidth > 0) {
-      if (midOrLine === 0) {
-        let tag = vague ? 'M' : upOrDown === 0 ? 'A' : 'B';
-        if (waitHandleLinePx > 0) {
+      if (joinOrLine === 'join') {
+        let token: UnderlineDrawCurlyOp = upOrDown === 'up' ? 'Y' : 'B';
+        if (waitHandleLinePixels > 0) {
           // right
-          tag = lastUpOrDown === 0 ? 'M' : 'P';
-          cellResult.push(`${tag}${waitHandleLinePx}`);
-          cellCurrentWidth -= waitHandleLinePx;
-          waitHandleLinePx = 0;
-          midOrLine = 1;
+          token = lastUpOrDown === 'up' ? 'M' : 'P';
+          cellResult.push(`${token}${waitHandleLinePixels}`);
+          cellCurrentWidth -= waitHandleLinePixels;
+          waitHandleLinePixels = 0;
+          joinOrLine = 'line';
         } else {
           // left
-          tag = lastUpOrDown === 0 ? 'Z' : 'Q';
           const usingWidth = point;
           if (usingWidth > cellCurrentWidth) {
-            cellResult.push(`${tag}${cellCurrentWidth}`);
-            waitHandleLinePx = usingWidth - cellCurrentWidth;
+            token = lastUpOrDown === 'up' ? 'Z' : 'Q';
+            cellResult.push(`${token}${cellCurrentWidth}`);
+            waitHandleLinePixels = usingWidth - cellCurrentWidth;
             cellCurrentWidth = 0;
           } else {
-            if (upOrDown === 0) {
-              cellResult.push(`Y${point}`);
-              cellCurrentWidth -= point;
-              midOrLine = 1;
-            } else if (upOrDown === 1) {
-              cellResult.push(`B${point}`);
-              cellCurrentWidth -= point;
-              midOrLine = 1;
-            }
+            cellResult.push(`${token}${point}`);
+            cellCurrentWidth -= point;
+            joinOrLine = 'line';
           }
         }
-      } else if (midOrLine === 1) {
-        if (waitHandleLinePx > 0) {
-          const tag = upOrDown === 0 ? 'U' : 'D';
-          cellResult.push(`${tag}${waitHandleLinePx}`);
-          cellCurrentWidth -= waitHandleLinePx;
-          waitHandleLinePx = 0;
-          midOrLine = 0;
+      } else if (joinOrLine === 'line') {
+        const token: UnderlineDrawCurlyOp = upOrDown === 'up' ? 'U' : 'D';
+        if (waitHandleLinePixels > 0) {
+          cellResult.push(`${token}${waitHandleLinePixels}`);
+          cellCurrentWidth -= waitHandleLinePixels;
+          waitHandleLinePixels = 0;
+          joinOrLine = 'join';
           lastUpOrDown = upOrDown;
-          upOrDown = upOrDown === 0 ? 1 : 0;
+          upOrDown = upOrDown === 'up' ? 'down' : 'up';
         } else {
           const usingWidth = line;
           if (usingWidth > cellCurrentWidth) {
-            const tag = upOrDown === 0 ? 'U' : 'D';
-            cellResult.push(`${tag}${cellCurrentWidth}`);
-            waitHandleLinePx = usingWidth - cellCurrentWidth;
+            cellResult.push(`${token}${cellCurrentWidth}`);
+            waitHandleLinePixels = usingWidth - cellCurrentWidth;
             cellCurrentWidth = 0;
           } else {
-            const tag = upOrDown === 0 ? 'U' : 'D';
-            cellResult.push(`${tag}${line}`);
+            cellResult.push(`${token}${line}`);
             cellCurrentWidth -= line;
-            midOrLine = 0;
+            joinOrLine = 'join';
             lastUpOrDown = upOrDown;
-            upOrDown = upOrDown === 0 ? 1 : 0;
+            upOrDown = upOrDown === 'up' ? 'down' : 'up';
           }
         }
       }
     }
-    countPx -= cellWidth;
+    totalPixels -= cellWidth;
     result.push(cellResult.join(' '));
   }
   return result;

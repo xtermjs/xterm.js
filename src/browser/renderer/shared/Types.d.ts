@@ -172,4 +172,17 @@ export interface ISelectionRenderModel {
   isCellSelected(terminal: Terminal, x: number, y: number): boolean;
 }
 
-export type UnderlineCurlySegmentType = 'up' | 'down';
+export type UnderlineCurlyLineType = 'up' | 'down';
+export type UnderlineCurlyJoinOrLine = 'join' | 'line';
+
+/**
+ * Y Complete upward join
+ * B Complete downward join
+ * M Split Right downward join
+ * P Split right upward join
+ * Q Split left upward join
+ * Z Split left downward join
+ * U Up line
+ * D Down line
+ */
+export type UnderlineDrawCurlyOp = 'Y' | 'B' | 'M' | 'Q' | 'P' | 'Z' | 'U' | 'D';

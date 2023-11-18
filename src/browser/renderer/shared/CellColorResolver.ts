@@ -61,12 +61,15 @@ export class CellColorResolver {
     $underlineVariantOffset = 0;
 
     const code = cell.getCode();
-    if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
+
+    // Underline handle
+    if (code !== NULL_CELL_CODE && cell.extended.underlineStyle !== UnderlineStyle.NONE) {
       const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
-      $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
-    } else if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.CURLY) {
-      const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
-      $underlineVariantOffset = getCurlyVariantOffset(x, deviceCellWidth, lineWidth);
+      if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
+        $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
+      } else if (cell.extended.underlineStyle === UnderlineStyle.CURLY) {
+        $underlineVariantOffset = getCurlyVariantOffset(x, deviceCellWidth, lineWidth);
+      }
     }
 
     // Apply decorations on the bottom layer

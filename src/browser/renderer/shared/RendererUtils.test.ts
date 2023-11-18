@@ -47,11 +47,4 @@ describe('RendererUtils', () => {
       assert.equal(variantOffset, result[index]);
     }
   });
-
-  // it('createDrawCurlyPlan', () => {
-  //   const cellWidth = 11;
-  //   const lineWidth = 2;
-  //   const result = createDrawCurlyPlan(cellWidth,lineWidth);
-  //   console.log(result);
-  // });
 });
