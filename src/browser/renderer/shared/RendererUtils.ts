@@ -119,19 +119,19 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
   let upOrDown: UnderlineCurlyLineType = 'up';
   let lastUpOrDown: UnderlineCurlyLineType = 'up';
   // Split between cells to be processed
-  let waitHandleLinePixels = 0;
+  let waitHandlePixels = 0;
   while (totalPixels > 0) {
     const cellResult: any[] = [];
     let cellCurrentWidth = cellWidth;
     while (cellCurrentWidth > 0) {
       if (joinOrLine === 'join') {
         let token: UnderlineDrawCurlyOp = upOrDown === 'up' ? 'Y' : 'B';
-        if (waitHandleLinePixels > 0) {
+        if (waitHandlePixels > 0) {
           // right
           token = lastUpOrDown === 'up' ? 'M' : 'P';
-          cellResult.push(`${token}${waitHandleLinePixels}`);
-          cellCurrentWidth -= waitHandleLinePixels;
-          waitHandleLinePixels = 0;
+          cellResult.push(`${token}${waitHandlePixels}`);
+          cellCurrentWidth -= waitHandlePixels;
+          waitHandlePixels = 0;
           joinOrLine = 'line';
         } else {
           // left
@@ -139,7 +139,7 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
           if (usingWidth > cellCurrentWidth) {
             token = lastUpOrDown === 'up' ? 'Z' : 'Q';
             cellResult.push(`${token}${cellCurrentWidth}`);
-            waitHandleLinePixels = usingWidth - cellCurrentWidth;
+            waitHandlePixels = usingWidth - cellCurrentWidth;
             cellCurrentWidth = 0;
           } else {
             cellResult.push(`${token}${point}`);
@@ -149,10 +149,10 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
         }
       } else if (joinOrLine === 'line') {
         const token: UnderlineDrawCurlyOp = upOrDown === 'up' ? 'U' : 'D';
-        if (waitHandleLinePixels > 0) {
-          cellResult.push(`${token}${waitHandleLinePixels}`);
-          cellCurrentWidth -= waitHandleLinePixels;
-          waitHandleLinePixels = 0;
+        if (waitHandlePixels > 0) {
+          cellResult.push(`${token}${waitHandlePixels}`);
+          cellCurrentWidth -= waitHandlePixels;
+          waitHandlePixels = 0;
           joinOrLine = 'join';
           lastUpOrDown = upOrDown;
           upOrDown = upOrDown === 'up' ? 'down' : 'up';
@@ -160,7 +160,7 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
           const usingWidth = line;
           if (usingWidth > cellCurrentWidth) {
             cellResult.push(`${token}${cellCurrentWidth}`);
-            waitHandleLinePixels = usingWidth - cellCurrentWidth;
+            waitHandlePixels = usingWidth - cellCurrentWidth;
             cellCurrentWidth = 0;
           } else {
             cellResult.push(`${token}${line}`);
