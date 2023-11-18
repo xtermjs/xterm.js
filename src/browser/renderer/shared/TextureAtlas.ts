@@ -7,7 +7,7 @@ import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { computeNextVariantOffset, excludeFromContrastRatioDemands, getCurlyVariant, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas, UnderlineDrawCurlyOp } from 'browser/renderer/shared/Types';
 import { NULL_COLOR, color, rgba } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { FiveKeyMap } from 'common/MultiKeyMap';
@@ -546,7 +546,7 @@ export class TextureAtlas implements ITextureAtlas {
       const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
       const yMid = yTop + lineWidth;
       const yBot = yTop + lineWidth * 2;
-      let nextOffset = underlineVariantoffset !== 0 ? underlineVariantoffset : this._workAttributeData.getUnderlineVariantOffset();
+      let nextOffset = underlineVariantoffset;
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
@@ -578,13 +578,14 @@ export class TextureAtlas implements ITextureAtlas {
             let xOffset = 0;
 
             steps.forEach(step => {
-              const token = step.substring(0, 1);
+              const op: UnderlineDrawCurlyOp = step.substring(0, 1) as UnderlineDrawCurlyOp;
               const pixels = Number.parseInt(step.substring(1));
 
               // draw join
-              if (token === 'Y' || token === 'B' || token === 'M' || token === 'Q' || token === 'P' || token === 'Z') {
+              if (op === 'Y' || op === 'B' || op === 'M' || op === 'Q' || op === 'P' || op === 'Z') {
+                // TODO recode
                 if (pixels < lineWidth) {
-                  if (token === 'Q') {
+                  if (op === 'Q') {
                     for (let index = 0; index < pixels; index++) {
                       this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - index, 1, lineWidth);
                     }
@@ -592,7 +593,7 @@ export class TextureAtlas implements ITextureAtlas {
                     return;
                   }
 
-                  if (token === 'P') {
+                  if (op === 'P') {
                     for (let index = 0; index < pixels; index++) {
                       this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - pixels) - index, 1, lineWidth);
                     }
@@ -600,7 +601,7 @@ export class TextureAtlas implements ITextureAtlas {
                     return;
                   }
 
-                  if (token === 'Z') {
+                  if (op === 'Z') {
                     for (let index = 0; index < pixels; index++) {
                       this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + index, 1, lineWidth);
                     }
@@ -608,7 +609,7 @@ export class TextureAtlas implements ITextureAtlas {
                     return;
                   }
 
-                  if (token === 'M') {
+                  if (op === 'M') {
                     for (let index = 0; index < pixels; index++) {
                       this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + (lineWidth - pixels) + index, 1, lineWidth);
                     }
@@ -616,7 +617,7 @@ export class TextureAtlas implements ITextureAtlas {
                     return;
                   }
                 } else {
-                  if (token === 'Y') {
+                  if (op === 'Y') {
                     for (let index = 0; index < pixels; index++) {
                       this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - index, 1, lineWidth);
                     }
@@ -624,7 +625,7 @@ export class TextureAtlas implements ITextureAtlas {
                     return;
                   }
 
-                  if (token === 'B') {
+                  if (op === 'B') {
                     for (let index = 0; index < pixels; index++) {
                       this._tmpCtx.fillRect(xChLeft + xOffset + index, yMidRectOffset - (lineWidth - 1) + index, 1, lineWidth);
                     }
@@ -636,13 +637,13 @@ export class TextureAtlas implements ITextureAtlas {
               }
 
               // draw line
-              if (token === 'U') {
+              if (op === 'U') {
                 this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset - lineWidth, pixels, lineWidth);
                 xOffset += pixels;
                 return;
               }
 
-              if (token === 'D') {
+              if (op === 'D') {
                 this._tmpCtx.fillRect(xChLeft + xOffset, yMidRectOffset + 1, pixels, lineWidth);
                 xOffset += pixels;
                 return;

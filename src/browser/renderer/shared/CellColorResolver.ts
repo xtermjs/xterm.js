@@ -14,7 +14,7 @@ let $hasFg = false;
 let $hasBg = false;
 let $isSelected = false;
 let $colors: ReadonlyColorSet | undefined;
-let $variantOffset = 0;
+// let $variantOffset = 0;
 let $underlineVariantOffset = 0;
 
 export class CellColorResolver {
@@ -57,7 +57,7 @@ export class CellColorResolver {
     $hasFg = false;
     $isSelected = false;
     $colors = this._themeService.colors;
-    $variantOffset = 0;
+    // $variantOffset = 0;
     $underlineVariantOffset = 0;
 
     const code = cell.getCode();
@@ -66,7 +66,7 @@ export class CellColorResolver {
     if (code !== NULL_CELL_CODE && cell.extended.underlineStyle !== UnderlineStyle.NONE) {
       const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
       if (cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
-        $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
+        $underlineVariantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
       } else if (cell.extended.underlineStyle === UnderlineStyle.CURLY) {
         $underlineVariantOffset = getCurlyVariantOffset(x, deviceCellWidth, lineWidth);
       }
@@ -154,8 +154,8 @@ export class CellColorResolver {
     this.result.fg = $hasFg ? $fg : this.result.fg;
 
     // Reset overrides variantOffset
-    this.result.ext &= ~ExtFlags.VARIANT_OFFSET;
-    this.result.ext |= ($variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
+    // this.result.ext &= ~ExtFlags.VARIANT_OFFSET;
+    // this.result.ext |= ($variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
     this.result.underlineVariantOffset = $underlineVariantOffset;
   }
 }
