@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { UNDERLINE_CURLY_SEGMENT_SIZE } from 'browser/renderer/shared/Constants';
 import { IDimensions, IRenderDimensions, UnderlineCurlyJoinOrLine, UnderlineCurlyLineType, UnderlineDrawCurlyOp } from 'browser/renderer/shared/Types';
 import { TwoKeyMap } from 'common/MultiKeyMap';
 
@@ -93,28 +92,15 @@ export function getCurlyVariantOffset(x: number, cellWidth: number, lineWidth: n
   return 0;
 }
 
-export function createDrawCurlyPlan(cellWidth: number, lineWidth: number): any[] {
-  const defaultFullSegmentWidth = UNDERLINE_CURLY_SEGMENT_SIZE * lineWidth * 2;
+const defaultCurlyLinePixels = 3;
 
-  if (lineWidth === 2) {
-    // 12 look better
-    return createVariantSequences(cellWidth, 12, lineWidth, 4);
-  }
-
-  if (lineWidth === 3) {
-    return createVariantSequences(cellWidth, 16, lineWidth, 5);
-  }
-
-  // if (lineWidth === 4) {
-  //   return createVariantSequences(cellWidth, 20 , lineWidth, 6);
-  // }
-
-  return createVariantSequences(cellWidth, defaultFullSegmentWidth , lineWidth, 3 * lineWidth);
+export function createDrawCurlyPlan(cellWidth: number, lineWidth: number): string[] {
+  return createVariantSequences(cellWidth, lineWidth, defaultCurlyLinePixels + lineWidth - 1);
 }
 
-function createVariantSequences(cellWidth: number, fullSegmentWidth: number, point: number, line: number): string[] {
+function createVariantSequences(cellWidth: number, joinPixels: number, linePixels: number): string[] {
   const result: string[] = [];
-  let totalPixels = cellWidth * fullSegmentWidth;
+  let totalPixels = cellWidth * ((joinPixels + linePixels) * 2);
   let joinOrLine: UnderlineCurlyJoinOrLine = 'join';
   let upOrDown: UnderlineCurlyLineType = 'up';
   let lastUpOrDown: UnderlineCurlyLineType = 'up';
@@ -135,15 +121,15 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
           joinOrLine = 'line';
         } else {
           // left
-          const usingWidth = point;
+          const usingWidth = joinPixels;
           if (usingWidth > cellCurrentWidth) {
             token = lastUpOrDown === 'up' ? 'Z' : 'Q';
             cellResult.push(`${token}${cellCurrentWidth}`);
             waitHandlePixels = usingWidth - cellCurrentWidth;
             cellCurrentWidth = 0;
           } else {
-            cellResult.push(`${token}${point}`);
-            cellCurrentWidth -= point;
+            cellResult.push(`${token}${joinPixels}`);
+            cellCurrentWidth -= joinPixels;
             joinOrLine = 'line';
           }
         }
@@ -157,14 +143,14 @@ function createVariantSequences(cellWidth: number, fullSegmentWidth: number, poi
           lastUpOrDown = upOrDown;
           upOrDown = upOrDown === 'up' ? 'down' : 'up';
         } else {
-          const usingWidth = line;
+          const usingWidth = linePixels;
           if (usingWidth > cellCurrentWidth) {
             cellResult.push(`${token}${cellCurrentWidth}`);
             waitHandlePixels = usingWidth - cellCurrentWidth;
             cellCurrentWidth = 0;
           } else {
-            cellResult.push(`${token}${line}`);
-            cellCurrentWidth -= line;
+            cellResult.push(`${token}${linePixels}`);
+            cellCurrentWidth -= linePixels;
             joinOrLine = 'join';
             lastUpOrDown = upOrDown;
             upOrDown = upOrDown === 'up' ? 'down' : 'up';

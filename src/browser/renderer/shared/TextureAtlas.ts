@@ -552,7 +552,6 @@ export class TextureAtlas implements ITextureAtlas {
         this._tmpCtx.save();
         const xChLeft = xLeft + i * this._config.deviceCellWidth;
         const xChRight = xLeft + (i + 1) * this._config.deviceCellWidth;
-        // const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
             this._tmpCtx.moveTo(xChLeft, yTop);
@@ -656,7 +655,7 @@ export class TextureAtlas implements ITextureAtlas {
           case UnderlineStyle.DOTTED:
             const offsetWidth = nextOffset === 0 ? 0 :
               (nextOffset >= lineWidth ? lineWidth * 2 - nextOffset : lineWidth - nextOffset);
-            // a line and a gap.
+              // a line and a gap.
             const isLineStart = nextOffset >= lineWidth ? false : true;
             if (isLineStart === false || offsetWidth === 0) {
               this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
@@ -1126,13 +1125,13 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match
     if (imageData.data[offset] === r &&
-      imageData.data[offset + 1] === g &&
-      imageData.data[offset + 2] === b) {
+        imageData.data[offset + 1] === g &&
+        imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
       // Check the threshold based difference
       if (enableThresholdCheck &&
-        (Math.abs(imageData.data[offset] - r) +
+          (Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;
