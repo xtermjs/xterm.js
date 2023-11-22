@@ -68,6 +68,7 @@ type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getS
 type TerminalProxyCustomOverrides = 'buffer' | (
   // The below are not implemented yet
   'element' |
+  'screenElement' |
   'textarea' |
   'markers' |
   'unicode' |
