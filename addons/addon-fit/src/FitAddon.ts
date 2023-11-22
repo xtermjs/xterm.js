@@ -46,6 +46,7 @@ export class FitAddon implements ITerminalAddon , IFitApi {
     if (this._terminal.rows !== dims.rows || this._terminal.cols !== dims.cols) {
       core._renderService.clear();
       this._terminal.resize(dims.cols, dims.rows);
+      // Fill in less than one row
       if (this._lastAvailableHeight && this._lastAvailableWidth) {
         core.screenElement.style.width = `${this._lastAvailableWidth}px`;
         core.screenElement.style.height = `${this._lastAvailableHeight}px`;
