@@ -768,6 +768,11 @@ declare module '@xterm/xterm' {
     readonly element: HTMLElement | undefined;
 
     /**
+     * The element is a screen container.
+     */
+    readonly screenElement: HTMLElement | undefined;
+
+    /**
      * The textarea that accepts input for the terminal.
      */
     readonly textarea: HTMLTextAreaElement | undefined;
