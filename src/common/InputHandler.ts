@@ -563,7 +563,6 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
         */
         //  col = ...;
-        break; // FIXME
       } else {
         // FIXME delete excess
         break;

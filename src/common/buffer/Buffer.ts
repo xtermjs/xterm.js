@@ -7,7 +7,7 @@ import { CircularList, IInsertEvent } from 'common/CircularList';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { BufferLine, USE_NewBufferLine, NewBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, USE_NewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
 import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
@@ -192,6 +192,17 @@ export class Buffer implements IBuffer {
       this.lines.maxLength = newMaxLength;
     }
 
+    if (this._cols !== newCols && USE_NewBufferLine) {
+      const nlines = this.lines.length;
+      for (let i = 0; i < nlines; i++) {
+        const line = this.lines.get(i);
+        if (line instanceof LogicalBufferLine
+          && (line.nextRowSameLine || line.logicalWidth > newCols)) {
+          line.reflowNeeded = true;
+        }
+      }
+    }
+
     // The following adjustments should only happen if the buffer has been
     // initialized/filled.
     if (this.lines.length > 0) {
@@ -328,11 +339,58 @@ export class Buffer implements IBuffer {
     return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
   }
 
+  // Only if USE_NewBufferLine
+  private _reflowRegion(startRow: number, endRow: number, newCols: number): void {
+    while (startRow > 0 && this.lines.get(startRow)?.isWrapped) {
+      startRow--;
+    }
+    // FIXME don't need to allocate newRows if no lines require more rows
+    // than before. So better to allocate newRows lazily.
+    const newRows: IBufferLine[] = [];
+    let inew = 0;
+    for (let row = startRow; row < endRow;) {
+      const line = this.lines.get(row)!;
+      newRows.push(line);
+      row++
+      if (line instanceof LogicalBufferLine && line.reflowNeeded) {
+        line.reflowNeeded = false;
+        let startCol = 0;
+        let curRow: NewBufferLine = line;
+        const dataLength = line.dataLength();
+        for (;;) {
+          const content = line.moveToColumn(startCol + newCols, true);
+          let idata = line._cachedDataIndex();
+          if (idata >= dataLength)
+            break;
+          startCol = line._cachedColumn();
+          let newRow1 = row < endRow && this.lines.get(row);
+          let newRow = newRow1 instanceof WrappedBufferLine
+                ? (row++, newRow1)
+                : new WrappedBufferLine(line);
+          line.setStartFromCache(newRow);
+          curRow.nextRowSameLine = newRow;
+          newRows.push(newRow);
+          curRow = newRow;
+        }
+        while (row < endRow
+          && this.lines.get(row) instanceof WrappedBufferLine) {
+          row++;
+        }
+      }
+    }
+    this.lines.splice(startRow, endRow - startRow, ...newRows);
+  }
+
   private _reflow(newCols: number, newRows: number): void {
     if (this._cols === newCols) {
       return;
     }
 
+    if (USE_NewBufferLine) {
+      // FIXME do this lazily
+        this._reflowRegion(0, this.lines.length, newCols);
+      return;
+    }
     // Iterate through rows, ignore the last one as it cannot be wrapped
     if (newCols > this._cols) {
       this._reflowLarger(newCols, newRows);

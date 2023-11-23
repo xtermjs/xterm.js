@@ -123,10 +123,10 @@ export abstract class AbstractBufferLine implements IBufferLine {
 
   abstract setCellFromCodepoint(index: number, codePoint: number, width: number,  attrs: IAttributeData): void;
   /**
-   * Set data at `index` to `cell`.
+   * Set data at `index` to `cell`. FIXME doesn't handle combined chars.
    */
   public setCell(index: number, cell: ICellData): void {
-    this.setCellFromCodepoint(index, cell.content, cell.getWidth(), cell);
+    this.setCellFromCodepoint(index, cell.getCode(), cell.getWidth(), cell);
   }
 
   /**
@@ -246,6 +246,8 @@ const enum Cell {
   FG = 1, // currently simply holds all known attrs
   BG = 2  // currently unused
 }
+
+// This class will be removed at some point
 
 export class OldBufferLine extends BufferLine implements IBufferLine {
   protected _data: Uint32Array;
@@ -669,37 +671,35 @@ export class OldBufferLine extends BufferLine implements IBufferLine {
   }
 }
 
+// This class will be merged with its parent when OldBufferLine is removed,
+
 export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   /** Color for "rest of line" background, following _dataLength. */
   lineEndBg: number = 0;
 
   nextRowSameLine: WrappedBufferLine | undefined;
 
-  // Maybe move these to LogicalBufferLine? or to Buffer?
-  private _cache1: number = 0;
-  private _cache2: number = 0;
-  private _cache3: number = 0;
-  private _cache4: number = 0;
-
   /** The "current" index into the _data array.
    * The index must be either dataLength() or wKindIsTextOrSkip must be true.
    * (The index never points to a CLUSTER_CONTINUED item.)
    */
-  protected _cachedDataIndex(): number { return this._cache1 >>> 16; }
-  /** The column number corresponding to _cachedDataIndex(). */
-  private _cachedColumn(): number { return this._cache1 & 0xFFFF; }
+  _cachedDataIndex(): number { return this.logicalLine()._cache1 >>> 16; }
+  /** The logical column number corresponding to _cachedDataIndex(). */
+  _cachedColumn(): number { return this.logicalLine()._cache1 & 0xFFFF; }
+  protected abstract _cachedColumnInRow(): number;
   //private _cachedColOffset(): number { return this._cache3 >> 24; } // UNUSED
-  protected _cachedBg(): number { return this._cache2; }
-  protected _cachedFg(): number { return this._cache3; }
+  protected _cachedBg(): number { return this.logicalLine()._cache2; }
+  protected _cachedFg(): number { return this.logicalLine()._cache3; }
   // One more than index (in data()) of STYLE_FLAGS; 0 if none.
-  protected _cachedStyleFlagsIndex(): number { return this._cache4; }
-  protected _cacheReset(): void { this._cache1 = 0; this._cache2 = 0; this._cache3 = 0; this._cache4 = 0; }
-  protected _cacheSetFgBg(fg: number, bg: number): void { this._cache2 = bg; this._cache3 = fg; }
-  protected _cacheSetStyleFlagsIndex(index: number): void { this._cache4 = index; }
-  protected _cacheSetColumnDataIndex(column: number, dataIndex: number): void { this._cache1 = (dataIndex << 16) | (column & 0xFFFF); }
+  protected _cachedStyleFlagsIndex(): number { return this.logicalLine()._cache4; }
+  protected _cacheReset(): void { const line = this.logicalLine(); line._cache1 = 0; line._cache2 = 0; line._cache3 = 0; line._cache4 = 0; }
+  protected _cacheSetFgBg(fg: number, bg: number): void { const line = this.logicalLine(); line._cache2 = bg; line._cache3 = fg; }
+  protected _cacheSetStyleFlagsIndex(index: number): void { this.logicalLine()._cache4 = index; }
+  protected _cacheSetColumnDataIndex(column: number, dataIndex: number): void { this.logicalLine()._cache1 = (dataIndex << 16) | (column & 0xFFFF); }
 
   public setStartFromCache(wrapRow: WrappedBufferLine): void {
     wrapRow.startIndex = this._cachedDataIndex();
+    wrapRow.startColumn = this._cachedColumn();
     wrapRow.startBg = this._cachedBg();
     wrapRow.startFg = this._cachedFg();
     wrapRow.startStyle = this._cachedStyleFlagsIndex();
@@ -908,7 +908,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     */
   }
 
-  public moveToColumn(index: number): number {
+  /** Move to column 'index'.
+   * If 'logical' true, 'index' is relative to logical line;
+   * otherwise relative to (and restricted to) this (screen) row.
+   * Return encoded 'content'.
+   */
+  public moveToColumn(index: number, logical: boolean = false): number {
+    const startColumn = ! logical && this instanceof WrappedBufferLine ? this.startColumn : 0;
+    index += startColumn;
     let curColumn = this._cachedColumn();
     if (index < curColumn) {
       // FIXME can sometimes do better
@@ -923,8 +930,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let word;
     let kind;
     let content = 0;
+    const end = logical ? this.dataLength() : this.dataRowEnd();
     while (todo >= 0) {
-      if (idata >= this.dataLength()) {
+      if (idata >= end) {
         word = NULL_DATA_WORD;
         kind = DataKind.SKIP_COLUMNS;
         content = (NULL_CELL_WIDTH << Content.WIDTH_SHIFT) | NULL_CELL_CODE;
@@ -1103,6 +1111,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   public insertText(index: number, data: Uint32Array, start: number, end: number, attrs: IAttributeData, inputHandler: IInputHandler, insertMode: boolean): number {
     const add = this.preInsert(index, attrs);
     let curColumn = this._cachedColumn();
+    const lline = this.logicalLine();
     const startColumn = curColumn;
     let idata = this._cachedDataIndex();
     let precedingJoinState = inputHandler.precedingJoinState;
@@ -1155,13 +1164,15 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     if (! insertMode && idata < this.dataLength()) {
       this.logicalLine().deleteCellsOnly(inext, 0, curColumn - startColumn);
     }
+    if (curColumn > lline.logicalWidth)
+      lline.logicalWidth = curColumn;
     return curColumn;
   }
 
   public setCellFromCodepoint(index: number, codePoint: number, width: number,  attrs: IAttributeData): void {
     if (codePoint === NULL_CELL_CODE && width === 0) {
       // i.e. combining character
-      // FIXME - usually a no-open
+      // FIXME - usually a no-op
       return;
     }
     const add = this.preInsert(index, attrs);
@@ -1185,21 +1196,28 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       else
         inext = idata;
     }
-    // FIXME optimize of overwriting simple text in-place
-    this.addEmptyDataElements(inext, 1);
-
     let cellColumn = curColumn;
     let kind = width === 2 ? DataKind.CHAR_w2 : DataKind.CHAR_w1;
     idata = inext;
     cellColumn = curColumn;
     curColumn += width;
-    this.data()[inext++] =
-      codePoint === NULL_CELL_CODE ?
-      BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1) :
-      BufferLine.wSet1(kind, codePoint);
+    if (codePoint===0 && inext > 0
+      && BufferLine.wKind(this.data()[inext-1]) === DataKind.SKIP_COLUMNS) {
+      console.log("nul setCellFromCodepoint");
+      this.data()[inext-1] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, BufferLine.wSkipCount(this.data()[inext-1]) + 1);
+      cellColumn = curColumn;
+    } else {
+      // FIXME optimize of overwriting simple text in-place
+      this.addEmptyDataElements(inext, 1);
+      this.data()[inext++] =
+        codePoint === NULL_CELL_CODE ?
+        BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1) :
+        BufferLine.wSet1(kind, codePoint);
+    }
     this._cacheSetColumnDataIndex(cellColumn, idata);
     if (idata < this.dataLength()) {
       this.logicalLine().deleteCellsOnly(inext, 0, curColumn - startColumn);
+    } else if (codePoint === 0) {
     }
   }
 
@@ -1463,8 +1481,14 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   protected _data: Uint32Array;
   // Each item in _data is a 4-bit DataKind and 28 bits data.
   protected _dataLength: number; // active length of _data array
-  // logicalWidth: number; TODO
-  // reflowNeeded: boolean; TODO
+  logicalWidth: number = 0; // FIXME needs work updating this
+  reflowNeeded: boolean = false;
+
+  // Maybe move these to LogicalBufferLine? or to Buffer?
+  _cache1: number = 0;
+  _cache2: number = 0;
+  _cache3: number = 0;
+  _cache4: number = 0;
 
   constructor(cols: number, fillCellData?: IAttributeData) {
     super();
@@ -1478,6 +1502,8 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   logicalLine(): LogicalBufferLine { return this; }
   data(): Uint32Array { return this._data; }
   dataLength(): number { return this._dataLength; }
+
+  protected _cachedColumnInRow(): number { return (this.logicalLine()._cache1 & 0xFFFF); }
 
   // count can be negative
   addEmptyDataElements(position: number, count: number): void {
@@ -1640,6 +1666,15 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
 export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
   _logicalLine: LogicalBufferLine;
   startIndex: number = 0;
+  /** Number of logical columns in previous rows.
+   * Also: logical column number (column number assuming infinitely-wide
+   * terminal) corresponding to the start of this row.
+   * If R is 0 for the previous LogicalBufferLine, R is 1 for first
+   * WrappedBufferLine and so on, startColumn will *usually* be N*W
+   * (where W is the width of the terminal in columns) but may be slightly
+   * different when a wide character at column W-1 must wrap "early".
+   */
+  startColumn: number = 0;
   startFg: number = 0;
   startBg: number = 0;
   startStyle: number = 0;
@@ -1655,10 +1690,11 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
   addEmptyDataElements(position: number, count: number): void {
     this._logicalLine.addEmptyDataElements(position, count);
   }
+  protected _cachedColumnInRow(): number { return (this.logicalLine()._cache1 & 0xFFFF) - this.startColumn; }
   protected _cacheReset(): void {
     this._cacheSetFgBg(this.startFg, this.startBg);
     this._cacheSetStyleFlagsIndex(this.startStyle);
-    this._cacheSetColumnDataIndex(0, this.startIndex);
+    this._cacheSetColumnDataIndex(this.startColumn, this.startIndex);
   }
   resizeData(size: number): void { this._logicalLine.resizeData(size); }
   public cleanupMemory(): number { return 0;}
