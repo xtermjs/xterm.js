@@ -348,11 +348,15 @@ export class Buffer implements IBuffer {
     // than before. So better to allocate newRows lazily.
     const newRows: IBufferLine[] = [];
     let inew = 0;
+    const yAbs = this.ybase + this.y;
+    let deltaSoFar = 0;
     for (let row = startRow; row < endRow;) {
       const line = this.lines.get(row)!;
       newRows.push(line);
       row++
       if (line instanceof LogicalBufferLine && line.reflowNeeded) {
+        const oldWrapStart = row;
+        const newWrapStart = newRows.length;
         line.reflowNeeded = false;
         let startCol = 0;
         let curRow: NewBufferLine = line;
@@ -376,8 +380,30 @@ export class Buffer implements IBuffer {
           && this.lines.get(row) instanceof WrappedBufferLine) {
           row++;
         }
+        const oldWrapCount = row - oldWrapStart;
+        const newWrapCount = newRows.length - newWrapStart;
+        /*
+        if (newWrapCount !== oldWrapCount) {
+            if (yAbs >= row && yAbs < row + oldWrapCount) {
+                let y = yAbs;
+                if (y > row + newWrapCount)
+                    y = row + newWrapCount;
+                this.y = y + deltaSoFar;
+            }
+        }
+        */
+        deltaSoFar += newWrapCount - oldWrapCount;
+      }
+      if (deltaSoFar !== 0 && yAbs === row) {
+        this.y = yAbs - this.ybase + Math.min(deltaSoFar, newRows.length);
       }
     }
+    if (deltaSoFar !== 0) {
+      if (yAbs >= endRow)
+        this.y += deltaSoFar;
+    }
+    // FIXME. This calls onDeleteEmitter and onInsertEmitter events,
+    // which we want handled at finer granularity.
     this.lines.splice(startRow, endRow - startRow, ...newRows);
   }
 
