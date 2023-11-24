@@ -814,13 +814,13 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         } else if (kind === DataKind.CLUSTER_START_w1
             || DataKind.CLUSTER_START_w2) {
           // FIXME extract cluster as string
-          value = '#' + (word & 0x1fffff).toString(16);
+          value = '*' + (word & 0x1fffff);
         } else if (kind === DataKind.CLUSTER_CONTINUED) {
-          value = '#' + (word & 0x1fffff).toString(16);
+          value = '*' + (word & 0x1fffff);
         } else if (kind === DataKind.BG || kind === DataKind.FG) {
           value = (wnum >> 24) + '#' + (wnum & 0xffffff).toString(16);
         } else if (kind !== DataKind.SKIP_COLUMNS) {
-          value = '#' + wnum.toString(16);
+          value = wnum;
         } else {
           value = wnum.toString();
         }
