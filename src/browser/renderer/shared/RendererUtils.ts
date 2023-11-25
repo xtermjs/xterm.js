@@ -94,7 +94,7 @@ export function getCurlyVariantOffset(x: number, cellWidth: number, lineWidth: n
 const defaultCurlyLinePixels = 3;
 
 export function createDrawCurlyPlan(cellWidth: number, lineWidth: number): string[] {
-  return createVariantSequences(cellWidth, lineWidth, defaultCurlyLinePixels + lineWidth - 1);
+  return createVariantSequences(cellWidth, lineWidth, defaultCurlyLinePixels + (lineWidth > 1 ? 1 : 0));
 }
 
 function createVariantSequences(cellWidth: number, joinPixels: number, linePixels: number): string[] {
