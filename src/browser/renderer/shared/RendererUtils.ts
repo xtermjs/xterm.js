@@ -63,13 +63,12 @@ export function computeNextVariantOffset(cellWidth: number, lineWidth: number, c
 }
 
 // TwoKeyMap
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const _curlyVariantCache = new TwoKeyMap();
+const curlyVariantCache = new TwoKeyMap<number, number, string[]>();
 
 export function getCurlyVariant(cellWidth: number, lineWidth: number, offset: number): string {
-  if (_curlyVariantCache.get(cellWidth, lineWidth)) {
-    const curlyVariants = _curlyVariantCache.get(cellWidth, lineWidth) as any[];
-    if (curlyVariants.length > 0) {
+  if (curlyVariantCache.get(cellWidth, lineWidth)) {
+    const curlyVariants = curlyVariantCache.get(cellWidth, lineWidth);
+    if (curlyVariants && curlyVariants.length > 0) {
       if (!curlyVariants[offset]) {
         return curlyVariants[0];
       }
@@ -80,13 +79,13 @@ export function getCurlyVariant(cellWidth: number, lineWidth: number, offset: nu
 }
 
 export function getCurlyVariantOffset(x: number, cellWidth: number, lineWidth: number): number {
-  if (_curlyVariantCache.get(cellWidth, lineWidth)) {
-    const curlyVariants = _curlyVariantCache.get(cellWidth, lineWidth) as any[];
+  if (curlyVariantCache.get(cellWidth, lineWidth)) {
+    const curlyVariants = curlyVariantCache.get(cellWidth, lineWidth) as any[];
     return x % curlyVariants.length;
   }
-  if (!_curlyVariantCache.get(cellWidth, lineWidth)) {
+  if (!curlyVariantCache.get(cellWidth, lineWidth)) {
     const curlyVariants = createDrawCurlyPlan(cellWidth, lineWidth);
-    _curlyVariantCache.set(cellWidth, lineWidth, curlyVariants);
+    curlyVariantCache.set(cellWidth, lineWidth, curlyVariants);
     return x % curlyVariants.length;
   }
   return 0;
