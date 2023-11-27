@@ -10,7 +10,7 @@ import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, NewBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, OldBufferLine, NewBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
@@ -667,7 +667,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         // if empty cell after fullwidth, need to go 2 cells back
         // it is save to step 2 cells back here
         // since an empty cell is only set by fullwidth chars
-        bufferRow.addCodepointToCell(this._activeBuffer.x - offset,
+        (bufferRow as OldBufferLine).addCodepointToCell(this._activeBuffer.x - offset,
           code, chWidth);
         for (let delta = chWidth - oldWidth; --delta >= 0; ) {
           bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
@@ -1208,11 +1208,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     const row = this._activeBuffer.ybase + y;
     const line = this._activeBuffer.lines.get(row)!;
     const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
-    //if (respectProtect) {
+    if (! respectProtect && line instanceof NewBufferLine) {
+      line.eraseCells(start, end - start, fill);
+    } else {
       line.replaceCells(start, end, fill, respectProtect);
-    //} else {
-    //  line.deleteCells(start, end - start, fill);
-    //}
+    }
     if (clearWrap) {
       this._activeBuffer.setWrapped(row, false);
     }
@@ -1228,9 +1228,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const row = buffer.ybase + y;
     const line = buffer.lines.get(row);
     if (line) {
-      /*if (line instanceof NewBufferLine && ! respectProtect) {
-        line.eraseAll(this._curAttrData.bg & ~0xFC000000);
-      } else*/ {
+      if (line instanceof NewBufferLine && ! respectProtect) {
+        line.eraseCells(0, this._bufferService.cols, this._eraseAttrData());
+      } else {
         const fillData = this._activeBuffer.getNullCell(this._eraseAttrData());
         line.fill(fillData, respectProtect);
       }

@@ -27,7 +27,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
   get isWrapped(): boolean { return this._isWrapped; }
   //abstract eraseAll(bg: number): void;
   abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
-  abstract addCodepointToCell(index: number, codePoint: number, width: number): void;
+  abstract addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
   abstract resize(cols: number, fillCellData: ICellData): boolean;
   abstract fill(fillCellData: ICellData, respectProtect: boolean): void;
   abstract copyFrom(line: BufferLine): void;
@@ -812,13 +812,15 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
             }
             value = JSON.stringify(str);
         } else if (kind === DataKind.CLUSTER_START_w1
-            || DataKind.CLUSTER_START_w2) {
+            || kind === DataKind.CLUSTER_START_w2) {
           // FIXME extract cluster as string
           value = '*' + (word & 0x1fffff);
         } else if (kind === DataKind.CLUSTER_CONTINUED) {
           value = '*' + (word & 0x1fffff);
         } else if (kind === DataKind.BG || kind === DataKind.FG) {
           value = (wnum >> 24) + '#' + (wnum & 0xffffff).toString(16);
+        } else if (DataKind.STYLE_FLAGS) {
+          value = '#' + (wnum & 0xfffffff).toString(16);
         } else if (kind !== DataKind.SKIP_COLUMNS) {
           value = wnum;
         } else {
@@ -1169,10 +1171,41 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     return curColumn;
   }
 
+  public eraseCells(start: number, end: number, attrs: IAttributeData): void {
+    const add = this.preInsert(start, attrs);
+    let idata = this._cachedDataIndex();
+    let colOffset = start - this._cachedColumn();
+    const lline = this.logicalLine();
+    lline.deleteCellsOnly(idata, colOffset, end - start);
+    idata = this._cachedDataIndex();
+    const data = this.data();
+    const count = end - start;
+    if (idata > 0 && BufferLine.wKind(data[idata-1]) === DataKind.SKIP_COLUMNS) {
+      if (idata === this.dataLength()) {
+        end = start;
+        idata--;
+        lline._dataLength = idata;
+      } else {
+        data[idata-1] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, BufferLine.wSkipCount(data[idata - 1]) + count);
+      }
+    } else {
+      if (idata === this.dataLength()) {
+        return;
+      }
+      this.addEmptyDataElements(idata, 1);
+      data[idata++] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, count);
+    }
+    this._cacheSetColumnDataIndex(end, idata);
+  }
+
   public setCellFromCodepoint(index: number, codePoint: number, width: number,  attrs: IAttributeData): void {
-    if (codePoint === NULL_CELL_CODE && width === 0) {
-      // i.e. combining character
-      // FIXME - usually a no-op
+    if (codePoint === NULL_CELL_CODE) {
+      if (width === 0) {
+        // i.e. combining character
+        // FIXME - usually a no-op
+      } else {
+        this.eraseCells(index, index + 1, attrs);
+      }
       return;
     }
     const add = this.preInsert(index, attrs);
@@ -1180,13 +1213,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const startColumn = curColumn;
     let idata = this._cachedDataIndex();
     let inext;
-    if (codePoint === NULL_CELL_CODE && width > 0) {
-        if (idata === this.dataLength())
-            return; // maybe set bg FIXME
-        const kind = BufferLine.wKind(this.data()[idata]);
-        if (kind === DataKind.SKIP_COLUMNS)
-            return; // maybe set bg FIXME
-    }
     if (add || idata === this.dataLength() || index === curColumn)
       inext = idata;
     else {
@@ -1201,23 +1227,12 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     idata = inext;
     cellColumn = curColumn;
     curColumn += width;
-    if (codePoint===0 && inext > 0
-      && BufferLine.wKind(this.data()[inext-1]) === DataKind.SKIP_COLUMNS) {
-      console.log("nul setCellFromCodepoint");
-      this.data()[inext-1] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, BufferLine.wSkipCount(this.data()[inext-1]) + 1);
-      cellColumn = curColumn;
-    } else {
-      // FIXME optimize of overwriting simple text in-place
-      this.addEmptyDataElements(inext, 1);
-      this.data()[inext++] =
-        codePoint === NULL_CELL_CODE ?
-        BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1) :
-        BufferLine.wSet1(kind, codePoint);
-    }
+    // FIXME optimize of overwriting simple text in-place
+    this.addEmptyDataElements(inext, 1);
+    this.data()[inext++] = BufferLine.wSet1(kind, codePoint);
     this._cacheSetColumnDataIndex(cellColumn, idata);
     if (idata < this.dataLength()) {
       this.logicalLine().deleteCellsOnly(inext, 0, curColumn - startColumn);
-    } else if (codePoint === 0) {
     }
   }
 
@@ -1291,8 +1306,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         }
       * /
     }
-    this.length = cols;
     */
+    this.length = cols;
     return this.dataLength() * CLEANUP_THRESHOLD < this.data().length;
   }
 
@@ -1480,7 +1495,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   protected _data: Uint32Array;
   // Each item in _data is a 4-bit DataKind and 28 bits data.
-  protected _dataLength: number; // active length of _data array
+  _dataLength: number; // active length of _data array
   logicalWidth: number = 0; // FIXME needs work updating this
   reflowNeeded: boolean = false;
 
@@ -1509,7 +1524,11 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   addEmptyDataElements(position: number, count: number): void {
     // FIXME also adjust _extendedAttr indexes
     this.resizeData(this.dataLength() + count);
-    this.data().copyWithin(position + count, position, this._dataLength);
+    if (count < 0) {
+      this.data().copyWithin(position, position - count, this._dataLength);
+    } else {
+      this.data().copyWithin(position + count, position, this._dataLength);
+    }
     for (let next = this.nextRowSameLine; next; next = next.nextRowSameLine) {
       next.startIndex += count;
     }
@@ -1532,7 +1551,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       }
   }
 
-  /*
+  /* ???
   public eraseAll(bg: number): void {
     // FIXME sometimes better to reuse old _data.
     this._data = EMPTY_DATA;
@@ -1571,6 +1590,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     let fgValue = -1; //cursor.getFg();
     let bgValue = -1; //cursor.getBg();
     let styleValue = -1; //cursor.getStyleFlags(); // FIXME handle extendedattrs
+
     /*
     if (colOffset === 0) {
       while (idata > 0) {
@@ -1591,6 +1611,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       }
     }
     */
+
     for (; todo > 0 && idata < this.dataLength(); idata++) {
       let word = this.data()[idata];
       const kind = BufferLine.wKind(word);
@@ -1655,10 +1676,8 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       this.data()[idata0++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, styleValue);
     }
     if (dskip_last >= 0) {
-      // FIXME maybe use addEmptyDataElements with negative count
-      this.data().copyWithin(idata0, dskip_last + 1, this.dataLength());
-      // FIXME also adjust _extendedAttr indexes
-      this._dataLength -= dskip_last + 1 - idata0;
+      const dcount = dskip_last + 1 - idata0;
+      this.addEmptyDataElements(idata0, - dcount);
     }
   }
 }

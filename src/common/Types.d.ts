@@ -240,7 +240,7 @@ export interface IBufferLine {
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
   setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
-  addCodepointToCell(index: number, codePoint: number, width: number): void;
+  addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
   insertCells(pos: number, n: number, ch: ICellData): void;
   //eraseAll(bg: number): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
