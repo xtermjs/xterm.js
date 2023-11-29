@@ -772,6 +772,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     return this.translateToString(true, 0, this.length, skipReplace);
   }
 
+  _showRowData(): string {
+    return this._showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
+  }
   /* Human-readable display of data() array, for debugging */
   _showData(start = 0, end = this.dataLength()) {
     let s = '[';
@@ -922,7 +925,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     if (index < curColumn) {
       // FIXME can sometimes do better
       this._cacheReset();
-      curColumn = 0;
+      curColumn = startColumn;
     }
     let idata = this._cachedDataIndex();
     let fg = this._cachedFg();
@@ -1265,7 +1268,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
    * excess memory (true after shrinking > CLEANUP_THRESHOLD).
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
-      console.log("BufferLineNew.resize");
+      console.log("BufferLineNew.resize "+this.length+"->"+cols);
     /*
     if (cols === this.length) {
       return this.data().length * 4 * CLEANUP_THRESHOLD < this.data().buffer.byteLength;
@@ -1344,17 +1347,23 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     return newLine;
   }
 
-  public getTrimmedLength(): number {
+  public getTrimmedLength(countBackground: boolean = false): number {
     let cols = 0;
     let skipped = 0;
-    for (let idata = 0; idata < this.dataLength(); idata++) {
-      const word = this.data()[idata];
+    const startColumn = this instanceof WrappedBufferLine ? this.startColumn : 0;
+    const data = this.data();
+    const end = this.dataRowEnd();
+    let bg = this._cachedBg();
+    for (let idata = startColumn; idata < end; idata++) {
+      const word = data[idata];
       const kind = BufferLine.wKind(word);
       const w = kind === DataKind.CHAR_w2 || kind === DataKind.CLUSTER_START_w2 ? 2 : 1;
       let wcols = 0;
       switch (kind) {
-        case DataKind.FG:
         case DataKind.BG:
+          bg = word & 0x3ffffff;
+          break;
+        case DataKind.FG:
         case DataKind.STYLE_FLAGS:
           break;
         case DataKind.SKIP_COLUMNS:
@@ -1362,33 +1371,27 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           break;
         case DataKind.CLUSTER_START_w1:
         case DataKind.CLUSTER_START_w2:
-          wcols = w;
+          const clEnd = this.clusterEnd(idata);
+          wcols = w * (clEnd - idata);
+          idata = clEnd - 1;
           break;
         case DataKind.CHAR_w1:
         case DataKind.CHAR_w2:
-          wcols = w * 1;
+          wcols = w;
           break;
         case DataKind.CLUSTER_CONTINUED:
-          break;
+          break; // should be skipped
       }
       if (wcols) {
         cols += skipped + wcols;
         skipped = 0;
       }
     }
-    return cols;
+    return countBackground && bg !== 0 ? this.length : cols;
   }
 
   public getNoBgTrimmedLength(): number {
-    return this.getTrimmedLength(); // FIXME
-    /*
-    for (let i = this.length - 1; i >= 0; --i) {
-      if ((this.data()[i * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK) || (this.data()[i * CELL_SIZE + Cell.BG] & Attributes.CM_MASK)) {
-        return i + (this.data()[i * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT);
-      }
-    }
-    return 0;
-    */
+    return this.getTrimmedLength(true);
   }
 
   public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void {
@@ -1530,7 +1533,8 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       this.data().copyWithin(position + count, position, this._dataLength);
     }
     for (let next = this.nextRowSameLine; next; next = next.nextRowSameLine) {
-      next.startIndex += count;
+      if (next.startIndex > position)
+        next.startIndex += count;
     }
     this._extendedAttrs.copyWithin(position + count, position, this._dataLength);
     this._dataLength += count;
@@ -1583,6 +1587,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   /** Internal - delete n columns, with adjust at end of line. */
   public deleteCellsOnly(idata0: number, colOffset0: number, n: number): void {
     let todo = n;
+    const data = this.data();
     let idata = idata0;
     let colOffset = colOffset0;
     let word0 = this.data()[idata];
@@ -1591,14 +1596,14 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     let bgValue = -1; //cursor.getBg();
     let styleValue = -1; //cursor.getStyleFlags(); // FIXME handle extendedattrs
 
-    /*
     if (colOffset === 0) {
       while (idata > 0) {
         let skipItem = true;
-        switch (BufferLine.wKind(this.data()[idata-1])) {
-          case DataKind.BG: cursor.setBg(-1); break;
-          case DataKind.FG: cursor.setFg(-1); break;
-          case DataKind.STYLE_FLAGS: cursor.setStyleFlags(-1 as StyleFlags); break;
+        const word = data[idata-1];
+        switch (BufferLine.wKind(word)) {
+          case DataKind.BG: bgValue = word; break;
+          case DataKind.FG: fgValue = word; break;
+          case DataKind.STYLE_FLAGS: styleValue = word; break;
           default: skipItem = false;
         }
         if (skipItem) {
@@ -1610,10 +1615,9 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
         }
       }
     }
-    */
 
     for (; todo > 0 && idata < this.dataLength(); idata++) {
-      let word = this.data()[idata];
+      let word = data[idata];
       const kind = BufferLine.wKind(word);
       switch (kind) {
         case DataKind.FG: fgValue = word; break;
@@ -1702,6 +1706,7 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
     super();
     this._logicalLine = logicalLine;
     this._isWrapped = true;
+    this.length = logicalLine.length;
   }
   logicalLine(): LogicalBufferLine { return this._logicalLine; }
   data(): Uint32Array { return this._logicalLine.data(); }

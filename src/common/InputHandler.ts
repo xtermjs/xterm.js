@@ -1209,7 +1209,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const line = this._activeBuffer.lines.get(row)!;
     const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
     if (! respectProtect && line instanceof NewBufferLine) {
-      line.eraseCells(start, end - start, fill);
+      line.eraseCells(start, end, fill);
     } else {
       line.replaceCells(start, end, fill, respectProtect);
     }
