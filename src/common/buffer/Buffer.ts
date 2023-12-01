@@ -117,31 +117,40 @@ export class Buffer implements IBuffer {
     const bufferService = this._bufferService;
     const curRow = this.lines.get(this.ybase + row - 1) as NewBufferLine;
     const nextRow = this.lines.get(this.ybase + row) as NewBufferLine;
-    curRow.moveToColumn(bufferService.cols);
+    curRow.moveToColumn(curRow.logicalStartColumn() + bufferService.cols, true);
     // FIXME: nextRow.logicalLine().deleteCellsOnly(bufferService.cols - col);
     let newRow;
     if (nextRow.isWrapped) {
       newRow = nextRow as WrappedBufferLine;
     } else {
-      newRow = new WrappedBufferLine(curRow.logicalLine());
+      newRow = new WrappedBufferLine(curRow);
       // append nextRow contents to end of curRow.logicalLine()
       this.lines.set(this.ybase + row, newRow);
-      curRow.nextRowSameLine = newRow;
     }
     curRow.setStartFromCache(newRow);
   }
 
-  public setWrapped(row: number, value: boolean): void {
-    const line = this.lines.get(row);
+  public setWrapped(absrow: number, value: boolean): void {
+    const line = this.lines.get(absrow);
     if (! line || line.isWrapped === value)
       return;
     if (! USE_NewBufferLine) {
       line!._isWrapped = value;
     } else if (value) {
-      // make wrapped FIXME
+      alert("setWrapped true"); // only used in test cases?
     } else {
       // clear wrapped FIXME
-    }
+      const prevRow = this.lines.get(absrow - 1) as NewBufferLine;
+      const curRow = line as WrappedBufferLine;
+      prevRow.nextRowSameLine = undefined;
+      const oldLine = prevRow.logicalLine();
+      const newRow = new LogicalBufferLine(line.length, undefined, oldLine);
+      const oldLength = oldLine._dataLength;
+      const oldStart = curRow.startIndex;
+      newRow.addEmptyDataElements(oldStart, oldLength - oldStart);
+      oldLine._dataLength = curRow.startIndex;
+      this.lines.set(absrow, newRow);
+   }
   }
 
   /**
@@ -370,9 +379,8 @@ export class Buffer implements IBuffer {
           let newRow1 = row < endRow && this.lines.get(row);
           let newRow = newRow1 instanceof WrappedBufferLine
                 ? (row++, newRow1)
-                : new WrappedBufferLine(line);
+                : new WrappedBufferLine(curRow);
           line.setStartFromCache(newRow);
-          curRow.nextRowSameLine = newRow;
           newRows.push(newRow);
           curRow = newRow;
         }

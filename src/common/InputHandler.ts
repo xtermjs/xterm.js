@@ -527,28 +527,23 @@ export class InputHandler extends Disposable implements IInputHandler {
       // autowrap - DECAWM
       // automatically wraps to the beginning of the next line
       if (wraparoundMode) {
-        const oldRow = bufferRow;
+        const oldRow = bufferRow as NewBufferLine;
         let oldCol = this._activeBuffer.x;
         //this._activeBuffer.x = oldWidth;
         this._activeBuffer.y++;
         if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
           this._activeBuffer.y--;
           this._bufferService.scroll(this._eraseAttrData(), true);
-          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
         } else {
           if (this._activeBuffer.y >= this._bufferService.rows) {
             this._activeBuffer.y = this._bufferService.rows - 1;
           }
-          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
-          // The line already exists (eg. the initial viewport), mark it as a
-          // wrapped line
-          if (bufferRow.isWrapped) {
-            // FIXME
-          } else {
-            this._activeBuffer.splitLine(this._activeBuffer.y, col);
-            col = col - cols;
-          }
         }
+        this._activeBuffer.splitLine(this._activeBuffer.y, col);
+        bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+        // usually same as cols, but may be less in case of wide characters.
+        const prevCols = (bufferRow as NewBufferLine).logicalStartColumn() - oldRow.logicalStartColumn()
+        col = col - prevCols;
         // row changed, get it again
         /*
         if (oldWidth > 0 && bufferRow instanceof BufferLine) {

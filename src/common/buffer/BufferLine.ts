@@ -720,6 +720,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   //public length: number;
 
   abstract logicalLine(): LogicalBufferLine;
+  abstract logicalStartColumn(): number;
   abstract data(): Uint32Array;
   abstract resizeData(size: number): void;
   abstract addEmptyDataElements(position: number, count: number): void;
@@ -1350,7 +1351,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   public getTrimmedLength(countBackground: boolean = false): number {
     let cols = 0;
     let skipped = 0;
-    const startColumn = this instanceof WrappedBufferLine ? this.startColumn : 0;
+    const startColumn = this.logicalStartColumn();
     const data = this.data();
     const end = this.dataRowEnd();
     let bg = this._cachedBg();
@@ -1508,16 +1509,22 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   _cache3: number = 0;
   _cache4: number = 0;
 
-  constructor(cols: number, fillCellData?: IAttributeData) {
+  constructor(cols: number, fillCellData?: IAttributeData, src?: LogicalBufferLine) {
     super();
     // MAYBE: const buffer = new ArrayBuffer(0, { maxByteLength: 6 * cols });
     //const buffer = new ArrayBuffer(4 * cols, { maxByteLength: 6 * cols });
-    this._data = new Uint32Array(cols);
-    this._dataLength = 0;
+    if (src) {
+      this._data = src._data.slice();
+      this._dataLength = src._dataLength;
+    } else {
+      this._data = new Uint32Array(cols);
+      this._dataLength = 0;
+    }
     this.length = cols;
     this._isWrapped = false;
   }
   logicalLine(): LogicalBufferLine { return this; }
+  logicalStartColumn(): number { return 0; }
   data(): Uint32Array { return this._data; }
   dataLength(): number { return this._dataLength; }
 
@@ -1702,13 +1709,17 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
   startBg: number = 0;
   startStyle: number = 0;
 
-  constructor(logicalLine: LogicalBufferLine) {
+  constructor(prevRow: NewBufferLine) {
     super();
+    const logicalLine = prevRow.logicalLine();
+    prevRow.nextRowSameLine = this;
     this._logicalLine = logicalLine;
     this._isWrapped = true;
     this.length = logicalLine.length;
   }
+
   logicalLine(): LogicalBufferLine { return this._logicalLine; }
+  logicalStartColumn(): number { return this.startColumn; }
   data(): Uint32Array { return this._logicalLine.data(); }
   dataLength(): number { return this._logicalLine.dataLength(); }
   addEmptyDataElements(position: number, count: number): void {
