@@ -1223,11 +1223,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     const row = buffer.ybase + y;
     const line = buffer.lines.get(row);
     if (line) {
+      const eraseAttrs = this._eraseAttrData();
       if (line instanceof NewBufferLine && ! respectProtect) {
-        line.eraseCells(0, this._bufferService.cols, this._eraseAttrData());
+        line.eraseCells(0, this._bufferService.cols, eraseAttrs);
       } else {
-        const fillData = this._activeBuffer.getNullCell(this._eraseAttrData());
-        line.fill(fillData, respectProtect);
+        line.fill(this._activeBuffer.getNullCell(eraseAttrs), respectProtect);
       }
       buffer.clearMarkers(this._activeBuffer.ybase + y);
       buffer.setWrapped(row, false);

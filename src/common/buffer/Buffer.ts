@@ -117,7 +117,7 @@ export class Buffer implements IBuffer {
     const bufferService = this._bufferService;
     const curRow = this.lines.get(this.ybase + row - 1) as NewBufferLine;
     const nextRow = this.lines.get(this.ybase + row) as NewBufferLine;
-    curRow.moveToColumn(curRow.logicalStartColumn() + bufferService.cols, true);
+    curRow.moveToLineColumn(curRow.logicalStartColumn() + bufferService.cols);
     // FIXME: nextRow.logicalLine().deleteCellsOnly(bufferService.cols - col);
     let newRow;
     if (nextRow.isWrapped) {
@@ -147,7 +147,7 @@ export class Buffer implements IBuffer {
       const newRow = new LogicalBufferLine(line.length, undefined, oldLine);
       const oldLength = oldLine._dataLength;
       const oldStart = curRow.startIndex;
-      newRow.addEmptyDataElements(oldStart, oldLength - oldStart);
+      newRow.addEmptyDataElements(0, - oldStart);
       oldLine._dataLength = curRow.startIndex;
       this.lines.set(absrow, newRow);
    }
@@ -371,7 +371,7 @@ export class Buffer implements IBuffer {
         let curRow: NewBufferLine = line;
         const dataLength = line.dataLength();
         for (;;) {
-          const content = line.moveToColumn(startCol + newCols, true);
+          const content = line.moveToLineColumn(startCol + newCols);
           let idata = line._cachedDataIndex();
           if (idata >= dataLength)
             break;
