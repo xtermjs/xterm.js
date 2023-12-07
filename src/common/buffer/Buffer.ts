@@ -373,8 +373,11 @@ export class Buffer implements IBuffer {
         for (;;) {
           const content = line.moveToLineColumn(startCol + newCols);
           let idata = line._cachedDataIndex();
-          if (idata >= dataLength)
+          if (idata >= dataLength) {
+            curRow.nextRowSameLine = undefined;
+            curRow._isWrapped = false;
             break;
+          }
           startCol = line._cachedColumn();
           let newRow1 = row < endRow && this.lines.get(row);
           let newRow = newRow1 instanceof WrappedBufferLine
@@ -422,7 +425,7 @@ export class Buffer implements IBuffer {
 
     if (USE_NewBufferLine) {
       // FIXME do this lazily
-        this._reflowRegion(0, this.lines.length, newCols);
+      this._reflowRegion(0, this.lines.length, newCols);
       return;
     }
     // Iterate through rows, ignore the last one as it cannot be wrapped

@@ -37,7 +37,6 @@ export abstract class AbstractBufferLine implements IBufferLine {
   length: number = 0;
   _isWrapped: boolean = false;
   get isWrapped(): boolean { return this._isWrapped; }
-  //abstract eraseAll(bg: number): void;
   abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
   abstract addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
   abstract resize(cols: number, fillCellData: ICellData): boolean;
@@ -686,8 +685,6 @@ export class OldBufferLine extends BufferLine implements IBufferLine {
 // This class will be merged with its parent when OldBufferLine is removed,
 
 export abstract class NewBufferLine extends BufferLine implements IBufferLine {
-  /** Color for "rest of line" background, following _dataLength. */
-  lineEndBg: number = 0;
 
   nextRowSameLine: WrappedBufferLine | undefined;
 
@@ -1050,8 +1047,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let idata = this._cachedDataIndex();
     let curColumn = this._cachedColumn();
     this.logicalLine().deleteCellsOnly(idata, 0, n);
-    // FIXME
-    this.lineEndBg = fillCellData.bg;
   }
 
   private preInsert(index: LineColumn, attrs: IAttributeData): boolean {
@@ -1083,45 +1078,63 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const newFg = attrs.getFg();
     const newBg = attrs.getBg();
     const newStyle = attrs.getStyleFlags();
-    const oldFg = this._cachedFg();
-    const oldBg = this._cachedBg();
+    let oldFg = this._cachedFg();
+    let oldBg = this._cachedBg();
     let styleFlagsIndex = this._cachedStyleFlagsIndex();
-    const oldStyle = styleFlagsIndex > 0 ? this.data()[styleFlagsIndex - 1] : 0;
-    const needFg = newFg !== oldFg;
-    const needBg = newBg !== oldBg
+    let oldStyle = styleFlagsIndex > 0 ? this.data()[styleFlagsIndex - 1] : 0;
+    let needFg = newFg !== oldFg;
+    let needBg = newBg !== oldBg
     // FIXME let oldExt = (oldStyle & StyleFlags.HAS_EXTENDED) && cell.extended;
     //let newExt = (newStyle & StyleFlags.HAS_EXTENDED) && attrs.extended;
-    const needStyle = newStyle !== oldStyle // FIXME || oldExt !== newExt;
+    let needStyle = newStyle !== oldStyle // FIXME || oldExt !== newExt;
     const atEnd = idata === this.dataLength();
     let add1 = atEnd ? 1 : 2;
-    let add = (needBg?add1:0) + (needFg?add1:0) + (needStyle?add1:0);
-
+    let add = (needBg?2:0) + (needFg?add1:0) + (needStyle?add1:0);
+    let data = this.data();
     if (add) {
-      this.addEmptyDataElements(idata, add);
+      const idata0 = idata;
+      let skipItem = true;
+      for (; idata > 0; idata--) {
+        const word = data[idata-1];
+        switch (BufferLine.wKind(word)) {
+          case DataKind.BG: needBg = true;  break;
+          case DataKind.FG: needFg = true; break;
+          case DataKind.STYLE_FLAGS: needStyle = true;
+            delete this._extendedAttrs[idata-1];
+            break;
+          default: skipItem = false;
+        }
+        if (! skipItem) {
+          break;
+        }
+      }
+      add = (needBg?2:0) + (needFg?add1:0) + (needStyle?add1:0);
+      this.addEmptyDataElements(idata, add - (idata0 - idata));
+      data = this.data();
       if (needFg) {
-        this.data()[idata++] = BufferLine.wSet1(DataKind.FG, newFg);
+        data[idata++] = BufferLine.wSet1(DataKind.FG, newFg);
       }
       if (needBg) {
-        this.data()[idata++] = BufferLine.wSet1(DataKind.BG, newBg);
+        data[idata++] = BufferLine.wSet1(DataKind.BG, newBg);
       }
       if (needStyle) {
         if (newStyle & StyleFlags.HAS_EXTENDED)
           this._extendedAttrs[idata] = attrs.extended;
         this._cacheSetStyleFlagsIndex(idata);
-        this.data()[idata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, newStyle);
+        data[idata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, newStyle);
       }
       this._cacheSetColumnDataIndex(index, idata);
       let xdata = idata; // FIXME
       if (! atEnd) {
-        if (needFg) {
-          this.data()[xdata++] = BufferLine.wSet1(DataKind.FG, oldFg);
+        if (newFg !== oldFg) {
+          data[xdata++] = BufferLine.wSet1(DataKind.FG, oldFg);
         }
         if (needStyle) {
-          this.data()[xdata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, oldStyle);
+          data[xdata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, oldStyle);
         }
-        if (needBg) {
-          this.data()[xdata++] = BufferLine.wSet1(DataKind.BG, oldBg);
-        }
+      }
+      if (needBg) {
+        data[xdata++] = BufferLine.wSet1(DataKind.BG, oldBg);
       }
       this._cacheSetFgBg(newFg, newBg);
     }
@@ -1199,6 +1212,11 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const startColumn = this.logicalStartColumn();
     const count = end - start;
     start += startColumn;
+    if (end == this.length && ! this.nextRowSameLine) {
+      this.preInsert(start, attrs);
+      this.logicalLine()._dataLength = this._cachedDataIndex();
+      return;
+    }
     //const add = this.preInsert(start, attrs);
     this.moveToLineColumn(start);
     const add = 0 // FIXME
@@ -1588,15 +1606,6 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
         this.logicalLine()._data = new_data;
       }
   }
-
-  /* ???
-  public eraseAll(bg: number): void {
-    // FIXME sometimes better to reuse old _data.
-    this._data = EMPTY_DATA;
-    this._dataLength = 0;
-    this.lineEndBg = bg;
-  }
-  */
 
   /**
    * Cleanup underlying array buffer.
