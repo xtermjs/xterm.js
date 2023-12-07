@@ -94,7 +94,8 @@ export class BufferService extends Disposable implements IBufferService {
         if (! willBufferBeTrimmed) {
           buffer.lines.push(newLine);
         } else if (USE_NewBufferLine) {
-          buffer.lines.set(bottomRow, newLine); // ???
+          buffer.lines.recycle(); // ignore result
+          buffer.lines.set(bottomRow, newLine);
         } else {
           buffer.lines.recycle().copyFrom(newLine);
         }
