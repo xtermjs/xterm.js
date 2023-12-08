@@ -39,6 +39,9 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
     this.register(toDisposable(() => {
       this._lastMouseEvent = undefined;
+      // Clear out link providers as they could easily cause an embedder memory leak
+      this._linkProviders.length = 0;
+      this._activeProviderReplies?.clear();
     }));
     // Listen to resize to catch the case where it's resized and the cursor is out of the viewport.
     this.register(this._bufferService.onResize(() => {

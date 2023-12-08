@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
@@ -86,6 +86,13 @@ export class OptionsService extends Disposable implements IOptionsService {
     this.rawOptions = defaultOptions;
     this.options = { ... defaultOptions };
     this._setupOptions();
+
+    // Clear out options that could link outside xterm.js as they could easily cause an embedder
+    // memory leak
+    this.register(toDisposable(() => {
+      this.rawOptions.linkHandler = null;
+      this.rawOptions.documentOverride = null;
+    }));
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
