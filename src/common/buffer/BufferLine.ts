@@ -893,34 +893,25 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   public insertCells(pos: number, n: number, fillCellData: ICellData): void {
-    alert("insertCells");
-    /*
-    pos %= this.length;
-
-    // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
-    if (pos && this.getWidth(pos - 1) === 2) {
-      this.setCellFromCodepoint(pos - 1, 0, 1, fillCellData);
+    // FIXME handle if start or end in middle of wide character.
+    const width = this.length;
+    if (pos >= width) {
+      return;
     }
-
-    if (n < this.length - pos) {
-      const cell = new CellData();
-      for (let i = this.length - pos - n - 1; i >= 0; --i) {
-        this.setCell(pos + n + i, this.loadCell(pos + i, cell));
-      }
-      for (let i = 0; i < n; ++i) {
-        this.setCell(pos + i, fillCellData);
-      }
+    if (pos + n < width) {
+      this.moveToColumn(pos + n);
+      let idata = this._cachedDataIndex();
+      const colOffset = -1; // ???
+      this.logicalLine().deleteCellsOnly(idata, colOffset, width - (pos + n));
     } else {
-      for (let i = pos; i < this.length; ++i) {
-        this.setCell(i, fillCellData);
-      }
+      n = width - pos;
     }
-
-    // handle fullwidth at line end: reset last cell if it is first cell of a wide char
-    if (this.getWidth(this.length - 1) === 2) {
-      this.setCellFromCodepoint(this.length - 1, 0, 1, fillCellData);
-    }
-    */
+    this.preInsert(pos, fillCellData);
+    let idata = this._cachedDataIndex();
+    this.addEmptyDataElements(idata, 1);
+    // Ideally should optize for adjacent SKIP_COLUMNS (as in eraseCells).
+    // However, typically is followed by replacing the new empty cells.
+    this.data()[idata-1] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
   }
 
   /** Move to column 'index', which is a RowColumn.
