@@ -70,7 +70,7 @@ export class DomRendererRowFactory {
     linkStart: number,
     linkEnd: number
   ): HTMLSpanElement[] {
-    let cell = this._workCell;
+    const cell = this._workCell;
 
     const elements: HTMLSpanElement[] = [];
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
@@ -97,7 +97,7 @@ export class DomRendererRowFactory {
 
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);
-      let width = this._workCell.getWidth();
+      const width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -105,8 +105,8 @@ export class DomRendererRowFactory {
       }
 
       // If true, indicates that the current character(s) to draw were joined.
-      let isJoined = false;
-      let lastCharX = x;
+      const isJoined = false;
+      const lastCharX = x;
 
       // Process any joined character ranges as needed. Because of how the
       // ranges are produced, we know that they are valid for the characters

@@ -219,10 +219,11 @@ export class Terminal extends Disposable implements ITerminalApi {
   public write(data: string | Uint8Array, callback?: () => void): void {
     if (this.logOutput && data instanceof Uint8Array) {
       const thisAny = this as any;
-      if (thisAny._decoder == null)
-        thisAny._decoder = new TextDecoder(); //label = "utf-8");
-      const str = thisAny._decoder.decode(data, {stream:true});
-      console.log("write: "+JSON.stringify(str));
+      if (thisAny._decoder === null) {
+        thisAny._decoder = new TextDecoder(); // label = "utf-8");
+      }
+      const str = thisAny._decoder.decode(data, { stream:true });
+      console.log('write: '+JSON.stringify(str));
     }
     this._core.write(data, callback);
   }

@@ -24,8 +24,6 @@ type RowColumn = number;
  */
 type LineColumn = number;
 
-const EMPTY_DATA = new Uint32Array(0);
-
 // Work variables to avoid garbage collection
 let $startIndex = 0;
 
@@ -34,21 +32,21 @@ const CLEANUP_THRESHOLD = 2;
 
 export abstract class AbstractBufferLine implements IBufferLine {
   /** Number of logical columns */
-  length: number = 0;
+  public length: number = 0;
   _isWrapped: boolean = false;
   get isWrapped(): boolean { return this._isWrapped; }
   abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
   abstract addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
   abstract resize(cols: number, fillCellData: ICellData): boolean;
   abstract fill(fillCellData: ICellData, respectProtect: boolean): void;
-  abstract copyFrom(line: BufferLine): void;
-  abstract clone(): IBufferLine;
-  abstract translateToString(trimRight: boolean, startCol: number, endCol: number): string;
-  abstract getTrimmedLength(): number;
-  abstract getNoBgTrimmedLength(): number;
-  abstract cleanupMemory(): number;
+  public abstract copyFrom(line: BufferLine): void;
+  public abstract clone(): IBufferLine;
+  public abstract translateToString(trimRight: boolean, startCol: number, endCol: number): string;
+  public abstract getTrimmedLength(): number;
+  public abstract getNoBgTrimmedLength(): number;
+  public abstract cleanupMemory(): number;
 
-  abstract loadCell(index: number, cell: ICellData): ICellData;
+  public abstract loadCell(index: number, cell: ICellData): ICellData;
 
   public replaceCells(start: number, end: number, fillCellData: ICellData, respectProtect: boolean = false): void {
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
@@ -82,22 +80,22 @@ export abstract class AbstractBufferLine implements IBufferLine {
     }
   }
 
- /**
+  /**
    * Get cell data CharData.
    * @deprecated
    */
   get(index: number): CharData {
-    let cell = new CellData();
+    const cell = new CellData();
     this.loadCell(index, cell);
     return cell.getAsCharData();
   }
 
- /**
+  /**
    * Set cell data from CharData.
    * @deprecated
    */
   public set(index: number, value: CharData): void {
-      this.setCell(index, CellData.fromCharData(value));
+    this.setCell(index, CellData.fromCharData(value));
   }
 
   /**
@@ -177,11 +175,11 @@ const enum DataKind { // 4 bits
 
   SKIP_COLUMNS = 7, // empty ("null") columns (28 bit count)
   // The following have a 21-bit codepoint value in the low-order bits
-  CHAR_w1 = 8, // single-non-compound, 1 column wide
-  CHAR_w2 = 9, // single-non-compound, 2 columns wide
+  CHAR_W1 = 8, // single-non-compound, 1 column wide
+  CHAR_W2 = 9, // single-non-compound, 2 columns wide
   // CLUSTER_START_xx have a 7=bit for number of CONTINUED entries
-  CLUSTER_START_w1 = 10, // start of non-trivial cluster, 1 column wide
-  CLUSTER_START_w2 = 11, // start of non-trivial cluster, 2 columns wide
+  CLUSTER_START_W1 = 10, // start of non-trivial cluster, 1 column wide
+  CLUSTER_START_W2 = 11, // start of non-trivial cluster, 2 columns wide
   CLUSTER_CONTINUED = 12 // continuation of cluster
 }
 
@@ -194,15 +192,15 @@ export abstract class BufferLine extends AbstractBufferLine implements IBufferLi
     if (USE_NewBufferLine) {
       // if (isWrapped) new WrappedBufferLine(...);
       return new LogicalBufferLine(cols, fillCellData);
-    } else {
-      return new OldBufferLine(cols, fillCellData, isWrapped);
     }
+    return new OldBufferLine(cols, fillCellData, isWrapped);
+
   }
 
   public abstract copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void;
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, skipReplace: string = WHITESPACE_CELL_CHAR): string {
-   if (trimRight) {
+    if (trimRight) {
       endCol = Math.min(endCol, this.getTrimmedLength());
     }
     let result = '';
@@ -219,13 +217,13 @@ export abstract class BufferLine extends AbstractBufferLine implements IBufferLi
 
   // FOLLOWING ONLY USED BY NewBufferLine
   /** From a Uint23 in _data, extract the DataKind bits. */
-  protected static wKind(word: number): DataKind { return word >>> 28; }
-  protected static wKindIsText(kind: DataKind): boolean { return kind >= DataKind.CHAR_w1 && kind <= DataKind.CLUSTER_CONTINUED; }
-  protected static wKindIsTextOrSkip(kind: DataKind): boolean { return kind >= DataKind.SKIP_COLUMNS && kind <= DataKind.CLUSTER_CONTINUED; }
+  public static wKind(word: number): DataKind { return word >>> 28; }
+  public static wKindIsText(kind: DataKind): boolean { return kind >= DataKind.CHAR_W1 && kind <= DataKind.CLUSTER_CONTINUED; }
+  public static wKindIsTextOrSkip(kind: DataKind): boolean { return kind >= DataKind.SKIP_COLUMNS && kind <= DataKind.CLUSTER_CONTINUED; }
   /** From a Uint23 in _data, extract length of string within _text.
-    * Only for SKIP_COLUMNS. */
-  protected static wSkipCount(word: number): number { return word & 0xfffff; }
-  protected static wSet1(kind: DataKind, value: number): number {
+   * Only for SKIP_COLUMNS. */
+  public static wSkipCount(word: number): number { return word & 0xfffff; }
+  public static wSet1(kind: DataKind, value: number): number {
     return (kind << 28) | (value & 0x0fffffff);
   }
 }
@@ -696,9 +694,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   /** The logical column number corresponding to _cachedDataIndex(). */
   _cachedColumn(): LineColumn { return this.logicalLine()._cache1 & 0xFFFF; }
   protected abstract _cachedColumnInRow(): RowColumn;
-  //private _cachedColOffset(): number { return this._cache3 >> 24; } // UNUSED
-  protected _cachedBg(): number { return this.logicalLine()._cache2; }
-  protected _cachedFg(): number { return this.logicalLine()._cache3; }
+  // private _cachedColOffset(): number { return this._cache3 >> 24; } // UNUSED
+  abstract _cachedBg(): number;
+  abstract _cachedFg(): number;
   // One more than index (in data()) of STYLE_FLAGS; 0 if none.
   protected _cachedStyleFlagsIndex(): number { return this.logicalLine()._cache4; }
   protected _cacheReset(): void { const line = this.logicalLine(); line._cache1 = 0; line._cache2 = 0; line._cache3 = 0; line._cache4 = 0; }
@@ -714,23 +712,20 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     wrapRow.startStyle = this._cachedStyleFlagsIndex();
   }
 
-  constructor() {
-    super();
-  }
   // Length of data() array.
-  protected abstract dataLength(): number;
+  abstract dataLength(): number;
   // End of current row in data() array.
   protected dataRowEnd(): number {
     return this.nextRowSameLine ? this.nextRowSameLine.startIndex : this.dataLength();
   }
   // Key is index in _data array that has STYLE_FLAGS kind with HAS_EXTENDED.
   protected _extendedAttrs: IExtendedAttrs[] = [];
-  //protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
-  //public length: number;
+  // protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
+  // public length: number;
 
-  abstract logicalLine(): LogicalBufferLine;
-  abstract logicalStartColumn(): LineColumn;
-  abstract data(): Uint32Array;
+  public abstract logicalLine(): LogicalBufferLine;
+  public abstract logicalStartColumn(): LineColumn;
+  protected abstract data(): Uint32Array;
   abstract resizeData(size: number): void;
   abstract addEmptyDataElements(position: number, count: number): void;
 
@@ -782,13 +777,12 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     return this.translateToString(true, 0, this.length, skipReplace);
   }
 
-  _showRowData(): string {
-    return this._showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
+  public showRowData(): string {
+    return this.showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
   }
   /* Human-readable display of data() array, for debugging */
-  _showData(start = 0, end = this.dataLength()) {
+  public showData(start = 0, end = this.dataLength()) {
     let s = '[';
-    let toffset = 0;
     for (let i = start; i < end; i++) {
       const word = this.data()[i];
       const kind = BufferLine.wKind(word);
@@ -799,33 +793,33 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         case DataKind.BG: code = 'BG'; break;
         case DataKind.STYLE_FLAGS: code = 'STYLE'; break;
         case DataKind.SKIP_COLUMNS: code = 'SKIP'; break;
-        case DataKind.CLUSTER_START_w1: code = 'CL1'; break;
-        case DataKind.CLUSTER_START_w2: code = 'CL2'; break;
+        case DataKind.CLUSTER_START_W1: code = 'CL1'; break;
+        case DataKind.CLUSTER_START_W2: code = 'CL2'; break;
         case DataKind.CLUSTER_CONTINUED: code = 'CL_CONT'; break;
-        case DataKind.CHAR_w1: code = 'C1'; break;
-        case DataKind.CHAR_w2: code = 'C2'; break;
+        case DataKind.CHAR_W1: code = 'C1'; break;
+        case DataKind.CHAR_W2: code = 'C2'; break;
       }
       if (i >= start) {
         if (i !== start) {
           s += ', ';
         }
         let value;
-        if (kind === DataKind.CHAR_w1 || kind === DataKind.CHAR_w2) {
-            let count = 1;
-            while (i + count < end && BufferLine.wKind(this.data()[i + count]) === kind) {
-                count++;
-            }
-            let str;
-            if (count === 1) {
-              str = stringFromCodePoint(word & 0x1fffff);
-            } else {
-                str = utf32ToString(this.data(), i, i + count);
-                code = code + '*' + count;
-                i += count - 1;
-            }
-            value = JSON.stringify(str);
-        } else if (kind === DataKind.CLUSTER_START_w1
-            || kind === DataKind.CLUSTER_START_w2) {
+        if (kind === DataKind.CHAR_W1 || kind === DataKind.CHAR_W2) {
+          let count = 1;
+          while (i + count < end && BufferLine.wKind(this.data()[i + count]) === kind) {
+            count++;
+          }
+          let str;
+          if (count === 1) {
+            str = stringFromCodePoint(word & 0x1fffff);
+          } else {
+            str = utf32ToString(this.data(), i, i + count);
+            code = code + '*' + count;
+            i += count - 1;
+          }
+          value = JSON.stringify(str);
+        } else if (kind === DataKind.CLUSTER_START_W1
+            || kind === DataKind.CLUSTER_START_W2) {
           // FIXME extract cluster as string
           value = '*' + (word & 0x1fffff);
         } else if (kind === DataKind.CLUSTER_CONTINUED) {
@@ -847,15 +841,12 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   /** Check invariants. Useful for debugging. */
   _check(): void {
-    function error(str: string) {
-      console.log("ERROR: "+str);
+    function error(str: string): void {
+      console.log('ERROR: '+str);
     }
-    let itext = 0;
-    let icol = 0;
+    const icol = 0;
     if (this.dataLength() < 0 || this.dataLength() > this.data().length)
-      error("bad _dataLength");
-    const incrementText = (wlen: number) => {
-    };
+    {error('bad _dataLength');}
     for (let idata = 0; idata < this.dataLength(); idata++) {
       const word = this.data()[idata];
       const kind = BufferLine.wKind(word);
@@ -867,14 +858,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           break;
         case DataKind.SKIP_COLUMNS:
           break;
-        case DataKind.CHAR_w1:
-        case DataKind.CHAR_w2:
-        case DataKind.CLUSTER_START_w1:
-        case DataKind.CLUSTER_START_w2:
+        case DataKind.CHAR_W1:
+        case DataKind.CHAR_W2:
+        case DataKind.CLUSTER_START_W1:
+        case DataKind.CLUSTER_START_W2:
         case DataKind.CLUSTER_CONTINUED:
           break;
         default:
-          error("invalid _dataKind");
+          error('invalid _dataKind');
       }
     }
   }
@@ -900,14 +891,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     }
     if (pos + n < width) {
       this.moveToColumn(pos + n);
-      let idata = this._cachedDataIndex();
+      const idata = this._cachedDataIndex();
       const colOffset = -1; // ???
       this.logicalLine().deleteCellsOnly(idata, colOffset, width - (pos + n));
     } else {
       n = width - pos;
     }
     this.preInsert(pos, fillCellData);
-    let idata = this._cachedDataIndex();
+    const idata = this._cachedDataIndex();
     this.addEmptyDataElements(idata, 1);
     // Ideally should optize for adjacent SKIP_COLUMNS (as in eraseCells).
     // However, typically is followed by replacing the new empty cells.
@@ -921,9 +912,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     return this.moveToLineColumn(index + this.logicalStartColumn(), this.dataRowEnd());
   }
 
- /** Move to column 'index', which is a LineColumn.
-  * Return encoded 'content'.
-  */
+  /** Move to column 'index', which is a LineColumn.
+   * Return encoded 'content'.
+   */
   public moveToLineColumn(index: LineColumn, end = this.dataLength()): number {
     let curColumn = this._cachedColumn();
     if (index < curColumn) {
@@ -963,7 +954,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           styleFlagsIndex = idata;
           break;
         case DataKind.SKIP_COLUMNS:
-          let wlen = BufferLine.wSkipCount(word);
+          const wlen = BufferLine.wSkipCount(word);
           if (todo >= wlen) {
             todo -= wlen;
             idata++;
@@ -973,9 +964,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
             todo = -1;
           }
           break;
-        case DataKind.CLUSTER_START_w1:
-        case DataKind.CLUSTER_START_w2:
-          w = kind + 1 - DataKind.CLUSTER_START_w1;
+        case DataKind.CLUSTER_START_W1:
+        case DataKind.CLUSTER_START_W2:
+          w = kind + 1 - DataKind.CLUSTER_START_W1;
           if (todo >= w) {
             const clEnd = this.clusterEnd(idata);
             todo -= w;
@@ -987,9 +978,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
             todo = -1;
           }
           break;
-        case DataKind.CHAR_w1:
-        case DataKind.CHAR_w2:
-          w = kind + 1 - DataKind.CHAR_w1; // 1, or 2 if wide characters
+        case DataKind.CHAR_W1:
+        case DataKind.CHAR_W2:
+          w = kind + 1 - DataKind.CHAR_W1; // 1, or 2 if wide characters
           if (todo >= w) {
             todo -= w;
             idata++;
@@ -1018,7 +1009,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     cursor.content = content;
     cursor.setFg(this._cachedFg());
     cursor.setBg(this._cachedBg());
-    let styleFlagsIndex = this._cachedStyleFlagsIndex();
+    const styleFlagsIndex = this._cachedStyleFlagsIndex();
     const word = styleFlagsIndex > 0 ? this.data()[styleFlagsIndex - 1] : 0;
     cursor.setStyleFlags(word);
     if (word & StyleFlags.HAS_EXTENDED) {
@@ -1026,7 +1017,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     }
     if (content & Content.IS_COMBINED_MASK) {
       // FIXME do this lazily, in CellData.getChars
-      let idata = this._cachedDataIndex();
+      const idata = this._cachedDataIndex();
       const str = utf32ToString(this.data(), idata, this.clusterEnd(idata));
       cursor.combinedData = str;
     }
@@ -1035,14 +1026,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
     const content = this.moveToColumn(pos);
-    let idata = this._cachedDataIndex();
-    let curColumn = this._cachedColumn();
-    this.logicalLine().deleteCellsOnly(idata, 0, n);
+    const idata = this._cachedDataIndex();
+    const curColumn = this._cachedColumn();
+    this.logicalLine().deleteCellsOnly(idata, pos - curColumn, n);
   }
 
   private preInsert(index: LineColumn, attrs: IAttributeData): boolean {
-    let content = this.moveToLineColumn(index);
-    let curColumn = this._cachedColumn();
+    const content = this.moveToLineColumn(index);
+    const curColumn = this._cachedColumn();
     const startColumn = curColumn;
     let idata = this._cachedDataIndex();
 
@@ -1069,17 +1060,17 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const newFg = attrs.getFg();
     const newBg = attrs.getBg();
     const newStyle = attrs.getStyleFlags();
-    let oldFg = this._cachedFg();
-    let oldBg = this._cachedBg();
-    let styleFlagsIndex = this._cachedStyleFlagsIndex();
-    let oldStyle = styleFlagsIndex > 0 ? this.data()[styleFlagsIndex - 1] : 0;
+    const oldFg = this._cachedFg();
+    const oldBg = this._cachedBg();
+    const styleFlagsIndex = this._cachedStyleFlagsIndex();
+    const oldStyle = styleFlagsIndex > 0 ? this.data()[styleFlagsIndex - 1] : 0;
     let needFg = newFg !== oldFg;
-    let needBg = newBg !== oldBg
+    let needBg = newBg !== oldBg;
     // FIXME let oldExt = (oldStyle & StyleFlags.HAS_EXTENDED) && cell.extended;
-    //let newExt = (newStyle & StyleFlags.HAS_EXTENDED) && attrs.extended;
-    let needStyle = newStyle !== oldStyle // FIXME || oldExt !== newExt;
+    // let newExt = (newStyle & StyleFlags.HAS_EXTENDED) && attrs.extended;
+    let needStyle = newStyle !== oldStyle; // FIXME || oldExt !== newExt;
     const atEnd = idata === this.dataLength();
-    let add1 = atEnd ? 1 : 2;
+    const add1 = atEnd ? 1 : 2;
     let add = (needBg?2:0) + (needFg?add1:0) + (needStyle?add1:0);
     let data = this.data();
     if (add) {
@@ -1110,7 +1101,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       }
       if (needStyle) {
         if (newStyle & StyleFlags.HAS_EXTENDED)
-          this._extendedAttrs[idata] = attrs.extended;
+        {this._extendedAttrs[idata] = attrs.extended;}
         this._cacheSetStyleFlagsIndex(idata);
         data[idata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, newStyle);
       }
@@ -1147,13 +1138,13 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let precedingJoinState = inputHandler.precedingJoinState;
     let inext;
     if (add || idata === this.dataLength() || lindex === curColumn)
-        inext = idata;
+    {inext = idata;}
     else {
-        const kind = BufferLine.wKind(this.data()[idata]);
-        if (BufferLine.wKindIsText(kind))
-            inext = this.clusterEnd(idata);
-        else
-            inext = idata;
+      const kind = BufferLine.wKind(this.data()[idata]);
+      if (BufferLine.wKindIsText(kind))
+      {inext = this.clusterEnd(idata);}
+      else
+      {inext = idata;}
     }
     // FIXME optimize of overwriting simple text in-place
     this.addEmptyDataElements(inext, end - start);
@@ -1173,7 +1164,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       precedingJoinState = currentInfo;
       let kind;
       if (shouldJoin) {
-        kind = chWidth === 2 ? DataKind.CLUSTER_START_w2 : DataKind.CLUSTER_START_w1;
+        kind = chWidth === 2 ? DataKind.CLUSTER_START_W2 : DataKind.CLUSTER_START_W1;
         const oldCount = (this.data()[idata] >> 21) & 0x3F;
         const startChar = this.data()[idata] & 0x1FFFFF;
         // FIXME check for count overflow;
@@ -1182,7 +1173,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         kind = DataKind.CLUSTER_CONTINUED;
         curColumn += chWidth - oldWidth;
       } else {
-        kind = chWidth === 2 ? DataKind.CHAR_w2 : DataKind.CHAR_w1;
+        kind = chWidth === 2 ? DataKind.CHAR_W2 : DataKind.CHAR_W1;
         idata = inext;
         cellColumn = curColumn;
         curColumn += chWidth;
@@ -1195,7 +1186,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       this.logicalLine().deleteCellsOnly(inext, 0, curColumn - startColumn);
     }
     if (curColumn > lline.logicalWidth)
-      lline.logicalWidth = curColumn;
+    {lline.logicalWidth = curColumn;}
     return curColumn - lstart;
   }
 
@@ -1203,17 +1194,17 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const startColumn = this.logicalStartColumn();
     const count = end - start;
     start += startColumn;
-    if (end == this.length && ! this.nextRowSameLine) {
+    if (end === this.length && ! this.nextRowSameLine) {
       this.preInsert(start, attrs);
       this.logicalLine()._dataLength = this._cachedDataIndex();
       return;
     }
-    //const add = this.preInsert(start, attrs);
+    // const add = this.preInsert(start, attrs);
     this.moveToLineColumn(start);
-    const add = 0 // FIXME
+    const add = 0; // FIXME
     end += startColumn;
     let idata = this._cachedDataIndex();
-    let colOffset = start - this._cachedColumn();
+    const colOffset = start - this._cachedColumn();
     const lline = this.logicalLine();
     lline.deleteCellsOnly(idata, colOffset, count);
     idata = this._cachedDataIndex();
@@ -1253,16 +1244,16 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let idata = this._cachedDataIndex();
     let inext;
     if (add || idata === this.dataLength() || lindex === curColumn)
-      inext = idata;
+    {inext = idata;}
     else {
       const kind = BufferLine.wKind(this.data()[idata]);
       if (BufferLine.wKindIsText(kind))
-        inext = this.clusterEnd(idata);
+      {inext = this.clusterEnd(idata);}
       else
-        inext = idata;
+      {inext = idata;}
     }
     let cellColumn = curColumn;
-    let kind = width === 2 ? DataKind.CHAR_w2 : DataKind.CHAR_w1;
+    const kind = width === 2 ? DataKind.CHAR_W2 : DataKind.CHAR_W1;
     idata = inext;
     cellColumn = curColumn;
     curColumn += width;
@@ -1290,9 +1281,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     this.addEmptyDataElements(clEnd, 1);
     const nContinued = clEnd - idata;
     const startChar = this.data()[idata] & 0x1FFFFF;
-    const kind = width === 2 ? DataKind.CLUSTER_START_w2 : DataKind.CLUSTER_START_w1;
+    const kind = width === 2 ? DataKind.CLUSTER_START_W2 : DataKind.CLUSTER_START_W1;
     this.data()[idata] = BufferLine.wSet1(kind,
-                                         startChar + (nContinued << 21));
+      startChar + (nContinued << 21));
     this.data()[clEnd] = BufferLine.wSet1(DataKind.CLUSTER_CONTINUED, codePoint);
   }
 
@@ -1304,7 +1295,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
    * excess memory (true after shrinking > CLEANUP_THRESHOLD).
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
-      console.log("BufferLineNew.resize "+this.length+"->"+cols);
+    console.log('BufferLineNew.resize '+this.length+'->'+cols);
     /*
     if (cols === this.length) {
       return this.data().length * 4 * CLEANUP_THRESHOLD < this.data().buffer.byteLength;
@@ -1357,7 +1348,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   /** alter to a full copy of line  */
   public copyFrom(xline: BufferLine): void {
-    alert("copyFrom");
+    alert('copyFrom');
     /*
     const line = xline as LogicalBufferLine; // FIXME
     if (this.length !== line.length) {
@@ -1378,7 +1369,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   /** create a new clone */
   public clone(): IBufferLine {
-    alert("NewBufferLine.clone");
+    alert('NewBufferLine.clone');
     const newLine = new LogicalBufferLine(0);
     return newLine;
   }
@@ -1393,7 +1384,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     for (let idata = startColumn; idata < end; idata++) {
       const word = data[idata];
       const kind = BufferLine.wKind(word);
-      const w = kind === DataKind.CHAR_w2 || kind === DataKind.CLUSTER_START_w2 ? 2 : 1;
+      const w = kind === DataKind.CHAR_W2 || kind === DataKind.CLUSTER_START_W2 ? 2 : 1;
       let wcols = 0;
       switch (kind) {
         case DataKind.BG:
@@ -1405,14 +1396,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         case DataKind.SKIP_COLUMNS:
           skipped += BufferLine.wSkipCount(word);
           break;
-        case DataKind.CLUSTER_START_w1:
-        case DataKind.CLUSTER_START_w2:
+        case DataKind.CLUSTER_START_W1:
+        case DataKind.CLUSTER_START_W2:
           const clEnd = this.clusterEnd(idata);
           wcols = w * (clEnd - idata);
           idata = clEnd - 1;
           break;
-        case DataKind.CHAR_w1:
-        case DataKind.CHAR_w2:
+        case DataKind.CHAR_W1:
+        case DataKind.CHAR_W2:
           wcols = w;
           break;
         case DataKind.CLUSTER_CONTINUED:
@@ -1435,8 +1426,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const cell = new CellData();
     if (applyInReverse) {
       for (let i = length - 1; i >= 0; i--) {
-          src.loadCell(srcCol + i, cell);
-          this.setCell(destCol + i, cell);
+        src.loadCell(srcCol + i, cell);
+        this.setCell(destCol + i, cell);
       }
     } else {
       for (let i = 0; i < length; i++) {
@@ -1451,8 +1442,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let col = 0;
     let pendingStart = -1;
     let pendingLength = 0;
-    let pendingSkip = 0;
-    //const text = this._text;
     const data = this.data();
     function pendingForce(handleSkip = ! trimRight): void {
       if (pendingStart >= 0 && pendingLength > 0) {
@@ -1482,7 +1471,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     for (let idata = 0; idata < this.dataLength() && col < endCol; idata++) {
       const word = this.data()[idata];
       const kind = BufferLine.wKind(word);
-      const wide = kind === DataKind.CHAR_w2 || kind === DataKind.CLUSTER_START_w2 ? 1 : 0;
+      const wide = kind === DataKind.CHAR_W2 || kind === DataKind.CLUSTER_START_W2 ? 1 : 0;
       let wcols;
       switch (kind) {
         case DataKind.FG:
@@ -1503,9 +1492,9 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           }
           col += wlen;
           break;
-        case DataKind.CLUSTER_START_w1:
-        case DataKind.CLUSTER_START_w2:
-          let clEnd = this.clusterEnd(idata);
+        case DataKind.CLUSTER_START_W1:
+        case DataKind.CLUSTER_START_W2:
+          const clEnd = this.clusterEnd(idata);
           wcols = 1 << wide;
           if (col >= startCol && col + wcols <= endCol) {
             addPendingString(idata, clEnd - idata);
@@ -1513,8 +1502,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           idata = clEnd - 1;
           col += wcols;
           break;
-        case DataKind.CHAR_w1:
-        case DataKind.CHAR_w2:
+        case DataKind.CHAR_W1:
+        case DataKind.CHAR_W2:
           wcols = 1 << wide;
           if (col >= startCol && col + wcols <= endCol) {
             addPendingString(idata, 1);
@@ -1547,9 +1536,9 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   constructor(cols: number, fillCellData?: IAttributeData, src?: LogicalBufferLine) {
     super();
     // MAYBE: const buffer = new ArrayBuffer(0, { maxByteLength: 6 * cols });
-    //const buffer = new ArrayBuffer(4 * cols, { maxByteLength: 6 * cols });
+    // const buffer = new ArrayBuffer(4 * cols, { maxByteLength: 6 * cols });
     if (src) {
-      //FIXME also copy _extendedAttrs
+      // FIXME also copy _extendedAttrs
       this._data = src._data.slice();
       this._dataLength = src._dataLength;
     } else {
@@ -1559,10 +1548,12 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     this.length = cols;
     this._isWrapped = false;
   }
-  logicalLine(): LogicalBufferLine { return this; }
-  logicalStartColumn(): LineColumn { return 0; }
-  data(): Uint32Array { return this._data; }
-  dataLength(): number { return this._dataLength; }
+  public override logicalLine(): LogicalBufferLine { return this; }
+  public override logicalStartColumn(): LineColumn { return 0; }
+  override data(): Uint32Array { return this._data; }
+  override dataLength(): number { return this._dataLength; }
+  override _cachedBg(): number { return this._cache2; }
+  override _cachedFg(): number { return this._cache3; }
 
   protected _cachedColumnInRow(): RowColumn { return (this.logicalLine()._cache1 & 0xFFFF); }
 
@@ -1577,7 +1568,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     }
     for (let next = this.nextRowSameLine; next; next = next.nextRowSameLine) {
       if (next.startIndex > position)
-        next.startIndex += count;
+      {next.startIndex += count;}
     }
     this._extendedAttrs.copyWithin(position + count, position, this._dataLength);
     this._dataLength += count;
@@ -1590,12 +1581,12 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   }
 
   resizeData(size: number): void {
-      if (size > this.data().length) {
-        //buffer = new ArrayBuffer(buffer.byteLength, { maxByteLength: 6 * size });
-        const new_data = new Uint32Array((3 * size) >> 1);
-        new_data.set(this._data);
-        this.logicalLine()._data = new_data;
-      }
+    if (size > this.data().length) {
+      // buffer = new ArrayBuffer(buffer.byteLength, { maxByteLength: 6 * size });
+      const dataNew = new Uint32Array((3 * size) >> 1);
+      dataNew.set(this._data);
+      this.logicalLine()._data = dataNew;
+    }
   }
 
   /**
@@ -1624,11 +1615,10 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     const data = this.data();
     let idata = idata0;
     let colOffset = colOffset0;
-    let word0 = this.data()[idata];
-    let dskip_first = idata, dskip_last = -1, tskip_first = -1, tskip_last = -1, w;
-    let fgValue = -1; //cursor.getFg();
-    let bgValue = -1; //cursor.getBg();
-    let styleValue = -1; //cursor.getStyleFlags(); // FIXME handle extendedattrs
+    let dskipFirst = idata; let dskipLast = -1; let w;
+    let fgValue = -1; // cursor.getFg();
+    let bgValue = -1; // cursor.getBg();
+    let styleValue = -1; // cursor.getStyleFlags(); // FIXME handle extendedattrs
 
     if (colOffset === 0) {
       while (idata > 0) {
@@ -1642,8 +1632,8 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
         }
         if (skipItem) {
           idata--;
-          dskip_first = idata;
-          dskip_last = idata0-1;
+          dskipFirst = idata;
+          dskipLast = idata0-1;
         } else {
           break;
         }
@@ -1651,7 +1641,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     }
 
     for (; todo > 0 && idata < this.dataLength(); idata++) {
-      let word = data[idata];
+      const word = data[idata];
       const kind = BufferLine.wKind(word);
       switch (kind) {
         case DataKind.FG: fgValue = word; break;
@@ -1661,39 +1651,39 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
           // handle ExtendedAttrs FIXME
           break;
         case DataKind.SKIP_COLUMNS:
-          let wlen = BufferLine.wSkipCount(word);
+          const wlen = BufferLine.wSkipCount(word);
           if (colOffset === 0 && wlen <= todo) {
-            dskip_last = idata;
+            dskipLast = idata;
             todo -= wlen;
           } else {
-            let delta = Math.min(todo,  wlen - colOffset);
+            const delta = Math.min(todo,  wlen - colOffset);
             this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, wlen - delta);
             todo -= delta;
           }
           colOffset = 0;
           break;
-        case DataKind.CHAR_w1:
-        case DataKind.CHAR_w2:
-          w = kind - DataKind.CHAR_w1; // 0, or 1 if wide characters
+        case DataKind.CHAR_W1:
+        case DataKind.CHAR_W2:
+          w = kind - DataKind.CHAR_W1; // 0, or 1 if wide characters
           if (colOffset === 0 && (1 << w) <= todo) {
-            dskip_last = idata;
+            dskipLast = idata;
             todo -= 1 << w;
           }
           break;
-        case DataKind.CLUSTER_START_w1:
-        case DataKind.CLUSTER_START_w2:
-          w = kind - DataKind.CLUSTER_START_w1; // 0, or 1 if wide characters
+        case DataKind.CLUSTER_START_W1:
+        case DataKind.CLUSTER_START_W2:
+          w = kind - DataKind.CLUSTER_START_W1; // 0, or 1 if wide characters
           const clEnd = this.clusterEnd(idata);
           if (colOffset < (1 << w)) {
             idata = clEnd;
-            dskip_last = idata;
+            dskipLast = idata;
             todo -= (1 << w);
           }
           colOffset = 0;
           break;
       }
     }
-    idata0 = dskip_first;
+    idata0 = dskipFirst;
     if (bgValue >= 0) {
       this.data()[idata0++] = BufferLine.wSet1(DataKind.BG, bgValue);
     }
@@ -1703,8 +1693,8 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     if (styleValue >= 0) {
       this.data()[idata0++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, styleValue);
     }
-    if (dskip_last >= 0) {
-      const dcount = dskip_last + 1 - idata0;
+    if (dskipLast >= 0) {
+      const dcount = dskipLast + 1 - idata0;
       this.addEmptyDataElements(idata0, - dcount);
     }
   }
@@ -1735,10 +1725,12 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
     this.length = logicalLine.length;
   }
 
-  logicalLine(): LogicalBufferLine { return this._logicalLine; }
-  logicalStartColumn(): LineColumn { return this.startColumn; }
-  data(): Uint32Array { return this._logicalLine.data(); }
-  dataLength(): number { return this._logicalLine.dataLength(); }
+  public override logicalLine(): LogicalBufferLine { return this._logicalLine; }
+  public override logicalStartColumn(): LineColumn { return this.startColumn; }
+  protected override data(): Uint32Array { return this._logicalLine.data(); }
+  public override dataLength(): number { return this._logicalLine.dataLength(); }
+  public override _cachedBg(): number { return this._logicalLine._cachedBg(); }
+  public override _cachedFg(): number { return this._logicalLine._cachedFg(); }
   addEmptyDataElements(position: number, count: number): void {
     this._logicalLine.addEmptyDataElements(position, count);
   }
@@ -1748,6 +1740,6 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
     this._cacheSetStyleFlagsIndex(this.startStyle);
     this._cacheSetColumnDataIndex(this.startColumn, this.startIndex);
   }
-  resizeData(size: number): void { this._logicalLine.resizeData(size); }
+  public resizeData(size: number): void { this._logicalLine.resizeData(size); }
   public cleanupMemory(): number { return 0;}
 }

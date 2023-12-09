@@ -25,7 +25,7 @@ export class CellData extends AttributeData implements ICellData {
   public extended: IExtendedAttrs = new ExtendedAttrs();
   public combinedData = '';
 
-  public copyFrom(src: CellData) {
+  public copyFrom(src: CellData): void {
     this.content = src.content;
     this.fg = src.fg;
     this.bg = src.bg;

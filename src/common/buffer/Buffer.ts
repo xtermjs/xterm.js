@@ -133,11 +133,11 @@ export class Buffer implements IBuffer {
   public setWrapped(absrow: number, value: boolean): void {
     const line = this.lines.get(absrow);
     if (! line || line.isWrapped === value)
-      return;
+    {return;}
     if (! USE_NewBufferLine) {
       line!._isWrapped = value;
     } else if (value) {
-      alert("setWrapped true"); // only used in test cases?
+      alert('setWrapped true'); // only used in test cases?
     } else {
       // clear wrapped FIXME
       const prevRow = this.lines.get(absrow - 1) as NewBufferLine;
@@ -145,12 +145,11 @@ export class Buffer implements IBuffer {
       prevRow.nextRowSameLine = undefined;
       const oldLine = prevRow.logicalLine();
       const newRow = new LogicalBufferLine(line.length, undefined, oldLine);
-      const oldLength = oldLine._dataLength;
       const oldStart = curRow.startIndex;
       newRow.addEmptyDataElements(0, - oldStart);
       oldLine._dataLength = curRow.startIndex;
       this.lines.set(absrow, newRow);
-   }
+    }
   }
 
   /**
@@ -356,13 +355,12 @@ export class Buffer implements IBuffer {
     // FIXME don't need to allocate newRows if no lines require more rows
     // than before. So better to allocate newRows lazily.
     const newRows: IBufferLine[] = [];
-    let inew = 0;
     const yAbs = this.ybase + this.y;
     let deltaSoFar = 0;
     for (let row = startRow; row < endRow;) {
       const line = this.lines.get(row)!;
       newRows.push(line);
-      row++
+      row++;
       if (line instanceof LogicalBufferLine && line.reflowNeeded) {
         const oldWrapStart = row;
         const newWrapStart = newRows.length;
@@ -371,18 +369,18 @@ export class Buffer implements IBuffer {
         let curRow: NewBufferLine = line;
         const dataLength = line.dataLength();
         for (;;) {
-          const content = line.moveToLineColumn(startCol + newCols);
-          let idata = line._cachedDataIndex();
+          line.moveToLineColumn(startCol + newCols);
+          const idata = line._cachedDataIndex();
           if (idata >= dataLength) {
             curRow.nextRowSameLine = undefined;
             curRow._isWrapped = false;
             break;
           }
           startCol = line._cachedColumn();
-          let newRow1 = row < endRow && this.lines.get(row);
-          let newRow = newRow1 instanceof WrappedBufferLine
-                ? (row++, newRow1)
-                : new WrappedBufferLine(curRow);
+          const newRow1 = row < endRow && this.lines.get(row);
+          const newRow = newRow1 instanceof WrappedBufferLine
+            ? (row++, newRow1)
+            : new WrappedBufferLine(curRow);
           line.setStartFromCache(newRow);
           newRows.push(newRow);
           curRow = newRow;
@@ -411,7 +409,7 @@ export class Buffer implements IBuffer {
     }
     if (deltaSoFar !== 0) {
       if (yAbs >= endRow)
-        this.y += deltaSoFar;
+      {this.y += deltaSoFar;}
     }
     // FIXME. This calls onDeleteEmitter and onInsertEmitter events,
     // which we want handled at finer granularity.

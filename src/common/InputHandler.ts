@@ -178,7 +178,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _optionsService: IOptionsService,
     private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
-    readonly unicodeService: IUnicodeService,
+    public readonly unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
     super();
@@ -508,15 +508,15 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public print(data: Uint32Array, start: number, end: number): void {
     const curAttr = this._curAttrData;
-    let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+    const bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
     if (bufferRow instanceof NewBufferLine) {
-      this.printNew(data, start, end, bufferRow, curAttr);
+      this._printNew(data, start, end, bufferRow, curAttr);
     } else {
-      this.printOld(data, start, end, bufferRow, curAttr);
+      this._printOld(data, start, end, bufferRow, curAttr);
     }
   }
 
-  private printNew(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
+  private _printNew(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const cols = this._bufferService.cols;
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
@@ -528,8 +528,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // automatically wraps to the beginning of the next line
       if (wraparoundMode) {
         const oldRow = bufferRow as NewBufferLine;
-        let oldCol = this._activeBuffer.x;
-        //this._activeBuffer.x = oldWidth;
+        // this._activeBuffer.x = oldWidth;
         this._activeBuffer.y++;
         if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
           this._activeBuffer.y--;
@@ -542,7 +541,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._activeBuffer.splitLine(this._activeBuffer.y, col);
         bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
         // usually same as cols, but may be less in case of wide characters.
-        const prevCols = (bufferRow as NewBufferLine).logicalStartColumn() - oldRow.logicalStartColumn()
+        const prevCols = (bufferRow as NewBufferLine).logicalStartColumn() - oldRow.logicalStartColumn();
         col = col - prevCols;
         // row changed, get it again
         /*
@@ -566,7 +565,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.x = col;
   }
 
-  private printOld(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
+  private _printOld(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
     let code: number;
     let chWidth: number;
     const charset = this._charsetService.charset;
@@ -1260,7 +1259,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public eraseInDisplay(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
-    let j, x;
+    let j; let x;
     switch (params.params[0]) {
       case 0:
         j = this._activeBuffer.y;
