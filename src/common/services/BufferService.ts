@@ -7,7 +7,7 @@ import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { USE_NewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine } from 'common/buffer/BufferLine';
+import { usingNewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine } from 'common/buffer/BufferLine';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 
@@ -65,7 +65,7 @@ export class BufferService extends Disposable implements IBufferService {
     const bottomRow = buffer.ybase + buffer.scrollBottom;
 
     let newLine: IBufferLine | undefined;
-    if (USE_NewBufferLine) {
+    if (usingNewBufferLine()) {
       if (isWrapped) {
         const oldLine = buffer.lines.get(buffer.ybase + buffer.y) as NewBufferLine;
         newLine = new WrappedBufferLine(oldLine);
@@ -74,7 +74,7 @@ export class BufferService extends Disposable implements IBufferService {
       }
     } else {
       newLine = this._cachedBlankLine;
-      if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
+      if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg || newLine instanceof NewBufferLine) {
         newLine = buffer.getBlankLine(eraseAttr, isWrapped);
         this._cachedBlankLine = newLine;
       }
@@ -93,7 +93,7 @@ export class BufferService extends Disposable implements IBufferService {
       if (bottomRow === buffer.lines.length - 1) {
         if (! willBufferBeTrimmed) {
           buffer.lines.push(newLine);
-        } else if (USE_NewBufferLine) {
+        } else if (usingNewBufferLine()) {
           buffer.lines.recycle(); // ignore result
           buffer.lines.set(bottomRow, newLine);
         } else {

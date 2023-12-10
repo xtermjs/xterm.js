@@ -185,9 +185,11 @@ const enum DataKind { // 4 bits
 
 const NULL_DATA_WORD = DataKind.SKIP_COLUMNS << 28;
 
-export var USE_NewBufferLine = true;
-
+var USE_NewBufferLine = true;
+export function usingNewBufferLine(): boolean { return USE_NewBufferLine; }
+export function selectNewBufferLine(value: boolean): void { USE_NewBufferLine = value; }
 export abstract class BufferLine extends AbstractBufferLine implements IBufferLine {
+
   static make(cols: number, fillCellData?: ICellData, isWrapped: boolean = false): BufferLine {
     if (USE_NewBufferLine) {
       // if (isWrapped) new WrappedBufferLine(...);

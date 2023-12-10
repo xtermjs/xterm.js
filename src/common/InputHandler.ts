@@ -10,7 +10,7 @@ import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, OldBufferLine, NewBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { usingNewBufferLine, BufferLine, OldBufferLine, NewBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
@@ -1223,13 +1223,18 @@ export class InputHandler extends Disposable implements IInputHandler {
     const line = buffer.lines.get(row);
     if (line) {
       const eraseAttrs = this._eraseAttrData();
-      if (line instanceof NewBufferLine && ! respectProtect) {
+      const wasNewBufferLine = line instanceof NewBufferLine;
+      if (wasNewBufferLine && ! respectProtect) {
         line.eraseCells(0, this._bufferService.cols, eraseAttrs);
       } else {
         line.fill(this._activeBuffer.getNullCell(eraseAttrs), respectProtect);
       }
       buffer.clearMarkers(this._activeBuffer.ybase + y);
       buffer.setWrapped(row, false);
+      if (wasNewBufferLine !== usingNewBufferLine()) {
+        const fill = this._activeBuffer.getNullCell(eraseAttrs);
+        buffer.lines.set(row, BufferLine.make(line.length, fill));
+      }
     }
   }
 

@@ -8,6 +8,7 @@ import { Disposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
+import { selectNewBufferLine } from 'common/buffer/BufferLine';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
@@ -30,6 +31,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   linkHandler: null,
   logLevel: 'info',
   logger: null,
+  newBufferLine: true,
   scrollback: 1000,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
@@ -84,6 +86,7 @@ export class OptionsService extends Disposable implements IOptionsService {
     // set up getters and setters for each option
     this.rawOptions = defaultOptions;
     this.options = { ... defaultOptions };
+    selectNewBufferLine(options['newBufferLine']);
     this._setupOptions();
   }
 
@@ -169,6 +172,9 @@ export class OptionsService extends Disposable implements IOptionsService {
         break;
       case 'minimumContrastRatio':
         value = Math.max(1, Math.min(21, Math.round(value * 10) / 10));
+        break;
+      case 'newBufferLine':
+        selectNewBufferLine(!!value);
         break;
       case 'scrollback':
         value = Math.min(value, 4294967295);

@@ -7,7 +7,7 @@ import { CircularList, IInsertEvent } from 'common/CircularList';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { BufferLine, USE_NewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, usingNewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
 import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
@@ -134,7 +134,7 @@ export class Buffer implements IBuffer {
     const line = this.lines.get(absrow);
     if (! line || line.isWrapped === value)
     {return;}
-    if (! USE_NewBufferLine) {
+    if (! usingNewBufferLine()) {
       line!._isWrapped = value;
     } else if (value) {
       alert('setWrapped true'); // only used in test cases?
@@ -200,7 +200,7 @@ export class Buffer implements IBuffer {
       this.lines.maxLength = newMaxLength;
     }
 
-    if (this._cols !== newCols && USE_NewBufferLine) {
+    if (this._cols !== newCols && usingNewBufferLine()) {
       const nlines = this.lines.length;
       for (let i = 0; i < nlines; i++) {
         const line = this.lines.get(i);
@@ -421,7 +421,7 @@ export class Buffer implements IBuffer {
       return;
     }
 
-    if (USE_NewBufferLine) {
+    if (usingNewBufferLine()) {
       // FIXME do this lazily
       this._reflowRegion(0, this.lines.length, newCols);
       return;
