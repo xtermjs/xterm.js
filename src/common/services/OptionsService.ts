@@ -86,7 +86,7 @@ export class OptionsService extends Disposable implements IOptionsService {
     // set up getters and setters for each option
     this.rawOptions = defaultOptions;
     this.options = { ... defaultOptions };
-    selectNewBufferLine(options['newBufferLine']);
+    selectNewBufferLine(this.options['newBufferLine']);
     this._setupOptions();
   }
 
