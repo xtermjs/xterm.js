@@ -22,7 +22,7 @@ import { IRenderLayer } from './Types';
 export class CanvasRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
-  private _observerDisposable : IDisposable| undefined;
+  private _observerDisposable: IDisposable | undefined;
 
   public dimensions: IRenderDimensions;
 

@@ -33,7 +33,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _charAtlasDisposable = this.register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
-  private _observerDisposable : IDisposable| undefined;
+  private _observerDisposable: IDisposable | undefined;
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
