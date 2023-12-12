@@ -32,6 +32,7 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
+export type CustomWheelEventHandler = (event: WheelEvent) => boolean;
 
 export type LineData = CharData[];
 

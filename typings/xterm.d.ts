@@ -1011,6 +1011,28 @@ declare module '@xterm/xterm' {
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
     /**
+     * Attaches a custom wheel event handler which is run before keys are
+     * processed, giving consumers of xterm.js control over whether to proceed
+     * or cancel terminal wheel events.
+     * @param customMouseEventHandler The custom WheelEvent handler to attach.
+     * This is a function that takes a WheelEvent, allowing consumers to stop
+     * propagation and/or prevent the default action. The function returns
+     * whether the event should be processed by xterm.js.
+     *
+     * @example A handler that prevents all wheel events while ctrl is held from
+     * being processed.
+     * ```ts
+     * term.attachCustomKeyEventHandler(ev => {
+     *   if (ev.ctrlKey) {
+     *     return false;
+     *   }
+     *   return true;
+     * });
+     * ```
+     */
+    attachCustomWheelEventHandler(customWheelEventHandler: (event: WheelEvent) => boolean): void;
+
+    /**
      * Registers a link provider, allowing a custom parser to be used to match
      * and handle links. Multiple link providers can be used, they will be asked
      * in the order in which they are registered.
