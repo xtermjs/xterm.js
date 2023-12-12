@@ -10,7 +10,7 @@ import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } 
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, MutableDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
-import { IBufferService, IDecorationService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -56,12 +56,11 @@ export class RenderService extends Disposable implements IRenderService {
     @IDecorationService decorationService: IDecorationService,
     @IBufferService bufferService: IBufferService,
     @ICoreBrowserService coreBrowserService: ICoreBrowserService,
-    @IInstantiationService instantiationService: IInstantiationService,
     @IThemeService themeService: IThemeService
   ) {
     super();
 
-    this._renderDebouncer = new RenderDebouncer(coreBrowserService.window, (start, end) => this._renderRows(start, end));
+    this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), coreBrowserService);
     this.register(this._renderDebouncer);
 
     this.register(coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
