@@ -283,4 +283,9 @@ export class RenderService extends Disposable implements IRenderService {
   public clear(): void {
     this._renderer.value?.clear();
   }
+
+  public override dispose(): void {
+    this._observerDisposable?.dispose();
+    super.dispose();
+  }
 }
