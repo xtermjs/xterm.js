@@ -3,12 +3,13 @@
  * @license MIT
  */
 
+import { IDisposable } from 'common/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, MutableDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
@@ -24,6 +25,7 @@ export class RenderService extends Disposable implements IRenderService {
   private _renderer: MutableDisposable<IRenderer> = this.register(new MutableDisposable());
   private _renderDebouncer: IRenderDebouncerWithCallback;
   private _pausedResizeTask = new DebouncedIdleTask();
+  private _observerDisposable: IDisposable | undefined;
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -38,7 +40,7 @@ export class RenderService extends Disposable implements IRenderService {
   };
 
   private readonly _onDimensionsChange = this.register(new EventEmitter<IRenderDimensions>());
-  public readonly onDimensionsChange =  this._onDimensionsChange.event;
+  public readonly onDimensionsChange = this._onDimensionsChange.event;
   private readonly _onRenderedViewportChange = this.register(new EventEmitter<{ start: number, end: number }>());
   public readonly onRenderedViewportChange = this._onRenderedViewportChange.event;
   private readonly _onRender = this.register(new EventEmitter<{ start: number, end: number }>());
@@ -101,12 +103,18 @@ export class RenderService extends Disposable implements IRenderService {
 
     this.register(themeService.onChangeColors(() => this._fullRefresh()));
 
+    this._registerIntersectionObserver(coreBrowserService.window, screenElement);
+    this.register(coreBrowserService.onWindowChange((w) => this._registerIntersectionObserver(w, screenElement)));
+  }
+
+  private _registerIntersectionObserver(w: Window & typeof globalThis, screenElement: HTMLElement): void {
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
-    if ('IntersectionObserver' in coreBrowserService.window) {
-      const observer = new coreBrowserService.window.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
+    this._observerDisposable?.dispose();
+    if ('IntersectionObserver' in w) {
+      const observer = new w.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
       observer.observe(screenElement);
-      this.register({ dispose: () => observer.disconnect() });
+      this._observerDisposable = toDisposable(() => observer.disconnect());
     }
   }
 
