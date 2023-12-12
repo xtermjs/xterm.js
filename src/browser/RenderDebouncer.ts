@@ -18,7 +18,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
 
   constructor(
     private _renderCallback: (start: number, end: number) => void,
-    private readonly _coreBrowserService: ICoreBrowserService,
+    private readonly _coreBrowserService: ICoreBrowserService
   ) {
   }
 
