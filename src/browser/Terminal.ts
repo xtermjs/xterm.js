@@ -26,7 +26,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Linkifier2 } from 'browser/Linkifier2';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
-import { CharacterJoinerHandler, CustomKeyEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal, IViewport } from 'browser/Types';
+import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal, IViewport } from 'browser/Types';
 import { Viewport } from 'browser/Viewport';
 import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
 import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
@@ -74,6 +74,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public browser: IBrowser = Browser as any;
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
+  private _customWheelEventHandler: CustomWheelEventHandler | undefined;
 
   // browser services
   private _decorationService: DecorationService;
@@ -633,6 +634,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
           but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
           break;
         case 'wheel':
+          if (self._customWheelEventHandler && self._customWheelEventHandler(ev as WheelEvent) === false) {
+            return false;
+          }
           const amount = self.viewport!.getLinesScrolled(ev as WheelEvent);
 
           if (amount === 0) {
@@ -792,6 +796,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       // do nothing, if app side handles wheel itself
       if (requestedEvents.wheel) return;
 
+      if (this._customWheelEventHandler && this._customWheelEventHandler(ev) === false) {
+        return false;
+      }
+
       if (!this.buffer.hasScrollback) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
         // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
@@ -878,17 +886,12 @@ export class Terminal extends CoreTerminal implements ITerminal {
     paste(data, this.textarea!, this.coreService, this.optionsService);
   }
 
-  /**
-   * Attaches a custom key event handler which is run before keys are processed,
-   * giving consumers of xterm.js ultimate control as to what keys should be
-   * processed by the terminal and what keys should not.
-   * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
-   * This is a function that takes a KeyboardEvent, allowing consumers to stop
-   * propagation and/or prevent the default action. The function returns whether
-   * the event should be processed by xterm.js.
-   */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this._customKeyEventHandler = customKeyEventHandler;
+  }
+
+  public attachCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler): void {
+    this._customWheelEventHandler = customWheelEventHandler;
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
