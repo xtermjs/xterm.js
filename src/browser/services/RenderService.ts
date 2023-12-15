@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { IDisposable } from 'common/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
@@ -25,7 +24,7 @@ export class RenderService extends Disposable implements IRenderService {
   private _renderer: MutableDisposable<IRenderer> = this.register(new MutableDisposable());
   private _renderDebouncer: IRenderDebouncerWithCallback;
   private _pausedResizeTask = new DebouncedIdleTask();
-  private _observerDisposable: IDisposable | undefined;
+  private _observerDisposable = this.register(new MutableDisposable());
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -110,11 +109,10 @@ export class RenderService extends Disposable implements IRenderService {
   private _registerIntersectionObserver(w: Window & typeof globalThis, screenElement: HTMLElement): void {
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
-    this._observerDisposable?.dispose();
     if ('IntersectionObserver' in w) {
       const observer = new w.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
       observer.observe(screenElement);
-      this._observerDisposable = toDisposable(() => observer.disconnect());
+      this._observerDisposable.value = toDisposable(() => observer.disconnect());
     }
   }
 
@@ -282,10 +280,5 @@ export class RenderService extends Disposable implements IRenderService {
 
   public clear(): void {
     this._renderer.value?.clear();
-  }
-
-  public override dispose(): void {
-    this._observerDisposable?.dispose();
-    super.dispose();
   }
 }

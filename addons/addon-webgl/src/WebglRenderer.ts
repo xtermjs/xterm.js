@@ -19,7 +19,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { IDisposable, Terminal } from '@xterm/xterm';
+import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
 import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
@@ -33,7 +33,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _charAtlasDisposable = this.register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
-  private _observerDisposable: IDisposable | undefined;
+  private _observerDisposable = this.register(new MutableDisposable());
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
@@ -124,10 +124,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._requestRedrawViewport();
     }));
 
-    this._observerDisposable = observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+    this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
     this.register(this._coreBrowserService.onWindowChange(w => {
-      this._observerDisposable?.dispose();
-      this._observerDisposable = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+      this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
     }));
 
     this._core.screenElement!.appendChild(this._canvas);
@@ -598,11 +597,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _requestRedrawCursor(): void {
     const cursorY = this._terminal.buffer.active.cursorY;
     this._onRequestRedraw.fire({ start: cursorY, end: cursorY });
-  }
-
-  public override dispose(): void {
-    this._observerDisposable?.dispose();
-    super.dispose();
   }
 }
 
