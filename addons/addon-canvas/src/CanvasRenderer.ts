@@ -10,7 +10,7 @@ import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { CursorRenderLayer } from './CursorRenderLayer';
@@ -22,6 +22,7 @@ import { IRenderLayer } from './Types';
 export class CanvasRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
+  private _observerDisposable = this.register(new MutableDisposable());
 
   public dimensions: IRenderDimensions;
 
@@ -60,7 +61,11 @@ export class CanvasRenderer extends Disposable implements IRenderer {
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
 
-    this.register(observeDevicePixelDimensions(this._renderLayers[0].canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
+    this._observerDisposable.value = observeDevicePixelDimensions(this._renderLayers[0].canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+    this.register(this._coreBrowserService.onWindowChange(w => {
+      this._observerDisposable.value = observeDevicePixelDimensions(this._renderLayers[0].canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+    }));
+
     this.register(toDisposable(() => {
       for (const l of this._renderLayers) {
         l.dispose();
