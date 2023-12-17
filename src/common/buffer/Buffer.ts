@@ -139,14 +139,19 @@ export class Buffer implements IBuffer {
     } else if (value) {
       alert('setWrapped true'); // only used in test cases?
     } else {
-      // clear wrapped FIXME
       const prevRow = this.lines.get(absrow - 1) as NewBufferLine;
       const curRow = line as WrappedBufferLine;
+      const oldStartColumn = curRow.logicalStartColumn()
       prevRow.nextRowSameLine = undefined;
       const oldLine = prevRow.logicalLine();
       const newRow = new LogicalBufferLine(line.length, undefined, oldLine);
+      newRow.nextRowSameLine = curRow.nextRowSameLine;
       const oldStart = curRow.startIndex;
       newRow.addEmptyDataElements(0, - oldStart);
+      for (let nextRow = newRow.nextRowSameLine; nextRow; nextRow = nextRow.nextRowSameLine) {
+        nextRow.startColumn -= oldStartColumn;
+        nextRow.startIndex -= oldStart;
+      }
       oldLine._dataLength = curRow.startIndex;
       this.lines.set(absrow, newRow);
     }
@@ -279,7 +284,7 @@ export class Buffer implements IBuffer {
       }
 
       // Make sure that the cursor stays on screen
-      this.x = Math.min(this.x, newCols - 1);
+      this.x = Math.min(this.x, newCols);
       this.y = Math.min(this.y, newRows - 1);
       if (addToY) {
         this.y += addToY;
@@ -354,26 +359,40 @@ export class Buffer implements IBuffer {
     }
     // FIXME don't need to allocate newRows if no lines require more rows
     // than before. So better to allocate newRows lazily.
-    const newRows: IBufferLine[] = [];
+    const newRows: NewBufferLine[] = [];
     const yAbs = this.ybase + this.y;
     let deltaSoFar = 0;
     for (let row = startRow; row < endRow;) {
-      const line = this.lines.get(row)!;
+      const line = this.lines.get(row) as NewBufferLine;
       newRows.push(line);
-      row++;
       if (line instanceof LogicalBufferLine && line.reflowNeeded) {
-        const oldWrapStart = row;
+        let curRow: NewBufferLine = line;
+
+        let logicalX;
+        let oldWrapCount = 0; // number of following wrapped lines
+        let nextRow = curRow;
+        for (; ; oldWrapCount++) {
+          if (yAbs === row + oldWrapCount) {
+            logicalX = nextRow.logicalStartColumn() + this.x;
+          }
+          if (! nextRow.nextRowSameLine || row + oldWrapCount + 1 >= endRow) {
+            break;
+          }
+          nextRow = nextRow.nextRowSameLine;
+        }
+
+        row++;
         const newWrapStart = newRows.length;
         line.reflowNeeded = false;
         let startCol = 0;
-        let curRow: NewBufferLine = line;
         const dataLength = line.dataLength();
+
         for (;;) {
           line.moveToLineColumn(startCol + newCols);
           const idata = line._cachedDataIndex();
           if (idata >= dataLength) {
             curRow.nextRowSameLine = undefined;
-            curRow._isWrapped = false;
+            //curRow._isWrapped = false;
             break;
           }
           startCol = line._cachedColumn();
@@ -389,22 +408,18 @@ export class Buffer implements IBuffer {
           && this.lines.get(row) instanceof WrappedBufferLine) {
           row++;
         }
-        const oldWrapCount = row - oldWrapStart;
         const newWrapCount = newRows.length - newWrapStart;
-        /*
-        if (newWrapCount !== oldWrapCount) {
-            if (yAbs >= row && yAbs < row + oldWrapCount) {
-                let y = yAbs;
-                if (y > row + newWrapCount)
-                    y = row + newWrapCount;
-                this.y = y + deltaSoFar;
-            }
+        if (logicalX !== undefined) { // update cursor x and y
+          let i = newWrapStart;
+          while (i < newRows.length && newRows[i].logicalStartColumn() <= logicalX) { i++; }
+          this.y = startRow + i - 1 + deltaSoFar;
+          this.x = logicalX - newRows[i-1].logicalStartColumn();
         }
-        */
         deltaSoFar += newWrapCount - oldWrapCount;
-      }
-      if (deltaSoFar !== 0 && yAbs === row) {
-        this.y = yAbs - this.ybase + Math.min(deltaSoFar, newRows.length);
+      } else {
+        if (row === yAbs)
+        { this.y += deltaSoFar; }
+        row++;
       }
     }
     if (deltaSoFar !== 0) {
@@ -773,6 +788,37 @@ export class Buffer implements IBuffer {
   private _removeMarker(marker: Marker): void {
     if (!this._isClearing) {
       this.markers.splice(this.markers.indexOf(marker), 1);
+    }
+  }
+
+  // for DEBUGGING
+  noteError(msg: string) {
+      console.log('ERROR: ' + msg);
+  }
+
+  // for DEBUGGING
+  checkLines(report = this.noteError): void {
+    const nlines = this.lines.length;
+    let prevRow: IBufferLine | undefined;
+    for (let i = 0; i < nlines; i++) {
+      const curRow = this.lines.get(i);
+      if (curRow instanceof LogicalBufferLine) {
+        if (curRow.isWrapped) { report('wrapped should not be set'); }
+      } else if (curRow instanceof WrappedBufferLine) {
+        if (! curRow.isWrapped) { report('wrapped should be set'); }
+        if (prevRow instanceof NewBufferLine) {
+          if (prevRow.nextRowSameLine !== curRow) {
+            report('bad previous nextRowSameLine');
+          }
+          if (prevRow.logicalStartColumn() > curRow.logicalStartColumn())
+          { report('bad logicalStartColumn'); }
+        } else {
+          report('bad previous line before Wrapped');
+        }
+      } else if (! curRow) {
+          report('undefined line in lines list');
+      }
+      prevRow = curRow;
     }
   }
 }

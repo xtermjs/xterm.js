@@ -275,7 +275,6 @@ export class OldBufferLine extends BufferLine implements IBufferLine {
       this.setCell(i, cell);
     }
     this.length = cols;
-    this._isWrapped = isWrapped;
   }
 
   /**
@@ -847,8 +846,16 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       console.log('ERROR: '+str);
     }
     const icol = 0;
-    if (this.dataLength() < 0 || this.dataLength() > this.data().length)
+    const data = this.data();
+    if (this.dataLength() < 0 || this.dataLength() > data.length)
     {error('bad _dataLength');}
+    if (this.dataLength() === 2 && BufferLine.wKind(data[0]) === DataKind.SKIP_COLUMNS && BufferLine.wKind(data[1]) === DataKind.BG) {
+          error("SKIP followed by BG");
+    }
+    if (this.dataLength() === 1 && data[0] === BufferLine.wSet1(DataKind.BG, 0)) {
+          error("default BG only");
+    }
+    /*
     for (let idata = 0; idata < this.dataLength(); idata++) {
       const word = this.data()[idata];
       const kind = BufferLine.wKind(word);
@@ -869,7 +876,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         default:
           error('invalid _dataKind');
       }
-    }
+      }
+    */
   }
 
   /**
@@ -902,7 +910,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     this.preInsert(pos, fillCellData);
     const idata = this._cachedDataIndex();
     this.addEmptyDataElements(idata, 1);
-    // Ideally should optize for adjacent SKIP_COLUMNS (as in eraseCells).
+    // Ideally should optimize for adjacent SKIP_COLUMNS (as in eraseCells).
     // However, typically is followed by replacing the new empty cells.
     this.data()[idata-1] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
   }
@@ -1297,7 +1305,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
    * excess memory (true after shrinking > CLEANUP_THRESHOLD).
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
-    console.log('BufferLineNew.resize '+this.length+'->'+cols);
     /*
     if (cols === this.length) {
       return this.data().length * 4 * CLEANUP_THRESHOLD < this.data().buffer.byteLength;
@@ -1699,7 +1706,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       const dcount = dskipLast + 1 - idata0;
       this.addEmptyDataElements(idata0, - dcount);
     }
-  }
+ }
 }
 
 export class WrappedBufferLine extends NewBufferLine implements IBufferLine {

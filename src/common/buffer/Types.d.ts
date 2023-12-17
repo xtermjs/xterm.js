@@ -18,12 +18,24 @@ export interface IBuffer {
   ydisp: number;
   /** Number of rows in the scrollback buffer, above the home row. */
   ybase: number;
-  /** Row number relative to the "home" row.
+
+  /** Row number relative to the "home" row, zero-origin.
    * This is the row number changed/reported by cursor escape sequences,
    * except that y is 0-origin: y=0 when we're at the home row.
+   * Currently assumed to be >= 0, but FUTURE should allow negative - i.e.
+   * in scroll-back area, as long as ybase+y >= 0.
    */
   y: number;
+
+  /** Column number, zero-origin.
+   * Valid range is 0 through C (inclusive), if C is terminal width in columns.
+   * The first (left-most) column is 0.
+   * The right-most column is either C-1 (before the right-most column, and
+   * ready to write in it), or C (after the right-most column, having written
+   * to it, and ready to wrap). DSR 6 returns C (1-origin) in either case,
+   */
   x: number;
+
   tabs: any;
   scrollBottom: number;
   scrollTop: number;

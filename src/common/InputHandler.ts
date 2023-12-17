@@ -2709,8 +2709,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 6:
         // cursor position
-        const y = this._activeBuffer.y + 1;
-        const x = this._activeBuffer.x + 1;
+        const buffer = this._activeBuffer;
+        const y = buffer.y + 1;
+        const x = Math.min(buffer.x + 1, this._bufferService.cols);
         this._coreService.triggerDataEvent(`${C0.ESC}[${y};${x}R`);
         break;
     }
