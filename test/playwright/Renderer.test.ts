@@ -21,5 +21,5 @@ test.afterAll(async () => await ctx.page.close());
 
 test.describe('DOM Renderer Integration Tests', () => {
   injectSharedRendererTests(ctxWrapper);
-  injectSharedRendererTestsStandalone(ctxWrapper);
+  injectSharedRendererTestsStandalone(ctxWrapper, () => {});
 });

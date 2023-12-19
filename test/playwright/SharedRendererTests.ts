@@ -1244,16 +1244,17 @@ enum CellColorPosition {
  * This is much slower than just calling `Terminal.reset` but testing some features needs this
  * treatment.
  */
-export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext): void {
+export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext, setupCb: () => Promise<void> | void): void {
   test.describe('standalone tests', () => {
     test.beforeEach(async () => {
       // Recreate terminal
       await openTerminal(ctx.value);
-      ctx.value.page.evaluate(`
+      await ctx.value.page.evaluate(`
         window.term.options.minimumContrastRatio = 1;
         window.term.options.allowTransparency = false;
         window.term.options.theme = undefined;
       `);
+      await setupCb();
       // Clear the cached screenshot before each test
       frameDetails = undefined;
     });
