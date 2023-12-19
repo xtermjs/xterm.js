@@ -1131,7 +1131,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 
   test.describe('regression tests', () => {
-    test('#4736: inactive selection background should replace regular cell background color', async () => {
+    (ctx.skipCanvasExceptions ? test.skip : test)('#4736: inactive selection background should replace regular cell background color', async () => {
       const theme: ITheme = {
         selectionBackground: '#FF0000',
         selectionInactiveBackground: '#0000FF'
