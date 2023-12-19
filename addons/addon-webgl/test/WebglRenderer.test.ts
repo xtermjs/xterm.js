@@ -30,7 +30,7 @@ test.describe('WebGL Renderer Integration Tests', async () => {
 
   injectSharedRendererTests(ctxWrapper);
   injectSharedRendererTestsStandalone(ctxWrapper, async () => {
-      await ctx.page.evaluate(`
+    await ctx.page.evaluate(`
       window.addon = new window.WebglAddon(true);
       window.term.loadAddon(window.addon);
     `);
