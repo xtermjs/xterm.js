@@ -15,7 +15,6 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
-import { traceCall } from 'common/services/LogService';
 import { IUnicodeService } from 'common/services/Services';
 
 /**
@@ -424,7 +423,6 @@ export class TextureAtlas implements ITextureAtlas {
     return this._config.colors.contrastCache;
   }
 
-  @traceCall
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
