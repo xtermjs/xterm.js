@@ -11,7 +11,7 @@ import { ICoreService, IDecorationService, IOptionsService } from 'common/servic
 import { color, rgba } from 'common/Color';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
-import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
+import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { IColorContrastCache } from 'browser/Types';
@@ -458,7 +458,7 @@ export class DomRendererRowFactory {
   }
 
   private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode())) {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || treatGlyphAsBackgroundColor(cell.getCode())) {
       return false;
     }
 

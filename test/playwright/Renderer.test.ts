@@ -8,7 +8,10 @@ import { ITestContext, createTestContext, openTerminal } from './TestUtils';
 import { ISharedRendererTestContext, injectSharedRendererTestsStandalone, injectSharedRendererTests } from './SharedRendererTests';
 
 let ctx: ITestContext;
-const ctxWrapper: ISharedRendererTestContext = { value: undefined } as any;
+const ctxWrapper: ISharedRendererTestContext = {
+  value: undefined,
+  skipCanvasExceptions: true
+} as any;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
   ctxWrapper.value = ctx;

@@ -5,6 +5,8 @@ import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle 
 import { IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from '@xterm/xterm';
+import { rgba } from 'common/Color';
+import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
 
 // Work variables to avoid garbage collection
 let $fg = 0;
@@ -65,11 +67,11 @@ export class CellColorResolver {
     // Apply decorations on the bottom layer
     this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
       if (d.backgroundColorRGB) {
-        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $bg = d.backgroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $fg = d.foregroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasFg = true;
       }
     });
@@ -77,10 +79,94 @@ export class CellColorResolver {
     // Apply the selection color if needed
     $isSelected = this._selectionRenderModel.isCellSelected(this._terminal, x, y);
     if ($isSelected) {
-      $bg = (this._coreBrowserService.isFocused ? $colors.selectionBackgroundOpaque : $colors.selectionInactiveBackgroundOpaque).rgba >> 8 & 0xFFFFFF;
+      // If the cell has a bg color, retain the color by blending it with the selection color
+      if (
+        (this.result.fg & FgFlags.INVERSE) ||
+        (this.result.bg & Attributes.CM_MASK) !== Attributes.CM_DEFAULT
+      ) {
+        // Resolve the standard bg color
+        if (this.result.fg & FgFlags.INVERSE) {
+          switch (this.result.fg & Attributes.CM_MASK) {
+            case Attributes.CM_P16:
+            case Attributes.CM_P256:
+              $bg = this._themeService.colors.ansi[this.result.fg & Attributes.PCOLOR_MASK].rgba;
+              break;
+            case Attributes.CM_RGB:
+              $bg = (this.result.fg & Attributes.RGB_MASK) << 8 | 0xFF;
+              break;
+            case Attributes.CM_DEFAULT:
+            default:
+              $bg = this._themeService.colors.foreground.rgba;
+          }
+        } else {
+          switch (this.result.bg & Attributes.CM_MASK) {
+            case Attributes.CM_P16:
+            case Attributes.CM_P256:
+              $bg = this._themeService.colors.ansi[this.result.bg & Attributes.PCOLOR_MASK].rgba;
+              break;
+            case Attributes.CM_RGB:
+              $bg = this.result.bg & Attributes.RGB_MASK << 8 | 0xFF;
+              break;
+            // No need to consider default bg color here as it's not possible
+          }
+        }
+        // Blend with selection bg color
+        $bg = rgba.blend(
+          $bg,
+          ((this._coreBrowserService.isFocused ? $colors.selectionBackgroundOpaque : $colors.selectionInactiveBackgroundOpaque).rgba & 0xFFFFFF00) | 0x80
+        ) >> 8 & Attributes.RGB_MASK;
+      } else {
+        $bg = (this._coreBrowserService.isFocused ? $colors.selectionBackgroundOpaque : $colors.selectionInactiveBackgroundOpaque).rgba >> 8 & Attributes.RGB_MASK;
+      }
       $hasBg = true;
+
+      // Apply explicit selection foreground if present
       if ($colors.selectionForeground) {
-        $fg = $colors.selectionForeground.rgba >> 8 & 0xFFFFFF;
+        $fg = $colors.selectionForeground.rgba >> 8 & Attributes.RGB_MASK;
+        $hasFg = true;
+      }
+
+      // Overwrite fg as bg if it's a special decorative glyph (eg. powerline)
+      if (treatGlyphAsBackgroundColor(cell.getCode())) {
+        // Inverse default background should be treated as transparent
+        if (
+          (this.result.fg & FgFlags.INVERSE) &&
+          (this.result.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT
+        ) {
+          $fg = (this._coreBrowserService.isFocused ? $colors.selectionBackgroundOpaque : $colors.selectionInactiveBackgroundOpaque).rgba >> 8 & Attributes.RGB_MASK;
+        } else {
+
+          if (this.result.fg & FgFlags.INVERSE) {
+            switch (this.result.bg & Attributes.CM_MASK) {
+              case Attributes.CM_P16:
+              case Attributes.CM_P256:
+                $fg = this._themeService.colors.ansi[this.result.bg & Attributes.PCOLOR_MASK].rgba;
+                break;
+              case Attributes.CM_RGB:
+                $fg = this.result.bg & Attributes.RGB_MASK << 8 | 0xFF;
+                break;
+              // No need to consider default bg color here as it's not possible
+            }
+          } else {
+            switch (this.result.fg & Attributes.CM_MASK) {
+              case Attributes.CM_P16:
+              case Attributes.CM_P256:
+                $fg = this._themeService.colors.ansi[this.result.fg & Attributes.PCOLOR_MASK].rgba;
+                break;
+              case Attributes.CM_RGB:
+                $fg = (this.result.fg & Attributes.RGB_MASK) << 8 | 0xFF;
+                break;
+              case Attributes.CM_DEFAULT:
+              default:
+                $fg = this._themeService.colors.foreground.rgba;
+            }
+          }
+
+          $fg = rgba.blend(
+            $fg,
+            ((this._coreBrowserService.isFocused ? $colors.selectionBackgroundOpaque : $colors.selectionInactiveBackgroundOpaque).rgba & 0xFFFFFF00) | 0x80
+          ) >> 8 & Attributes.RGB_MASK;
+        }
         $hasFg = true;
       }
     }
@@ -88,11 +174,11 @@ export class CellColorResolver {
     // Apply decorations on the top layer
     this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
       if (d.backgroundColorRGB) {
-        $bg = d.backgroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $bg = d.backgroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasBg = true;
       }
       if (d.foregroundColorRGB) {
-        $fg = d.foregroundColorRGB.rgba >> 8 & 0xFFFFFF;
+        $fg = d.foregroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasFg = true;
       }
     });
@@ -119,7 +205,7 @@ export class CellColorResolver {
       if ($hasBg && !$hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this.result.bg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $fg = (this.result.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | (($colors.background.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          $fg = (this.result.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | (($colors.background.rgba >> 8 & Attributes.RGB_MASK) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
           $fg = (this.result.fg & ~(Attributes.RGB_MASK | FgFlags.INVERSE | Attributes.CM_MASK)) | this.result.bg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }
@@ -128,7 +214,7 @@ export class CellColorResolver {
       if (!$hasBg && $hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)
         if ((this.result.fg & Attributes.CM_MASK) === Attributes.CM_DEFAULT) {
-          $bg = (this.result.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | (($colors.foreground.rgba >> 8 & 0xFFFFFF) & Attributes.RGB_MASK) | Attributes.CM_RGB;
+          $bg = (this.result.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | (($colors.foreground.rgba >> 8 & Attributes.RGB_MASK) & Attributes.RGB_MASK) | Attributes.CM_RGB;
         } else {
           $bg = (this.result.bg & ~(Attributes.RGB_MASK | Attributes.CM_MASK)) | this.result.fg & (Attributes.RGB_MASK | Attributes.CM_MASK);
         }

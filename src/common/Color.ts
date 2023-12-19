@@ -245,6 +245,23 @@ export namespace rgb {
  * Helper functions where the source type is "rgba" (number: 0xrrggbbaa).
  */
 export namespace rgba {
+  export function blend(bg: number, fg: number): number {
+    $a = (fg & 0xFF) / 0xFF;
+    if ($a === 1) {
+      return fg;
+    }
+    const fgR = (fg >> 24) & 0xFF;
+    const fgG = (fg >> 16) & 0xFF;
+    const fgB = (fg >> 8) & 0xFF;
+    const bgR = (bg >> 24) & 0xFF;
+    const bgG = (bg >> 16) & 0xFF;
+    const bgB = (bg >> 8) & 0xFF;
+    $r = bgR + Math.round((fgR - bgR) * $a);
+    $g = bgG + Math.round((fgG - bgG) * $a);
+    $b = bgB + Math.round((fgB - bgB) * $a);
+    return channels.toRgba($r, $g, $b);
+  }
+
   /**
    * Given a foreground color and a background color, either increase or reduce the luminance of the
    * foreground color until the specified contrast ratio is met. If pure white or black is hit
