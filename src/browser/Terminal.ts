@@ -261,11 +261,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private _handleTextAreaFocus(ev: KeyboardEvent): void {
+  private _handleTextAreaFocus(ev: FocusEvent): void {
     if (this.coreService.decPrivateModes.sendFocus) {
       this.coreService.triggerDataEvent(C0.ESC + '[I');
     }
-    this.updateCursorStyle(ev);
     this.element!.classList.add('focus');
     this._showCursor();
     this._onFocus.fire();
@@ -429,6 +428,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this.screenElement = this._document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
+    this.register(addDisposableDomListener(this.screenElement, 'mousemove', (ev: MouseEvent) => this.updateCursorStyle(ev)));
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
     this._helperContainer = this._document.createElement('div');
@@ -459,10 +459,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     ));
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
-    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._handleTextAreaFocus(ev)));
+    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: FocusEvent) => this._handleTextAreaFocus(ev)));
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._handleTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
-
 
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
     this._instantiationService.setService(ICharSizeService, this._charSizeService);
@@ -855,7 +854,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   /**
    * Change the cursor style for different selection modes
    */
-  public updateCursorStyle(ev: KeyboardEvent): void {
+  public updateCursorStyle(ev: KeyboardEvent | MouseEvent): void {
     if (this._selectionService?.shouldColumnSelect(ev)) {
       this.element!.classList.add('column-select');
     } else {
