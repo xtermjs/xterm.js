@@ -8,6 +8,7 @@ import { IBufferService } from 'common/services/Services';
 import { Linkifier2 } from 'browser/Linkifier2';
 import { MockBufferService } from 'common/TestUtils.test';
 import { ILink } from 'browser/Types';
+import { LinkProviderService } from 'browser/services/LinkProviderService';
 
 class TestLinkifier2 extends Linkifier2 {
   public set currentLink(link: any) {
@@ -44,7 +45,7 @@ describe('Linkifier2', () => {
 
   beforeEach(() => {
     bufferService = new MockBufferService(100, 10);
-    linkifier = new TestLinkifier2(bufferService);
+    linkifier = new TestLinkifier2(bufferService, new LinkProviderService());
     linkifier.currentLink = {
       link,
       state: {

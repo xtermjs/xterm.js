@@ -4,18 +4,17 @@
  */
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { IBufferCellPosition, ILink, ILinkDecorations, ILinkProvider, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
+import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, disposeArray, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 import { IBufferService } from 'common/services/Services';
-import { IMouseService, IRenderService } from './services/Services';
+import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
 
 export class Linkifier2 extends Disposable implements ILinkifier2 {
   private _element: HTMLElement | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
-  private _linkProviders: ILinkProvider[] = [];
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
   protected _currentLink: ILinkWithState | undefined;
   private _mouseDownLink: ILinkWithState | undefined;
@@ -33,14 +32,14 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   public readonly onHideLinkUnderline = this._onHideLinkUnderline.event;
 
   constructor(
-    @IBufferService private readonly _bufferService: IBufferService
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ILinkProviderService private readonly _linkProviderService: ILinkProviderService
   ) {
     super();
     this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
     this.register(toDisposable(() => {
       this._lastMouseEvent = undefined;
       // Clear out link providers as they could easily cause an embedder memory leak
-      this._linkProviders.length = 0;
       this._activeProviderReplies?.clear();
     }));
     // Listen to resize to catch the case where it's resized and the cursor is out of the viewport.
@@ -48,20 +47,6 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
       this._clearCurrentLink();
       this._wasResized = true;
     }));
-  }
-
-  public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
-    this._linkProviders.push(linkProvider);
-    return {
-      dispose: () => {
-        // Remove the link provider from the list
-        const providerIndex = this._linkProviders.indexOf(linkProvider);
-
-        if (providerIndex !== -1) {
-          this._linkProviders.splice(providerIndex, 1);
-        }
-      }
-    };
   }
 
   public attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void {
@@ -145,7 +130,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     let linkProvided = false;
 
     // There is no link cached, so ask for one
-    for (const [i, linkProvider] of this._linkProviders.entries()) {
+    for (const [i, linkProvider] of this._linkProviderService.linkProviders.entries()) {
       if (useLineCache) {
         const existingReply = this._activeProviderReplies?.get(i);
         // If there isn't a reply, the provider hasn't responded yet.
@@ -167,7 +152,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
           // If all providers have responded, remove lower priority links that intersect ranges of
           // higher priority links
-          if (this._activeProviderReplies?.size === this._linkProviders.length) {
+          if (this._activeProviderReplies?.size === this._linkProviderService.linkProviders.length) {
             this._removeIntersectingLinks(position.y, this._activeProviderReplies);
           }
         });
@@ -223,7 +208,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
     }
 
     // Check if all the providers have responded
-    if (this._activeProviderReplies.size === this._linkProviders.length && !linkProvided) {
+    if (this._activeProviderReplies.size === this._linkProviderService.linkProviders.length && !linkProvided) {
       // Respect the order of the link providers
       for (let j = 0; j < this._activeProviderReplies.size; j++) {
         const currentLink = this._activeProviderReplies.get(j)?.find(link => this._linkAtPosition(link.link, position));
