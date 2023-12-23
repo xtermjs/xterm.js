@@ -48,6 +48,7 @@ export class MockTerminal implements ITerminal {
   public onRender!: IEvent<{ start: number, end: number }>;
   public onResize!: IEvent<{ cols: number, rows: number }>;
   public markers!: IMarker[];
+  public linkifier: ILinkifier2 | undefined;
   public coreMouseService!: ICoreMouseService;
   public coreService!: ICoreService;
   public optionsService!: IOptionsService;
@@ -151,7 +152,6 @@ export class MockTerminal implements ITerminal {
   }
   public bracketedPasteMode!: boolean;
   public renderer!: IRenderer;
-  public linkifier2!: ILinkifier2;
   public isFocused!: boolean;
   public options!: Required<ITerminalOptions>;
   public element!: HTMLElement;

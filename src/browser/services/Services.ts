@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { AllColorIndex, IDisposable } from 'common/Types';
@@ -144,4 +144,15 @@ export interface IThemeService {
    * prevent accidental writes.
    */
   modifyColors(callback: (colors: IColorSet) => void): void;
+}
+
+
+export const ILinkProviderService = createDecorator<ILinkProviderService>('LinkProviderService');
+export interface ILinkProviderService extends IDisposable {
+  serviceBrand: undefined;
+  readonly linkProviders: ReadonlyArray<ILinkProvider>;
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
+}
+export interface ILinkProvider {
+  provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void;
 }

@@ -37,7 +37,7 @@ export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasA
     const coreService = core.coreService;
     const optionsService = core.optionsService;
     const screenElement = core.screenElement!;
-    const linkifier = core.linkifier2;
+    const linkifier = core.linkifier!;
 
     const unsafeCore = core as any;
     const bufferService: IBufferService = unsafeCore._bufferService;

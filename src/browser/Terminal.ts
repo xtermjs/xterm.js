@@ -23,7 +23,7 @@
 
 import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { Linkifier2 } from 'browser/Linkifier2';
+import { Linkifier } from './Linkifier';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
 import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal, IViewport } from 'browser/Types';
@@ -39,7 +39,7 @@ import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { MouseService } from 'browser/services/MouseService';
 import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
 import { color, rgba } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
@@ -57,6 +57,7 @@ import { IDecorationService } from 'common/services/Services';
 import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from '@xterm/xterm';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
+import { LinkProviderService } from 'browser/services/LinkProviderService';
 
 export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -69,6 +70,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
 
+  public linkifier: ILinkifier2 | undefined;
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
 
   public browser: IBrowser = Browser as any;
@@ -76,8 +78,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
   private _customWheelEventHandler: CustomWheelEventHandler | undefined;
 
-  // browser services
+  // Browser services
   private _decorationService: DecorationService;
+  private _linkProviderService: ILinkProviderService;
+
+  // Optional browser services
   private _charSizeService: ICharSizeService | undefined;
   private _coreBrowserService: ICoreBrowserService | undefined;
   private _mouseService: IMouseService | undefined;
@@ -113,7 +118,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
-  public linkifier2: ILinkifier2;
   public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this.register(new MutableDisposable());
@@ -149,10 +153,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this._setup();
 
-    this.linkifier2 = this.register(this._instantiationService.createInstance(Linkifier2));
-    this.linkifier2.registerLinkProvider(this._instantiationService.createInstance(OscLinkProvider));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
+    this._linkProviderService = this._instantiationService.createInstance(LinkProviderService);
+    this._instantiationService.setService(ILinkProviderService, this._linkProviderService);
+    this._linkProviderService.registerLinkProvider(this._instantiationService.createInstance(OscLinkProvider));
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));
@@ -482,6 +487,11 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
     this._helperContainer.appendChild(this._compositionView);
 
+    this._mouseService = this._instantiationService.createInstance(MouseService);
+    this._instantiationService.setService(IMouseService, this._mouseService);
+
+    this.linkifier = this.register(this._instantiationService.createInstance(Linkifier, this.screenElement));
+
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
@@ -492,9 +502,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (!this._renderService.hasRenderer()) {
       this._renderService.setRenderer(this._createRenderer());
     }
-
-    this._mouseService = this._instantiationService.createInstance(MouseService);
-    this._instantiationService.setService(IMouseService, this._mouseService);
 
     this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
     this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
@@ -513,7 +520,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,
       this.screenElement,
-      this.linkifier2
+      this.linkifier
     ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this.register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
@@ -533,7 +540,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
 
-    this.linkifier2.attachToDom(this.screenElement, this._mouseService, this._renderService);
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
@@ -575,7 +581,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   private _createRenderer(): IRenderer {
-    return this._instantiationService.createInstance(DomRenderer, this, this._document!, this.element!, this.screenElement!, this._viewportElement!, this._helperContainer!, this.linkifier2);
+    return this._instantiationService.createInstance(DomRenderer, this, this._document!, this.element!, this.screenElement!, this._viewportElement!, this._helperContainer!, this.linkifier!);
   }
 
   /**
@@ -894,7 +900,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
-    return this.linkifier2.registerLinkProvider(linkProvider);
+    return this._linkProviderService.registerLinkProvider(linkProvider);
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {

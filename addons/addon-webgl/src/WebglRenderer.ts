@@ -81,7 +81,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, _optionsService, this._themeService)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService)
     ];
     this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
