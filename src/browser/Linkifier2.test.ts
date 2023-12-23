@@ -9,6 +9,7 @@ import { Linkifier2 } from './Linkifier2';
 import { MockBufferService } from 'common/TestUtils.test';
 import { ILink } from 'browser/Types';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
+import jsdom = require('jsdom');
 
 class TestLinkifier2 extends Linkifier2 {
   public set currentLink(link: any) {
@@ -44,8 +45,9 @@ describe('Linkifier2', () => {
   };
 
   beforeEach(() => {
+    const dom = new jsdom.JSDOM();
     bufferService = new MockBufferService(100, 10);
-    linkifier = new TestLinkifier2(null!, null!, null!, bufferService, new LinkProviderService());
+    linkifier = new TestLinkifier2(dom.window.document.createElement('div'), null!, null!, bufferService, new LinkProviderService());
     linkifier.currentLink = {
       link,
       state: {
