@@ -5,13 +5,13 @@
 
 import { assert } from 'chai';
 import { IBufferService } from 'common/services/Services';
-import { Linkifier2 } from './Linkifier2';
+import { Linkifier } from './Linkifier';
 import { MockBufferService } from 'common/TestUtils.test';
 import { ILink } from 'browser/Types';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
 import jsdom = require('jsdom');
 
-class TestLinkifier2 extends Linkifier2 {
+class TestLinkifier2 extends Linkifier {
   public set currentLink(link: any) {
     this._currentLink = link;
   }

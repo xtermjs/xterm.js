@@ -11,7 +11,7 @@ import { IDisposable } from 'common/Types';
 import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
 
-export class Linkifier2 extends Disposable implements ILinkifier2 {
+export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
   protected _currentLink: ILinkWithState | undefined;
   private _mouseDownLink: ILinkWithState | undefined;
