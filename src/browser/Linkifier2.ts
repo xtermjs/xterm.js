@@ -12,9 +12,6 @@ import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
 
 export class Linkifier2 extends Disposable implements ILinkifier2 {
-  private _element: HTMLElement | undefined;
-  private _mouseService: IMouseService | undefined;
-  private _renderService: IRenderService | undefined;
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
   protected _currentLink: ILinkWithState | undefined;
   private _mouseDownLink: ILinkWithState | undefined;
@@ -32,6 +29,9 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   public readonly onHideLinkUnderline = this._onHideLinkUnderline.event;
 
   constructor(
+    private readonly _element: HTMLElement,
+    @IMouseService private readonly _mouseService: IMouseService,
+    @IRenderService private readonly _renderService: IRenderService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ILinkProviderService private readonly _linkProviderService: ILinkProviderService
   ) {
@@ -47,13 +47,6 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
       this._clearCurrentLink();
       this._wasResized = true;
     }));
-  }
-
-  public attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void {
-    this._element = element;
-    this._mouseService = mouseService;
-    this._renderService = renderService;
-
     this.register(addDisposableDomListener(this._element, 'mouseleave', () => {
       this._isMouseOut = true;
       this._clearCurrentLink();
@@ -65,10 +58,6 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
   private _handleMouseMove(event: MouseEvent): void {
     this._lastMouseEvent = event;
-
-    if (!this._element || !this._mouseService) {
-      return;
-    }
 
     const position = this._positionFromMouseEvent(event, this._element, this._mouseService);
     if (!position) {
@@ -228,7 +217,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   }
 
   private _handleMouseUp(event: MouseEvent): void {
-    if (!this._element || !this._mouseService || !this._currentLink) {
+    if (!this._currentLink) {
       return;
     }
 
@@ -243,7 +232,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   }
 
   private _clearCurrentLink(startRow?: number, endRow?: number): void {
-    if (!this._element || !this._currentLink || !this._lastMouseEvent) {
+    if (!this._currentLink || !this._lastMouseEvent) {
       return;
     }
 
@@ -256,7 +245,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
   }
 
   private _handleNewLink(linkWithState: ILinkWithState): void {
-    if (!this._element || !this._lastMouseEvent || !this._mouseService) {
+    if (!this._lastMouseEvent) {
       return;
     }
 
@@ -287,7 +276,7 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
             if (this._currentLink?.state && this._currentLink.state.decorations.pointerCursor !== v) {
               this._currentLink.state.decorations.pointerCursor = v;
               if (this._currentLink.state.isHovered) {
-                this._element?.classList.toggle('xterm-cursor-pointer', v);
+                this._element.classList.toggle('xterm-cursor-pointer', v);
               }
             }
           }
@@ -307,29 +296,27 @@ export class Linkifier2 extends Disposable implements ILinkifier2 {
 
       // Listen to viewport changes to re-render the link under the cursor (only when the line the
       // link is on changes)
-      if (this._renderService) {
-        this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
-          // Sanity check, this shouldn't happen in practice as this listener would be disposed
-          if (!this._currentLink) {
-            return;
-          }
-          // When start is 0 a scroll most likely occurred, make sure links above the fold also get
-          // cleared.
-          const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
-          const end = this._bufferService.buffer.ydisp + 1 + e.end;
-          // Only clear the link if the viewport change happened on this line
-          if (this._currentLink.link.range.start.y >= start && this._currentLink.link.range.end.y <= end) {
-            this._clearCurrentLink(start, end);
-            if (this._lastMouseEvent && this._element) {
-              // re-eval previously active link after changes
-              const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element, this._mouseService!);
-              if (position) {
-                this._askForLink(position, false);
-              }
+      this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
+        // Sanity check, this shouldn't happen in practice as this listener would be disposed
+        if (!this._currentLink) {
+          return;
+        }
+        // When start is 0 a scroll most likely occurred, make sure links above the fold also get
+        // cleared.
+        const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
+        const end = this._bufferService.buffer.ydisp + 1 + e.end;
+        // Only clear the link if the viewport change happened on this line
+        if (this._currentLink.link.range.start.y >= start && this._currentLink.link.range.end.y <= end) {
+          this._clearCurrentLink(start, end);
+          if (this._lastMouseEvent) {
+            // re-eval previously active link after changes
+            const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element, this._mouseService!);
+            if (position) {
+              this._askForLink(position, false);
             }
           }
-        }));
-      }
+        }
+      }));
     }
   }
 

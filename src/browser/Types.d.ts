@@ -7,7 +7,6 @@ import { IEvent } from 'common/EventEmitter';
 import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IDisposable, Terminal as ITerminalApi } from '@xterm/xterm';
-import { IMouseService, IRenderService } from 'browser/services/Services';
 
 /**
  * A portion of the public API that are implemented identially internally and simply passed through.
@@ -128,8 +127,6 @@ export interface ILinkifier2 extends IDisposable {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
   readonly currentLink: ILinkWithState | undefined;
-
-  attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
 }
 
 interface ILink {

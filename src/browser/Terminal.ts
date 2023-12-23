@@ -23,7 +23,7 @@
 
 import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { Linkifier2 } from 'browser/Linkifier2';
+import { Linkifier2 } from './Linkifier2';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
 import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal, IViewport } from 'browser/Types';
@@ -490,9 +490,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.linkifier = this.register(this._instantiationService.createInstance(Linkifier2));
-    // TODO: Move into ctor
-    this.linkifier.attachToDom(this.screenElement, this._mouseService, this._renderService);
+    this.linkifier = this.register(this._instantiationService.createInstance(Linkifier2, this.screenElement));
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
