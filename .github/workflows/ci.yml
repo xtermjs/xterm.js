@@ -153,7 +153,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        node-version: [16]
+        node-version: [18]
         runs-on: [ubuntu, macos, windows]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
