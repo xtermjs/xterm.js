@@ -167,6 +167,11 @@ jobs:
       run: |
         yarn --frozen-lockfile
         yarn install-addons
+    - name: Wait for build job
+      uses: NathanFirmo/wait-for-other-job@v1.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        job: build
     - uses: actions/download-artifact@v3
       with:
         name: build-artifacts
