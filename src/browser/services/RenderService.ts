@@ -3,14 +3,12 @@
  * @license MIT
  */
 
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
-import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, MutableDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
@@ -25,8 +23,8 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderer: MutableDisposable<IRenderer> = this.register(new MutableDisposable());
   private _renderDebouncer: IRenderDebouncerWithCallback;
-  private _screenDprMonitor: ScreenDprMonitor;
   private _pausedResizeTask = new DebouncedIdleTask();
+  private _observerDisposable = this.register(new MutableDisposable());
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -41,7 +39,7 @@ export class RenderService extends Disposable implements IRenderService {
   };
 
   private readonly _onDimensionsChange = this.register(new EventEmitter<IRenderDimensions>());
-  public readonly onDimensionsChange =  this._onDimensionsChange.event;
+  public readonly onDimensionsChange = this._onDimensionsChange.event;
   private readonly _onRenderedViewportChange = this.register(new EventEmitter<{ start: number, end: number }>());
   public readonly onRenderedViewportChange = this._onRenderedViewportChange.event;
   private readonly _onRender = this.register(new EventEmitter<{ start: number, end: number }>());
@@ -63,12 +61,10 @@ export class RenderService extends Disposable implements IRenderService {
   ) {
     super();
 
-    this._renderDebouncer = new RenderDebouncer(coreBrowserService.window, (start, end) => this._renderRows(start, end));
+    this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), coreBrowserService);
     this.register(this._renderDebouncer);
 
-    this._screenDprMonitor = new ScreenDprMonitor(coreBrowserService.window);
-    this._screenDprMonitor.setListener(() => this.handleDevicePixelRatioChange());
-    this.register(this._screenDprMonitor);
+    this.register(coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
 
     this.register(bufferService.onResize(() => this._fullRefresh()));
     this.register(bufferService.buffers.onBufferActivate(() => this._renderer.value?.clear()));
@@ -104,18 +100,19 @@ export class RenderService extends Disposable implements IRenderService {
       'cursorStyle'
     ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, true)));
 
-    // dprchange should handle this case, we need this as well for browsers that don't support the
-    // matchMedia query.
-    this.register(addDisposableDomListener(coreBrowserService.window, 'resize', () => this.handleDevicePixelRatioChange()));
-
     this.register(themeService.onChangeColors(() => this._fullRefresh()));
 
+    this._registerIntersectionObserver(coreBrowserService.window, screenElement);
+    this.register(coreBrowserService.onWindowChange((w) => this._registerIntersectionObserver(w, screenElement)));
+  }
+
+  private _registerIntersectionObserver(w: Window & typeof globalThis, screenElement: HTMLElement): void {
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
-    if ('IntersectionObserver' in coreBrowserService.window) {
-      const observer = new coreBrowserService.window.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
+    if ('IntersectionObserver' in w) {
+      const observer = new w.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
       observer.observe(screenElement);
-      this.register({ dispose: () => observer.disconnect() });
+      this._observerDisposable.value = toDisposable(() => observer.disconnect());
     }
   }
 

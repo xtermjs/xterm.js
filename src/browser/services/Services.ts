@@ -5,7 +5,7 @@
 
 import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
-import { IColorSet, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { AllColorIndex, IDisposable } from 'common/Types';
@@ -28,12 +28,21 @@ export interface ICoreBrowserService {
   serviceBrand: undefined;
 
   readonly isFocused: boolean;
+
+  readonly onDprChange: IEvent<number>;
+  readonly onWindowChange: IEvent<Window & typeof globalThis>;
+
   /**
-   * Parent window that the terminal is rendered into. DOM and rendering APIs
-   * (e.g. requestAnimationFrame) should be invoked in the context of this
-   * window.
+   * Gets or sets the parent window that the terminal is rendered into. DOM and rendering APIs (e.g.
+   * requestAnimationFrame) should be invoked in the context of this window. This should be set when
+   * the window hosting the xterm.js instance changes.
    */
-  readonly window: Window & typeof globalThis;
+  window: Window & typeof globalThis;
+  /**
+   * The document of the primary window to be used to create elements when working with multiple
+   * windows. This is defined by the documentOverride setting.
+   */
+  readonly mainDocument: Document;
   /**
    * Helper for getting the devicePixelRatio of the parent window.
    */
@@ -135,4 +144,15 @@ export interface IThemeService {
    * prevent accidental writes.
    */
   modifyColors(callback: (colors: IColorSet) => void): void;
+}
+
+
+export const ILinkProviderService = createDecorator<ILinkProviderService>('LinkProviderService');
+export interface ILinkProviderService extends IDisposable {
+  serviceBrand: undefined;
+  readonly linkProviders: ReadonlyArray<ILinkProvider>;
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
+}
+export interface ILinkProvider {
+  provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void;
 }

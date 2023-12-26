@@ -13,7 +13,7 @@ import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from 'xterm';
+import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from '@xterm/xterm';
 
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
@@ -148,6 +148,9 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
+  }
+  public attachCustomWheelEventHandler(customWheelEventHandler: (event: WheelEvent) => boolean): void {
+    this._core.attachCustomWheelEventHandler(customWheelEventHandler);
   }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     return this._core.registerLinkProvider(linkProvider);

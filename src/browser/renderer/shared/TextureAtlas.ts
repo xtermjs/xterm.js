@@ -6,7 +6,7 @@
 import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { excludeFromContrastRatioDemands, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_COLOR, color, rgba } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
@@ -15,7 +15,6 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
-import { traceCall } from 'common/services/LogService';
 import { IUnicodeService } from 'common/services/Services';
 
 /**
@@ -424,7 +423,6 @@ export class TextureAtlas implements ITextureAtlas {
     return this._config.colors.contrastCache;
   }
 
-  @traceCall
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
@@ -492,7 +490,7 @@ export class TextureAtlas implements ITextureAtlas {
 
     const powerlineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
     const restrictedPowerlineGlyph = chars.length === 1 && isRestrictedPowerlineGlyph(chars.charCodeAt(0));
-    const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, dim, bold, excludeFromContrastRatioDemands(chars.charCodeAt(0)));
+    const foregroundColor = this._getForegroundColor(bg, bgColorMode, bgColor, fg, fgColorMode, fgColor, inverse, dim, bold, treatGlyphAsBackgroundColor(chars.charCodeAt(0)));
     this._tmpCtx.fillStyle = foregroundColor.css;
 
     // For powerline glyphs left/top padding is excluded (https://github.com/microsoft/vscode/issues/120129)
@@ -545,6 +543,7 @@ export class TextureAtlas implements ITextureAtlas {
       const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
       const yMid = yTop + lineWidth;
       const yBot = yTop + lineWidth * 2;
+      let nextOffset = this._workAttributeData.getUnderlineVariantOffset();
 
       for (let i = 0; i < chWidth; i++) {
         this._tmpCtx.save();
@@ -594,12 +593,32 @@ export class TextureAtlas implements ITextureAtlas {
             );
             break;
           case UnderlineStyle.DOTTED:
-            this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-            this._tmpCtx.moveTo(xChLeft, yTop);
-            this._tmpCtx.lineTo(xChRight, yTop);
+            const offsetWidth = nextOffset === 0 ? 0 :
+              (nextOffset >= lineWidth ? lineWidth * 2 - nextOffset : lineWidth - nextOffset);
+              // a line and a gap.
+            const isLineStart = nextOffset >= lineWidth ? false : true;
+            if (isLineStart === false || offsetWidth === 0) {
+              this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+              this._tmpCtx.moveTo(xChLeft + offsetWidth, yTop);
+              this._tmpCtx.lineTo(xChRight, yTop);
+            } else {
+              this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
+              this._tmpCtx.moveTo(xChLeft, yTop);
+              this._tmpCtx.lineTo(xChLeft + offsetWidth, yTop);
+              this._tmpCtx.moveTo(xChLeft + offsetWidth + lineWidth, yTop);
+              this._tmpCtx.lineTo(xChRight, yTop);
+            }
+            nextOffset = computeNextVariantOffset(xChRight - xChLeft, lineWidth, nextOffset);
             break;
           case UnderlineStyle.DASHED:
-            this._tmpCtx.setLineDash([this._config.devicePixelRatio * 4, this._config.devicePixelRatio * 3]);
+            const lineRatio = 0.6;
+            const gapRatio = 0.3;
+            // End line ratio is approximately equal to 0.1
+            const xChWidth = xChRight - xChLeft;
+            const line = Math.floor(lineRatio * xChWidth);
+            const gap = Math.floor(gapRatio * xChWidth);
+            const end = xChWidth - line - gap;
+            this._tmpCtx.setLineDash([line, gap, end]);
             this._tmpCtx.moveTo(xChLeft, yTop);
             this._tmpCtx.lineTo(xChRight, yTop);
             break;

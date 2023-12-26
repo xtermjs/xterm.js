@@ -27,7 +27,7 @@ function isBoxOrBlockGlyph(codepoint: number): boolean {
   return 0x2500 <= codepoint && codepoint <= 0x259F;
 }
 
-export function excludeFromContrastRatioDemands(codepoint: number): boolean {
+export function treatGlyphAsBackgroundColor(codepoint: number): boolean {
   return isPowerlineGlyph(codepoint) || isBoxOrBlockGlyph(codepoint);
 }
 
@@ -55,4 +55,8 @@ function createDimension(): IDimensions {
     width: 0,
     height: 0
   };
+}
+
+export function computeNextVariantOffset(cellWidth: number, lineWidth: number, currentOffset: number = 0): number {
+  return (cellWidth - (Math.round(lineWidth) * 2 - currentOffset)) % (Math.round(lineWidth) * 2);
 }

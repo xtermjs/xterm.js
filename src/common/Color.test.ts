@@ -271,6 +271,27 @@ describe('Color', () => {
   });
 
   describe('rgba', () => {
+    describe('blend', () => {
+      it('should blend colors based on the alpha channel', () => {
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF00), 0x000000FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF10), 0x101010FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF20), 0x202020FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF30), 0x303030FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF40), 0x404040FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF50), 0x505050FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF60), 0x606060FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF70), 0x707070FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF80), 0x808080FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFF90), 0x909090FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFFA0), 0xA0A0A0FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFFB0), 0xB0B0B0FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFFC0), 0xC0C0C0FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFFD0), 0xD0D0D0FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFFE0), 0xE0E0E0FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFFF0), 0xF0F0F0FF);
+        assert.deepEqual(rgba.blend(0x000000FF, 0xFFFFFFFF), 0xFFFFFFFF);
+      });
+    });
     describe('ensureContrastRatio', () => {
       it('should return undefined if the color already meets the contrast ratio (black bg)', () => {
         assert.equal(rgba.ensureContrastRatio(0x000000ff, 0x606060ff, 1), undefined);

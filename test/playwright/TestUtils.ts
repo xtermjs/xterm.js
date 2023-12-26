@@ -10,7 +10,7 @@ import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from 'xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
 import { EventEmitter } from '../../out/common/EventEmitter';
 
 export interface ITestContext {
@@ -75,6 +75,7 @@ type TerminalProxyCustomOverrides = 'buffer' | (
   'options' |
   'open' |
   'attachCustomKeyEventHandler' |
+  'attachCustomWheelEventHandler' |
   'registerLinkProvider' |
   'registerCharacterJoiner' |
   'deregisterCharacterJoiner' |

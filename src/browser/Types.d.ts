@@ -6,8 +6,7 @@
 import { IEvent } from 'common/EventEmitter';
 import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IDisposable, Terminal as ITerminalApi } from 'xterm';
-import { IMouseService, IRenderService } from './services/Services';
+import { IDisposable, Terminal as ITerminalApi } from '@xterm/xterm';
 
 /**
  * A portion of the public API that are implemented identially internally and simply passed through.
@@ -18,9 +17,9 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   screenElement: HTMLElement | undefined;
   browser: IBrowser;
   buffer: IBuffer;
+  linkifier: ILinkifier2 | undefined;
   viewport: IViewport | undefined;
   options: Required<ITerminalOptions>;
-  linkifier2: ILinkifier2;
 
   onBlur: IEvent<void>;
   onFocus: IEvent<void>;
@@ -32,6 +31,7 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
+export type CustomWheelEventHandler = (event: WheelEvent) => boolean;
 
 export type LineData = CharData[];
 
@@ -127,13 +127,6 @@ export interface ILinkifier2 extends IDisposable {
   onShowLinkUnderline: IEvent<ILinkifierEvent>;
   onHideLinkUnderline: IEvent<ILinkifierEvent>;
   readonly currentLink: ILinkWithState | undefined;
-
-  attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void;
-  registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
-}
-
-interface ILinkProvider {
-  provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void;
 }
 
 interface ILink {

@@ -41,7 +41,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
   abstract fill(fillCellData: ICellData, respectProtect: boolean): void;
   public abstract copyFrom(line: BufferLine): void;
   public abstract clone(): IBufferLine;
-  public abstract translateToString(trimRight: boolean, startCol: number, endCol: number): string;
+  public abstract translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
   public abstract getTrimmedLength(): number;
   public abstract getNoBgTrimmedLength(): number;
   public abstract cleanupMemory(): number;
@@ -200,22 +200,6 @@ export abstract class BufferLine extends AbstractBufferLine implements IBufferLi
   }
 
   public abstract copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void;
-
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, skipReplace: string = WHITESPACE_CELL_CHAR): string {
-    if (trimRight) {
-      endCol = Math.min(endCol, this.getTrimmedLength());
-    }
-    let result = '';
-    const cell = new CellData();
-    while (startCol < endCol) {
-      this.loadCell(startCol, cell);
-      const content = cell.content;
-      const cp = content & Content.CODEPOINT_MASK;
-      result += cp ? cell.getChars() : skipReplace;
-      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
-    }
-    return result;
-  }
 
   // FOLLOWING ONLY USED BY NewBufferLine
   /** From a Uint23 in _data, extract the DataKind bits. */
@@ -679,6 +663,32 @@ export class OldBufferLine extends BufferLine implements IBufferLine {
       }
     }
   }
+
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, outColumns?: number[], skipReplace: string = WHITESPACE_CELL_CHAR): string {
+    if (trimRight) {
+      endCol = Math.min(endCol, this.getTrimmedLength());
+    }
+    if (outColumns) {
+      outColumns.length = 0;
+    }
+    let result = '';
+    while (startCol < endCol) {
+      const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
+      const cp = content & Content.CODEPOINT_MASK;
+      const chars = (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
+      result += chars;
+      if (outColumns) {
+        for (let i = 0; i < chars.length; ++i) {
+          outColumns.push(startCol);
+        }
+      }
+      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by at least 1
+    }
+    if (outColumns) {
+      outColumns.push(startCol);
+    }
+    return result;
+  }
 }
 
 // This class will be merged with its parent when OldBufferLine is removed,
@@ -775,7 +785,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   /** for debugging */
   getText(skipReplace: string = ' '): string {
-    return this.translateToString(true, 0, this.length, skipReplace);
+    return this.translateToString(true, 0, this.length, undefined, skipReplace);
   }
 
   public showRowData(): string {
@@ -1446,7 +1456,10 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     }
   }
 
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, skipReplace: string = WHITESPACE_CELL_CHAR): string {
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, outColumns?: number[], skipReplace: string = WHITESPACE_CELL_CHAR): string {
+    if (outColumns) {
+      outColumns.length = 0;
+    }
     let s = '';
     let col = 0;
     let pendingStart = -1;
@@ -1469,6 +1482,11 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         pendingForce(true);
         pendingStart = start;
         pendingLength = length;
+      }
+      if (outColumns) {
+        for (let i = 0; i < length; ++i) {
+          outColumns.push(startCol);
+        }
       }
     }
     function addPendingSkip(length: number): void {
@@ -1506,7 +1524,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           const clEnd = this.clusterEnd(idata);
           wcols = 1 << wide;
           if (col >= startCol && col + wcols <= endCol) {
-            addPendingString(idata, clEnd - idata);
+              addPendingString(idata, clEnd - idata);
           }
           idata = clEnd - 1;
           col += wcols;
@@ -1515,7 +1533,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         case DataKind.CHAR_W2:
           wcols = 1 << wide;
           if (col >= startCol && col + wcols <= endCol) {
-            addPendingString(idata, 1);
+            addPendingString(idata, wcols);
           }
           col += wcols;
           break;
