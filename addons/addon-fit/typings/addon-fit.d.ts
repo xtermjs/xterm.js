@@ -30,12 +30,12 @@ declare module '@xterm/addon-fit' {
     /**
      * Resizes the terminal to the dimensions of its containing element.
      */
-    public fit(): void;
+    public fit(rect: object): void;
 
     /**
      * Gets the proposed dimensions that will be used for a fit.
      */
-    public proposeDimensions(): ITerminalDimensions | undefined;
+    public proposeDimensions(rect: object): ITerminalDimensions | undefined;
   }
 
   /**
