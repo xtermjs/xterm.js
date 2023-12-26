@@ -237,6 +237,9 @@ export class MockBuffer implements IBuffer {
   public getWrappedRangeForLine(y: number): { first: number, last: number } {
     return Buffer.prototype.getWrappedRangeForLine.apply(this, arguments as any);
   }
+  public reflowRegion(startRow: number, endRow: number, maxRows: number): boolean {
+    throw new Error('Method not implemented.');
+  }
   public nextStop(x?: number): number {
     throw new Error('Method not implemented.');
   }

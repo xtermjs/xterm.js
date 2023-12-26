@@ -431,6 +431,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     let cursorStartY = this._activeBuffer.y;
     let start = 0;
     const wasPaused = this._parseStack.paused;
+    this._activeBuffer.reflowRegion(this._activeBuffer.ybase, this._activeBuffer.lines.length, -1);
 
     if (wasPaused) {
       // assumption: _parseBuffer never mutates between async calls

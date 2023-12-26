@@ -58,6 +58,7 @@ export interface IBuffer {
   clearMarkers(y: number): void;
   clearAllMarkers(): void;
   setWrapped(row: number, value: boolean): void;
+  reflowRegion(startRow: number, endRow: number, maxRows: number): void;
 }
 
 export interface IBufferSet extends IDisposable {

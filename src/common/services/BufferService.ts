@@ -163,5 +163,6 @@ export class BufferService extends Disposable implements IBufferService {
     if (!suppressScrollEvent) {
       this._onScroll.fire(buffer.ydisp);
     }
+    buffer.reflowRegion(buffer.ydisp, buffer.lines.length, this.rows);
   }
 }
