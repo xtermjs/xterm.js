@@ -909,10 +909,11 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       return;
     }
     if (pos + n < width) {
-      this.moveToColumn(pos + n);
+      const endpos = width - n;
+      this.moveToColumn(endpos);
       const idata = this._cachedDataIndex();
-      const colOffset = -1; // ???
-      this.logicalLine().deleteCellsOnly(idata, colOffset, width - (pos + n));
+      const colOffset = this._cachedColumn();
+      this.logicalLine().deleteCellsOnly(idata, endpos - colOffset, n);
     } else {
       n = width - pos;
     }
@@ -921,7 +922,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     this.addEmptyDataElements(idata, 1);
     // Ideally should optimize for adjacent SKIP_COLUMNS (as in eraseCells).
     // However, typically is followed by replacing the new empty cells.
-    this.data()[idata-1] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
+    this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
   }
 
   /** Move to column 'index', which is a RowColumn.
@@ -1550,7 +1551,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         case DataKind.CHAR_W2:
           wcols = 1 << wide;
           if (col >= startCol && col + wcols <= endCol) {
-            addPendingString(idata, wcols);
+            addPendingString(idata, 1);
           }
           col += wcols;
           break;
