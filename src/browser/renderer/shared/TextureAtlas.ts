@@ -291,7 +291,6 @@ export class TextureAtlas implements ITextureAtlas {
         break;
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(bgColor);
-        // TODO: This object creation is slow
         result = channels.toColor(arr[0], arr[1], arr[2]);
         break;
       case Attributes.CM_DEFAULT:
