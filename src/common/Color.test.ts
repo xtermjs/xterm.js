@@ -30,23 +30,23 @@ describe('Color', () => {
         assert.equal(channels.toCss(0xff, 0xff, 0xff), '#ffffff');
       });
       it('should convert an rgba array to css hex string', () => {
-        assert.equal(channels.toCss(0x00, 0x00, 0x00, 0x00), '0x00000000');
-        assert.equal(channels.toCss(0x10, 0x10, 0x10, 0x10), '0x10101010');
-        assert.equal(channels.toCss(0x20, 0x20, 0x20, 0x20), '0x20202020');
-        assert.equal(channels.toCss(0x30, 0x30, 0x30, 0x30), '0x30303030');
-        assert.equal(channels.toCss(0x40, 0x40, 0x40, 0x40), '0x40404040');
-        assert.equal(channels.toCss(0x50, 0x50, 0x50, 0x50), '0x50505050');
-        assert.equal(channels.toCss(0x60, 0x60, 0x60, 0x60), '0x60606060');
-        assert.equal(channels.toCss(0x70, 0x70, 0x70, 0x70), '0x70707070');
-        assert.equal(channels.toCss(0x80, 0x80, 0x80, 0x80), '0x80808080');
-        assert.equal(channels.toCss(0x90, 0x90, 0x90, 0x90), '0x90909090');
-        assert.equal(channels.toCss(0xa0, 0xa0, 0xa0, 0xa0), '0xa0a0a0a0');
-        assert.equal(channels.toCss(0xb0, 0xb0, 0xb0, 0xb0), '0xb0b0b0b0');
-        assert.equal(channels.toCss(0xc0, 0xc0, 0xc0, 0xc0), '0xc0c0c0c0');
-        assert.equal(channels.toCss(0xd0, 0xd0, 0xd0, 0xd0), '0xd0d0d0d0');
-        assert.equal(channels.toCss(0xe0, 0xe0, 0xe0, 0xe0), '0xe0e0e0e0');
-        assert.equal(channels.toCss(0xf0, 0xf0, 0xf0, 0xf0), '0xf0f0f0f0');
-        assert.equal(channels.toCss(0xff, 0xff, 0xff, 0xff), '0xffffffff');
+        assert.equal(channels.toCss(0x00, 0x00, 0x00, 0x00), '#00000000');
+        assert.equal(channels.toCss(0x10, 0x10, 0x10, 0x10), '#10101010');
+        assert.equal(channels.toCss(0x20, 0x20, 0x20, 0x20), '#20202020');
+        assert.equal(channels.toCss(0x30, 0x30, 0x30, 0x30), '#30303030');
+        assert.equal(channels.toCss(0x40, 0x40, 0x40, 0x40), '#40404040');
+        assert.equal(channels.toCss(0x50, 0x50, 0x50, 0x50), '#50505050');
+        assert.equal(channels.toCss(0x60, 0x60, 0x60, 0x60), '#60606060');
+        assert.equal(channels.toCss(0x70, 0x70, 0x70, 0x70), '#70707070');
+        assert.equal(channels.toCss(0x80, 0x80, 0x80, 0x80), '#80808080');
+        assert.equal(channels.toCss(0x90, 0x90, 0x90, 0x90), '#90909090');
+        assert.equal(channels.toCss(0xa0, 0xa0, 0xa0, 0xa0), '#a0a0a0a0');
+        assert.equal(channels.toCss(0xb0, 0xb0, 0xb0, 0xb0), '#b0b0b0b0');
+        assert.equal(channels.toCss(0xc0, 0xc0, 0xc0, 0xc0), '#c0c0c0c0');
+        assert.equal(channels.toCss(0xd0, 0xd0, 0xd0, 0xd0), '#d0d0d0d0');
+        assert.equal(channels.toCss(0xe0, 0xe0, 0xe0, 0xe0), '#e0e0e0e0');
+        assert.equal(channels.toCss(0xf0, 0xf0, 0xf0, 0xf0), '#f0f0f0f0');
+        assert.equal(channels.toCss(0xff, 0xff, 0xff, 0xff), '#ffffffff');
       });
     });
 
@@ -88,6 +88,47 @@ describe('Color', () => {
         assert.equal(channels.toRgba(0xe0, 0xe0, 0xe0, 0xe0), 0xe0e0e0e0);
         assert.equal(channels.toRgba(0xf0, 0xf0, 0xf0, 0xf0), 0xf0f0f0f0);
         assert.equal(channels.toRgba(0xff, 0xff, 0xff, 0xff), 0xffffffff);
+      });
+    });
+
+    describe('toColor', () => {
+      it('should convert an rgb array to an IColor', () => {
+        assert.deepStrictEqual(channels.toColor(0x00, 0x00, 0x00), { css: '#000000', rgba: 0x000000FF });
+        assert.deepStrictEqual(channels.toColor(0x10, 0x10, 0x10), { css: '#101010', rgba: 0x101010FF });
+        assert.deepStrictEqual(channels.toColor(0x20, 0x20, 0x20), { css: '#202020', rgba: 0x202020FF });
+        assert.deepStrictEqual(channels.toColor(0x30, 0x30, 0x30), { css: '#303030', rgba: 0x303030FF });
+        assert.deepStrictEqual(channels.toColor(0x40, 0x40, 0x40), { css: '#404040', rgba: 0x404040FF });
+        assert.deepStrictEqual(channels.toColor(0x50, 0x50, 0x50), { css: '#505050', rgba: 0x505050FF });
+        assert.deepStrictEqual(channels.toColor(0x60, 0x60, 0x60), { css: '#606060', rgba: 0x606060FF });
+        assert.deepStrictEqual(channels.toColor(0x70, 0x70, 0x70), { css: '#707070', rgba: 0x707070FF });
+        assert.deepStrictEqual(channels.toColor(0x80, 0x80, 0x80), { css: '#808080', rgba: 0x808080FF });
+        assert.deepStrictEqual(channels.toColor(0x90, 0x90, 0x90), { css: '#909090', rgba: 0x909090FF });
+        assert.deepStrictEqual(channels.toColor(0xa0, 0xa0, 0xa0), { css: '#a0a0a0', rgba: 0xa0a0a0FF });
+        assert.deepStrictEqual(channels.toColor(0xb0, 0xb0, 0xb0), { css: '#b0b0b0', rgba: 0xb0b0b0FF });
+        assert.deepStrictEqual(channels.toColor(0xc0, 0xc0, 0xc0), { css: '#c0c0c0', rgba: 0xc0c0c0FF });
+        assert.deepStrictEqual(channels.toColor(0xd0, 0xd0, 0xd0), { css: '#d0d0d0', rgba: 0xd0d0d0FF });
+        assert.deepStrictEqual(channels.toColor(0xe0, 0xe0, 0xe0), { css: '#e0e0e0', rgba: 0xe0e0e0FF });
+        assert.deepStrictEqual(channels.toColor(0xf0, 0xf0, 0xf0), { css: '#f0f0f0', rgba: 0xf0f0f0FF });
+        assert.deepStrictEqual(channels.toColor(0xff, 0xff, 0xff), { css: '#ffffff', rgba: 0xffffffFF });
+      });
+      it('should convert an rgba array to an IColor', () => {
+        assert.deepStrictEqual(channels.toColor(0x00, 0x00, 0x00, 0x00), { css: '#00000000', rgba: 0x00000000 });
+        assert.deepStrictEqual(channels.toColor(0x10, 0x10, 0x10, 0x10), { css: '#10101010', rgba: 0x10101010 });
+        assert.deepStrictEqual(channels.toColor(0x20, 0x20, 0x20, 0x20), { css: '#20202020', rgba: 0x20202020 });
+        assert.deepStrictEqual(channels.toColor(0x30, 0x30, 0x30, 0x30), { css: '#30303030', rgba: 0x30303030 });
+        assert.deepStrictEqual(channels.toColor(0x40, 0x40, 0x40, 0x40), { css: '#40404040', rgba: 0x40404040 });
+        assert.deepStrictEqual(channels.toColor(0x50, 0x50, 0x50, 0x50), { css: '#50505050', rgba: 0x50505050 });
+        assert.deepStrictEqual(channels.toColor(0x60, 0x60, 0x60, 0x60), { css: '#60606060', rgba: 0x60606060 });
+        assert.deepStrictEqual(channels.toColor(0x70, 0x70, 0x70, 0x70), { css: '#70707070', rgba: 0x70707070 });
+        assert.deepStrictEqual(channels.toColor(0x80, 0x80, 0x80, 0x80), { css: '#80808080', rgba: 0x80808080 });
+        assert.deepStrictEqual(channels.toColor(0x90, 0x90, 0x90, 0x90), { css: '#90909090', rgba: 0x90909090 });
+        assert.deepStrictEqual(channels.toColor(0xa0, 0xa0, 0xa0, 0xa0), { css: '#a0a0a0a0', rgba: 0xa0a0a0a0 });
+        assert.deepStrictEqual(channels.toColor(0xb0, 0xb0, 0xb0, 0xb0), { css: '#b0b0b0b0', rgba: 0xb0b0b0b0 });
+        assert.deepStrictEqual(channels.toColor(0xc0, 0xc0, 0xc0, 0xc0), { css: '#c0c0c0c0', rgba: 0xc0c0c0c0 });
+        assert.deepStrictEqual(channels.toColor(0xd0, 0xd0, 0xd0, 0xd0), { css: '#d0d0d0d0', rgba: 0xd0d0d0d0 });
+        assert.deepStrictEqual(channels.toColor(0xe0, 0xe0, 0xe0, 0xe0), { css: '#e0e0e0e0', rgba: 0xe0e0e0e0 });
+        assert.deepStrictEqual(channels.toColor(0xf0, 0xf0, 0xf0, 0xf0), { css: '#f0f0f0f0', rgba: 0xf0f0f0f0 });
+        assert.deepStrictEqual(channels.toColor(0xff, 0xff, 0xff, 0xff), { css: '#ffffffff', rgba: 0xffffffff });
       });
     });
   });
