@@ -146,7 +146,7 @@ export class Buffer implements IBuffer {
     } else {
       const prevRow = this.lines.get(absrow - 1) as NewBufferLine;
       const curRow = line as WrappedBufferLine;
-      const oldStartColumn = curRow.logicalStartColumn()
+      const oldStartColumn = curRow.logicalStartColumn();
       prevRow.nextRowSameLine = undefined;
       const oldLine = prevRow.logicalLine();
       const newRow = new LogicalBufferLine(line.length, undefined, oldLine);
@@ -307,9 +307,8 @@ export class Buffer implements IBuffer {
       const reflowNow = this._isReflowEnabled && this._cols !== newCols && ! lazyReflow;
       this._cols = newCols;
       this._rows = newRows;
-      this.reflowRegion(reflowNow ? 0 : this.ydisp,
-                        this.lines.length,
-                        reflowNow? -1 : newRows);
+      this.reflowRegion(reflowNow ? 0 : this.ydisp, this.lines.length,
+        reflowNow? -1 : newRows);
       this._fixupPosition();
     } else { // !usingNewBufferLine()
       if (this._isReflowEnabled) {
@@ -425,7 +424,6 @@ export class Buffer implements IBuffer {
           const idata = line._cachedDataIndex();
           if (idata >= dataLength) {
             curRow.nextRowSameLine = undefined;
-            //curRow._isWrapped = false;
             break;
           }
           startCol = line._cachedColumn();
@@ -462,7 +460,7 @@ export class Buffer implements IBuffer {
         if (row + deltaSoFar === yBaseOld) { this.ybase = yBaseOld + deltaSoFar; }
         if (row + deltaSoFar === yDispOld) { this.ydisp = yDispOld + deltaSoFar; }
         if (row === yAbsOld) {
-            yAbs += deltaSoFar;
+          yAbs += deltaSoFar;
         }
         row++;
       }
@@ -867,8 +865,8 @@ export class Buffer implements IBuffer {
   }
 
   // for DEBUGGING
-  noteError(msg: string) {
-      console.log('ERROR: ' + msg);
+  noteError(msg: string): void {
+    console.log('ERROR: ' + msg);
   }
 
   // for DEBUGGING
@@ -891,7 +889,7 @@ export class Buffer implements IBuffer {
           report('bad previous line before Wrapped');
         }
       } else if (! curRow) {
-          report('undefined line in lines list');
+        report('undefined line in lines list');
       }
       prevRow = curRow;
     }

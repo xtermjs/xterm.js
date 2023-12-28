@@ -73,7 +73,6 @@ export class DomRendererRowFactory {
     const cell = this._workCell;
 
     const elements: HTMLSpanElement[] = [];
-    const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
     const colors = this._themeService.colors;
 
     let lineLength = lineData.getNoBgTrimmedLength();

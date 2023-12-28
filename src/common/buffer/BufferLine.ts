@@ -792,7 +792,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     return this.showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
   }
   /* Human-readable display of data() array, for debugging */
-  public showData(start = 0, end = this.dataLength()) {
+  public showData(start = 0, end = this.dataLength()): string {
     let s = '[';
     for (let i = start; i < end; i++) {
       const word = this.data()[i];
@@ -855,15 +855,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     function error(str: string): void {
       console.log('ERROR: '+str);
     }
-    const icol = 0;
     const data = this.data();
     if (this.dataLength() < 0 || this.dataLength() > data.length)
     {error('bad _dataLength');}
     if (this.dataLength() === 2 && BufferLine.wKind(data[0]) === DataKind.SKIP_COLUMNS && BufferLine.wKind(data[1]) === DataKind.BG) {
-          error("SKIP followed by BG");
+      error('SKIP followed by BG');
     }
     if (this.dataLength() === 1 && data[0] === BufferLine.wSet1(DataKind.BG, 0)) {
-          error("default BG only");
+      error('default BG only');
     }
     /*
     for (let idata = 0; idata < this.dataLength(); idata++) {
@@ -1053,8 +1052,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   private preInsert(index: LineColumn, attrs: IAttributeData): boolean {
     const content = this.moveToLineColumn(index);
-    const curColumn = this._cachedColumn();
-    const startColumn = curColumn;
+    let curColumn = this._cachedColumn();
     let idata = this._cachedDataIndex();
 
     // CASES:
@@ -1066,15 +1064,34 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     // b. index === curColumn + width
     // c. otherwise - in middle of wide char
 
-    if ((content >> Content.WIDTH_SHIFT) === 2
-      && index === curColumn + 1) {
-      // In the middle of a wide character. Well-behaved applications are
-      // unlikely to do this, so it's not worth optimizing.
-      const clEnd = this.clusterEnd(idata);
-      this.addEmptyDataElements(idata, idata - clEnd - 1);
-      this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 2);
+    if (curColumn < index) {
+      if ((content >> Content.WIDTH_SHIFT) === 2
+        && index === curColumn + 1) {
+        // In the middle of a wide character. Well-behaved applications are
+        // unlikely to do this, so it's not worth optimizing.
+        const clEnd = this.clusterEnd(idata);
+        this.addEmptyDataElements(idata, idata - clEnd - 2);
+        this.data()[idata++] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1);
+        this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1);
+        curColumn = index;
+      } else if (idata === this.dataLength()) {
+        this.addEmptyDataElements(idata, 1);
+        this.data()[idata] =
+          BufferLine.wSet1(DataKind.SKIP_COLUMNS, index - curColumn);
+        curColumn = index;
+        idata++;
+      } else if (BufferLine.wKind(this.data()[idata]) === DataKind.SKIP_COLUMNS) {
+        const oldSkip = BufferLine.wSkipCount(this.data()[idata]);
+        this.addEmptyDataElements(idata, 1);
+        const needed = index - curColumn;
+        this.data()[idata++] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, needed);
+        this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, oldSkip - needed);
+        curColumn = index;
+      } else {
+        console.log("can't insert at column "+index);
+      }
+      this._cacheSetColumnDataIndex(curColumn, idata);
     }
-    // FIXME handle after dataLength() or in SKIP_COILUMNS
 
     // set attributes
     const newFg = attrs.getFg();
@@ -1524,7 +1541,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           const clEnd = this.clusterEnd(idata);
           wcols = 1 << wide;
           if (col >= startCol && col + wcols <= endCol) {
-              addPendingString(idata, clEnd - idata);
+            addPendingString(idata, clEnd - idata);
           }
           idata = clEnd - 1;
           col += wcols;
