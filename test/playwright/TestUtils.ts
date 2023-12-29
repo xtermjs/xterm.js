@@ -75,6 +75,7 @@ type TerminalProxyCustomOverrides = 'buffer' | (
   'options' |
   'open' |
   'attachCustomKeyEventHandler' |
+  'attachCustomWheelEventHandler' |
   'registerLinkProvider' |
   'registerCharacterJoiner' |
   'deregisterCharacterJoiner' |

@@ -8,10 +8,10 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { color, rgba } from 'common/Color';
+import { channels, color } from 'common/Color';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
-import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
+import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { IColorContrastCache } from 'browser/Types';
@@ -376,7 +376,7 @@ export class DomRendererRowFactory {
           classes.push(`xterm-bg-${bg}`);
           break;
         case Attributes.CM_RGB:
-          resolvedBg = rgba.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
+          resolvedBg = channels.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
           this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
           break;
         case Attributes.CM_DEFAULT:
@@ -408,7 +408,7 @@ export class DomRendererRowFactory {
           }
           break;
         case Attributes.CM_RGB:
-          const color = rgba.toColor(
+          const color = channels.toColor(
             (fg >> 16) & 0xFF,
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
@@ -458,7 +458,7 @@ export class DomRendererRowFactory {
   }
 
   private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode())) {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || treatGlyphAsBackgroundColor(cell.getCode())) {
       return false;
     }
 

@@ -6,7 +6,7 @@
  */
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
-import type { SerializeAddon as ISerializeApi } from '@xterm/addon-serialize';
+import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
 import { DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
 import { IAttributeData, IColor } from 'common/Types';
 
@@ -21,24 +21,24 @@ abstract class BaseSerializeHandler {
   ) {
   }
 
-  public serialize(range: IBufferRange): string {
+  public serialize(range: IBufferRange, excludeFinalCursorPosition?: boolean): string {
     // we need two of them to flip between old and new cell
     const cell1 = this._buffer.getNullCell();
     const cell2 = this._buffer.getNullCell();
     let oldCell = cell1;
 
-    const startRow = range.start.x;
-    const endRow = range.end.x;
-    const startColumn = range.start.y;
-    const endColumn = range.end.y;
+    const startRow = range.start.y;
+    const endRow = range.end.y;
+    const startColumn = range.start.x;
+    const endColumn = range.end.x;
 
     this._beforeSerialize(endRow - startRow, startRow, endRow);
 
     for (let row = startRow; row <= endRow; row++) {
       const line = this._buffer.getLine(row);
       if (line) {
-        const startLineColumn = row !== range.start.x ? 0 : startColumn;
-        const endLineColumn = row !== range.end.x ? line.length : endColumn;
+        const startLineColumn = row === range.start.y ? startColumn : 0;
+        const endLineColumn = row === range.end.y ? endColumn: line.length;
         for (let col = startLineColumn; col < endLineColumn; col++) {
           const c = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
           if (!c) {
@@ -54,14 +54,14 @@ abstract class BaseSerializeHandler {
 
     this._afterSerialize();
 
-    return this._serializeString();
+    return this._serializeString(excludeFinalCursorPosition);
   }
 
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void { }
   protected _rowEnd(row: number, isLastRow: boolean): void { }
   protected _beforeSerialize(rows: number, startRow: number, endRow: number): void { }
   protected _afterSerialize(): void { }
-  protected _serializeString(): string { return ''; }
+  protected _serializeString(excludeFinalCursorPosition?: boolean): string { return ''; }
 }
 
 function equalFg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
@@ -353,7 +353,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
     }
   }
 
-  protected _serializeString(): string {
+  protected _serializeString(excludeFinalCursorPosition: boolean): string {
     let rowEnd = this._allRows.length;
 
     // the fixup is only required for data without scrollback
@@ -374,29 +374,31 @@ class StringSerializeHandler extends BaseSerializeHandler {
     }
 
     // restore the cursor
-    const realCursorRow = this._buffer.baseY + this._buffer.cursorY;
-    const realCursorCol = this._buffer.cursorX;
+    if (!excludeFinalCursorPosition) {
+      const realCursorRow = this._buffer.baseY + this._buffer.cursorY;
+      const realCursorCol = this._buffer.cursorX;
 
-    const cursorMoved = (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
+      const cursorMoved = (realCursorRow !== this._lastCursorRow || realCursorCol !== this._lastCursorCol);
 
-    const moveRight = (offset: number): void => {
-      if (offset > 0) {
-        content += `\u001b[${offset}C`;
-      } else if (offset < 0) {
-        content += `\u001b[${-offset}D`;
+      const moveRight = (offset: number): void => {
+        if (offset > 0) {
+          content += `\u001b[${offset}C`;
+        } else if (offset < 0) {
+          content += `\u001b[${-offset}D`;
+        }
+      };
+      const moveDown = (offset: number): void => {
+        if (offset > 0) {
+          content += `\u001b[${offset}B`;
+        } else if (offset < 0) {
+          content += `\u001b[${-offset}A`;
+        }
+      };
+
+      if (cursorMoved) {
+        moveDown(realCursorRow - this._lastCursorRow);
+        moveRight(realCursorCol - this._lastCursorCol);
       }
-    };
-    const moveDown = (offset: number): void => {
-      if (offset > 0) {
-        content += `\u001b[${offset}B`;
-      } else if (offset < 0) {
-        content += `\u001b[${-offset}A`;
-      }
-    };
-
-    if (cursorMoved) {
-      moveDown(realCursorRow - this._lastCursorRow);
-      moveRight(realCursorCol - this._lastCursorCol);
     }
 
     // Restore the cursor's current style, see https://github.com/xtermjs/xterm.js/issues/3677
@@ -419,14 +421,21 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
     this._terminal = terminal;
   }
 
-  private _serializeBuffer(terminal: Terminal, buffer: IBuffer, scrollback?: number): string {
+  private _serializeBufferByScrollback(terminal: Terminal, buffer: IBuffer, scrollback?: number): string {
     const maxRows = buffer.length;
-    const handler = new StringSerializeHandler(buffer, terminal);
     const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
+    return this._serializeBufferByRange(terminal, buffer, {
+      start: maxRows - correctRows,
+      end: maxRows - 1
+    }, false);
+  }
+
+  private _serializeBufferByRange(terminal: Terminal, buffer: IBuffer, range: ISerializeRange, excludeFinalCursorPosition: boolean): string {
+    const handler = new StringSerializeHandler(buffer, terminal);
     return handler.serialize({
-      start: { x: maxRows - correctRows, y: 0 },
-      end: { x: maxRows - 1, y: terminal.cols }
-    });
+      start: { x: 0,             y: typeof range.start === 'number' ? range.start : range.start.line },
+      end:   { x: terminal.cols, y: typeof range.end   === 'number' ? range.end   : range.end.line   }
+    }, excludeFinalCursorPosition);
   }
 
   private _serializeBufferAsHTML(terminal: Terminal, options: Partial<IHTMLSerializeOptions>): string {
@@ -438,16 +447,16 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
       const scrollback = options.scrollback;
       const correctRows = (scrollback === undefined) ? maxRows : constrain(scrollback + terminal.rows, 0, maxRows);
       return handler.serialize({
-        start: { x: maxRows - correctRows, y: 0 },
-        end: { x: maxRows - 1, y: terminal.cols }
+        start: { x: 0,             y: maxRows - correctRows },
+        end:   { x: terminal.cols, y: maxRows - 1           }
       });
     }
 
     const selection = this._terminal?.getSelectionPosition();
     if (selection !== undefined) {
       return handler.serialize({
-        start: { x: selection.start.y, y: selection.start.x },
-        end: { x: selection.end.y, y: selection.end.x }
+        start: { x: selection.start.x, y: selection.start.y },
+        end:   { x: selection.end.x,   y: selection.end.y   }
       });
     }
 
@@ -490,12 +499,14 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
     }
 
     // Normal buffer
-    let content = this._serializeBuffer(this._terminal, this._terminal.buffer.normal, options?.scrollback);
+    let content = options?.range
+      ? this._serializeBufferByRange(this._terminal, this._terminal.buffer.normal, options.range, true)
+      : this._serializeBufferByScrollback(this._terminal, this._terminal.buffer.normal, options?.scrollback);
 
     // Alternate buffer
     if (!options?.excludeAltBuffer) {
       if (this._terminal.buffer.active.type === 'alternate') {
-        const alternativeScreenContent = this._serializeBuffer(this._terminal, this._terminal.buffer.alternate, undefined);
+        const alternativeScreenContent = this._serializeBufferByScrollback(this._terminal, this._terminal.buffer.alternate, undefined);
         content += `\u001b[?1049h\u001b[H${alternativeScreenContent}`;
       }
     }
@@ -517,19 +528,6 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
   }
 
   public dispose(): void { }
-}
-
-
-interface ISerializeOptions {
-  scrollback?: number;
-  excludeModes?: boolean;
-  excludeAltBuffer?: boolean;
-}
-
-interface IHTMLSerializeOptions {
-  scrollback: number;
-  onlySelection: boolean;
-  includeGlobalBackground: boolean;
 }
 
 export class HTMLSerializeHandler extends BaseSerializeHandler {

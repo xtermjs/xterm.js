@@ -27,7 +27,7 @@ function isBoxOrBlockGlyph(codepoint: number): boolean {
   return 0x2500 <= codepoint && codepoint <= 0x259F;
 }
 
-export function excludeFromContrastRatioDemands(codepoint: number): boolean {
+export function treatGlyphAsBackgroundColor(codepoint: number): boolean {
   return isPowerlineGlyph(codepoint) || isBoxOrBlockGlyph(codepoint);
 }
 

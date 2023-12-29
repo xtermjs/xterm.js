@@ -33,6 +33,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _charAtlasDisposable = this.register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
+  private _observerDisposable = this.register(new MutableDisposable());
 
   private _model: RenderModel = new RenderModel();
   private _workCell: CellData = new CellData();
@@ -80,7 +81,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier2, this._coreBrowserService, _optionsService, this._themeService)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService)
     ];
     this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
@@ -123,7 +124,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._requestRedrawViewport();
     }));
 
-    this.register(observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
+    this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+    this.register(this._coreBrowserService.onWindowChange(w => {
+      this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+    }));
 
     this._core.screenElement!.appendChild(this._canvas);
 

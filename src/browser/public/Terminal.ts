@@ -148,6 +148,9 @@ export class Terminal extends Disposable implements ITerminalApi {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
   }
+  public attachCustomWheelEventHandler(customWheelEventHandler: (event: WheelEvent) => boolean): void {
+    this._core.attachCustomWheelEventHandler(customWheelEventHandler);
+  }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     return this._core.registerLinkProvider(linkProvider);
   }
