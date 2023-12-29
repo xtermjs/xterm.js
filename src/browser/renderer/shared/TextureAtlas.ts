@@ -8,7 +8,7 @@ import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { NULL_COLOR, color, rgba } from 'common/Color';
+import { NULL_COLOR, channels, color, rgba } from 'common/Color';
 import { EventEmitter } from 'common/EventEmitter';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
@@ -291,8 +291,7 @@ export class TextureAtlas implements ITextureAtlas {
         break;
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(bgColor);
-        // TODO: This object creation is slow
-        result = rgba.toColor(arr[0], arr[1], arr[2]);
+        result = channels.toColor(arr[0], arr[1], arr[2]);
         break;
       case Attributes.CM_DEFAULT:
       default:
@@ -324,7 +323,7 @@ export class TextureAtlas implements ITextureAtlas {
         break;
       case Attributes.CM_RGB:
         const arr = AttributeData.toColorRGB(fgColor);
-        result = rgba.toColor(arr[0], arr[1], arr[2]);
+        result = channels.toColor(arr[0], arr[1], arr[2]);
         break;
       case Attributes.CM_DEFAULT:
       default:
@@ -406,7 +405,7 @@ export class TextureAtlas implements ITextureAtlas {
       return undefined;
     }
 
-    const color = rgba.toColor(
+    const color = channels.toColor(
       (result >> 24) & 0xFF,
       (result >> 16) & 0xFF,
       (result >> 8) & 0xFF

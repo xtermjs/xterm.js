@@ -41,7 +41,7 @@ import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
-import { color, rgba } from 'common/Color';
+import { channels, color } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
@@ -211,17 +211,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
       switch (req.type) {
         case ColorRequestType.REPORT:
-          const channels = color.toColorRGB(acc === 'ansi'
+          const colorRgb = color.toColorRGB(acc === 'ansi'
             ? this._themeService.colors.ansi[req.index]
             : this._themeService.colors[acc]);
-          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(channels)}${C1_ESCAPED.ST}`);
+          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(colorRgb)}${C1_ESCAPED.ST}`);
           break;
         case ColorRequestType.SET:
           if (acc === 'ansi') {
-            this._themeService.modifyColors(colors => colors.ansi[req.index] = rgba.toColor(...req.color));
+            this._themeService.modifyColors(colors => colors.ansi[req.index] = channels.toColor(...req.color));
           } else {
             const narrowedAcc = acc;
-            this._themeService.modifyColors(colors => colors[narrowedAcc] = rgba.toColor(...req.color));
+            this._themeService.modifyColors(colors => colors[narrowedAcc] = channels.toColor(...req.color));
           }
           break;
         case ColorRequestType.RESTORE:
