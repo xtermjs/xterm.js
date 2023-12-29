@@ -27,9 +27,9 @@ export class CharSizeService extends Disposable implements ICharSizeService {
   ) {
     super();
     try {
-      this._measureStrategy = new TextMetricsMeasureStrategy(this._optionsService);
+      this._measureStrategy = this.register(new TextMetricsMeasureStrategy(this._optionsService));
     } catch {
-      this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
+      this._measureStrategy = this.register(new DomMeasureStrategy(document, parentElement, this._optionsService));
     }
     this.register(this._optionsService.onMultipleOptionChange(['fontFamily', 'fontSize'], () => this.measure()));
   }
@@ -57,8 +57,22 @@ const enum DomMeasureStrategyConstants {
   REPEAT = 32
 }
 
-class DomMeasureStrategy implements IMeasureStrategy {
-  private _result: IMeasureResult = { width: 0, height: 0 };
+abstract class BaseMeasureStategy extends Disposable implements IMeasureStrategy {
+  protected _result: IMeasureResult = { width: 0, height: 0 };
+
+  protected _validateAndSet(width: number | undefined, height: number | undefined): void {
+    // If values are 0 then the element is likely currently display:none, in which case we should
+    // retain the previous value.
+    if (width !== undefined && width > 0 && height !== undefined && height > 0) {
+      this._result.width = width;
+      this._result.height = height;
+    }
+  }
+
+  public abstract measure(): Readonly<IMeasureResult>;
+}
+
+class DomMeasureStrategy extends BaseMeasureStategy {
   private _measureElement: HTMLElement;
 
   constructor(
@@ -66,6 +80,7 @@ class DomMeasureStrategy implements IMeasureStrategy {
     private _parentElement: HTMLElement,
     private _optionsService: IOptionsService
   ) {
+    super();
     this._measureElement = this._document.createElement('span');
     this._measureElement.classList.add('xterm-char-measure-element');
     this._measureElement.textContent = 'W'.repeat(DomMeasureStrategyConstants.REPEAT);
@@ -80,30 +95,20 @@ class DomMeasureStrategy implements IMeasureStrategy {
     this._measureElement.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
 
     // Note that this triggers a synchronous layout
-    const geometry = {
-      height: Number(this._measureElement.offsetHeight),
-      width: Number(this._measureElement.offsetWidth)
-    };
-
-    // If values are 0 then the element is likely currently display:none, in which case we should
-    // retain the previous value.
-    if (geometry.width !== 0 && geometry.height !== 0) {
-      this._result.width = geometry.width / DomMeasureStrategyConstants.REPEAT;
-      this._result.height = Math.ceil(geometry.height);
-    }
+    this._validateAndSet(Number(this._measureElement.offsetWidth) / DomMeasureStrategyConstants.REPEAT, Number(this._measureElement.offsetHeight));
 
     return this._result;
   }
 }
 
-class TextMetricsMeasureStrategy implements IMeasureStrategy {
-  private _result: IMeasureResult = { width: 0, height: 0 };
+class TextMetricsMeasureStrategy extends BaseMeasureStategy {
   private _canvas: OffscreenCanvas;
   private _ctx: OffscreenCanvasRenderingContext2D;
 
   constructor(
     private _optionsService: IOptionsService
   ) {
+    super();
     // This will throw if any required API is not supported
     this._canvas = new OffscreenCanvas(100, 100);
     this._ctx = this._canvas.getContext('2d')!;
@@ -115,15 +120,8 @@ class TextMetricsMeasureStrategy implements IMeasureStrategy {
 
   public measure(): Readonly<IMeasureResult> {
     this._ctx.font = `${this._optionsService.rawOptions.fontSize}px ${this._optionsService.rawOptions.fontFamily}`;
-
     const metrics = this._ctx.measureText('W');
-
-    // Sanity check that the values are not 0
-    if (metrics.width !== 0 && metrics.fontBoundingBoxAscent !== 0) {
-      this._result.width = metrics.width;
-      this._result.height = Math.ceil(metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
-    }
-
+    this._validateAndSet(metrics.width, metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
     return this._result;
   }
 }
