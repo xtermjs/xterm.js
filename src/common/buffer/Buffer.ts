@@ -865,12 +865,12 @@ export class Buffer implements IBuffer {
   }
 
   // for DEBUGGING
-  noteError(msg: string): void {
+  public noteError(msg: string): void {
     console.log('ERROR: ' + msg);
   }
 
   // for DEBUGGING
-  checkLines(report = this.noteError): void {
+  public checkLines(report = this.noteError): void {
     const nlines = this.lines.length;
     let prevRow: IBufferLine | undefined;
     for (let i = 0; i < nlines; i++) {

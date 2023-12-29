@@ -34,11 +34,11 @@ export abstract class AbstractBufferLine implements IBufferLine {
   /** Number of logical columns */
   public length: number = 0;
   _isWrapped: boolean = false;
-  get isWrapped(): boolean { return this._isWrapped; }
-  abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
-  abstract addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
-  abstract resize(cols: number, fillCellData: ICellData): boolean;
-  abstract fill(fillCellData: ICellData, respectProtect?: boolean): void;
+  public get isWrapped(): boolean { return this._isWrapped; }
+  public abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
+  public abstract addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
+  public abstract resize(cols: number, fillCellData: ICellData): boolean;
+  public abstract fill(fillCellData: ICellData, respectProtect?: boolean): void;
   public abstract copyFrom(line: BufferLine): void;
   public abstract clone(): IBufferLine;
   public abstract translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
@@ -1045,7 +1045,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
-    const content = this.moveToColumn(pos);
+    this.moveToColumn(pos);
     const idata = this._cachedDataIndex();
     const curColumn = this._cachedColumn();
     this.logicalLine().deleteCellsOnly(idata, pos - curColumn, n);
@@ -1089,7 +1089,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, oldSkip - needed);
         curColumn = index;
       } else {
-        console.log("can't insert at column "+index);
+        console.log(`can't insert at column ${index}`);
       }
       this._cacheSetColumnDataIndex(curColumn, idata);
     }
@@ -1742,7 +1742,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       const dcount = dskipLast + 1 - idata0;
       this.addEmptyDataElements(idata0, - dcount);
     }
- }
+  }
 }
 
 export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
