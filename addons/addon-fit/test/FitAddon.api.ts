@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { openTerminal, launchBrowser } from '../../../out-test/api/TestUtils';
+import { openTerminal, launchBrowser, timeout } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from '@playwright/test';
 
 const APP = 'http://127.0.0.1:3001/test';
@@ -75,7 +75,15 @@ describe('FitAddon', () => {
       await page.evaluate(`window.term = new Terminal()`);
       await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
       await loadFit();
-      assert.equal(await page.evaluate(`window.fit.proposeDimensions()`), undefined);
+      const dimensions: { cols: number, rows: number } | undefined = await page.evaluate(`window.fit.proposeDimensions()`);
+      // The value of dims will be undefined if the char measure strategy falls back to the DOM
+      // method, so only assert if it's not undefined.
+      if (dimensions) {
+        assert.isAbove(dimensions.cols, 85);
+        assert.isBelow(dimensions.cols, 88);
+        assert.isAbove(dimensions.rows, 24);
+        assert.isBelow(dimensions.rows, 29);
+      }
     });
   });
 
