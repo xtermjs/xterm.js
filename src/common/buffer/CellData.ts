@@ -71,7 +71,7 @@ export class CellData extends AttributeData implements ICellData {
     const length = value[CHAR_DATA_CHAR_INDEX].length;
     // surrogates and combined strings need special treatment
     if (length > 2) {
-      throw new Error('setFromCharData does not allow width > 2');
+      combined = true;
     }
     else if (length === 2) {
       const code = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);

@@ -38,7 +38,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
   abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
   abstract addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
   abstract resize(cols: number, fillCellData: ICellData): boolean;
-  abstract fill(fillCellData: ICellData, respectProtect: boolean): void;
+  abstract fill(fillCellData: ICellData, respectProtect?: boolean): void;
   public abstract copyFrom(line: BufferLine): void;
   public abstract clone(): IBufferLine;
   public abstract translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
@@ -560,7 +560,7 @@ export class OldBufferLine extends BufferLine implements IBufferLine {
   }
 
   /** fill a line with fillCharData */
-  public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
+  public fill(fillCellData: ICellData, respectProtect?: boolean): void {
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
     if (respectProtect) {
       for (let i = 0; i < this.length; ++i) {
@@ -1379,7 +1379,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   /** fill a line with fillCharData */
-  public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
+  public fill(fillCellData: ICellData, respectProtect?: boolean): void {
     this.replaceCells(0, this.length, fillCellData, respectProtect);
   }
 

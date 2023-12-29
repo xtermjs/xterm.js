@@ -107,6 +107,7 @@ export interface ICharset {
   [key: string]: string | undefined;
 }
 
+// Deprecated
 export type CharData = [number, string, number, number];
 
 export interface IColor {

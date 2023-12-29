@@ -7,6 +7,7 @@ export const DEFAULT_COLOR = 0;
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const DEFAULT_EXT = 0;
 
+// Deprecated
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
