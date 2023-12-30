@@ -42,6 +42,8 @@
   },
   "ignorePatterns": [
     "addons/*/src/third-party/*.ts",
+    "out/*",
+    "out-test/*",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
