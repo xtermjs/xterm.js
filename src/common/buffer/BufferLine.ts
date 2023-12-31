@@ -783,11 +783,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     return this.moveToColumn(index) & Content.IS_COMBINED_MASK;
   }
 
-  /** for debugging */
-  getText(skipReplace: string = ' '): string {
-    return this.translateToString(true, 0, this.length, undefined, skipReplace);
-  }
-
   public showRowData(): string {
     return this.showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
   }
@@ -1475,92 +1470,13 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length, outColumns?: number[], skipReplace: string = WHITESPACE_CELL_CHAR): string {
-    if (outColumns) {
-      outColumns.length = 0;
-    }
-    let s = '';
-    let col = 0;
-    let pendingStart = -1;
-    let pendingLength = 0;
-    const data = this.data();
-    function pendingForce(handleSkip = ! trimRight): void {
-      if (pendingStart >= 0 && pendingLength > 0) {
-        s += utf32ToString(data, pendingStart, pendingStart + pendingLength);
-        pendingLength = 0;
-      } else if (handleSkip && pendingLength > 0) {
-        s += skipReplace.repeat(pendingLength);
-        pendingLength = 0;
-      }
-      pendingStart = -1;
-    }
-    function addPendingString(start: number, length: number): void {
-      if (pendingStart >= 0 && pendingStart + pendingLength === start) {
-        pendingLength += length;
-      } else {
-        pendingForce(true);
-        pendingStart = start;
-        pendingLength = length;
-      }
-      if (outColumns) {
-        for (let i = 0; i < length; ++i) {
-          outColumns.push(startCol);
-        }
+    const lineStart = this.logicalStartColumn();
+    const s = this.logicalLine().translateLogicalToString(trimRight, lineStart + startCol, lineStart + endCol, outColumns, skipReplace);
+    if (outColumns && lineStart !== 0) {
+      for (let i = outColumns.length; --i >= 0; ) {
+        outColumns[i] -= lineStart;
       }
     }
-    function addPendingSkip(length: number): void {
-      if (pendingStart >= 0) {
-        pendingForce();
-      }
-      pendingLength += length;
-    }
-    for (let idata = 0; idata < this.dataLength() && col < endCol; idata++) {
-      const word = this.data()[idata];
-      const kind = BufferLine.wKind(word);
-      const wide = kind === DataKind.CHAR_W2 || kind === DataKind.CLUSTER_START_W2 ? 1 : 0;
-      let wcols;
-      switch (kind) {
-        case DataKind.FG:
-        case DataKind.BG:
-        case DataKind.STYLE_FLAGS:
-          break;
-        case DataKind.SKIP_COLUMNS:
-          let wlen = BufferLine.wSkipCount(word);
-          if (col + wlen > startCol) {
-            if (col < startCol) {
-              wlen -= startCol - col;
-              col = startCol;
-            }
-            if (col + wlen > endCol) {
-              wlen = endCol - col;
-            }
-            addPendingSkip(wlen);
-          }
-          col += wlen;
-          break;
-        case DataKind.CLUSTER_START_W1:
-        case DataKind.CLUSTER_START_W2:
-          const clEnd = this.clusterEnd(idata);
-          wcols = 1 << wide;
-          if (col >= startCol && col + wcols <= endCol) {
-            addPendingString(idata, clEnd - idata);
-          }
-          idata = clEnd - 1;
-          col += wcols;
-          break;
-        case DataKind.CHAR_W1:
-        case DataKind.CHAR_W2:
-          wcols = 1 << wide;
-          if (col >= startCol && col + wcols <= endCol) {
-            addPendingString(idata, 1);
-          }
-          col += wcols;
-          break;
-      }
-    }
-    if (! trimRight && col < endCol) {
-      addPendingSkip(endCol - col);
-    }
-    pendingForce();
     return s;
   }
 }
@@ -1742,6 +1658,101 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       const dcount = dskipLast + 1 - idata0;
       this.addEmptyDataElements(idata0, - dcount);
     }
+  }
+
+  public translateLogicalToString(trimRight: boolean = false, startCol: number = 0, endCol: number = Infinity, outColumns?: number[], skipReplace: string = WHITESPACE_CELL_CHAR): string {
+    if (outColumns) {
+      outColumns.length = 0;
+    }
+    let s = '';
+    let col = 0;
+    let pendingStart = -1;
+    let pendingLength = 0;
+    const data = this.data();
+    function pendingForce(handleSkip = ! trimRight): void {
+      if (pendingStart >= 0 && pendingLength > 0) {
+        s += utf32ToString(data, pendingStart, pendingStart + pendingLength);
+        pendingLength = 0;
+      } else if (handleSkip && pendingLength > 0) {
+        s += skipReplace.repeat(pendingLength);
+        pendingLength = 0;
+      }
+      pendingStart = -1;
+    }
+    function addPendingString(start: number, length: number): void {
+      if (pendingStart >= 0 && pendingStart + pendingLength === start) {
+        pendingLength += length;
+      } else {
+        pendingForce(true);
+        pendingStart = start;
+        pendingLength = length;
+      }
+      if (outColumns) {
+        for (let i = 0; i < length; ++i) {
+          outColumns.push(col);
+        }
+      }
+    }
+    function addPendingSkip(length: number): void {
+      if (pendingStart >= 0) {
+        pendingForce();
+      }
+      pendingLength += length;
+    }
+    for (let idata = 0; idata < this.dataLength() && col < endCol; idata++) {
+      const word = this.data()[idata];
+      const kind = BufferLine.wKind(word);
+      const wide = kind === DataKind.CHAR_W2 || kind === DataKind.CLUSTER_START_W2 ? 1 : 0;
+      let wcols;
+      switch (kind) {
+        case DataKind.FG:
+        case DataKind.BG:
+        case DataKind.STYLE_FLAGS:
+          break;
+        case DataKind.SKIP_COLUMNS:
+          let wlen = BufferLine.wSkipCount(word);
+          if (col + wlen > startCol) {
+            if (col < startCol) {
+              wlen -= startCol - col;
+              col = startCol;
+            }
+            if (col + wlen > endCol) {
+              wlen = endCol - col;
+            }
+            addPendingSkip(wlen);
+          }
+          col += wlen;
+          break;
+        case DataKind.CLUSTER_START_W1:
+        case DataKind.CLUSTER_START_W2:
+          const clEnd = this.clusterEnd(idata);
+          wcols = 1 << wide;
+          if (col >= startCol && col + wcols <= endCol) {
+            addPendingString(idata, clEnd - idata);
+          }
+          idata = clEnd - 1;
+          col += wcols;
+          break;
+        case DataKind.CHAR_W1:
+        case DataKind.CHAR_W2:
+          wcols = 1 << wide;
+          if (col >= startCol && col + wcols <= endCol) {
+            addPendingString(idata, 1);
+          }
+          col += wcols;
+          break;
+      }
+    }
+    if (! trimRight && col < endCol && endCol !== Infinity) {
+      addPendingSkip(endCol - col);
+    }
+    pendingForce();
+    return s;
+  }
+
+  /** for debugging */
+  getText(skipReplace: string = ' '): string {
+    return this.translateLogicalToString(true, 0, this.length, undefined, skipReplace);
   }
 }
 

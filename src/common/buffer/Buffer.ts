@@ -214,6 +214,7 @@ export class Buffer implements IBuffer {
       const nlines = this.lines.length;
       for (let i = 0; i < nlines; i++) {
         const line = this.lines.get(i);
+        line && (line.length = newCols);
         if (line instanceof LogicalBufferLine
           && (line.nextRowSameLine || line.logicalWidth > newCols)) {
           line.reflowNeeded = true;
