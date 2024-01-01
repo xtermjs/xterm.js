@@ -324,17 +324,15 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
+    if (!this._selectionRenderModel.hasSelection) {
+      return;
+    }
 
     // Translate from buffer position to viewport position
     const viewportStartRow = this._selectionRenderModel.viewportStartRow;
     const viewportEndRow = this._selectionRenderModel.viewportEndRow;
     const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
     const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
-
-    // No need to draw the selection
-    if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
-      return;
-    }
 
     // Create the selections
     const documentFragment = this._document.createDocumentFragment();
