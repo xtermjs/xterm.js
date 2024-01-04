@@ -3,17 +3,17 @@
  * @license MIT
  */
 
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import { ICoreBrowserService } from './Services';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { addDisposableDomListener } from 'browser/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from "common/Lifecycle";
+import { ICoreBrowserService } from "./Services";
+import { EventEmitter, forwardEvent } from "common/EventEmitter";
+import { addDisposableDomListener } from "browser/Lifecycle";
 
 export class CoreBrowserService extends Disposable implements ICoreBrowserService {
   public serviceBrand: undefined;
 
   private _isFocused = false;
   private _cachedIsFocused: boolean | undefined = undefined;
-  private _screenDprMonitor = new ScreenDprMonitor(this._window);
+  private _screenDprMonitor = this.register(new ScreenDprMonitor(this._window));
 
   private readonly _onDprChange = this.register(new EventEmitter<number>());
   public readonly onDprChange = this._onDprChange.event;
@@ -28,11 +28,11 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
     super();
 
     // Monitor device pixel ratio
-    this.register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
+    this.register(this.onWindowChange((w) => this._screenDprMonitor.setWindow(w)));
     this.register(forwardEvent(this._screenDprMonitor.onDprChange, this._onDprChange));
 
-    this._textarea.addEventListener('focus', () => this._isFocused = true);
-    this._textarea.addEventListener('blur', () => this._isFocused = false);
+    this._textarea.addEventListener("focus", () => (this._isFocused = true));
+    this._textarea.addEventListener("blur", () => (this._isFocused = false));
   }
 
   public get window(): Window & typeof globalThis {
@@ -53,12 +53,11 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
   public get isFocused(): boolean {
     if (this._cachedIsFocused === undefined) {
       this._cachedIsFocused = this._isFocused && this._textarea.ownerDocument.hasFocus();
-      queueMicrotask(() => this._cachedIsFocused = undefined);
+      queueMicrotask(() => (this._cachedIsFocused = undefined));
     }
     return this._cachedIsFocused;
   }
 }
-
 
 /**
  * The screen device pixel ratio monitor allows listening for when the
@@ -94,7 +93,6 @@ class ScreenDprMonitor extends Disposable {
     this.register(toDisposable(() => this.clearListener()));
   }
 
-
   public setWindow(parentWindow: Window): void {
     this._parentWindow = parentWindow;
     this._setWindowResizeListener();
@@ -102,7 +100,9 @@ class ScreenDprMonitor extends Disposable {
   }
 
   private _setWindowResizeListener(): void {
-    this._windowResizeListener.value = addDisposableDomListener(this._parentWindow, 'resize', () => this._setDprAndFireIfDiffers());
+    this._windowResizeListener.value = addDisposableDomListener(this._parentWindow, "resize", () =>
+      this._setDprAndFireIfDiffers()
+    );
   }
 
   private _setDprAndFireIfDiffers(): void {
@@ -122,7 +122,9 @@ class ScreenDprMonitor extends Disposable {
 
     // Add listeners for new DPR
     this._currentDevicePixelRatio = this._parentWindow.devicePixelRatio;
-    this._resolutionMediaMatchList = this._parentWindow.matchMedia(`screen and (resolution: ${this._parentWindow.devicePixelRatio}dppx)`);
+    this._resolutionMediaMatchList = this._parentWindow.matchMedia(
+      `screen and (resolution: ${this._parentWindow.devicePixelRatio}dppx)`
+    );
     this._resolutionMediaMatchList.addListener(this._outerListener);
   }
 
