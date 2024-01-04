@@ -106,9 +106,7 @@ class ScreenDprMonitor extends Disposable {
   }
 
   private _setWindowResizeListener(): void {
-    this._windowResizeListener.value = addDisposableDomListener(this._parentWindow, 'resize', () =>
-      this._setDprAndFireIfDiffers()
-    );
+    this._windowResizeListener.value = addDisposableDomListener(this._parentWindow, 'resize', () => this._setDprAndFireIfDiffers());
   }
 
   private _setDprAndFireIfDiffers(): void {
