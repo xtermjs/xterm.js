@@ -41,6 +41,18 @@ export class WebLinkProvider implements ILinkProvider {
   }
 }
 
+function baseUrlString(url: URL): string {
+  if (url.password && url.username) {
+    return `${url.protocol}//${url.username}:${url.password}@${url.host}`;
+  }
+
+  if (url.username) {
+    return `${url.protocol}//${url.username}@${url.host}`;
+  }
+
+  return `${url.protocol}//${url.host}`;
+}
+
 export class LinkComputer {
   public static computeLink(y: number, regex: RegExp, terminal: Terminal, activate: (event: MouseEvent, uri: string) => void): ILink[] {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
@@ -64,8 +76,7 @@ export class LinkComputer {
       // - append /   also match domain urls w'o any path notion
       try {
         const url = new URL(text);
-        const urlText = decodeURI(url.toString());
-        if (text !== urlText && text + '/' !== urlText) {
+        if (!text.startsWith(baseUrlString(url))) {
           continue;
         }
       } catch (e) {
