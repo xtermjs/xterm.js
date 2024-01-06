@@ -226,7 +226,7 @@ export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerTy
 /**
  * Interface to denote a specific ESC, CSI or DCS handler slot.
  * The values are used to create an integer respresentation during handler
- * regristation before passed to the subparsers as `ident`.
+ * registration before passed to the subparsers as `ident`.
  * The integer translation is made to allow a faster handler access
  * in `EscapeSequenceParser.parse`.
  */

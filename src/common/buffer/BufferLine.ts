@@ -43,6 +43,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
   public abstract clone(): IBufferLine;
   public abstract translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
   public abstract getTrimmedLength(): number;
+  public isEmpty(): boolean { return this.getTrimmedLength() === 0; }
   public abstract getNoBgTrimmedLength(): number;
   public abstract cleanupMemory(): number;
 
@@ -1517,6 +1518,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   override _cachedFg(): number { return this._cache3; }
 
   protected _cachedColumnInRow(): RowColumn { return (this.logicalLine()._cache1 & 0xFFFF); }
+  public isEmpty(): boolean { return this._dataLength === 0 && ! this.nextRowSameLine; }
 
   // count can be negative
   addEmptyDataElements(position: number, count: number): void {
@@ -1796,6 +1798,7 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
     this._cacheSetStyleFlagsIndex(this.startStyle);
     this._cacheSetColumnDataIndex(this.startColumn, this.startIndex);
   }
+  public override isEmpty(): boolean { return this._logicalLine.dataLength() === this.startIndex && ! this.nextRowSameLine; }
   public resizeData(size: number): void { this._logicalLine.resizeData(size); }
   public cleanupMemory(): number { return 0;}
 }

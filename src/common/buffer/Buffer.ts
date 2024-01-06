@@ -388,6 +388,8 @@ export class Buffer implements IBuffer {
     const yBaseOld = this.ybase;
     const yAbsOld = yBaseOld + this.y;
     let yAbs = yAbsOld;
+    const ySavedOld = this.savedY;
+    let ySaved = ySavedOld;
     let deltaSoFar = 0;
     for (let row = startRow; row < endRow;) {
       if (maxRows >= 0 && newRows.length > maxRows) {
@@ -399,12 +401,15 @@ export class Buffer implements IBuffer {
       if (line instanceof LogicalBufferLine && line.reflowNeeded) {
         let curRow: NewBufferLine = line;
 
-        let logicalX;
+        let logicalX, logicalSavedX;
         let oldWrapCount = 0; // number of following wrapped lines
         let nextRow = curRow;
         for (; ; oldWrapCount++) {
           if (yAbsOld === row + oldWrapCount) {
             logicalX = nextRow.logicalStartColumn() + this.x;
+          }
+          if (ySavedOld === row + oldWrapCount) {
+            logicalSavedX = nextRow.logicalStartColumn() + this.savedX;
           }
           if (! nextRow.nextRowSameLine || row + oldWrapCount + 1 >= endRow) {
             break;
@@ -456,6 +461,12 @@ export class Buffer implements IBuffer {
           yAbs = startRow + i - 1 + deltaSoFar;
           this.x = logicalX - newRows[i-1].logicalStartColumn();
         }
+        if (logicalSavedX !== undefined) { // update cursor x and y
+          let i = newWrapStart;
+          while (i < newRows.length && newRows[i].logicalStartColumn() <= logicalSavedX) { i++; }
+          ySaved = startRow + i - 1 + deltaSoFar;
+          this.savedX = logicalSavedX - newRows[i-1].logicalStartColumn();
+        }
         deltaSoFar += newWrapCount - oldWrapCount;
       } else {
         if (row + deltaSoFar === yBaseOld) { this.ybase = yBaseOld + deltaSoFar; }
@@ -463,15 +474,20 @@ export class Buffer implements IBuffer {
         if (row === yAbsOld) {
           yAbs += deltaSoFar;
         }
+        if (row === ySavedOld) {
+          ySaved += deltaSoFar;
+        }
         row++;
       }
     }
     if (deltaSoFar !== 0) {
       if (yAbsOld >= endRow) { yAbs += deltaSoFar; }
+      if (ySavedOld >= endRow) { ySaved += deltaSoFar; }
       if (yBaseOld >= endRow) { this.ybase = yBaseOld + deltaSoFar; }
       if (yDispOld >= endRow) { this.ydisp = yDispOld + deltaSoFar; }
     }
     this.y = yAbs - this.ybase;
+    this.savedY = ySaved;
     // FIXME. This calls onDeleteEmitter and onInsertEmitter events,
     // which we want handled at finer granularity.
     const oldLinesCount = this.lines.length;
@@ -488,6 +504,13 @@ export class Buffer implements IBuffer {
   private _fixupPosition(): void {
     const cols = this._cols;
     const rows = this._rows;
+
+    let ilast = this.lines.length - 1;
+    while (ilast >= rows && this.ybase + this.y <ilast && this.savedY < ilast) {
+      this.setWrapped(ilast, false);
+      this.lines.pop();
+      ilast--;
+    }
     // FIXME migrate Windows conpty handling
     if (this.y >= rows) {
       const adjust = this.y - rows + 1;

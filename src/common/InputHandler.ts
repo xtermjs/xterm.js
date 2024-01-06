@@ -431,7 +431,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     let cursorStartY = this._activeBuffer.y;
     let start = 0;
     const wasPaused = this._parseStack.paused;
-    this._activeBuffer.reflowRegion(this._activeBuffer.ybase, this._activeBuffer.lines.length, -1);
+    usingNewBufferLine() && this._activeBuffer.reflowRegion(this._activeBuffer.ybase, this._activeBuffer.lines.length, -1);
 
     if (wasPaused) {
       // assumption: _parseBuffer never mutates between async calls
@@ -1955,7 +1955,6 @@ export class InputHandler extends Disposable implements IInputHandler {
            */
           if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(132, this._bufferService.rows);
-            this._onRequestReset.fire();
           }
           break;
         case 6:
@@ -2193,7 +2192,6 @@ export class InputHandler extends Disposable implements IInputHandler {
            */
           if (this._optionsService.rawOptions.windowOptions.setWinLines) {
             this._bufferService.resize(80, this._bufferService.rows);
-            this._onRequestReset.fire();
           }
           break;
         case 6:
@@ -2890,6 +2888,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const second = (params.length > 1) ? params.params[1] : 0;
     switch (params.params[0]) {
+      case 8: // resize
+        const newRows = params.params[1] || this._bufferService.rows;
+        const newCols = params.params[2] || this._bufferService.cols;
+        this._bufferService.resize(newCols, newRows);
+        break;
       case 14:  // GetWinSizePixels, returns CSI 4 ; height ; width t
         if (second !== 2) {
           this._onRequestWindowsOptionsReport.fire(WindowsOptionsReportType.GET_WIN_SIZE_PIXELS);
