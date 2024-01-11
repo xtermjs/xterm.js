@@ -68,12 +68,8 @@ export class LinkComputer {
 
       // check via URL if the matched text would form a proper url
       // NOTE: This outsources the ugly url parsing to the browser.
-      // To avoid surprising auto expansion from URL we additionally
-      // check afterwards if the provided string resembles the parsed
-      // one close enough:
-      // - decodeURI  decode path segement back to byte repr
-      //              to detect unicode auto conversion correctly
-      // - append /   also match domain urls w'o any path notion
+      // we check if the provided string resembles the URL-parsed one
+      // up to the end of the domain name (ignoring path and params)
       try {
         const url = new URL(text);
         if (!text.startsWith(baseUrlString(url))) {
