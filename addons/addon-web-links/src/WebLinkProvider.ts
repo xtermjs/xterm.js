@@ -41,6 +41,18 @@ export class WebLinkProvider implements ILinkProvider {
   }
 }
 
+function baseUrlString(url: URL): string {
+  if (url.password && url.username) {
+    return `${url.protocol}//${url.username}:${url.password}@${url.host}`;
+  }
+
+  if (url.username) {
+    return `${url.protocol}//${url.username}@${url.host}`;
+  }
+
+  return `${url.protocol}//${url.host}`;
+}
+
 export class LinkComputer {
   public static computeLink(y: number, regex: RegExp, terminal: Terminal, activate: (event: MouseEvent, uri: string) => void): ILink[] {
     const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
@@ -56,16 +68,11 @@ export class LinkComputer {
 
       // check via URL if the matched text would form a proper url
       // NOTE: This outsources the ugly url parsing to the browser.
-      // To avoid surprising auto expansion from URL we additionally
-      // check afterwards if the provided string resembles the parsed
-      // one close enough:
-      // - decodeURI  decode path segement back to byte repr
-      //              to detect unicode auto conversion correctly
-      // - append /   also match domain urls w'o any path notion
+      // we check if the provided string resembles the URL-parsed one
+      // up to the end of the domain name (ignoring path and params)
       try {
         const url = new URL(text);
-        const urlText = decodeURI(url.toString());
-        if (text !== urlText && text + '/' !== urlText) {
+        if (!text.startsWith(baseUrlString(url))) {
           continue;
         }
       } catch (e) {
