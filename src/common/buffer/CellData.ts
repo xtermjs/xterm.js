@@ -18,6 +18,13 @@ export class CellData extends AttributeData implements ICellData {
     obj.setFromCharData(value);
     return obj;
   }
+
+  public static fromChar(text: string, width: number = -1, fg: number = 0): CellData {
+    const obj = new CellData();
+    obj.setFromChar(text, width, fg);
+    return obj;
+  }
+
   /** Primitives from terminal buffer. */
   public content = 0;
   public fg = 0;
@@ -63,6 +70,13 @@ export class CellData extends AttributeData implements ICellData {
     }
     return this.content & Content.CODEPOINT_MASK;
   }
+  public setFromChar(text: string, width: number = -1, fg: number = 0) {
+    width = width >= 0 ? width : stringFromCodePoint.length === 0 ? 0 : 1;
+    this.fg = fg;
+    this.bg = 0;
+    this.content = (text.codePointAt(0) || 0) | (width << Content.WIDTH_SHIFT);
+  }
+
   /** Set data from CharData */
   public setFromCharData(value: CharData): void {
     this.fg = value[CHAR_DATA_ATTR_INDEX];

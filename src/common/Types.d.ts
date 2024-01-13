@@ -250,7 +250,9 @@ export interface IBufferLine {
   resize(cols: number, fill: ICellData): boolean;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
+  // @deprecated - only if !usingNewBufferLine()
   copyFrom(line: IBufferLine): void;
+  // @deprecated - only if !usingNewBufferLine()
   clone(): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;

@@ -530,17 +530,21 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (wraparoundMode) {
         const oldRow = bufferRow as NewBufferLine;
         // this._activeBuffer.x = oldWidth;
-        this._activeBuffer.y++;
-        if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
-          this._activeBuffer.y--;
+        const buffer = this._activeBuffer
+        if (buffer.y === this._activeBuffer.scrollBottom) {
           this._bufferService.scroll(this._eraseAttrData(), true);
+          buffer.splitLine(buffer.y, col);
         } else {
+          buffer.y++;
           if (this._activeBuffer.y >= this._bufferService.rows) {
-            this._activeBuffer.y = this._bufferService.rows - 1;
+            buffer.y = this._bufferService.rows - 1;
+            // FIXME overwrite last line - not impemented
+            col = cols;
+          } else {
+            buffer.splitLine(buffer.y, col);
           }
         }
-        this._activeBuffer.splitLine(this._activeBuffer.y, col);
-        bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+        bufferRow = this._activeBuffer.lines.get(buffer.ybase + buffer.y)!;
         // usually same as cols, but may be less in case of wide characters.
         const prevCols = (bufferRow as NewBufferLine).logicalStartColumn() - oldRow.logicalStartColumn();
         col = col - prevCols;

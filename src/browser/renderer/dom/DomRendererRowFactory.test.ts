@@ -405,7 +405,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should handle BCE correctly', () => {
-      const nullCell = lineData.loadCell(0, new CellData());
+      const nullCell = CellData.fromChar(' ');
       nullCell.bg = Attributes.CM_P16 | 1;
       lineData.setCell(2, nullCell);
       nullCell.bg = Attributes.CM_P16 | 2;
@@ -418,7 +418,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should handle BCE for multiple cells', () => {
-      const nullCell = lineData.loadCell(0, new CellData());
+      const nullCell = CellData.fromChar(' ');
       nullCell.bg = Attributes.CM_P16 | 1;
       lineData.setCell(0, nullCell);
       let spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);

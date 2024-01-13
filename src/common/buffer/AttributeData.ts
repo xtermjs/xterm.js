@@ -48,7 +48,7 @@ export class AttributeData implements IAttributeData {
   public isStrikethrough(): number { return this.fg & FgFlags.STRIKETHROUGH; }
   public isProtected(): number     { return this.bg & BgFlags.PROTECTED; }
   public isOverline(): number      { return this.bg & BgFlags.OVERLINE; }
-  public getStyleFlags(): StyleFlags {  return ((this.fg & 0xFC000000) >> 24) | ((this.bg & 0xFC000000) >> 16); }
+  public getStyleFlags(): StyleFlags {  return ((this.fg & 0xFC000000) >>> 24) | ((this.bg & 0xFC000000) >> 16); }
   public setStyleFlags(flags: StyleFlags): void {
     this.fg = (this.fg & 0x03ffffff) | ((flags << 24) & 0xFC000000);
     this.bg = (this.bg & 0x03ffffff) | ((flags << 16) & 0xFC000000);
