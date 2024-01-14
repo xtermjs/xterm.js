@@ -43,6 +43,6 @@ const config = {
     // Force usage of globalThis instead of global / self. (This is cross-env compatible)
     globalObject: 'globalThis',
   },
-  mode: 'production'
+  mode: 'production',
 };
 module.exports = config;
