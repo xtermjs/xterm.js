@@ -172,7 +172,7 @@ export abstract class AbstractBufferLine implements IBufferLine {
 const enum DataKind { // 4 bits
   FG = 1, // lower 26 bits is RGB foreground color and CM_MASK
   BG = 2, // lower 26 bits is RGB background color and CM_MASK
-  STYLE_FLAGS = 3, // lower 26 bits is StyleFlags
+  STYLE_FLAGS = 3, // lower 28 bits is StyleFlags
 
   SKIP_COLUMNS = 7, // empty ("null") columns (28 bit count)
   // The following have a 21-bit codepoint value in the low-order bits
@@ -1556,7 +1556,8 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     let dskipFirst = idata; let dskipLast = -1; let w;
     let fgValue = -1; // cursor.getFg();
     let bgValue = -1; // cursor.getBg();
-    let styleValue = -1; // cursor.getStyleFlags(); // FIXME handle extendedattrs
+    let styleValue = -1;
+    let extended = undefined; // cursor.getStyleFlags(); // FIXME handle extendedattrs
 
     if (colOffset === 0) {
       while (idata > 0) {
@@ -1565,7 +1566,11 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
         switch (BufferLine.wKind(word)) {
           case DataKind.BG: bgValue = word & 0x3ffffff; break;
           case DataKind.FG: fgValue = word & 0x3ffffff; break;
-          case DataKind.STYLE_FLAGS: styleValue = word; break;
+          case DataKind.STYLE_FLAGS:
+            styleValue = word & 0xfffffff;
+            if (word & StyleFlags.HAS_EXTENDED) {}
+            extended = (word & StyleFlags.HAS_EXTENDED) && this._extendedAttrs[idata - 1];
+            break;
           default: skipItem = false;
         }
         if (skipItem) {
@@ -1592,8 +1597,8 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
           break;
         case DataKind.STYLE_FLAGS:
           dskipLast = idata;
-          styleValue = word;
-          // handle ExtendedAttrs FIXME
+          styleValue = word & 0xfffffff;
+          extended = (word & StyleFlags.HAS_EXTENDED) && this._extendedAttrs[idata];
           break;
         case DataKind.SKIP_COLUMNS:
           const wlen = BufferLine.wSkipCount(word);
@@ -1636,6 +1641,9 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       this.data()[idata0++] = BufferLine.wSet1(DataKind.FG, fgValue);
     }
     if (styleValue >= 0 && idata0 !== this._dataLength) {
+      if ((styleValue & StyleFlags.HAS_EXTENDED) && extended) {
+        this._extendedAttrs[idata0] = extended;
+      }
       this.data()[idata0++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, styleValue);
     }
     if (dskipLast >= 0) {
