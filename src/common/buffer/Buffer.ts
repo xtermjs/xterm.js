@@ -142,7 +142,10 @@ export class Buffer implements IBuffer {
     if (! usingNewBufferLine()) {
       line!._isWrapped = value;
     } else if (value) {
-      alert('setWrapped true'); // only used in test cases?
+      const prevRow = this.lines.get(absrow - 1) as NewBufferLine;
+      const curRow = line as LogicalBufferLine;
+      const newRow = curRow.setWrapped(prevRow);
+      this.lines.set(absrow, newRow);
     } else {
       const prevRow = this.lines.get(absrow - 1) as NewBufferLine;
       const curRow = line as WrappedBufferLine;

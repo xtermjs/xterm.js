@@ -3,11 +3,11 @@
  * @license MIT
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
-import { BufferLine, LogicalBufferLine } from 'common/buffer//BufferLine';
+import { BufferLine } from 'common/buffer//BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { CharData, IAttributeData, IBufferLine } from '../Types';
+import { CharData, IBufferLine, IExtendedAttrs } from '../Types';
 import { assert } from 'chai';
-import { AttributeData } from 'common/buffer/AttributeData';
+import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 
 function lineToArray(line: IBufferLine): CharData[] {
   const result = [];
@@ -599,6 +599,11 @@ describe('BufferLine', function(): void {
     });
   });
   describe('extended attributes', () => {
+    function extendedAttributes(line: BufferLine, index: number): IExtendedAttrs | undefined {
+      const cell = new CellData();
+      line.loadCell(index, cell);
+      return cell.hasExtendedAttrs() !== 0 ? cell.extended : undefined;
+    }
     it('setCells', function(): void {
       const line = BufferLine.make(5);
       const cell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
@@ -630,9 +635,9 @@ describe('BufferLine', function(): void {
         [1, 'A', 0, 'A'.charCodeAt(0)],
         [1, 'A', 0, 'A'.charCodeAt(0)]
       ]);
-      assert.equal((line as any)._extendedAttrs[0], undefined);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 0), undefined);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
       assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOTTED);
       assert.equal((line as any)._extendedAttrs[4], undefined);
       // should be ref to the same object
@@ -664,24 +669,18 @@ describe('BufferLine', function(): void {
       cell.bg &= ~BgFlags.HAS_EXTENDED;
       line.setCell(4, cell);
 
-      const cell0 = new CellData();
-      line.loadCell(0, cell0);
-      const cell1 = new CellData();
-      line.loadCell(1, cell1);
-      const cell2 = new CellData();
-      line.loadCell(2, cell2);
-      const cell3 = new CellData();
-      line.loadCell(3, cell3);
-      const cell4 = new CellData();
-      line.loadCell(4, cell4);
-
-      assert.equal(cell0.extended.underlineStyle, UnderlineStyle.NONE);
-      assert.equal(cell1.extended.underlineStyle, UnderlineStyle.CURLY);
-      assert.equal(cell2.extended.underlineStyle, UnderlineStyle.CURLY);
-      assert.equal(cell3.extended.underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal(cell4.extended.underlineStyle, UnderlineStyle.NONE);
-      assert.equal(cell1.extended, cell2.extended);
-      assert.notEqual(cell2.extended, cell3.extended);
+      const ext0 = extendedAttributes(line, 0);
+      const ext1 = extendedAttributes(line, 1);
+      const ext2 = extendedAttributes(line, 2);
+      const ext3 = extendedAttributes(line, 3);
+      const ext4 = extendedAttributes(line, 4);
+      assert.equal(ext0?.underlineStyle, undefined); // UnderlineStyle.NONE
+      assert.equal(ext1?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(ext2?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(ext3?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(ext4?.underlineStyle, undefined); // UnderlineStyle.NONE
+      assert.equal(ext1, ext2);
+      assert.notEqual(ext2, ext3);
     });
     it('fill', () => {
       const line = BufferLine.make(3);
@@ -689,9 +688,9 @@ describe('BufferLine', function(): void {
       cell.extended.underlineStyle = UnderlineStyle.CURLY;
       cell.bg |= BgFlags.HAS_EXTENDED;
       line.fill(cell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('insertCells', () => {
       const line = BufferLine.make(5);
@@ -699,17 +698,17 @@ describe('BufferLine', function(): void {
       cell.extended.underlineStyle = UnderlineStyle.CURLY;
       cell.bg |= BgFlags.HAS_EXTENDED;
       line.insertCells(1, 3, cell);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[4], undefined);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 4), undefined);
       cell.extended = cell.extended.clone();
       cell.extended.underlineStyle = UnderlineStyle.DOTTED;
       line.insertCells(2, 2, cell);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('deleteCells', () => {
       const line = BufferLine.make(5);
@@ -720,11 +719,11 @@ describe('BufferLine', function(): void {
       fillCell.extended = fillCell.extended.clone();
       fillCell.extended.underlineStyle = UnderlineStyle.DOUBLE;
       line.deleteCells(1, 3, fillCell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.DOUBLE);
     });
     it('replaceCells', () => {
       const line = BufferLine.make(5);
@@ -735,11 +734,11 @@ describe('BufferLine', function(): void {
       fillCell.extended = fillCell.extended.clone();
       fillCell.extended.underlineStyle = UnderlineStyle.DOUBLE;
       line.replaceCells(1, 3, fillCell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('clone', () => {
       const line = BufferLine.make(5);
