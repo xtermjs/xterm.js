@@ -449,18 +449,16 @@ describe('InputHandler', () => {
       );
 
       // fill display with a's
-      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      const a_repeat_cols = Array(bufferService.cols + 1).join('a');
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(a_repeat_cols);
 
       // params [0] - right and below erase
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([0]));
       assert.deepEqual(termContent(bufferService, false), [
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
+        a_repeat_cols, a_repeat_cols, a_repeat_cols,
+        a_repeat_cols, a_repeat_cols,
         Array(40 + 1).join('a') + Array(bufferService.cols - 40 + 1).join(' '),
         Array(bufferService.cols + 1).join(' ')
       ]);

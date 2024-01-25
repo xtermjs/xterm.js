@@ -152,13 +152,13 @@ export class Buffer implements IBuffer {
       const oldStartColumn = curRow.logicalStartColumn();
       prevRow.nextRowSameLine = undefined;
       const oldLine = prevRow.logicalLine();
-      const newRow = new LogicalBufferLine(line.length, undefined, oldLine);
+      const newRow = new LogicalBufferLine(line.length, undefined, curRow);
       newRow.nextRowSameLine = curRow.nextRowSameLine;
       const oldStart = curRow.startIndex;
-      newRow.addEmptyDataElements(0, - oldStart);
       for (let nextRow = newRow.nextRowSameLine; nextRow; nextRow = nextRow.nextRowSameLine) {
         nextRow.startColumn -= oldStartColumn;
         nextRow.startIndex -= oldStart;
+        nextRow._logicalLine = newRow;
       }
       oldLine._dataLength = curRow.startIndex;
       this.lines.set(absrow, newRow);
@@ -900,11 +900,16 @@ export class Buffer implements IBuffer {
   public checkLines(report = this.noteError): void {
     const nlines = this.lines.length;
     let prevRow: IBufferLine | undefined;
+    let logicalLine;
     for (let i = 0; i < nlines; i++) {
       const curRow = this.lines.get(i);
       if (curRow instanceof LogicalBufferLine) {
         if (curRow.isWrapped) { report('wrapped should not be set'); }
+        logicalLine = curRow;
       } else if (curRow instanceof WrappedBufferLine) {
+        if (curRow.logicalLine() !== logicalLine) {
+          report('wrapped line points to wrong logical line')
+        }
         if (! curRow.isWrapped) { report('wrapped should be set'); }
         if (prevRow instanceof NewBufferLine) {
           if (prevRow.nextRowSameLine !== curRow) {

@@ -522,8 +522,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const cols = this._bufferService.cols;
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     // if (charset) replace character; FIXME ok to do it in-place?
-    const insertMode = this._coreService.modes.insertMode;
-    let col = (bufferRow as NewBufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, insertMode);
+    let col = (bufferRow as NewBufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, this._coreService);
     while (col > cols) {
       // autowrap - DECAWM
       // automatically wraps to the beginning of the next line
@@ -1207,12 +1206,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     const row = this._activeBuffer.ybase + y;
     const line = this._activeBuffer.lines.get(row)!;
     const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
+    if (clearWrap && end === Infinity) {
+      this._activeBuffer.setWrapped(row + 1, false);
+    }
     if (! respectProtect && line instanceof NewBufferLine) {
       line.eraseCells(start, end, fill);
     } else {
       line.replaceCells(start, end, fill, respectProtect);
     }
-    if (clearWrap) {
+    if (clearWrap && start === 0) {
       this._activeBuffer.setWrapped(row, false);
     }
   }
@@ -1222,9 +1224,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * the terminal and the isWrapped property is set to false.
    * @param y row index
    */
-  private _resetBufferLine(y: number, respectProtect: boolean = false): void {
+  private _resetBufferLine(row: number, respectProtect: boolean = false): void {
     const buffer = this._activeBuffer;
-    const row = buffer.ybase + y;
     const line = buffer.lines.get(row);
     if (line) {
       const eraseAttrs = this._eraseAttrData();
@@ -1234,7 +1235,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else {
         line.fill(this._activeBuffer.getNullCell(eraseAttrs), respectProtect);
       }
-      buffer.clearMarkers(this._activeBuffer.ybase + y);
+      buffer.clearMarkers(row);
       buffer.setWrapped(row, false);
       if (wasNewBufferLine !== usingNewBufferLine()) {
         const fill = this._activeBuffer.getNullCell(eraseAttrs);
@@ -1269,19 +1270,22 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public eraseInDisplay(params: IParams, respectProtect: boolean = false): boolean {
     this._restrictCursor(this._bufferService.cols);
-    let j; let x;
+    // When erasing wrapped lines, we do less copying if we go bottom up.
+    let j; let x; let y;
+    const buffer = this._activeBuffer;
     switch (params.params[0]) {
       case 0:
-        j = this._activeBuffer.y;
+        y = buffer.y;
+        x = buffer.x;
+        j = this._bufferService.rows;
         this._dirtyRowTracker.markDirty(j);
-        x = this._activeBuffer.x;
+        this._dirtyRowTracker.markDirty(y);
+        while (--j > y || (j === y && x === 0)) {
+          this._resetBufferLine(buffer.ybase + j, respectProtect);
+        }
         if (x > 0) {
-          this._eraseInBufferLine(j++, x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
+          this._eraseInBufferLine(y, x, Infinity, false, respectProtect);
         }
-        for (; j < this._bufferService.rows; j++) {
-          this._resetBufferLine(j, respectProtect);
-        }
-        this._dirtyRowTracker.markDirty(j);
         break;
       case 1:
         j = this._activeBuffer.y;
@@ -1293,7 +1297,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._activeBuffer.setWrapped(j + 1, false);
         }
         while (j--) {
-          this._resetBufferLine(j, respectProtect);
+          this._resetBufferLine(buffer.ybase + j, respectProtect);
         }
         this._dirtyRowTracker.markDirty(0);
         break;
@@ -1301,7 +1305,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._bufferService.rows;
         this._dirtyRowTracker.markDirty(j - 1);
         while (j--) {
-          this._resetBufferLine(j, respectProtect);
+          this._resetBufferLine(buffer.ybase + j, respectProtect);
         }
         this._dirtyRowTracker.markDirty(0);
         break;
@@ -1346,13 +1350,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._restrictCursor(this._bufferService.cols);
     switch (params.params[0]) {
       case 0:
-        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, this._bufferService.cols, this._activeBuffer.x === 0, respectProtect);
+        this._eraseInBufferLine(this._activeBuffer.y, this._activeBuffer.x, Infinity, this._activeBuffer.x === 0, respectProtect);
         break;
       case 1:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
         break;
       case 2:
-        this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
+        this._eraseInBufferLine(this._activeBuffer.y, 0, Infinity, true, respectProtect);
         break;
     }
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
