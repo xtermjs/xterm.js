@@ -115,6 +115,13 @@ describe('WebLinksAddon', () => {
       await resetAndHover(5, 1);
       await evalLinkStateData('http://test:password@example.com/some_path', { start: { x: 12, y: 1 }, end: { x: 13, y: 2 } });
     });
+    it('url encoded params work properly', async () => {
+      await writeSync(page, '￥￥￥cafe\u0301 http://test:password@example.com/some_path?param=1%202%3');
+      await resetAndHover(12, 0);
+      await evalLinkStateData('http://test:password@example.com/some_path?param=1%202%3', { start: { x: 12, y: 1 }, end: { x: 27, y: 2 } });
+      await resetAndHover(5, 1);
+      await evalLinkStateData('http://test:password@example.com/some_path?param=1%202%3', { start: { x: 12, y: 1 }, end: { x: 27, y: 2 } });
+    });
   });
 });
 
