@@ -934,14 +934,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   /** Move to column 'index', which is a RowColumn.
    * Return encoded 'content'.
    */
-  public moveToColumn(index: RowColumn): number {
-    return this.moveToLineColumn(index + this.logicalStartColumn(), this.dataRowEnd());
+  public moveToColumn(index: RowColumn, stopEarly: boolean = false): number {
+    return this.moveToLineColumn(index + this.logicalStartColumn(), this.dataRowEnd(), stopEarly);
   }
 
   /** Move to column 'index', which is a LineColumn.
    * Return encoded 'content'.
    */
-  public moveToLineColumn(index: LineColumn, end = this.dataLength()): number {
+  public moveToLineColumn(index: LineColumn, end = this.dataLength(), stopEarly: boolean = false): number {
     let curColumn = this._cachedColumn();
     if (index < curColumn) {
       // FIXME can sometimes do better
@@ -956,7 +956,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let word;
     let kind;
     let content = 0;
-    while (todo >= 0) {
+    while (stopEarly ? todo > 0 : todo >= 0) {
       if (idata >= end) {
         word = NULL_DATA_WORD;
         kind = DataKind.SKIP_COLUMNS;
@@ -1058,7 +1058,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   private preInsert(index: LineColumn, attrs: IAttributeData, extendToEnd: boolean = false): boolean {
-    const content = this.moveToLineColumn(index);
+    const content = this.moveToLineColumn(index, this.dataLength(), true);
     let curColumn = this._cachedColumn();
     let idata = this._cachedDataIndex();
 
@@ -1104,10 +1104,34 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const newFg = attrs.getFg();
     const newBg = attrs.getBg();
     const newStyle = attrs.getStyleFlags();
-    const oldFg = this._cachedFg();
-    const oldBg = this._cachedBg();
+    let oldFg = this._cachedFg();
+    let oldBg = this._cachedBg();
     const styleFlagsIndex = this._cachedStyleFlagsIndex();
     const oldStyle = styleFlagsIndex < 0 ? 0 : (this.data()[styleFlagsIndex] & 0xfffffff);
+    let data = this.data();
+    const idata0 = idata;
+    let dataLength = this.dataLength();
+    for (; idata < dataLength; idata++) {
+      const word = data[idata];
+      let done = true;
+      switch (BufferLine.wKind(word)) {
+        case DataKind.BG:
+          if ((word & 0x3ffffff) === newBg) {
+            oldBg = newBg;
+            done = false;
+          }
+          break;
+          case DataKind.FG:
+            if ((word & 0x3ffffff) === newFg) {
+              oldFg = newFg;
+              done = false;
+            }
+            break;
+      }
+      if (done) {
+        break;
+      }
+    }
     let needFg = newFg !== oldFg;
     let needBg = newBg !== oldBg;
     let oldExt = (oldStyle & StyleFlags.HAS_EXTENDED) && this._extendedAttrs[styleFlagsIndex];
@@ -1115,24 +1139,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let needStyle = newStyle !== oldStyle || oldExt !== newExt;
     const add1 = extendToEnd ? 1 : 2;
     let add = (needBg?add1:0) + (needFg?add1:0) + (needStyle?add1:0);
-    let data = this.data();
-    if (add) {
-      const idata0 = idata;
-      let skipItem = true;
-      for (; idata > 0; idata--) {
-        const word = data[idata-1];
-        switch (BufferLine.wKind(word)) {
-          case DataKind.BG: needBg = true;  break;
-          case DataKind.FG: needFg = true; break;
-          case DataKind.STYLE_FLAGS: needStyle = true;
-            delete this._extendedAttrs[idata-1];
-            break;
-          default: skipItem = false;
-        }
-        if (! skipItem) {
-          break;
-        }
-      }
+    if (add ) {
       add =(needBg?add1:0) + (needFg?add1:0) + (needStyle?add1:0);
       this.addEmptyDataElements(idata, add - (idata0 - idata));
       data = this.data();
@@ -1164,6 +1171,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         }
        }
       this._cacheSetFgBg(newFg, newBg);
+    } else if (idata > idata0) {
+      this._cacheSetColumnDataIndex(index, idata);
     }
     return add > 0;
   }
