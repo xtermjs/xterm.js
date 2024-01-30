@@ -92,7 +92,7 @@ export class CellColorResolver {
               $bg = this._themeService.colors.ansi[this.result.fg & Attributes.PCOLOR_MASK].rgba;
               break;
             case Attributes.CM_RGB:
-              $bg = (this.result.fg & Attributes.RGB_MASK) << 8 | 0xFF;
+              $bg = ((this.result.fg & Attributes.RGB_MASK) << 8) | 0xFF;
               break;
             case Attributes.CM_DEFAULT:
             default:
@@ -105,7 +105,7 @@ export class CellColorResolver {
               $bg = this._themeService.colors.ansi[this.result.bg & Attributes.PCOLOR_MASK].rgba;
               break;
             case Attributes.CM_RGB:
-              $bg = this.result.bg & Attributes.RGB_MASK << 8 | 0xFF;
+              $bg = ((this.result.bg & Attributes.RGB_MASK) << 8) | 0xFF;
               break;
             // No need to consider default bg color here as it's not possible
           }
@@ -143,7 +143,7 @@ export class CellColorResolver {
                 $fg = this._themeService.colors.ansi[this.result.bg & Attributes.PCOLOR_MASK].rgba;
                 break;
               case Attributes.CM_RGB:
-                $fg = this.result.bg & Attributes.RGB_MASK << 8 | 0xFF;
+                $fg = ((this.result.bg & Attributes.RGB_MASK) << 8) | 0xFF;
                 break;
               // No need to consider default bg color here as it's not possible
             }
@@ -154,7 +154,7 @@ export class CellColorResolver {
                 $fg = this._themeService.colors.ansi[this.result.fg & Attributes.PCOLOR_MASK].rgba;
                 break;
               case Attributes.CM_RGB:
-                $fg = (this.result.fg & Attributes.RGB_MASK) << 8 | 0xFF;
+                $fg = ((this.result.fg & Attributes.RGB_MASK) << 8) | 0xFF;
                 break;
               case Attributes.CM_DEFAULT:
               default:

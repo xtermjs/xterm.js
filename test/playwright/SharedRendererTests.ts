@@ -6,7 +6,7 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from '@xterm/xterm';
-import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
+import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate, timeout } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -989,13 +989,15 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await ctx.value.proxy.focus();
-      await ctx.value.proxy.writeln('\x1b[41m red bg');
-      await ctx.value.proxy.writeln('\x1b[7m inverse');
-      await ctx.value.proxy.writeln('\x1b[31;7m red fg inverse');
+      await ctx.value.proxy.writeln('\x1b[41m red bg\x1b[0m');
+      await ctx.value.proxy.writeln('\x1b[7m inverse\x1b[0m');
+      await ctx.value.proxy.writeln('\x1b[31;7m red fg inverse\x1b[0m');
+      await ctx.value.proxy.writeln('\x1b[48:2:0:204:0:0m red truecolor bg\x1b[0m');
       await ctx.value.proxy.selectAll();
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [230,128,128,255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [255,255,255,255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 3), [230,128,128,255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [230, 128, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [255, 255, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 3), [230, 128, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 4), [230, 128, 128, 255]);
     });
     test('powerline decorative symbols', async () => {
       const theme: ITheme = {
