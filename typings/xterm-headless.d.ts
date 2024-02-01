@@ -719,6 +719,18 @@ declare module '@xterm/headless' {
     onTitleChange: IEvent<string>;
 
     /**
+     * Input data to application side.
+     * The data is treated the same way as typed input at the terminal
+     * (will appear in the onData event).
+     * wasUserInput indicates, whether the input is genuine user input.
+     * It is true by default and triggers additional actions like prompt
+     * focus or selection clearing.
+     * Set it to false if your data sent does not resemble
+     * what a user would have typed (e.g. sequence embedded data).
+     */
+    input(data: string, wasUserInput?: boolean): void;
+
+    /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
      * this will help ensure that the pty can respond to the resize event
      * before another one occurs.
