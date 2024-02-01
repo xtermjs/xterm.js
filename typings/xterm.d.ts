@@ -962,6 +962,12 @@ declare module '@xterm/xterm' {
      * Focus the terminal.
      */
     focus(): void;
+    
+    /**
+     * Input data to application side.
+     * The data is treated the same way as typed input at the terminal (will appear in the onData event).
+     */
+    input(data: string): void;
 
     /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
