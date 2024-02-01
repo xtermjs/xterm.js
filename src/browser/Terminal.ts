@@ -1193,9 +1193,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
   }
   
   /**
-     * Input data to application side.
-     * The data is treated the same way as typed input at the terminal (will appear in the onData event).
-     */
+    * Input data to application side.
+    * The data is treated the same way as typed input at the terminal.
+    * (will appear in the onData event).
+    */
   public input(data: string): void {
     this.coreService.triggerDataEvent(data, true);
     return this.write(data);
