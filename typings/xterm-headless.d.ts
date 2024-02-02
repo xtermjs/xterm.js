@@ -719,6 +719,18 @@ declare module '@xterm/headless' {
     onTitleChange: IEvent<string>;
 
     /**
+     * Input data to application side. The data is treated the same way input
+     * typed into the terminal would (ie. the {@link onData} event will fire).
+     * @param data The data to forward to the application.
+     * @param wasUserInput Whether the input is genuine user input. This is true
+     * by default and triggers additionalbehavior like focus or selection
+     * clearing. Set this to false if the data sent should not be treated like
+     * user input would, for example passing an escape sequence to the
+     * application.
+     */
+    input(data: string, wasUserInput?: boolean): void;
+
+    /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
      * this will help ensure that the pty can respond to the resize event
      * before another one occurs.
