@@ -81,6 +81,19 @@ export class Terminal extends CoreTerminal {
     this._onBell.fire();
   }
 
+ /**
+  * Input data to application side.
+  * The data is treated the same way as typed input at the terminal.
+  * (will appear in the onData event).
+  * wasUserInput indicates, whether the input is genuine user input.
+  * It is true by default and triggers additional actions like prompt focus or selection clearing.
+  * Set it to false if your data sent does not resemble what a user would have typed
+  * (e.g. sequence embedded data).
+  */
+  public input(data: string, wasUserInput: boolean = true): void {
+    this.coreService.triggerDataEvent(data, wasUserInput);
+  }
+
   /**
    * Resizes the terminal.
    *
