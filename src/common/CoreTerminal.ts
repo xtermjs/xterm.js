@@ -168,6 +168,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._writeBuffer.writeSync(data, maxSubsequentCalls);
   }
 
+  public input(data: string, wasUserInput: boolean = true): void {
+    this.coreService.triggerDataEvent(data, wasUserInput);
+  }
+
   public resize(x: number, y: number): void {
     if (isNaN(x) || isNaN(y)) {
       return;
