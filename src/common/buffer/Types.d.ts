@@ -46,6 +46,7 @@ export interface IBuffer {
   savedCurAttrData: IAttributeData;
   isCursorInViewport: boolean;
   markers: IMarker[];
+  scrollArea: HTMLElement | undefined;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
   splitLine(row: number, col: number): void;
   getWrappedRangeForLine(y: number): { first: number, last: number };
@@ -59,6 +60,7 @@ export interface IBuffer {
   clearAllMarkers(): void;
   setWrapped(row: number, value: boolean): void;
   reflowRegion(startRow: number, endRow: number, maxRows: number): void;
+  insertHtml(htmlText: string): void;
 }
 
 export interface IBufferSet extends IDisposable {

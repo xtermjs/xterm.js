@@ -195,6 +195,13 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._verifyIntegers(start, end);
     this._core.selectLines(start, end);
   }
+  public insertHtml(html: string): void {
+    //console.log("public insertHtml")
+    if (this._core.optionsService.rawOptions.allowInsertHtml
+      && this._core instanceof TerminalCore) {
+        (this._core as TerminalCore).insertHtml(html);
+    }
+  }
   public dispose(): void {
     super.dispose();
   }

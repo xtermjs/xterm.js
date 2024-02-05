@@ -87,6 +87,8 @@ export class BufferSet extends Disposable implements IBufferSet {
     this._alt.clearAllMarkers();
     this._alt.clear();
     this._activeBuffer = this._normal;
+    this.normal.scrollArea?.classList.add('xterm-active-buffer');
+    this.alt.scrollArea?.classList.remove('xterm-active-buffer');
     this._onBufferActivate.fire({
       activeBuffer: this._normal,
       inactiveBuffer: this._alt
@@ -106,6 +108,8 @@ export class BufferSet extends Disposable implements IBufferSet {
     this._alt.x = this._normal.x;
     this._alt.y = this._normal.y;
     this._activeBuffer = this._alt;
+    this.normal.scrollArea?.classList.remove('xterm-active-buffer');
+    this.alt.scrollArea?.classList.add('xterm-active-buffer');
     this._onBufferActivate.fire({
       activeBuffer: this._alt,
       inactiveBuffer: this._normal

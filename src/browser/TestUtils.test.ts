@@ -126,6 +126,9 @@ export class MockTerminal implements ITerminal {
   public selectAll(): void {
     throw new Error('Method not implemented.');
   }
+  public insertHtml(html: string): void {
+    throw new Error('Method not implemented.');
+  }
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
@@ -234,6 +237,7 @@ export class MockBuffer implements IBuffer {
   public savedX!: number;
   public savedCharset: ICharset | undefined;
   public savedCurAttrData = new AttributeData();
+  public scrollArea: HTMLElement | undefined;
   public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments as any);
   }
@@ -268,6 +272,9 @@ export class MockBuffer implements IBuffer {
     throw new Error('Method not implemented.');
   }
   public setWrapped(row: number, value: boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  public insertHtml(html: string): void {
     throw new Error('Method not implemented.');
   }
 }

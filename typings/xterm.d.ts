@@ -1078,6 +1078,8 @@ declare module '@xterm/xterm' {
      */
     deregisterCharacterJoiner(joinerId: number): void;
 
+    insertHtml(html: string): void;
+
     /**
      * Adds a marker to the normal buffer and returns it.
      * @param cursorYOffset The y position offset of the marker from the cursor.

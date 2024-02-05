@@ -54,7 +54,7 @@ export class Viewport extends Disposable implements IViewport {
 
   constructor(
     private readonly _viewportElement: HTMLElement,
-    private readonly _scrollArea: HTMLElement,
+    //private readonly _scrollArea: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
@@ -63,15 +63,16 @@ export class Viewport extends Disposable implements IViewport {
     @IThemeService themeService: IThemeService
   ) {
     super();
+    this._activeBuffer = this._bufferService.buffer;
 
     // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
     // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that
     // case, therefore we account for a standard amount to make it visible
-    this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
+    let scrollArea = this._activeBuffer.scrollArea;
+    this.scrollBarWidth = (this._viewportElement.offsetWidth - scrollArea!.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._handleScroll.bind(this)));
 
     // Track properties used in performance critical code manually to avoid using slow getters
-    this._activeBuffer = this._bufferService.buffer;
     this.register(this._bufferService.buffers.onBufferActivate(e => this._activeBuffer = e.activeBuffer));
     this._renderDimensions = this._renderService.dimensions;
     this.register(this._renderService.onDimensionsChange(e => this._renderDimensions = e));
@@ -125,7 +126,8 @@ export class Viewport extends Disposable implements IViewport {
       const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._renderDimensions.css.canvas.height);
       if (this._lastRecordedBufferHeight !== newBufferHeight) {
         this._lastRecordedBufferHeight = newBufferHeight;
-        this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
+        let scrollArea = this._activeBuffer.scrollArea;
+        scrollArea && (scrollArea.style.height = this._lastRecordedBufferHeight + 'px');
       }
     }
 

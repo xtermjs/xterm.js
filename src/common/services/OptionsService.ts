@@ -42,6 +42,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   macOptionClickForcesSelection: false,
   minimumContrastRatio: 1,
   disableStdin: false,
+  allowInsertHtml: false,
   allowProposedApi: false,
   allowTransparency: false,
   tabStopWidth: 8,

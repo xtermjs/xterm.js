@@ -65,7 +65,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public screenElement: HTMLElement | undefined;
 
   private _document: Document | undefined;
-  private _viewportScrollArea: HTMLElement | undefined;
   private _viewportElement: HTMLElement | undefined;
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
@@ -427,9 +426,14 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._viewportElement.classList.add('xterm-viewport');
     fragment.appendChild(this._viewportElement);
 
-    this._viewportScrollArea = this._document.createElement('div');
-    this._viewportScrollArea.classList.add('xterm-scroll-area');
-    this._viewportElement.appendChild(this._viewportScrollArea);
+    let normalHtmlArea = this._document.createElement('div');
+    normalHtmlArea.classList.add('xterm-scroll-area', 'xterm-active-buffer');
+    let altHtmlArea = this._document.createElement('div');
+    altHtmlArea.classList.add('xterm-scroll-area');
+    this._viewportElement.appendChild(normalHtmlArea);
+    this._viewportElement.appendChild(altHtmlArea);
+    this.buffers.normal.scrollArea = normalHtmlArea;
+    this.buffers.alt.scrollArea = altHtmlArea;
 
     this.screenElement = this._document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
@@ -503,7 +507,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._renderService.setRenderer(this._createRenderer());
     }
 
-    this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
+    this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement /*, this._viewportScrollArea*/);
     this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
@@ -846,6 +850,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }, { passive: false }));
   }
 
+  public insertHtml(htmlText: string): void {
+     console.log("insertHtml");
+     this.buffers.active.insertHtml(htmlText);
+  }
 
   /**
    * Tells the renderer to refresh terminal content between two rows (inclusive) at the next

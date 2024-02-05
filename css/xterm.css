@@ -113,7 +113,11 @@
 }
 
 .xterm .xterm-scroll-area {
-    visibility: hidden;
+    display: none;
+}
+
+.xterm .xterm-scroll-area.xterm-active-buffer {
+    display: block;
 }
 
 .xterm-char-measure-element {

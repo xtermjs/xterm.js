@@ -7,7 +7,7 @@ import { CircularList, IInsertEvent } from 'common/CircularList';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { BufferLine, usingNewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, usingNewBufferLine, ElementBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
 import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
@@ -27,6 +27,7 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
  */
 export class Buffer implements IBuffer {
   public lines: CircularList<IBufferLine>;
+  /** Row index of first BufferLine that is partially or fully in the viewport. */
   public ydisp: number = 0;
   public ybase: number = 0;
   public y: number = 0;
@@ -38,6 +39,10 @@ export class Buffer implements IBuffer {
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
+  public scrollArea: HTMLElement | undefined;
+  // first row following the most recent htl chunk (if any)
+  textChunkY: number = 0;
+
   /** Reflow may be needed for line indexes less than lastReflowNeeded.
    * I.e. if i >= lastReflowNeeded then lines.get(i).reflowNeeded is false.
    * Lines later in the buffer are more likly to be visible and hence
@@ -400,6 +405,9 @@ export class Buffer implements IBuffer {
         break;
       }
       const line = this.lines.get(row) as NewBufferLine;
+      if (line instanceof ElementBufferLine) {
+
+      }
       newRows.push(line);
       if (line instanceof LogicalBufferLine && line.reflowNeeded) {
         let curRow: NewBufferLine = line;
@@ -889,6 +897,20 @@ export class Buffer implements IBuffer {
     if (!this._isClearing) {
       this.markers.splice(this.markers.indexOf(marker), 1);
     }
+  }
+
+  public insertHtml(htmlText: string): void {
+    const div = document.createElement('div');
+    div.innerHTML = htmlText;
+    const element = this.scrollArea!;
+    element.appendChild(div);
+    const line = new ElementBufferLine(div);
+    const row = this.y + this.ybase;
+    line.precedingTextCount = row - this.textChunkY;
+    this.textChunkY = row + 1;
+    this.y += 1;
+    this.lines.splice(row, 0, line);
+    line.height = div.offsetHeight;
   }
 
   // for DEBUGGING

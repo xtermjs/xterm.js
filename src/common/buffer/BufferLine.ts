@@ -35,6 +35,8 @@ export abstract class AbstractBufferLine implements IBufferLine {
   /** Number of logical columns */
   public length: number = 0;
   _isWrapped: boolean = false;
+  //public lineHeight: number = -1;
+  //public lineTop: number = 0;
   public get isWrapped(): boolean { return this._isWrapped; }
   public abstract insertCells(pos: number, n: number, fillCellData: ICellData, eraseAttr?: IAttributeData): void;
   public abstract addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
@@ -1898,4 +1900,63 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
   public override isEmpty(): boolean { return this._logicalLine.dataLength() === this.startIndex && ! this.nextRowSameLine; }
   public resizeData(size: number): void { this._logicalLine.resizeData(size); }
   public cleanupMemory(): number { return 0;}
+}
+export class ElementBufferLine extends AbstractBufferLine implements IBufferLine {
+  public element: HTMLElement;
+  public precedingTextCount: number = 0;
+  /** height in px units (-1 if unknown). */
+  public height: number = -1;
+  constructor (element: HTMLElement) {
+    super();
+    this.element = element;
+  }
+  public insertCells(pos: number, n: number, _fillCellData: ICellData, _eraseAttr?: IAttributeData | undefined): void {
+    console.log("unexpected insertCells call");
+  }
+  public addCodepointToCell(_index: number, _codePoint: number, _width: number): void {
+    console.log("unexpected addCodepointToCell call");
+  }
+  public fill(_fillCellData: ICellData, _respectProtect?: boolean | undefined): void {
+    console.log("unexpected fill call");
+  }
+  public clone(): IBufferLine {
+    console.log("unexpected clone call");
+    return this;
+  }
+  public getTrimmedLength(): number {
+    console.log("unexpected getTrimmedLength call");
+    return 0;
+  }
+  public getNoBgTrimmedLength(): number {
+    console.log("unexpected getNoBgTrimmedLength call");
+    return 0;
+  }
+  public translateToString(_trimRight?: boolean | undefined, _startCol?: number | undefined, _endCol?: number | undefined, _outColumns?: number[] | undefined): string {
+    console.log("unexpected translateToString call");
+    return "";
+  }
+  public resize(_cols: number, _fillCellData: ICellData): boolean {
+    console.log("unexpected resize call");
+    return false;
+  }
+  public copyFrom(_line: BufferLine): void {
+    console.log("unexpected copyFrom call");
+  }
+  public cleanupMemory(): number {
+    console.log("unexpected cleanupMemory call");
+    return 0;
+  }
+  public loadCell(_index: number, cell: ICellData): ICellData {
+    console.log("unexpected loadCell call");
+    return cell;
+  }
+  setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
+    console.log("unexpected setCellFromCodepoint call");
+  }
+  public setCell(_index: number, _cell: ICellData): void {
+    console.log("unexpected setCell call");
+  }
+  deleteCells(_pos: number, _n: number, _fillCellData: ICellData): void {
+    console.log("unexpected sdeleteCells call");
+  }
 }
