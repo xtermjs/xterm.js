@@ -48,7 +48,7 @@ declare module '@xterm/xterm' {
     /**
      * When enabled the cursor will be set to the beginning of the next line
      * with every new line. This is equivalent to sending '\r\n' for each '\n'.
-     * Normally the termios settings of the underlying PTY deals with the
+     * Normally the terminal settings of the underlying PTY deals with the
      * translation of '\n' to '\r\n' and this setting should not be used. If you
      * deal with data from a non-PTY related source, this settings might be
      * useful.
