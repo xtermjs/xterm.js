@@ -125,7 +125,7 @@ describe('WebLinksAddon', () => {
   });
 
   // issue #4964
-  it.only('uppercase in protocol and host, default ports', async () => {
+  it('uppercase in protocol and host, default ports', async () => {
     const data = `  HTTP://EXAMPLE.COM  \\r\\n` +
       `  HTTPS://Example.com  \\r\\n` +
       `  HTTP://Example.com:80  \\r\\n` +
