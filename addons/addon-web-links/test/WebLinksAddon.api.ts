@@ -129,12 +129,14 @@ describe('WebLinksAddon', () => {
     const data = `  HTTP://EXAMPLE.COM  \\r\\n` +
       `  HTTPS://Example.com  \\r\\n` +
       `  HTTP://Example.com:80  \\r\\n` +
-      `  HTTP://Example.com:80/staysUpper  \\r\\n`;
+      `  HTTP://Example.com:80/staysUpper  \\r\\n` +
+      `  HTTP://Ab:xY@abc.com:80/staysUpper  \\r\\n`;
     await writeSync(page, data);
     await pollForLinkAtCell(3, 0, `HTTP://EXAMPLE.COM`);
     await pollForLinkAtCell(3, 1, `HTTPS://Example.com`);
     await pollForLinkAtCell(3, 2, `HTTP://Example.com:80`);
     await pollForLinkAtCell(3, 3, `HTTP://Example.com:80/staysUpper`);
+    await pollForLinkAtCell(3, 4, `HTTP://Ab:xY@abc.com:80/staysUpper`);
   });
 });
 

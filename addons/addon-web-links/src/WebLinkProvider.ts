@@ -49,7 +49,7 @@ function isUrl(urlString: string): boolean {
       : url.username
         ? `${url.protocol}//${url.username}@${url.host}`
         : `${url.protocol}//${url.host}`;
-    return urlString.toLocaleLowerCase().startsWith(parsedBase);
+    return urlString.toLocaleLowerCase().startsWith(parsedBase.toLocaleLowerCase());
   } catch (e) {
     return false;
   }
