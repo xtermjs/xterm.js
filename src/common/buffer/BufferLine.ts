@@ -781,35 +781,40 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   public showRowData(): string {
-    return this.showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
+    //return this.showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
+    return this.showData(this.logicalStartColumn(), this.nextRowSameLine ? this.nextRowSameLine?.logicalStartColumn() : Infinity);
   }
   /* Human-readable display of data() array, for debugging */
-  public showData(start = 0, end = this.dataLength()): string {
-    let s = '[';
-    for (let i = start; i < end; i++) {
+  public showData(startColumn = 0, endColumn = Infinity): string {
+    let s = '';
+    let curColumn = 0;
+    for (let i = 0; i < this.dataLength() && curColumn < endColumn; i++) {
       const word = this.data()[i];
       const kind = BufferLine.wKind(word);
       let code: string | number = kind;
       const wnum = word & 0xfffffff;
+      let nextColumn = curColumn;
       switch (kind) {
         case DataKind.FG: code = 'FG'; break;
         case DataKind.BG: code = 'BG'; break;
         case DataKind.STYLE_FLAGS: code = 'STYLE'; break;
-        case DataKind.SKIP_COLUMNS: code = 'SKIP'; break;
-        case DataKind.CLUSTER_START_W1: code = 'CL1'; break;
-        case DataKind.CLUSTER_START_W2: code = 'CL2'; break;
+        case DataKind.SKIP_COLUMNS: code = 'SKIP'; nextColumn += wnum; break;
+        case DataKind.CLUSTER_START_W1: code = 'CL1'; nextColumn += 1; break;
+        case DataKind.CLUSTER_START_W2: code = 'CL2'; nextColumn += 2; break;
         case DataKind.CLUSTER_CONTINUED: code = 'CL_CONT'; break;
-        case DataKind.CHAR_W1: code = 'C1'; break;
-        case DataKind.CHAR_W2: code = 'C2'; break;
+        case DataKind.CHAR_W1: code = 'C1'; nextColumn += 1; break;
+        case DataKind.CHAR_W2: code = 'C2'; nextColumn += 2; break;
       }
-      if (i >= start) {
-        if (i !== start) {
+
+      if (startColumn < nextColumn) {
+        if (s) {
           s += ', ';
         }
         let value;
         if (kind === DataKind.CHAR_W1 || kind === DataKind.CHAR_W2) {
           let count = 1;
-          while (i + count < end && BufferLine.wKind(this.data()[i + count]) === kind) {
+          const w = nextColumn - curColumn;
+          while (curColumn + count * w < endColumn && i + count < this.dataLength() && BufferLine.wKind(this.data()[i + count]) === kind) {
             count++;
           }
           let str;
@@ -821,6 +826,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
             i += count - 1;
           }
           value = JSON.stringify(str);
+          nextColumn = curColumn + count * w;
         } else if (kind === DataKind.CLUSTER_START_W1
             || kind === DataKind.CLUSTER_START_W2
             || kind === DataKind.CLUSTER_CONTINUED) {
@@ -842,15 +848,20 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
                   }
               }
           }
-        } else if (kind !== DataKind.SKIP_COLUMNS) {
-          value = wnum;
+        } else if (kind === DataKind.SKIP_COLUMNS) {
+          value = nextColumn <= endColumn ? wnum
+          : `${endColumn - curColumn} of ${wnum}`;
         } else {
           value = wnum.toString();
         }
         s += code + ': ' + value;
+        if (curColumn < startColumn) {
+          s += ` offset ${startColumn - curColumn}`;
+        }
       }
+      curColumn = nextColumn;
     }
-    return s + ']';
+    return `[${s}]`;
   }
 
   /** Check invariants. Useful for debugging. */
