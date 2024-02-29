@@ -247,7 +247,7 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     if (this._isPaused) {
-      this._pausedResizeTask.set(() => this._renderer.value!.handleResize(cols, rows));
+      this._pausedResizeTask.set(() => this._renderer.value?.handleResize(cols, rows));
     } else {
       this._renderer.value.handleResize(cols, rows);
     }
