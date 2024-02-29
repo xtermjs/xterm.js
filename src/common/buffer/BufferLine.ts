@@ -724,10 +724,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   // Length of data() array.
   abstract dataLength(): number;
-  // End of current row in data() array.
-  protected dataRowEnd(): number {
-    return this.nextRowSameLine ? this.nextRowSameLine.startIndex : this.dataLength();
-  }
   // Key is index in _data array that has STYLE_FLAGS kind with HAS_EXTENDED.
   protected _extendedAttrs: IExtendedAttrs[] = [];
 
@@ -930,11 +926,11 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       this.moveToColumn(endpos);
       const idata = this._cachedDataIndex();
       const colOffset = this._cachedColumn();
-      this.logicalLine().deleteCellsOnly(idata, endpos - colOffset, n);
+      this.logicalLine().deleteCellsOnly(idata, this.logicalStartColumn() + endpos - colOffset, n);
     } else {
       n = width - pos;
     }
-    this.preInsert(pos, fillCellData);
+    this.preInsert(this.logicalStartColumn() + pos, fillCellData);
     const idata = this._cachedDataIndex();
     this.addEmptyDataElements(idata, 1);
     // Ideally should optimize for adjacent SKIP_COLUMNS (as in eraseCells).
@@ -946,13 +942,16 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
    * Return encoded 'content'.
    */
   public moveToColumn(index: RowColumn, stopEarly: boolean = false): number {
-    return this.moveToLineColumn(index + this.logicalStartColumn(), this.dataRowEnd(), stopEarly);
+    const endColumn = this.nextRowSameLine ? this.nextRowSameLine.logicalStartColumn() : Infinity;
+    return this.moveToLineColumn(index + this.logicalStartColumn(), endColumn, stopEarly);
   }
 
   /** Move to column 'index', which is a LineColumn.
-   * Return encoded 'content'.
+   * Return encoded 'content' (code value with width and possible IS_COMBINED_MARK) of following character, if any.
+   * If at SKIP_COLUMNS or after end then the code value is 0 and the width is 1.
+   * If in the middle of a multi-column character, the code value is 0 and the width is 0.
    */
-  public moveToLineColumn(index: LineColumn, end = this.dataLength(), stopEarly: boolean = false): number {
+  public moveToLineColumn(index: LineColumn, endColumn = Infinity, stopEarly: boolean = false): number {
     let curColumn = this._cachedColumn();
     if (index < curColumn) {
       // FIXME can sometimes do better
@@ -968,12 +967,13 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let kind;
     let content = 0;
     while (stopEarly ? todo > 0 : todo >= 0) {
-      if (idata >= end) {
+      if (idata >= this.dataLength()) {
         word = NULL_DATA_WORD;
         kind = DataKind.SKIP_COLUMNS;
         content = (NULL_CELL_WIDTH << Content.WIDTH_SHIFT) | NULL_CELL_CODE;
         break;
       }
+      let nextColumn = curColumn;
       word = this.data()[idata];
       kind = BufferLine.wKind(word);
       let w;
@@ -991,11 +991,12 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           idata++;
           break;
         case DataKind.SKIP_COLUMNS:
-          const wlen = BufferLine.wSkipCount(word);
-          if (todo >= wlen) {
-            todo -= wlen;
+          w = BufferLine.wSkipCount(word);
+          nextColumn = curColumn + w;
+          if (todo >= w && nextColumn <= endColumn) {
+            todo -= w;
             idata++;
-            curColumn += wlen;
+            curColumn += w;
           } else {
             content = (NULL_CELL_WIDTH << Content.WIDTH_SHIFT) | NULL_CELL_CODE;
             todo = -1;
@@ -1004,13 +1005,16 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         case DataKind.CLUSTER_START_W1:
         case DataKind.CLUSTER_START_W2:
           w = kind + 1 - DataKind.CLUSTER_START_W1;
-          if (todo >= w) {
+          nextColumn = curColumn + w;
+          if (todo >= w && nextColumn <= endColumn) {
             const clEnd = this.clusterEnd(idata);
             todo -= w;
-            curColumn += w;
+            curColumn = nextColumn;
             idata = clEnd;
           } else {
-            content = index !== curColumn ? 0
+            content = nextColumn > endColumn
+              ? (NULL_CELL_WIDTH << Content.WIDTH_SHIFT) | NULL_CELL_CODE
+              : index !== curColumn ? 0
               : (w << Content.WIDTH_SHIFT) | Content.IS_COMBINED_MASK;
             todo = -1;
           }
@@ -1018,13 +1022,16 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         case DataKind.CHAR_W1:
         case DataKind.CHAR_W2:
           w = kind + 1 - DataKind.CHAR_W1; // 1, or 2 if wide characters
-          if (todo >= w) {
+          nextColumn = curColumn + w;
+          if (todo >= w && nextColumn <= endColumn) {
             todo -= w;
             idata++;
-            curColumn += w;
+            curColumn = nextColumn;
           } else {
             todo = -1;
-            content = index !== curColumn ? 0
+            content = nextColumn > endColumn
+              ? (NULL_CELL_WIDTH << Content.WIDTH_SHIFT) | NULL_CELL_CODE
+              : index !== curColumn ? 0
               : (w << Content.WIDTH_SHIFT) | (word & 0x1fffff);
           }
           break;
@@ -1068,8 +1075,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     this.logicalLine().deleteCellsOnly(idata, pos - curColumn, n);
   }
 
-  private preInsert(index: LineColumn, attrs: IAttributeData, extendToEnd: boolean = false): boolean {
-    const content = this.moveToLineColumn(index, this.dataLength(), true);
+  public _splitIfNeeded(index: LineColumn): number {
+    const content = this.logicalLine().moveToLineColumn(index, Infinity, true);
     let curColumn = this._cachedColumn();
     let idata = this._cachedDataIndex();
 
@@ -1083,13 +1090,29 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     // c. otherwise - in middle of wide char
 
     if (curColumn < index) {
-      if ((content >> Content.WIDTH_SHIFT) === 2
+      if ((content >> Content.WIDTH_SHIFT) === 0
         && index === curColumn + 1) {
         // In the middle of a wide character. Well-behaved applications are
         // unlikely to do this, so it's not worth optimizing.
         const clEnd = this.clusterEnd(idata);
-        this.addEmptyDataElements(idata, idata - clEnd - 2);
-        this.data()[idata++] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1);
+        this.addEmptyDataElements(idata, 2 - (clEnd - idata));
+        let wrappedBecauseWide = false; // FIXME
+        let prev: NewBufferLine = this.logicalLine();
+        let prevStart = 0;
+        for (;;) {
+          let next = prev.nextRowSameLine;
+          if (! next) { break; }
+          let nextStart = next.logicalStartColumn();
+          if (nextStart === curColumn && nextStart === prevStart + this.length - 1) {
+            wrappedBecauseWide = true;
+            index++;
+          }
+          if (wrappedBecauseWide) {
+            next.startColumn++;
+          }
+          prev = next;
+        }
+        this.data()[idata++] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, wrappedBecauseWide ? 2 : 1);
         this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, 1);
         curColumn = index;
       } else if (idata === this.dataLength()) {
@@ -1110,7 +1133,10 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       }
       this._cacheSetColumnDataIndex(curColumn, idata);
     }
-
+    return idata;
+  }
+  private preInsert(index: LineColumn, attrs: IAttributeData, extendToEnd: boolean = false): boolean {
+    let idata = this._splitIfNeeded(index);
     // set attributes
     const newFg = attrs.getFg();
     const newBg = attrs.getBg();
@@ -1195,9 +1221,11 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   public insertText(index: RowColumn, data: Uint32Array, start: number, end: number, attrs: IAttributeData, inputHandler: IInputHandler, coreService: ICoreService): RowColumn {
     const insertMode = coreService.modes.insertMode;
     const wraparoundMode = coreService.decPrivateModes.wraparound;
-    const lstart = this.logicalStartColumn();
-    const lindex = index + lstart;
+    let lstart = this.logicalStartColumn();
+    let lindex = index + lstart;
     const add = this.preInsert(lindex, attrs);
+    lstart = this.logicalStartColumn();
+    lindex = index + lstart;
     let curColumn = this._cachedColumn();
     const lline = this.logicalLine();
     const startColumn: LineColumn = curColumn;
@@ -1480,7 +1508,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let skipped = 0;
     const startColumn = this.logicalStartColumn();
     const data = this.data();
-    const end = this.dataRowEnd();
+    const end = this.nextRowSameLine ? this.nextRowSameLine.startIndex : this.dataLength();
     let bg = this._cachedBg();
     for (let idata = startColumn; idata < end; idata++) {
       const word = data[idata];
@@ -1853,6 +1881,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
           break;
       }
     }
+    if (col < startCol) { col = startCol; }
     if (! trimRight && col < endCol && endCol !== Infinity) {
       addPendingSkip(endCol - col);
     }
@@ -1868,6 +1897,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
 
 export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
   _logicalLine: LogicalBufferLine;
+  // DEPRECATE FIXME startIndex doesn't work in the case of when soft line-break is inside a SKIP_COLUMNS.
   startIndex: number = 0;
   /** Number of logical columns in previous rows.
    * Also: logical column number (column number assuming infinitely-wide

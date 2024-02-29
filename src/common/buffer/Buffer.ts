@@ -152,6 +152,7 @@ export class Buffer implements IBuffer {
       const oldStartColumn = curRow.logicalStartColumn();
       prevRow.nextRowSameLine = undefined;
       const oldLine = prevRow.logicalLine();
+      curRow.startIndex = oldLine._splitIfNeeded(oldStartColumn);
       const newRow = new LogicalBufferLine(line.length, undefined, curRow);
       newRow.nextRowSameLine = curRow.nextRowSameLine;
       const oldStart = curRow.startIndex;
