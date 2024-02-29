@@ -44,7 +44,6 @@ export abstract class AbstractBufferLine implements IBufferLine {
   public abstract clone(): IBufferLine;
   public abstract translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
   public abstract getTrimmedLength(): number;
-  public isEmpty(): boolean { return this.getTrimmedLength() === 0; }
   public abstract getNoBgTrimmedLength(): number;
   public abstract cleanupMemory(): number;
 
@@ -777,7 +776,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   }
 
   public showRowData(): string {
-    //return this.showData(this instanceof WrappedBufferLine ? this.startIndex : 0, this.dataRowEnd());
     return this.showData(this.logicalStartColumn(), this.nextRowSameLine ? this.nextRowSameLine?.logicalStartColumn() : Infinity);
   }
   /* Human-readable display of data() array, for debugging */
@@ -1045,7 +1043,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   /**
    * Load data at `index` into `cell`. This is used to access cells in a way that's more friendly
-   * to GC as it significantly reduced the amount of new objects/references needed. @deprecated
+   * to GC as it significantly reduced the amount of new objects/references needed.
    */
   public loadCell(index: number, cell: ICellData): ICellData {
     const cursor = cell as CellData;
@@ -1135,7 +1133,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     }
     return idata;
   }
-  private preInsert(index: LineColumn, attrs: IAttributeData, extendToEnd: boolean = false): boolean {
+  protected preInsert(index: LineColumn, attrs: IAttributeData, extendToEnd: boolean = false): boolean {
     let idata = this._splitIfNeeded(index);
     // set attributes
     const newFg = attrs.getFg();
@@ -1591,13 +1589,13 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   _cache3: number = 0;
   _cache4: number = -1;
 
-  constructor(cols: number, fillCellData?: IAttributeData, src?: WrappedBufferLine) {
+  constructor(cols: number, fillCellData?: IAttributeData, src?: WrappedBufferLine, startIndex?: number) {
     super();
     // MAYBE: const buffer = new ArrayBuffer(0, { maxByteLength: 6 * cols });
     // const buffer = new ArrayBuffer(4 * cols, { maxByteLength: 6 * cols });
     if (src) {
       const lline = src.logicalLine();
-      const oldStart = src.startIndex;
+      const oldStart = startIndex || 0;
       this._data = lline._data.slice(oldStart);
       this._dataLength = lline._dataLength - oldStart;
       this._extendedAttrs = lline._extendedAttrs.slice(oldStart);
@@ -1607,6 +1605,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     }
     this.length = cols;
     this._isWrapped = false;
+    if (fillCellData) { this.preInsert(0, fillCellData); }
   }
   public override logicalLine(): LogicalBufferLine { return this; }
   public override logicalStartColumn(): LineColumn { return 0; }
@@ -1616,7 +1615,6 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   override _cachedFg(): number { return this._cache3; }
 
   protected _cachedColumnInRow(): RowColumn { return (this.logicalLine()._cache1 & 0xFFFF); }
-  public isEmpty(): boolean { return this._dataLength === 0 && ! this.nextRowSameLine; }
 
   // count can be negative
   addEmptyDataElements(position: number, count: number): void {
@@ -1897,8 +1895,6 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
 
 export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
   _logicalLine: LogicalBufferLine;
-  // DEPRECATE FIXME startIndex doesn't work in the case of when soft line-break is inside a SKIP_COLUMNS.
-  startIndex: number = 0;
   /** Number of logical columns in previous rows.
    * Also: logical column number (column number assuming infinitely-wide
    * terminal) corresponding to the start of this row.
@@ -1908,6 +1904,12 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
    * different when a wide character at column W-1 must wrap "early".
    */
   startColumn: LineColumn = 0;
+  // DEPRECATE FIXME startIndex doesn't work in the case of when soft line-break is inside a SKIP_COLUMNS.
+  // startIndex, startFg, startBg, startStyle are primaraily used by _cacheReset
+  // to optimize moveToColumn on same row.  It might be best to get rid of them;
+  // to migitate the pergfance cost we cann support backwards movement by moveToColumn.
+  // Changing Data>FG etc to use xor-encoding would help. TODO.
+  startIndex: number = 0;
   startFg: number = 0;
   startBg: number = 0;
   startStyle: number = -1;
@@ -1936,7 +1938,6 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
     this._cacheSetStyleFlagsIndex(this.startStyle);
     this._cacheSetColumnDataIndex(this.startColumn, this.startIndex);
   }
-  public override isEmpty(): boolean { return this._logicalLine.dataLength() === this.startIndex && ! this.nextRowSameLine; }
   public resizeData(size: number): void { this._logicalLine.resizeData(size); }
   public cleanupMemory(): number { return 0;}
 }

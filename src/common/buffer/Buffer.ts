@@ -152,8 +152,10 @@ export class Buffer implements IBuffer {
       const oldStartColumn = curRow.logicalStartColumn();
       prevRow.nextRowSameLine = undefined;
       const oldLine = prevRow.logicalLine();
-      curRow.startIndex = oldLine._splitIfNeeded(oldStartColumn);
-      const newRow = new LogicalBufferLine(line.length, undefined, curRow);
+      const startIndex = oldLine._splitIfNeeded(oldStartColumn);
+      const cell = new CellData();
+      curRow.loadCell(oldStartColumn, cell);
+      const newRow = new LogicalBufferLine(line.length, cell, curRow, startIndex);
       newRow.nextRowSameLine = curRow.nextRowSameLine;
       const oldStart = curRow.startIndex;
       for (let nextRow = newRow.nextRowSameLine; nextRow; nextRow = nextRow.nextRowSameLine) {
@@ -161,7 +163,7 @@ export class Buffer implements IBuffer {
         nextRow.startIndex -= oldStart;
         nextRow._logicalLine = newRow;
       }
-      oldLine._dataLength = curRow.startIndex;
+      oldLine._dataLength = startIndex;
       this.lines.set(absrow, newRow);
     }
   }
