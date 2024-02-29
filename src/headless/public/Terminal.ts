@@ -134,6 +134,9 @@ export class Terminal extends Disposable implements ITerminalApi {
       this._publicOptions[propName] = options[propName];
     }
   }
+  public input(data: string, wasUserInput: boolean = true): void {
+    this._core.input(data, wasUserInput);
+  }
   public resize(columns: number, rows: number): void {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
