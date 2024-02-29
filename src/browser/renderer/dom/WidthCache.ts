@@ -134,9 +134,14 @@ export class WidthCache implements IDisposable {
   public get(c: string, bold: boolean | number, italic: boolean | number): number {
     let cp = 0;
     if (!bold && !italic && c.length === 1 && (cp = c.charCodeAt(0)) < WidthCacheSettings.FLAT_SIZE) {
-      return this._flat[cp] !== WidthCacheSettings.FLAT_UNSET
-        ? this._flat[cp]
-        : (this._flat[cp] = this._measure(c, 0));
+      if (this._flat[cp] !== WidthCacheSettings.FLAT_UNSET) {
+        return this._flat[cp];
+      }
+      const width = this._measure(c, 0);
+      if (width > 0) {
+        this._flat[cp] = width;
+      }
+      return width;
     }
     let key = c;
     if (bold) key += 'B';
@@ -147,7 +152,9 @@ export class WidthCache implements IDisposable {
       if (bold) variant |= FontVariant.BOLD;
       if (italic) variant |= FontVariant.ITALIC;
       width = this._measure(c, variant);
-      this._holey!.set(key, width);
+      if (width > 0) {
+        this._holey!.set(key, width);
+      }
     }
     return width;
   }
