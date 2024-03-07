@@ -187,6 +187,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       `@keyframes blink_box_shadow` + `_` + this._terminalClass + ` {` +
       ` 50% {` +
       `  border-bottom-style: hidden;` +
+      `  box-shadow: none;` +
       ` }` +
       `}`;
     styles +=
