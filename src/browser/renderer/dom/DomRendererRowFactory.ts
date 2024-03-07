@@ -377,7 +377,9 @@ export class DomRendererRowFactory {
           break;
         case Attributes.CM_RGB:
           resolvedBg = channels.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
-          this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
+          if (!isCursorCell) {
+            this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
+          }
           break;
         case Attributes.CM_DEFAULT:
         default:
