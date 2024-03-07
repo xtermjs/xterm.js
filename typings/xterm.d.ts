@@ -225,7 +225,7 @@ declare module '@xterm/xterm' {
     /**
      * The amount of scrollback in the terminal. Scrollback is the amount of
      * rows that are retained when lines are scrolled beyond the initial
-     * viewport.
+     * viewport. Defaults to 1000.
      */
     scrollback?: number;
 
