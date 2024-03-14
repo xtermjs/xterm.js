@@ -234,6 +234,7 @@ export interface ITerminalOptions {
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
+  rescaleOverlappingGlyphs?: boolean;
   rightClickSelectsWord?: boolean;
   rows?: number;
   screenReaderMode?: boolean;

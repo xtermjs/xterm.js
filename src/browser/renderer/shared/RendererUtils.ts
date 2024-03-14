@@ -27,6 +27,19 @@ function isBoxOrBlockGlyph(codepoint: number): boolean {
   return 0x2500 <= codepoint && codepoint <= 0x259F;
 }
 
+export function isEmoji(codepoint: number): boolean {
+  return (
+    codepoint >= 0x1F600 && codepoint <= 0x1F64F || // Emoticons
+    codepoint >= 0x1F300 && codepoint <= 0x1F5FF ||  // Misc Symbols and Pictographs
+    codepoint >= 0x1F680 && codepoint <= 0x1F6FF ||  // Transport and Map
+    codepoint >= 0x2600 && codepoint <= 0x26FF ||    // Misc symbols
+    codepoint >= 0x2700 && codepoint <= 0x27BF ||    // Dingbats
+    codepoint >= 0xFE00 && codepoint <= 0xFE0F ||    // Variation Selectors
+    codepoint >= 0x1F900 && codepoint <= 0x1F9FF ||  // Supplemental Symbols and Pictographs
+    codepoint >= 0x1F1E6 && codepoint <= 0x1F1FF
+  );
+}
+
 export function treatGlyphAsBackgroundColor(codepoint: number): boolean {
   return isPowerlineGlyph(codepoint) || isBoxOrBlockGlyph(codepoint);
 }
