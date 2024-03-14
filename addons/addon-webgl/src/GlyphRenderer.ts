@@ -289,7 +289,7 @@ export class GlyphRenderer extends Disposable {
         // Never rescale emoji
         code && !isEmoji(code)
       ) {
-        array[$i + 2] = (this._dimensions.device.cell.width - /* improve readability */1) / this._dimensions.device.canvas.width; // - 1 to improve readability
+        array[$i + 2] = (this._dimensions.device.cell.width - 1) / this._dimensions.device.canvas.width; // - 1 to improve readability
       }
     }
   }
