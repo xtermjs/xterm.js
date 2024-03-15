@@ -144,8 +144,14 @@ declare module '@xterm/headless' {
      * Whether to rescale glyphs horizontally that are a single cell wide but
      * have glyphs that would overlap following cell(s). This typically happens
      * for ambiguous width characters (eg. the roman numeral characters U+2160+)
-     * which aren't featured in monospace fonts. Emoji glyphs are never
-     * rescaled. This is an important feature for achieving GB18030 compliance.
+     * which aren't featured in monospace fonts. This is an important feature
+     * for achieving GB18030 compliance.
+     *
+     * The following glyphs will never be rescaled:
+     *
+     * - Emoji glyphs
+     * - Powerline glyphs
+     * - Nerd font glyphs
      *
      * Note that this doesn't work with the DOM renderer. The default is false.
      */
