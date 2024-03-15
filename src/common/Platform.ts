@@ -14,7 +14,7 @@ interface INavigator {
 declare const navigator: INavigator;
 declare const process: unknown;
 
-export const isNode = (typeof process !== 'undefined') ? true : false;
+export const isNode = (typeof process !== 'undefined' && process.title !== 'browser') ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
