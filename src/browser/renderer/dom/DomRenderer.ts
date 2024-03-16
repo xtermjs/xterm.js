@@ -220,9 +220,16 @@ export class DomRenderer extends Disposable implements IRenderer {
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` animation: ${blinkAnimationBlockId} 1s step-end infinite;` +
       `}` +
+      // !important helps fix an issue where the cursor will not render on top of the selection,
+      // however it's very hard to fix this issue and retain the blink animation without the use of
+      // !important. So this edge case fails when cursor blink is on.
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` background-color: ${colors.cursor.css};` +
       ` color: ${colors.cursorAccent.css};` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS}:not(.${RowCss.CURSOR_BLINK_CLASS}) {` +
+      ` background-color: ${colors.cursor.css} !important;` +
+      ` color: ${colors.cursorAccent.css} !important;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_OUTLINE_CLASS} {` +
       ` outline: 1px solid ${colors.cursor.css};` +
