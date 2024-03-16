@@ -78,6 +78,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    */
   private _linesCache: LineCacheEntry[] | undefined;
   private _linesCacheTimeoutId = 0;
+  private _lineFeedListener: IDisposable | undefined;
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
 
@@ -427,6 +428,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     const terminal = this._terminal!;
     if (!this._linesCache) {
       this._linesCache = new Array(terminal.buffer.active.length);
+      this._lineFeedListener = terminal.onLineFeed(() => this._destroyLinesCache());
       this._cursorMoveListener = terminal.onCursorMove(() => this._destroyLinesCache());
       this._resizeListener = terminal.onResize(() => this._destroyLinesCache());
     }
@@ -444,6 +446,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     if (this._resizeListener) {
       this._resizeListener.dispose();
       this._resizeListener = undefined;
+    }
+    if (this._lineFeedListener) {
+      this._lineFeedListener.dispose();
+      this._lineFeedListener = undefined;
     }
     if (this._linesCacheTimeoutId) {
       window.clearTimeout(this._linesCacheTimeoutId);
