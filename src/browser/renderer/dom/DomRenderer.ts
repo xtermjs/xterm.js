@@ -183,20 +183,23 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` font-style: italic;` +
       `}`;
     // Blink animation
+    const blinkAnimationUnderlineId = `blink_underline_${this._terminalClass}`;
+    const blinkAnimationBarId = `blink_bar_${this._terminalClass}`;
+    const blinkAnimationBlockId = `blink_block_${this._terminalClass}`;
     styles +=
-      `@keyframes blink_underline` + `_` + this._terminalClass + ` {` +
+      `@keyframes ${blinkAnimationUnderlineId} {` +
       ` 50% {` +
       `  border-bottom-style: hidden;` +
       ` }` +
       `}`;
     styles +=
-      `@keyframes blink_bar` + `_` + this._terminalClass + ` {` +
+      `@keyframes ${blinkAnimationBarId} {` +
       ` 50% {` +
       `  box-shadow: none;` +
       ` }` +
       `}`;
     styles +=
-      `@keyframes blink_block` + `_` + this._terminalClass + ` {` +
+      `@keyframes ${blinkAnimationBlockId} {` +
       ` 0% {` +
       `  background-color: ${colors.cursor.css};` +
       `  color: ${colors.cursorAccent.css};` +
@@ -209,13 +212,13 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Cursor
     styles +=
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} {` +
-      ` animation: blink_underline` + `_` + this._terminalClass + ` 1s step-end infinite;` +
+      ` animation: ${blinkAnimationUnderlineId} 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} {` +
-      ` animation: blink_bar` + `_` + this._terminalClass + ` 1s step-end infinite;` +
+      ` animation: ${blinkAnimationBarId} 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
-      ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
+      ` animation: ${blinkAnimationBlockId} 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` background-color: ${colors.cursor.css};` +
