@@ -48,8 +48,9 @@ export function allowRescaling(codepoint: number | undefined, width: number, gly
   return (
     // Is single cell width
     width === 1 &&
-    // Glyph exceeds cell bounds, + 1 to avoid hurting readability
-    glyphSizeX > deviceCellWidth + 1 &&
+    // Glyph exceeds cell bounds, add 25% to avoid hurting readability by rescaling glyphs that
+    // barely overlap
+    glyphSizeX > deviceCellWidth * 1.25 &&
     // Never rescale emoji
     codepoint !== undefined && !isEmoji(codepoint) &&
     // Never rescale powerline or nerd fonts
