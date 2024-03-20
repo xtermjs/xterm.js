@@ -2972,7 +2972,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * feedback. Use `OSC 8 ; ; BEL` to finish the current hyperlink.
    */
   public setHyperlink(data: string): boolean {
-    const args = data.split(';');
+    const args = data.match(/^([^;]*);(.*)$/)?.slice(1) ?? [];
     if (args.length < 2) {
       return false;
     }
