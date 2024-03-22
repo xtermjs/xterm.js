@@ -49,6 +49,8 @@ export class Viewport extends Disposable implements IViewport {
     target: -1
   };
 
+  private _ensureTimeout: number;
+
   private readonly _onRequestScrollLines = this.register(new EventEmitter<{ amount: number, suppressScrollEvent: boolean }>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
@@ -81,7 +83,7 @@ export class Viewport extends Disposable implements IViewport {
     this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.syncScrollArea()));
 
     // Perform this async to ensure the ICharSizeService is ready.
-    setTimeout(() => this.syncScrollArea());
+    this._ensureTimeout = window.setTimeout(() => this.syncScrollArea());
   }
 
   private _handleThemeChange(colors: ReadonlyColorSet): void {
@@ -397,5 +399,9 @@ export class Viewport extends Disposable implements IViewport {
     }
     this._viewportElement.scrollTop += deltaY;
     return this._bubbleScroll(ev, deltaY);
+  }
+
+  public dispose(): void {
+    clearTimeout(this._ensureTimeout);
   }
 }
