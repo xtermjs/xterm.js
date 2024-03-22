@@ -770,6 +770,60 @@ test.describe('API Integration Tests', () => {
     });
   });
 
+  test.describe('registerClipboardProvider', () => {
+    async function registerClipboardProvider(ctx: ITestContext): Promise<void> {
+      await ctx.page.evaluate(`window.clipboard = ''`);
+      await ctx.page.evaluate(`window.term._disposables.push(
+      window.term.registerClipboardProvider({
+          readText: (selection) => {
+            return Promise.resolve(window.clipboard);
+          },
+          writeText: (selection, text) => {
+            window.clipboard = text;
+            return Promise.resolve();
+          }
+        })
+      )`);
+    }
+    test('should register clipboard provider', async () => {
+      await openTerminal(ctx, { allowClipboardAccess: true });
+      await registerClipboardProvider(ctx);
+      await ctx.page.evaluate(`window.term.dispose()`);
+    });
+    test('should ignore clipboard when no provider is registered', async () => {
+      await openTerminal(ctx, { allowClipboardAccess: true });
+      await ctx.proxy.write('\x1b]52;c;foobar\x07');
+      strictEqual(await ctx.page.evaluate(`window.clipboard`), '');
+      await ctx.page.evaluate(`window.term.dispose()`);
+    });
+    test('should ignore clipboard when allowClipboardAccess is false', async () => {
+      await openTerminal(ctx, { allowClipboardAccess: false });
+      await registerClipboardProvider(ctx);
+      await ctx.proxy.write('\x1b]52;c;foobar\x07');
+      strictEqual(await ctx.page.evaluate(`window.clipboard`), '');
+      await ctx.page.evaluate(`window.term.dispose()`);
+    });
+    test('should save to clipboard when writeText is called', async () => {
+      await openTerminal(ctx, { allowClipboardAccess: true });
+      await registerClipboardProvider(ctx);
+      await ctx.proxy.write('\x1b]52;c;foobar\x07');
+      strictEqual(await ctx.page.evaluate(`window.clipboard`), 'foobar');
+      await ctx.page.evaluate(`window.term.dispose()`);
+    });
+    test('should read from clipboard when readText is called', async () => {
+      await openTerminal(ctx, { allowClipboardAccess: true });
+      await registerClipboardProvider(ctx);
+      await ctx.page.evaluate(`
+        window.data = [];
+        window.term.onData(e => data.push(e));
+      `);
+      await ctx.proxy.write('\x1b]52;c;foobar\x07');
+      await ctx.proxy.write('\x1b]52;c;?\x07');
+      deepStrictEqual(await ctx.page.evaluate(`window.data`), ['foobar']);
+      await ctx.page.evaluate(`window.term.dispose()`);
+    });
+  });
+
   test.describe('registerLinkProvider', () => {
     test('should fire provideLinks when hovering cells', async () => {
       await openTerminal(ctx);
