@@ -1,13 +1,15 @@
 {
   "name": "xterm.js",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:0-18-buster",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:18-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {} // yarn
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": 18
+    } // yarn
   },
   "forwardPorts": [
     3000
   ],
-  "postCreateCommand": "yarn install",
+  "postCreateCommand": "yarn install && yarn setup",
   "customizations": {
     "vscode": {
       "extensions": [
