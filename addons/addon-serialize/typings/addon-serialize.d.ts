@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IMarker, IBufferRange } from '@xterm/xterm';
 
 declare module '@xterm/addon-serialize' {
   /**
@@ -49,9 +49,15 @@ declare module '@xterm/addon-serialize' {
 
   export interface ISerializeOptions {
     /**
+     * The row range to serialize. The an explicit range is specified, the cursor will get its final
+     * repositioning.
+     */
+    range?: ISerializeRange;
+
+    /**
      * The number of rows in the scrollback buffer to serialize, starting from the bottom of the
      * scrollback buffer. When not specified, all available rows in the scrollback buffer will be
-     * serialized.
+     * serialized. This will be ignored if {@link range} is specified.
      */
     scrollback?: number;
 
@@ -84,5 +90,16 @@ declare module '@xterm/addon-serialize' {
      * Whether to include the global background of the terminal. False by default.
      */
     includeGlobalBackground: boolean;
+  }
+
+  export interface ISerializeRange {
+    /**
+     * The line to start serializing (inclusive).
+     */
+    start: IMarker | number;
+    /**
+     * The line to end serializing (inclusive).
+     */
+    end: IMarker | number;
   }
 }

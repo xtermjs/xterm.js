@@ -81,6 +81,10 @@ export class Terminal extends CoreTerminal {
     this._onBell.fire();
   }
 
+  public input(data: string, wasUserInput: boolean = true): void {
+    this.coreService.triggerDataEvent(data, wasUserInput);
+  }
+
   /**
    * Resizes the terminal.
    *

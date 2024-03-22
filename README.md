@@ -21,7 +21,7 @@ Xterm.js is a front-end component written in TypeScript that lets applications b
 First, you need to install the module, we ship exclusively through [npm](https://www.npmjs.com/), so you need that installed and then add xterm.js as a dependency by running:
 
 ```bash
-npm install xterm
+npm install @xterm/xterm
 ```
 
 To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your HTML page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself. Finally, instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
@@ -30,8 +30,8 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 <!doctype html>
   <html>
     <head>
-      <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
-      <script src="node_modules/xterm/lib/xterm.js"></script>
+      <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css" />
+      <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
     </head>
     <body>
       <div id="terminal"></div>
@@ -113,7 +113,7 @@ All current and past releases are available on this repo's [Releases page](https
 Our CI releases beta builds to npm for every change that goes into master. Install the latest beta build with:
 
 ```bash
-npm install -S xterm@beta
+npm install -S @xterm/xterm@beta
 ```
 
 These should generally be stable, but some bugs may slip in. We recommend using the beta build primarily to test out new features and to verify bug fixes.

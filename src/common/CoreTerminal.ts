@@ -120,6 +120,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._oscLinkService = this._instantiationService.createInstance(OscLinkService);
     this._instantiationService.setService(IOscLinkService, this._oscLinkService);
 
+
     // Register input handler and handle/forward events
     this._inputHandler = this.register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));
     this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
@@ -165,6 +166,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
       hasWriteSyncWarnHappened = true;
     }
     this._writeBuffer.writeSync(data, maxSubsequentCalls);
+  }
+
+  public input(data: string, wasUserInput: boolean = true): void {
+    this.coreService.triggerDataEvent(data, wasUserInput);
   }
 
   public resize(x: number, y: number): void {
