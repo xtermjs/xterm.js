@@ -80,6 +80,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
+  public get screenElement(): HTMLElement | undefined { return this._core.screenElement; }
   public get parser(): IParser {
     if (!this._parser) {
       this._parser = new ParserApi(this._core);
