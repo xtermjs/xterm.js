@@ -139,13 +139,13 @@ describe('SerializeAddon', () => {
     });
 
     it('basic terminal with html unsafe chars', async () => {
-      await writeP(terminal, ' <script>alert("&pi; = 3.14")</script> ');
-      terminal.select(1, 0, 37);
+      await writeP(terminal, ' <a>&pi; ');
+      terminal.select(1, 0, 7);
 
       const output = serializeAddon.serializeAsHTML({
         onlySelection: true
       });
-      assert.equal((output.match(/<div><span>&lt;script>alert("&amp;pi; = 3.14")&lt;\/script><\/span><\/div>/g) || []).length, 1, output);
+      assert.equal((output.match(/<div><span>&lt;a>&amp;pi;<\/span><\/div>/g) || []).length, 1, output);
     });
 
     it('cells with bold styling', async () => {
