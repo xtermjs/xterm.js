@@ -14,6 +14,14 @@ function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
 }
 
+function escapeHtmlChar(c: string): string {
+  switch (c) {
+    case '&': return '&amp;';
+    case '<': return '&lt;';
+  }
+  return c;
+}
+
 // TODO: Refine this template class later
 abstract class BaseSerializeHandler {
   constructor(
@@ -669,7 +677,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     if (isEmptyCell) {
       this._currentRow += ' ';
     } else {
-      this._currentRow += cell.getChars();
+      this._currentRow += escapeHtmlChar(cell.getChars());
     }
   }
 
