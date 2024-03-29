@@ -14,7 +14,7 @@ function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
 }
 
-function escapeHtmlChar(c: string): string {
+function escapeHTMLChar(c: string): string {
   switch (c) {
     case '&': return '&amp;';
     case '<': return '&lt;';
@@ -677,7 +677,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     if (isEmptyCell) {
       this._currentRow += ' ';
     } else {
-      this._currentRow += escapeHtmlChar(cell.getChars());
+      this._currentRow += escapeHTMLChar(cell.getChars());
     }
   }
 
