@@ -34,7 +34,7 @@ describe('ClipboardAddon', () => {
     page = await context.newPage();
     await page.setViewportSize({ width, height });
     await page.goto(APP);
-    await openTerminal(page, { allowClipboardAccess: true });
+    await openTerminal(page);
     await page.evaluate(`
       window.clipboardAddon = new ClipboardAddon();
       window.term.loadAddon(window.clipboardAddon);
