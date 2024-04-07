@@ -25,12 +25,6 @@ declare module '@xterm/xterm' {
    */
   export interface ITerminalOptions {
     /**
-     * Whether to allow clipboard access. When false, any access to the
-     * clipboard is ignored. The default is false.
-     */
-    allowClipboardAccess?: boolean;
-
-    /**
      * Whether to allow the use of proposed API. When false, any usage of APIs
      * marked as experimental/proposed will throw an error. The default is
      * false.
@@ -1131,14 +1125,6 @@ declare module '@xterm/xterm' {
     registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
 
     /**
-     * Registers a clipboard provider, allowing custom handling of clipboard
-     * selection events. This is used primarily to enable accessing the
-     * clipboard to read/write clipboard data.
-     * @param provider The provider to register.
-     */
-    registerClipboardProvider(provider: IClipboardProvider): IDisposable;
-
-    /**
      * Gets whether the terminal has an active selection.
      */
     hasSelection(): boolean;
@@ -1918,34 +1904,5 @@ declare module '@xterm/xterm' {
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */
     readonly wraparoundMode: boolean;
-  }
-
-  export interface IClipboardProvider {
-    /**
-     * Gets the clipboard content.
-     * @param selection The clipboard selection to read.
-     * @returns A promise that resolves with the base64 encoded data.
-     */
-    readText(selection: ClipboardSelectionType): Promise<string>;
-
-    /**
-     * Sets the clipboard content.
-     * @param selection The clipboard selection to set.
-     * @param data The base64 encoded data to set. If the data is invalid
-     * base64, the clipboard is cleared.
-     */
-    writeText(selection: ClipboardSelectionType, data: string): Promise<void>;
-  }
-
-  /**
-   * Clipboard selection type. This is used to specify which selection buffer to
-   * read or write to.
-   * - SYSTEM `c`: The system clipboard.
-   * - PRIMARY `p`: The primary clipboard. This is provided for compatibility
-   *  with Linux X11.
-   */
-  export const enum ClipboardSelectionType {
-    SYSTEM = 'c',
-    PRIMARY = 'p',
   }
 }

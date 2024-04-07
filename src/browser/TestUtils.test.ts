@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, IClipboardProvider } from '@xterm/xterm';
+import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
@@ -109,9 +109,6 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    throw new Error('Method not implemented.');
-  }
-  public registerClipboardProvider(provider: IClipboardProvider): IDisposable {
     throw new Error('Method not implemented.');
   }
   public hasSelection(): boolean {
