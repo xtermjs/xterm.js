@@ -75,6 +75,7 @@ type TerminalProxyCustomOverrides = 'buffer' | (
   'options' |
   'open' |
   'attachCustomKeyEventHandler' |
+  'attachCustomWheelEventHandler' |
   'registerLinkProvider' |
   'registerCharacterJoiner' |
   'registerClipboardProvider' |
@@ -216,6 +217,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
       return new Promise(r => term.writeln(typeof data === 'string' ? data : new Uint8Array(data), r));
     }, [await this.getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
+  public async input(data: string, wasUserInput: boolean = true): Promise<void> { return this.evaluate(([term]) => term.input(data, wasUserInput)); }
   public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const); }
   public async registerMarker(y?: number | undefined): Promise<IMarker> { return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const); }
   public async registerDecoration(decorationOptions: IDecorationOptions): Promise<IDecoration | undefined> { return this._page.evaluate(([term, decorationOptions]) => term.registerDecoration(decorationOptions), [await this.getHandle(), decorationOptions] as const); }

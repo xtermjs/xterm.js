@@ -8,12 +8,6 @@ import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
 
-
-const enum MeasureSettings {
-  REPEAT = 32
-}
-
-
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
 
@@ -32,7 +26,11 @@ export class CharSizeService extends Disposable implements ICharSizeService {
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
-    this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
+    try {
+      this._measureStrategy = this.register(new TextMetricsMeasureStrategy(this._optionsService));
+    } catch {
+      this._measureStrategy = this.register(new DomMeasureStrategy(document, parentElement, this._optionsService));
+    }
     this.register(this._optionsService.onMultipleOptionChange(['fontFamily', 'fontSize'], () => this.measure()));
   }
 
@@ -47,12 +45,7 @@ export class CharSizeService extends Disposable implements ICharSizeService {
 }
 
 interface IMeasureStrategy {
-  measure(): IReadonlyMeasureResult;
-}
-
-interface IReadonlyMeasureResult {
-  readonly width: number;
-  readonly height: number;
+  measure(): Readonly<IMeasureResult>;
 }
 
 interface IMeasureResult {
@@ -60,10 +53,26 @@ interface IMeasureResult {
   height: number;
 }
 
-// TODO: For supporting browsers we should also provide a CanvasCharDimensionsProvider that uses
-// ctx.measureText
-class DomMeasureStrategy implements IMeasureStrategy {
-  private _result: IMeasureResult = { width: 0, height: 0 };
+const enum DomMeasureStrategyConstants {
+  REPEAT = 32
+}
+
+abstract class BaseMeasureStategy extends Disposable implements IMeasureStrategy {
+  protected _result: IMeasureResult = { width: 0, height: 0 };
+
+  protected _validateAndSet(width: number | undefined, height: number | undefined): void {
+    // If values are 0 then the element is likely currently display:none, in which case we should
+    // retain the previous value.
+    if (width !== undefined && width > 0 && height !== undefined && height > 0) {
+      this._result.width = width;
+      this._result.height = height;
+    }
+  }
+
+  public abstract measure(): Readonly<IMeasureResult>;
+}
+
+class DomMeasureStrategy extends BaseMeasureStategy {
   private _measureElement: HTMLElement;
 
   constructor(
@@ -71,32 +80,48 @@ class DomMeasureStrategy implements IMeasureStrategy {
     private _parentElement: HTMLElement,
     private _optionsService: IOptionsService
   ) {
+    super();
     this._measureElement = this._document.createElement('span');
     this._measureElement.classList.add('xterm-char-measure-element');
-    this._measureElement.textContent = 'W'.repeat(MeasureSettings.REPEAT);
+    this._measureElement.textContent = 'W'.repeat(DomMeasureStrategyConstants.REPEAT);
     this._measureElement.setAttribute('aria-hidden', 'true');
     this._measureElement.style.whiteSpace = 'pre';
     this._measureElement.style.fontKerning = 'none';
     this._parentElement.appendChild(this._measureElement);
   }
 
-  public measure(): IReadonlyMeasureResult {
+  public measure(): Readonly<IMeasureResult> {
     this._measureElement.style.fontFamily = this._optionsService.rawOptions.fontFamily;
     this._measureElement.style.fontSize = `${this._optionsService.rawOptions.fontSize}px`;
 
     // Note that this triggers a synchronous layout
-    const geometry = {
-      height: Number(this._measureElement.offsetHeight),
-      width: Number(this._measureElement.offsetWidth)
-    };
+    this._validateAndSet(Number(this._measureElement.offsetWidth) / DomMeasureStrategyConstants.REPEAT, Number(this._measureElement.offsetHeight));
 
-    // If values are 0 then the element is likely currently display:none, in which case we should
-    // retain the previous value.
-    if (geometry.width !== 0 && geometry.height !== 0) {
-      this._result.width = geometry.width / MeasureSettings.REPEAT;
-      this._result.height = Math.ceil(geometry.height);
+    return this._result;
+  }
+}
+
+class TextMetricsMeasureStrategy extends BaseMeasureStategy {
+  private _canvas: OffscreenCanvas;
+  private _ctx: OffscreenCanvasRenderingContext2D;
+
+  constructor(
+    private _optionsService: IOptionsService
+  ) {
+    super();
+    // This will throw if any required API is not supported
+    this._canvas = new OffscreenCanvas(100, 100);
+    this._ctx = this._canvas.getContext('2d')!;
+    const a = this._ctx.measureText('W');
+    if (!('width' in a && 'fontBoundingBoxAscent' in a && 'fontBoundingBoxDescent' in a)) {
+      throw new Error('Required font metrics not supported');
     }
+  }
 
+  public measure(): Readonly<IMeasureResult> {
+    this._ctx.font = `${this._optionsService.rawOptions.fontSize}px ${this._optionsService.rawOptions.fontFamily}`;
+    const metrics = this._ctx.measureText('W');
+    this._validateAndSet(metrics.width, metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
     return this._result;
   }
 }

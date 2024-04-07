@@ -48,6 +48,7 @@ export class MockTerminal implements ITerminal {
   public onRender!: IEvent<{ start: number, end: number }>;
   public onResize!: IEvent<{ cols: number, rows: number }>;
   public markers!: IMarker[];
+  public linkifier: ILinkifier2 | undefined;
   public coreMouseService!: ICoreMouseService;
   public coreService!: ICoreService;
   public optionsService!: IOptionsService;
@@ -71,6 +72,9 @@ export class MockTerminal implements ITerminal {
   public focus(): void {
     throw new Error('Method not implemented.');
   }
+  public input(data: string, wasUserInput: boolean = true): void {
+    throw new Error('Method not implemented.');
+  }
   public resize(columns: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
@@ -84,6 +88,9 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  public attachCustomWheelEventHandler(customWheelEventHandler: (event: WheelEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
   public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
@@ -151,7 +158,6 @@ export class MockTerminal implements ITerminal {
   }
   public bracketedPasteMode!: boolean;
   public renderer!: IRenderer;
-  public linkifier2!: ILinkifier2;
   public isFocused!: boolean;
   public options!: Required<ITerminalOptions>;
   public element!: HTMLElement;

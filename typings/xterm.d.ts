@@ -216,6 +216,23 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
+     * Whether to rescale glyphs horizontally that are a single cell wide but
+     * have glyphs that would overlap following cell(s). This typically happens
+     * for ambiguous width characters (eg. the roman numeral characters U+2160+)
+     * which aren't featured in monospace fonts. This is an important feature
+     * for achieving GB18030 compliance.
+     *
+     * The following glyphs will never be rescaled:
+     *
+     * - Emoji glyphs
+     * - Powerline glyphs
+     * - Nerd font glyphs
+     *
+     * Note that this doesn't work with the DOM renderer. The default is false.
+     */
+    rescaleOverlappingGlyphs?: boolean;
+
+    /**
      * Whether to select the word under the cursor on right click, this is
      * standard behavior in a lot of macOS applications.
      */
@@ -231,7 +248,7 @@ declare module '@xterm/xterm' {
     /**
      * The amount of scrollback in the terminal. Scrollback is the amount of
      * rows that are retained when lines are scrolled beyond the initial
-     * viewport.
+     * viewport. Defaults to 1000.
      */
     scrollback?: number;
 
@@ -970,6 +987,18 @@ declare module '@xterm/xterm' {
     focus(): void;
 
     /**
+     * Input data to application side. The data is treated the same way input
+     * typed into the terminal would (ie. the {@link onData} event will fire).
+     * @param data The data to forward to the application.
+     * @param wasUserInput Whether the input is genuine user input. This is true
+     * by default and triggers additionalbehavior like focus or selection
+     * clearing. Set this to false if the data sent should not be treated like
+     * user input would, for example passing an escape sequence to the
+     * application.
+     */
+    input(data: string, wasUserInput?: boolean): void;
+
+    /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
      * this will help ensure that the pty can respond to the resize event
      * before another one occurs.
@@ -1015,6 +1044,28 @@ declare module '@xterm/xterm' {
      * ```
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
+
+    /**
+     * Attaches a custom wheel event handler which is run before keys are
+     * processed, giving consumers of xterm.js control over whether to proceed
+     * or cancel terminal wheel events.
+     * @param customWheelEventHandler The custom WheelEvent handler to attach.
+     * This is a function that takes a WheelEvent, allowing consumers to stop
+     * propagation and/or prevent the default action. The function returns
+     * whether the event should be processed by xterm.js.
+     *
+     * @example A handler that prevents all wheel events while ctrl is held from
+     * being processed.
+     * ```ts
+     * term.attachCustomWheelEventHandler(ev => {
+     *   if (ev.ctrlKey) {
+     *     return false;
+     *   }
+     *   return true;
+     * });
+     * ```
+     */
+    attachCustomWheelEventHandler(customWheelEventHandler: (event: WheelEvent) => boolean): void;
 
     /**
      * Registers a link provider, allowing a custom parser to be used to match
