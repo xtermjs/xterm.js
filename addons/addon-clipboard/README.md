@@ -1,6 +1,7 @@
 ## @xterm/addon-clipboard
 
-An addon for [xterm.js](https://github.com/xtermjs/xterm.js) that enables accessing the system clipboard. This addon requires xterm.js v4+.
+An addon for [xterm.js](https://github.com/xtermjs/xterm.js) that enables
+accessing the system clipboard. This addon requires xterm.js v4+.
 
 ### Install
 
@@ -22,8 +23,8 @@ terminal.loadAddon(clipboardAddon);
 To use a custom clipboard provider
 
 ```ts
-import { Terminal, IClipboardProvider, ClipboardSelection } from 'xterm';
-import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { Terminal } from '@xterm/xterm';
+import { ClipboardAddon, IClipboardProvider, ClipboardSelectionType } from '@xterm/addon-clipboard';
 
 function b64Encode(data: string): string {
   // Base64 encode impl
@@ -35,10 +36,10 @@ function b64Decode(data: string): string {
 
 class MyCustomClipboardProvider implements IClipboardProvider {
   private _data: string
-  public readText(selection: ClipboardSelection): Promise<string> {
+  public readText(selection: ClipboardSelectionType): Promise<string> {
     return Promise.resolve(b64Encode(this._data));
   }
-  public writeText(selection: ClipboardSelection, data: string): Promise<void> {
+  public writeText(selection: ClipboardSelectionType, data: string): Promise<void> {
     this._data = b64Decode(data);
     return Promise.resolve();
   }
