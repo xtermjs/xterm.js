@@ -169,7 +169,7 @@ export class OptionsService extends Disposable implements IOptionsService {
         break;
       case 'cursorWidth':
         value = Math.floor(value);
-      // Fall through for bounds check
+        // Fall through for bounds check
       case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {

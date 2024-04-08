@@ -18,6 +18,7 @@ import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
 
+
 function getCursor(bufferService: IBufferService): number[] {
   return [
     bufferService.buffer.x,
@@ -1993,7 +1994,7 @@ describe('InputHandler', () => {
       stack.length = 0;
       // full ANSI table restore
       await inputHandler.parseP('\x1b]104\x07');
-      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE }]]);
+      assert.deepEqual(stack, [[{ type: ColorRequestType.RESTORE}]]);
     });
 
     it('10: FG set & query events', async () => {
