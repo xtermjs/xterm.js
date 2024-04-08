@@ -159,8 +159,9 @@ export class CompositionHelper {
           // otherwise input characters can be duplicated. (Issue #3191)
           currentCompositionPosition.start += this._dataAlreadySent.length;
           if (this._isComposing) {
-            // Use the end position to get the string if a new composition has started.
-            input = this._textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
+            // Use the start position of the new composition to get the string
+            // if a new composition has started.
+            input = this._textarea.value.substring(currentCompositionPosition.start, this._compositionPosition.start);
           } else {
             // Don't use the end position here in order to pick up any characters after the
             // composition has finished, for example when typing a non-composition character
