@@ -8,12 +8,11 @@ import { type IClipboardProvider, ClipboardSelectionType } from '@xterm/addon-cl
 import { Base64 as JSBase64 } from 'js-base64';
 
 export class ClipboardAddon implements ITerminalAddon {
-  private readonly _provider: IClipboardProvider;
   private _terminal?: Terminal;
   private _disposable?: IDisposable;
 
-  constructor(provider: IClipboardProvider = new ClipboardProvider()) {
-    this._provider = provider;
+  constructor(private _provider: IClipboardProvider = new ClipboardProvider()) {
+    this._provider = _provider;
   }
 
   public activate(terminal: Terminal): void {
@@ -44,7 +43,7 @@ export class ClipboardAddon implements ITerminalAddon {
           if (pd === '?') {
             // Report clipboard
             return this._provider.readText(pc).then(data => {
-              this._terminal?.input(data, false);
+              this._terminal?.input(`\x1b]52;${pc};${data}\x07`, false);
               return true;
             });
           }
