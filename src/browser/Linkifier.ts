@@ -304,7 +304,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
         // When start is 0 a scroll most likely occurred, make sure links above the fold also get
         // cleared.
         const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
-        const end = this._bufferService.buffer.ydisp + 1 + e.end;
+        const end = e.start === 0 ? this._bufferService.buffer.ybase + this._bufferService.rows: this._bufferService.buffer.ydisp + 1 + e.end;
         // Only clear the link if the viewport change happened on this line
         if (this._currentLink.link.range.start.y >= start && this._currentLink.link.range.end.y <= end) {
           this._clearCurrentLink(start, end);
