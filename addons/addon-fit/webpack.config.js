@@ -3,29 +3,30 @@
  * @license MIT
  */
 
-const path = require('path');
+const path = require("path");
 
-const addonName = 'FitAddon';
-const mainFile = 'addon-fit.js';
+const addonName = "FitAddon";
+const mainFile = "addon-fit.js";
 
 module.exports = {
   entry: `./out/${addonName}.js`,
-  devtool: 'source-map',
+  devtool: "source-map",
   module: {
     rules: [
       {
         test: /\.js$/,
         use: ["source-map-loader"],
         enforce: "pre",
-        exclude: /node_modules/
-      }
-    ]
+        exclude: /node_modules/,
+      },
+    ],
   },
   output: {
     filename: mainFile,
-    path: path.resolve('./lib'),
+    path: path.resolve("./lib"),
     library: addonName,
-    libraryTarget: 'umd'
+    libraryTarget: "umd",
+    globalObject: "this",
   },
-  mode: 'production'
+  mode: "production",
 };
