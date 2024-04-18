@@ -21,7 +21,7 @@
     "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
-    "@xterm/xterm": "^5.5.0"
+    "@xterm/xterm": "^5.4.0"
   },
   "dependencies": {
     "js-base64": "^3.7.5"

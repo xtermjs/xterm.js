@@ -11,13 +11,11 @@ export class ClipboardAddon implements ITerminalAddon {
   private _terminal?: Terminal;
   private _disposable?: IDisposable;
 
-  constructor(private _provider: IClipboardProvider = new ClipboardProvider()) {
-    this._provider = _provider;
-  }
+  constructor(private _provider: IClipboardProvider = new ClipboardProvider()) {}
 
   public activate(terminal: Terminal): void {
-    this._disposable = terminal.parser.registerOscHandler(52, this._setOrReportClipboard);
     this._terminal = terminal;
+    this._disposable = terminal.parser.registerOscHandler(52, this._setOrReportClipboard);
   }
 
   public dispose(): void {
@@ -42,7 +40,7 @@ export class ClipboardAddon implements ITerminalAddon {
         try {
           if (pd === '?') {
             // Report clipboard
-            return this._provider.readText(pc).then(data => {
+            return this._provider.readText(pc).then((data) => {
               this._terminal?.input(`\x1b]52;${pc};${data}\x07`, false);
               return true;
             });
@@ -72,7 +70,7 @@ export class ClipboardProvider implements IClipboardProvider {
      * Zero means no limit.
      */
     limit: number = 0 // unlimited
-  ){
+  ) {
     this._base64 = base64;
     this.limit = limit;
   }
