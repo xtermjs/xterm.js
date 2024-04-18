@@ -15,7 +15,7 @@ export class ClipboardAddon implements ITerminalAddon {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._disposable = terminal.parser.registerOscHandler(52, this._setOrReportClipboard);
+    this._disposable = terminal.parser.registerOscHandler(52, data => this._setOrReportClipboard(data));
   }
 
   public dispose(): void {
