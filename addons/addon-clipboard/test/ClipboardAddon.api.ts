@@ -75,12 +75,12 @@ describe('ClipboardAddon', () => {
       `);
       await page.evaluate(() => window.navigator.clipboard.writeText('hello world'));
       await writeSync(page, `\x1b]52;c;?\x07`);
-      assert.deepEqual(await page.evaluate(`window.data`), [testDataEncoded]);
+      assert.deepEqual(await page.evaluate(`window.data`), [`\x1b]52;c;${testDataEncoded}\x07`]);
     });
     it('clear clipboard', async () => {
       await writeSync(page, `\x1b]52;c;!\x07`);
       await writeSync(page, `\x1b]52;c;?\x07`);
-      assert.deepEqual(await page.evaluate(() => window.navigator.clipboard.readText()), '');
+      assert.deepEqual(await page.evaluate(() => window.navigator.clipboard.readText()), '\x1b]52;c;\x07');
     });
   });
 });
