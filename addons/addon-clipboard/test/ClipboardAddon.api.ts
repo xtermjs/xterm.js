@@ -6,6 +6,7 @@
 import { assert } from 'chai';
 import { openTerminal, launchBrowser, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
 import { Browser, BrowserContext, Page } from '@playwright/test';
+import { beforeEach } from 'mocha';
 
 const APP = 'http://127.0.0.1:3001/test';
 
@@ -62,6 +63,7 @@ describe('ClipboardAddon', () => {
       assert.deepEqual(await page.evaluate(() => window.navigator.clipboard.readText()), '');
     });
     it('empty string', async () => {
+      await writeSync(page, `\x1b]52;c;${testDataEncoded}\x07`);
       await writeSync(page, `\x1b]52;c;\x07`);
       assert.deepEqual(await page.evaluate(() => window.navigator.clipboard.readText()), '');
     });
@@ -75,12 +77,12 @@ describe('ClipboardAddon', () => {
       `);
       await page.evaluate(() => window.navigator.clipboard.writeText('hello world'));
       await writeSync(page, `\x1b]52;c;?\x07`);
-      assert.deepEqual(await page.evaluate(`window.data`), [`\x1b]52;c;${testDataEncoded}\x07`]);
+      assert.deepEqual(await page.evaluate('window.data'), [`\x1b]52;c;${testDataEncoded}\x07`]);
     });
     it('clear clipboard', async () => {
       await writeSync(page, `\x1b]52;c;!\x07`);
       await writeSync(page, `\x1b]52;c;?\x07`);
-      assert.deepEqual(await page.evaluate(() => window.navigator.clipboard.readText()), '\x1b]52;c;\x07');
+      assert.deepEqual(await page.evaluate(() => window.navigator.clipboard.readText()), '');
     });
   });
 });

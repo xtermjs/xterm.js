@@ -30,10 +30,6 @@ export class ClipboardAddon implements ITerminalAddon {
 
     const pc = args[0];
     const pd = args[1];
-    if (pd.length === 0) {
-      return true;
-    }
-
     switch (pc) {
       case ClipboardSelectionType.SYSTEM:
       case ClipboardSelectionType.PRIMARY:
