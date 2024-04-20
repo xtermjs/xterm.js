@@ -22,7 +22,7 @@ export class SortedList<T> {
 
   private readonly _deletedIndices: Set<number> = new Set();
   private readonly _flushDeletedTask = new IdleTaskQueue();
-  private _isflushingDeleted = false;
+  private _isFlushingDeleted = false;
 
   constructor(
     private readonly _getKey: (value: T) => number
@@ -33,7 +33,7 @@ export class SortedList<T> {
     this._array.length = 0;
     this._deletedIndices.clear();
     this._flushDeletedTask.clear();
-    this._isflushingDeleted = false;
+    this._isFlushingDeleted = false;
   }
 
   public insert(value: T): void {
@@ -65,7 +65,7 @@ export class SortedList<T> {
   }
 
   private _flushCleanupInserted(): void {
-    if (!this._isFlushingInserted) {
+    if (!this._isFlushingInserted && this._insertedValues.size > 0) {
       this._flushInsertedTask.flush();
     }
   }
@@ -99,7 +99,7 @@ export class SortedList<T> {
   }
 
   private _flushDeleted(): void {
-    this._isflushingDeleted = true;
+    this._isFlushingDeleted = true;
     const sortedDeletedIndices = Array.from(this._deletedIndices).sort((a, b) => a - b);
     let sortedDeletedIndicesIndex = 0;
     const newArray = new Array(this._array.length - sortedDeletedIndices.length);
@@ -113,11 +113,11 @@ export class SortedList<T> {
     }
     this._array = newArray;
     this._deletedIndices.clear();
-    this._isflushingDeleted = false;
+    this._isFlushingDeleted = false;
   }
 
   private _flushCleanupDeleted(): void {
-    if (!this._isflushingDeleted) {
+    if (!this._isFlushingDeleted && this._deletedIndices.size > 0) {
       this._flushDeletedTask.flush();
     }
   }
