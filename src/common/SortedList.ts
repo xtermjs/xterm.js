@@ -56,7 +56,7 @@ export class SortedList<T> {
     const newArray = new Array(this._array.length + this._insertedValues.length);
 
     for (let newArrayIndex = 0; newArrayIndex < newArray.length; newArrayIndex++) {
-      if (arrayIndex >= this._array.length || this._getKey(sortedAddedValues[sortedAddedValuesIndex]) === this._getKey(this._array[arrayIndex])) {
+      if (arrayIndex >= this._array.length || this._getKey(sortedAddedValues[sortedAddedValuesIndex]) <= this._getKey(this._array[arrayIndex])) {
         newArray[newArrayIndex] = sortedAddedValues[sortedAddedValuesIndex];
         sortedAddedValuesIndex++;
       } else {
