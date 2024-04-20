@@ -45,7 +45,8 @@ export class DecorationService extends Disposable implements IDecorationService 
     const decoration = new Decoration(options);
     if (decoration) {
       const markerDispose = decoration.marker.onDispose(() => decoration.dispose());
-      decoration.onDispose(() => {
+      const listener = decoration.onDispose(() => {
+        listener.dispose();
         if (decoration) {
           if (this._decorations.delete(decoration)) {
             this._onDecorationRemoved.fire(decoration);
