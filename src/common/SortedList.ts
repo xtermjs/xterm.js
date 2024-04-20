@@ -49,7 +49,7 @@ export class SortedList<T> {
   }
 
   private _flushInserted(): void {
-    const sortedAddedValues = Array.from(this._insertedValues).sort((a, b) => this._getKey(a) - this._getKey(b));
+    const sortedAddedValues = this._insertedValues.sort((a, b) => this._getKey(a) - this._getKey(b));
     let sortedAddedValuesIndex = 0;
     let arrayIndex = 0;
 
@@ -104,7 +104,7 @@ export class SortedList<T> {
 
   private _flushDeleted(): void {
     this._isFlushingDeleted = true;
-    const sortedDeletedIndices = Array.from(this._deletedIndices).sort((a, b) => a - b);
+    const sortedDeletedIndices = this._deletedIndices.sort((a, b) => a - b);
     let sortedDeletedIndicesIndex = 0;
     const newArray = new Array(this._array.length - sortedDeletedIndices.length);
     let newArrayIndex = 0;
