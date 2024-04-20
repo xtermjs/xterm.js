@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { IdleTaskQueue } from 'common/TaskQueue';
+
 // Work variables to avoid garbage collection.
 let i = 0;
 
@@ -12,7 +14,10 @@ let i = 0;
  * includes the by key iterator.
  */
 export class SortedList<T> {
-  private readonly _array: T[] = [];
+  private _array: T[] = [];
+  private readonly _deletedIndices: Set<number> = new Set();
+  private readonly _cleanupDeletedTask = new IdleTaskQueue();
+  private _isCleaningUp = false;
 
   constructor(
     private readonly _getKey: (value: T) => number
@@ -21,9 +26,13 @@ export class SortedList<T> {
 
   public clear(): void {
     this._array.length = 0;
+    this._deletedIndices.clear();
+    this._cleanupDeletedTask.clear();
+    this._isCleaningUp = false;
   }
 
   public insert(value: T): void {
+    this._flushCleanupDeleted();
     if (this._array.length === 0) {
       this._array.push(value);
       return;
@@ -49,14 +58,42 @@ export class SortedList<T> {
     }
     do {
       if (this._array[i] === value) {
-        this._array.splice(i, 1);
+        if (this._deletedIndices.size === 0) {
+          this._cleanupDeletedTask.enqueue(() => this._cleanupDeleted());
+        }
+        this._deletedIndices.add(i);
         return true;
       }
     } while (++i < this._array.length && this._getKey(this._array[i]) === key);
     return false;
   }
 
+  private _cleanupDeleted(): void {
+    this._isCleaningUp = true;
+    const sortedDeletedIndices = Array.from(this._deletedIndices).sort((a, b) => a - b);
+    let sortedDeletedIndicesIndex = 0;
+    const newArray = new Array(this._array.length - sortedDeletedIndices.length);
+    let newArrayIndex = 0;
+    for (let i = 0; i < this._array.length; i++) {
+      if (sortedDeletedIndices[sortedDeletedIndicesIndex] === i) {
+        sortedDeletedIndicesIndex++;
+      } else {
+        newArray[newArrayIndex++] = this._array[i];
+      }
+    }
+    this._array = newArray;
+    this._deletedIndices.clear();
+    this._isCleaningUp = false;
+  }
+
+  private _flushCleanupDeleted(): void {
+    if (!this._isCleaningUp) {
+      this._cleanupDeletedTask.flush();
+    }
+  }
+
   public *getKeyIterator(key: number): IterableIterator<T> {
+    this._flushCleanupDeleted();
     if (this._array.length === 0) {
       return;
     }
@@ -73,6 +110,7 @@ export class SortedList<T> {
   }
 
   public forEachByKey(key: number, callback: (value: T) => void): void {
+    this._flushCleanupDeleted();
     if (this._array.length === 0) {
       return;
     }
@@ -89,6 +127,7 @@ export class SortedList<T> {
   }
 
   public values(): IterableIterator<T> {
+    this._flushCleanupDeleted();
     // Duplicate the array to avoid issues when _array changes while iterating
     return [...this._array].values();
   }
