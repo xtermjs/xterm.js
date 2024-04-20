@@ -16,14 +16,13 @@ let i = 0;
 export class SortedList<T> {
   private _array: T[] = [];
 
-  private readonly _addedValues: Set<T> = new Set();
-  private readonly _cleanupAddedTask = new IdleTaskQueue();
-  private _isCleaningUpAdded = false;
+  private readonly _insertedValues: Set<T> = new Set();
+  private readonly _flushInsertedTask = new IdleTaskQueue();
+  private _isFlushingInserted = false;
 
   private readonly _deletedIndices: Set<number> = new Set();
-
-  private readonly _cleanupTask = new IdleTaskQueue();
-  private _isCleaningUp = false;
+  private readonly _flushDeletedTask = new IdleTaskQueue();
+  private _isflushingDeleted = false;
 
   constructor(
     private readonly _getKey: (value: T) => number
@@ -33,30 +32,24 @@ export class SortedList<T> {
   public clear(): void {
     this._array.length = 0;
     this._deletedIndices.clear();
-    this._cleanupTask.clear();
-    this._isCleaningUp = false;
+    this._flushDeletedTask.clear();
+    this._isflushingDeleted = false;
   }
 
   public insert(value: T): void {
     this._flushCleanupDeleted();
-    if (this._addedValues.size === 0) {
-      this._cleanupAddedTask.enqueue(() => this._cleanupAdded());
+    if (this._insertedValues.size === 0) {
+      this._flushInsertedTask.enqueue(() => this._flushInserted());
     }
-    this._addedValues.add(value);
-    // if (this._array.length === 0) {
-    //   this._array.push(value);
-    //   return;
-    // }
-    // i = this._search(this._getKey(value));
-    // this._array.splice(i, 0, value);
+    this._insertedValues.add(value);
   }
 
-  private _cleanupAdded(): void {
-    const sortedAddedValues = Array.from(this._addedValues).sort((a, b) => this._getKey(a) - this._getKey(b));
+  private _flushInserted(): void {
+    const sortedAddedValues = Array.from(this._insertedValues).sort((a, b) => this._getKey(a) - this._getKey(b));
     let sortedAddedValuesIndex = 0;
     let arrayIndex = 0;
 
-    const newArray = new Array(this._array.length + this._addedValues.size);
+    const newArray = new Array(this._array.length + this._insertedValues.size);
 
     for (let newArrayIndex = 0; newArrayIndex < newArray.length; newArrayIndex++) {
       if (arrayIndex >= this._array.length || this._getKey(sortedAddedValues[sortedAddedValuesIndex]) === this._getKey(this._array[arrayIndex])) {
@@ -68,17 +61,17 @@ export class SortedList<T> {
     }
 
     this._array = newArray;
-    this._addedValues.clear();
+    this._insertedValues.clear();
   }
 
-  private _flushCleanupAdded(): void {
-    if (!this._isCleaningUpAdded) {
-      this._cleanupAddedTask.flush();
+  private _flushCleanupInserted(): void {
+    if (!this._isFlushingInserted) {
+      this._flushInsertedTask.flush();
     }
   }
 
   public delete(value: T): boolean {
-    this._flushCleanupAdded();
+    this._flushCleanupInserted();
     if (this._array.length === 0) {
       return false;
     }
@@ -96,7 +89,7 @@ export class SortedList<T> {
     do {
       if (this._array[i] === value) {
         if (this._deletedIndices.size === 0) {
-          this._cleanupTask.enqueue(() => this._cleanupDeleted());
+          this._flushDeletedTask.enqueue(() => this._flushDeleted());
         }
         this._deletedIndices.add(i);
         return true;
@@ -105,8 +98,8 @@ export class SortedList<T> {
     return false;
   }
 
-  private _cleanupDeleted(): void {
-    this._isCleaningUp = true;
+  private _flushDeleted(): void {
+    this._isflushingDeleted = true;
     const sortedDeletedIndices = Array.from(this._deletedIndices).sort((a, b) => a - b);
     let sortedDeletedIndicesIndex = 0;
     const newArray = new Array(this._array.length - sortedDeletedIndices.length);
@@ -120,17 +113,17 @@ export class SortedList<T> {
     }
     this._array = newArray;
     this._deletedIndices.clear();
-    this._isCleaningUp = false;
+    this._isflushingDeleted = false;
   }
 
   private _flushCleanupDeleted(): void {
-    if (!this._isCleaningUp) {
-      this._cleanupTask.flush();
+    if (!this._isflushingDeleted) {
+      this._flushDeletedTask.flush();
     }
   }
 
   public *getKeyIterator(key: number): IterableIterator<T> {
-    this._flushCleanupAdded();
+    this._flushCleanupInserted();
     this._flushCleanupDeleted();
     if (this._array.length === 0) {
       return;
@@ -148,7 +141,7 @@ export class SortedList<T> {
   }
 
   public forEachByKey(key: number, callback: (value: T) => void): void {
-    this._flushCleanupAdded();
+    this._flushCleanupInserted();
     this._flushCleanupDeleted();
     if (this._array.length === 0) {
       return;
@@ -166,7 +159,7 @@ export class SortedList<T> {
   }
 
   public values(): IterableIterator<T> {
-    this._flushCleanupAdded();
+    this._flushCleanupInserted();
     this._flushCleanupDeleted();
     // Duplicate the array to avoid issues when _array changes while iterating
     return [...this._array].values();
