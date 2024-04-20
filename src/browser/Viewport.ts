@@ -36,6 +36,8 @@ export class Viewport extends Disposable implements IViewport {
   private _activeBuffer: IBuffer;
   private _renderDimensions: IRenderDimensions;
 
+  private _smoothScrollAnimationFrame: number = 0;
+
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
   // quick fix and could have a more robust solution in place that reset the value when needed.
@@ -211,7 +213,12 @@ export class Viewport extends Disposable implements IViewport {
 
     // Continue or finish smooth scroll
     if (percent < 1) {
-      this._coreBrowserService.window.requestAnimationFrame(() => this._smoothScroll());
+      if (!this._smoothScrollAnimationFrame) {
+        this._smoothScrollAnimationFrame = this._coreBrowserService.window.requestAnimationFrame(() => {
+          this._smoothScrollAnimationFrame = 0;
+          this._smoothScroll();
+        });
+      }
     } else {
       this._clearSmoothScrollState();
     }
