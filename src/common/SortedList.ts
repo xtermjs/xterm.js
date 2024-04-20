@@ -9,9 +9,10 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 let i = 0;
 
 /**
- * A generic list that is maintained in sorted order and allows values with duplicate keys. This
- * list is based on binary search and as such locating a key will take O(log n) amortized, this
- * includes the by key iterator.
+ * A generic list that is maintained in sorted order and allows values with duplicate keys. Deferred
+ * batch insertion and deletion is used to significantly reduce the time it takes to insert and
+ * delete a large amount of items in succession. This list is based on binary search and as such
+ * locating a key will take O(log n) amortized, this includes the by key iterator.
  */
 export class SortedList<T> {
   private _array: T[] = [];
