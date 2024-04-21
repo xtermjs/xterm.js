@@ -46,7 +46,7 @@ if ('WebAssembly' in window) {
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
-import { Terminal as TerminalType, ITerminalOptions } from '@xterm/xterm';
+import { Terminal as TerminalType, ITerminalOptions, type IDisposable } from '@xterm/xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
@@ -263,6 +263,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('add-grapheme-clusters').addEventListener('click', addGraphemeClusters);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
+  document.getElementById('decoration-stress-test').addEventListener('click', decorationStressTest);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
@@ -1178,6 +1179,33 @@ function addOverviewRuler(): void {
   term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' } });
   term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
   term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
+}
+
+let decorationStressTestDecorations: IDisposable[] | undefined;
+function decorationStressTest(): void {
+  if (decorationStressTestDecorations) {
+    for (const d of decorationStressTestDecorations) {
+      d.dispose();
+    }
+    decorationStressTestDecorations = undefined;
+  } else {
+    const t = term as Terminal;
+    const buffer = t.buffer.active;
+    const cursorY = buffer.baseY + buffer.cursorY;
+    decorationStressTestDecorations = [];
+    for (const x of [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]) {
+      for (let y = 0; y < t.buffer.active.length; y++) {
+        const cursorOffsetY = y - cursorY;
+        decorationStressTestDecorations.push(t.registerDecoration({
+          marker: t.registerMarker(cursorOffsetY),
+          x,
+          width: 4,
+          backgroundColor: '#FF0000',
+          overviewRulerOptions: { color: '#FF0000' }
+        }));
+      }
+    }
+  }
 }
 
 (console as any).image = (source: ImageData | HTMLCanvasElement, scale: number = 1) => {
