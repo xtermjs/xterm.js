@@ -20,6 +20,8 @@ import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOption
  */
 const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
+let $value = 0;
+
 export class Terminal extends Disposable implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
@@ -138,6 +140,9 @@ export class Terminal extends Disposable implements ITerminalApi {
   public focus(): void {
     this._core.focus();
   }
+  public input(data: string, wasUserInput: boolean = true): void {
+    this._core.input(data, wasUserInput);
+  }
   public resize(columns: number, rows: number): void {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
@@ -246,16 +251,16 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
 
   private _verifyIntegers(...values: number[]): void {
-    for (const value of values) {
-      if (value === Infinity || isNaN(value) || value % 1 !== 0) {
+    for ($value of values) {
+      if ($value === Infinity || isNaN($value) || $value % 1 !== 0) {
         throw new Error('This API only accepts integers');
       }
     }
   }
 
   private _verifyPositiveIntegers(...values: number[]): void {
-    for (const value of values) {
-      if (value && (value === Infinity || isNaN(value) || value % 1 !== 0 || value < 0)) {
+    for ($value of values) {
+      if ($value && ($value === Infinity || isNaN($value) || $value % 1 !== 0 || $value < 0)) {
         throw new Error('This API only accepts positive integers');
       }
     }

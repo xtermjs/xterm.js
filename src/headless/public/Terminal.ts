@@ -80,6 +80,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get parser(): IParser {
     this._checkProposedApi();
@@ -133,6 +134,9 @@ export class Terminal extends Disposable implements ITerminalApi {
     for (const propName in options) {
       this._publicOptions[propName] = options[propName];
     }
+  }
+  public input(data: string, wasUserInput: boolean = true): void {
+    this._core.input(data, wasUserInput);
   }
   public resize(columns: number, rows: number): void {
     this._verifyIntegers(columns, rows);

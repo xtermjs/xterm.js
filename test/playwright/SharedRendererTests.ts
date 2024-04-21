@@ -989,13 +989,15 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       };
       await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
       await ctx.value.proxy.focus();
-      await ctx.value.proxy.writeln('\x1b[41m red bg');
-      await ctx.value.proxy.writeln('\x1b[7m inverse');
-      await ctx.value.proxy.writeln('\x1b[31;7m red fg inverse');
+      await ctx.value.proxy.writeln('\x1b[41m red bg\x1b[0m');
+      await ctx.value.proxy.writeln('\x1b[7m inverse\x1b[0m');
+      await ctx.value.proxy.writeln('\x1b[31;7m red fg inverse\x1b[0m');
+      await ctx.value.proxy.writeln('\x1b[48:2:0:204:0:0m red truecolor bg\x1b[0m');
       await ctx.value.proxy.selectAll();
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [230,128,128,255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [255,255,255,255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 3), [230,128,128,255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [230, 128, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [255, 255, 255, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 3), [230, 128, 128, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 4), [230, 128, 128, 255]);
     });
     test('powerline decorative symbols', async () => {
       const theme: ITheme = {
@@ -1231,6 +1233,20 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       // outlink cursor style
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows), [0, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows, CellColorPosition.FIRST), [0, 0, 255, 255]);
+    });
+    test('#4917 The selection should not be displayed if it is not within the scope of the viewport.', async () => {
+      const theme: ITheme = {
+        selectionBackground: '#FF0000'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      for (let index = 0; index < 160; index++) {
+        await ctx.value.proxy.writeln(``);
+      }
+      await ctx.value.proxy.scrollToBottom();
+      const rows = await ctx.value.proxy.buffer.active.length;
+      await ctx.value.proxy.selectLines(rows - 1, rows - 1);
+      await ctx.value.proxy.scrollLines(-2);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
     });
   });
 }
