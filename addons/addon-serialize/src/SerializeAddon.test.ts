@@ -145,7 +145,8 @@ describe('SerializeAddon', () => {
       const output = serializeAddon.serializeAsHTML({
         onlySelection: true
       });
-      assert.equal((output.match(/<div><span>&lt;a>&amp;pi;<\/span><\/div>/g) || []).length, 1, output);
+      const spanContent = output.match(/<span>([^<]+)<\/span>/)![1];
+      assert.equal(spanContent, '&#60;a&#62;&#38;pi;');
     });
 
     it('cells with bold styling', async () => {
