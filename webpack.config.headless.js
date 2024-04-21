@@ -39,8 +39,10 @@ const config = {
     path: path.resolve('./headless/lib-headless'),
     library: {
       type: 'commonjs'
-    }
+    },
+    // Force usage of globalThis instead of global / self. (This is cross-env compatible)
+    globalObject: 'globalThis',
   },
-  mode: 'production'
+  mode: 'production',
 };
 module.exports = config;
