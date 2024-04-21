@@ -52,7 +52,7 @@ declare module '@xterm/xterm' {
      * translation of `\n` to `\r\n` and this setting should not be used. If you
      * deal with data from a non-PTY related source, this settings might be
      * useful.
-     * 
+     *
      * @see https://pubs.opengroup.org/onlinepubs/007904975/basedefs/termios.h.html
      */
     convertEol?: boolean;
