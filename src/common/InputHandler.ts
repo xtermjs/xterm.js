@@ -2979,7 +2979,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (args[1]) {
       return this._createHyperlink(args[0], args[1]);
     }
-    if (args[0]) {
+    if (args[0].trim()) {
       return false;
     }
     return this._finishHyperlink();

@@ -8,7 +8,7 @@ import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { isEmoji, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
@@ -407,14 +407,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     // following cell (ie. the width is not 2).
     let renderWidth = glyph.size.x;
     if (this._optionsService.rawOptions.rescaleOverlappingGlyphs) {
-      if (
-        // Is single cell width
-        width === 1 &&
-        // Glyph exceeds cell bounds, + 1 to avoid hurting readability
-        glyph.size.x > this._deviceCellWidth + 1 &&
-        // Never rescale emoji
-        code && !isEmoji(code)
-      ) {
+      if (allowRescaling(code, width, glyph.size.x, this._deviceCellWidth)) {
         renderWidth = this._deviceCellWidth - 1; // - 1 to improve readability
       }
     }

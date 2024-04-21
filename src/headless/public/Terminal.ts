@@ -80,6 +80,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get parser(): IParser {
     this._checkProposedApi();

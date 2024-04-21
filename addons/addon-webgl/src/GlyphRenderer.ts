@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { isEmoji, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
@@ -281,14 +281,7 @@ export class GlyphRenderer extends Disposable {
     // Reduce scale horizontally for wide glyphs printed in cells that would overlap with the
     // following cell (ie. the width is not 2).
     if (this._optionsService.rawOptions.rescaleOverlappingGlyphs) {
-      if (
-        // Is single cell width
-        width === 1 &&
-        // Glyph exceeds cell bounds, + 1 to avoid hurting readability
-        $glyph.size.x > this._dimensions.device.cell.width + 1 &&
-        // Never rescale emoji
-        code && !isEmoji(code)
-      ) {
+      if (allowRescaling(code, width, $glyph.size.x, this._dimensions.device.cell.width)) {
         array[$i + 2] = (this._dimensions.device.cell.width - 1) / this._dimensions.device.canvas.width; // - 1 to improve readability
       }
     }
