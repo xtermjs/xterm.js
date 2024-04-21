@@ -33,7 +33,8 @@ module.exports = {
     path: path.resolve('./lib'),
     library: addonName,
     libraryTarget: 'umd',
-    globalObject: 'this'
+    // Force usage of globalThis instead of global / self. (This is cross-env compatible)
+    globalObject: 'globalThis',
   },
   mode: 'production'
 };

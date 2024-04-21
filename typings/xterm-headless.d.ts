@@ -715,6 +715,17 @@ declare module '@xterm/headless' {
     onLineFeed: IEvent<void>;
 
     /**
+     * Adds an event listener for when data has been parsed by the terminal,
+     * after {@link write} is called. This event is useful to listen for any
+     * changes in the buffer.
+     *
+     * This fires at most once per frame, after data parsing completes. Note
+     * that this can fire when there are still writes pending if there is a lot
+     * of data.
+     */
+    onWriteParsed: IEvent<void>;
+
+    /**
      * Adds an event listener for when the terminal is resized. The event value
      * contains the new size.
      * @returns an `IDisposable` to stop listening.

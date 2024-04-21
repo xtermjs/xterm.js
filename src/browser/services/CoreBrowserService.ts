@@ -13,7 +13,7 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
 
   private _isFocused = false;
   private _cachedIsFocused: boolean | undefined = undefined;
-  private _screenDprMonitor = new ScreenDprMonitor(this._window);
+  private _screenDprMonitor = this.register(new ScreenDprMonitor(this._window));
 
   private readonly _onDprChange = this.register(new EventEmitter<number>());
   public readonly onDprChange = this._onDprChange.event;
@@ -31,8 +31,12 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
     this.register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
     this.register(forwardEvent(this._screenDprMonitor.onDprChange, this._onDprChange));
 
-    this._textarea.addEventListener('focus', () => this._isFocused = true);
-    this._textarea.addEventListener('blur', () => this._isFocused = false);
+    this.register(
+      addDisposableDomListener(this._textarea, 'focus', () => (this._isFocused = true))
+    );
+    this.register(
+      addDisposableDomListener(this._textarea, 'blur', () => (this._isFocused = false))
+    );
   }
 
   public get window(): Window & typeof globalThis {
