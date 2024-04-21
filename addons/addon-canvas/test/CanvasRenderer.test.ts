@@ -28,5 +28,10 @@ test.describe('Canvas Renderer Integration Tests', () => {
   test.skip(({ browserName }) => browserName === 'webkit');
 
   injectSharedRendererTests(ctxWrapper);
-  injectSharedRendererTestsStandalone(ctxWrapper);
+  injectSharedRendererTestsStandalone(ctxWrapper, async () => {
+    await ctx.page.evaluate(`
+      window.addon = new window.CanvasAddon(true);
+      window.term.loadAddon(window.addon);
+    `);
+  });
 });
