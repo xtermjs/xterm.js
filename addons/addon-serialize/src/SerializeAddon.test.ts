@@ -138,6 +138,16 @@ describe('SerializeAddon', () => {
       assert.equal((output.match(/<div><span>terminal<\/span><\/div>/g) || []).length, 1, output);
     });
 
+    it('basic terminal with html unsafe chars', async () => {
+      await writeP(terminal, ' <a>&pi; ');
+      terminal.select(1, 0, 7);
+
+      const output = serializeAddon.serializeAsHTML({
+        onlySelection: true
+      });
+      assert.equal((output.match(/<div><span>&lt;a>&amp;pi;<\/span><\/div>/g) || []).length, 1, output);
+    });
+
     it('cells with bold styling', async () => {
       await writeP(terminal, ' ' + sgr('1') + 'terminal' + sgr('22') + ' ');
 
