@@ -36,6 +36,8 @@ export class Viewport extends Disposable implements IViewport {
   private _activeBuffer: IBuffer;
   private _renderDimensions: IRenderDimensions;
 
+  private _smoothScrollAnimationFrame: number = 0;
+
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
   // quick fix and could have a more robust solution in place that reset the value when needed.
@@ -48,6 +50,8 @@ export class Viewport extends Disposable implements IViewport {
     origin: -1,
     target: -1
   };
+
+  private _ensureTimeout: number;
 
   private readonly _onRequestScrollLines = this.register(new EventEmitter<{ amount: number, suppressScrollEvent: boolean }>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
@@ -81,7 +85,7 @@ export class Viewport extends Disposable implements IViewport {
     this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.syncScrollArea()));
 
     // Perform this async to ensure the ICharSizeService is ready.
-    setTimeout(() => this.syncScrollArea());
+    this._ensureTimeout = window.setTimeout(() => this.syncScrollArea());
   }
 
   private _handleThemeChange(colors: ReadonlyColorSet): void {
@@ -211,7 +215,12 @@ export class Viewport extends Disposable implements IViewport {
 
     // Continue or finish smooth scroll
     if (percent < 1) {
-      this._coreBrowserService.window.requestAnimationFrame(() => this._smoothScroll());
+      if (!this._smoothScrollAnimationFrame) {
+        this._smoothScrollAnimationFrame = this._coreBrowserService.window.requestAnimationFrame(() => {
+          this._smoothScrollAnimationFrame = 0;
+          this._smoothScroll();
+        });
+      }
     } else {
       this._clearSmoothScrollState();
     }
@@ -397,5 +406,9 @@ export class Viewport extends Disposable implements IViewport {
     }
     this._viewportElement.scrollTop += deltaY;
     return this._bubbleScroll(ev, deltaY);
+  }
+
+  public dispose(): void {
+    clearTimeout(this._ensureTimeout);
   }
 }

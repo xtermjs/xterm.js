@@ -44,6 +44,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: {},
+  rescaleOverlappingGlyphs: false,
   rightClickSelectsWord: isMac,
   windowOptions: {},
   windowsMode: false,

@@ -87,7 +87,8 @@ export class RenderService extends Disposable implements IRenderService {
       'fontSize',
       'fontWeight',
       'fontWeightBold',
-      'minimumContrastRatio'
+      'minimumContrastRatio',
+      'rescaleOverlappingGlyphs'
     ], () => {
       this.clear();
       this.handleResize(bufferService.cols, bufferService.rows);
@@ -247,7 +248,7 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     if (this._isPaused) {
-      this._pausedResizeTask.set(() => this._renderer.value!.handleResize(cols, rows));
+      this._pausedResizeTask.set(() => this._renderer.value?.handleResize(cols, rows));
     } else {
       this._renderer.value.handleResize(cols, rows);
     }

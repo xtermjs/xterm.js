@@ -115,6 +115,28 @@ describe('WebLinksAddon', () => {
       await resetAndHover(5, 1);
       await evalLinkStateData('http://test:password@example.com/some_path', { start: { x: 12, y: 1 }, end: { x: 13, y: 2 } });
     });
+    it('url encoded params work properly', async () => {
+      await writeSync(page, '￥￥￥cafe\u0301 http://test:password@example.com/some_path?param=1%202%3');
+      await resetAndHover(12, 0);
+      await evalLinkStateData('http://test:password@example.com/some_path?param=1%202%3', { start: { x: 12, y: 1 }, end: { x: 27, y: 2 } });
+      await resetAndHover(5, 1);
+      await evalLinkStateData('http://test:password@example.com/some_path?param=1%202%3', { start: { x: 12, y: 1 }, end: { x: 27, y: 2 } });
+    });
+  });
+
+  // issue #4964
+  it('uppercase in protocol and host, default ports', async () => {
+    const data = `  HTTP://EXAMPLE.COM  \\r\\n` +
+      `  HTTPS://Example.com  \\r\\n` +
+      `  HTTP://Example.com:80  \\r\\n` +
+      `  HTTP://Example.com:80/staysUpper  \\r\\n` +
+      `  HTTP://Ab:xY@abc.com:80/staysUpper  \\r\\n`;
+    await writeSync(page, data);
+    await pollForLinkAtCell(3, 0, `HTTP://EXAMPLE.COM`);
+    await pollForLinkAtCell(3, 1, `HTTPS://Example.com`);
+    await pollForLinkAtCell(3, 2, `HTTP://Example.com:80`);
+    await pollForLinkAtCell(3, 3, `HTTP://Example.com:80/staysUpper`);
+    await pollForLinkAtCell(3, 4, `HTTP://Ab:xY@abc.com:80/staysUpper`);
   });
 });
 
