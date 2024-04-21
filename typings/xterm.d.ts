@@ -47,11 +47,13 @@ declare module '@xterm/xterm' {
 
     /**
      * When enabled the cursor will be set to the beginning of the next line
-     * with every new line. This is equivalent to sending '\r\n' for each '\n'.
-     * Normally the termios settings of the underlying PTY deals with the
-     * translation of '\n' to '\r\n' and this setting should not be used. If you
+     * with every new line. This is equivalent to sending `\r\n` for each `\n`.
+     * Normally the settings of the underlying PTY (`termios`) deal with the
+     * translation of `\n` to `\r\n` and this setting should not be used. If you
      * deal with data from a non-PTY related source, this settings might be
      * useful.
+     *
+     * @see https://pubs.opengroup.org/onlinepubs/007904975/basedefs/termios.h.html
      */
     convertEol?: boolean;
 
@@ -210,6 +212,23 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
+     * Whether to rescale glyphs horizontally that are a single cell wide but
+     * have glyphs that would overlap following cell(s). This typically happens
+     * for ambiguous width characters (eg. the roman numeral characters U+2160+)
+     * which aren't featured in monospace fonts. This is an important feature
+     * for achieving GB18030 compliance.
+     *
+     * The following glyphs will never be rescaled:
+     *
+     * - Emoji glyphs
+     * - Powerline glyphs
+     * - Nerd font glyphs
+     *
+     * Note that this doesn't work with the DOM renderer. The default is false.
+     */
+    rescaleOverlappingGlyphs?: boolean;
+
+    /**
      * Whether to select the word under the cursor on right click, this is
      * standard behavior in a lot of macOS applications.
      */
@@ -225,7 +244,7 @@ declare module '@xterm/xterm' {
     /**
      * The amount of scrollback in the terminal. Scrollback is the amount of
      * rows that are retained when lines are scrolled beyond the initial
-     * viewport.
+     * viewport. Defaults to 1000.
      */
     scrollback?: number;
 
@@ -964,6 +983,18 @@ declare module '@xterm/xterm' {
     focus(): void;
 
     /**
+     * Input data to application side. The data is treated the same way input
+     * typed into the terminal would (ie. the {@link onData} event will fire).
+     * @param data The data to forward to the application.
+     * @param wasUserInput Whether the input is genuine user input. This is true
+     * by default and triggers additionalbehavior like focus or selection
+     * clearing. Set this to false if the data sent should not be treated like
+     * user input would, for example passing an escape sequence to the
+     * application.
+     */
+    input(data: string, wasUserInput?: boolean): void;
+
+    /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
      * this will help ensure that the pty can respond to the resize event
      * before another one occurs.
@@ -1014,7 +1045,7 @@ declare module '@xterm/xterm' {
      * Attaches a custom wheel event handler which is run before keys are
      * processed, giving consumers of xterm.js control over whether to proceed
      * or cancel terminal wheel events.
-     * @param customMouseEventHandler The custom WheelEvent handler to attach.
+     * @param customWheelEventHandler The custom WheelEvent handler to attach.
      * This is a function that takes a WheelEvent, allowing consumers to stop
      * propagation and/or prevent the default action. The function returns
      * whether the event should be processed by xterm.js.
@@ -1022,7 +1053,7 @@ declare module '@xterm/xterm' {
      * @example A handler that prevents all wheel events while ctrl is held from
      * being processed.
      * ```ts
-     * term.attachCustomKeyEventHandler(ev => {
+     * term.attachCustomWheelEventHandler(ev => {
      *   if (ev.ctrlKey) {
      *     return false;
      *   }

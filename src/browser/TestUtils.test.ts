@@ -72,6 +72,9 @@ export class MockTerminal implements ITerminal {
   public focus(): void {
     throw new Error('Method not implemented.');
   }
+  public input(data: string, wasUserInput: boolean = true): void {
+    throw new Error('Method not implemented.');
+  }
   public resize(columns: number, rows: number): void {
     throw new Error('Method not implemented.');
   }

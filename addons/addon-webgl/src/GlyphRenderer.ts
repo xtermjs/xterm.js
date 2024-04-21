@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
@@ -11,6 +11,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { Terminal } from '@xterm/xterm';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
+import type { IOptionsService } from 'common/services/Services';
 
 interface IVertices {
   attributes: Float32Array;
@@ -111,7 +112,8 @@ export class GlyphRenderer extends Disposable {
   constructor(
     private readonly _terminal: Terminal,
     private readonly _gl: IWebGL2RenderingContext,
-    private _dimensions: IRenderDimensions
+    private _dimensions: IRenderDimensions,
+    private readonly _optionsService: IOptionsService
   ) {
     super();
 
@@ -212,15 +214,15 @@ export class GlyphRenderer extends Disposable {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
+  public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
     // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
     // should not instantiate any variables unless a new glyph is drawn to the cache where the
     // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
     // each glyph.
-    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, lastBg);
+    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, width, lastBg);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, lastBg: number): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
     $i = (y * this._terminal.cols + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null character, allow space character to continue as it may have
@@ -275,6 +277,14 @@ export class GlyphRenderer extends Disposable {
       array[$i + 8] = $glyph.sizeClipSpace.y;
     }
     // a_cellpos only changes on resize
+
+    // Reduce scale horizontally for wide glyphs printed in cells that would overlap with the
+    // following cell (ie. the width is not 2).
+    if (this._optionsService.rawOptions.rescaleOverlappingGlyphs) {
+      if (allowRescaling(code, width, $glyph.size.x, this._dimensions.device.cell.width)) {
+        array[$i + 2] = (this._dimensions.device.cell.width - 1) / this._dimensions.device.canvas.width; // - 1 to improve readability
+      }
+    }
   }
 
   public clear(): void {
