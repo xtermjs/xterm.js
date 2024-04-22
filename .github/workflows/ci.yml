@@ -30,6 +30,8 @@ jobs:
           ./addons/addon-attach/out-test/* \
           ./addons/addon-canvas/out/* \
           ./addons/addon-canvas/out-test/* \
+          ./addons/addon-clipboard/out/* \
+          ./addons/addon-clipboard/out-test/* \
           ./addons/addon-fit/out/* \
           ./addons/addon-fit/out-test/* \
           ./addons/addon-image/out/* \

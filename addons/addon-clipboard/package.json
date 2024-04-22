@@ -1,0 +1,29 @@
+{
+  "name": "@xterm/addon-clipboard",
+  "version": "0.1.0",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/addon-clipboard.js",
+  "types": "typings/addon-clipboard.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-clipboard",
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "xterm",
+    "xterm.js"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc -p .",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package"
+  },
+  "peerDependencies": {
+    "@xterm/xterm": "^5.4.0"
+  },
+  "dependencies": {
+    "js-base64": "^3.7.5"
+  }
+}
