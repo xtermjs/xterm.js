@@ -29,7 +29,8 @@ export const enum RowCss {
   CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block',
   CURSOR_STYLE_OUTLINE_CLASS = 'xterm-cursor-outline',
   CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar',
-  CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline'
+  CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline',
+  FG_UNDERLINE_CLASS = 'xterm-fg-underline'
 }
 
 
@@ -284,8 +285,10 @@ export class DomRendererRowFactory {
             if (this._optionsService.rawOptions.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
               fg += 8;
             }
-            charElement.style.textDecorationColor = colors.ansi[fg].css;
+            classes.push(`xterm-fg-${fg}-underline`);
           }
+        } else {
+          classes.push(RowCss.FG_UNDERLINE_CLASS);
         }
       }
 
@@ -303,8 +306,7 @@ export class DomRendererRowFactory {
       // apply link hover underline late, effectively overrides any previous text-decoration
       // settings
       if (isLinkHover) {
-        classes.push('xterm-hoverline');
-        // charElement.style.textDecoration = 'underline';
+        classes.push('xterm-fg-hoverline');
       }
 
       let fg = cell.getFgColor();

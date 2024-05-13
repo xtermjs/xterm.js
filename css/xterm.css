@@ -175,31 +175,60 @@
     opacity: 1 !important;
 }
 
-.xterm-underline-1 { text-decoration: underline; }
-.xterm-underline-2 { text-decoration: double underline; }
+.xterm-underline-1 { position: relative; }
+.xterm-underline-1::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1px;
+    border-bottom: 2px solid;
+}
+
+.xterm-underline-2 { position: relative; }
+.xterm-underline-2::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1px;
+    border-bottom: 3px double;
+}
+
 .xterm-underline-3 { text-decoration: wavy underline; }
-.xterm-underline-4 { text-decoration: dotted underline; }
-.xterm-underline-5 { position: relative; /* text-decoration: dashed underline; */ }
+.xterm-underline-4 { position: relative; }
+.xterm-underline-4::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1px;
+    border-bottom: 2px dotted;
+}
+
+.xterm-underline-5 { position: relative; }
 .xterm-underline-5::after {
     content: "";
     position: absolute;
     left: 0;
     right: 0;
     bottom: 1px;
-    border-bottom: 2px dashed #fff;
+    border-bottom: 2px dashed;
 }
 
 .xterm-overline {
     text-decoration: overline;
 }
 
-.xterm-hoverline::before {
+.xterm-fg-hoverline {
+    position: relative;
+}
+.xterm-fg-hoverline::before {
     content: "";
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 3px;
-    border-bottom: 1px solid #fff;
+    bottom: 3px
 }
 
 .xterm-overline.xterm-underline-1 { text-decoration: overline underline; }
