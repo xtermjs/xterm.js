@@ -37,7 +37,6 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   private _themeStyleElement!: HTMLStyleElement;
   private _dimensionsStyleElement!: HTMLStyleElement;
-  private _underlineStyleElement!: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -101,7 +100,6 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._widthCache.dispose();
       this._themeStyleElement.remove();
       this._dimensionsStyleElement.remove();
-      this._underlineStyleElement.remove();
     }));
 
     this._widthCache = new WidthCache(this._document, this._helperContainer);
@@ -160,11 +158,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     if (!this._themeStyleElement) {
       this._themeStyleElement = this._document.createElement('style');
       this._screenElement.appendChild(this._themeStyleElement);
-    }
-
-    if (!this._underlineStyleElement) {
-      this._underlineStyleElement = this._document.createElement('style');
-      this._screenElement.appendChild(this._underlineStyleElement);
     }
 
     // Base CSS
