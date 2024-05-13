@@ -37,6 +37,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   private _themeStyleElement!: HTMLStyleElement;
   private _dimensionsStyleElement!: HTMLStyleElement;
+  private _underlineStyleElement!: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -98,6 +99,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._widthCache.dispose();
       this._themeStyleElement.remove();
       this._dimensionsStyleElement.remove();
+      this._underlineStyleElement.remove();
     }));
 
     this._widthCache = new WidthCache(this._document, this._helperContainer);
@@ -156,6 +158,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     if (!this._themeStyleElement) {
       this._themeStyleElement = this._document.createElement('style');
       this._screenElement.appendChild(this._themeStyleElement);
+    }
+
+    if (!this._underlineStyleElement) {
+      this._underlineStyleElement = this._document.createElement('style');
+      this._screenElement.appendChild(this._underlineStyleElement);
     }
 
     // Base CSS
@@ -264,6 +271,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (const [i, c] of colors.ansi.entries()) {
       styles +=
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}::after { content: "";border-bottom-color: ${c.css}; }` +
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(c, 0.5).css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     }

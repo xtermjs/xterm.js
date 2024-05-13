@@ -303,7 +303,8 @@ export class DomRendererRowFactory {
       // apply link hover underline late, effectively overrides any previous text-decoration
       // settings
       if (isLinkHover) {
-        charElement.style.textDecoration = 'underline';
+        classes.push('xterm-hoverline');
+        // charElement.style.textDecoration = 'underline';
       }
 
       let fg = cell.getFgColor();
