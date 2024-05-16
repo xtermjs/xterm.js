@@ -3,38 +3,42 @@
  * @license MIT
  */
 
+// Import necessary types and decorators
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, CursorInactiveStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDecorationOptions, IDecoration, ILinkHandler } from 'xterm';
+import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from '@xterm/xterm';
 
+// Define interfaces for various services and their corresponding decorators
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
   serviceBrand: undefined;
 
+  // Properties related to buffer dimensions and content
   readonly cols: number;
   readonly rows: number;
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
   isUserScrolling: boolean;
+  // Events related to terminal resize and scroll
   onResize: IEvent<{ cols: number, rows: number }>;
   onScroll: IEvent<number>;
+  // Methods for scrolling and resizing the terminal buffer
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
-  scrollToBottom(): void;
-  scrollToTop(): void;
-  scrollToLine(line: number): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
-  scrollPages(pageCount: number): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }
 
+// Service for managing core mouse functionality
 export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
 export interface ICoreMouseService {
+  // Properties related to active mouse protocol and encoding
   activeProtocol: string;
   activeEncoding: string;
   areMouseEventsActive: boolean;
+  // Methods for managing mouse protocols and encodings
   addProtocol(name: string, protocol: ICoreMouseProtocol): void;
   addEncoding(name: string, encoding: CoreMouseEncoding): void;
   reset(): void;
@@ -76,11 +80,13 @@ export interface ICoreService {
   readonly modes: IModes;
   readonly decPrivateModes: IDecPrivateModes;
 
+  // Events related to terminal data, user input, and binary data
   readonly onData: IEvent<string>;
   readonly onUserInput: IEvent<void>;
   readonly onBinary: IEvent<string>;
   readonly onRequestScrollToBottom: IEvent<void>;
 
+  // Method to reset terminal state
   reset(): void;
 
   /**
@@ -134,7 +140,7 @@ export interface IBrandedService {
 
 type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends [] ? []
   : TArgs extends [...infer TFirst, infer TLast] ? TLast extends IBrandedService ? GetLeadingNonServiceArgs<TFirst> : TArgs
-    : never;
+  : never;
 
 export const IInstantiationService = createDecorator<IInstantiationService>('InstantiationService');
 export interface IInstantiationService {
@@ -145,20 +151,24 @@ export interface IInstantiationService {
   createInstance<Ctor extends new (...args: any[]) => any, R extends InstanceType<Ctor>>(t: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;
 }
 
+// Constants and types for logging service
 export enum LogLevelEnum {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-  OFF = 4
+  TRACE = 0,
+  DEBUG = 1,
+  INFO = 2,
+  WARN = 3,
+  ERROR = 4,
+  OFF = 5
 }
 
+// Service for logging messages
 export const ILogService = createDecorator<ILogService>('LogService');
 export interface ILogService {
   serviceBrand: undefined;
 
-  logLevel: LogLevelEnum;
+  readonly logLevel: LogLevelEnum;
 
+  trace(message: any, ...optionalParams: any[]): void;
   debug(message: any, ...optionalParams: any[]): void;
   info(message: any, ...optionalParams: any[]): void;
   warn(message: any, ...optionalParams: any[]): void;
@@ -205,7 +215,7 @@ export interface IOptionsService {
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'off';
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 
 export interface ITerminalOptions {
   allowProposedApi?: boolean;
@@ -216,8 +226,10 @@ export interface ITerminalOptions {
   cursorBlink?: boolean;
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
+  cursorInactiveStyle?: CursorInactiveStyle;
   customGlyphs?: boolean;
   disableStdin?: boolean;
+  documentOverride?: any | null;
   drawBoldTextInBrightColors?: boolean;
   fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
   fastScrollSensitivity?: number;
@@ -225,13 +237,16 @@ export interface ITerminalOptions {
   fontFamily?: string;
   fontWeight?: FontWeight;
   fontWeightBold?: FontWeight;
+  ignoreBracketedPasteMode?: boolean;
   letterSpacing?: number;
   lineHeight?: number;
   linkHandler?: ILinkHandler | null;
   logLevel?: LogLevel;
+  logger?: ILogger | null;
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
+  rescaleOverlappingGlyphs?: boolean;
   rightClickSelectsWord?: boolean;
   rows?: number;
   screenReaderMode?: boolean;
@@ -242,6 +257,7 @@ export interface ITerminalOptions {
   tabStopWidth?: number;
   theme?: ITheme;
   windowsMode?: boolean;
+  windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
   overviewRulerWidth?: number;
@@ -294,6 +310,29 @@ export interface IOscLinkService {
   getLinkData(linkId: number): IOscLinkData | undefined;
 }
 
+/*
+ * Width and Grapheme_Cluster_Break properties of a character as a bit mask.
+ *
+ * bit 0: shouldJoin - should combine with preceding character.
+ * bit 1..2: wcwidth - see UnicodeCharWidth.
+ * bit 3..31: class of character (currently only 4 bits are used).
+ *   This is used to determined grapheme clustering - i.e. which codepoints
+ *   are to be combined into a single compound character.
+ *
+ * Use the UnicodeService static function createPropertyValue to create a
+ * UnicodeCharProperties; use extractShouldJoin, extractWidth, and
+ * extractCharKind to extract the components.
+ */
+export type UnicodeCharProperties = number;
+
+/**
+ * Width in columns of a character.
+ * In a CJK context, "half-width" characters (such as Latin) are width 1,
+ * while "full-width" characters (such as Kanji) are 2 columns wide.
+ * Combining characters (such as accents) are width 0.
+ */
+export type UnicodeCharWidth = 0 | 1 | 2;
+
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
   serviceBrand: undefined;
@@ -309,13 +348,20 @@ export interface IUnicodeService {
   /**
    * Unicode version dependent
    */
-  wcwidth(codepoint: number): number;
+  wcwidth(codepoint: number): UnicodeCharWidth;
   getStringCellWidth(s: string): number;
+  /**
+   * Return character width and type for grapheme clustering.
+   * If preceding != 0, it is the return code from the previous character;
+   * in that case the result specifies if the characters should be joined.
+   */
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
 export interface IUnicodeVersionProvider {
   readonly version: string;
-  wcwidth(ucs: number): 0 | 1 | 2;
+  wcwidth(ucs: number): UnicodeCharWidth;
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
 export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
