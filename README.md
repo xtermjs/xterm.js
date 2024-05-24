@@ -224,6 +224,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Helix Editor Playground**](https://github.com/tomgroenwoldt/helix-editor-playground): Online playground for the terminal based helix editor.
 - [**Coder**](https://github.com/coder/coder): Self-Hosted Remote Development Environments
 - [**Wave Terminal**](https://waveterm.dev): An open-source, ai-native, terminal built for seamless workflows.
+- [**balena**](https://www.balena.io/): Balena is a full-stack solution for developing, deploying, updating, and troubleshooting IoT Edge devices. We use xterm.js to manage & debug devices on [balenaCloud](https://www.balena.io/cloud).
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
