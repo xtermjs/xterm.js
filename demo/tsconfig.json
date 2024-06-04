@@ -7,6 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "addon-attach": ["../addons/addon-attach"],
+      "addon-clipboard": ["../addons/addon-clipboard"],
       "addon-fit": ["../addons/addon-fit"],
       "addon-image": ["../addons/addon-image"],
       "addon-search": ["../addons/addon-search"],

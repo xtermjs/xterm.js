@@ -18,6 +18,8 @@
       "addons/addon-attach/test/tsconfig.json",
       "addons/addon-canvas/src/tsconfig.json",
       "addons/addon-canvas/test/tsconfig.json",
+      "addons/addon-clipboard/src/tsconfig.json",
+      "addons/addon-clipboard/test/tsconfig.json",
       "addons/addon-fit/src/tsconfig.json",
       "addons/addon-fit/test/tsconfig.json",
       "addons/addon-image/src/tsconfig.json",
@@ -42,6 +44,8 @@
   },
   "ignorePatterns": [
     "addons/*/src/third-party/*.ts",
+    "out/*",
+    "out-test/*",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",

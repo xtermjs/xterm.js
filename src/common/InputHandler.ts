@@ -2972,14 +2972,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    * feedback. Use `OSC 8 ; ; BEL` to finish the current hyperlink.
    */
   public setHyperlink(data: string): boolean {
-    const args = data.split(';');
-    if (args.length < 2) {
-      return false;
+    // Arg parsing is special cases to support unencoded semi-colons in the URIs (#4944)
+    const idx = data.indexOf(';');
+    if (idx === -1) {
+      // malformed sequence, just return as handled
+      return true;
     }
-    if (args[1]) {
-      return this._createHyperlink(args[0], args[1]);
+    const id = data.slice(0, idx).trim();
+    const uri = data.slice(idx + 1);
+    if (uri) {
+      return this._createHyperlink(id, uri);
     }
-    if (args[0]) {
+    if (id.trim()) {
       return false;
     }
     return this._finishHyperlink();

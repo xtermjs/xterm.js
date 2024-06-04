@@ -6,7 +6,7 @@
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
 import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, toDisposable, disposeArray, MutableDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable, disposeArray, MutableDisposable, getDisposeArrayDisposable } from 'common/Lifecycle';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -78,8 +78,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    */
   private _linesCache: LineCacheEntry[] | undefined;
   private _linesCacheTimeoutId = 0;
-  private _cursorMoveListener: IDisposable | undefined;
-  private _resizeListener: IDisposable | undefined;
+  private _linesCacheDisposables = new MutableDisposable();
 
   private readonly _onDidChangeResults = this.register(new EventEmitter<{ resultIndex: number, resultCount: number }>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
@@ -427,8 +426,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     const terminal = this._terminal!;
     if (!this._linesCache) {
       this._linesCache = new Array(terminal.buffer.active.length);
-      this._cursorMoveListener = terminal.onCursorMove(() => this._destroyLinesCache());
-      this._resizeListener = terminal.onResize(() => this._destroyLinesCache());
+      this._linesCacheDisposables.value = getDisposeArrayDisposable([
+        terminal.onLineFeed(() => this._destroyLinesCache()),
+        terminal.onCursorMove(() => this._destroyLinesCache()),
+        terminal.onResize(() => this._destroyLinesCache())
+      ]);
     }
 
     window.clearTimeout(this._linesCacheTimeoutId);
@@ -437,14 +439,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   private _destroyLinesCache(): void {
     this._linesCache = undefined;
-    if (this._cursorMoveListener) {
-      this._cursorMoveListener.dispose();
-      this._cursorMoveListener = undefined;
-    }
-    if (this._resizeListener) {
-      this._resizeListener.dispose();
-      this._resizeListener = undefined;
-    }
+    this._linesCacheDisposables.clear();
     if (this._linesCacheTimeoutId) {
       window.clearTimeout(this._linesCacheTimeoutId);
       this._linesCacheTimeoutId = 0;

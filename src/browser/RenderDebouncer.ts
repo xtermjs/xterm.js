@@ -4,6 +4,7 @@
  */
 
 import { IRenderDebouncerWithCallback } from 'browser/Types';
+import { ICoreBrowserService } from 'browser/services/Services';
 
 /**
  * Debounces calls to render terminal rows using animation frames.
@@ -16,14 +17,14 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   private _refreshCallbacks: FrameRequestCallback[] = [];
 
   constructor(
-    private _parentWindow: Window,
-    private _renderCallback: (start: number, end: number) => void
+    private _renderCallback: (start: number, end: number) => void,
+    private readonly _coreBrowserService: ICoreBrowserService
   ) {
   }
 
   public dispose(): void {
     if (this._animationFrame) {
-      this._parentWindow.cancelAnimationFrame(this._animationFrame);
+      this._coreBrowserService.window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = undefined;
     }
   }
@@ -31,7 +32,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   public addRefreshCallback(callback: FrameRequestCallback): number {
     this._refreshCallbacks.push(callback);
     if (!this._animationFrame) {
-      this._animationFrame = this._parentWindow.requestAnimationFrame(() => this._innerRefresh());
+      this._animationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
     }
     return this._animationFrame;
   }
@@ -49,7 +50,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
       return;
     }
 
-    this._animationFrame = this._parentWindow.requestAnimationFrame(() => this._innerRefresh());
+    this._animationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
   }
 
   private _innerRefresh(): void {

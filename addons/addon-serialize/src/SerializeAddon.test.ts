@@ -9,7 +9,6 @@ import { SerializeAddon } from './SerializeAddon';
 import { Terminal } from 'browser/public/Terminal';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { IBufferService } from 'common/services/Services';
-import { OptionsService } from 'common/services/OptionsService';
 import { ThemeService } from 'browser/services/ThemeService';
 
 function sgr(...seq: string[]): string {
@@ -83,6 +82,36 @@ describe('SerializeAddon', () => {
       await writeP(terminal, sgr('32') + '> ' + sgr('0'));
       assert.equal(serializeAddon.serialize(), '\u001b[32m> \u001b[0m');
     });
+
+    describe('ISerializeOptions.range', () => {
+      it('should serialize the top line', async () => {
+        await writeP(terminal, 'hello\r\nworld');
+        assert.equal(serializeAddon.serialize({
+          range: {
+            start: 0,
+            end: 0
+          }
+        }), 'hello');
+      });
+      it('should serialize multiple lines from the top', async () => {
+        await writeP(terminal, 'hello\r\nworld');
+        assert.equal(serializeAddon.serialize({
+          range: {
+            start: 0,
+            end: 1
+          }
+        }), 'hello\r\nworld');
+      });
+      it('should serialize lines in the middle', async () => {
+        await writeP(terminal, 'hello\r\nworld');
+        assert.equal(serializeAddon.serialize({
+          range: {
+            start: 1,
+            end: 1
+          }
+        }), 'world');
+      });
+    });
   });
 
   describe('html', () => {
@@ -107,6 +136,16 @@ describe('SerializeAddon', () => {
         onlySelection: true
       });
       assert.equal((output.match(/<div><span>terminal<\/span><\/div>/g) || []).length, 1, output);
+    });
+
+    it('basic terminal with html unsafe chars', async () => {
+      await writeP(terminal, ' <a>&pi; ');
+      terminal.select(1, 0, 7);
+
+      const output = serializeAddon.serializeAsHTML({
+        onlySelection: true
+      });
+      assert.equal((output.match(/<div><span>&lt;a>&amp;pi;<\/span><\/div>/g) || []).length, 1, output);
     });
 
     it('cells with bold styling', async () => {

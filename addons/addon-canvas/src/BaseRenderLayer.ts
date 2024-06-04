@@ -8,7 +8,7 @@ import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
 import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
-import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
@@ -365,6 +365,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    */
   protected _drawChars(cell: ICellData, x: number, y: number): void {
     const chars = cell.getChars();
+    const code = cell.getCode();
+    const width = cell.getWidth();
     this._cellColorResolver.resolve(cell, x, this._bufferService.buffer.ydisp + y, this._deviceCellWidth);
 
     if (!this._charAtlas) {
@@ -400,6 +402,16 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       this._bitmapGenerator[glyph.texturePage]!.refresh();
       this._bitmapGenerator[glyph.texturePage]!.version = this._charAtlas.pages[glyph.texturePage].version;
     }
+
+    // Reduce scale horizontally for wide glyphs printed in cells that would overlap with the
+    // following cell (ie. the width is not 2).
+    let renderWidth = glyph.size.x;
+    if (this._optionsService.rawOptions.rescaleOverlappingGlyphs) {
+      if (allowRescaling(code, width, glyph.size.x, this._deviceCellWidth)) {
+        renderWidth = this._deviceCellWidth - 1; // - 1 to improve readability
+      }
+    }
+
     this._ctx.drawImage(
       this._bitmapGenerator[glyph.texturePage]?.bitmap || this._charAtlas!.pages[glyph.texturePage].canvas,
       glyph.texturePosition.x,
@@ -408,7 +420,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       glyph.size.y,
       x * this._deviceCellWidth + this._deviceCharLeft - glyph.offset.x,
       y * this._deviceCellHeight + this._deviceCharTop - glyph.offset.y,
-      glyph.size.x,
+      renderWidth,
       glyph.size.y
     );
     this._ctx.restore();

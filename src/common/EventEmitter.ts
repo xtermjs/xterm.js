@@ -20,23 +20,18 @@ export interface IEventEmitter<T, U = void> {
 }
 
 export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
-  private _listeners: IListener<T, U>[] = [];
+  private _listeners: Set<IListener<T, U>> = new Set();
   private _event?: IEvent<T, U>;
   private _disposed: boolean = false;
 
   public get event(): IEvent<T, U> {
     if (!this._event) {
       this._event = (listener: (arg1: T, arg2: U) => any) => {
-        this._listeners.push(listener);
+        this._listeners.add(listener);
         const disposable = {
           dispose: () => {
             if (!this._disposed) {
-              for (let i = 0; i < this._listeners.length; i++) {
-                if (this._listeners[i] === listener) {
-                  this._listeners.splice(i, 1);
-                  return;
-                }
-              }
+              this._listeners.delete(listener);
             }
           }
         };
@@ -48,8 +43,8 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
 
   public fire(arg1: T, arg2: U): void {
     const queue: IListener<T, U>[] = [];
-    for (let i = 0; i < this._listeners.length; i++) {
-      queue.push(this._listeners[i]);
+    for (const l of this._listeners.values()) {
+      queue.push(l);
     }
     for (let i = 0; i < queue.length; i++) {
       queue[i].call(undefined, arg1, arg2);
@@ -63,7 +58,7 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
 
   public clearListeners(): void {
     if (this._listeners) {
-      this._listeners.length = 0;
+      this._listeners.clear();
     }
   }
 }

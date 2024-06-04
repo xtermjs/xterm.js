@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "es2015"
+    ],
+    "rootDir": ".",
+    "outDir": "../out-test",
+    "sourceMap": true,
+    "removeComments": true,
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha",
+      "../../../node_modules/@types/node",
+      "../../../out-test/api/TestUtils"
+    ]
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ]
+}
