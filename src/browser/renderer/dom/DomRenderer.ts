@@ -45,6 +45,8 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
+  private _currentLink: ILinkifierEvent | undefined;
+
   public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
 
   constructor(
@@ -264,6 +266,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (const [i, c] of colors.ansi.entries()) {
       styles +=
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}::after { content: "";border-bottom-color: ${c.css}; }` +
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}-underline::after { content: "";border-bottom-color: ${c.css}; }` +
         `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(c, 0.5).css}; }` +
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     }
@@ -271,6 +275,13 @@ export class DomRenderer extends Disposable implements IRenderer {
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(colors.background).css}; }` +
       `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
+
+    // Underline
+    styles +=
+      `.${FG_CLASS_PREFIX}underline::after { border-bottom-color: ${colors.foreground.css}; }`;
+
+    styles +=
+      `.${FG_CLASS_PREFIX}hoverline::before { border-bottom: 1px solid ${colors.foreground.css}; }`;
 
     this._themeStyleElement.textContent = styles;
   }
@@ -440,7 +451,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
-
+    
     for (let y = start; y <= end; y++) {
       const row = y + buffer.ydisp;
       const rowElement = this._rowElements[y];
@@ -459,8 +470,8 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorBlink,
           this.dimensions.css.cell.width,
           this._widthCache,
-          -1,
-          -1
+          this._currentLink ? this._currentLink.y1 === y ? this._currentLink.x1 : -1 : -1,
+          this._currentLink ? this._currentLink.y2 === y ? this._currentLink.x2 : -1 : -1
         )
       );
     }
@@ -471,10 +482,12 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _handleLinkHover(e: ILinkifierEvent): void {
+    this._currentLink = e;
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
   }
 
   private _handleLinkLeave(e: ILinkifierEvent): void {
+    this._currentLink = undefined;
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, false);
   }
 
