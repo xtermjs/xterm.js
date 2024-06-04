@@ -398,7 +398,7 @@ export class AccessibilityManager extends Disposable {
     }
     Object.assign(this._accessibilityContainer.style, {
       width: `${this._renderService.dimensions.css.canvas.width}px`,
-      fontSize: `${this._terminal.options.fontSize}px`,
+      fontSize: `${this._terminal.options.fontSize}px`
     });
     if (this._rowElements.length !== this._terminal.rows) {
       this._handleResize(this._terminal.rows);
