@@ -18,7 +18,7 @@ import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 // - final interpunction like ,.!?
 // - any sort of brackets <>()[]{} (not spec conform, but often used to enclose urls)
 // - unsafe chars from rfc1738: {}|\^~[]`
-const strictUrlRegex = /https?:[/]{2}[^\s"'!*(){}|\\\^<>`]*[^\s"':,.!?{}|\\\^~\[\]`()<>]/;
+const strictUrlRegex = /(https?|HTTPS?):[/]{2}[^\s"'!*(){}|\\\^<>`]*[^\s"':,.!?{}|\\\^~\[\]`()<>]/;
 
 
 function handleLink(event: MouseEvent, uri: string): void {

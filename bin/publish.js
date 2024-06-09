@@ -29,6 +29,7 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-attach'),
   path.resolve(__dirname, '../addons/addon-canvas'),
+  path.resolve(__dirname, '../addons/addon-clipboard'),
   path.resolve(__dirname, '../addons/addon-fit'),
   path.resolve(__dirname, '../addons/addon-image'),
   path.resolve(__dirname, '../addons/addon-ligatures'),
@@ -57,9 +58,8 @@ function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
-  // TODO: Uncomment when publishing 5.4
-  // const publishedVersions = getPublishedVersions(packageJson);
-  const isStableRelease = false; //!publishedVersions.includes(packageJson.version);
+  const publishedVersions = getPublishedVersions(packageJson);
+  const isStableRelease = !publishedVersions.includes(packageJson.version);
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);

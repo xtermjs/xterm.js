@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { isNode } from 'common/Platform';
 import { IColor, IColorRGB } from 'common/Types';
 
 let $r = 0;
@@ -117,9 +116,10 @@ export namespace color {
  * '#rrggbbaa').
  */
 export namespace css {
+  // Attempt to set get the shared canvas context
   let $ctx: CanvasRenderingContext2D | undefined;
   let $litmusColor: CanvasGradient | undefined;
-  if (!isNode) {
+  try {
     // This is guaranteed to run in the first window, so document should be correct
     const canvas = document.createElement('canvas');
     canvas.width = 1;
@@ -132,6 +132,9 @@ export namespace css {
       $ctx.globalCompositeOperation = 'copy';
       $litmusColor = $ctx.createLinearGradient(0, 0, 1, 1);
     }
+  }
+  catch {
+    // noop
   }
 
   /**

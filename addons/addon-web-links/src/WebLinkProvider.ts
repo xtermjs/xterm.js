@@ -41,16 +41,18 @@ export class WebLinkProvider implements ILinkProvider {
   }
 }
 
-function baseUrlString(url: URL): string {
-  if (url.password && url.username) {
-    return `${url.protocol}//${url.username}:${url.password}@${url.host}`;
+function isUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    const parsedBase = url.password && url.username
+      ? `${url.protocol}//${url.username}:${url.password}@${url.host}`
+      : url.username
+        ? `${url.protocol}//${url.username}@${url.host}`
+        : `${url.protocol}//${url.host}`;
+    return urlString.toLocaleLowerCase().startsWith(parsedBase.toLocaleLowerCase());
+  } catch (e) {
+    return false;
   }
-
-  if (url.username) {
-    return `${url.protocol}//${url.username}@${url.host}`;
-  }
-
-  return `${url.protocol}//${url.host}`;
 }
 
 export class LinkComputer {
@@ -67,15 +69,7 @@ export class LinkComputer {
       const text = match[0];
 
       // check via URL if the matched text would form a proper url
-      // NOTE: This outsources the ugly url parsing to the browser.
-      // we check if the provided string resembles the URL-parsed one
-      // up to the end of the domain name (ignoring path and params)
-      try {
-        const url = new URL(text);
-        if (!text.startsWith(baseUrlString(url))) {
-          continue;
-        }
-      } catch (e) {
+      if (!isUrl(text)) {
         continue;
       }
 
