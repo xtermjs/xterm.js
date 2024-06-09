@@ -6,7 +6,7 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from '@xterm/xterm';
-import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate, timeout } from './TestUtils';
+import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -1233,6 +1233,20 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       // outlink cursor style
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows), [0, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, rows, CellColorPosition.FIRST), [0, 0, 255, 255]);
+    });
+    test('#4917 The selection should not be displayed if it is not within the scope of the viewport.', async () => {
+      const theme: ITheme = {
+        selectionBackground: '#FF0000'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      for (let index = 0; index < 160; index++) {
+        await ctx.value.proxy.writeln(``);
+      }
+      await ctx.value.proxy.scrollToBottom();
+      const rows = await ctx.value.proxy.buffer.active.length;
+      await ctx.value.proxy.selectLines(rows - 1, rows - 1);
+      await ctx.value.proxy.scrollLines(-2);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
     });
   });
 }
