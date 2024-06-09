@@ -81,7 +81,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (let x = 0; x < this._bufferService.cols; x++) {
         line!.loadCell(x, this._workCell);
-        let cell = this._workCell;
+        let cell: ICellData = this._workCell;
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;

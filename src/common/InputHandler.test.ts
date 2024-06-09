@@ -452,18 +452,16 @@ describe('InputHandler', () => {
       );
 
       // fill display with a's
-      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      const a_repeat_cols = Array(bufferService.cols + 1).join('a');
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(a_repeat_cols);
 
       // params [0] - right and below erase
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([0]));
       assert.deepEqual(termContent(bufferService, false), [
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
+        a_repeat_cols, a_repeat_cols, a_repeat_cols,
+        a_repeat_cols, a_repeat_cols,
         Array(40 + 1).join('a') + Array(bufferService.cols - 40 + 1).join(' '),
         Array(bufferService.cols + 1).join(' ')
       ]);
@@ -1885,17 +1883,19 @@ describe('InputHandler', () => {
       assert.equal(cell.isUnderlineColorDefault(), false);
 
       // eAttrs in buffer pos 0 and 1 should be the same object
-      assert.equal(
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[0],
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[1]
-      );
+      const line0 = bufferService.buffer!.lines.get(0)!;
+      line0.loadCell(0, cell);
+      const ext0 = cell.extended;
+      line0.loadCell(1, cell);
+      const ext1 = cell.extended;
+      assert.equal(ext0, ext1);
       // should not have written eAttr for pos 2 in the buffer
-      assert.equal((bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[2], undefined);
+      line0.loadCell(2, cell);
+      assert.isFalse(cell.hasExtendedAttrs() !== 0);
       // eAttrs in buffer pos 1 and pos 3 must be different objs
-      assert.notEqual(
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[1],
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[3]
-      );
+      line0.loadCell(3, cell);
+      const ext3 = cell.extended;
+      assert.notEqual(ext1, ext3);
     });
   });
   describe('DECSTR', () => {

@@ -28,6 +28,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   private _parser: IParser | undefined;
   private _buffer: BufferNamespaceApi | undefined;
   private _publicOptions: Required<ITerminalOptions>;
+  public logOutput: boolean = false;
 
   constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
     super();
@@ -224,6 +225,14 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._core.clear();
   }
   public write(data: string | Uint8Array, callback?: () => void): void {
+    if (this.logOutput && data instanceof Uint8Array) {
+      const thisAny = this as any;
+      if (! thisAny._decoder) {
+        thisAny._decoder = new TextDecoder(); // label = "utf-8");
+      }
+      const str = thisAny._decoder.decode(data, { stream:true });
+      console.log('write: '+JSON.stringify(str));
+    }
     this._core.write(data, callback);
   }
   public writeln(data: string | Uint8Array, callback?: () => void): void {

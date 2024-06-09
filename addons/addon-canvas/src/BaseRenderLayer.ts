@@ -16,7 +16,6 @@ import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { isSafari } from 'common/Platform';
 import { ICellData } from 'common/Types';
-import { CellData } from 'common/buffer/CellData';
 import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
@@ -339,7 +338,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  protected _fillCharTrueColor(cell: CellData, x: number, y: number): void {
+  protected _fillCharTrueColor(cell: ICellData, x: number, y: number): void {
     this._ctx.font = this._getFont(false, false);
     this._ctx.textBaseline = TEXT_BASELINE;
     this._clipRow(y);
