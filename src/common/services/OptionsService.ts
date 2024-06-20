@@ -36,6 +36,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   scrollSensitivity: 1,
   screenReaderMode: false,
   smoothScrollDuration: 0,
+  macOptionIsEscape: false,
   macOptionIsMeta: false,
   macOptionClickForcesSelection: false,
   minimumContrastRatio: 1,

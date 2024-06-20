@@ -39,7 +39,8 @@ export function evaluateKeyboardEvent(
   ev: IKeyboardEvent,
   applicationCursorMode: boolean,
   isMac: boolean,
-  macOptionIsMeta: boolean
+  macOptionIsMeta: boolean,
+  macOptionIsEscape: boolean
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
@@ -346,11 +347,15 @@ export function evaluateKeyboardEvent(
         } else if (ev.keyCode === 221) {
           result.key = C0.GS;
         }
-      } else if ((!isMac || macOptionIsMeta) && ev.altKey && !ev.metaKey) {
+      } else if ((!isMac || macOptionIsMeta || macOptionIsEscape) && ev.altKey && !ev.metaKey) {
         // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
         const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
         const key = keyMapping?.[!ev.shiftKey ? 0 : 1];
-        if (key) {
+        if (macOptionIsEscape && ev.keyCode >= 64 && ev.keyCode <= 95) {
+          result.key = String.fromCharCode(128 + ev.keyCode - 64);
+          console.log(12);
+        }
+        else if (key) {
           result.key = C0.ESC + key;
         } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;

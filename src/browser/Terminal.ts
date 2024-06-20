@@ -1007,7 +1007,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
-    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
+    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && this.options.macOptionIsEscape && event.altKey;
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
@@ -1020,7 +1020,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._unprocessedDeadKey = true;
     }
 
-    const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
+    const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta, this.options.macOptionIsEscape);
 
     this.updateCursorStyle(event);
 
@@ -1084,7 +1084,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
     const thirdLevelKey =
-      (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (browser.isMac && !this.options.macOptionIsMeta && !this.options.macOptionIsEscape && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
       (browser.isWindows && ev.altKey && ev.ctrlKey && !ev.metaKey) ||
       (browser.isWindows && ev.getModifierState('AltGraph'));
 

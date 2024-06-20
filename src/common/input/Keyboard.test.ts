@@ -20,6 +20,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
   applicationCursorMode?: boolean;
   isMac?: boolean;
   macOptionIsMeta?: boolean;
+  macOptionIsEscape?: boolean;
 } = {}): IKeyboardResult {
   const event: IKeyboardEvent = {
     altKey: partialEvent.altKey || false,
@@ -34,9 +35,10 @@ function testEvaluateKeyboardEvent(partialEvent: {
   const options = {
     applicationCursorMode: partialOptions.applicationCursorMode || false,
     isMac: partialOptions.isMac || false,
-    macOptionIsMeta: partialOptions.macOptionIsMeta || false
+    macOptionIsMeta: partialOptions.macOptionIsMeta || false,
+    macOptionIsEscape: partialOptions.macOptionIsEscape || false
   };
-  return evaluateKeyboardEvent(event, options.applicationCursorMode, options.isMac, options.macOptionIsMeta);
+  return evaluateKeyboardEvent(event, options.applicationCursorMode, options.isMac, options.macOptionIsMeta, options.macOptionIsEscape);
 }
 
 describe('Keyboard', () => {
@@ -173,6 +175,15 @@ describe('Keyboard', () => {
 
       it('should return \\x1b\\x1b for alt+enter', () => {
         assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 13 }, { isMac: true, macOptionIsMeta: true }).key, '\x1b\r');
+      });
+    });
+    describe('with macOptionIsEscape', () => {
+      it('should return \\x80 for alt+@', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 64 }, { isMac: true, macOptionIsEscape: true }).key, '\x80');
+      });
+
+      it('should return \\x9F for alt+_', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 95 }, { isMac: true, macOptionIsEscape: true }).key, '\x9F');
       });
     });
 
