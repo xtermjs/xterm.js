@@ -611,8 +611,8 @@ export class Buffer implements IBuffer {
     this._isClearing = true;
     for (let i = 0; i < this.markers.length; i++) {
       this.markers[i].dispose();
-      this.markers.splice(i--, 1);
     }
+    this.markers.length = 0;
     this._isClearing = false;
   }
 
