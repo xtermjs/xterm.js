@@ -521,6 +521,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
     this.element.appendChild(scrollableElement.getDomNode());
     let inSync = false;
+    let suppressOnScrollEvent = false;
     // TODO: Ensure sync only happens once per frame
     const sync = (ydisp: number = this._bufferService.buffer.ydisp): void => {
       if (!this._renderService) {
@@ -531,23 +532,28 @@ export class Terminal extends CoreTerminal implements ITerminal {
       }
       inSync = true;
 
-      console.log('sync', {
-        height: this._renderService.dimensions.css.canvas.height,
-        scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length,
-        scrollTop: ydisp * this._renderService.dimensions.css.cell.height,
-        ydispParam: ydisp,
-        ydispBuffer: this._bufferService.buffer.ydisp
-      });
+      // console.log('sync', {
+      //   height: this._renderService.dimensions.css.canvas.height,
+      //   scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length,
+      //   scrollTop: ydisp * this._renderService.dimensions.css.cell.height,
+      //   ydispParam: ydisp,
+      //   ydispBuffer: this._bufferService.buffer.ydisp
+      // });
       const newDims = {
         height: this._renderService.dimensions.css.canvas.height,
         scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length
       };
 
-      // HACK: setScrollDimensions here can trigger a diff -1 onScroll to occur before setScrollPosition. onScroll should only fire once!
+      // Ignore any onScroll event that happens as a result of dimensions changing as this should
+      // never cause a scrollLines call, only setScrollPosition can do that.
+      suppressOnScrollEvent = true;
       scrollableElement.setScrollDimensions(newDims);
+      suppressOnScrollEvent = false;
+
       scrollableElement.setScrollPosition({
         scrollTop: ydisp * this._renderService.dimensions.css.cell.height
       });
+
       inSync = false;
     };
     let inScroll = false;
@@ -555,19 +561,19 @@ export class Terminal extends CoreTerminal implements ITerminal {
       if (!this._renderService) {
         return;
       }
-      if (inScroll) {
+      if (inScroll || suppressOnScrollEvent) {
         return;
       }
       inScroll = true;
       const newRow = Math.round(e.scrollTop / this._renderService.dimensions.css.cell.height);
       const diff = newRow - this._bufferService.buffer.ydisp;
-      console.log('onScroll', {
-        ydisp: this._bufferService.buffer.ydisp,
-        newRow,
-        diff,
-        'e.scrollTop': e.scrollTop,
-        'cell.height': this._renderService.dimensions.css.cell.height
-      });
+      // console.log('onScroll', {
+      //   ydisp: this._bufferService.buffer.ydisp,
+      //   newRow,
+      //   diff,
+      //   'e.scrollTop': e.scrollTop,
+      //   'cell.height': this._renderService.dimensions.css.cell.height
+      // });
       if (diff !== 0) {
         this.scrollLines(diff, false, ScrollSource.VIEWPORT);
       }
