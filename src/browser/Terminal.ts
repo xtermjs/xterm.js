@@ -516,7 +516,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     const scrollableElement = new DomScrollableElement(this.screenElement, {
       vertical: ScrollbarVisibility.Auto,
       horizontal: ScrollbarVisibility.Hidden,
-      useShadows: false
+      useShadows: false,
+      verticalScrollbarSize: 14
     });
     scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
     this.element.appendChild(scrollableElement.getDomNode());
