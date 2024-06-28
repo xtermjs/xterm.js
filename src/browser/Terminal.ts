@@ -58,6 +58,7 @@ import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } 
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
+import { findLast } from 'vs/base/common/arraysFind';
 
 export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -150,6 +151,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     options: Partial<ITerminalOptions> = {}
   ) {
     super(options);
+
+    console.log('last', findLast([1, 2, 4, 3], e => e > 2));
 
     this._setup();
 

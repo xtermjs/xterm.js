@@ -34,7 +34,8 @@ const config = {
     alias: {
       common: path.resolve('./out/common'),
       browser: path.resolve('./out/browser'),
-      vs: path.resolve('./out/browser/vs')
+      "vs/base": path.resolve('./out/base'),
+      "vs/patches": path.resolve('./out/patches')
     }
   },
   output: {

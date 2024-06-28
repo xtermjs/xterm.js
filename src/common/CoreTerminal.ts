@@ -39,6 +39,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
+import { findLast } from 'vs/base/common/arraysFind';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -145,6 +146,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Setup WriteBuffer
     this._writeBuffer = this.register(new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult)));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
+
+    console.log('last#2', findLast([1, 2, 4, 3], e => e > 2));
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
