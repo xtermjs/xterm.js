@@ -59,6 +59,8 @@ import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
 import { findLast } from 'vs/base/common/arraysFind';
+import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
+import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 
 export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -510,6 +512,20 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
     this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
     this.register(this.viewport);
+
+    // HACK: Hide viewport while testing new scrollable element
+    this._viewportElement.style.display = 'none';
+
+    const scrollableElement = new DomScrollableElement(this.screenElement, {
+      vertical: ScrollbarVisibility.Auto,
+      horizontal: ScrollbarVisibility.Hidden,
+      useShadows: false
+    });
+    scrollableElement.setScrollDimensions({
+      height: 1000,
+      scrollHeight: 10000
+    });
+    this.element.appendChild(scrollableElement.getDomNode());
 
     this.register(this.onCursorMove(() => {
       this._renderService!.handleCursorMove();

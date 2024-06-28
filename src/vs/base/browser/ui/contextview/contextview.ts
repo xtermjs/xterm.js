@@ -10,7 +10,7 @@ import { Disposable, DisposableStore, IDisposable, toDisposable } from 'vs/base/
 import * as platform from 'vs/base/common/platform';
 import { Range } from 'vs/base/common/range';
 import { OmitOptional } from 'vs/base/common/types';
-import 'vs/css!./contextview';
+// import 'vs/css!./contextview';
 
 export const enum ContextViewDOMPosition {
 	ABSOLUTE = 1,

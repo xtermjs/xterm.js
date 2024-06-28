@@ -11,7 +11,7 @@ import { memoize } from 'vs/base/common/decorators';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
 import { isMacintosh } from 'vs/base/common/platform';
-import 'vs/css!./sash';
+// import 'vs/css!./sash';
 
 /**
  * Allow the sashes to be visible at runtime.

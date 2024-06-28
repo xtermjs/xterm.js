@@ -21,7 +21,7 @@ import { KeyCode, KeyCodeUtils } from 'vs/base/common/keyCodes';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { isMacintosh } from 'vs/base/common/platform';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
-import 'vs/css!./selectBoxCustom';
+// import 'vs/css!./selectBoxCustom';
 import { localize } from 'vs/patches/nls';
 
 

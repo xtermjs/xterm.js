@@ -14,7 +14,7 @@ import { combinedDisposable, Disposable, dispose, IDisposable, toDisposable } fr
 import { clamp } from 'vs/base/common/numbers';
 import { Scrollable, ScrollbarVisibility, ScrollEvent } from 'vs/base/common/scrollable';
 import * as types from 'vs/base/common/types';
-import 'vs/css!./splitview';
+// import 'vs/css!./splitview';
 export { Orientation } from 'vs/base/browser/ui/sash/sash';
 
 export interface ISplitViewStyles {

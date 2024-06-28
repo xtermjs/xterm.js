@@ -12,7 +12,7 @@ import { Widget } from 'vs/base/browser/ui/widget';
 import { Event } from 'vs/base/common/event';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { isMacintosh } from 'vs/base/common/platform';
-import 'vs/css!./selectBox';
+// import 'vs/css!./selectBox';
 
 
 

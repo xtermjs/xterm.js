@@ -14,7 +14,7 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { ScrollbarVisibility, ScrollEvent } from 'vs/base/common/scrollable';
 import { ISpliceable } from 'vs/base/common/sequence';
-import 'vs/css!./table';
+// import 'vs/css!./table';
 
 // TODO@joao
 type TCell = any;

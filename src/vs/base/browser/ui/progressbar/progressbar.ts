@@ -8,7 +8,7 @@ import { getProgressAcccessibilitySignalScheduler } from 'vs/base/browser/ui/pro
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { Disposable, IDisposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { isNumber } from 'vs/base/common/types';
-import 'vs/css!./progressbar';
+// import 'vs/css!./progressbar';
 
 const CSS_DONE = 'done';
 const CSS_ACTIVE = 'active';

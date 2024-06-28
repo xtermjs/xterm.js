@@ -12,7 +12,7 @@ import { Emitter, Event, Relay } from 'vs/base/common/event';
 import { Disposable, DisposableStore, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { rot } from 'vs/base/common/numbers';
 import { isUndefined } from 'vs/base/common/types';
-import 'vs/css!./gridview';
+// import 'vs/css!./gridview';
 
 export { Orientation } from 'vs/base/browser/ui/sash/sash';
 export { LayoutPriority, Sizing } from 'vs/base/browser/ui/splitview/splitview';

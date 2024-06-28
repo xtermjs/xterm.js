@@ -5,7 +5,7 @@
 
 import { $, append } from 'vs/base/browser/dom';
 import { format } from 'vs/base/common/strings';
-import 'vs/css!./countBadge';
+// import 'vs/css!./countBadge';
 
 export interface ICountBadgeOptions {
 	readonly count?: number;

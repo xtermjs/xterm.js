@@ -11,7 +11,7 @@ import { ThemeIcon } from 'vs/base/common/themables';
 import { Emitter, Event } from 'vs/base/common/event';
 import { DisposableStore, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
-import 'vs/css!./breadcrumbsWidget';
+// import 'vs/css!./breadcrumbsWidget';
 
 export abstract class BreadcrumbsItem {
 	abstract dispose(): void;

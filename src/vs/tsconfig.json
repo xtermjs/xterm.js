@@ -68,5 +68,6 @@
     "base/common/jsonc.js",
     "base/common/performance.js",
     "base/common/marked/marked.js",
+    "base/common/network.js"
   ]
 }
