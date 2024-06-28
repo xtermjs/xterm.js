@@ -513,13 +513,17 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // HACK: Hide viewport while testing new scrollable element
     this._viewportElement.style.display = 'none';
 
+    // TODO: overviewRulerWidth should deprecated in favor of scrollBarWidth
+
     const scrollableElement = new DomScrollableElement(this.screenElement, {
       vertical: ScrollbarVisibility.Auto,
       horizontal: ScrollbarVisibility.Hidden,
       useShadows: false,
+      // TODO: Over scrollBarWidth instead
       verticalScrollbarSize: 14
     });
     scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
+    scrollableElement.getDomNode().style.backgroundColor = this._themeService.colors.background.css;
     this.element.appendChild(scrollableElement.getDomNode());
     let inSync = false;
     let suppressOnScrollEvent = false;

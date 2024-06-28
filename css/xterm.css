@@ -219,22 +219,20 @@
 
 
 
-/* Override xterm's cursor style */
-.monaco-scrollable-element > .scrollbar {
+/* Derived from vs/base/browser/ui/scrollbar/media/scrollbar.css */
+
+/* xterm.js customization: Override xterm's cursor style */
+.xterm .monaco-scrollable-element > .scrollbar {
     cursor: default;
 }
 
-
-
-/* From vs/base/browser/ui/scrollbar/media/scrollbar.css */
-
 /* Arrows */
-.monaco-scrollable-element > .scrollbar > .scra {
+.xterm .monaco-scrollable-element > .scrollbar > .scra {
 	cursor: pointer;
 	font-size: 11px !important;
 }
 
-.monaco-scrollable-element > .visible {
+.xterm .monaco-scrollable-element > .visible {
 	opacity: 1;
 
 	/* Background rule added for IE9 - to allow clicks on dom node */
@@ -244,54 +242,54 @@
 	/* In front of peek view */
 	z-index: 11;
 }
-.monaco-scrollable-element > .invisible {
+.xterm .monaco-scrollable-element > .invisible {
 	opacity: 0;
 	pointer-events: none;
 }
-.monaco-scrollable-element > .invisible.fade {
+.xterm .monaco-scrollable-element > .invisible.fade {
 	transition: opacity 800ms linear;
 }
 
 /* Scrollable Content Inset Shadow */
-.monaco-scrollable-element > .shadow {
+.xterm .monaco-scrollable-element > .shadow {
 	position: absolute;
 	display: none;
 }
-.monaco-scrollable-element > .shadow.top {
+.xterm .monaco-scrollable-element > .shadow.top {
 	display: block;
 	top: 0;
 	left: 3px;
 	height: 3px;
 	width: 100%;
-	box-shadow: var(--vscode-scrollbar-shadow, #0F0) 0 6px 6px -6px inset;
+	box-shadow: var(--vscode-scrollbar-shadow, #000) 0 6px 6px -6px inset;
 }
-.monaco-scrollable-element > .shadow.left {
+.xterm .monaco-scrollable-element > .shadow.left {
 	display: block;
 	top: 3px;
 	left: 0;
 	height: 100%;
 	width: 3px;
-	box-shadow: var(--vscode-scrollbar-shadow, #0F0) 6px 0 6px -6px inset;
+	box-shadow: var(--vscode-scrollbar-shadow, #000) 6px 0 6px -6px inset;
 }
-.monaco-scrollable-element > .shadow.top-left-corner {
+.xterm .monaco-scrollable-element > .shadow.top-left-corner {
 	display: block;
 	top: 0;
 	left: 0;
 	height: 3px;
 	width: 3px;
 }
-.monaco-scrollable-element > .shadow.top.left {
-	box-shadow: var(--vscode-scrollbar-shadow, #0F0) 6px 0 6px -6px inset;
+.xterm .monaco-scrollable-element > .shadow.top.left {
+	box-shadow: var(--vscode-scrollbar-shadow, #000) 6px 0 6px -6px inset;
 }
 
-.monaco-scrollable-element > .scrollbar > .slider {
-	background: var(--vscode-scrollbarSlider-background, #F00);
+.xterm .monaco-scrollable-element > .scrollbar > .slider {
+	background: var(--vscode-scrollbarSlider-background, #79797966);
 }
 
-.monaco-scrollable-element > .scrollbar > .slider:hover {
-	background: var(--vscode-scrollbarSlider-hoverBackground, #F66);
+.xterm .monaco-scrollable-element > .scrollbar > .slider:hover {
+	background: var(--vscode-scrollbarSlider-hoverBackground, #646464b3);
 }
 
-.monaco-scrollable-element > .scrollbar > .slider.active {
-	background: var(--vscode-scrollbarSlider-activeBackground, #FF6);
+.xterm .monaco-scrollable-element > .scrollbar > .slider.active {
+	background: var(--vscode-scrollbarSlider-activeBackground, #bfbfbf66);
 }
