@@ -18,7 +18,6 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   browser: IBrowser;
   buffer: IBuffer;
   linkifier: ILinkifier2 | undefined;
-  viewport: IViewport | undefined;
   options: Required<ITerminalOptions>;
 
   onBlur: IEvent<void>;

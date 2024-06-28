@@ -26,8 +26,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Linkifier } from './Linkifier';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
-import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal, IViewport } from 'browser/Types';
-import { Viewport } from 'browser/Viewport';
+import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal } from 'browser/Types';
 import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
 import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
@@ -59,7 +58,7 @@ import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
-import { ScrollbarVisibility, type INewScrollDimensions, type INewScrollPosition } from 'vs/base/common/scrollable';
+import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 
 export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -67,7 +66,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
   public screenElement: HTMLElement | undefined;
 
   private _document: Document | undefined;
-  private _viewportScrollArea: HTMLElement | undefined;
   private _viewportElement: HTMLElement | undefined;
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
@@ -120,7 +118,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
-  public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this.register(new MutableDisposable());
 
@@ -429,10 +426,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this._viewportElement.classList.add('xterm-viewport');
     fragment.appendChild(this._viewportElement);
 
-    this._viewportScrollArea = this._document.createElement('div');
-    this._viewportScrollArea.classList.add('xterm-scroll-area');
-    this._viewportElement.appendChild(this._viewportScrollArea);
-
     this.screenElement = this._document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
     this.register(addDisposableDomListener(this.screenElement, 'mousemove', (ev: MouseEvent) => this.updateCursorStyle(ev)));
@@ -505,14 +498,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this._renderService.setRenderer(this._createRenderer());
     }
 
-    this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
-    // this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
-    // this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
-    // this.register(this.viewport);
-
-    // HACK: Hide viewport while testing new scrollable element
-    this._viewportElement.style.display = 'none';
-
+    // TODO: Support smooth scroll
+    // TODO: Support scrollSensitivity
+    // TODO: Support fastScrollSensitivity
+    // TODO: Support fastScrollModifier?
     // TODO: overviewRulerWidth should deprecated in favor of scrollBarWidth
 
     const scrollableElement = new DomScrollableElement(this.screenElement, {
@@ -598,7 +587,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
         });
         microtaskQueued = true;
       }
-    }
+    };
     this.onResize(() => queue());
     this.onScroll((e) => queue(e));
 
@@ -609,7 +598,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.register(this.onResize(() => this._renderService!.handleResize(this.cols, this.rows)));
     this.register(this.onBlur(() => this._renderService!.handleBlur()));
     this.register(this.onFocus(() => this._renderService!.handleFocus()));
-    this.register(this._renderService.onDimensionsChange(() => this.viewport!.syncScrollArea()));
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,
@@ -628,11 +616,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
       this.textarea!.focus();
       this.textarea!.select();
     }));
-    this.register(this._onScroll.event(ev => {
-      this.viewport!.syncScrollArea();
-      this._selectionService!.refresh();
-    }));
-    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
+    this.register(this._onScroll.event(() => this._selectionService!.refresh()));
 
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
@@ -736,7 +720,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
           if (self._customWheelEventHandler && self._customWheelEventHandler(ev as WheelEvent) === false) {
             return false;
           }
-          const amount = self.viewport!.getLinesScrolled(ev as WheelEvent);
+          // TODO: Implement
+          const amount = 0;
+          // const amount = self.viewport!.getLinesScrolled(ev as WheelEvent);
 
           if (amount === 0) {
             return false;
@@ -902,7 +888,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
       if (!this.buffer.hasScrollback) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
         // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
-        const amount = this.viewport!.getLinesScrolled(ev);
+        // TODO: Impl
+        const amount = 0; // this.viewport!.getLinesScrolled(ev);
 
         // Do nothing if there's no vertical scroll
         if (amount === 0) {
@@ -921,23 +908,24 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
       // normal viewport scrolling
       // conditionally stop event, if the viewport still had rows to scroll within
-      if (this.viewport!.handleWheel(ev)) {
-        return this.cancel(ev);
-      }
+      // if (this.viewport!.handleWheel(ev)) {
+      //   return this.cancel(ev);
+      // }
     }, { passive: false }));
 
-    this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
-      if (this.coreMouseService.areMouseEventsActive) return;
-      this.viewport!.handleTouchStart(ev);
-      return this.cancel(ev);
-    }, { passive: true }));
+    // TODO: Make sure this.coreMouseService.areMouseEventsActive still works
+    // this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
+    //   if (this.coreMouseService.areMouseEventsActive) return;
+    //   this.viewport!.handleTouchStart(ev);
+    //   return this.cancel(ev);
+    // }, { passive: true }));
 
-    this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
-      if (this.coreMouseService.areMouseEventsActive) return;
-      if (!this.viewport!.handleTouchMove(ev)) {
-        return this.cancel(ev);
-      }
-    }, { passive: false }));
+    // this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
+    //   if (this.coreMouseService.areMouseEventsActive) return;
+    //   if (!this.viewport!.handleTouchMove(ev)) {
+    //     return this.cancel(ev);
+    //   }
+    // }, { passive: false }));
   }
 
 
@@ -976,8 +964,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     if (source === ScrollSource.VIEWPORT) {
       super.scrollLines(disp, suppressScrollEvent, source);
       this.refresh(0, this.rows - 1);
-    } else {
-      this.viewport?.scrollLines(disp);
     }
   }
 
@@ -1306,10 +1292,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   private _afterResize(x: number, y: number): void {
     this._charSizeService?.measure();
-
-    // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
-    // invalid location
-    this.viewport?.syncScrollArea(true);
   }
 
   /**
@@ -1332,7 +1314,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     // IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
     // scroll event and that the viewport's state will be valid for immediate writes.
     this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
-    this.viewport?.reset();
+    // TODO: Reset scrollable element?
     this.refresh(0, this.rows - 1);
   }
 
@@ -1357,7 +1339,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
     super.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
-    this.viewport?.reset();
+    // TODO: Reset scrollable element?
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
