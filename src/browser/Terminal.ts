@@ -58,9 +58,8 @@ import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } 
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
-import { findLast } from 'vs/base/common/arraysFind';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
-import { ScrollbarVisibility } from 'vs/base/common/scrollable';
+import { ScrollbarVisibility, type INewScrollDimensions, type INewScrollPosition } from 'vs/base/common/scrollable';
 
 export class Terminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -153,8 +152,6 @@ export class Terminal extends CoreTerminal implements ITerminal {
     options: Partial<ITerminalOptions> = {}
   ) {
     super(options);
-
-    console.log('last', findLast([1, 2, 4, 3], e => e > 2));
 
     this._setup();
 
@@ -509,9 +506,9 @@ export class Terminal extends CoreTerminal implements ITerminal {
     }
 
     this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
-    this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
-    this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
-    this.register(this.viewport);
+    // this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
+    // this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
+    // this.register(this.viewport);
 
     // HACK: Hide viewport while testing new scrollable element
     this._viewportElement.style.display = 'none';
@@ -521,11 +518,78 @@ export class Terminal extends CoreTerminal implements ITerminal {
       horizontal: ScrollbarVisibility.Hidden,
       useShadows: false
     });
-    scrollableElement.setScrollDimensions({
-      height: 1000,
-      scrollHeight: 10000
-    });
+    scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
     this.element.appendChild(scrollableElement.getDomNode());
+    let inSync = false;
+    // TODO: Ensure sync only happens once per frame
+    const sync = (ydisp: number = this._bufferService.buffer.ydisp): void => {
+      if (!this._renderService) {
+        return;
+      }
+      if (inSync) {
+        return;
+      }
+      inSync = true;
+
+      console.log('sync', {
+        height: this._renderService.dimensions.css.canvas.height,
+        scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length,
+        scrollTop: ydisp * this._renderService.dimensions.css.cell.height,
+        ydispParam: ydisp,
+        ydispBuffer: this._bufferService.buffer.ydisp
+      });
+      const newDims = {
+        height: this._renderService.dimensions.css.canvas.height,
+        scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length
+      };
+
+      // HACK: setScrollDimensions here can trigger a diff -1 onScroll to occur before setScrollPosition. onScroll should only fire once!
+      scrollableElement.setScrollDimensions(newDims);
+      scrollableElement.setScrollPosition({
+        scrollTop: ydisp * this._renderService.dimensions.css.cell.height
+      });
+      inSync = false;
+    };
+    let inScroll = false;
+    scrollableElement.onScroll(e => {
+      if (!this._renderService) {
+        return;
+      }
+      if (inScroll) {
+        return;
+      }
+      inScroll = true;
+      const newRow = Math.round(e.scrollTop / this._renderService.dimensions.css.cell.height);
+      const diff = newRow - this._bufferService.buffer.ydisp;
+      console.log('onScroll', {
+        ydisp: this._bufferService.buffer.ydisp,
+        newRow,
+        diff,
+        'e.scrollTop': e.scrollTop,
+        'cell.height': this._renderService.dimensions.css.cell.height
+      });
+      if (diff !== 0) {
+        this.scrollLines(diff, false, ScrollSource.VIEWPORT);
+      }
+      inScroll = false;
+    });
+    let microtaskQueued = false;
+    let lastE: number | undefined;
+    const queue = (e?: number): void => {
+      if (e) {
+        lastE = e;
+      }
+      if (!microtaskQueued) {
+        this._coreBrowserService?.window.requestAnimationFrame(() => {
+          sync(lastE);
+          microtaskQueued = false;
+          lastE = undefined;
+        });
+        microtaskQueued = true;
+      }
+    }
+    this.onResize(() => queue());
+    this.onScroll((e) => queue(e));
 
     this.register(this.onCursorMove(() => {
       this._renderService!.handleCursorMove();
