@@ -1,0 +1,72 @@
+{
+  // "extends": "../tsconfig-library-base",
+	"compilerOptions": {
+		"module": "amd",
+		"moduleResolution": "node",
+		"experimentalDecorators": true,
+		"noImplicitReturns": true,
+		"noImplicitOverride": true,
+		"noUnusedLocals": true,
+		"allowUnreachableCode": false,
+		"strict": true,
+		"exactOptionalPropertyTypes": false,
+		"useUnknownInCatchVariables": false,
+		"forceConsistentCasingInFileNames": true,
+		// "baseUrl": ".",
+		"paths": {
+			"vs/*": [
+				"./vs/*"
+			],
+			"vs/nls": [
+        "./vs/patches/nls"
+      ]
+		},
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"lib": [
+			"ES2022",
+			"DOM",
+			"DOM.Iterable",
+			"WebWorker.ImportScripts"
+		],
+		"esModuleInterop": true,
+		"removeComments": false,
+		"preserveConstEnums": true,
+		"sourceMap": false,
+		"allowJs": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		// "outDir": "../out/vs",
+		"types": [
+			"mocha",
+			"semver",
+			// "sinon",
+			// "winreg",
+			"trusted-types",
+			// "wicg-file-system-access"
+		],
+
+    "composite": true,
+    "outDir": "../../out",
+    "baseUrl": "../",
+
+	},
+	"include": [
+    "./**/*",
+  ],
+  "exclude": [
+    "**/electron-main",
+    "**/electron-sandbox",
+    "**/node",
+    "**/test",
+    "**/sandbox",
+    "**/worker",
+
+    // Exclude problematic files
+    "base/common/amd.ts",
+    "base/browser/defaultWorkerFactory.ts",
+    "base/common/jsonc.js",
+    "base/common/performance.js",
+    "base/common/marked/marked.js",
+  ]
+}
