@@ -3,119 +3,122 @@
  * @license MIT
  */
 
-import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
+import { IRenderService, IThemeService } from 'browser/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
-import { ScrollbarVisibility } from 'vs/base/common/scrollable';
+import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
+import { ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
 
 export class Viewport extends Disposable{
 
   protected _onRequestScrollLines = this.register(new EventEmitter<number>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
+  private _scrollableElement: DomScrollableElement;
+
+  private _queuedAnimationFrame?: number;
+  private _latestYDisp?: number;
+  private _isSyncing: boolean = false;
+  private _isHandlingScroll: boolean = false;
+  private _suppressOnScrollHandler: boolean = false;
+
   constructor(
     element: HTMLElement,
     screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
-    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IThemeService themeService: IThemeService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
 
     // TODO: Support smooth scroll
-    // TODO: Support scrollSensitivity
-    // TODO: Support fastScrollSensitivity
     // TODO: Support fastScrollModifier?
-    // TODO: overviewRulerWidth should deprecated in favor of scrollBarWidth
+    // TODO: overviewRulerWidth should deprecated in favor of scrollBarWidth?
 
-    const scrollableElement = new DomScrollableElement(screenElement, {
+    this._scrollableElement = this.register(new DomScrollableElement(screenElement, {
       vertical: ScrollbarVisibility.Auto,
       horizontal: ScrollbarVisibility.Hidden,
       useShadows: false,
-      // TODO: Over scrollBarWidth instead
-      verticalScrollbarSize: 14
-    });
-    scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
-    scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
-    element.appendChild(scrollableElement.getDomNode());
-    let inSync = false;
-    let suppressOnScrollEvent = false;
-    // TODO: Ensure sync only happens once per frame
-    const sync = (ydisp: number = this._bufferService.buffer.ydisp): void => {
-      if (!this._renderService) {
-        return;
-      }
-      if (inSync) {
-        return;
-      }
-      inSync = true;
+      mouseWheelSmoothScroll: true,
+      ...this._getMutableOptions()
+    }));
+    this.register(this._optionsService.onMultipleOptionChange([
+      'scrollSensitivity',
+      'fastScrollSensitivity',
+      'overviewRulerWidth'
+    ], () => this._scrollableElement.updateOptions(this._getMutableOptions())));
 
-      // console.log('sync', {
-      //   height: this._renderService.dimensions.css.canvas.height,
-      //   scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length,
-      //   scrollTop: ydisp * this._renderService.dimensions.css.cell.height,
-      //   ydispParam: ydisp,
-      //   ydispBuffer: this._bufferService.buffer.ydisp
-      // });
-      const newDims = {
-        height: this._renderService.dimensions.css.canvas.height,
-        scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length
-      };
+    this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
+    this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
+    element.appendChild(this._scrollableElement.getDomNode());
 
-      // Ignore any onScroll event that happens as a result of dimensions changing as this should
-      // never cause a scrollLines call, only setScrollPosition can do that.
-      suppressOnScrollEvent = true;
-      scrollableElement.setScrollDimensions(newDims);
-      suppressOnScrollEvent = false;
+    this.register(this._bufferService.onResize(() => this._queueSync()));
+    this.register(this._bufferService.onScroll(ydisp => this._queueSync(ydisp)));
 
-      scrollableElement.setScrollPosition({
-        scrollTop: ydisp * this._renderService.dimensions.css.cell.height
-      });
+    this.register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
+  }
 
-      inSync = false;
+  private _getMutableOptions(): ScrollableElementChangeOptions {
+    return {
+      mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
+      fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
+      verticalScrollbarSize: this._optionsService.rawOptions.overviewRulerWidth || 14
     };
-    let inScroll = false;
-    scrollableElement.onScroll(e => {
-      if (!this._renderService) {
-        return;
-      }
-      if (inScroll || suppressOnScrollEvent) {
-        return;
-      }
-      inScroll = true;
-      const newRow = Math.round(e.scrollTop / this._renderService.dimensions.css.cell.height);
-      const diff = newRow - this._bufferService.buffer.ydisp;
-      // console.log('onScroll', {
-      //   ydisp: this._bufferService.buffer.ydisp,
-      //   newRow,
-      //   diff,
-      //   'e.scrollTop': e.scrollTop,
-      //   'cell.height': this._renderService.dimensions.css.cell.height
-      // });
-      if (diff !== 0) {
-        this._onRequestScrollLines.fire(diff);
-      }
-      inScroll = false;
+  }
+
+  private _queueSync(ydisp?: number): void {
+    // Update state
+    if (ydisp !== undefined) {
+      this._latestYDisp = ydisp;
+    }
+
+    // Don't queue more than one callback
+    if (this._queuedAnimationFrame !== undefined) {
+      return;
+    }
+    this._queuedAnimationFrame = this._renderService.addRefreshCallback(() => this._sync(this._latestYDisp));
+    this._latestYDisp = undefined;
+    this._queuedAnimationFrame = undefined;
+  }
+
+  private _sync(ydisp: number = this._bufferService.buffer.ydisp): void {
+    if (!this._renderService || this._isSyncing) {
+      return;
+    }
+    this._isSyncing = true;
+
+    // Ignore any onScroll event that happens as a result of dimensions changing as this should
+    // never cause a scrollLines call, only setScrollPosition can do that.
+    this._suppressOnScrollHandler = true;
+    this._scrollableElement.setScrollDimensions({
+      height: this._renderService.dimensions.css.canvas.height,
+      scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length
     });
-    let microtaskQueued = false;
-    let lastE: number | undefined;
-    const queue = (e?: number): void => {
-      if (e) {
-        lastE = e;
-      }
-      if (!microtaskQueued) {
-        this._coreBrowserService?.window.requestAnimationFrame(() => {
-          sync(lastE);
-          microtaskQueued = false;
-          lastE = undefined;
-        });
-        microtaskQueued = true;
-      }
-    };
-    this._bufferService.onResize(() => queue());
-    this._bufferService.onScroll((e) => queue(e));
+    this._suppressOnScrollHandler = false;
+
+    this._scrollableElement.setScrollPosition({
+      scrollTop: ydisp * this._renderService.dimensions.css.cell.height
+    });
+
+    this._isSyncing = false;
+  }
+
+  private _handleScroll(e: ScrollEvent): void {
+    if (!this._renderService) {
+      return;
+    }
+    if (this._isHandlingScroll || this._suppressOnScrollHandler) {
+      return;
+    }
+    this._isHandlingScroll = true;
+    const newRow = Math.round(e.scrollTop / this._renderService.dimensions.css.cell.height);
+    const diff = newRow - this._bufferService.buffer.ydisp;
+    if (diff !== 0) {
+      this._onRequestScrollLines.fire(diff);
+    }
+    this._isHandlingScroll = false;
   }
 }
