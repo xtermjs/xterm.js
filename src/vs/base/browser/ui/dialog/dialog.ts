@@ -17,7 +17,7 @@ import { mnemonicButtonLabel } from 'vs/base/common/labels';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 // import 'vs/css!./dialog';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 
 export interface IDialogInputOptions {
 	readonly placeholder?: string;

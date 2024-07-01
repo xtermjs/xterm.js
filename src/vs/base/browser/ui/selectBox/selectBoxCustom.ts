@@ -22,7 +22,7 @@ import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { isMacintosh } from 'vs/base/common/platform';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 // import 'vs/css!./selectBoxCustom';
-import { localize } from 'vs/patches/nls';
+import { localize } from 'vs/nls';
 
 
 const $ = dom.$;

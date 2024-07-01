@@ -5,7 +5,7 @@
 
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 
 export interface ITelemetryData {
 	readonly from?: string;

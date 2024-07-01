@@ -7,7 +7,7 @@ import { getDefaultHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegateF
 import { IHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegate';
 import { Toggle } from 'vs/base/browser/ui/toggle/toggle';
 import { Codicon } from 'vs/base/common/codicons';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 
 export interface IFindInputToggleOpts {
 	readonly appendTitle: string;

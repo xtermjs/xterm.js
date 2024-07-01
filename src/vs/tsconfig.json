@@ -61,6 +61,7 @@
     "**/test",
     "**/sandbox",
     "**/worker",
+    "temp",
 
     // Exclude problematic files
     "base/common/amd.ts",

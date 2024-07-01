@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 import { IContextMenuProvider } from 'vs/base/browser/contextmenu';
 import { $, addDisposableListener, append, EventType, h } from 'vs/base/browser/dom';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';

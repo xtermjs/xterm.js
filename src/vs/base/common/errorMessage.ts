@@ -5,7 +5,7 @@
 
 import * as arrays from 'vs/base/common/arrays';
 import * as types from 'vs/base/common/types';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 import { IAction } from 'vs/base/common/actions';
 
 function exceptionToErrorMessage(exception: any, verbose: boolean): string {

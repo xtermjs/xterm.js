@@ -9,7 +9,7 @@ import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableEle
 import { KeyCode } from 'vs/base/common/keyCodes';
 import { Disposable } from 'vs/base/common/lifecycle';
 // import 'vs/css!./hoverWidget';
-import { localize } from 'vs/patches/nls';
+import { localize } from 'vs/nls';
 
 const $ = dom.$;
 

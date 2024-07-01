@@ -5,7 +5,7 @@
 
 import { Modifiers } from 'vs/base/common/keybindings';
 import { OperatingSystem } from 'vs/base/common/platform';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 
 export interface ModifierLabels {
 	readonly ctrlKey: string;

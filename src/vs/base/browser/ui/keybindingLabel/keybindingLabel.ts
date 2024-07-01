@@ -13,7 +13,7 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import { equals } from 'vs/base/common/objects';
 import { OperatingSystem } from 'vs/base/common/platform';
 // import 'vs/css!./keybindingLabel';
-import { localize } from 'vs/patches/nls';
+import { localize } from 'vs/nls';
 
 const $ = dom.$;
 

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from 'vs/patches/nls';
+import { localize } from 'vs/nls';
 
 const minute = 60;
 const hour = minute * 60;

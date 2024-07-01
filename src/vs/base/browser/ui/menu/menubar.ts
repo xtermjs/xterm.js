@@ -21,7 +21,7 @@ import { Disposable, DisposableStore, dispose, IDisposable } from 'vs/base/commo
 import { isMacintosh } from 'vs/base/common/platform';
 import * as strings from 'vs/base/common/strings';
 // import 'vs/css!./menubar';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 import { mainWindow } from 'vs/base/browser/window';
 
 const $ = DOM.$;

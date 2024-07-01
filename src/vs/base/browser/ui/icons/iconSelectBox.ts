@@ -11,7 +11,7 @@ import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableEle
 import { Emitter } from 'vs/base/common/event';
 import { IDisposable, DisposableStore, Disposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { ThemeIcon } from 'vs/base/common/themables';
-import { localize } from 'vs/patches/nls';
+import { localize } from 'vs/nls';
 import { IMatch } from 'vs/base/common/filters';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 import { HighlightedLabel } from 'vs/base/browser/ui/highlightedlabel/highlightedLabel';

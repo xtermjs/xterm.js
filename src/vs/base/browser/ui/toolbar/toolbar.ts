@@ -14,7 +14,7 @@ import { EventMultiplexer } from 'vs/base/common/event';
 import { ResolvedKeybinding } from 'vs/base/common/keybindings';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 // import 'vs/css!./toolbar';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 import { IHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegate';
 import { createInstantHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegateFactory';
 

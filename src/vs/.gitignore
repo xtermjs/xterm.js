@@ -1,3 +1,5 @@
+temp/
+
 # Tests
 base/test/
 base/**/test/

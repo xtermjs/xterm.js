@@ -15,7 +15,7 @@ import { Codicon } from 'vs/base/common/codicons';
 import { Emitter, Event } from 'vs/base/common/event';
 import { KeyCode } from 'vs/base/common/keyCodes';
 // import 'vs/css!./findInput';
-import * as nls from 'vs/patches/nls';
+import * as nls from 'vs/nls';
 import { getDefaultHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegateFactory';
 
 
