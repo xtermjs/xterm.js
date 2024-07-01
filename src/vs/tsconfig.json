@@ -55,15 +55,18 @@
     "./**/*",
   ],
   "exclude": [
+    // Update repo folder
+    "temp",
+
+    // Unwanted layers/modules
     "**/electron-main",
     "**/electron-sandbox",
     "**/node",
     "**/test",
     "**/sandbox",
     "**/worker",
-    "temp",
 
-    // Exclude problematic files
+    // Problematic files
     "base/common/amd.ts",
     "base/browser/defaultWorkerFactory.ts",
     "base/common/jsonc.js",
