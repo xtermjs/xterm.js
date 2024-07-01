@@ -33,7 +33,9 @@ const config = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      browser: path.resolve('./out/browser')
+      browser: path.resolve('./out/browser'),
+      "vs/base": path.resolve('./out/base'),
+      "vs/patches": path.resolve('./out/patches')
     }
   },
   output: {

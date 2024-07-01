@@ -42,7 +42,9 @@ const config = {
     extensions: [ '.tsx', '.ts', '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      browser: path.resolve('./out/browser')
+      browser: path.resolve('./out/browser'),
+      "vs/base": path.resolve('./out/base'),
+      "vs/patches": path.resolve('./out/patches')
     },
     fallback: {
       // The ligature modules contains fallbacks for node environments, we never want to browserify them

@@ -726,7 +726,7 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 
 function updateTerminalSize(): void {
   const width = autoResize ? '100%'
-    : (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
+    : (term._core._renderService.dimensions.css.canvas.width + 14).toString() + 'px';
   const height = autoResize ? '100%'
     : (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
   terminalContainer.style.width = width;
@@ -1155,7 +1155,7 @@ function addGraphemeClusters(): void {
 }
 
 function addDecoration(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRulerWidth'] = 14;
   const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
@@ -1170,7 +1170,7 @@ function addDecoration(): void {
 }
 
 function addOverviewRuler(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRulerWidth'] = 14;
   term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
   term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
   term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
