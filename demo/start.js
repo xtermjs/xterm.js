@@ -11,16 +11,16 @@ const startServer = require('./server.js');
 
 startServer();
 
-const compiler = webpack(clientConfig);
+// const compiler = webpack(clientConfig);
 
-compiler.watch({
-  aggregateTimeout: 300,
-  poll: undefined
-}, (err, stats) => {
-  if (err) {
-    console.error(err);
-  }
-  console.log(stats?.toString({
-    colors: true
-  }));
-});
+// compiler.watch({
+//   aggregateTimeout: 300,
+//   poll: undefined
+// }, (err, stats) => {
+//   if (err) {
+//     console.error(err);
+//   }
+//   console.log(stats?.toString({
+//     colors: true
+//   }));
+// });

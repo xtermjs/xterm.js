@@ -178,7 +178,7 @@ export interface ILinkifier2 extends IDisposable {
   readonly currentLink: ILinkWithState | undefined;
 }
 
-interface ILink {
+export interface ILink {
   range: IBufferRange;
   text: string;
   decorations?: ILinkDecorations;
@@ -188,7 +188,7 @@ interface ILink {
   dispose?(): void;
 }
 
-interface ILinkDecorations {
+export interface ILinkDecorations {
   pointerCursor: boolean;
   underline: boolean;
 }
@@ -198,7 +198,7 @@ export interface IBufferRange {
   end: IBufferCellPosition;
 }
 
-interface IBufferCellPosition {
+export interface IBufferCellPosition {
   x: number;
   y: number;
 }

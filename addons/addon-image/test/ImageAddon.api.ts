@@ -6,7 +6,6 @@
 import { assert } from 'chai';
 import { openTerminal, launchBrowser, pollFor } from '../../../out-test/api/TestUtils';
 import { Browser, Page } from '@playwright/test';
-import { IImageAddonOptions } from '../src/Types';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { readFileSync } from 'fs';
 
@@ -16,6 +15,19 @@ let browser: Browser;
 let page: Page;
 const width = 800;
 const height = 600;
+
+export interface IImageAddonOptions {
+  enableSizeReports: boolean;
+  pixelLimit: number;
+  storageLimit: number;
+  showPlaceholder: boolean;
+  sixelSupport: boolean;
+  sixelScrolling: boolean;
+  sixelPaletteLimit: number;
+  sixelSizeLimit: number;
+  iipSupport: boolean;
+  iipSizeLimit: number;
+}
 
 // eslint-disable-next-line
 declare const ImageAddon: {

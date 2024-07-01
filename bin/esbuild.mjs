@@ -128,7 +128,24 @@ if (config.isDemoClient) {
     ...bundleConfig,
     entryPoints: [`demo/client.ts`],
     outfile: 'demo/dist/client-bundle.js',
-    external: ['util', 'os', 'fs', 'path', 'stream']
+    external: ['util', 'os', 'fs', 'path', 'stream'],
+    alias: {
+      "@xterm/xterm": ".",
+      "@xterm/addon-attach": "./addons/addon-attach/lib/xterm-addon-attach.js",
+      "@xterm/addon-canvas": "./addons/addon-canvas/lib/xterm-addon-canvas.js",
+      "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/xterm-addon-clipboard.js",
+      "@xterm/addon-fit": "./addons/addon-fit/lib/xterm-addon-fit.js",
+      // "@xterm/addon-image": "./addons/addon-image/lib/xterm-addon-image.js",
+      // "@xterm/addon-ligatures": "./addons/addon-ligatures/lib/xterm-addon-ligatures.js",
+      "@xterm/addon-search": "./addons/addon-search/lib/xterm-addon-search.js",
+      "@xterm/addon-serialize": "./addons/addon-serialize/lib/xterm-addon-serialize.js",
+      "@xterm/addon-web-links": "./addons/addon-web-links/lib/xterm-addon-web-links.js",
+      "@xterm/addon-webgl": "./addons/addon-webgl/lib/xterm-addon-webgl.js",
+      "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/xterm-addon-unicode11.js",
+      "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/xterm-addon-unicode-graphemes.js",
+
+      "common/Lifecycle": "./src/common/Lifecycle.ts",
+    }
   }
 }
 
