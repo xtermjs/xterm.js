@@ -9,10 +9,11 @@
 /// <reference path="../typings/xterm.d.ts"/>
 
 
-// Use tsc version (yarn watch)
+// TODO: Move to regular import?
 import { LigaturesAddon } from '../addons/addon-ligatures/out-esbuild-dev/LigaturesAddon';
 
-// Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
+// DEBT: The image addon is not currently build with esbuild
+// HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
 import type { ImageAddonType, IImageAddonOptions } from '../addons/addon-image/out-tsc/src/ImageAddon';
 let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
@@ -26,13 +27,13 @@ import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 // import { ImageAddon } from '@xterm/addon-image';
+// import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
-// import { LigaturesAddon } from '@xterm/addon-ligatures';
 
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
