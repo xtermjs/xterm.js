@@ -3,6 +3,7 @@ node_modules/
 .lock-wscript
 lib/
 out-tsc/
+out-esbuild-dev/
 .nyc_output/
 Makefile.gyp
 *.Makefile

@@ -10,13 +10,13 @@
 
 
 // Use tsc version (yarn watch)
-import { LigaturesAddon } from '../addons/addon-ligatures/out/LigaturesAddon';
+import { LigaturesAddon } from '../addons/addon-ligatures/out-esbuild-dev/LigaturesAddon';
 
 // Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddonType, IImageAddonOptions } from '../addons/addon-image/out/ImageAddon';
+import type { ImageAddonType, IImageAddonOptions } from '../addons/addon-image/out-tsc/src/ImageAddon';
 let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
-  const imageAddon = require('../addons/addon-image/out/ImageAddon');
+  const imageAddon = require('../addons/addon-image/out-tsc/src/ImageAddon');
   ImageAddon = imageAddon.ImageAddon;
 }
 
