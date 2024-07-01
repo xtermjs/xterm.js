@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { openTerminal, launchBrowser, writeSync, getBrowserType } from '../../../out-test/api/TestUtils';
+import { openTerminal, launchBrowser, writeSync, getBrowserType } from '../../../out-tsc/test-api/TestUtils';
 import { Browser, BrowserContext, Page } from '@playwright/test';
 import { beforeEach } from 'mocha';
 

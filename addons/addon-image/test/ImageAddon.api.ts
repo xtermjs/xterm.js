@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { openTerminal, launchBrowser, pollFor } from '../../../out-test/api/TestUtils';
+import { openTerminal, launchBrowser, pollFor } from '../../../out-tsc/test-api/TestUtils';
 import { Browser, Page } from '@playwright/test';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { readFileSync } from 'fs';

@@ -6,7 +6,7 @@
       "es2015"
     ],
     "rootDir": ".",
-    "outDir": "../out-test",
+    "outDir": "../out-tsc/test",
     "sourceMap": true,
     "removeComments": true,
     "baseUrl": ".",
@@ -19,7 +19,7 @@
     "types": [
       "../../../node_modules/@types/mocha",
       "../../../node_modules/@types/node",
-      "../../../out-test/api/TestUtils"
+      "../../../out-tsc/test-api/TestUtils"
     ]
   },
   "include": [

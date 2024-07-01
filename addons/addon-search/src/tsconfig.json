@@ -7,7 +7,7 @@
       "es2021",
     ],
     "rootDir": ".",
-    "outDir": "../out",
+    "outDir": "../out-tsc/src",
     "sourceMap": true,
     "removeComments": true,
     "strict": true,

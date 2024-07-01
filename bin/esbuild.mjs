@@ -80,12 +80,12 @@ if (config.addon) {
   outConfig = {
     ...outConfig,
     entryPoints: [`addons/addon-${config.addon}/src/**/*.ts`],
-    outdir: `addons/addon-${config.addon}/out/`
+    outdir: `addons/addon-${config.addon}/out-esbuild-dev/`
   };
   outTestConfig = {
     ...outConfig,
     entryPoints: [`addons/addon-${config.addon}/test/**/*.ts`],
-    outdir: `addons/addon-${config.addon}/out-test/`
+    outdir: `addons/addon-${config.addon}/out-esbuild-dev/test/`
   };
 
   if (config.addon === 'ligatures') {
@@ -114,12 +114,12 @@ if (config.addon) {
   outConfig = {
     ...outConfig,
     entryPoints: ['src/**/*.ts'],
-    outdir: 'out/'
+    outdir: 'out-esbuild-dev/'
   };
   outTestConfig = {
     ...outConfig,
     entryPoints: ['test/**/*.ts'],
-    outdir: 'out-test/'
+    outdir: 'out-esbuild-dev/test/'
   };
 }
 

@@ -4,7 +4,7 @@
       "dom",
       "es2021",
     ],
-    "outDir": "../../out-test/benchmark",
+    "outDir": "../../out-tsc/test-benchmark",
     "types": [
       "../../node_modules/@types/node"
     ],

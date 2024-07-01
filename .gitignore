@@ -2,8 +2,7 @@ node_modules/
 *.swp
 .lock-wscript
 lib/
-out/
-out-test/
+out-tsc/
 .nyc_output/
 Makefile.gyp
 *.Makefile

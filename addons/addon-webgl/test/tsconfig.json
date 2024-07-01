@@ -6,7 +6,7 @@
       "es2021",
     ],
     "rootDir": ".",
-    "outDir": "../out-test",
+    "outDir": "../out-tsc/test",
     "sourceMap": true,
     "removeComments": true,
     "baseUrl": ".",
@@ -22,8 +22,8 @@
     "types": [
       "../../../node_modules/@types/node",
       "../../../node_modules/@lunapaint/png-codec",
-      "../../../out-test/playwright/TestUtils",
-      "../../../out-test/playwright/SharedRendererTests"
+      "../../../out-tsc/test-playwright/TestUtils",
+      "../../../out-tsc/test-playwright/SharedRendererTests"
     ]
   },
   "include": [

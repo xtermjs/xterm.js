@@ -5,7 +5,7 @@
       "dom",
       "es2021"
     ],
-    "outDir": "../../out",
+    "outDir": "../../out-tsc",
     "types": [
       "../../node_modules/@types/mocha"
     ],
