@@ -25,7 +25,3 @@ demo/dist/
 # dont commit benchmark folders
 .benchmark/
 timeline/
-
-# vs/base
-vs/base/test/
-vs/base/**/test/

@@ -1,0 +1,8 @@
+# Tests
+base/test/
+base/**/test/
+
+# Unwanted modules
+base/node/
+base/parts/
+base/worker/
