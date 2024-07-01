@@ -56,7 +56,13 @@
     "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/test/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/test/benchmark/*benchmark.js",
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
-    "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts"
+    "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts",
+
+    "esbuild": "node bin/esbuild_all.mjs",
+    "esbuild-dev": "node bin/esbuild_all.mjs --dev",
+    "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch",
+    "esbuild-demo": "node bin/esbuild.mjs --demo-client",
+    "esbuild-demo-watch": "node bin/esbuild.mjs --demo-client --watch"
   },
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
@@ -78,6 +84,7 @@
     "chai": "^4.3.4",
     "cross-env": "^7.0.3",
     "deep-equal": "^2.0.5",
+    "esbuild": "^0.22.0",
     "eslint": "^8.56.0",
     "eslint-plugin-jsdoc": "^46.9.1",
     "express": "^4.17.1",
