@@ -147,9 +147,10 @@ if (config.isDemoClient) {
       "common/Lifecycle": "./src/common/Lifecycle.ts",
     }
   }
-}
+};
 
 if (config.isWatch) {
+  console.log(`${bundleConfig.entryPoints?.[0]} config:`, JSON.stringify(bundleConfig));
   // TODO: This doesn't report errors?
   context(bundleConfig).then(e => e.watch());
   if (!skipOut) {
