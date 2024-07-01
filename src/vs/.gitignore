@@ -6,3 +6,6 @@ base/**/test/
 base/node/
 base/parts/
 base/worker/
+
+# Binary files
+base/browser/ui/codicons/codicon/codicon.ttf
