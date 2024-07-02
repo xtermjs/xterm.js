@@ -25,7 +25,7 @@ module.exports = {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
     alias: {
-      common: path.resolve('../../out/common')
+      common: path.resolve('../../out-tsc/common')
     }
   },
   output: {

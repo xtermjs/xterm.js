@@ -1313,7 +1313,7 @@ function getCellColor(ctx: ITestContext, col: number, row: number, position: Cel
 
 let frameDetails: { cols: number, rows: number, decoded: IImage32 } | undefined = undefined;
 async function getFrameDetails(ctx: ITestContext): Promise<{ cols: number, rows: number, decoded: IImage32 }> {
-  const screenshotOptions: LocatorScreenshotOptions | undefined = process.env.DEBUG ? { path: 'out-test/playwright/screenshot.png' } : undefined;
+  const screenshotOptions: LocatorScreenshotOptions | undefined = process.env.DEBUG ? { path: 'out-tsc/test/screenshot.png' } : undefined;
   const buffer = await ctx.page.locator('#terminal-container .xterm-screen').screenshot(screenshotOptions);
   frameDetails = {
     cols: await ctx.proxy.cols,

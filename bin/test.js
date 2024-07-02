@@ -13,8 +13,8 @@ const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out');
 
 let testFiles = [
-  './out/**/*test.js',
-  './addons/**/out/*test.js',
+  './out-tsc/**/*test.js',
+  './addons/**/out-tsc/*test.js',
 ];
 
 let flagArgs = [];

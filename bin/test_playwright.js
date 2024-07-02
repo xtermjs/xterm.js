@@ -18,9 +18,9 @@ while (argv.some(e => e.startsWith('--suite='))) {
 }
 
 let configs = [
-  { name: 'core', path: 'out-test/playwright/playwright.config.js' },
-  { name: 'addon-canvas', path: 'addons/addon-canvas/out-test/playwright.config.js' },
-  { name: 'addon-webgl', path: 'addons/addon-webgl/out-test/playwright.config.js' }
+  { name: 'core', path: 'out-tsc/test/playwright.config.js' },
+  { name: 'addon-canvas', path: 'addons/addon-canvas/out-tsc/test.config.js' },
+  { name: 'addon-webgl', path: 'addons/addon-webgl/out-tsc/test.config.js' }
 ];
 
 if (suiteFilter) {

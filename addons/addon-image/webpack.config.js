@@ -25,8 +25,8 @@ const addon = {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
     alias: {
-      common: path.resolve('../../out/common'),
-      browser: path.resolve('../../out/browser')
+      common: path.resolve('../../out-tsc/common'),
+      browser: path.resolve('../../out-tsc/browser')
     }
   },
   output: {
