@@ -34,6 +34,28 @@ const prodOptions = {
   minify: true,
   treeShaking: true,
   logLevel: 'debug',
+  legalComments: 'none',
+  // TODO: Mangling private and protected properties will reduce bundle size quite a bit, we must
+  //       make sure we don't cast privates to `any` in order to prevent regressions.
+  //mangleProps: /_.+/,
+  banner: {
+    js: `/**
+ * Copyright (c) 2014-2024 The xterm.js authors. All rights reserved.
+ * @license MIT
+ *
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
+ * @license MIT
+ *
+ * Originally forked from (with the author's permission):
+ *   Fabrice Bellard's javascript vt100 for jslinux:
+ *   http://bellard.org/jslinux/
+ *   Copyright (c) 2011 Fabrice Bellard
+ */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/`
+  }
   // mangleProps: /_.+/,
 };
 
