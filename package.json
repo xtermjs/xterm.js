@@ -16,6 +16,16 @@
     "start": "node demo/start",
     "build-demo": "webpack --config ./demo/webpack.config.js",
 
+    "build": "npm run tsc",
+    "watch": "npm run tsc-watch",
+    "tsc": "tsc -b ./tsconfig.all.json",
+    "tsc-watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
+
+    "esbuild": "node bin/esbuild_all.mjs",
+    "esbuild-watch": "node bin/esbuild_all.mjs --watch",
+    "esbuild-package": "node bin/esbuild_all.mjs --prod",
+    "esbuild-package-watch": "node bin/esbuild_all.mjs --prod --watch",
+
     "test": "npm run test-unit",
     "posttest": "npm run lint",
 
@@ -37,20 +47,12 @@
     "test-playwright-webkit": "node ./bin/test_playwright.js --workers=75% \"--project=WebKit\"",
     "test-playwright-debug": "node ./bin/test_playwright.js  --workers=1 --headed --timeout=30000",
 
-    "build": "tsc -b ./tsconfig.all.json",
-    "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
-
     "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
     "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/test/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/test/benchmark/*benchmark.js",
 
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts",
-
-    "esbuild": "node bin/esbuild_all.mjs",
-    "esbuild-watch": "node bin/esbuild_all.mjs --watch",
-    "esbuild-package": "node bin/esbuild_all.mjs --prod",
-    "esbuild-package-watch": "node bin/esbuild_all.mjs --prod --watch",
 
     "prepackage": "npm run build",
     "package": "webpack",

@@ -35,7 +35,7 @@
     {
       "label": "tsc-watch",
       "type": "npm",
-      "script": "watch",
+      "script": "tsc-watch",
       "group": "build",
       "isBackground": true,
       "problemMatcher": "$tsc-watch",
