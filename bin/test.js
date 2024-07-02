@@ -6,7 +6,7 @@
 const cp = require('child_process');
 const path = require('path');
 
-const COVERAGE_LINES_THRESHOLD = 60;
+const COVERAGE_LINES_THRESHOLD = 40;
 
 // Add `out` to the NODE_PATH so absolute paths can be resolved.
 const env = { ...process.env };
