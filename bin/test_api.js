@@ -50,6 +50,7 @@ server.stdout.on('data', (data) => {
       [...testFiles, ...flagArgs], {
         cwd: path.resolve(__dirname, '..'),
         env,
+        shell: true,
         stdio: 'inherit'
       }
     );
@@ -61,7 +62,10 @@ server.stdout.on('data', (data) => {
 
     server.kill();
 
-    process.exit(run.status);
+    if (run.error) {
+      console.error(run.error);
+    }
+    process.exit(run.status ?? -1);
   }
 });
 
