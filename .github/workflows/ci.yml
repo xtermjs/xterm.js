@@ -19,8 +19,10 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies
       run: yarn --frozen-lockfile
-    - name: Build
+    - name: Setup and tsc build
       run: yarn setup
+    - name: Esbuild build
+      run: yarn esbuild
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
