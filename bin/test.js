@@ -10,11 +10,14 @@ const COVERAGE_LINES_THRESHOLD = 60;
 
 // Add `out` to the NODE_PATH so absolute paths can be resolved.
 const env = { ...process.env };
-env.NODE_PATH = path.resolve(__dirname, '../out');
+env.NODE_PATH = path.resolve(__dirname, '../out-tsc');
 
 let testFiles = [
-  './out-tsc/**/*test.js',
-  './addons/**/out-tsc/*test.js',
+  // TODO: Set up a browser-based test runner
+  // './out-tsc/browser/**/*test.js',
+  './out-tsc/common/**/*test.js',
+  './out-tsc/headless/**/*test.js',
+  // './addons/**/out-tsc/src/*test.js',
 ];
 
 let flagArgs = [];
@@ -44,7 +47,8 @@ if (checkCoverage) {
     {
       cwd: path.resolve(__dirname, '..'),
       env,
-      stdio: 'inherit'
+      shell: true,
+      stdio: 'inherit',
     }
   );
   process.exit(run.status);
@@ -56,7 +60,8 @@ const run = cp.spawnSync(
   {
     cwd: path.resolve(__dirname, '..'),
     env,
-    stdio: 'inherit'
+    shell: true,
+    stdio: 'inherit',
   }
 );
 
@@ -64,4 +69,8 @@ function npmBinScript(script) {
   return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ? `${script}.cmd` : script));
 }
 
-process.exit(run.status);
+if (run.error) {
+  console.error(run.error);
+}
+
+process.exit(run.status ?? -1);
