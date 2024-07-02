@@ -9,7 +9,7 @@ const addonName = 'Unicode11Addon';
 const mainFile = 'addon-unicode11.js';
 
 module.exports = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [

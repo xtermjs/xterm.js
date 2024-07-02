@@ -47,7 +47,7 @@
 		],
 
     "composite": true,
-    "outDir": "../../out",
+    "outDir": "../../out-tsc",
     "baseUrl": "../",
 
 	},

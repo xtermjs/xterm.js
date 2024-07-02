@@ -9,7 +9,7 @@ const addonName = 'FitAddon';
 const mainFile = 'addon-fit.js';
 
 module.exports = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [

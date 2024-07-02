@@ -9,7 +9,7 @@ const addonName = 'ImageAddon';
 const mainFile = 'addon-image.js';
 
 const addon = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [

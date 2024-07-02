@@ -21,7 +21,10 @@ const config = {
 const commonOptions = {
   format: 'esm',
   target: 'es2015', // TODO: Upgrade
-  logLevel: 'info'
+  logLevel: 'info',
+  keepNames: true,
+  minify: false,
+  chunkNames: 'hello'
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -31,7 +34,10 @@ const devOptions = {
 
 /** @type {esbuild.BuildOptions} */
 const prodOptions = {
-  minify: true
+  minify: true,
+  treeShaking: true,
+  logLevel: 'debug',
+  // mangleProps: /_.+/,
 };
 
 /**
@@ -149,8 +155,8 @@ if (config.isDemoClient) {
   }
 };
 
+console.log(`${bundleConfig.entryPoints?.[0]} config:`, JSON.stringify(bundleConfig));
 if (config.isWatch) {
-  console.log(`${bundleConfig.entryPoints?.[0]} config:`, JSON.stringify(bundleConfig));
   // TODO: This doesn't report errors?
   context(bundleConfig).then(e => e.watch());
   if (!skipOut) {

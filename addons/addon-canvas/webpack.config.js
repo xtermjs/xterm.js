@@ -9,7 +9,7 @@ const addonName = 'CanvasAddon';
 const mainFile = 'addon-canvas.js';
 
 module.exports = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [

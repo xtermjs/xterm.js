@@ -9,7 +9,7 @@ const addonName = 'ClipboardAddon';
 const mainFile = 'addon-clipboard.js';
 
 module.exports = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [

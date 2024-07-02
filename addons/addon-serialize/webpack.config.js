@@ -9,7 +9,7 @@ const addonName = 'SerializeAddon';
 const mainFile = 'addon-serialize.js';
 
 module.exports = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [
