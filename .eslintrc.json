@@ -44,12 +44,14 @@
   },
   "ignorePatterns": [
     "addons/*/src/third-party/*.ts",
-    "out/*",
-    "out-test/*",
+    "out-esbuild/*",
+    "out-tsc/*",
+    "src/vs/*",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
-    "**/*.js"
+    "**/*.js",
+    "**/*.mjs"
   ],
   "plugins": [
     "@typescript-eslint",

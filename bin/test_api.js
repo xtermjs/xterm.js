@@ -12,8 +12,8 @@ const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out');
 
 let testFiles = [
-  './addons/**/out-test/*api.js',
-  './out-test/**/*api.js',
+  './addons/**/out-tsc/*api.js',
+  './out-tsc/**/*api.js',
 ];
 
 

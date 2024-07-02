@@ -5,14 +5,20 @@
       "es2015",
       "es2016.Array.Include"
     ],
-    "outDir": "../../out",
+    "outDir": "../../out-tsc",
     "types": [
       "../../node_modules/@types/mocha"
     ],
-    "baseUrl": ".."
+    "baseUrl": "..",
+    "paths": {
+      "vs/*": [ "./vs/*" ]
+    }
   },
   "include": [
     "./**/*",
     "../../typings/xterm.d.ts"
+  ],
+  "references": [
+    { "path": "../vs" }
   ]
 }

@@ -8,28 +8,19 @@
     "showReuseMessage": true
   },
   "tasks": [
+    // Compound tasks
     {
-      "type": "npm",
-      "script": "test",
-      "group":{
-        "kind": "test",
+      "label": "Development",
+      "dependsOn": ["demo-server", "tsc-watch", "esbuild-watch"],
+      "group": {
+        "kind": "build",
         "isDefault": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "watch",
-      "type": "npm",
-      "script": "watch",
-      "group": "build",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch",
-      "presentation": {
-        "group": "vscode"
       }
     },
+
+    // Demo
     {
-      "label": "start",
+      "label": "demo-server",
       "type": "npm",
       "script": "start",
       "group": "build",
@@ -39,36 +30,40 @@
         "group": "vscode"
       }
     },
+
+    // Build
     {
-      "label": "Start demo",
-      "dependsOn": ["start", "watch"],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "label": "tsc-watch",
+      "type": "npm",
+      "script": "tsc-watch",
+      "group": "build",
       "isBackground": true,
-      "problemMatcher": {
-        "owner": "typescript",
-        "fileLocation": [
-          "relative",
-          "${workspaceFolder}"
-        ],
-        "pattern": [
-          {
-            "regexp": "^([^\\\\s].*)\\\\((\\\\d+,\\\\d+)\\\\):\\\\s*(.*)$",
-            "file": 1,
-            "location": 2,
-            "message": 3
-          }
-        ],
-        "background": {
-          "beginsPattern": "assets by",
-          "endsPattern": "webpack \\d+\\.\\d+\\.\\d+ compiled successfully"
-        }
-      },
+      "problemMatcher": "$tsc-watch",
       "presentation": {
         "group": "vscode"
       }
-    }
+    },
+    {
+      "label": "esbuild-watch",
+      "type": "npm",
+      "script": "esbuild-watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$esbuild-watch",
+      "presentation": {
+        "group": "vscode"
+      }
+    },
+
+    // Test
+    {
+      "type": "npm",
+      "script": "test",
+      "group":{
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
   ]
 }

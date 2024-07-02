@@ -9,7 +9,7 @@ const addonName = 'ImageAddon';
 const mainFile = 'addon-image.js';
 
 const addon = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [
@@ -25,8 +25,8 @@ const addon = {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
     alias: {
-      common: path.resolve('../../out/common'),
-      browser: path.resolve('../../out/browser')
+      common: path.resolve('../../out-tsc/common'),
+      browser: path.resolve('../../out-tsc/browser')
     }
   },
   output: {

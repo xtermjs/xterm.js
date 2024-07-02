@@ -13,13 +13,13 @@
       "runtimeArgs": [
         "--colors",
         "--recursive",
-        "${workspaceRoot}/out/**/*.test.js"
+        "${workspaceRoot}/out-tsc/**/*.test.js"
       ],
       "env": {
         "NODE_PATH": "${workspaceRoot}/out"
       },
       "sourceMaps": true,
-      "outFiles": [ "${workspaceRoot}/out/**/*.js" ],
+      "outFiles": [ "${workspaceRoot}/out-tsc/**/*.js" ],
       "internalConsoleOptions": "openOnSessionStart"
     },
     {
@@ -34,7 +34,7 @@
       "runtimeArgs": [
         "--colors",
         "--recursive",
-        "${workspaceRoot}/out/**/*.api.js"
+        "${workspaceRoot}/out-tsc/**/*.api.js"
       ],
       "sourceMaps": true,
       "outFiles": [ "${workspaceRoot}/lib/**/*.js" ],

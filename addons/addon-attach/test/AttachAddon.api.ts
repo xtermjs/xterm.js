@@ -4,7 +4,7 @@
  */
 
 import WebSocket = require('ws');
-import { openTerminal, pollFor, launchBrowser } from '../../../out-test/api/TestUtils';
+import { openTerminal, pollFor, launchBrowser } from '../../../out-tsc/test-api/TestUtils';
 import { Browser, Page } from '@playwright/test';
 
 const APP = 'http://127.0.0.1:3001/test';

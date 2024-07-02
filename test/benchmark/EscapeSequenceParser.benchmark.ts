@@ -8,7 +8,7 @@ import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { IDcsHandler, IOscHandler, IParams } from 'common/parser/Types';
 import { OscHandler } from 'common/parser/OscParser';
-import { DcsHandler } from '../../out/common/parser/DcsParser';
+import { DcsHandler } from '../../out-tsc/common/parser/DcsParser';
 
 const SIZE = 5000000;
 

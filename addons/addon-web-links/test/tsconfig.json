@@ -6,7 +6,7 @@
       "es2015"
     ],
     "rootDir": ".",
-    "outDir": "../out-test",
+    "outDir": "../out-tsc/test",
     "sourceMap": true,
     "removeComments": true,
     "strict": true,

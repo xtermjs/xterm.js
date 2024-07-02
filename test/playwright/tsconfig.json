@@ -5,7 +5,7 @@
       "es6"
     ],
     "rootDir": ".",
-    "outDir": "../../out-test/playwright",
+    "outDir": "../../out-tsc/test-playwright",
     "types": [
       "../../node_modules/@types/node",
       "../../node_modules/@lunapaint/png-codec"

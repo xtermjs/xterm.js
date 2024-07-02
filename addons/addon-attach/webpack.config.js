@@ -9,7 +9,7 @@ const addonName = 'AttachAddon';
 const mainFile = 'addon-attach.js';
 
 module.exports = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [

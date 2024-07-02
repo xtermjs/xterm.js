@@ -19,7 +19,7 @@
     "prepackage": "npm run build",
     "package": "webpack",
     "pretest": "npm run build",
-    "test": "nyc mocha out/**/*.test.js",
+    "test": "nyc mocha out-tsc/**/*.test.js",
     "prepublish": "npm run package"
   },
   "keywords": [

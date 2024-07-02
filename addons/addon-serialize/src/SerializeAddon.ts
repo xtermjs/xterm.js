@@ -7,7 +7,7 @@
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
-import { DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
+import { DEFAULT_ANSI_COLORS } from 'browser/Types';
 import { IAttributeData, IColor } from 'common/Types';
 
 function constrain(value: number, low: number, high: number): number {

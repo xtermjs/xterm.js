@@ -11,7 +11,7 @@ import type { ICoreTerminal, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
 import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
-import { EventEmitter } from '../../out/common/EventEmitter';
+import { EventEmitter } from '../../out-tsc/common/EventEmitter';
 
 export interface ITestContext {
   browser: Browser;

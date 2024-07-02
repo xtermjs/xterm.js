@@ -9,7 +9,7 @@ const addonName = 'UnicodeGraphemesAddon';
 const mainFile = 'addon-unicode-graphemes.js';
 
 module.exports = {
-  entry: `./out/${addonName}.js`,
+  entry: `./out-tsc/src/${addonName}.js`,
   devtool: 'source-map',
   module: {
     rules: [
@@ -25,7 +25,7 @@ module.exports = {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
     alias: {
-      common: path.resolve('../../out/common')
+      common: path.resolve('../../out-tsc/common')
     }
   },
   output: {

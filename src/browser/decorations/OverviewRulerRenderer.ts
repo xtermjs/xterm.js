@@ -118,8 +118,8 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _refreshDrawConstants(): void {
     // width
-    const outerWidth = Math.floor(this._canvas.width / 3);
-    const innerWidth = Math.ceil(this._canvas.width / 3);
+    const outerWidth = Math.floor((this._canvas.width - 1) / 3);
+    const innerWidth = Math.ceil((this._canvas.width - 1) / 3);
     drawWidth.full = this._canvas.width;
     drawWidth.left = outerWidth;
     drawWidth.center = innerWidth;
@@ -127,10 +127,10 @@ export class OverviewRulerRenderer extends Disposable {
     // height
     this._refreshDrawHeightConstants();
     // x
-    drawX.full = 0;
-    drawX.left = 0;
-    drawX.center = drawWidth.left;
-    drawX.right = drawWidth.left + drawWidth.center;
+    drawX.full = 1;
+    drawX.left = 1;
+    drawX.center = 1 + drawWidth.left;
+    drawX.right = 1 + drawWidth.left + drawWidth.center;
   }
 
   private _refreshDrawHeightConstants(): void {
@@ -173,6 +173,7 @@ export class OverviewRulerRenderer extends Disposable {
       this._colorZoneStore.addDecoration(decoration);
     }
     this._ctx.lineWidth = 1;
+    this._renderRulerOutline();
     const zones = this._colorZoneStore.zones;
     for (const zone of zones) {
       if (zone.position !== 'full') {
@@ -186,6 +187,12 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._shouldUpdateDimensions = false;
     this._shouldUpdateAnchor = false;
+  }
+
+  private _renderRulerOutline(): void {
+    // TODO: Support customizing the color
+    this._ctx.fillStyle = '#000';
+    this._ctx.fillRect(0, 0, 1, this._canvas.height);
   }
 
   private _renderColorZone(zone: IColorZone): void {

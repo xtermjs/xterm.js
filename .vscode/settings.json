@@ -6,11 +6,11 @@
   "typescript.preferences.quoteStyle": "single",
   "mochaExplorer.envPath": ".mocha.env",
   "mochaExplorer.files": [
-    "out/**/*.test.js",
-    "addons/**/out/*.test.js"
+    "out-tsc/**/*.test.js",
+    "addons/**/out-tsc/*.test.js"
   ],
   "mochaExplorer.watch": [
-    "out/**/*.js",
-    "addons/**/out/*.js"
+    "out-tsc/**/*.js",
+    "addons/**/out-tsc/*.js"
   ]
 }

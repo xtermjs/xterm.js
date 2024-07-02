@@ -3,7 +3,7 @@
     "target": "es2017",
     "module": "commonjs",
     "sourceMap": true,
-    "outDir": "../out",
+    "outDir": "../out-tsc/src",
     "rootDir": ".",
     "strict": true,
     "noUnusedLocals": true,
