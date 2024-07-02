@@ -3,20 +3,16 @@
  * @license MIT
  */
 
-import { deepStrictEqual, strictEqual } from 'assert';
-import { ITestContext, createTestContext, openTerminal, timeout } from '../../../out-test/playwright/TestUtils';
 import test from '@playwright/test';
+import { deepStrictEqual, strictEqual } from 'assert';
 import { readFile } from 'fs';
 import { resolve } from 'path';
+import { ITestContext, createTestContext, openTerminal, timeout } from '../../../out-test/playwright/TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
   await openTerminal(ctx);
-  await ctx.page.evaluate(`
-    window.addon = new window.SearchAddon();
-    window.term.loadAddon(window.addon);
-  `);
 });
 test.afterAll(async () => await ctx.page.close());
 
