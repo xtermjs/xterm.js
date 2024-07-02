@@ -9,7 +9,7 @@ import { build, context, default as esbuild } from 'esbuild';
 import { argv } from 'process';
 
 const config = {
-  isDev: argv.includes('--dev'),
+  isProd: argv.includes('--prod'),
   isWatch: argv.includes('--watch'),
   isDemoClient: argv.includes('--demo-client'),
   addon: argv.find(e => e.startsWith('--addon='))?.replace(/^--addon=/, ''),
@@ -81,7 +81,7 @@ function getAddonEntryPoint(addon) {
 let bundleConfig = {
   bundle: true,
   ...commonOptions,
-  ...(config.isDev ? devOptions : prodOptions)
+  ...(config.isProd ? prodOptions : devOptions)
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -105,12 +105,12 @@ if (config.addon) {
   outConfig = {
     ...outConfig,
     entryPoints: [`addons/addon-${config.addon}/src/**/*.ts`],
-    outdir: `addons/addon-${config.addon}/out-esbuild-dev/`
+    outdir: `addons/addon-${config.addon}/out-esbuild/`
   };
   outTestConfig = {
     ...outConfig,
     entryPoints: [`addons/addon-${config.addon}/test/**/*.ts`],
-    outdir: `addons/addon-${config.addon}/out-esbuild-dev/test/`
+    outdir: `addons/addon-${config.addon}/out-esbuild/test/`
   };
 
   if (config.addon === 'ligatures') {
@@ -139,12 +139,12 @@ if (config.addon) {
   outConfig = {
     ...outConfig,
     entryPoints: ['src/**/*.ts'],
-    outdir: 'out-esbuild-dev/'
+    outdir: 'out-esbuild/'
   };
   outTestConfig = {
     ...outConfig,
     entryPoints: ['test/**/*.ts'],
-    outdir: 'out-esbuild-dev/test/'
+    outdir: 'out-esbuild/test/'
   };
 }
 

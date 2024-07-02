@@ -23,46 +23,54 @@
     "xterm"
   ],
   "scripts": {
-    "prepackage": "npm run build",
-    "package": "webpack",
-    "package-headless": "webpack --config ./webpack.config.headless.js",
-    "postpackage-headless": "node ./bin/package_headless.js",
+    "setup": "npm run build",
+    "presetup": "npm run install-addons",
+    "install-addons": "node ./bin/install-addons.js",
+
     "start": "node demo/start",
     "build-demo": "webpack --config ./demo/webpack.config.js",
-    "lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts src/ addons/",
-    "lint-api": "eslint --no-eslintrc -c .eslintrc.json.typings --max-warnings 0 --no-ignore --ext .d.ts typings/",
+
     "test": "npm run test-unit",
     "posttest": "npm run lint",
+
+    "lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts src/ addons/",
+    "lint-api": "eslint --no-eslintrc -c .eslintrc.json.typings --max-warnings 0 --no-ignore --ext .d.ts typings/",
+
+    "test-unit": "node ./bin/test.js",
+    "test-unit-coverage": "node ./bin/test.js --coverage",
+    "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
+
     "test-api": "npm run test-api-chromium",
     "test-api-chromium": "node ./bin/test_api.js --browser=chromium --timeout=20000",
     "test-api-firefox": "node ./bin/test_api.js --browser=firefox --timeout=20000",
     "test-api-webkit": "node ./bin/test_api.js --browser=webkit --timeout=20000",
+
     "test-playwright": "node ./bin/test_playwright.js --workers=75%",
     "test-playwright-chromium": "node ./bin/test_playwright.js --workers=75% \"--project=Chrome Stable\"",
     "test-playwright-firefox": "node ./bin/test_playwright.js --workers=75% \"--project=Firefox Stable\"",
     "test-playwright-webkit": "node ./bin/test_playwright.js --workers=75% \"--project=WebKit\"",
     "test-playwright-debug": "node ./bin/test_playwright.js  --workers=1 --headed --timeout=30000",
-    "test-unit": "node ./bin/test.js",
-    "test-unit-coverage": "node ./bin/test.js --coverage",
-    "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
+
     "build": "tsc -b ./tsconfig.all.json",
-    "install-addons": "node ./bin/install-addons.js",
-    "presetup": "npm run install-addons",
-    "setup": "npm run build",
-    "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
+
     "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
     "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/test/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/test/benchmark/*benchmark.js",
+
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts",
 
-    "esbuild-package": "node bin/esbuild_all.mjs",
-    "esbuild-package-watch": "node bin/esbuild_all.mjs --watch",
-    "esbuild-dev": "node bin/esbuild_all.mjs --dev",
-    "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch",
-    "esbuild-demo": "node bin/esbuild.mjs --demo-client",
-    "esbuild-demo-watch": "node bin/esbuild.mjs --demo-client --watch"
+    "esbuild": "node bin/esbuild_all.mjs",
+    "esbuild-watch": "node bin/esbuild_all.mjs --watch",
+    "esbuild-package": "node bin/esbuild_all.mjs --prod",
+    "esbuild-package-watch": "node bin/esbuild_all.mjs --prod --watch",
+
+    "prepackage": "npm run build",
+    "package": "webpack",
+    "package-headless": "webpack --config ./webpack.config.headless.js",
+    "postpackage-headless": "node ./bin/package_headless.js",
+    "prepublishOnly": "npm run package"
   },
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",

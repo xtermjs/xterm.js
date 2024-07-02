@@ -10,7 +10,7 @@
 
 
 // TODO: Move to regular import?
-import { LigaturesAddon } from '../addons/addon-ligatures/out-esbuild-dev/LigaturesAddon';
+import { LigaturesAddon } from '../addons/addon-ligatures/out-esbuild/LigaturesAddon';
 
 // DEBT: The image addon is not currently build with esbuild
 // HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
