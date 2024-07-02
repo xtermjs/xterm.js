@@ -304,14 +304,6 @@ class FileAccessImpl {
 
 		return uri;
 	}
-
-	private toUri(uriOrModule: URI | string, moduleIdToUrl: { toUrl(moduleId: string): string }): URI {
-		if (URI.isUri(uriOrModule)) {
-			return uriOrModule;
-		}
-
-		return URI.parse(moduleIdToUrl.toUrl(uriOrModule));
-	}
 }
 
 export const FileAccess = new FileAccessImpl();

@@ -58,7 +58,8 @@
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
     "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts",
 
-    "esbuild": "node bin/esbuild_all.mjs",
+    "esbuild-package": "node bin/esbuild_all.mjs",
+    "esbuild-package-watch": "node bin/esbuild_all.mjs --watch",
     "esbuild-dev": "node bin/esbuild_all.mjs --dev",
     "esbuild-dev-watch": "node bin/esbuild_all.mjs --dev --watch",
     "esbuild-demo": "node bin/esbuild.mjs --demo-client",
