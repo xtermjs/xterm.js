@@ -5,22 +5,6 @@
 
 // @ts-check
 
-const clientConfig = require('./webpack.config');
-const webpack = require('webpack');
 const startServer = require('./server.js');
 
 startServer();
-
-// const compiler = webpack(clientConfig);
-
-// compiler.watch({
-//   aggregateTimeout: 300,
-//   poll: undefined
-// }, (err, stats) => {
-//   if (err) {
-//     console.error(err);
-//   }
-//   console.log(stats?.toString({
-//     colors: true
-//   }));
-// });
