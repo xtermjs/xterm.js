@@ -7,21 +7,7 @@
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
-  "keywords": [
-    "cli",
-    "command-line",
-    "console",
-    "pty",
-    "shell",
-    "ssh",
-    "styles",
-    "terminal-emulator",
-    "terminal",
-    "tty",
-    "vt100",
-    "webgl",
-    "xterm"
-  ],
+  "keywords": ["cli", "command-line", "console", "pty", "shell", "ssh", "styles", "terminal-emulator", "terminal", "tty", "vt100", "webgl", "xterm"],
   "scripts": {
     "setup": "npm run build",
     "presetup": "npm run install-addons",
