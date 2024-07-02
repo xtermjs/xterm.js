@@ -87,48 +87,6 @@ export function findFirstIdxMonotonousOrArrLen<T>(array: readonly T[], predicate
 	return i;
 }
 
-export function findFirstIdxMonotonous<T>(array: readonly T[], predicate: (item: T) => boolean, startIdx = 0, endIdxEx = array.length): number {
-	const idx = findFirstIdxMonotonousOrArrLen(array, predicate, startIdx, endIdxEx);
-	return idx === array.length ? -1 : idx;
-}
-
-/**
- * Use this when
- * * You have a sorted array
- * * You query this array with a monotonous predicate to find the last item that has a certain property.
- * * You query this array multiple times with monotonous predicates that get weaker and weaker.
- */
-export class MonotonousArray<T> {
-	public static assertInvariants = false;
-
-	private _findLastMonotonousLastIdx = 0;
-	private _prevFindLastPredicate: ((item: T) => boolean) | undefined;
-
-	constructor(private readonly _array: readonly T[]) {
-	}
-
-	/**
-	 * The predicate must be monotonous, i.e. `arr.map(predicate)` must be like `[true, ..., true, false, ..., false]`!
-	 * For subsequent calls, current predicate must be weaker than (or equal to) the previous predicate, i.e. more entries must be `true`.
-	 */
-	findLastMonotonous(predicate: (item: T) => boolean): T | undefined {
-		if (MonotonousArray.assertInvariants) {
-			if (this._prevFindLastPredicate) {
-				for (const item of this._array) {
-					if (this._prevFindLastPredicate(item) && !predicate(item)) {
-						throw new Error('MonotonousArray: current predicate must be weaker than (or equal to) the previous predicate.');
-					}
-				}
-			}
-			this._prevFindLastPredicate = predicate;
-		}
-
-		const idx = findLastIdxMonotonous(this._array, predicate, this._findLastMonotonousLastIdx);
-		this._findLastMonotonousLastIdx = idx + 1;
-		return idx === -1 ? undefined : this._array[idx];
-	}
-}
-
 /**
  * Returns the first item that is equal to or greater than every other item.
 */

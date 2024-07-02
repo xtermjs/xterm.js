@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as browser from 'vs/base/browser/browser';
-import { BrowserFeatures } from 'vs/base/browser/canIUse';
 import { IKeyboardEvent, StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { IMouseEvent, StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { AbstractIdleValue, IntervalTimer, TimeoutTimer, _runWhenIdle, IdleDeadline } from 'vs/base/common/async';
@@ -12,10 +11,7 @@ import { onUnexpectedError } from 'vs/base/common/errors';
 import * as event from 'vs/base/common/event';
 import { KeyCode } from 'vs/base/common/keyCodes';
 import { Disposable, DisposableStore, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { FileAccess, RemoteAuthorities } from 'vs/base/common/network';
 import * as platform from 'vs/base/common/platform';
-import { URI } from 'vs/base/common/uri';
-import { hash } from 'vs/base/common/hash';
 import { CodeWindow, ensureCodeWindow, mainWindow } from 'vs/base/browser/window';
 import { isPointWithinTriangle } from 'vs/base/common/numbers';
 
@@ -196,29 +192,6 @@ export const addStandardDisposableListener: IAddStandardDisposableListenerSignat
 
 	return addDisposableListener(node, type, wrapHandler, useCapture);
 };
-
-export const addStandardDisposableGenericMouseDownListener = function addStandardDisposableListener(node: HTMLElement, handler: (event: any) => void, useCapture?: boolean): IDisposable {
-	const wrapHandler = _wrapAsStandardMouseEvent(getWindow(node), handler);
-
-	return addDisposableGenericMouseDownListener(node, wrapHandler, useCapture);
-};
-
-export const addStandardDisposableGenericMouseUpListener = function addStandardDisposableListener(node: HTMLElement, handler: (event: any) => void, useCapture?: boolean): IDisposable {
-	const wrapHandler = _wrapAsStandardMouseEvent(getWindow(node), handler);
-
-	return addDisposableGenericMouseUpListener(node, wrapHandler, useCapture);
-};
-export function addDisposableGenericMouseDownListener(node: EventTarget, handler: (event: any) => void, useCapture?: boolean): IDisposable {
-	return addDisposableListener(node, platform.isIOS && BrowserFeatures.pointerEvents ? EventType.POINTER_DOWN : EventType.MOUSE_DOWN, handler, useCapture);
-}
-
-export function addDisposableGenericMouseMoveListener(node: EventTarget, handler: (event: any) => void, useCapture?: boolean): IDisposable {
-	return addDisposableListener(node, platform.isIOS && BrowserFeatures.pointerEvents ? EventType.POINTER_MOVE : EventType.MOUSE_MOVE, handler, useCapture);
-}
-
-export function addDisposableGenericMouseUpListener(node: EventTarget, handler: (event: any) => void, useCapture?: boolean): IDisposable {
-	return addDisposableListener(node, platform.isIOS && BrowserFeatures.pointerEvents ? EventType.POINTER_UP : EventType.MOUSE_UP, handler, useCapture);
-}
 
 /**
  * Execute the callback the next time the browser is idle, returning an
@@ -1010,68 +983,11 @@ function cloneGlobalStyleSheet(globalStylesheet: HTMLStyleElement, globalStylesh
 		clone.sheet?.insertRule(rule.cssText, clone.sheet?.cssRules.length);
 	}
 
-	disposables.add(sharedMutationObserver.observe(globalStylesheet, disposables, { childList: true })(() => {
-		clone.textContent = globalStylesheet.textContent;
-	}));
-
 	globalStylesheetClones.add(clone);
 	disposables.add(toDisposable(() => globalStylesheetClones.delete(clone)));
 
 	return disposables;
 }
-
-interface IMutationObserver {
-	users: number;
-	readonly observer: MutationObserver;
-	readonly onDidMutate: event.Event<MutationRecord[]>;
-}
-
-export const sharedMutationObserver = new class {
-
-	readonly mutationObservers = new Map<Node, Map<number, IMutationObserver>>();
-
-	observe(target: Node, disposables: DisposableStore, options?: MutationObserverInit): event.Event<MutationRecord[]> {
-		let mutationObserversPerTarget = this.mutationObservers.get(target);
-		if (!mutationObserversPerTarget) {
-			mutationObserversPerTarget = new Map<number, IMutationObserver>();
-			this.mutationObservers.set(target, mutationObserversPerTarget);
-		}
-
-		const optionsHash = hash(options);
-		let mutationObserverPerOptions = mutationObserversPerTarget.get(optionsHash);
-		if (!mutationObserverPerOptions) {
-			const onDidMutate = new event.Emitter<MutationRecord[]>();
-			const observer = new MutationObserver(mutations => onDidMutate.fire(mutations));
-			observer.observe(target, options);
-
-			const resolvedMutationObserverPerOptions = mutationObserverPerOptions = {
-				users: 1,
-				observer,
-				onDidMutate: onDidMutate.event
-			};
-
-			disposables.add(toDisposable(() => {
-				resolvedMutationObserverPerOptions.users -= 1;
-
-				if (resolvedMutationObserverPerOptions.users === 0) {
-					onDidMutate.dispose();
-					observer.disconnect();
-
-					mutationObserversPerTarget?.delete(optionsHash);
-					if (mutationObserversPerTarget?.size === 0) {
-						this.mutationObservers.delete(target);
-					}
-				}
-			}));
-
-			mutationObserversPerTarget.set(optionsHash, mutationObserverPerOptions);
-		} else {
-			mutationObserverPerOptions.users += 1;
-		}
-
-		return mutationObserverPerOptions.onDidMutate;
-	}
-};
 
 export function createMetaElement(container: HTMLElement = mainWindow.document.head): HTMLMetaElement {
 	return createHeadElement('meta', container) as HTMLMetaElement;
@@ -1668,18 +1584,6 @@ export function animate(targetWindow: Window, fn: () => void): IDisposable {
 	return toDisposable(() => stepDisposable.dispose());
 }
 
-RemoteAuthorities.setPreferredWebSchema(/^https:/.test(mainWindow.location.href) ? 'https' : 'http');
-
-/**
- * returns url('...')
- */
-export function asCSSUrl(uri: URI | null | undefined): string {
-	if (!uri) {
-		return `url('')`;
-	}
-	return `url('${FileAccess.uriToBrowserUri(uri).toString(true).replace(/'/g, '%27')}')`;
-}
-
 export function asCSSPropertyValue(value: string) {
 	return `'${value.replace(/'/g, '%27')}'`;
 }
@@ -1697,60 +1601,6 @@ export function asCssValueWithDefault(cssPropertyValue: string | undefined, dflt
 		return cssPropertyValue;
 	}
 	return dflt;
-}
-
-export function triggerDownload(dataOrUri: Uint8Array | URI, name: string): void {
-
-	// If the data is provided as Buffer, we create a
-	// blob URL out of it to produce a valid link
-	let url: string;
-	if (URI.isUri(dataOrUri)) {
-		url = dataOrUri.toString(true);
-	} else {
-		const blob = new Blob([dataOrUri]);
-		url = URL.createObjectURL(blob);
-
-		// Ensure to free the data from DOM eventually
-		setTimeout(() => URL.revokeObjectURL(url));
-	}
-
-	// In order to download from the browser, the only way seems
-	// to be creating a <a> element with download attribute that
-	// points to the file to download.
-	// See also https://developers.google.com/web/updates/2011/08/Downloading-resources-in-HTML5-a-download
-	const activeWindow = getActiveWindow();
-	const anchor = document.createElement('a');
-	activeWindow.document.body.appendChild(anchor);
-	anchor.download = name;
-	anchor.href = url;
-	anchor.click();
-
-	// Ensure to remove the element from DOM eventually
-	setTimeout(() => anchor.remove());
-}
-
-export function triggerUpload(): Promise<FileList | undefined> {
-	return new Promise<FileList | undefined>(resolve => {
-
-		// In order to upload to the browser, create a
-		// input element of type `file` and click it
-		// to gather the selected files
-		const activeWindow = getActiveWindow();
-		const input = document.createElement('input');
-		activeWindow.document.body.appendChild(input);
-		input.type = 'file';
-		input.multiple = true;
-
-		// Resolve once the input event has fired once
-		event.Event.once(event.Event.fromDOMEventEmitter(input, 'input'))(() => {
-			resolve(input.files ?? undefined);
-		});
-
-		input.click();
-
-		// Ensure to remove the element from DOM eventually
-		setTimeout(() => input.remove());
-	});
 }
 
 export enum DetectedFullscreenMode {
@@ -1815,79 +1665,6 @@ export function detectFullscreen(targetWindow: Window): IDetectedFullscreen | nu
 	// Not in fullscreen
 	return null;
 }
-
-/**
- * List of safe, non-input html tags.
- */
-export const basicMarkupHtmlTags = Object.freeze([
-	'a',
-	'abbr',
-	'b',
-	'bdo',
-	'blockquote',
-	'br',
-	'caption',
-	'cite',
-	'code',
-	'col',
-	'colgroup',
-	'dd',
-	'del',
-	'details',
-	'dfn',
-	'div',
-	'dl',
-	'dt',
-	'em',
-	'figcaption',
-	'figure',
-	'h1',
-	'h2',
-	'h3',
-	'h4',
-	'h5',
-	'h6',
-	'hr',
-	'i',
-	'img',
-	'input',
-	'ins',
-	'kbd',
-	'label',
-	'li',
-	'mark',
-	'ol',
-	'p',
-	'pre',
-	'q',
-	'rp',
-	'rt',
-	'ruby',
-	'samp',
-	'small',
-	'small',
-	'source',
-	'span',
-	'strike',
-	'strong',
-	'sub',
-	'summary',
-	'sup',
-	'table',
-	'tbody',
-	'td',
-	'tfoot',
-	'th',
-	'thead',
-	'time',
-	'tr',
-	'tt',
-	'u',
-	'ul',
-	'var',
-	'video',
-	'wbr',
-]);
 
 /**
  * Convert a Unicode string to a string in which each 16-bit unit occupies only one byte
@@ -2417,31 +2194,6 @@ export function copyAttributes(from: Element, to: Element, filter?: string[]): v
 			to.setAttribute(name, value);
 		}
 	}
-}
-
-function copyAttribute(from: Element, to: Element, name: string): void {
-	const value = from.getAttribute(name);
-	if (value) {
-		to.setAttribute(name, value);
-	} else {
-		to.removeAttribute(name);
-	}
-}
-
-export function trackAttributes(from: Element, to: Element, filter?: string[]): IDisposable {
-	copyAttributes(from, to, filter);
-
-	const disposables = new DisposableStore();
-
-	disposables.add(sharedMutationObserver.observe(from, disposables, { attributes: true, attributeFilter: filter })(mutations => {
-		for (const mutation of mutations) {
-			if (mutation.type === 'attributes' && mutation.attributeName) {
-				copyAttribute(from, to, mutation.attributeName);
-			}
-		}
-	}));
-
-	return disposables;
 }
 
 /**

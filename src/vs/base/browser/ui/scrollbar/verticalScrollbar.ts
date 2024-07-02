@@ -3,12 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { StandardWheelEvent } from 'vs/base/browser/mouseEvent';
 import { AbstractScrollbar, ISimplifiedPointerEvent, ScrollbarHost } from 'vs/base/browser/ui/scrollbar/abstractScrollbar';
 import { ScrollableElementResolvedOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
-import { ARROW_IMG_SIZE } from 'vs/base/browser/ui/scrollbar/scrollbarArrow';
 import { ScrollbarState } from 'vs/base/browser/ui/scrollbar/scrollbarState';
-import { Codicon } from 'vs/base/common/codicons';
 import { INewScrollPosition, Scrollable, ScrollbarVisibility, ScrollEvent } from 'vs/base/common/scrollable';
 
 
@@ -37,32 +34,33 @@ export class VerticalScrollbar extends AbstractScrollbar {
 		});
 
 		if (options.verticalHasArrows) {
-			const arrowDelta = (options.arrowSize - ARROW_IMG_SIZE) / 2;
-			const scrollbarDelta = (options.verticalScrollbarSize - ARROW_IMG_SIZE) / 2;
+      throw new Error('verticalHasArrows is not supported in xterm.js');
+			// const arrowDelta = (options.arrowSize - ARROW_IMG_SIZE) / 2;
+			// const scrollbarDelta = (options.verticalScrollbarSize - ARROW_IMG_SIZE) / 2;
 
-			this._createArrow({
-				className: 'scra',
-				icon: Codicon.scrollbarButtonUp,
-				top: arrowDelta,
-				left: scrollbarDelta,
-				bottom: undefined,
-				right: undefined,
-				bgWidth: options.verticalScrollbarSize,
-				bgHeight: options.arrowSize,
-				onActivate: () => this._host.onMouseWheel(new StandardWheelEvent(null, 0, 1)),
-			});
+			// this._createArrow({
+			// 	className: 'scra',
+			// 	icon: Codicon.scrollbarButtonUp,
+			// 	top: arrowDelta,
+			// 	left: scrollbarDelta,
+			// 	bottom: undefined,
+			// 	right: undefined,
+			// 	bgWidth: options.verticalScrollbarSize,
+			// 	bgHeight: options.arrowSize,
+			// 	onActivate: () => this._host.onMouseWheel(new StandardWheelEvent(null, 0, 1)),
+			// });
 
-			this._createArrow({
-				className: 'scra',
-				icon: Codicon.scrollbarButtonDown,
-				top: undefined,
-				left: scrollbarDelta,
-				bottom: arrowDelta,
-				right: undefined,
-				bgWidth: options.verticalScrollbarSize,
-				bgHeight: options.arrowSize,
-				onActivate: () => this._host.onMouseWheel(new StandardWheelEvent(null, 0, -1)),
-			});
+			// this._createArrow({
+			// 	className: 'scra',
+			// 	icon: Codicon.scrollbarButtonDown,
+			// 	top: undefined,
+			// 	left: scrollbarDelta,
+			// 	bottom: arrowDelta,
+			// 	right: undefined,
+			// 	bgWidth: options.verticalScrollbarSize,
+			// 	bgHeight: options.arrowSize,
+			// 	onActivate: () => this._host.onMouseWheel(new StandardWheelEvent(null, 0, -1)),
+			// });
 		}
 
 		this._createSlider(0, Math.floor((options.verticalScrollbarSize - options.verticalSliderSize) / 2), options.verticalSliderSize, undefined);

@@ -6,9 +6,7 @@
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { BugIndicatingError, CancellationError } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
-import { Disposable, DisposableMap, DisposableStore, IDisposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { extUri as defaultExtUri, IExtUri } from 'vs/base/common/resources';
-import { URI } from 'vs/base/common/uri';
+import { Disposable, DisposableStore, IDisposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { setTimeout0 } from 'vs/base/common/platform';
 import { MicrotaskDelay } from './symbols';
 import { Lazy } from 'vs/base/common/lazy';
@@ -769,112 +767,6 @@ export class LimitedQueue {
 		return this.sequentializer.queue(() => {
 			return this.sequentializer.run(this.tasks++, factory());
 		});
-	}
-}
-
-/**
- * A helper to organize queues per resource. The ResourceQueue makes sure to manage queues per resource
- * by disposing them once the queue is empty.
- */
-export class ResourceQueue implements IDisposable {
-
-	private readonly queues = new Map<string, Queue<void>>();
-
-	private readonly drainers = new Set<DeferredPromise<void>>();
-
-	private drainListeners: DisposableMap<number> | undefined = undefined;
-	private drainListenerCount = 0;
-
-	async whenDrained(): Promise<void> {
-		if (this.isDrained()) {
-			return;
-		}
-
-		const promise = new DeferredPromise<void>();
-		this.drainers.add(promise);
-
-		return promise.p;
-	}
-
-	private isDrained(): boolean {
-		for (const [, queue] of this.queues) {
-			if (queue.size > 0) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	queueSize(resource: URI, extUri: IExtUri = defaultExtUri): number {
-		const key = extUri.getComparisonKey(resource);
-
-		return this.queues.get(key)?.size ?? 0;
-	}
-
-	queueFor(resource: URI, factory: ITask<Promise<void>>, extUri: IExtUri = defaultExtUri): Promise<void> {
-		const key = extUri.getComparisonKey(resource);
-
-		let queue = this.queues.get(key);
-		if (!queue) {
-			queue = new Queue<void>();
-			const drainListenerId = this.drainListenerCount++;
-			const drainListener = Event.once(queue.onDrained)(() => {
-				queue?.dispose();
-				this.queues.delete(key);
-				this.onDidQueueDrain();
-
-				this.drainListeners?.deleteAndDispose(drainListenerId);
-
-				if (this.drainListeners?.size === 0) {
-					this.drainListeners.dispose();
-					this.drainListeners = undefined;
-				}
-			});
-
-			if (!this.drainListeners) {
-				this.drainListeners = new DisposableMap();
-			}
-			this.drainListeners.set(drainListenerId, drainListener);
-
-			this.queues.set(key, queue);
-		}
-
-		return queue.queue(factory);
-	}
-
-	private onDidQueueDrain(): void {
-		if (!this.isDrained()) {
-			return; // not done yet
-		}
-
-		this.releaseDrainers();
-	}
-
-	private releaseDrainers(): void {
-		for (const drainer of this.drainers) {
-			drainer.complete();
-		}
-
-		this.drainers.clear();
-	}
-
-	dispose(): void {
-		for (const [, queue] of this.queues) {
-			queue.dispose();
-		}
-
-		this.queues.clear();
-
-		// Even though we might still have pending
-		// tasks queued, after the queues have been
-		// disposed, we can no longer track them, so
-		// we release drainers to prevent hanging
-		// promises when the resource queue is being
-		// disposed.
-		this.releaseDrainers();
-
-		this.drainListeners?.dispose();
 	}
 }
 

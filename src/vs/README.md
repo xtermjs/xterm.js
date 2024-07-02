@@ -5,3 +5,5 @@ To update against upstream:
 ```
 ./bin/update-vs-base.ps1
 ```
+
+TODO: Mention review `src/vs/base` in xterm.js

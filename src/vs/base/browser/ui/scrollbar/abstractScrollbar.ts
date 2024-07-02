@@ -7,7 +7,6 @@ import * as dom from 'vs/base/browser/dom';
 import { createFastDomNode, FastDomNode } from 'vs/base/browser/fastDomNode';
 import { GlobalPointerMoveMonitor } from 'vs/base/browser/globalPointerMoveMonitor';
 import { StandardWheelEvent } from 'vs/base/browser/mouseEvent';
-import { ScrollbarArrow, ScrollbarArrowOptions } from 'vs/base/browser/ui/scrollbar/scrollbarArrow';
 import { ScrollbarState } from 'vs/base/browser/ui/scrollbar/scrollbarState';
 import { ScrollbarVisibilityController } from 'vs/base/browser/ui/scrollbar/scrollbarVisibilityController';
 import { Widget } from 'vs/base/browser/ui/widget';
@@ -78,15 +77,6 @@ export abstract class AbstractScrollbar extends Widget {
 	}
 
 	// ----------------- creation
-
-	/**
-	 * Creates the dom node for an arrow & adds it to the container
-	 */
-	protected _createArrow(opts: ScrollbarArrowOptions): void {
-		const arrow = this._register(new ScrollbarArrow(opts));
-		this.domNode.domNode.appendChild(arrow.bgDomNode);
-		this.domNode.domNode.appendChild(arrow.domNode);
-	}
 
 	/**
 	 * Creates the slider dom node, adds it to the container & hooks up the events

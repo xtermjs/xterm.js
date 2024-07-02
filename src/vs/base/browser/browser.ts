@@ -80,7 +80,6 @@ export function setZoomLevel(zoomLevel: number, targetWindow: Window): void {
 export function getZoomLevel(targetWindow: Window): number {
 	return WindowManager.INSTANCE.getZoomLevel(targetWindow);
 }
-export const onDidChangeZoomLevel = WindowManager.INSTANCE.onDidChangeZoomLevel;
 
 /** The zoom scale for an index, e.g. 1, 1.2, 1.4 */
 export function getZoomFactor(targetWindow: Window): number {
@@ -96,7 +95,6 @@ export function setFullscreen(fullscreen: boolean, targetWindow: Window): void {
 export function isFullscreen(targetWindow: Window): boolean {
 	return WindowManager.INSTANCE.isFullscreen(targetWindow);
 }
-export const onDidChangeFullscreen = WindowManager.INSTANCE.onDidChangeFullscreen;
 
 const userAgent = navigator.userAgent;
 
@@ -105,8 +103,6 @@ export const isWebKit = (userAgent.indexOf('AppleWebKit') >= 0);
 export const isChrome = (userAgent.indexOf('Chrome') >= 0);
 export const isSafari = (!isChrome && (userAgent.indexOf('Safari') >= 0));
 export const isWebkitWebView = (!isChrome && !isSafari && isWebKit);
-export const isElectron = (userAgent.indexOf('Electron/') >= 0);
-export const isAndroid = (userAgent.indexOf('Android') >= 0);
 
 let standalone = false;
 if (typeof mainWindow.matchMedia === 'function') {
