@@ -20,11 +20,8 @@ const config = {
 /** @type {esbuild.BuildOptions} */
 const commonOptions = {
   format: 'esm',
-  target: 'es2015', // TODO: Upgrade
+  target: 'es2021', // TODO: Upgrade
   logLevel: 'info',
-  keepNames: true,
-  minify: false,
-  chunkNames: 'hello'
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -150,12 +147,13 @@ if (config.isDemoClient) {
       "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/xterm-addon-unicode11.js",
       "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/xterm-addon-unicode-graphemes.js",
 
+      // Needed for out-tsc based image addon
       "common/Lifecycle": "./src/common/Lifecycle.ts",
     }
   }
 };
 
-console.log(`${bundleConfig.entryPoints?.[0]} config:`, JSON.stringify(bundleConfig));
+// console.log(`${bundleConfig.entryPoints?.[0]} config:`, JSON.stringify(bundleConfig));
 if (config.isWatch) {
   // TODO: This doesn't report errors?
   context(bundleConfig).then(e => e.watch());

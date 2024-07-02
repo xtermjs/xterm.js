@@ -252,17 +252,6 @@ class FileAccessImpl {
 	 *
 	 * **Note:** use `dom.ts#asCSSUrl` whenever the URL is to be used in CSS context.
 	 */
-	asBrowserUri(resourcePath: AppResourcePath | ''): URI {
-		const uri = this.toUri(resourcePath, require);
-		return this.uriToBrowserUri(uri);
-	}
-
-	/**
-	 * Returns a URI to use in contexts where the browser is responsible
-	 * for loading (e.g. fetch()) or when used within the DOM.
-	 *
-	 * **Note:** use `dom.ts#asCSSUrl` whenever the URL is to be used in CSS context.
-	 */
 	uriToBrowserUri(uri: URI): URI {
 		// Handle remote URIs via `RemoteAuthorities`
 		if (uri.scheme === Schemas.vscodeRemote) {
@@ -293,15 +282,6 @@ class FileAccessImpl {
 		}
 
 		return uri;
-	}
-
-	/**
-	 * Returns the `file` URI to use in contexts where node.js
-	 * is responsible for loading.
-	 */
-	asFileUri(resourcePath: AppResourcePath | ''): URI {
-		const uri = this.toUri(resourcePath, require);
-		return this.uriToFileUri(uri);
 	}
 
 	/**

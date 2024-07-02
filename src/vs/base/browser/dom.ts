@@ -10,10 +10,9 @@ import { IMouseEvent, StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { AbstractIdleValue, IntervalTimer, TimeoutTimer, _runWhenIdle, IdleDeadline } from 'vs/base/common/async';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import * as event from 'vs/base/common/event';
-import * as dompurify from 'vs/base/browser/dompurify/dompurify';
 import { KeyCode } from 'vs/base/common/keyCodes';
 import { Disposable, DisposableStore, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { FileAccess, RemoteAuthorities, Schemas } from 'vs/base/common/network';
+import { FileAccess, RemoteAuthorities } from 'vs/base/common/network';
 import * as platform from 'vs/base/common/platform';
 import { URI } from 'vs/base/common/uri';
 import { hash } from 'vs/base/common/hash';
@@ -1817,51 +1816,6 @@ export function detectFullscreen(targetWindow: Window): IDetectedFullscreen | nu
 	return null;
 }
 
-// -- sanitize and trusted html
-
-/**
- * Hooks dompurify using `afterSanitizeAttributes` to check that all `href` and `src`
- * attributes are valid.
- */
-export function hookDomPurifyHrefAndSrcSanitizer(allowedProtocols: readonly string[], allowDataImages = false): IDisposable {
-	// https://github.com/cure53/DOMPurify/blob/main/demos/hooks-scheme-allowlist.html
-
-	// build an anchor to map URLs to
-	const anchor = document.createElement('a');
-
-	dompurify.addHook('afterSanitizeAttributes', (node) => {
-		// check all href/src attributes for validity
-		for (const attr of ['href', 'src']) {
-			if (node.hasAttribute(attr)) {
-				const attrValue = node.getAttribute(attr) as string;
-				if (attr === 'href' && attrValue.startsWith('#')) {
-					// Allow fragment links
-					continue;
-				}
-
-				anchor.href = attrValue;
-				if (!allowedProtocols.includes(anchor.protocol.replace(/:$/, ''))) {
-					if (allowDataImages && attr === 'src' && anchor.href.startsWith('data:')) {
-						continue;
-					}
-
-					node.removeAttribute(attr);
-				}
-			}
-		}
-	});
-
-	return toDisposable(() => {
-		dompurify.removeHook('afterSanitizeAttributes');
-	});
-}
-
-const defaultSafeProtocols = [
-	Schemas.http,
-	Schemas.https,
-	Schemas.command,
-];
-
 /**
  * List of safe, non-input html tags.
  */
@@ -1934,27 +1888,6 @@ export const basicMarkupHtmlTags = Object.freeze([
 	'video',
 	'wbr',
 ]);
-
-const defaultDomPurifyConfig = Object.freeze<dompurify.Config & { RETURN_TRUSTED_TYPE: true }>({
-	ALLOWED_TAGS: ['a', 'button', 'blockquote', 'code', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'input', 'label', 'li', 'p', 'pre', 'select', 'small', 'span', 'strong', 'textarea', 'ul', 'ol'],
-	ALLOWED_ATTR: ['href', 'data-href', 'data-command', 'target', 'title', 'name', 'src', 'alt', 'class', 'id', 'role', 'tabindex', 'style', 'data-code', 'width', 'height', 'align', 'x-dispatch', 'required', 'checked', 'placeholder', 'type', 'start'],
-	RETURN_DOM: false,
-	RETURN_DOM_FRAGMENT: false,
-	RETURN_TRUSTED_TYPE: true
-});
-
-/**
- * Sanitizes the given `value` and reset the given `node` with it.
- */
-export function safeInnerHtml(node: HTMLElement, value: string): void {
-	const hook = hookDomPurifyHrefAndSrcSanitizer(defaultSafeProtocols);
-	try {
-		const html = dompurify.sanitize(value, defaultDomPurifyConfig);
-		node.innerHTML = html as unknown as string;
-	} finally {
-		hook.dispose();
-	}
-}
 
 /**
  * Convert a Unicode string to a string in which each 16-bit unit occupies only one byte
