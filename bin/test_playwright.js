@@ -40,12 +40,15 @@ async function run() {
     console.log(`\n\x1b[32m${command}\x1b[0m`, args);
     const run = cp.spawnSync(command, args, {
         cwd: path.resolve(__dirname, '..'),
+        shell: true,
         stdio: 'inherit'
       }
     );
-    if (run.status) {
-      process.exit(run.status);
+
+    if (run.error) {
+      console.error(run.error);
     }
+    process.exit(run.status ?? -1);
   }
 }
 run();
