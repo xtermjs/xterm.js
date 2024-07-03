@@ -390,6 +390,9 @@ test.describe('Search Tests', () => {
       let fixture: string;
       test.beforeAll(async () => {
         fixture = (await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)))).toString();
+        if (process.platform !== 'win32') {
+          fixture = fixture.replace(/\n/g, '\n\r');
+        }
       });
       test('should find all occurrences using findNext', async () => {
         await ctx.proxy.write(fixture);
