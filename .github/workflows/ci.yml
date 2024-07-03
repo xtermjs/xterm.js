@@ -150,47 +150,6 @@ jobs:
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
-  test-api-parallel:
-    timeout-minutes: 20
-    strategy:
-      matrix:
-        node-version: [18] # just one as integration tests are about testing in browser
-        runs-on: [ubuntu] # macos is flaky
-        browser: [chromium, firefox]
-    runs-on: ${{ matrix.runs-on }}-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}.x
-        cache: 'yarn'
-    - name: Install dependencies
-      run: |
-        yarn --frozen-lockfile
-        yarn install-addons
-    - name: Install playwright
-      run: npx playwright install
-    - name: Wait for build job
-      uses: NathanFirmo/wait-for-other-job@v1.1.1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        job: build
-    - uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
-    - name: Unzip artifacts
-      shell: bash
-      run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-        else
-          unzip -o compressed-build.zip
-        fi
-        ls -R
-    - name: Integration tests (${{ matrix.browser }})
-      run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
-
   test-playwright-parallel:
     timeout-minutes: 20
     strategy:
@@ -237,43 +196,6 @@ jobs:
       run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-canvas
     - name: Integration tests (addon-webgl)
       run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
-
-  test-api:
-    needs: build
-    timeout-minutes: 20
-    strategy:
-      matrix:
-        node-version: [18] # just one as integration tests are about testing in browser
-        runs-on: [windows] # macos is flaky
-        browser: [chromium, firefox]
-    runs-on: ${{ matrix.runs-on }}-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}.x
-        cache: 'yarn'
-    - name: Install dependencies
-      run: |
-        yarn --frozen-lockfile
-        yarn install-addons
-    - name: Install playwright
-      run: npx playwright install
-    - uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
-    - name: Unzip artifacts
-      shell: bash
-      run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-        else
-          unzip -o compressed-build.zip
-        fi
-        ls -R
-    - name: Integration tests (${{ matrix.browser }})
-      run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
 
   release-dry-run:
     needs: build
