@@ -51,11 +51,25 @@
     "**/*.js"
   ],
   "plugins": [
+    "@stylistic/ts",
     "@typescript-eslint",
     "jsdoc"
   ],
   "rules": {
-    "no-extra-semi": "error",
+    "@stylistic/ts/indent": [
+      "warn",
+      2
+    ],
+    "@stylistic/ts/semi": [
+      "warn",
+      "always"
+    ],
+    "@stylistic/ts/quotes": [
+      "warn",
+      "single",
+      { "allowTemplateLiterals": true }
+    ],
+
     "@typescript-eslint/array-type": [
       "warn",
       {
@@ -79,10 +93,6 @@
           "constructors": "off"
         }
       }
-    ],
-    "@typescript-eslint/indent": [
-      "warn",
-      2
     ],
     "@typescript-eslint/member-delimiter-style": [
       "warn",
@@ -143,15 +153,7 @@
     "@typescript-eslint/no-useless-constructor": "warn",
     "@typescript-eslint/prefer-namespace-keyword": "warn",
     "@typescript-eslint/type-annotation-spacing": "warn",
-    "@typescript-eslint/quotes": [
-      "warn",
-      "single",
-      { "allowTemplateLiterals": true }
-    ],
-    "@typescript-eslint/semi": [
-      "warn",
-      "always"
-    ],
+
     "comma-dangle": [
       "warn",
       {
@@ -192,6 +194,7 @@
       }
     ],
     "no-eval": "warn",
+    "no-extra-semi": "error",
     "no-irregular-whitespace": "warn",
     "no-restricted-imports": [
       "warn",

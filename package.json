@@ -57,6 +57,7 @@
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
     "@playwright/test": "^1.37.1",
+    "@stylistic/eslint-plugin": "^2.3.0",
     "@types/chai": "^4.2.22",
     "@types/debug": "^4.1.7",
     "@types/deep-equal": "^1.0.1",
