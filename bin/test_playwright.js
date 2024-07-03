@@ -27,6 +27,7 @@ let configs = [
   { name: 'addon-serialize',         path: 'addons/addon-serialize/out-test/playwright.config.js' },
   { name: 'addon-unicode-graphemes', path: 'addons/addon-unicode-graphemes/out-test/playwright.config.js' },
   { name: 'addon-unicode11',         path: 'addons/addon-unicode11/out-test/playwright.config.js' },
+  { name: 'addon-web-links',         path: 'addons/addon-web-links/out-test/playwright.config.js' },
   { name: 'addon-webgl',             path: 'addons/addon-webgl/out-test/playwright.config.js' }
 ];
 
