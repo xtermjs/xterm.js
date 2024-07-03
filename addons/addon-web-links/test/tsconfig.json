@@ -3,7 +3,7 @@
     "module": "commonjs",
     "target": "es2021",
     "lib": [
-      "es2021",
+      "esnext",
     ],
     // "downlevelIteration": true,
     "rootDir": ".",

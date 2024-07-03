@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "es6"],
+    "lib": ["dom", "esnext"],
     "outDir": "../out-benchmark",
     "types": ["../../../node_modules/@types/node"],
     "moduleResolution": "node",
     "strict": false,
-    "target": "es2015",
+    "target": "esnext",
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {

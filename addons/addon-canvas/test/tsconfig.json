@@ -3,7 +3,7 @@
     "module": "commonjs",
     "target": "ESNext",
     "lib": [
-      "es6",
+      "esnext",
     ],
     "rootDir": ".",
     "outDir": "../out-test",

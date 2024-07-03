@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es2021",
+      "esnext",
     ],
     "outDir": "../../out-test/benchmark",
     "types": [
@@ -10,7 +10,7 @@
     ],
     "moduleResolution": "node",
     "strict": false,
-    "target": "es2021",
+    "target": "esnext",
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {
