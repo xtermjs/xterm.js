@@ -121,7 +121,8 @@ if (config.addon) {
     bundleConfig.tsconfig = 'addons/addon-serialize/src/tsconfig.json'
   }
 
-  if (['canvas', 'ligatures'].includes(config.addon)) {
+  // Addons that don't have unit tests
+  if (['ligatures'].includes(config.addon)) {
     skipOutTest = true;
   }
 
@@ -175,7 +176,6 @@ if (config.isDemoClient) {
   }
 };
 
-// console.log(`${bundleConfig.entryPoints?.[0]} config:`, JSON.stringify(bundleConfig));
 if (config.isWatch) {
   // TODO: This doesn't report errors?
   context(bundleConfig).then(e => e.watch());
