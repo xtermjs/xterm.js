@@ -5,9 +5,7 @@
 
 import test from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
-import { readFile } from 'fs';
-import { resolve } from 'path';
-import { ITestContext, createTestContext, openTerminal, timeout } from '../../../out-test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
@@ -21,9 +19,9 @@ test.describe('UnicodeGraphemesAddon', () => {
   test.beforeEach(async () => {
     await ctx.page.evaluate(`
       window.term.reset()
-      window.search?.dispose();
-      window.search = new SearchAddon();
-      window.term.loadAddon(window.search);
+      window.unicode?.dispose();
+      window.unicode = new UnicodeGraphemesAddon();
+      window.term.loadAddon(window.unicode);
     `);
   });
 
@@ -32,10 +30,6 @@ test.describe('UnicodeGraphemesAddon', () => {
   }
   const ourVersion = '15-graphemes';
   test('wcwidth V15 emoji test', async () => {
-    await ctx.page.evaluate(`
-      window.unicode = new UnicodeGraphemesAddon();
-      window.term.loadAddon(window.unicode);
-    `);
     // should have loaded '15-graphemes'
     deepStrictEqual(await ctx.page.evaluate(`window.term.unicode.versions`), ['6', '15', '15-graphemes']);
     // switch should not throw
