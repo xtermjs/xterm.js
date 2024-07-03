@@ -23,6 +23,7 @@ let configs = [
   { name: 'addon-canvas',            path: 'addons/addon-canvas/out-test/playwright.config.js' },
   { name: 'addon-clipboard',         path: 'addons/addon-clipboard/out-test/playwright.config.js' },
   { name: 'addon-fit',               path: 'addons/addon-fit/out-test/playwright.config.js' },
+  { name: 'addon-image',             path: 'addons/addon-image/out-test/playwright.config.js' },
   { name: 'addon-search',            path: 'addons/addon-search/out-test/playwright.config.js' },
   { name: 'addon-serialize',         path: 'addons/addon-serialize/out-test/playwright.config.js' },
   { name: 'addon-unicode-graphemes', path: 'addons/addon-unicode-graphemes/out-test/playwright.config.js' },
