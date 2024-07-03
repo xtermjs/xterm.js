@@ -18,8 +18,8 @@ for (const addon of addons) {
   }
 }
 
-// Demo job
-jobs.push(createJob('demo-client', [`--demo-client`]));
+// Demo job - This requires the others to be built so it's not included when building all
+// jobs.push(createJob('demo-client', [`--demo-client`]));
 
 await Promise.all(jobs.map((job, i) => {
   return new Promise(r => {

@@ -25,6 +25,8 @@
     "esbuild-watch": "node bin/esbuild_all.mjs --watch",
     "esbuild-package": "node bin/esbuild_all.mjs --prod",
     "esbuild-package-watch": "node bin/esbuild_all.mjs --prod --watch",
+    "esbuild-demo": "node bin/esbuild.mjs --demo-client",
+    "esbuild-demo-watch": "node bin/esbuild.mjs --demo-client --watch",
 
     "test": "npm run test-unit",
     "posttest": "npm run lint",

@@ -20,8 +20,8 @@ const config = {
 /** @type {esbuild.BuildOptions} */
 const commonOptions = {
   format: 'esm',
-  target: 'es2021', // TODO: Upgrade
-  logLevel: 'info',
+  target: 'es2021',
+  logLevel: 'debug',
 };
 
 /** @type {esbuild.BuildOptions} */

@@ -11,7 +11,7 @@
     // Compound tasks
     {
       "label": "Development",
-      "dependsOn": ["demo-server", "tsc-watch", "esbuild-watch"],
+      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -27,31 +27,43 @@
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
-        "group": "vscode"
+        "group": "xterm-demo"
       }
     },
 
     // Build
     {
-      "label": "tsc-watch",
+      "label": "tsc",
       "type": "npm",
       "script": "tsc-watch",
       "group": "build",
       "isBackground": true,
       "problemMatcher": "$tsc-watch",
       "presentation": {
-        "group": "vscode"
+        "group": "xterm-build"
       }
     },
     {
-      "label": "esbuild-watch",
+      "label": "esbuild",
       "type": "npm",
       "script": "esbuild-watch",
       "group": "build",
       "isBackground": true,
       "problemMatcher": "$esbuild-watch",
       "presentation": {
-        "group": "vscode"
+        "group": "xterm-build"
+      }
+    },
+    {
+      "label": "esbuild-demo",
+      "type": "npm",
+      "script": "esbuild-demo-watch",
+      "dependsOn": ["esbuild", "tsc"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$esbuild-watch",
+      "presentation": {
+        "group": "xterm-demo"
       }
     },
 
