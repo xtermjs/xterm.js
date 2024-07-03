@@ -6,7 +6,7 @@
 const cp = require('child_process');
 const path = require('path');
 
-const COVERAGE_LINES_THRESHOLD = 60;
+const COVERAGE_LINES_THRESHOLD = 40;
 
 // Add `out` to the NODE_PATH so absolute paths can be resolved.
 const env = { ...process.env };
@@ -31,7 +31,6 @@ if (process.argv.length > 2) {
 }
 
 const checkCoverage = flagArgs.indexOf('--coverage') >= 0;
-
 if (checkCoverage) {
   flagArgs.splice(flagArgs.indexOf('--coverage'), 1);
   const executable = npmBinScript('nyc');
@@ -44,6 +43,7 @@ if (checkCoverage) {
     {
       cwd: path.resolve(__dirname, '..'),
       env,
+      shell: true,
       stdio: 'inherit'
     }
   );
@@ -56,6 +56,7 @@ const run = cp.spawnSync(
   {
     cwd: path.resolve(__dirname, '..'),
     env,
+    shell: true,
     stdio: 'inherit'
   }
 );
@@ -64,4 +65,7 @@ function npmBinScript(script) {
   return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ? `${script}.cmd` : script));
 }
 
-process.exit(run.status);
+if (run.error) {
+  console.error(run.error);
+}
+process.exit(run.status ?? -1);

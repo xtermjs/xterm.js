@@ -224,6 +224,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Helix Editor Playground**](https://github.com/tomgroenwoldt/helix-editor-playground): Online playground for the terminal based helix editor.
 - [**Coder**](https://github.com/coder/coder): Self-Hosted Remote Development Environments
 - [**Wave Terminal**](https://waveterm.dev): An open-source, ai-native, terminal built for seamless workflows.
+- [**eva**](https://github.com/info24/eva): Eva is a web application for SSH remote login, developed in Go.
 - [**OpenSFTP**](https://opensftp.com): Super beautiful SSH and SFTP integrated workspace client.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 

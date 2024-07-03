@@ -3,49 +3,47 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
-import { openTerminal, writeSync, launchBrowser } from '../../../out-test/api/TestUtils';
-import { Browser, Page } from '@playwright/test';
+import test from '@playwright/test';
+import { deepStrictEqual, notDeepStrictEqual, strictEqual } from 'assert';
+import { readFile } from 'fs';
+import { resolve } from 'path';
+import { ITestContext, createTestContext, openTerminal, timeout, writeSync } from '../../../out-test/playwright/TestUtils';
 
-const APP = 'http://127.0.0.1:3001/test';
-
-let browser: Browser;
-let page: Page;
-const width = 800;
-const height = 600;
-
-const writeRawSync = (page: any, str: string): Promise<void> => writeSync(page, `' +` + JSON.stringify(str) + `+ '`);
+const writeRawSync = (page: any, str: string): Promise<void> => writeSync(ctx.page, `' +` + JSON.stringify(str) + `+ '`);
 
 const testNormalScreenEqual = async (page: any, str: string): Promise<void> => {
-  await writeRawSync(page, str);
-  const originalBuffer = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
+  await writeRawSync(ctx.page, str);
+  const originalBuffer = await ctx.page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
-  const result = await page.evaluate(`serializeAddon.serialize();`) as string;
-  await page.evaluate(`term.reset();`);
-  await writeRawSync(page, result);
-  const newBuffer = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
+  const result = await ctx.page.evaluate(`window.serialize.serialize();`) as string;
+  await ctx.page.evaluate(`term.reset();`);
+  await writeRawSync(ctx.page, result);
+  const newBuffer = await ctx.page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
-  // chai decides -0 and 0 are different number...
-  // and firefox have a bug that output -0 for unknown reason
-  assert.equal(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
+  deepStrictEqual(JSON.stringify(originalBuffer), JSON.stringify(newBuffer));
 };
 
 async function testSerializeEquals(writeContent: string, expectedSerialized: string): Promise<void> {
-  await writeRawSync(page, writeContent);
-  const result = await page.evaluate(`serializeAddon.serialize();`) as string;
-  assert.strictEqual(result, expectedSerialized);
+  await writeRawSync(ctx.page, writeContent);
+  const result = await ctx.page.evaluate(`window.serialize.serialize();`) as string;
+  strictEqual(result, expectedSerialized);
 }
 
-describe('SerializeAddon', () => {
-  before(async function(): Promise<any> {
-    browser = await launchBrowser();
-    page = await (await browser.newContext()).newPage();
-    await page.setViewportSize({ width, height });
-    await page.goto(APP);
-    await openTerminal(page, { rows: 10, cols: 10 });
-    await page.evaluate(`
-      window.serializeAddon = new SerializeAddon();
-      window.term.loadAddon(window.serializeAddon);
+let ctx: ITestContext;
+test.beforeAll(async ({ browser }) => {
+  ctx = await createTestContext(browser);
+  await openTerminal(ctx, { rows: 10, cols: 10 });
+});
+test.afterAll(async () => await ctx.page.close());
+
+test.describe('SerializeAddon', () => {
+
+  test.beforeEach(async () => {
+    await ctx.page.evaluate(`
+      window.term.reset()
+      window.serialize?.dispose();
+      window.serialize = new SerializeAddon();
+      window.term.loadAddon(window.serialize);
       window.inspectBuffer = (buffer) => {
         const lines = [];
         for (let i = 0; i < buffer.length; i++) {
@@ -62,56 +60,53 @@ describe('SerializeAddon', () => {
     `);
   });
 
-  after(async () => await browser.close());
-  beforeEach(async () => await page.evaluate(`window.term.reset()`));
-
-  it('produce different output when we call test util with different text', async function(): Promise<any> {
-    await writeRawSync(page, '12345');
-    const buffer1 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
-
-    await page.evaluate(`term.reset();`);
-    await writeRawSync(page, '67890');
-    const buffer2 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
-
-    assert.throw(() => {
-      assert.equal(JSON.stringify(buffer1), JSON.stringify(buffer2));
-    });
+  test.beforeEach(async () => {
+    await ctx.proxy.reset();
   });
 
-  it('produce different output when we call test util with different line wrap', async function(): Promise<any> {
-    await writeRawSync(page, '1234567890\r\n12345');
-    const buffer3 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
+  test('produce different output when we call test util with different text', async function(): Promise<any> {
+    await writeRawSync(ctx.page, '12345');
+    const buffer1 = await ctx.page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
-    await page.evaluate(`term.reset();`);
-    await writeRawSync(page, '123456789012345');
-    const buffer4 = await page.evaluate(`inspectBuffer(term.buffer.normal);`);
+    await ctx.page.evaluate(`term.reset();`);
+    await writeRawSync(ctx.page, '67890');
+    const buffer2 = await ctx.page.evaluate(`inspectBuffer(term.buffer.normal);`);
 
-    assert.throw(() => {
-      assert.equal(JSON.stringify(buffer3), JSON.stringify(buffer4));
-    });
+    notDeepStrictEqual(JSON.stringify(buffer1), JSON.stringify(buffer2));
   });
 
-  it('empty content', async function(): Promise<any> {
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), '');
+  test('produce different output when we call test util with different line wrap', async function(): Promise<any> {
+    await writeRawSync(ctx.page, '1234567890\r\n12345');
+    const buffer3 = await ctx.page.evaluate(`inspectBuffer(term.buffer.normal);`);
+
+    await ctx.page.evaluate(`term.reset();`);
+    await writeRawSync(ctx.page, '123456789012345');
+    const buffer4 = await ctx.page.evaluate(`inspectBuffer(term.buffer.normal);`);
+
+    notDeepStrictEqual(JSON.stringify(buffer3), JSON.stringify(buffer4));
   });
 
-  it('unwrap wrapped line', async function(): Promise<any> {
+  test('empty content', async function(): Promise<any> {
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), '');
+  });
+
+  test('unwrap wrapped line', async function(): Promise<any> {
     const lines = ['123456789123456789'];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('does not unwrap non-wrapped line', async function(): Promise<any> {
+  test('does not unwrap non-wrapped line', async function(): Promise<any> {
     const lines = [
       '123456789',
       '123456789'
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
 
-  it('preserve last empty lines', async function(): Promise<any> {
+  test('preserve last empty lines', async function(): Promise<any> {
     const cols = 10;
     const lines = [
       '',
@@ -126,50 +121,50 @@ describe('SerializeAddon', () => {
       '',
       ''
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('digits content', async function(): Promise<any> {
+  test('digits content', async function(): Promise<any> {
     const rows = 10;
     const cols = 10;
     const digitsLine = digitsString(cols);
     const lines = newArray<string>(digitsLine, rows);
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize with half of scrollback', async function(): Promise<any> {
+  test('serialize with half of scrollback', async function(): Promise<any> {
     const rows = 20;
     const scrollback = rows - 10;
     const halfScrollback = scrollback / 2;
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: ${halfScrollback} });`), lines.slice(halfScrollback, rows).join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize({ scrollback: ${halfScrollback} });`), lines.slice(halfScrollback, rows).join('\r\n'));
   });
 
-  it('serialize 0 rows of scrollback', async function(): Promise<any> {
+  test('serialize 0 rows of scrollback', async function(): Promise<any> {
     const rows = 20;
     const cols = 10;
     const lines = newArray<string>((index: number) => digitsString(cols, index), rows);
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize({ scrollback: 0 });`), lines.slice(rows - 10, rows).join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize({ scrollback: 0 });`), lines.slice(rows - 10, rows).join('\r\n'));
   });
 
-  it('serialize exclude modes', async () => {
-    await writeSync(page, 'before\\x1b[?1hafter');
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'beforeafter\x1b[?1h');
-    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeModes: true });`), 'beforeafter');
+  test('serialize exclude modes', async () => {
+    await ctx.proxy.write('before\x1b[?1hafter');
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), 'beforeafter\x1b[?1h');
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize({ excludeModes: true });`), 'beforeafter');
   });
 
-  it('serialize exclude alt buffer', async () => {
-    await writeSync(page, 'normal\\x1b[?1049h\\x1b[Halt');
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), 'normal\x1b[?1049h\x1b[Halt');
-    assert.equal(await page.evaluate(`serializeAddon.serialize({ excludeAltBuffer: true });`), 'normal');
+  test('serialize exclude alt buffer', async () => {
+    await ctx.proxy.write('normal\x1b[?1049h\x1b[Halt');
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), 'normal\x1b[?1049h\x1b[Halt');
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize({ excludeAltBuffer: true });`), 'normal');
   });
 
-  it('serialize all rows of content with color16', async function(): Promise<any> {
+  test('serialize all rows of content with color16', async function(): Promise<any> {
     const cols = 10;
     const color16 = [
       30, 31, 32, 33, 34, 35, 36, 37, // Set foreground color
@@ -182,11 +177,11 @@ describe('SerializeAddon', () => {
       (index: number) => digitsString(cols, index, `\x1b[${color16[index % color16.length]}m`),
       rows
     );
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with fg/bg flags', async function(): Promise<any> {
+  test('serialize all rows of content with fg/bg flags', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -204,22 +199,22 @@ describe('SerializeAddon', () => {
       sgr(NO_INVISIBLE) + line,
       sgr(NO_STRIKETHROUGH) + line
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color256', async function(): Promise<any> {
+  test('serialize all rows of content with color256', async function(): Promise<any> {
     const rows = 32;
     const cols = 10;
     const lines = newArray<string>(
       (index: number) => digitsString(cols, index, `\x1b[38;5;${16 + index}m`),
       rows
     );
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with overline', async () => {
+  test('serialize all rows of content with overline', async () => {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -227,11 +222,11 @@ describe('SerializeAddon', () => {
       sgr(UNDERLINED) + line,                  // Overlined, Underlined
       sgr(NORMAL) + line                       // Normal
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color16 and style separately', async function(): Promise<any> {
+  test('serialize all rows of content with color16 and style separately', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -246,11 +241,11 @@ describe('SerializeAddon', () => {
       sgr(BG_RESET) + line,       // Underlined, Inverse
       sgr(NORMAL) + line          // Back to normal
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color16 and style together', async function(): Promise<any> {
+  test('serialize all rows of content with color16 and style together', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -268,11 +263,11 @@ describe('SerializeAddon', () => {
       sgr(FG_RESET, ITALIC) + line,             // bg Yellow, Italic
       sgr(BG_RESET) + line                      // Italic
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color256 and style separately', async function(): Promise<any> {
+  test('serialize all rows of content with color256 and style separately', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -287,11 +282,11 @@ describe('SerializeAddon', () => {
       sgr(BG_RESET) + line,       // Underlined, Inverse
       sgr(NORMAL) + line          // Back to normal
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with color256 and style together', async function(): Promise<any> {
+  test('serialize all rows of content with color256 and style together', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -309,11 +304,11 @@ describe('SerializeAddon', () => {
       sgr(FG_RESET, ITALIC) + line,               // bg Yellow 256, Italic
       sgr(BG_RESET) + line                        // Italic
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with colorRGB and style separately', async function(): Promise<any> {
+  test('serialize all rows of content with colorRGB and style separately', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -328,11 +323,11 @@ describe('SerializeAddon', () => {
       sgr(BG_RESET) + line,       // Underlined, Inverse
       sgr(NORMAL) + line          // Back to normal
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize all rows of content with colorRGB and style together', async function(): Promise<any> {
+  test('serialize all rows of content with colorRGB and style together', async function(): Promise<any> {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
@@ -350,11 +345,11 @@ describe('SerializeAddon', () => {
       sgr(FG_RESET, ITALIC) + line,             // bg Yellow RGB, Italic
       sgr(BG_RESET) + line                      // Italic
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize tabs correctly', async () => {
+  test('serialize tabs correctly', async () => {
     const lines = [
       'a\tb',
       'aa\tc',
@@ -365,11 +360,11 @@ describe('SerializeAddon', () => {
       'aa\x1b[6Cc',
       'aaa\x1b[5Cd'
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), expected.join('\r\n'));
   });
 
-  it('serialize CJK correctly', async () => {
+  test('serialize CJK correctly', async () => {
     const lines = [
       '中文中文',
       '12中文',
@@ -381,22 +376,22 @@ describe('SerializeAddon', () => {
       // see also #3097
       '1中文中文中'
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), lines.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
-  it('serialize CJK Mixed with tab correctly', async () => {
+  test('serialize CJK Mixed with tab correctly', async () => {
     const lines = [
       '中文\t12' // CJK mixed with tab
     ];
     const expected = [
       '中文\x1b[4C12'
     ];
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`serializeAddon.serialize();`), expected.join('\r\n'));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), expected.join('\r\n'));
   });
 
-  it('serialize with alt screen correctly', async () => {
+  test('serialize with alt screen correctly', async () => {
     const SMCUP = '\u001b[?1049h';
     const CUP = '\u001b[H';
 
@@ -407,12 +402,12 @@ describe('SerializeAddon', () => {
       `1${SMCUP}${CUP}2`
     ];
 
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'alternate');
-    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize();`)), JSON.stringify(expected.join('\r\n')));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.term.buffer.active.type`), 'alternate');
+    strictEqual(JSON.stringify(await ctx.page.evaluate(`window.serialize.serialize();`)), JSON.stringify(expected.join('\r\n')));
   });
 
-  it('serialize without alt screen correctly', async () => {
+  test('serialize without alt screen correctly', async () => {
     const SMCUP = '\u001b[?1049h';
     const RMCUP = '\u001b[?1049l';
 
@@ -423,12 +418,12 @@ describe('SerializeAddon', () => {
       `1`
     ];
 
-    await writeSync(page, lines.join('\\r\\n'));
-    assert.equal(await page.evaluate(`window.term.buffer.active.type`), 'normal');
-    assert.equal(JSON.stringify(await page.evaluate(`serializeAddon.serialize();`)), JSON.stringify(expected.join('\r\n')));
+    await ctx.proxy.write(lines.join('\r\n'));
+    strictEqual(await ctx.page.evaluate(`window.term.buffer.active.type`), 'normal');
+    strictEqual(JSON.stringify(await ctx.page.evaluate(`window.serialize.serialize();`)), JSON.stringify(expected.join('\r\n')));
   });
 
-  it('serialize with background', async () => {
+  test('serialize with background', async () => {
     const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
 
     const lines = [
@@ -436,10 +431,10 @@ describe('SerializeAddon', () => {
       `2${CLEAR_RIGHT(9)}`
     ];
 
-    await testNormalScreenEqual(page, lines.join('\r\n'));
+    await testNormalScreenEqual(ctx.page, lines.join('\r\n'));
   });
 
-  it('cause the BCE on scroll', async () => {
+  test('cause the BCE on scroll', async () => {
     const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
 
     const padLines = newArray<string>(
@@ -452,10 +447,10 @@ describe('SerializeAddon', () => {
       `\u001b[44m${CLEAR_RIGHT(5)}1111111111111111`
     ];
 
-    await testNormalScreenEqual(page, lines.join('\r\n'));
+    await testNormalScreenEqual(ctx.page, lines.join('\r\n'));
   });
 
-  it('handle invalid wrap before scroll', async () => {
+  test('handle invalid wrap before scroll', async () => {
     const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
     const MOVE_UP = (l: number): string => `\u001b[${l}A`;
     const MOVE_DOWN = (l: number): string => `\u001b[${l}B`;
@@ -475,10 +470,10 @@ describe('SerializeAddon', () => {
       '1'
     ];
 
-    await testNormalScreenEqual(page, segments.join(''));
+    await testNormalScreenEqual(ctx.page, segments.join(''));
   });
 
-  it('handle invalid wrap after scroll', async () => {
+  test('handle invalid wrap after scroll', async () => {
     const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
     const MOVE_UP = (l: number): string => `\u001b[${l}A`;
     const MOVE_DOWN = (l: number): string => `\u001b[${l}B`;
@@ -505,27 +500,27 @@ describe('SerializeAddon', () => {
       '1'
     ];
 
-    await testNormalScreenEqual(page, lines.join(''));
+    await testNormalScreenEqual(ctx.page, lines.join(''));
   });
 
-  describe('handle modes', () => {
-    it('applicationCursorKeysMode', async () => {
+  test.describe('handle modes', () => {
+    test('applicationCursorKeysMode', async () => {
       await testSerializeEquals('test\u001b[?1h', 'test\u001b[?1h');
       await testSerializeEquals('\u001b[?1l', 'test');
     });
-    it('applicationKeypadMode', async () => {
+    test('applicationKeypadMode', async () => {
       await testSerializeEquals('test\u001b[?66h', 'test\u001b[?66h');
       await testSerializeEquals('\u001b[?66l', 'test');
     });
-    it('bracketedPasteMode', async () => {
+    test('bracketedPasteMode', async () => {
       await testSerializeEquals('test\u001b[?2004h', 'test\u001b[?2004h');
       await testSerializeEquals('\u001b[?2004l', 'test');
     });
-    it('insertMode', async () => {
+    test('insertMode', async () => {
       await testSerializeEquals('test\u001b[4h', 'test\u001b[4h');
       await testSerializeEquals('\u001b[4l', 'test');
     });
-    it('mouseTrackingMode', async () => {
+    test('mouseTrackingMode', async () => {
       await testSerializeEquals('test\u001b[?9h', 'test\u001b[?9h');
       await testSerializeEquals('\u001b[?9l', 'test');
       await testSerializeEquals('\u001b[?1000h', 'test\u001b[?1000h');
@@ -535,20 +530,20 @@ describe('SerializeAddon', () => {
       await testSerializeEquals('\u001b[?1003h', 'test\u001b[?1003h');
       await testSerializeEquals('\u001b[?1003l', 'test');
     });
-    it('originMode', async () => {
+    test('originMode', async () => {
       // origin mode moves cursor to (0,0)
       await testSerializeEquals('test\u001b[?6h', 'test\u001b[4D\u001b[?6h');
       await testSerializeEquals('\u001b[?6l', 'test\u001b[4D');
     });
-    it('reverseWraparoundMode', async () => {
+    test('reverseWraparoundMode', async () => {
       await testSerializeEquals('test\u001b[?45h', 'test\u001b[?45h');
       await testSerializeEquals('\u001b[?45l', 'test');
     });
-    it('sendFocusMode', async () => {
+    test('sendFocusMode', async () => {
       await testSerializeEquals('test\u001b[?1004h', 'test\u001b[?1004h');
       await testSerializeEquals('\u001b[?1004l', 'test');
     });
-    it('wraparoundMode', async () => {
+    test('wraparoundMode', async () => {
       await testSerializeEquals('test\u001b[?7l', 'test\u001b[?7l');
       await testSerializeEquals('\u001b[?7h', 'test');
     });

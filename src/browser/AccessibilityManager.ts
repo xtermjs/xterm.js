@@ -58,10 +58,11 @@ export class AccessibilityManager extends Disposable {
     @IRenderService private readonly _renderService: IRenderService
   ) {
     super();
-    this._accessibilityContainer = this._coreBrowserService.mainDocument.createElement('div');
+    const doc = this._coreBrowserService.mainDocument;
+    this._accessibilityContainer = doc.createElement('div');
     this._accessibilityContainer.classList.add('xterm-accessibility');
 
-    this._rowContainer = this._coreBrowserService.mainDocument.createElement('div');
+    this._rowContainer = doc.createElement('div');
     this._rowContainer.setAttribute('role', 'list');
     this._rowContainer.classList.add('xterm-accessibility-tree');
     this._rowElements = [];
@@ -75,10 +76,9 @@ export class AccessibilityManager extends Disposable {
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
-    this._refreshRowsDimensions();
     this._accessibilityContainer.appendChild(this._rowContainer);
 
-    this._liveRegion = this._coreBrowserService.mainDocument.createElement('div');
+    this._liveRegion = doc.createElement('div');
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityContainer.appendChild(this._liveRegion);
@@ -93,12 +93,12 @@ export class AccessibilityManager extends Disposable {
       this._rowContainer.classList.add('debug');
 
       // Use a `<div class="xterm">` container so that the css will still apply.
-      this._debugRootContainer = document.createElement('div');
+      this._debugRootContainer = doc.createElement('div');
       this._debugRootContainer.classList.add('xterm');
 
-      this._debugRootContainer.appendChild(document.createTextNode('------start a11y------'));
+      this._debugRootContainer.appendChild(doc.createTextNode('------start a11y------'));
       this._debugRootContainer.appendChild(this._accessibilityContainer);
-      this._debugRootContainer.appendChild(document.createTextNode('------end a11y------'));
+      this._debugRootContainer.appendChild(doc.createTextNode('------end a11y------'));
 
       this._terminal.element.insertAdjacentElement('afterend', this._debugRootContainer);
     } else {
@@ -115,9 +115,10 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
-    this.register(addDisposableDomListener(document, 'selectionchange', () => this._handleSelectionChange()));
+    this.register(addDisposableDomListener(doc, 'selectionchange', () => this._handleSelectionChange()));
     this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
 
+    this._refreshRowsDimensions();
     this._refreshRows();
     this.register(toDisposable(() => {
       if (DEBUG) {
@@ -192,6 +193,7 @@ export class AccessibilityManager extends Disposable {
         }
         element.setAttribute('aria-posinset', posInSet);
         element.setAttribute('aria-setsize', setSize);
+        this._alignRowWidth(element);
       }
     }
     this._announceCharacters();
@@ -270,7 +272,7 @@ export class AccessibilityManager extends Disposable {
       return;
     }
 
-    const selection = document.getSelection();
+    const selection = this._coreBrowserService.mainDocument.getSelection();
     if (!selection) {
       return;
     }
@@ -389,19 +391,45 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowDimensions(element);
     return element;
   }
+
   private _refreshRowsDimensions(): void {
     if (!this._renderService.dimensions.css.cell.height) {
       return;
     }
-    this._accessibilityContainer.style.width = `${this._renderService.dimensions.css.canvas.width}px`;
+    Object.assign(this._accessibilityContainer.style, {
+      width: `${this._renderService.dimensions.css.canvas.width}px`,
+      fontSize: `${this._terminal.options.fontSize}px`
+    });
     if (this._rowElements.length !== this._terminal.rows) {
       this._handleResize(this._terminal.rows);
     }
     for (let i = 0; i < this._terminal.rows; i++) {
       this._refreshRowDimensions(this._rowElements[i]);
+      this._alignRowWidth(this._rowElements[i]);
     }
   }
+
   private _refreshRowDimensions(element: HTMLElement): void {
     element.style.height = `${this._renderService.dimensions.css.cell.height}px`;
+  }
+
+  /**
+   * Scale the width of a row so that each of the character is (mostly) aligned
+   * with the actual rendering. This will allow the screen reader to draw
+   * selection outline at the correct position.
+   *
+   * On top of using the "monospace" font and correct font size, the scaling
+   * here is necessary to handle characters that are not covered by the font
+   * (e.g. CJK).
+   */
+  private _alignRowWidth(element: HTMLElement): void {
+    element.style.transform = '';
+    const width = element.getBoundingClientRect().width;
+    const lastColumn = this._rowColumns.get(element)?.slice(-1)?.[0];
+    if (!lastColumn) {
+      return;
+    }
+    const targetWidth = lastColumn * this._renderService.dimensions.css.cell.width;
+    element.style.transform = `scaleX(${targetWidth / width})`;
   }
 }
