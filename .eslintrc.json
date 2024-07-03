@@ -56,16 +56,20 @@
     "jsdoc"
   ],
   "rules": {
-    "no-extra-semi": "error",
     "@stylistic/ts/indent": [
       "warn",
       2
+    ],
+    "@stylistic/ts/semi": [
+      "warn",
+      "always"
     ],
     "@stylistic/ts/quotes": [
       "warn",
       "single",
       { "allowTemplateLiterals": true }
     ],
+
     "@typescript-eslint/array-type": [
       "warn",
       {
@@ -149,10 +153,7 @@
     "@typescript-eslint/no-useless-constructor": "warn",
     "@typescript-eslint/prefer-namespace-keyword": "warn",
     "@typescript-eslint/type-annotation-spacing": "warn",
-    "@typescript-eslint/semi": [
-      "warn",
-      "always"
-    ],
+
     "comma-dangle": [
       "warn",
       {
@@ -193,6 +194,7 @@
       }
     ],
     "no-eval": "warn",
+    "no-extra-semi": "error",
     "no-irregular-whitespace": "warn",
     "no-restricted-imports": [
       "warn",
