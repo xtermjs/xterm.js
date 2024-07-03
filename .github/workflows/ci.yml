@@ -112,7 +112,7 @@ jobs:
         ./node_modules/.bin/nyc report --reporter=cobertura
         exit $EXIT_CODE
 
-  test-unit-parallel:
+  test-unit:
     timeout-minutes: 20
     strategy:
       matrix:
@@ -150,7 +150,7 @@ jobs:
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
-  test-playwright-parallel:
+  test-integration:
     timeout-minutes: 20
     strategy:
       matrix:
@@ -191,11 +191,11 @@ jobs:
     - name: Build demo
       run: yarn build-demo
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
-      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-canvas)
-      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-canvas
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-canvas
     - name: Integration tests (addon-webgl)
-      run: yarn test-playwright-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
 
   release-dry-run:
     needs: build
