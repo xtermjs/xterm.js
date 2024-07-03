@@ -6,7 +6,7 @@
 import WebSocket = require('ws');
 
 import test from '@playwright/test';
-import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../out-test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../out-tsc/test-playwright/TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {

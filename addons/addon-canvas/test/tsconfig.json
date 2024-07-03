@@ -5,7 +5,7 @@
     "lib": [
       "es6",
     ],
-    "rootDir": ".",
+    "rootDir": "..",
     "outDir": "../out-tsc/test",
     "sourceMap": true,
     "removeComments": true,

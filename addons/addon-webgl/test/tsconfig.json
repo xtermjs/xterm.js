@@ -5,7 +5,7 @@
     "lib": [
       "es2021",
     ],
-    "rootDir": ".",
+    "rootDir": "..",
     "outDir": "../out-tsc/test",
     "sourceMap": true,
     "removeComments": true,

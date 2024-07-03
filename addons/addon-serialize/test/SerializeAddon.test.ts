@@ -7,7 +7,7 @@ import test from '@playwright/test';
 import { deepStrictEqual, notDeepStrictEqual, strictEqual } from 'assert';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { ITestContext, createTestContext, openTerminal, timeout, writeSync } from '../../../out-tsc/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, timeout, writeSync } from '../../../out-tsc/test-playwright/TestUtils';
 
 const writeRawSync = (page: any, str: string): Promise<void> => writeSync(ctx.page, `' +` + JSON.stringify(str) + `+ '`);
 

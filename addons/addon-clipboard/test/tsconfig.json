@@ -5,7 +5,7 @@
     "lib": [
       "es2021",
     ],
-    "rootDir": ".",
+    "rootDir": "..",
     "outDir": "../out-tsc/test",
     "sourceMap": true,
     "removeComments": true,
@@ -21,7 +21,7 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/node",
-      "../../../out-tsc/playwright/TestUtils"
+      "../../../out-tsc/test-playwright/TestUtils"
     ]
   },
   "include": [
