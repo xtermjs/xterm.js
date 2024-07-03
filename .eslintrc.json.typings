@@ -6,6 +6,7 @@
   },
   "parser": "@typescript-eslint/parser",
   "plugins": [
+    "@stylistic/ts",
     "@typescript-eslint",
     "jsdoc"
   ],
