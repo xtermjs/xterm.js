@@ -43,11 +43,11 @@
     "test-api-firefox": "node ./bin/test_api.js --browser=firefox --timeout=20000",
     "test-api-webkit": "node ./bin/test_api.js --browser=webkit --timeout=20000",
 
-    "test-playwright": "node ./bin/test_playwright.js --workers=75%",
-    "test-playwright-chromium": "node ./bin/test_playwright.js --workers=75% \"--project=Chrome Stable\"",
-    "test-playwright-firefox": "node ./bin/test_playwright.js --workers=75% \"--project=Firefox Stable\"",
-    "test-playwright-webkit": "node ./bin/test_playwright.js --workers=75% \"--project=WebKit\"",
-    "test-playwright-debug": "node ./bin/test_playwright.js  --workers=1 --headed --timeout=30000",
+    "test-integration": "node ./bin/test_playwright.js --workers=75%",
+    "test-integration-chromium": "node ./bin/test_playwright.js --workers=75% \"--project=ChromeStable\"",
+    "test-integration-firefox": "node ./bin/test_playwright.js --workers=75% \"--project=FirefoxStable\"",
+    "test-integration-webkit": "node ./bin/test_playwright.js --workers=75% \"--project=WebKit\"",
+    "test-integration-debug": "node ./bin/test_playwright.js  --workers=1 --headed --timeout=30000",
 
     "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
     "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-tsc/test-benchmark/test/benchmark/*benchmark.js",
@@ -65,6 +65,7 @@
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
     "@playwright/test": "^1.37.1",
+    "@stylistic/eslint-plugin": "^2.3.0",
     "@types/chai": "^4.2.22",
     "@types/debug": "^4.1.7",
     "@types/deep-equal": "^1.0.1",

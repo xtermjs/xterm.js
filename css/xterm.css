@@ -157,8 +157,14 @@
 }
 
 .xterm .xterm-accessibility-tree {
+  font-family: monospace;
   user-select: text;
   white-space: pre;
+}
+
+.xterm .xterm-accessibility-tree > div {
+  transform-origin: left;
+  width: fit-content;
 }
 
 .xterm .live-region {

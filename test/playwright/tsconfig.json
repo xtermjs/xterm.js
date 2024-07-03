@@ -24,7 +24,7 @@
         "../../src/common/*"
       ]
     },
-    "target": "es2016",
+    "target": "ESNext",
     "module": "commonjs",
   },
   "include": [

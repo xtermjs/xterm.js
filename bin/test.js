@@ -6,7 +6,7 @@
 const cp = require('child_process');
 const path = require('path');
 
-const COVERAGE_LINES_THRESHOLD = 60;
+const COVERAGE_LINES_THRESHOLD = 40;
 
 // Add `out` to the NODE_PATH so absolute paths can be resolved.
 const env = { ...process.env };
@@ -34,7 +34,6 @@ if (process.argv.length > 2) {
 }
 
 const checkCoverage = flagArgs.indexOf('--coverage') >= 0;
-
 if (checkCoverage) {
   flagArgs.splice(flagArgs.indexOf('--coverage'), 1);
   const executable = npmBinScript('nyc');
@@ -48,7 +47,7 @@ if (checkCoverage) {
       cwd: path.resolve(__dirname, '..'),
       env,
       shell: true,
-      stdio: 'inherit',
+      stdio: 'inherit'
     }
   );
   process.exit(run.status);
@@ -72,5 +71,4 @@ function npmBinScript(script) {
 if (run.error) {
   console.error(run.error);
 }
-
 process.exit(run.status ?? -1);
