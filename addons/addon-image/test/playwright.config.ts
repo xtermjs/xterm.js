@@ -5,14 +5,14 @@ const config: PlaywrightTestConfig = {
   timeout: 10000,
   projects: [
     {
-      name: 'ChromeStable',
+      name: 'Chrome Stable',
       use: {
         browserName: 'chromium',
         channel: 'chrome'
       }
     },
     {
-      name: 'FirefoxStable',
+      name: 'Firefox Stable',
       use: {
         browserName: 'firefox'
       }

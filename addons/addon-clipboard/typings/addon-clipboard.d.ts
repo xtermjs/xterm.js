@@ -13,8 +13,10 @@ declare module '@xterm/addon-clipboard' {
   export class ClipboardAddon implements ITerminalAddon {
     /**
      * Creates a new clipboard addon.
+     * @param base64 An optional base64 encoder/decoder.
+     * @param provider An optional clipboard provider.
      */
-    constructor(provider?: IClipboardProvider);
+    constructor(base64?: IBase64, provider?: IClipboardProvider);
 
     /**
      * Activates the addon
