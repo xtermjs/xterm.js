@@ -12,7 +12,7 @@ import { ITestContext, createTestContext, openTerminal, timeout } from '../../..
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
-  await openTerminal(ctx);
+  await openTerminal(ctx, { cols: 80, rows: 24 });
 });
 test.afterAll(async () => await ctx.page.close());
 
