@@ -3,7 +3,7 @@
     "module": "commonjs",
     "target": "es2021",
     "lib": [
-      "es2015"
+      "es2021",
     ],
     "rootDir": ".",
     "outDir": "../out-test",
@@ -13,13 +13,15 @@
     "paths": {
       "common/*": [
         "../../../src/common/*"
+      ],
+      "browser/*": [
+        "../../../src/browser/*"
       ]
     },
     "strict": true,
     "types": [
-      "../../../node_modules/@types/mocha",
       "../../../node_modules/@types/node",
-      "../../../out-test/api/TestUtils"
+      "../../../out-test/playwright/TestUtils"
     ]
   },
   "include": [
@@ -29,6 +31,9 @@
   "references": [
     {
       "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/browser"
     }
   ]
 }
