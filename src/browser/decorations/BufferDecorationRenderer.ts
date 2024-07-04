@@ -108,8 +108,13 @@ export class BufferDecorationRenderer extends Disposable {
           element!.remove();
         });
       }
-      element.style.top = `${line * this._renderService.dimensions.css.cell.height}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';
+      if (!this._altBufferIsActive) {
+        element.style.width = `${Math.round((decoration.options.width || 1) * this._renderService.dimensions.css.cell.width)}px`;
+        element.style.height = `${(decoration.options.height || 1) * this._renderService.dimensions.css.cell.height}px`;
+        element.style.top = `${line * this._renderService.dimensions.css.cell.height}px`;
+        element.style.lineHeight = `${this._renderService.dimensions.css.cell.height}px`;
+      }
       decoration.onRenderEmitter.fire(element);
     }
   }
