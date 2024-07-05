@@ -77,7 +77,7 @@
     "deep-equal": "^2.0.5",
     "eslint": "^8.56.0",
     "eslint-plugin-jsdoc": "^46.9.1",
-    "express": "^4.17.1",
+    "express": "^4.19.2",
     "express-ws": "^5.0.2",
     "glob": "^7.2.0",
     "jsdom": "^18.0.1",
