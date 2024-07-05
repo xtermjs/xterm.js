@@ -21,12 +21,12 @@ const config = {
 const commonOptions = {
   format: 'esm',
   target: 'es2021',
+  sourcemap: true,
   logLevel: 'debug',
 };
 
 /** @type {esbuild.BuildOptions} */
 const devOptions = {
-  sourcemap: true,
   minify: false,
 };
 
@@ -57,12 +57,6 @@ const prodOptions = {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/`
   },
-  // footer: {
-  //   js: `return __export__;\n});`
-  // },
-
-  format: 'esm',
-  // mangleProps: /_.+/,
 };
 
 /**
