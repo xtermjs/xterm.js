@@ -22,7 +22,7 @@ jobs:
     - name: Setup and run tsc
       run: yarn setup
     - name: Esbuild
-      run: yarn esbuild-dev
+      run: yarn esbuild
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
