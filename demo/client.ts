@@ -8,15 +8,14 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-// TODO: Move to regular import?
+// TODO: Move to regular import, currently it complains about the `fs` module
 import { LigaturesAddon } from '../addons/addon-ligatures/out-esbuild/LigaturesAddon';
 
-// DEBT: The image addon is not currently build with esbuild
 // HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddonType, IImageAddonOptions } from '../addons/addon-image/out/ImageAddon';
-let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
+import type { ImageAddon as ImageAddonType, IImageAddonOptions } from '@xterm/addon-image';
+let ImageAddon: typeof ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
-  const imageAddon = require('../addons/addon-image/out/ImageAddon');
+  const imageAddon = require('@xterm/addon-image');
   ImageAddon = imageAddon.ImageAddon;
 }
 
@@ -25,7 +24,6 @@ import { AttachAddon } from '@xterm/addon-attach';
 import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
-// import { ImageAddon } from '@xterm/addon-image';
 // import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';

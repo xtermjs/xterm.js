@@ -150,7 +150,7 @@ if (config.isDemoClient) {
       "@xterm/addon-canvas": "./addons/addon-canvas/lib/xterm-addon-canvas.mjs",
       "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/xterm-addon-clipboard.mjs",
       "@xterm/addon-fit": "./addons/addon-fit/lib/xterm-addon-fit.mjs",
-      // "@xterm/addon-image": "./addons/addon-image/lib/xterm-addon-image.js",
+      "@xterm/addon-image": "./addons/addon-image/lib/xterm-addon-image.mjs",
       // "@xterm/addon-ligatures": "./addons/addon-ligatures/lib/xterm-addon-ligatures.js",
       "@xterm/addon-search": "./addons/addon-search/lib/xterm-addon-search.mjs",
       "@xterm/addon-serialize": "./addons/addon-serialize/lib/xterm-addon-serialize.mjs",
