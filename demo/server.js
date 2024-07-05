@@ -185,4 +185,12 @@ function startServer() {
   app.listen(port, host, 0);
 }
 
+// HACK: There is an EPIPE error thrown when reloading a page. This only seems to happen on Windows
+// and it's unclear why it happens. Suppressing the error here since this is just the demo server.
+process.on('uncaughtException', (error) => {
+  if (process.platform === 'win32' && error.message === 'read EPIPE') {
+    return;
+  }
+});
+
 module.exports = startServer;
