@@ -7,8 +7,23 @@ import test from '@playwright/test';
 import { readFileSync } from 'fs';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { ITestContext, createTestContext, openTerminal, pollFor } from '../../../out-test/playwright/TestUtils';
-import { IImageAddonOptions } from '../src/Types';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
+
+/**
+ * Plugin ctor options.
+ */
+export interface IImageAddonOptions {
+  enableSizeReports: boolean;
+  pixelLimit: number;
+  storageLimit: number;
+  showPlaceholder: boolean;
+  sixelSupport: boolean;
+  sixelScrolling: boolean;
+  sixelPaletteLimit: number;
+  sixelSizeLimit: number;
+  iipSupport: boolean;
+  iipSizeLimit: number;
+}
 
 // eslint-disable-next-line
 declare const ImageAddon: {
