@@ -60,3 +60,48 @@ By contributing code to xterm.js you:
 ### Test coverage
 
 One area that always needs attention is improving out unit test coverage, you can view the code coverage report on [Azure Pipelines](https://dev.azure.com/xtermjs/xterm.js/_build/latest?definitionId=3) by clicking the Code Coverage tab.
+
+## Testing
+
+### Unit tests
+
+All unit tests can be run with:
+
+```sh
+yarn test-unit
+```
+
+Run a subset of tests like this:
+
+```sh
+# Absolute file path:
+yarn test-unit out-esbuild/browser/Terminal.test.js
+
+# Wildcard:
+yarn test-unit out-esbuild/**/Terminal.test.js
+
+# All of an specific addon's tests:
+yarn test-unit addons/addon-image/out-esbuild/*.test.js
+
+# Multiple files:
+yarn test-unit out-esbuild/**/Terminal.test.js out-esbuild/**/InputHandler.test.js
+```
+
+These use mocha to run all `.test.js` files within the esbuild output (`out-esbuild/`).
+
+### Integration tests
+
+All integration tests can be run with:
+
+```sh
+yarn test-integration
+```
+
+Run a particular suite with the `--suite` flag:
+
+```sh
+yarn test-integration --suite=core
+yarn test-integration --suite=addon-search
+```
+
+These use `@playwright/test` to run all tests within the tsc test output (`out-test/`). These do not use the esbuild output because they require declaration files to get types to work.
