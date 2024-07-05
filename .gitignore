@@ -4,6 +4,8 @@ node_modules/
 lib/
 out/
 out-test/
+out-esbuild/
+out-esbuild-test/
 .nyc_output/
 Makefile.gyp
 *.Makefile

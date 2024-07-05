@@ -7,10 +7,14 @@
   "mochaExplorer.envPath": ".mocha.env",
   "mochaExplorer.files": [
     "out/**/*.test.js",
-    "addons/**/out/*.test.js"
+    "addons/**/out/*.test.js",
+    "out-*/**/*.test.js",
+    "addons/**/out-*/*.test.js"
   ],
   "mochaExplorer.watch": [
     "out/**/*.js",
-    "addons/**/out/*.js"
+    "addons/**/out/*.js",
+    "out-*/**/*.js",
+    "addons/**/out-*/*.js"
   ]
 }

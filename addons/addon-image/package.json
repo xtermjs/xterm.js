@@ -20,7 +20,7 @@
     "prepackage": "../../node_modules/.bin/tsc -p .",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
-    "start-server-only": "node ../../demo/start-server-only"
+    "start": "node ../../demo/start"
   },
   "peerDependencies": {
     "@xterm/xterm": "^5.2.0"

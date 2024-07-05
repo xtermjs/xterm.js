@@ -59,7 +59,7 @@ import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
 
-export class Terminal extends CoreTerminal implements ITerminal {
+export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
   public element: HTMLElement | undefined;
   public screenElement: HTMLElement | undefined;

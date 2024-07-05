@@ -4,7 +4,7 @@
  */
 
 import * as Strings from 'browser/LocalizableStrings';
-import { Terminal as TerminalCore } from 'browser/Terminal';
+import { CoreBrowserTerminal as TerminalCore } from 'browser/CoreBrowserTerminal';
 import { IBufferRange, ITerminal } from 'browser/Types';
 import { IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
