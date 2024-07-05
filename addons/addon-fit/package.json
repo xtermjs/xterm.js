@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-fit.js",
+  "module": "lib/addon-fit.mjs",
   "types": "typings/addon-fit.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit",
   "license": "MIT",

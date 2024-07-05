@@ -3,6 +3,7 @@
   "description": "Full xterm terminal, in your browser",
   "version": "5.5.0",
   "main": "lib/xterm.js",
+  "module": "lib/xterm.mjs",
   "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
@@ -67,6 +68,7 @@
 
     "prepackage": "npm run build",
     "package": "webpack",
+    "postpackage":"npm run esbuild-package",
     "package-headless": "webpack --config ./webpack.config.headless.js",
     "postpackage-headless": "node ./bin/package_headless.js",
     "prepublishOnly": "npm run package"

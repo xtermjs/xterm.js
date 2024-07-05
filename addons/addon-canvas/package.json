@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-canvas.js",
+  "module": "lib/addon-canvas.mjs",
   "types": "typings/addon-canvas.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-canvas",
   "license": "MIT",

@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-clipboard.js",
+  "module": "lib/addon-clipboard.mjs",
   "types": "typings/addon-clipboard.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-clipboard",
   "license": "MIT",

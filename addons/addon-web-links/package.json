@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-web-links.js",
+  "module": "lib/addon-web-links.mjs",
   "types": "typings/addon-web-links.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-links",
   "license": "MIT",

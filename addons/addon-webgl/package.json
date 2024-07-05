@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-webgl.js",
+  "module": "lib/addon-webgl.mjs",
   "types": "typings/addon-webgl.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-webgl",
   "license": "MIT",

@@ -443,7 +443,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this.textarea = this._document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
-    this.textarea.setAttribute('aria-label', Strings.promptLabel);
+    this.textarea.setAttribute('aria-label', Strings.promptLabel.get());
     if (!Browser.isChromeOS) {
       // ChromeVox on ChromeOS does not like this. See
       // https://issuetracker.google.com/issues/260170397

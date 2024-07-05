@@ -247,7 +247,13 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._addonManager.loadAddon(this, addon);
   }
   public static get strings(): ILocalizableStrings {
-    return Strings;
+    // A wrapper is required here because esbuild prevents setting an `export let`
+    return {
+      get promptLabel(): string { return Strings.promptLabel.get(); },
+      set promptLabel(value: string) { Strings.promptLabel.set(value); },
+      get tooMuchOutput(): string { return Strings.tooMuchOutput.get(); },
+      set tooMuchOutput(value: string) { Strings.tooMuchOutput.set(value); }
+    };
   }
 
   private _verifyIntegers(...values: number[]): void {

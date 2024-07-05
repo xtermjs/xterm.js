@@ -56,7 +56,12 @@ const prodOptions = {
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/`
-  }
+  },
+  // footer: {
+  //   js: `return __export__;\n});`
+  // },
+
+  format: 'esm',
   // mangleProps: /_.+/,
 };
 
@@ -101,7 +106,7 @@ if (config.addon) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`addons/addon-${config.addon}/src/${getAddonEntryPoint(config.addon)}.ts`],
-    outfile: `addons/addon-${config.addon}/lib/xterm-addon-${config.addon}.js`,
+    outfile: `addons/addon-${config.addon}/lib/xterm-addon-${config.addon}.mjs`,
   };
   outConfig = {
     ...outConfig,
@@ -125,7 +130,7 @@ if (config.addon) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`src/browser/public/Terminal.ts`],
-    outfile: `lib/xterm.js`
+    outfile: `lib/xterm.mjs`
   };
   outConfig = {
     ...outConfig,
@@ -147,18 +152,18 @@ if (config.isDemoClient) {
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
     alias: {
       "@xterm/xterm": ".",
-      "@xterm/addon-attach": "./addons/addon-attach/lib/xterm-addon-attach.js",
-      "@xterm/addon-canvas": "./addons/addon-canvas/lib/xterm-addon-canvas.js",
-      "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/xterm-addon-clipboard.js",
-      "@xterm/addon-fit": "./addons/addon-fit/lib/xterm-addon-fit.js",
+      "@xterm/addon-attach": "./addons/addon-attach/lib/xterm-addon-attach.mjs",
+      "@xterm/addon-canvas": "./addons/addon-canvas/lib/xterm-addon-canvas.mjs",
+      "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/xterm-addon-clipboard.mjs",
+      "@xterm/addon-fit": "./addons/addon-fit/lib/xterm-addon-fit.mjs",
       // "@xterm/addon-image": "./addons/addon-image/lib/xterm-addon-image.js",
       // "@xterm/addon-ligatures": "./addons/addon-ligatures/lib/xterm-addon-ligatures.js",
-      "@xterm/addon-search": "./addons/addon-search/lib/xterm-addon-search.js",
-      "@xterm/addon-serialize": "./addons/addon-serialize/lib/xterm-addon-serialize.js",
-      "@xterm/addon-web-links": "./addons/addon-web-links/lib/xterm-addon-web-links.js",
-      "@xterm/addon-webgl": "./addons/addon-webgl/lib/xterm-addon-webgl.js",
-      "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/xterm-addon-unicode11.js",
-      "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/xterm-addon-unicode-graphemes.js",
+      "@xterm/addon-search": "./addons/addon-search/lib/xterm-addon-search.mjs",
+      "@xterm/addon-serialize": "./addons/addon-serialize/lib/xterm-addon-serialize.mjs",
+      "@xterm/addon-web-links": "./addons/addon-web-links/lib/xterm-addon-web-links.mjs",
+      "@xterm/addon-webgl": "./addons/addon-webgl/lib/xterm-addon-webgl.mjs",
+      "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/xterm-addon-unicode11.mjs",
+      "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/xterm-addon-unicode-graphemes.mjs",
 
       // Needed for out-tsc based image addon
       "common/Lifecycle": "./src/common/Lifecycle.ts",
