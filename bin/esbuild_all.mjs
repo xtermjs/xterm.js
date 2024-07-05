@@ -13,9 +13,7 @@ jobs.push(createJob('xterm', []));
 // Addon jobs
 const addons = (await readdir('addons')).map(e => e.replace('addon-', ''));
 for (const addon of addons) {
-  if (addon !== 'image') {
-    jobs.push(createJob(`xterm-addon-${addon}`, [`--addon=${addon}`]));
-  }
+  jobs.push(createJob(`xterm-addon-${addon}`, [`--addon=${addon}`]));
 }
 
 // Demo job - This requires the others to be built so it's not included when building all
