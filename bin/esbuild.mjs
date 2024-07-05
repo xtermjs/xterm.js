@@ -145,13 +145,13 @@ if (config.isDemoClient) {
     outfile: 'demo/dist/client-bundle.js',
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
     alias: {
+      // Library ESM imports
       "@xterm/xterm": ".",
       "@xterm/addon-attach": "./addons/addon-attach/lib/xterm-addon-attach.mjs",
       "@xterm/addon-canvas": "./addons/addon-canvas/lib/xterm-addon-canvas.mjs",
       "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/xterm-addon-clipboard.mjs",
       "@xterm/addon-fit": "./addons/addon-fit/lib/xterm-addon-fit.mjs",
       "@xterm/addon-image": "./addons/addon-image/lib/xterm-addon-image.mjs",
-      // "@xterm/addon-ligatures": "./addons/addon-ligatures/lib/xterm-addon-ligatures.js",
       "@xterm/addon-search": "./addons/addon-search/lib/xterm-addon-search.mjs",
       "@xterm/addon-serialize": "./addons/addon-serialize/lib/xterm-addon-serialize.mjs",
       "@xterm/addon-web-links": "./addons/addon-web-links/lib/xterm-addon-web-links.mjs",
@@ -159,8 +159,12 @@ if (config.isDemoClient) {
       "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/xterm-addon-unicode11.mjs",
       "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/xterm-addon-unicode-graphemes.mjs",
 
-      // Needed for out-tsc based image addon
-      "common/Lifecycle": "./src/common/Lifecycle.ts",
+      // Non-bundled ESM imports
+      // HACK: Ligatures imports fs which in the esbuild bundle resolves at runtime _on startup_
+      //       instead of only when it's needed. This causes a `Dynamic require of "fs" is not
+      //       supported` exception to be thrown. So the unbundled out-esbuild sources are used
+      //       instead of the .mjs file which seems to resolve the issue.
+      "@xterm/addon-ligatures": "./addons/addon-ligatures/out-esbuild/LigaturesAddon",
     }
   }
 };

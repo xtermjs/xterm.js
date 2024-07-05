@@ -8,9 +8,6 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-// TODO: Move to regular import, currently it complains about the `fs` module
-import { LigaturesAddon } from '../addons/addon-ligatures/out-esbuild/LigaturesAddon';
-
 // HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
 import type { ImageAddon as ImageAddonType, IImageAddonOptions } from '@xterm/addon-image';
 let ImageAddon: typeof ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
@@ -24,7 +21,7 @@ import { AttachAddon } from '@xterm/addon-attach';
 import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
-// import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -620,15 +617,15 @@ function initAddons(term: Terminal): void {
       term.unicode.activeVersion = '15-graphemes';
     }
     if (name === 'search' && checkbox.checked) {
-      addon.instance.onDidChangeResults(e => updateFindResults(e));
+      addons[name].instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (name === 'image') {
         if (checkbox.checked) {
           const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
           addon.instance = ctorOptionsJson
-            ? new addon.ctor(JSON.parse(ctorOptionsJson))
-            : new addon.ctor();
+            ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
+            : new addons[name].ctor();
           term.loadAddon(addon.instance);
         } else {
           addon.instance!.dispose();
@@ -637,7 +634,8 @@ function initAddons(term: Terminal): void {
         return;
       }
       if (checkbox.checked) {
-        addon.instance = new addon.ctor();
+        // HACK: Manually remove addons that cannot be changes
+        addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
@@ -657,7 +655,7 @@ function initAddons(term: Terminal): void {
           } else if (name === 'unicodeGraphemes') {
             term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
-            addon.instance.onDidChangeResults(e => updateFindResults(e));
+            addons[name].instance.onDidChangeResults(e => updateFindResults(e));
           }
         }
         catch {
