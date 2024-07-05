@@ -92,10 +92,10 @@ let outConfig = {
 let skipOut = false;
 
 /** @type {esbuild.BuildOptions} */
-let outTestConfig = {
-  format: 'cjs'
-}
-let skipOutTest = false;
+// let outTestConfig = {
+//   format: 'cjs'
+// }
+// let skipOutTest = false;
 
 if (config.addon) {
   bundleConfig = {
@@ -108,11 +108,11 @@ if (config.addon) {
     entryPoints: [`addons/addon-${config.addon}/src/**/*.ts`],
     outdir: `addons/addon-${config.addon}/out-esbuild/`
   };
-  outTestConfig = {
-    ...outConfig,
-    entryPoints: [`addons/addon-${config.addon}/test/**/*.ts`],
-    outdir: `addons/addon-${config.addon}/out-esbuild-test/`
-  };
+  // outTestConfig = {
+  //   ...outConfig,
+  //   entryPoints: [`addons/addon-${config.addon}/test/**/*.ts`],
+  //   outdir: `addons/addon-${config.addon}/out-esbuild-test/`
+  // };
 
   if (config.addon === 'ligatures') {
     bundleConfig.platform = 'node';
@@ -120,11 +120,6 @@ if (config.addon) {
 
   if (config.addon === 'serialize') {
     bundleConfig.tsconfig = 'addons/addon-serialize/src/tsconfig.json'
-  }
-
-  // Addons that don't have unit tests
-  if (['ligatures'].includes(config.addon)) {
-    skipOutTest = true;
   }
 } else {
   bundleConfig = {
@@ -137,11 +132,11 @@ if (config.addon) {
     entryPoints: ['src/**/*.ts'],
     outdir: 'out-esbuild/'
   };
-  outTestConfig = {
-    ...outConfig,
-    entryPoints: ['test/**/*.ts'],
-    outdir: 'out-esbuild-test/'
-  };
+  // outTestConfig = {
+  //   ...outConfig,
+  //   entryPoints: ['test/**/*.ts'],
+  //   outdir: 'out-esbuild-test/'
+  // };
 }
 
 if (config.isDemoClient) {
@@ -176,15 +171,15 @@ if (config.isWatch) {
   if (!skipOut) {
     context(outConfig).then(e => e.watch());
   }
-  if (!skipOutTest) {
-    context(outTestConfig).then(e => e.watch());
-  }
+  // if (!skipOutTest) {
+  //   context(outTestConfig).then(e => e.watch());
+  // }
 } else {
   await build(bundleConfig);
   if (!skipOut) {
     await build(outConfig);
   }
-  if (!skipOutTest) {
-    await build(outTestConfig);
-  }
+  // if (!skipOutTest) {
+  //   await build(outTestConfig);
+  // }
 }
