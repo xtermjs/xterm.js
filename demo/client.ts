@@ -451,6 +451,7 @@ function initOptions(term: TerminalType): void {
     'termName',
     'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
+    'documentOverride',
     'linkHandler',
     'logger',
     'theme',
