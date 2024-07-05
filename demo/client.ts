@@ -20,7 +20,7 @@ if ('WebAssembly' in window) {
   ImageAddon = imageAddon.ImageAddon;
 }
 
-import { Terminal as TerminalCtor, ITerminalOptions, type IDisposable } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
@@ -35,8 +35,8 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
 export interface IWindowWithTerminal extends Window {
-  term: TerminalCtor;
-  Terminal: typeof TerminalCtor;
+  term: typeof Terminal;
+  Terminal: typeof Terminal;
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -219,7 +219,7 @@ const createNewWindowButtonHandler: () => void = () => {
 };
 
 if (document.location.pathname === '/test') {
-  window.Terminal = TerminalCtor;
+  window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
   window.CanvasAddon = CanvasAddon;
   window.ClipboardAddon = ClipboardAddon;
@@ -265,7 +265,7 @@ function createTerminal(): void {
   }
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
-  term = new TerminalCtor({
+  term = new Terminal({
     allowProposedApi: true,
     windowsPty: isWindows ? {
       // In a real scenario, these values should be verified on the backend
@@ -277,7 +277,7 @@ function createTerminal(): void {
   } as ITerminalOptions);
 
   // Load addons
-  const typedTerm = term as TerminalCtor;
+  const typedTerm = term as Terminal;
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
@@ -430,7 +430,7 @@ function runFakeTerminal(): void {
   });
 }
 
-function initOptions(term: TerminalCtor): void {
+function initOptions(term: Terminal): void {
   const blacklistedOptions = [
     // Internal only options
     'cancelEvents',
@@ -438,7 +438,6 @@ function initOptions(term: TerminalCtor): void {
     'termName',
     'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
-    'documentOverride',
     'linkHandler',
     'logger',
     'theme',
@@ -606,7 +605,7 @@ function initOptions(term: TerminalCtor): void {
   });
 }
 
-function initAddons(term: TerminalCtor): void {
+function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
   Object.keys(addons).forEach((name: AddonType) => {
     const addon = addons[name];
@@ -1177,7 +1176,7 @@ function decorationStressTest(): void {
     }
     decorationStressTestDecorations = undefined;
   } else {
-    const t = term as TerminalCtor;
+    const t = term as Terminal;
     const buffer = t.buffer.active;
     const cursorY = buffer.baseY + buffer.cursorY;
     decorationStressTestDecorations = [];

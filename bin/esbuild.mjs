@@ -178,7 +178,6 @@ if (config.isDemoClient) {
 };
 
 if (config.isWatch) {
-  // TODO: This doesn't report errors?
   context(bundleConfig).then(e => e.watch());
   if (!skipOut) {
     context(outConfig).then(e => e.watch());
