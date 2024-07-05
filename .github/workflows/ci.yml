@@ -204,7 +204,7 @@ jobs:
         fi
         ls -R
     - name: Build demo
-      run: yarn build-demo
+      run: yarn esbuild-demo
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-attach)
