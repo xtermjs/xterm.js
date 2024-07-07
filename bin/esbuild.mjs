@@ -12,6 +12,7 @@ const config = {
   isProd: argv.includes('--prod'),
   isWatch: argv.includes('--watch'),
   isDemoClient: argv.includes('--demo-client'),
+  isHeadless: argv.includes('--headless'),
   addon: argv.find(e => e.startsWith('--addon='))?.replace(/^--addon=/, ''),
 };
 
@@ -120,25 +121,7 @@ if (config.addon) {
   if (config.addon === 'serialize') {
     bundleConfig.tsconfig = 'addons/addon-serialize/src/tsconfig.json'
   }
-} else {
-  bundleConfig = {
-    ...bundleConfig,
-    entryPoints: [`src/browser/public/Terminal.ts`],
-    outfile: `lib/xterm.mjs`
-  };
-  outConfig = {
-    ...outConfig,
-    entryPoints: ['src/**/*.ts'],
-    outdir: 'out-esbuild/'
-  };
-  // outTestConfig = {
-  //   ...outConfig,
-  //   entryPoints: ['test/**/*.ts'],
-  //   outdir: 'out-esbuild-test/'
-  // };
-}
-
-if (config.isDemoClient) {
+} else if (config.isDemoClient) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`demo/client.ts`],
@@ -167,7 +150,35 @@ if (config.isDemoClient) {
       "@xterm/addon-ligatures": "./addons/addon-ligatures/out-esbuild/LigaturesAddon",
     }
   }
-};
+} else if (config.isHeadless) {
+  bundleConfig = {
+    ...bundleConfig,
+    entryPoints: [`src/headless/public/Terminal.ts`],
+    outfile: `headless/lib-headless/xterm-headless.mjs`
+  };
+  outConfig = {
+    ...outConfig,
+    entryPoints: ['src/**/*.ts'],
+    outdir: 'out-esbuild/'
+  };
+  skipOut = true;
+} else {
+  bundleConfig = {
+    ...bundleConfig,
+    entryPoints: [`src/browser/public/Terminal.ts`],
+    outfile: `lib/xterm.mjs`
+  };
+  outConfig = {
+    ...outConfig,
+    entryPoints: ['src/**/*.ts'],
+    outdir: 'out-esbuild/'
+  };
+  // outTestConfig = {
+  //   ...outConfig,
+  //   entryPoints: ['test/**/*.ts'],
+  //   outdir: 'out-esbuild-test/'
+  // };
+}
 
 if (config.isWatch) {
   context(bundleConfig).then(e => e.watch());

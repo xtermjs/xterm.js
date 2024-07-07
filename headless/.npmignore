@@ -8,6 +8,9 @@
 !lib-headless/**/*.js
 !lib-headless/**/*.js.map
 
+!lib-headless/**/*.mjs
+!lib-headless/**/*.mjs.map
+
 !lib-headless/**/*.css
 
 # Whitelist - src/

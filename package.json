@@ -40,6 +40,7 @@
     "esbuild-watch": "node bin/esbuild_all.mjs --watch",
     "esbuild-package": "node bin/esbuild_all.mjs --prod",
     "esbuild-package-watch": "node bin/esbuild_all.mjs --prod --watch",
+    "esbuild-package-headless-only": "node bin/esbuild.mjs --prod --headless",
     "esbuild-demo": "node bin/esbuild.mjs --demo-client",
     "esbuild-demo-watch": "node bin/esbuild.mjs --demo-client --watch",
 
@@ -69,6 +70,7 @@
     "prepackage": "npm run build",
     "package": "webpack",
     "postpackage":"npm run esbuild-package",
+    "prepackage-headless": "npm run esbuild-package-headless-only",
     "package-headless": "webpack --config ./webpack.config.headless.js",
     "postpackage-headless": "node ./bin/package_headless.js",
     "prepublishOnly": "npm run package"
