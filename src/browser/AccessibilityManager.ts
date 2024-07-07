@@ -151,7 +151,7 @@ export class AccessibilityManager extends Disposable {
       if (char === '\n') {
         this._liveRegionLineCount++;
         if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
-          this._liveRegion.textContent += Strings.tooMuchOutput;
+          this._liveRegion.textContent += Strings.tooMuchOutput.get();
         }
       }
     }

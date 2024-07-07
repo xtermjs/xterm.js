@@ -12,7 +12,7 @@ import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
-import { Terminal } from 'browser/Terminal';
+import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
 import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
@@ -20,7 +20,7 @@ import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 
 import { css } from 'common/Color';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
-export class TestTerminal extends Terminal {
+export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
   public keyDown(ev: any): boolean | undefined { return this._keyDown(ev); }
   public keyPress(ev: any): boolean { return this._keyPress(ev); }

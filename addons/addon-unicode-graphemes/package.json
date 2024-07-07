@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-unicode-graphemes.js",
+  "module": "lib/.addon-unicode-graphemes.mjs",
   "types": "typings/addon-unicode-graphemes.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-unicode-graphemes",
   "license": "MIT",
@@ -19,7 +20,7 @@
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
-    "start-server-only": "node ../../demo/start-server-only",
+    "start": "node ../../demo/start",
     "benchmark": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json out-benchmark/benchmark/*benchmark.js",
     "benchmark-baseline": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --baseline out-benchmark/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --eval out-benchmark/benchmark/*benchmark.js"

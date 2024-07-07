@@ -26,7 +26,7 @@ const config: PlaywrightTestConfig = {
   ],
   reporter: 'list',
   webServer: {
-    command: 'npm run start-server-only',
+    command: 'npm run start',
     port: 3000,
     timeout: 120000,
     reuseExistingServer: !process.env.CI

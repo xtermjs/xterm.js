@@ -5,7 +5,7 @@
 
 import test from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
-import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal } from '../../../test/playwright/TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {

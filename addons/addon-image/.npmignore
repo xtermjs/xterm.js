@@ -6,5 +6,7 @@ tsconfig.json
 webpack.config.js
 test
 out-test
+out-esbuild
+out-esbuild-test
 inwasm-sdks
 inwasm-builds

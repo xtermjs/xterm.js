@@ -7,7 +7,7 @@ import test from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { ITestContext, createTestContext, openTerminal, timeout } from '../../../out-test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, timeout } from '../../../test/playwright/TestUtils';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {

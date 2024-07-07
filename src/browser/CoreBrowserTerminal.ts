@@ -59,7 +59,7 @@ import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
 
-export class Terminal extends CoreTerminal implements ITerminal {
+export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
   public element: HTMLElement | undefined;
   public screenElement: HTMLElement | undefined;
@@ -443,7 +443,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
     this.textarea = this._document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
-    this.textarea.setAttribute('aria-label', Strings.promptLabel);
+    this.textarea.setAttribute('aria-label', Strings.promptLabel.get());
     if (!Browser.isChromeOS) {
       // ChromeVox on ChromeOS does not like this. See
       // https://issuetracker.google.com/issues/260170397

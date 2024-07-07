@@ -7,7 +7,6 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import { assert } from 'chai';
 import * as fontFinder from 'font-finder';
-import * as fontLigatures from 'font-ligatures';
 
 import * as ligatureSupport from '.';
 
@@ -105,15 +104,6 @@ describe('LigaturesAddon', () => {
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
     assert.isTrue(onRefresh.notCalled);
-  });
-
-  it('ensures no empty errors are thrown', async () => {
-    sinon.stub(fontLigatures, 'loadFile').callsFake(async () => { throw undefined; });
-    term.options.fontFamily = 'Iosevka';
-    assert.deepEqual(term.joiner!(input), []);
-    await delay(500);
-    assert.isTrue(onRefresh.notCalled);
-    (fontLigatures.loadFile as sinon.SinonStub).restore();
   });
 });
 

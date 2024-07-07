@@ -4,8 +4,8 @@
  */
 
 import test from '@playwright/test';
-import { ISharedRendererTestContext, injectSharedRendererTests, injectSharedRendererTestsStandalone } from '../../../out-test/playwright/SharedRendererTests';
-import { ITestContext, createTestContext, openTerminal } from '../../../out-test/playwright/TestUtils';
+import { ISharedRendererTestContext, injectSharedRendererTests, injectSharedRendererTestsStandalone } from '../../../test/playwright/SharedRendererTests';
+import { ITestContext, createTestContext, openTerminal } from '../../../test/playwright/TestUtils';
 
 let ctx: ITestContext;
 const ctxWrapper: ISharedRendererTestContext = {

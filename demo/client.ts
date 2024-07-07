@@ -8,54 +8,35 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-// Use tsc version (yarn watch)
-import { Terminal } from '../out/browser/public/Terminal';
-import { AttachAddon } from '../addons/addon-attach/out/AttachAddon';
-import { CanvasAddon } from '../addons/addon-canvas/out/CanvasAddon';
-import { ClipboardAddon } from '../addons/addon-clipboard/out/ClipboardAddon';
-import { FitAddon } from '../addons/addon-fit/out/FitAddon';
-import { SearchAddon, ISearchOptions } from '../addons/addon-search/out/SearchAddon';
-import { SerializeAddon } from '../addons/addon-serialize/out/SerializeAddon';
-import { WebLinksAddon } from '../addons/addon-web-links/out/WebLinksAddon';
-import { WebglAddon } from '../addons/addon-webgl/out/WebglAddon';
-import { Unicode11Addon } from '../addons/addon-unicode11/out/Unicode11Addon';
-import { UnicodeGraphemesAddon } from '../addons/addon-unicode-graphemes/out/UnicodeGraphemesAddon';
-import { LigaturesAddon } from '../addons/addon-ligatures/out/LigaturesAddon';
-
-// Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddonType, IImageAddonOptions } from '../addons/addon-image/out/ImageAddon';
-let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
+// HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
+import type { ImageAddon as ImageAddonType, IImageAddonOptions } from '@xterm/addon-image';
+let ImageAddon: typeof ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
-  const imageAddon = require('../addons/addon-image/out/ImageAddon');
+  const imageAddon = require('@xterm/addon-image');
   ImageAddon = imageAddon.ImageAddon;
 }
 
-// Use webpacked version (yarn package)
-// import { Terminal } from '../lib/xterm';
-// import { AttachAddon } from '@xterm/addon-attach';
-// import { ClipboardAddon } from '@xterm/addon-clipboard';
-// import { FitAddon } from '@xterm/addon-fit';
-// import { ImageAddon } from '@xterm/addon-image';
-// import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
-// import { SerializeAddon } from '@xterm/addon-serialize';
-// import { WebLinksAddon } from '@xterm/addon-web-links';
-// import { WebglAddon } from '@@xterm/addon-webgl';
-// import { Unicode11Addon } from '@xterm/addon-unicode11';
-// import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
-// import { LigaturesAddon } from '@xterm/addon-ligatures';
-
-// Pulling in the module's types relies on the <reference> above, it's looks a
-// little weird here as we're importing "this" module
-import { Terminal as TerminalType, ITerminalOptions, type IDisposable } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable } from '@xterm/xterm';
+import { AttachAddon } from '@xterm/addon-attach';
+import { CanvasAddon } from '@xterm/addon-canvas';
+import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { FitAddon } from '@xterm/addon-fit';
+import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
+import { SerializeAddon } from '@xterm/addon-serialize';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
 export interface IWindowWithTerminal extends Window {
-  term: TerminalType;
-  Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
+  term: typeof Terminal;
+  Terminal: typeof Terminal;
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
+  ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -84,13 +65,14 @@ interface IDemoAddon<T extends AddonType> {
         T extends 'clipboard' ? typeof ClipboardAddon :
           T extends 'fit' ? typeof FitAddon :
             T extends 'image' ? typeof ImageAddonType :
-              T extends 'search' ? typeof SearchAddon :
-                T extends 'serialize' ? typeof SerializeAddon :
-                  T extends 'webLinks' ? typeof WebLinksAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                        T extends 'ligatures' ? typeof LigaturesAddon :
-                        typeof WebglAddon
+              T extends 'ligatures' ? typeof LigaturesAddon :
+                T extends 'search' ? typeof SearchAddon :
+                  T extends 'serialize' ? typeof SerializeAddon :
+                    T extends 'webLinks' ? typeof WebLinksAddon :
+                      T extends 'unicode11' ? typeof Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                          T extends 'webgl' ? typeof WebglAddon :
+                            never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -98,13 +80,13 @@ interface IDemoAddon<T extends AddonType> {
         T extends 'clipboard' ? ClipboardAddon :
           T extends 'fit' ? FitAddon :
             T extends 'image' ? ImageAddonType :
-              T extends 'search' ? SearchAddon :
-                T extends 'serialize' ? SerializeAddon :
-                  T extends 'webLinks' ? WebLinksAddon :
-                    T extends 'webgl' ? WebglAddon :
-                      T extends 'unicode11' ? typeof Unicode11Addon :
-                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                          T extends 'ligatures' ? typeof LigaturesAddon :
+              T extends 'ligatures' ? LigaturesAddon :
+                T extends 'search' ? SearchAddon :
+                  T extends 'serialize' ? SerializeAddon :
+                    T extends 'webLinks' ? WebLinksAddon :
+                      T extends 'unicode11' ? Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                          T extends 'webgl' ? WebglAddon :
                             never
   );
 }
@@ -290,7 +272,7 @@ function createTerminal(): void {
   } as ITerminalOptions);
 
   // Load addons
-  const typedTerm = term as TerminalType;
+  const typedTerm = term as Terminal;
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
@@ -443,7 +425,7 @@ function runFakeTerminal(): void {
   });
 }
 
-function initOptions(term: TerminalType): void {
+function initOptions(term: Terminal): void {
   const blacklistedOptions = [
     // Internal only options
     'cancelEvents',
@@ -451,7 +433,6 @@ function initOptions(term: TerminalType): void {
     'termName',
     'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
-    'documentOverride',
     'linkHandler',
     'logger',
     'theme',
@@ -619,7 +600,7 @@ function initOptions(term: TerminalType): void {
   });
 }
 
-function initAddons(term: TerminalType): void {
+function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
   Object.keys(addons).forEach((name: AddonType) => {
     const addon = addons[name];
@@ -636,15 +617,15 @@ function initAddons(term: TerminalType): void {
       term.unicode.activeVersion = '15-graphemes';
     }
     if (name === 'search' && checkbox.checked) {
-      addon.instance.onDidChangeResults(e => updateFindResults(e));
+      addons[name].instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (name === 'image') {
         if (checkbox.checked) {
           const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
           addon.instance = ctorOptionsJson
-            ? new addon.ctor(JSON.parse(ctorOptionsJson))
-            : new addon.ctor();
+            ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
+            : new addons[name].ctor();
           term.loadAddon(addon.instance);
         } else {
           addon.instance!.dispose();
@@ -653,7 +634,8 @@ function initAddons(term: TerminalType): void {
         return;
       }
       if (checkbox.checked) {
-        addon.instance = new addon.ctor();
+        // HACK: Manually remove addons that cannot be changes
+        addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
@@ -673,7 +655,7 @@ function initAddons(term: TerminalType): void {
           } else if (name === 'unicodeGraphemes') {
             term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
-            addon.instance.onDidChangeResults(e => updateFindResults(e));
+            addons[name].instance.onDidChangeResults(e => updateFindResults(e));
           }
         }
         catch {

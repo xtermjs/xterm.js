@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-canvas.js",
+  "module": "lib/addon-canvas.mjs",
   "types": "typings/addon-canvas.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-canvas",
   "license": "MIT",
@@ -20,7 +21,7 @@
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
-    "start-server-only": "node ../../demo/start-server-only"
+    "start": "node ../../demo/start"
   },
   "peerDependencies": {
     "@xterm/xterm": "^5.0.0"

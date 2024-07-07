@@ -19,37 +19,52 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies
       run: yarn --frozen-lockfile
-    - name: Build
+    - name: Setup and run tsc
       run: yarn setup
+    - name: Esbuild
+      run: yarn esbuild
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
+          ./lib/* \
           ./out/* \
-          ./out-test/* \
+          ./out-*/* \
+          ./addons/addon-attach/lib/* \
           ./addons/addon-attach/out/* \
-          ./addons/addon-attach/out-test/* \
+          ./addons/addon-attach/out-*/* \
+          ./addons/addon-canvas/lib/* \
           ./addons/addon-canvas/out/* \
-          ./addons/addon-canvas/out-test/* \
+          ./addons/addon-canvas/out-*/* \
+          ./addons/addon-clipboard/lib/* \
           ./addons/addon-clipboard/out/* \
-          ./addons/addon-clipboard/out-test/* \
+          ./addons/addon-clipboard/out-*/* \
+          ./addons/addon-fit/lib/* \
           ./addons/addon-fit/out/* \
-          ./addons/addon-fit/out-test/* \
+          ./addons/addon-fit/out-*/* \
+          ./addons/addon-image/lib/* \
           ./addons/addon-image/out/* \
-          ./addons/addon-image/out-test/* \
+          ./addons/addon-image/out-*/* \
+          ./addons/addon-ligatures/lib/* \
           ./addons/addon-ligatures/out/* \
-          ./addons/addon-ligatures/out-test/* \
+          ./addons/addon-ligatures/out-*/* \
+          ./addons/addon-search/lib/* \
           ./addons/addon-search/out/* \
-          ./addons/addon-search/out-test/* \
+          ./addons/addon-search/out-*/* \
+          ./addons/addon-serialize/lib/* \
           ./addons/addon-serialize/out/* \
-          ./addons/addon-serialize/out-test/* \
+          ./addons/addon-serialize/out-*/* \
+          ./addons/addon-unicode11/lib/* \
           ./addons/addon-unicode11/out/* \
-          ./addons/addon-unicode11/out-test/* \
+          ./addons/addon-unicode11/out-*/* \
+          ./addons/addon-unicode-graphemes/lib/* \
           ./addons/addon-unicode-graphemes/out/* \
-          ./addons/addon-unicode-graphemes/out-test/* \
+          ./addons/addon-unicode-graphemes/out-*/* \
+          ./addons/addon-web-links/lib/* \
           ./addons/addon-web-links/out/* \
-          ./addons/addon-web-links/out-test/* \
+          ./addons/addon-web-links/out-*/* \
+          ./addons/addon-webgl/lib/* \
           ./addons/addon-webgl/out/* \
-          ./addons/addon-webgl/out-test/*
+          ./addons/addon-webgl/out-*st/*
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
@@ -189,7 +204,7 @@ jobs:
         fi
         ls -R
     - name: Build demo
-      run: yarn build-demo
+      run: yarn esbuild-demo
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-attach)

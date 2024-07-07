@@ -45,10 +45,13 @@
     "addons/*/src/third-party/*.ts",
     "out/*",
     "out-test/*",
+    "out-esbuild/*",
+    "out-esbuild-test/*",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
-    "**/*.js"
+    "**/*.js",
+    "**/*.mjs"
   ],
   "plugins": [
     "@stylistic/ts",
