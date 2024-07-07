@@ -65,25 +65,22 @@ One area that always needs attention is improving out unit test coverage, you ca
 
 ### Unit tests
 
-All unit tests can be run with:
+Unit tests are run with `yarn test-unit`:
 
 ```sh
+# All unit tests
 yarn test-unit
-```
 
-Run a subset of tests like this:
-
-```sh
-# Absolute file path:
+# Absolute file path
 yarn test-unit out-esbuild/browser/Terminal.test.js
 
-# Wildcard:
+# Filter by wildcard
 yarn test-unit out-esbuild/**/Terminal.test.js
 
-# All of an specific addon's tests:
+# Specific addon unit tests tests
 yarn test-unit addons/addon-image/out-esbuild/*.test.js
 
-# Multiple files:
+# Multiple files
 yarn test-unit out-esbuild/**/Terminal.test.js out-esbuild/**/InputHandler.test.js
 ```
 
@@ -91,16 +88,16 @@ These use mocha to run all `.test.js` files within the esbuild output (`out-esbu
 
 ### Integration tests
 
-All integration tests can be run with:
+Integration tests are run with `yarn test-integration`:
 
 ```sh
+# All integration tests
 yarn test-integration
-```
 
-Run a particular suite with the `--suite` flag:
-
-```sh
+# Core integration tests
 yarn test-integration --suite=core
+
+# Specific addon integration tests
 yarn test-integration --suite=addon-search
 ```
 
