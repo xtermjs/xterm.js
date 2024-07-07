@@ -6,7 +6,7 @@ import test from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../out-test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../test/playwright/TestUtils';
 
 interface ILinkStateData {
   uri?: string;

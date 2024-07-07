@@ -29,54 +29,67 @@ jobs:
           ./lib/* \
           ./out/* \
           ./out-esbuild/* \
+          ./out-esbuild-test/* \
           ./out-test/* \
           ./addons/addon-attach/lib/* \
           ./addons/addon-attach/out/* \
           ./addons/addon-attach/out-esbuild/* \
+          ./addons/addon-attach/out-esbuild-test/* \
           ./addons/addon-attach/out-test/* \
           ./addons/addon-canvas/lib/* \
           ./addons/addon-canvas/out/* \
           ./addons/addon-canvas/out-esbuild/* \
+          ./addons/addon-canvas/out-esbuild-test/* \
           ./addons/addon-canvas/out-test/* \
           ./addons/addon-clipboard/lib/* \
           ./addons/addon-clipboard/out/* \
           ./addons/addon-clipboard/out-esbuild/* \
+          ./addons/addon-clipboard/out-esbuild-test/* \
           ./addons/addon-clipboard/out-test/* \
           ./addons/addon-fit/lib/* \
           ./addons/addon-fit/out/* \
           ./addons/addon-fit/out-esbuild/* \
+          ./addons/addon-fit/out-esbuild-test/* \
           ./addons/addon-fit/out-test/* \
           ./addons/addon-image/lib/* \
           ./addons/addon-image/out/* \
           ./addons/addon-image/out-esbuild/* \
+          ./addons/addon-image/out-esbuild-test/* \
           ./addons/addon-image/out-test/* \
           ./addons/addon-ligatures/lib/* \
           ./addons/addon-ligatures/out/* \
           ./addons/addon-ligatures/out-esbuild/* \
+          ./addons/addon-ligatures/out-esbuild-test/* \
           ./addons/addon-ligatures/out-test/* \
           ./addons/addon-search/lib/* \
           ./addons/addon-search/out/* \
           ./addons/addon-search/out-esbuild/* \
+          ./addons/addon-search/out-esbuild-test/* \
           ./addons/addon-search/out-test/* \
           ./addons/addon-serialize/lib/* \
           ./addons/addon-serialize/out/* \
           ./addons/addon-serialize/out-esbuild/* \
+          ./addons/addon-serialize/out-esbuild-test/* \
           ./addons/addon-serialize/out-test/* \
           ./addons/addon-unicode11/lib/* \
           ./addons/addon-unicode11/out/* \
           ./addons/addon-unicode11/out-esbuild/* \
+          ./addons/addon-unicode11/out-esbuild-test/* \
           ./addons/addon-unicode11/out-test/* \
           ./addons/addon-unicode-graphemes/lib/* \
           ./addons/addon-unicode-graphemes/out/* \
           ./addons/addon-unicode-graphemes/out-esbuild/* \
+          ./addons/addon-unicode-graphemes/out-esbuild-test/* \
           ./addons/addon-unicode-graphemes/out-test/* \
           ./addons/addon-web-links/lib/* \
           ./addons/addon-web-links/out/* \
           ./addons/addon-web-links/out-esbuild/* \
+          ./addons/addon-web-links/out-esbuild-test/* \
           ./addons/addon-web-links/out-test/* \
           ./addons/addon-webgl/lib/* \
           ./addons/addon-webgl/out/* \
           ./addons/addon-webgl/out-esbuild/* \
+          ./addons/addon-webgl/out-esbuild-test/* \
           ./addons/addon-webgl/out-test/*
     - name: Upload artifacts
       uses: actions/upload-artifact@v3

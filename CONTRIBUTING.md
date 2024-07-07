@@ -101,4 +101,4 @@ yarn test-integration --suite=core
 yarn test-integration --suite=addon-search
 ```
 
-These use `@playwright/test` to run all tests within the tsc test output (`out-test/`). These do not use the esbuild output because they require declaration files to get types to work.
+These use `@playwright/test` to run all tests within the esbuild test output (`out-esbuild-test/`).

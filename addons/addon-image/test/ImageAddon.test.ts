@@ -6,7 +6,7 @@
 import test from '@playwright/test';
 import { readFileSync } from 'fs';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
-import { ITestContext, createTestContext, openTerminal, pollFor } from '../../../out-test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, pollFor } from '../../../test/playwright/TestUtils';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
 
 /**

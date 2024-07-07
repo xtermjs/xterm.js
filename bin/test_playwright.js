@@ -18,7 +18,7 @@ while (argv.some(e => e.startsWith('--suite='))) {
 }
 
 let configs = [
-  { name: 'core', path: 'out-test/playwright/playwright.config.js' }
+  { name: 'core', path: 'out-esbuild-test/playwright/playwright.config.js' }
 ];
 const addons = [
   'attach',
@@ -34,7 +34,7 @@ const addons = [
   'webgl',
 ];
 for (const addon of addons) {
-  configs.push({ name: `addon-${addon}`, path: `addons/addon-${addon}/out-test/playwright.config.js` });
+  configs.push({ name: `addon-${addon}`, path: `addons/addon-${addon}/out-esbuild-test/playwright.config.js` });
 }
 
 if (suiteFilter) {
@@ -61,8 +61,8 @@ async function run() {
 
     if (run.error) {
       console.error(run.error);
+      process.exit(run.status ?? -1);
     }
-    process.exit(run.status ?? -1);
   }
 }
 run();

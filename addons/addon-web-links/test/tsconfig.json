@@ -21,8 +21,7 @@
     },
     "strict": true,
     "types": [
-      "../../../node_modules/@types/node",
-      "../../../out-test/playwright/TestUtils"
+      "../../../node_modules/@types/node"
     ]
   },
   "include": [
@@ -35,6 +34,9 @@
     },
     {
       "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../test/playwright"
     }
   ]
 }
