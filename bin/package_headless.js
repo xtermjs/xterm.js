@@ -34,7 +34,7 @@ fs.copyFileSync(
 
 console.log('> headless/logo-full.png');
 fs.copyFileSync(
-  join(repoRoot, 'logo-full.png'),
+  join(repoRoot, 'images/logo-full.png'),
   join(headlessRoot, 'logo-full.png')
 );
 

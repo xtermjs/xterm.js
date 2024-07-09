@@ -1,4 +1,4 @@
-# [![xterm.js logo](logo-full.png)](https://xtermjs.org)
+# [![xterm.js logo](images/logo-full.png)](https://xtermjs.org)
 
 Xterm.js is a front-end component written in TypeScript that lets applications bring fully-featured terminals to their users in the browser. It's used by popular projects such as VS Code, Hyper and Theia.
 
