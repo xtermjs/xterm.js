@@ -35,7 +35,7 @@ const devOptions = {
 const prodOptions = {
   minify: true,
   treeShaking: true,
-  logLevel: 'debug',
+  logLevel: 'verbose',
   legalComments: 'none',
   // TODO: Mangling private and protected properties will reduce bundle size quite a bit, we must
   //       make sure we don't cast privates to `any` in order to prevent regressions.

@@ -11,7 +11,8 @@
     ],
     "baseUrl": "..",
     "paths": {
-      "common/*": [ "./common/*" ]
+      "common/*": [ "./common/*" ],
+      "vs/*": [ "./vs/*" ]
     }
   },
   "include": [
@@ -19,6 +20,7 @@
     "../../typings/xterm.d.ts"
   ],
   "references": [
-    { "path": "../common" }
+    { "path": "../common" },
+    { "path": "../vs" }
   ]
 }
