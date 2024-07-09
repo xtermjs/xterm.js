@@ -29,8 +29,6 @@ describe('Terminal', () => {
     term = new TestTerminal(termOptions);
     term.refresh = () => { };
     (term as any).renderer = new MockRenderer();
-    term.viewport = new MockViewport();
-    term.viewport.onRequestScrollLines(e => term.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT));
     (term as any)._compositionHelper = new MockCompositionHelper();
     (term as any).element = {
       classList: {

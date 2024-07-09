@@ -9,16 +9,10 @@
     "types": [
       "../../node_modules/@types/mocha"
     ],
-    "baseUrl": "..",
-    "paths": {
-      "vs/*": [ "./vs/*" ]
-    }
+    "baseUrl": ".."
   },
   "include": [
     "./**/*",
     "../../typings/xterm.d.ts"
-  ],
-  "references": [
-    { "path": "../vs" }
   ]
 }

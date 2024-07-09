@@ -35,7 +35,7 @@ const devOptions = {
 const prodOptions = {
   minify: true,
   treeShaking: true,
-  logLevel: 'verbose',
+  logLevel: 'debug',
   legalComments: 'none',
   // TODO: Mangling private and protected properties will reduce bundle size quite a bit, we must
   //       make sure we don't cast privates to `any` in order to prevent regressions.
@@ -171,7 +171,13 @@ if (config.addon) {
   };
   outConfig = {
     ...outConfig,
-    entryPoints: ['src/**/*.ts'],
+    entryPoints: [
+      `src/browser/public/Terminal.ts`,
+      `src/headless/public/Terminal.ts`,
+      `src/browser/*.test.ts`,
+      `src/common/*.test.ts`,
+      `src/headless/*.test.ts`
+    ],
     outdir: 'out-esbuild/'
   };
   outTestConfig = {

@@ -112,10 +112,6 @@
     top: 0;
 }
 
-.xterm .xterm-scroll-area {
-    visibility: hidden;
-}
-
 .xterm-char-measure-element {
     display: inline-block;
     visibility: hidden;
