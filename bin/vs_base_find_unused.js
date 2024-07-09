@@ -2,6 +2,7 @@
 
 const { dirname } = require("path");
 const ts = require("typescript");
+const fs = require("fs");
 
 function findUnusedSymbols(
   /** @type string */ tsconfigPath
@@ -17,7 +18,22 @@ function findUnusedSymbols(
   });
   const sourceFiles = program.getSourceFiles();
   const usedBaseSourceFiles = sourceFiles.filter(e => e.fileName.includes('src/vs/base/'));
-  console.log('Source files used in src/vs/base/:', usedBaseSourceFiles.map(e => e.fileName.replace(/^.+\/src\//, 'src/')).sort((a, b) => a.localeCompare(b)));
+  const usedFilesInBase = usedBaseSourceFiles.map(e => e.fileName.replace(/^.+\/src\//, 'src/')).sort((a, b) => a.localeCompare(b));
+  // console.log('Source files used in src/vs/base/:', used);
+
+  // Get an array of all files that exist in src/vs/base/
+  const allFilesInBase = (
+    fs.readdirSync('src/vs/base', { recursive: true, withFileTypes: true })
+      .filter(e => e.isFile())
+      .map(e => `${e.parentPath}/${e.name}`.replace(/\\/g, '/'))
+  );
+  const unusedFilesInBase = allFilesInBase.filter(e => !usedFilesInBase.includes(e));
+
+  console.log({
+    allFilesInBase,
+    usedFilesInBase,
+    unusedFilesInBase
+  });
 }
 
 // Example usage
