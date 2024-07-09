@@ -188,8 +188,6 @@ if (config.addon) {
   };
 }
 
-console.log('Building bundle with config:', JSON.stringify(bundleConfig, undefined, 2));
-
 if (config.isWatch) {
   context(bundleConfig).then(e => e.watch());
   if (!skipOut) {
