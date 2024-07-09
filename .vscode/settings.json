@@ -4,9 +4,9 @@
   },
   // Hide output files from the file explorer, comment this out to see the build output
   "files.exclude": {
-    "**/lib": true,
-    "**/out": true,
-    "**/out-*": true,
+    // "**/lib": true,
+    // "**/out": true,
+    // "**/out-*": true,
   },
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.quoteStyle": "single",

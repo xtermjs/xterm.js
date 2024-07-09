@@ -34,7 +34,6 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"types": [
-			"semver",
 			"trusted-types",
 		],
     "composite": true,
@@ -54,6 +53,7 @@
     "**/electron-main",
     "**/electron-sandbox",
     "**/node",
+    "**/parts",
     "**/test",
     "**/sandbox",
     "**/worker",
@@ -64,7 +64,6 @@
     "base/common/jsonc.js",
     "base/common/performance.js",
     "base/common/marked/marked.js",
-    "base/common/network.ts",
-    "base/browser/markdownRenderer.ts"
+    "base/common/network.ts"
   ]
 }

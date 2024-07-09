@@ -11,6 +11,7 @@
       "src/browser/tsconfig.json",
       "src/common/tsconfig.json",
       "src/headless/tsconfig.json",
+      "src/vs/tsconfig.json",
       "test/benchmark/tsconfig.json",
       "test/playwright/tsconfig.json",
       "addons/addon-attach/src/tsconfig.json",

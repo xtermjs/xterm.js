@@ -29,6 +29,7 @@ const commonOptions = {
 /** @type {esbuild.BuildOptions} */
 const devOptions = {
   minify: false,
+  treeShaking: true,
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -174,9 +175,9 @@ if (config.addon) {
     entryPoints: [
       `src/browser/public/Terminal.ts`,
       `src/headless/public/Terminal.ts`,
-      `src/browser/*.test.ts`,
-      `src/common/*.test.ts`,
-      `src/headless/*.test.ts`
+      `src/browser/**/*.test.ts`,
+      `src/common/**/*.test.ts`,
+      `src/headless/**/*.test.ts`
     ],
     outdir: 'out-esbuild/'
   };
@@ -186,6 +187,8 @@ if (config.addon) {
     outdir: 'out-esbuild-test/'
   };
 }
+
+console.log('Building bundle with config:', JSON.stringify(bundleConfig, undefined, 2));
 
 if (config.isWatch) {
   context(bundleConfig).then(e => e.watch());
