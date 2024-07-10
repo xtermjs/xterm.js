@@ -18,7 +18,7 @@ Write-Host "`e[32m> Copying base`e[0m"
 Copy-Item -Path "src/vs/temp/src/vs/base" -Destination "src/vs/base" -Recurse
 
 # Comment out any CSS imports
-Write-Host "`e[32m> Commenting out CSS imports`e[0m" -NoNewline
+Write-Host "`e[32m> Commenting out CSS imports" -NoNewline
 $baseFiles = Get-ChildItem -Path "src/vs/base" -Recurse -File
 $count = 0
 foreach ($file in $baseFiles) {
@@ -34,7 +34,23 @@ foreach ($file in $baseFiles) {
   }
   $updatedContent | Set-Content -Path $file.FullName
 }
-Write-Host " $count files patched"
+Write-Host " $count files patched`e[0m"
+
+# Replace `monaco-*` with `xterm-*`, this will help avoid any styling conflicts when monaco and
+# xterm.js are used in the same project.
+Write-Host "`e[32m> Replacing monaco-* class names with xterm-* `e[0m" -NoNewline
+$baseFiles = Get-ChildItem -Path "src/vs/base" -Recurse -File
+$count = 0
+foreach ($file in $baseFiles) {
+  $content = Get-Content -Path $file.FullName
+  if ($content -match "monaco-([a-zA-Z\-]+)") {
+    $updatedContent = $content -replace "monaco-([a-zA-Z\-]+)", 'xterm-$1'
+    Write-Host "`e[32m." -NoNewline
+    $count++
+    $updatedContent | Set-Content -Path $file.FullName
+  }
+}
+Write-Host " $count files patched`e[0m"
 
 # Copy typings
 Write-Host "`e[32m> Copying typings`e[0m"
