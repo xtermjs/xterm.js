@@ -41,7 +41,6 @@ export class Viewport extends Disposable {
     super();
 
     // TODO: Support smooth scroll
-    // TODO: Support fastScrollModifier?
 
     this._scrollableElement = this.register(new DomScrollableElement(screenElement, {
       vertical: ScrollbarVisibility.Auto,

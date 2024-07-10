@@ -219,6 +219,7 @@ export interface ITerminalOptions {
   disableStdin?: boolean;
   documentOverride?: any | null;
   drawBoldTextInBrightColors?: boolean;
+  /** @deprecated No longer supported */
   fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
   fastScrollSensitivity?: number;
   fontSize?: number;

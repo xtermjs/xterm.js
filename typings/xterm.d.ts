@@ -109,11 +109,13 @@ declare module '@xterm/xterm' {
 
     /**
      * The modifier key hold to multiply scroll speed.
+     * @deprecated This option is no longer available and will always use alt. Setting this will be
+     * ignored.
      */
     fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
-     * The scroll speed multiplier used for fast scrolling.
+     * The scroll speed multiplier used for fast scrolling when `Alt` is held.
      */
     fastScrollSensitivity?: number;
 
