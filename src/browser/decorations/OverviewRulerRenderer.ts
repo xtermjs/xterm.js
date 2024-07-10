@@ -59,34 +59,18 @@ export class OverviewRulerRenderer extends Disposable {
     this._canvas.classList.add('xterm-decoration-overview-ruler');
     this._refreshCanvasDimensions();
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
+    this.register(toDisposable(() => this._canvas?.remove()));
+
     const ctx = this._canvas.getContext('2d');
     if (!ctx) {
       throw new Error('Ctx cannot be null');
     } else {
       this._ctx = ctx;
     }
-    this._registerDecorationListeners();
-    this._registerBufferChangeListeners();
-    this._registerDimensionChangeListeners();
-    this.register(this._themeService.onChangeColors(() => this._queueRefresh()));
-    this.register(toDisposable(() => {
-      this._canvas?.remove();
-    }));
-  }
 
-  /**
-   * On decoration add or remove, redraw
-   */
-  private _registerDecorationListeners(): void {
     this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
     this.register(this._decorationService.onDecorationRemoved(() => this._queueRefresh(undefined, true)));
-  }
 
-  /**
-   * On buffer change, redraw
-   * and hide the canvas if the alt buffer is active
-   */
-  private _registerBufferChangeListeners(): void {
     this.register(this._renderService.onRenderedViewportChange(() => this._queueRefresh()));
     this.register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
@@ -97,24 +81,18 @@ export class OverviewRulerRenderer extends Disposable {
         this._refreshColorZonePadding();
       }
     }));
-  }
-  /**
-   * On dimension change, update canvas dimensions
-   * and then redraw
-   */
-  private _registerDimensionChangeListeners(): void {
-    // container height changed
+
+    // Container height changed
     this.register(this._renderService.onRender((): void => {
       if (!this._containerHeight || this._containerHeight !== this._screenElement.clientHeight) {
         this._queueRefresh(true);
         this._containerHeight = this._screenElement.clientHeight;
       }
     }));
-    // overview ruler width changed
-    this.register(this._optionsService.onSpecificOptionChange('overviewRulerWidth', () => this._queueRefresh(true)));
-    // device pixel ratio changed
+
     this.register(this._coreBrowserService.onDprChange(() => this._queueRefresh(true)));
-    // set the canvas dimensions
+    this.register(this._optionsService.onSpecificOptionChange('overviewRulerWidth', () => this._queueRefresh(true)));
+    this.register(this._themeService.onChangeColors(() => this._queueRefresh()));
     this._queueRefresh(true);
   }
 
