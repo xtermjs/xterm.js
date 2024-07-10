@@ -27,7 +27,7 @@ import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
-import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent, ScrollSource } from 'common/Types';
+import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
@@ -134,11 +134,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
     this.register(this.optionsService.onMultipleOptionChange(['windowsMode', 'windowsPty'], () => this._handleWindowsPtyOptionChange()));
     this.register(this._bufferService.onScroll(event => {
-      this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
+      this._onScroll.fire({ position: this._bufferService.buffer.ydisp });
       this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
     }));
     this.register(this._inputHandler.onScroll(event => {
-      this._onScroll.fire({ position: this._bufferService.buffer.ydisp, source: ScrollSource.TERMINAL });
+      this._onScroll.fire({ position: this._bufferService.buffer.ydisp });
       this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
     }));
 
@@ -198,10 +198,9 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used to avoid
    * unwanted events being handled by the viewport when the event was triggered from the viewport
    * originally.
-   * @param source Which component the event came from.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void {
-    this._bufferService.scrollLines(disp, suppressScrollEvent, source);
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+    this._bufferService.scrollLines(disp, suppressScrollEvent);
   }
 
   public scrollPages(pageCount: number): void {

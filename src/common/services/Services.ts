@@ -3,11 +3,11 @@
  * @license MIT
  */
 
+import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty } from '@xterm/xterm';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, CursorInactiveStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from '@xterm/xterm';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -21,7 +21,7 @@ export interface IBufferService {
   onResize: IEvent<{ cols: number, rows: number }>;
   onScroll: IEvent<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
-  scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
+  scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }

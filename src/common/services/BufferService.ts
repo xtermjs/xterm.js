@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
-import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
+import { IAttributeData, IBufferLine } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
@@ -125,7 +125,7 @@ export class BufferService extends Disposable implements IBufferService {
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void {
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
     const buffer = this.buffer;
     if (disp < 0) {
       if (buffer.ydisp === 0) {

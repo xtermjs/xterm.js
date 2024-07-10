@@ -3,14 +3,13 @@
  * @license MIT
  */
 
+import { MockCompositionHelper, MockRenderer, MockViewport, TestTerminal } from 'browser/TestUtils.test';
+import type { IBrowser } from 'browser/Types';
 import { assert } from 'chai';
-import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from 'browser/TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockUnicodeService } from 'common/TestUtils.test';
-import { IMarker, ScrollSource } from 'common/Types';
-import { ICoreService } from 'common/services/Services';
-import type { IBrowser } from 'browser/Types';
+import { IMarker } from 'common/Types';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

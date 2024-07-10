@@ -60,12 +60,6 @@ export interface IKeyboardEvent {
 
 export interface IScrollEvent {
   position: number;
-  source: ScrollSource;
-}
-
-export const enum ScrollSource {
-  TERMINAL,
-  VIEWPORT,
 }
 
 export interface ICircularList<T> {
