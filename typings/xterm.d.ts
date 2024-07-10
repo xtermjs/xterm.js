@@ -384,9 +384,10 @@ declare module '@xterm/xterm' {
      */
     scrollbarSliderActiveBackground?: string;
     /**
-     * The border color of the overview ruler. This visually separates the terminal from the scroll
-     * bar when {@link ITerminalOptions.overviewRulerWidth overviewRulerWidth} is set. When this is
-     * not set it defaults to black (#000000).
+     * The border color of the overview ruler. This visually separates the
+     * terminal from the scroll bar when
+     * {@link ITerminalOptions.overviewRulerWidth overviewRulerWidth} is set.
+     * When this is not set it defaults to black (`#000000`).
      */
     overviewRulerBorder?: string;
     /** ANSI black (eg. `\x1b[30m`) */
