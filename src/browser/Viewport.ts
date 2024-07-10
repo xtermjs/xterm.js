@@ -55,13 +55,13 @@ export class Viewport extends Disposable {
       horizontal: ScrollbarVisibility.Hidden,
       useShadows: false,
       mouseWheelSmoothScroll: true,
-      ...this._getMutableOptions()
+      ...this._getChangeOptions()
     }, scrollable));
     this.register(this._optionsService.onMultipleOptionChange([
       'scrollSensitivity',
       'fastScrollSensitivity',
       'overviewRulerWidth'
-    ], () => this._scrollableElement.updateOptions(this._getMutableOptions())));
+    ], () => this._scrollableElement.updateOptions(this._getChangeOptions())));
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
     this.register(runAndSubscribe(themeService.onChangeColors, () => {
@@ -111,7 +111,7 @@ export class Viewport extends Disposable {
     });
   }
 
-  private _getMutableOptions(): ScrollableElementChangeOptions {
+  private _getChangeOptions(): ScrollableElementChangeOptions {
     return {
       mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
       fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
