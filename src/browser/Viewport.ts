@@ -4,7 +4,7 @@
  */
 
 import { IRenderService, IThemeService } from 'browser/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
+import { EventEmitter, runAndSubscribe } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
@@ -52,7 +52,9 @@ export class Viewport extends Disposable{
     ], () => this._scrollableElement.updateOptions(this._getMutableOptions())));
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
-    this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
+    this.register(runAndSubscribe(themeService.onChangeColors, () => {
+      this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
+    }));
     element.appendChild(this._scrollableElement.getDomNode());
 
     this.register(this._bufferService.onResize(() => this._queueSync()));
