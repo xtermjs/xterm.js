@@ -34,7 +34,14 @@ const checkCoverage = flagArgs.indexOf('--coverage') >= 0;
 if (checkCoverage) {
   flagArgs.splice(flagArgs.indexOf('--coverage'), 1);
   const executable = npmBinScript('nyc');
-  const args = ['--check-coverage', `--lines=${COVERAGE_LINES_THRESHOLD}`, npmBinScript('mocha'), ...testFiles, ...flagArgs];
+  const args = [
+    '--check-coverage',
+    `--lines=${COVERAGE_LINES_THRESHOLD}`,
+    '--exclude=out-esbuild/vs/**',
+    npmBinScript('mocha'),
+    ...testFiles,
+    ...flagArgs
+  ];
   console.info('executable', executable);
   console.info('args', args);
   const run = cp.spawnSync(
