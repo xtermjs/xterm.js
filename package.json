@@ -28,7 +28,6 @@
     "presetup": "npm run install-addons",
     "install-addons": "node ./bin/install-addons.js",
     "start": "node demo/start",
-    "build-demo": "webpack --config ./demo/webpack.config.js",
     "build": "npm run tsc",
     "watch": "npm run tsc-watch",
     "tsc": "tsc -b ./tsconfig.all.json",
