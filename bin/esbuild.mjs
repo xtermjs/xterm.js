@@ -88,13 +88,15 @@ let bundleConfig = {
 
 /** @type {esbuild.BuildOptions} */
 let outConfig = {
-  format: 'cjs'
+  format: 'cjs',
+  sourcemap: true,
 }
 let skipOut = false;
 
 /** @type {esbuild.BuildOptions} */
 let outTestConfig = {
-  format: 'cjs'
+  format: 'cjs',
+  sourcemap: true,
 }
 let skipOutTest = false;
 
@@ -175,7 +177,7 @@ if (config.addon) {
     entryPoints: [
       `src/**/*.ts`
     ],
-    outdir: 'out-esbuild/'
+    outdir: 'out-esbuild/',
   };
   outTestConfig = {
     ...outConfig,
