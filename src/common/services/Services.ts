@@ -263,6 +263,7 @@ export interface ITheme {
   selectionForeground?: string;
   selectionBackground?: string;
   selectionInactiveBackground?: string;
+  overviewRulerBorder?: string;
   black?: string;
   red?: string;
   green?: string;

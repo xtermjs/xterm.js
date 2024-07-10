@@ -28,6 +28,7 @@ const DEFAULT_SELECTION = {
   css: 'rgba(255, 255, 255, 0.3)',
   rgba: 0xFFFFFF4D
 };
+const DEFAULT_OVERVIEW_RULER_BORDER = css.toColor('#000000');
 
 export class ThemeService extends Disposable implements IThemeService {
   public serviceBrand: undefined;
@@ -57,6 +58,7 @@ export class ThemeService extends Disposable implements IThemeService {
       selectionBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       selectionInactiveBackgroundTransparent: DEFAULT_SELECTION,
       selectionInactiveBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
+      overviewRulerBorder: DEFAULT_OVERVIEW_RULER_BORDER,
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache,
       halfContrastCache: this._halfContrastCache
@@ -100,6 +102,7 @@ export class ThemeService extends Disposable implements IThemeService {
       const opacity = 0.3;
       colors.selectionInactiveBackgroundTransparent = color.opacity(colors.selectionInactiveBackgroundTransparent, opacity);
     }
+    colors.overviewRulerBorder = parseColor(theme.overviewRulerBorder, DEFAULT_OVERVIEW_RULER_BORDER);
     colors.ansi = DEFAULT_ANSI_COLORS.slice();
     colors.ansi[0] = parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     colors.ansi[1] = parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);

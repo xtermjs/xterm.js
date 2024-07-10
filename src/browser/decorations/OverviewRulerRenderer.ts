@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
-import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
+import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
@@ -51,6 +51,7 @@ export class OverviewRulerRenderer extends Disposable {
     @IDecorationService private readonly _decorationService: IDecorationService,
     @IRenderService private readonly _renderService: IRenderService,
     @IOptionsService private readonly _optionsService: IOptionsService,
+    @IThemeService private readonly _themeService: IThemeService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
@@ -67,6 +68,7 @@ export class OverviewRulerRenderer extends Disposable {
     this._registerDecorationListeners();
     this._registerBufferChangeListeners();
     this._registerDimensionChangeListeners();
+    this.register(this._themeService.onChangeColors(() => this._queueRefresh()));
     this.register(toDisposable(() => {
       this._canvas?.remove();
     }));
@@ -190,8 +192,7 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _renderRulerOutline(): void {
-    // TODO: Support customizing the color
-    this._ctx.fillStyle = '#000';
+    this._ctx.fillStyle = this._themeService.colors.overviewRulerBorder.css;
     this._ctx.fillRect(0, 0, 1, this._canvas.height);
   }
 

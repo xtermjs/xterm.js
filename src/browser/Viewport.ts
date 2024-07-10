@@ -36,7 +36,6 @@ export class Viewport extends Disposable{
 
     // TODO: Support smooth scroll
     // TODO: Support fastScrollModifier?
-    // TODO: overviewRulerWidth should deprecated in favor of scrollBarWidth?
 
     this._scrollableElement = this.register(new DomScrollableElement(screenElement, {
       vertical: ScrollbarVisibility.Auto,

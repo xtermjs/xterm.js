@@ -21,6 +21,7 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
     selectionBackgroundOpaque: NULL_COLOR,
     selectionInactiveBackgroundTransparent: NULL_COLOR,
     selectionInactiveBackgroundOpaque: NULL_COLOR,
+    overviewRulerBorder: NULL_COLOR,
     // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
     // dynamic character atlas.
     ansi: colors.ansi.slice(),

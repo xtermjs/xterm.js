@@ -575,6 +575,7 @@ function initOptions(term: Terminal): void {
               cursor: '#333333',
               cursorAccent: '#ffffff',
               selectionBackground: '#add6ff',
+              overviewRulerBorder: '#aaaaaa',
               black: '#000000',
               blue: '#0451a5',
               brightBlack: '#666666',

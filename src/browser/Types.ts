@@ -66,6 +66,7 @@ export interface IColorSet {
   selectionBackgroundOpaque: IColor;
   selectionInactiveBackgroundTransparent: IColor;
   selectionInactiveBackgroundOpaque: IColor;
+  overviewRulerBorder: IColor;
   ansi: IColor[];
   /** Maps original colors to colors that respect minimum contrast ratio. */
   contrastCache: IColorContrastCache;
