@@ -283,15 +283,3 @@
 .xterm .monaco-scrollable-element > .shadow.top.left {
 	box-shadow: var(--vscode-scrollbar-shadow, #000) 6px 0 6px -6px inset;
 }
-
-.xterm .monaco-scrollable-element > .scrollbar > .slider {
-	background: var(--vscode-scrollbarSlider-background, #79797966);
-}
-
-.xterm .monaco-scrollable-element > .scrollbar > .slider:hover {
-	background: var(--vscode-scrollbarSlider-hoverBackground, #646464b3);
-}
-
-.xterm .monaco-scrollable-element > .scrollbar > .slider.active {
-	background: var(--vscode-scrollbarSlider-activeBackground, #bfbfbf66);
-}

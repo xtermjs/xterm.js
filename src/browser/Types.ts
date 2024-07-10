@@ -66,6 +66,9 @@ export interface IColorSet {
   selectionBackgroundOpaque: IColor;
   selectionInactiveBackgroundTransparent: IColor;
   selectionInactiveBackgroundOpaque: IColor;
+  scrollbarSliderBackground: IColor;
+  scrollbarSliderHoverBackground: IColor;
+  scrollbarSliderActiveBackground: IColor;
   overviewRulerBorder: IColor;
   ansi: IColor[];
   /** Maps original colors to colors that respect minimum contrast ratio. */

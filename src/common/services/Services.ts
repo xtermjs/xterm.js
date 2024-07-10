@@ -263,6 +263,9 @@ export interface ITheme {
   selectionForeground?: string;
   selectionBackground?: string;
   selectionInactiveBackground?: string;
+  scrollbarSliderBackground?: string;
+  scrollbarSliderHoverBackground?: string;
+  scrollbarSliderActiveBackground?: string;
   overviewRulerBorder?: string;
   black?: string;
   red?: string;

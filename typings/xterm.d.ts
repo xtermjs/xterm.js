@@ -369,6 +369,21 @@ declare module '@xterm/xterm' {
      */
     selectionInactiveBackground?: string;
     /**
+     * The scrollbar slider background color. Defaults to
+     * {@link ITerminalOptions.foreground foreground} with 20% opacity.
+     */
+    scrollbarSliderBackground?: string;
+    /**
+     * The scrollbar slider background color when hovered. Defaults to
+     * {@link ITerminalOptions.foreground foreground} with 40% opacity.
+     */
+    scrollbarSliderHoverBackground?: string;
+    /**
+     * The scrollbar slider background color when clicked. Defaults to
+     * {@link ITerminalOptions.foreground foreground} with 50% opacity.
+     */
+    scrollbarSliderActiveBackground?: string;
+    /**
      * The border color of the overview ruler. This visually separates the terminal from the scroll
      * bar when {@link ITerminalOptions.overviewRulerWidth overviewRulerWidth} is set. When this is
      * not set it defaults to black (#000000).

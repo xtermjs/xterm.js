@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IRenderService, IThemeService } from 'browser/services/Services';
+import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { EventEmitter, runAndSubscribe } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
@@ -17,6 +17,7 @@ export class Viewport extends Disposable{
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   private _scrollableElement: DomScrollableElement;
+  private _styleElement: HTMLStyleElement;
 
   private _queuedAnimationFrame?: number;
   private _latestYDisp?: number;
@@ -28,6 +29,7 @@ export class Viewport extends Disposable{
     element: HTMLElement,
     screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreBrowserService coreBrowserService: ICoreBrowserService,
     @IThemeService themeService: IThemeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IRenderService private readonly _renderService: IRenderService
@@ -55,6 +57,24 @@ export class Viewport extends Disposable{
       this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
     }));
     element.appendChild(this._scrollableElement.getDomNode());
+    this.register(toDisposable(() => this._scrollableElement.getDomNode().remove()));
+
+    this._styleElement = coreBrowserService.window.document.createElement('style');
+    screenElement.appendChild(this._styleElement);
+    this.register(toDisposable(() => this._styleElement.remove()));
+    this.register(runAndSubscribe(themeService.onChangeColors, () => {
+      this._styleElement.textContent = [
+        `.xterm .monaco-scrollable-element > .scrollbar > .slider {`,
+        `  background: ${themeService.colors.scrollbarSliderBackground.css};`,
+        `}`,
+        `.xterm .monaco-scrollable-element > .scrollbar > .slider:hover {`,
+        `  background: ${themeService.colors.scrollbarSliderHoverBackground.css};`,
+        `}`,
+        `.xterm .monaco-scrollable-element > .scrollbar > .slider.active {`,
+        `  background: ${themeService.colors.scrollbarSliderActiveBackground.css};`,
+        `}`
+      ].join('\n');
+    }));
 
     this.register(this._bufferService.onResize(() => this._queueSync()));
     this.register(this._bufferService.onScroll(ydisp => this._queueSync(ydisp)));

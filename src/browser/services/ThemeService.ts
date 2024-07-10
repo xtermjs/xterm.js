@@ -58,6 +58,9 @@ export class ThemeService extends Disposable implements IThemeService {
       selectionBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
       selectionInactiveBackgroundTransparent: DEFAULT_SELECTION,
       selectionInactiveBackgroundOpaque: color.blend(DEFAULT_BACKGROUND, DEFAULT_SELECTION),
+      scrollbarSliderBackground: color.opacity(DEFAULT_FOREGROUND, 0.2),
+      scrollbarSliderHoverBackground: color.opacity(DEFAULT_FOREGROUND, 0.4),
+      scrollbarSliderActiveBackground: color.opacity(DEFAULT_FOREGROUND, 0.5),
       overviewRulerBorder: DEFAULT_OVERVIEW_RULER_BORDER,
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache,
@@ -102,6 +105,9 @@ export class ThemeService extends Disposable implements IThemeService {
       const opacity = 0.3;
       colors.selectionInactiveBackgroundTransparent = color.opacity(colors.selectionInactiveBackgroundTransparent, opacity);
     }
+    colors.scrollbarSliderBackground = parseColor(theme.scrollbarSliderBackground, color.opacity(colors.foreground, 0.2));
+    colors.scrollbarSliderHoverBackground = parseColor(theme.scrollbarSliderHoverBackground, color.opacity(colors.foreground, 0.4));
+    colors.scrollbarSliderActiveBackground = parseColor(theme.scrollbarSliderActiveBackground, color.opacity(colors.foreground, 0.5));
     colors.overviewRulerBorder = parseColor(theme.overviewRulerBorder, DEFAULT_OVERVIEW_RULER_BORDER);
     colors.ansi = DEFAULT_ANSI_COLORS.slice();
     colors.ansi[0] = parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
