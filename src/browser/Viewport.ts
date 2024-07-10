@@ -11,7 +11,11 @@ import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableEle
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
 import { ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
 
-export class Viewport extends Disposable{
+const enum Constants {
+  DEFAULT_SCROLL_BAR_WIDTH = 14
+}
+
+export class Viewport extends Disposable {
 
   protected _onRequestScrollLines = this.register(new EventEmitter<number>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
@@ -86,7 +90,7 @@ export class Viewport extends Disposable{
     return {
       mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
       fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
-      verticalScrollbarSize: this._optionsService.rawOptions.overviewRulerWidth || 14
+      verticalScrollbarSize: this._optionsService.rawOptions.overviewRulerWidth || Constants.DEFAULT_SCROLL_BAR_WIDTH
     };
   }
 
