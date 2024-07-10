@@ -870,10 +870,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   public scrollLines(disp: number, suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
-    if (source === ScrollSource.VIEWPORT) {
-      super.scrollLines(disp, suppressScrollEvent, source);
-      this.refresh(0, this.rows - 1);
-    }
+    super.scrollLines(disp, suppressScrollEvent, source);
+    this.refresh(0, this.rows - 1);
   }
 
   public paste(data: string): void {
