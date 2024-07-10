@@ -129,9 +129,10 @@ export class Viewport extends Disposable {
     if (this._queuedAnimationFrame !== undefined) {
       return;
     }
-    this._queuedAnimationFrame = this._renderService.addRefreshCallback(() => this._sync(this._latestYDisp));
-    this._latestYDisp = undefined;
-    this._queuedAnimationFrame = undefined;
+    this._queuedAnimationFrame = this._renderService.addRefreshCallback(() => {
+      this._queuedAnimationFrame = undefined;
+      this._sync(this._latestYDisp);
+    });
   }
 
   private _sync(ydisp: number = this._bufferService.buffer.ydisp): void {
