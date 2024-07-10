@@ -225,7 +225,7 @@ export abstract class AbstractScrollableElement extends Widget {
 		this._horizontalScrollbar = this._register(new HorizontalScrollbar(this._scrollable, this._options, scrollbarHost));
 
 		this._domNode = document.createElement('div');
-		this._domNode.className = 'monaco-scrollable-element ' + this._options.className;
+		this._domNode.className = 'xterm-scrollable-element ' + this._options.className;
 		this._domNode.setAttribute('role', 'presentation');
 		this._domNode.style.position = 'relative';
 		this._domNode.style.overflow = 'hidden';
@@ -312,7 +312,7 @@ export abstract class AbstractScrollableElement extends Widget {
 		if (platform.isMacintosh) {
 			this._options.className += ' mac';
 		}
-		this._domNode.className = 'monaco-scrollable-element ' + this._options.className;
+		this._domNode.className = 'xterm-scrollable-element ' + this._options.className;
 	}
 
 	/**

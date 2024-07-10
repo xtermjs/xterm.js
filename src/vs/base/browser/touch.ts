@@ -12,11 +12,11 @@ import { Disposable, IDisposable, markAsSingleton, toDisposable } from 'vs/base/
 import { LinkedList } from 'vs/base/common/linkedList';
 
 export namespace EventType {
-	export const Tap = '-monaco-gesturetap';
-	export const Change = '-monaco-gesturechange';
-	export const Start = '-monaco-gesturestart';
-	export const End = '-monaco-gesturesend';
-	export const Contextmenu = '-monaco-gesturecontextmenu';
+	export const Tap = '-xterm-gesturetap';
+	export const Change = '-xterm-gesturechange';
+	export const Start = '-xterm-gesturestart';
+	export const End = '-xterm-gesturesend';
+	export const Contextmenu = '-xterm-gesturecontextmenu';
 }
 
 interface TouchData {

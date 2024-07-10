@@ -224,17 +224,17 @@
 /* Derived from vs/base/browser/ui/scrollbar/media/scrollbar.css */
 
 /* xterm.js customization: Override xterm's cursor style */
-.xterm .monaco-scrollable-element > .scrollbar {
+.xterm .xterm-scrollable-element > .scrollbar {
     cursor: default;
 }
 
 /* Arrows */
-.xterm .monaco-scrollable-element > .scrollbar > .scra {
+.xterm .xterm-scrollable-element > .scrollbar > .scra {
 	cursor: pointer;
 	font-size: 11px !important;
 }
 
-.xterm .monaco-scrollable-element > .visible {
+.xterm .xterm-scrollable-element > .visible {
 	opacity: 1;
 
 	/* Background rule added for IE9 - to allow clicks on dom node */
@@ -244,20 +244,20 @@
 	/* In front of peek view */
 	z-index: 11;
 }
-.xterm .monaco-scrollable-element > .invisible {
+.xterm .xterm-scrollable-element > .invisible {
 	opacity: 0;
 	pointer-events: none;
 }
-.xterm .monaco-scrollable-element > .invisible.fade {
+.xterm .xterm-scrollable-element > .invisible.fade {
 	transition: opacity 800ms linear;
 }
 
 /* Scrollable Content Inset Shadow */
-.xterm .monaco-scrollable-element > .shadow {
+.xterm .xterm-scrollable-element > .shadow {
 	position: absolute;
 	display: none;
 }
-.xterm .monaco-scrollable-element > .shadow.top {
+.xterm .xterm-scrollable-element > .shadow.top {
 	display: block;
 	top: 0;
 	left: 3px;
@@ -265,7 +265,7 @@
 	width: 100%;
 	box-shadow: var(--vscode-scrollbar-shadow, #000) 0 6px 6px -6px inset;
 }
-.xterm .monaco-scrollable-element > .shadow.left {
+.xterm .xterm-scrollable-element > .shadow.left {
 	display: block;
 	top: 3px;
 	left: 0;
@@ -273,13 +273,13 @@
 	width: 3px;
 	box-shadow: var(--vscode-scrollbar-shadow, #000) 6px 0 6px -6px inset;
 }
-.xterm .monaco-scrollable-element > .shadow.top-left-corner {
+.xterm .xterm-scrollable-element > .shadow.top-left-corner {
 	display: block;
 	top: 0;
 	left: 0;
 	height: 3px;
 	width: 3px;
 }
-.xterm .monaco-scrollable-element > .shadow.top.left {
+.xterm .xterm-scrollable-element > .shadow.top.left {
 	box-shadow: var(--vscode-scrollbar-shadow, #000) 6px 0 6px -6px inset;
 }

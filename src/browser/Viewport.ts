@@ -75,13 +75,13 @@ export class Viewport extends Disposable {
     this.register(toDisposable(() => this._styleElement.remove()));
     this.register(runAndSubscribe(themeService.onChangeColors, () => {
       this._styleElement.textContent = [
-        `.xterm .monaco-scrollable-element > .scrollbar > .slider {`,
+        `.xterm .xterm-scrollable-element > .scrollbar > .slider {`,
         `  background: ${themeService.colors.scrollbarSliderBackground.css};`,
         `}`,
-        `.xterm .monaco-scrollable-element > .scrollbar > .slider:hover {`,
+        `.xterm .xterm-scrollable-element > .scrollbar > .slider:hover {`,
         `  background: ${themeService.colors.scrollbarSliderHoverBackground.css};`,
         `}`,
-        `.xterm .monaco-scrollable-element > .scrollbar > .slider.active {`,
+        `.xterm .xterm-scrollable-element > .scrollbar > .slider.active {`,
         `  background: ${themeService.colors.scrollbarSliderActiveBackground.css};`,
         `}`
       ].join('\n');
