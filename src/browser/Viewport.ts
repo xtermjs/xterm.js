@@ -4,6 +4,7 @@
  */
 
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
+import { ViewportConstants } from 'browser/shared/Constants';
 import { EventEmitter, runAndSubscribe } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IOptionsService } from 'common/services/Services';
@@ -11,10 +12,6 @@ import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
 import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
-
-const enum Constants {
-  DEFAULT_SCROLL_BAR_WIDTH = 14
-}
 
 export class Viewport extends Disposable {
 
@@ -118,7 +115,7 @@ export class Viewport extends Disposable {
     return {
       mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
       fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
-      verticalScrollbarSize: this._optionsService.rawOptions.overviewRulerWidth || Constants.DEFAULT_SCROLL_BAR_WIDTH
+      verticalScrollbarSize: this._optionsService.rawOptions.overviewRulerWidth || ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH
     };
   }
 

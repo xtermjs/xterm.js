@@ -6,6 +6,7 @@
 import type { Terminal, ITerminalAddon } from '@xterm/xterm';
 import type { FitAddon as IFitApi } from '@xterm/addon-fit';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { ViewportConstants } from 'browser/shared/Constants';
 
 interface ITerminalDimensions {
   /**
@@ -21,11 +22,6 @@ interface ITerminalDimensions {
 
 const MINIMUM_COLS = 2;
 const MINIMUM_ROWS = 1;
-
-// Must remain in sync with the value in core's viewport
-const enum Constants {
-  DEFAULT_SCROLL_BAR_WIDTH = 14
-}
 
 export class FitAddon implements ITerminalAddon , IFitApi {
   private _terminal: Terminal | undefined;
@@ -71,7 +67,7 @@ export class FitAddon implements ITerminalAddon , IFitApi {
 
     const scrollbarWidth = (this._terminal.options.scrollback === 0
       ? 0
-      : (this._terminal.options.overviewRulerWidth || Constants.DEFAULT_SCROLL_BAR_WIDTH));
+      : (this._terminal.options.overviewRulerWidth || ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
     const parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
