@@ -29,6 +29,7 @@ describe('Terminal', () => {
     term = new TestTerminal(termOptions);
     term.refresh = () => { };
     (term as any).renderer = new MockRenderer();
+    (term as any).viewport = new MockViewport();
     (term as any)._compositionHelper = new MockCompositionHelper();
     (term as any).element = {
       classList: {

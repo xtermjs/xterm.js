@@ -173,11 +173,7 @@ if (config.addon) {
   outConfig = {
     ...outConfig,
     entryPoints: [
-      `src/browser/public/Terminal.ts`,
-      `src/headless/public/Terminal.ts`,
-      `src/browser/**/*.test.ts`,
-      `src/common/**/*.test.ts`,
-      `src/headless/**/*.test.ts`
+      `src/**/*.ts`
     ],
     outdir: 'out-esbuild/'
   };

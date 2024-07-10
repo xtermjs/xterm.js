@@ -11,4 +11,4 @@ export function ensureCodeWindow(targetWindow: Window, fallbackWindowId: number)
 }
 
 // eslint-disable-next-line no-restricted-globals
-export const mainWindow = window as CodeWindow;
+export const mainWindow = (typeof window === 'object' ? window : globalThis) as CodeWindow;

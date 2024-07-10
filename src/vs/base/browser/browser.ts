@@ -98,7 +98,7 @@ export function isFullscreen(targetWindow: Window): boolean {
 }
 export const onDidChangeFullscreen = WindowManager.INSTANCE.onDidChangeFullscreen;
 
-const userAgent = navigator.userAgent;
+const userAgent = typeof navigator === 'object' ? navigator.userAgent : '';
 
 export const isFirefox = (userAgent.indexOf('Firefox') >= 0);
 export const isWebKit = (userAgent.indexOf('AppleWebKit') >= 0);

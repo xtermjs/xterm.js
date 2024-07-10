@@ -13,6 +13,8 @@ export const enum KeyboardSupport {
 	None
 }
 
+const safeNavigator = typeof navigator === 'object' ? navigator : {} as { [key: string]: any };
+
 /**
  * Browser feature we can support in current platform, browser and environment.
  */
@@ -21,11 +23,11 @@ export const BrowserFeatures = {
 		writeText: (
 			platform.isNative
 			|| (document.queryCommandSupported && document.queryCommandSupported('copy'))
-			|| !!(navigator && navigator.clipboard && navigator.clipboard.writeText)
+			|| !!(safeNavigator && safeNavigator.clipboard && safeNavigator.clipboard.writeText)
 		),
 		readText: (
 			platform.isNative
-			|| !!(navigator && navigator.clipboard && navigator.clipboard.readText)
+			|| !!(safeNavigator && safeNavigator.clipboard && safeNavigator.clipboard.readText)
 		)
 	},
 	keyboard: (() => {
@@ -33,7 +35,7 @@ export const BrowserFeatures = {
 			return KeyboardSupport.Always;
 		}
 
-		if ((<any>navigator).keyboard || browser.isSafari) {
+		if ((<any>safeNavigator).keyboard || browser.isSafari) {
 			return KeyboardSupport.FullScreen;
 		}
 
@@ -42,6 +44,6 @@ export const BrowserFeatures = {
 
 	// 'ontouchstart' in window always evaluates to true with typescript's modern typings. This causes `window` to be
 	// `never` later in `window.navigator`. That's why we need the explicit `window as Window` cast
-	touch: 'ontouchstart' in mainWindow || navigator.maxTouchPoints > 0,
+	touch: 'ontouchstart' in mainWindow || safeNavigator.maxTouchPoints > 0,
 	pointerEvents: mainWindow.PointerEvent && ('ontouchstart' in mainWindow || navigator.maxTouchPoints > 0)
 };
