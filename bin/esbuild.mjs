@@ -20,23 +20,22 @@ const config = {
 
 /** @type {esbuild.BuildOptions} */
 const commonOptions = {
+  bundle: true,
   format: 'esm',
   target: 'es2021',
   sourcemap: true,
+  treeShaking: true,
   logLevel: 'debug',
 };
 
 /** @type {esbuild.BuildOptions} */
 const devOptions = {
   minify: false,
-  treeShaking: true,
 };
 
 /** @type {esbuild.BuildOptions} */
 const prodOptions = {
   minify: true,
-  treeShaking: true,
-  logLevel: 'debug',
   legalComments: 'none',
   // TODO: Mangling private and protected properties will reduce bundle size quite a bit, we must
   //       make sure we don't cast privates to `any` in order to prevent regressions.
@@ -81,7 +80,6 @@ function getAddonEntryPoint(addon) {
 
 /** @type {esbuild.BuildOptions} */
 let bundleConfig = {
-  bundle: true,
   ...commonOptions,
   ...(config.isProd ? prodOptions : devOptions)
 };
