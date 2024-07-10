@@ -7,9 +7,10 @@ import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/serv
 import { EventEmitter, runAndSubscribe } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IOptionsService } from 'common/services/Services';
-import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
+import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
+import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
-import { ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
+import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
 
 const enum Constants {
   DEFAULT_SCROLL_BAR_WIDTH = 14
@@ -20,7 +21,7 @@ export class Viewport extends Disposable {
   protected _onRequestScrollLines = this.register(new EventEmitter<number>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
-  private _scrollableElement: DomScrollableElement;
+  private _scrollableElement: SmoothScrollableElement;
   private _styleElement: HTMLStyleElement;
 
   private _queuedAnimationFrame?: number;
@@ -42,13 +43,23 @@ export class Viewport extends Disposable {
 
     // TODO: Support smooth scroll
 
-    this._scrollableElement = this.register(new DomScrollableElement(screenElement, {
+    const scrollable = this.register(new Scrollable({
+      forceIntegerValues: false,
+      smoothScrollDuration: this._optionsService.rawOptions.smoothScrollDuration,
+      // This is used over `IRenderService.addRefreshCallback` since it can be canceled
+      scheduleAtNextAnimationFrame: cb => scheduleAtNextAnimationFrame(coreBrowserService.window, cb)
+    }));
+    this.register(this._optionsService.onSpecificOptionChange('smoothScrollDuration', () => {
+      scrollable.setSmoothScrollDuration(this._optionsService.rawOptions.smoothScrollDuration);
+    }));
+
+    this._scrollableElement = this.register(new SmoothScrollableElement(screenElement, {
       vertical: ScrollbarVisibility.Auto,
       horizontal: ScrollbarVisibility.Hidden,
       useShadows: false,
       mouseWheelSmoothScroll: true,
       ...this._getMutableOptions()
-    }));
+    }, scrollable));
     this.register(this._optionsService.onMultipleOptionChange([
       'scrollSensitivity',
       'fastScrollSensitivity',
@@ -80,9 +91,27 @@ export class Viewport extends Disposable {
     }));
 
     this.register(this._bufferService.onResize(() => this._queueSync()));
-    this.register(this._bufferService.onScroll(ydisp => this._queueSync(ydisp)));
+    this.register(this._bufferService.onScroll(() => this._sync()));
 
     this.register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
+  }
+
+  public scrollLines(disp: number): void {
+    const pos = this._scrollableElement.getScrollPosition();
+    this._scrollableElement.setScrollPosition({
+      reuseAnimation: true,
+      scrollTop: pos.scrollTop + disp * this._renderService.dimensions.css.cell.height
+    });
+  }
+
+  public scrollToLine(line: number, disableSmoothScroll?: boolean): void {
+    if (!disableSmoothScroll) {
+      this._latestYDisp = line;
+    }
+    this._scrollableElement.setScrollPosition({
+      reuseAnimation: !disableSmoothScroll,
+      scrollTop: line * this._renderService.dimensions.css.cell.height
+    });
   }
 
   private _getMutableOptions(): ScrollableElementChangeOptions {
@@ -123,9 +152,13 @@ export class Viewport extends Disposable {
     });
     this._suppressOnScrollHandler = false;
 
-    this._scrollableElement.setScrollPosition({
-      scrollTop: ydisp * this._renderService.dimensions.css.cell.height
-    });
+    // If ydisp has been changed by some other copmonent (input/buffer), then stop animating smooth
+    // scroll and scroll there immediately.
+    if (ydisp !== this._latestYDisp) {
+      this._scrollableElement.setScrollPosition({
+        scrollTop: ydisp * this._renderService.dimensions.css.cell.height
+      });
+    }
 
     this._isSyncing = false;
   }
@@ -141,6 +174,7 @@ export class Viewport extends Disposable {
     const newRow = Math.round(e.scrollTop / this._renderService.dimensions.css.cell.height);
     const diff = newRow - this._bufferService.buffer.ydisp;
     if (diff !== 0) {
+      this._latestYDisp = newRow;
       this._onRequestScrollLines.fire(diff);
     }
     this._isHandlingScroll = false;

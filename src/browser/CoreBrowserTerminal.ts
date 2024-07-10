@@ -71,6 +71,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
   public linkifier: ILinkifier2 | undefined;
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
+  private _viewport: Viewport | undefined;
 
   public browser: IBrowser = Browser as any;
 
@@ -505,8 +506,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.register(this.onBlur(() => this._renderService!.handleBlur()));
     this.register(this.onFocus(() => this._renderService!.handleFocus()));
 
-    const viewport = this.register(this._instantiationService.createInstance(Viewport, this.element, this.screenElement));
-    this.register(viewport.onRequestScrollLines(e => this.scrollLines(e, false)));
+    this._viewport = this.register(this._instantiationService.createInstance(Viewport, this.element, this.screenElement));
+    this.register(this._viewport.onRequestScrollLines(e => super.scrollLines(e, false)));
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,
@@ -870,8 +871,32 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
-    super.scrollLines(disp, suppressScrollEvent);
+    // All scrollLines methods need to go via the viewport in order to support smooth scroll
+    if (this._viewport) {
+      this._viewport.scrollLines(disp);
+    } else {
+      super.scrollLines(disp, suppressScrollEvent);
+    }
     this.refresh(0, this.rows - 1);
+  }
+
+  public scrollPages(pageCount: number): void {
+    this.scrollLines(pageCount * (this.rows - 1));
+  }
+
+  public scrollToTop(): void {
+    this.scrollLines(-this._bufferService.buffer.ydisp);
+  }
+
+  public scrollToBottom(): void {
+    this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+  }
+
+  public scrollToLine(line: number): void {
+    const scrollAmount = line - this._bufferService.buffer.ydisp;
+    if (scrollAmount !== 0) {
+      this.scrollLines(scrollAmount);
+    }
   }
 
   public paste(data: string): void {
