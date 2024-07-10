@@ -97,7 +97,6 @@
     "mustache": "^4.2.0",
     "node-pty": "1.1.0-beta5",
     "nyc": "^15.1.0",
-    "semver": "^7.6.2",
     "source-map-loader": "^3.0.0",
     "source-map-support": "^0.5.20",
     "ts-loader": "^9.3.1",

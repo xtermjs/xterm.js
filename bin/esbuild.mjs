@@ -172,10 +172,8 @@ if (config.addon) {
   };
   outConfig = {
     ...outConfig,
-    entryPoints: [
-      `src/**/*.ts`
-    ],
-    outdir: 'out-esbuild/',
+    entryPoints: ['src/**/*.ts'],
+    outdir: 'out-esbuild/'
   };
   outTestConfig = {
     ...outConfig,

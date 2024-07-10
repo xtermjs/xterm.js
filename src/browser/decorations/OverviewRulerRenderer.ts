@@ -8,6 +8,10 @@ import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/serv
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
+const enum Constants {
+  OVERVIEW_RULER_BORDER_WIDTH = 1
+}
+
 // Helper objects to avoid excessive calculation and garbage collection during rendering. These are
 // static values for each render and can be accessed using the decoration position as the key.
 const drawHeight = {
@@ -98,8 +102,8 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _refreshDrawConstants(): void {
     // width
-    const outerWidth = Math.floor((this._canvas.width - 1) / 3);
-    const innerWidth = Math.ceil((this._canvas.width - 1) / 3);
+    const outerWidth = Math.floor((this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH) / 3);
+    const innerWidth = Math.ceil((this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH) / 3);
     drawWidth.full = this._canvas.width;
     drawWidth.left = outerWidth;
     drawWidth.center = innerWidth;
@@ -107,10 +111,10 @@ export class OverviewRulerRenderer extends Disposable {
     // height
     this._refreshDrawHeightConstants();
     // x
-    drawX.full = 1;
-    drawX.left = 1;
-    drawX.center = 1 + drawWidth.left;
-    drawX.right = 1 + drawWidth.left + drawWidth.center;
+    drawX.full = Constants.OVERVIEW_RULER_BORDER_WIDTH;
+    drawX.left = Constants.OVERVIEW_RULER_BORDER_WIDTH;
+    drawX.center = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left;
+    drawX.right = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left + drawWidth.center;
   }
 
   private _refreshDrawHeightConstants(): void {
@@ -171,7 +175,7 @@ export class OverviewRulerRenderer extends Disposable {
 
   private _renderRulerOutline(): void {
     this._ctx.fillStyle = this._themeService.colors.overviewRulerBorder.css;
-    this._ctx.fillRect(0, 0, 1, this._canvas.height);
+    this._ctx.fillRect(0, 0, Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.height);
   }
 
   private _renderColorZone(zone: IColorZone): void {

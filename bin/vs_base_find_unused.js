@@ -25,6 +25,7 @@ function findUnusedSymbols(
   const allFilesInBase = (
     fs.readdirSync('src/vs/base', { recursive: true, withFileTypes: true })
       .filter(e => e.isFile())
+      // @ts-ignore HACK: This is only available in Node 20
       .map(e => `${e.parentPath}/${e.name}`.replace(/\\/g, '/'))
   );
   const unusedFilesInBase = allFilesInBase.filter(e => !usedFilesInBase.includes(e));

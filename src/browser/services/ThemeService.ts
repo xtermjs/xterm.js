@@ -23,12 +23,12 @@ interface IRestoreColorSet {
 const DEFAULT_FOREGROUND = css.toColor('#ffffff');
 const DEFAULT_BACKGROUND = css.toColor('#000000');
 const DEFAULT_CURSOR = css.toColor('#ffffff');
-const DEFAULT_CURSOR_ACCENT = css.toColor('#000000');
+const DEFAULT_CURSOR_ACCENT = DEFAULT_BACKGROUND;
 const DEFAULT_SELECTION = {
   css: 'rgba(255, 255, 255, 0.3)',
   rgba: 0xFFFFFF4D
 };
-const DEFAULT_OVERVIEW_RULER_BORDER = css.toColor('#000000');
+const DEFAULT_OVERVIEW_RULER_BORDER = DEFAULT_FOREGROUND;
 
 export class ThemeService extends Disposable implements IThemeService {
   public serviceBrand: undefined;
@@ -61,7 +61,7 @@ export class ThemeService extends Disposable implements IThemeService {
       scrollbarSliderBackground: color.opacity(DEFAULT_FOREGROUND, 0.2),
       scrollbarSliderHoverBackground: color.opacity(DEFAULT_FOREGROUND, 0.4),
       scrollbarSliderActiveBackground: color.opacity(DEFAULT_FOREGROUND, 0.5),
-      overviewRulerBorder: DEFAULT_OVERVIEW_RULER_BORDER,
+      overviewRulerBorder: DEFAULT_FOREGROUND,
       ansi: DEFAULT_ANSI_COLORS.slice(),
       contrastCache: this._contrastCache,
       halfContrastCache: this._halfContrastCache
