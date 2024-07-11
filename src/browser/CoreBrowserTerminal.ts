@@ -793,22 +793,21 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
       if (!this.buffer.hasScrollback) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
-        // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
-        // TODO: Impl
-        const amount = 0; // this.viewport!.getLinesScrolled(ev);
+        // enables scrolling in apps hosted in the alt buffer such as vim or tmux even when mouse
+        // events are not enabled.
+        // This used implementation used get the actual lines/partial lines scrolled from the
+        // viewport but since moving to the new viewport implementation has been simplified to
+        // simply send a single up or down sequence.
 
         // Do nothing if there's no vertical scroll
-        if (amount === 0) {
-          return;
+        const deltaY = (ev as WheelEvent).deltaY;
+        if (deltaY === 0) {
+          return false;
         }
 
         // Construct and send sequences
         const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
-        let data = '';
-        for (let i = 0; i < Math.abs(amount); i++) {
-          data += sequence;
-        }
-        this.coreService.triggerDataEvent(data, true);
+        this.coreService.triggerDataEvent(sequence, true);
         return this.cancel(ev, true);
       }
 
