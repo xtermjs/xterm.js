@@ -130,7 +130,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.register(forwardEvent(this._bufferService.onResize, this._onResize));
     this.register(forwardEvent(this.coreService.onData, this._onData));
     this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
-    this.register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom()));
+    this.register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom(true)));
     this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
     this.register(this.optionsService.onMultipleOptionChange(['windowsMode', 'windowsPty'], () => this._handleWindowsPtyOptionChange()));
     this.register(this._bufferService.onScroll(() => {
@@ -206,7 +206,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.scrollLines(-this._bufferService.buffer.ydisp);
   }
 
-  public scrollToBottom(): void {
+  public scrollToBottom(disableSmoothScroll?: boolean): void {
     this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
   }
 

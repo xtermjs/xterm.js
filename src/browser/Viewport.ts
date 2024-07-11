@@ -108,7 +108,7 @@ export class Viewport extends Disposable {
   }
 
   public scrollToLine(line: number, disableSmoothScroll?: boolean): void {
-    if (!disableSmoothScroll) {
+    if (disableSmoothScroll) {
       this._latestYDisp = line;
     }
     this._scrollableElement.setScrollPosition({

@@ -863,8 +863,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.scrollLines(-this._bufferService.buffer.ydisp);
   }
 
-  public scrollToBottom(): void {
-    this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+  public scrollToBottom(disableSmoothScroll?: boolean): void {
+    if (disableSmoothScroll && this._viewport) {
+      this._viewport.scrollToLine(this.buffer.ybase, true);
+    } else {
+      this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    }
   }
 
   public scrollToLine(line: number): void {
@@ -998,7 +1002,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
-        this.scrollToBottom();
+        this.scrollToBottom(true);
       }
       return false;
     }
