@@ -40,8 +40,6 @@ export class Viewport extends Disposable {
   ) {
     super();
 
-    // TODO: Support smooth scroll
-
     const scrollable = this.register(new Scrollable({
       forceIntegerValues: false,
       smoothScrollDuration: this._optionsService.rawOptions.smoothScrollDuration,

@@ -810,27 +810,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
         this.coreService.triggerDataEvent(sequence, true);
         return this.cancel(ev, true);
       }
-
-      // normal viewport scrolling
-      // conditionally stop event, if the viewport still had rows to scroll within
-      // if (this.viewport!.handleWheel(ev)) {
-      //   return this.cancel(ev);
-      // }
     }, { passive: false }));
-
-    // TODO: Make sure this.coreMouseService.areMouseEventsActive still works
-    // this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
-    //   if (this.coreMouseService.areMouseEventsActive) return;
-    //   this.viewport!.handleTouchStart(ev);
-    //   return this.cancel(ev);
-    // }, { passive: true }));
-
-    // this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
-    //   if (this.coreMouseService.areMouseEventsActive) return;
-    //   if (!this.viewport!.handleTouchMove(ev)) {
-    //     return this.cancel(ev);
-    //   }
-    // }, { passive: false }));
   }
 
 
@@ -1241,8 +1221,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
     // scroll event and that the viewport's state will be valid for immediate writes.
     this._onScroll.fire({ position: this.buffer.ydisp });
-    // TODO: Reset scrollable element?
-    // this.viewport?.reset();
     this.refresh(0, this.rows - 1);
   }
 
@@ -1267,8 +1245,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     super.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
-    // TODO: Reset scrollable element?
-    // this.viewport?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
