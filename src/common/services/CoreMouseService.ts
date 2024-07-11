@@ -167,6 +167,8 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
  * To send a mouse event call `triggerMouseEvent`.
  */
 export class CoreMouseService extends Disposable implements ICoreMouseService {
+  public serviceBrand: any;
+
   private _protocols: { [name: string]: ICoreMouseProtocol } = {};
   private _encodings: { [name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';

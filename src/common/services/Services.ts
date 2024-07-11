@@ -28,6 +28,8 @@ export interface IBufferService {
 
 export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
 export interface ICoreMouseService {
+  serviceBrand: undefined;
+
   activeProtocol: string;
   activeEncoding: string;
   areMouseEventsActive: boolean;
