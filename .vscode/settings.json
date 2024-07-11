@@ -4,7 +4,9 @@
   },
   // Hide output files from the file explorer, comment this out to see the build output
   "files.exclude": {
+    "**/.nyc_output": true,
     "**/lib": true,
+    "**/dist": true,
     "**/out": true,
     "**/out-*": true,
   },

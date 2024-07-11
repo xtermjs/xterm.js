@@ -21,12 +21,12 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from '@xterm/xterm';
 import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { Linkifier } from './Linkifier';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
-import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal, IViewport } from 'browser/Types';
+import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal } from 'browser/Types';
 import { Viewport } from 'browser/Viewport';
 import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
 import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
@@ -36,6 +36,7 @@ import { IRenderer } from 'browser/renderer/shared/Types';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
+import { LinkProviderService } from 'browser/services/LinkProviderService';
 import { MouseService } from 'browser/services/MouseService';
 import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
@@ -46,7 +47,7 @@ import { CoreTerminal } from 'common/CoreTerminal';
 import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
-import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, ScrollSource, SpecialColorIndex } from 'common/Types';
+import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
@@ -54,10 +55,9 @@ import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
-import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from '@xterm/xterm';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
-import { LinkProviderService } from 'browser/services/LinkProviderService';
+import { Linkifier } from './Linkifier';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -65,13 +65,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public screenElement: HTMLElement | undefined;
 
   private _document: Document | undefined;
-  private _viewportScrollArea: HTMLElement | undefined;
   private _viewportElement: HTMLElement | undefined;
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
 
   public linkifier: ILinkifier2 | undefined;
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
+  private _viewport: Viewport | undefined;
 
   public browser: IBrowser = Browser as any;
 
@@ -118,7 +118,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
-  public viewport: IViewport | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this.register(new MutableDisposable());
 
@@ -427,10 +426,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._viewportElement.classList.add('xterm-viewport');
     fragment.appendChild(this._viewportElement);
 
-    this._viewportScrollArea = this._document.createElement('div');
-    this._viewportScrollArea.classList.add('xterm-scroll-area');
-    this._viewportElement.appendChild(this._viewportScrollArea);
-
     this.screenElement = this._document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
     this.register(addDisposableDomListener(this.screenElement, 'mousemove', (ev: MouseEvent) => this.updateCursorStyle(ev)));
@@ -503,11 +498,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._renderService.setRenderer(this._createRenderer());
     }
 
-    this.viewport = this._instantiationService.createInstance(Viewport, this._viewportElement, this._viewportScrollArea);
-    this.viewport.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT)),
-    this.register(this._inputHandler.onRequestSyncScrollBar(() => this.viewport!.syncScrollArea()));
-    this.register(this.viewport);
-
     this.register(this.onCursorMove(() => {
       this._renderService!.handleCursorMove();
       this._syncTextArea();
@@ -515,7 +505,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.register(this.onResize(() => this._renderService!.handleResize(this.cols, this.rows)));
     this.register(this.onBlur(() => this._renderService!.handleBlur()));
     this.register(this.onFocus(() => this._renderService!.handleFocus()));
-    this.register(this._renderService.onDimensionsChange(() => this.viewport!.syncScrollArea()));
+
+    this._viewport = this.register(this._instantiationService.createInstance(Viewport, this.element, this.screenElement));
+    this.register(this._viewport.onRequestScrollLines(e => super.scrollLines(e, false)));
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,
@@ -534,11 +526,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea!.focus();
       this.textarea!.select();
     }));
-    this.register(this._onScroll.event(ev => {
-      this.viewport!.syncScrollArea();
-      this._selectionService!.refresh();
-    }));
-    this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this._selectionService!.refresh()));
+    this.register(this._onScroll.event(() => this._selectionService!.refresh()));
 
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
@@ -642,13 +630,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           if (self._customWheelEventHandler && self._customWheelEventHandler(ev as WheelEvent) === false) {
             return false;
           }
-          const amount = self.viewport!.getLinesScrolled(ev as WheelEvent);
-
-          if (amount === 0) {
+          const deltaY = (ev as WheelEvent).deltaY;
+          if (deltaY === 0) {
             return false;
           }
-
-          action = (ev as WheelEvent).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
+          action = deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
           but = CoreMouseButton.WHEEL;
           break;
         default:
@@ -807,41 +793,22 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
       if (!this.buffer.hasScrollback) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
-        // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
-        const amount = this.viewport!.getLinesScrolled(ev);
+        // enables scrolling in apps hosted in the alt buffer such as vim or tmux even when mouse
+        // events are not enabled.
+        // This used implementation used get the actual lines/partial lines scrolled from the
+        // viewport but since moving to the new viewport implementation has been simplified to
+        // simply send a single up or down sequence.
 
         // Do nothing if there's no vertical scroll
-        if (amount === 0) {
-          return;
+        const deltaY = (ev as WheelEvent).deltaY;
+        if (deltaY === 0) {
+          return false;
         }
 
         // Construct and send sequences
         const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
-        let data = '';
-        for (let i = 0; i < Math.abs(amount); i++) {
-          data += sequence;
-        }
-        this.coreService.triggerDataEvent(data, true);
+        this.coreService.triggerDataEvent(sequence, true);
         return this.cancel(ev, true);
-      }
-
-      // normal viewport scrolling
-      // conditionally stop event, if the viewport still had rows to scroll within
-      if (this.viewport!.handleWheel(ev)) {
-        return this.cancel(ev);
-      }
-    }, { passive: false }));
-
-    this.register(addDisposableDomListener(el, 'touchstart', (ev: TouchEvent) => {
-      if (this.coreMouseService.areMouseEventsActive) return;
-      this.viewport!.handleTouchStart(ev);
-      return this.cancel(ev);
-    }, { passive: true }));
-
-    this.register(addDisposableDomListener(el, 'touchmove', (ev: TouchEvent) => {
-      if (this.coreMouseService.areMouseEventsActive) return;
-      if (!this.viewport!.handleTouchMove(ev)) {
-        return this.cancel(ev);
       }
     }, { passive: false }));
   }
@@ -878,12 +845,36 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  public scrollLines(disp: number, suppressScrollEvent?: boolean, source = ScrollSource.TERMINAL): void {
-    if (source === ScrollSource.VIEWPORT) {
-      super.scrollLines(disp, suppressScrollEvent, source);
-      this.refresh(0, this.rows - 1);
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+    // All scrollLines methods need to go via the viewport in order to support smooth scroll
+    if (this._viewport) {
+      this._viewport.scrollLines(disp);
     } else {
-      this.viewport?.scrollLines(disp);
+      super.scrollLines(disp, suppressScrollEvent);
+    }
+    this.refresh(0, this.rows - 1);
+  }
+
+  public scrollPages(pageCount: number): void {
+    this.scrollLines(pageCount * (this.rows - 1));
+  }
+
+  public scrollToTop(): void {
+    this.scrollLines(-this._bufferService.buffer.ydisp);
+  }
+
+  public scrollToBottom(disableSmoothScroll?: boolean): void {
+    if (disableSmoothScroll && this._viewport) {
+      this._viewport.scrollToLine(this.buffer.ybase, true);
+    } else {
+      this.scrollLines(this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
+    }
+  }
+
+  public scrollToLine(line: number): void {
+    const scrollAmount = line - this._bufferService.buffer.ydisp;
+    if (scrollAmount !== 0) {
+      this.scrollLines(scrollAmount);
     }
   }
 
@@ -1011,7 +1002,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
-        this.scrollToBottom();
+        this.scrollToBottom(true);
       }
       return false;
     }
@@ -1212,10 +1203,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
   private _afterResize(x: number, y: number): void {
     this._charSizeService?.measure();
-
-    // Sync the scroll area to make sure scroll events don't fire and scroll the viewport to an
-    // invalid location
-    this.viewport?.syncScrollArea(true);
   }
 
   /**
@@ -1237,8 +1224,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
     // IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
     // scroll event and that the viewport's state will be valid for immediate writes.
-    this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
-    this.viewport?.reset();
+    this._onScroll.fire({ position: this.buffer.ydisp });
     this.refresh(0, this.rows - 1);
   }
 
@@ -1263,7 +1249,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     super.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
-    this.viewport?.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;

@@ -25,7 +25,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { IMarker, ITerminalOptions, ScrollSource } from 'common/Types';
+import { IMarker, ITerminalOptions } from 'common/Types';
 
 export class Terminal extends CoreTerminal {
   private readonly _onBell = this.register(new EventEmitter<void>());
@@ -115,7 +115,7 @@ export class Terminal extends CoreTerminal {
     for (let i = 1; i < this.rows; i++) {
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    this._onScroll.fire({ position: this.buffer.ydisp, source: ScrollSource.TERMINAL });
+    this._onScroll.fire({ position: this.buffer.ydisp });
   }
 
   /**

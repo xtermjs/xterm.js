@@ -6,6 +6,7 @@
 import type { Terminal, ITerminalAddon } from '@xterm/xterm';
 import type { FitAddon as IFitApi } from '@xterm/addon-fit';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { ViewportConstants } from 'browser/shared/Constants';
 
 interface ITerminalDimensions {
   /**
@@ -64,8 +65,9 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       return undefined;
     }
 
-    const scrollbarWidth = this._terminal.options.scrollback === 0 ?
-      0 : core.viewport.scrollBarWidth;
+    const scrollbarWidth = (this._terminal.options.scrollback === 0
+      ? 0
+      : (this._terminal.options.overviewRulerWidth || ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
     const parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
