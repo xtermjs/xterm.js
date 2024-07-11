@@ -206,7 +206,8 @@ export abstract class AbstractScrollableElement extends Widget {
 
 	protected constructor(element: HTMLElement, options: ScrollableElementCreationOptions, scrollable: Scrollable) {
 		super();
-		element.style.overflow = 'hidden';
+		// HACK: xterm.js currnetly requires overflow to allow decorations to escape the container
+		// element.style.overflow = 'hidden';
 		this._options = resolveOptions(options);
 		this._scrollable = scrollable;
 
@@ -228,7 +229,8 @@ export abstract class AbstractScrollableElement extends Widget {
 		this._domNode.className = 'xterm-scrollable-element ' + this._options.className;
 		this._domNode.setAttribute('role', 'presentation');
 		this._domNode.style.position = 'relative';
-		this._domNode.style.overflow = 'hidden';
+		// HACK: xterm.js currnetly requires overflow to allow decorations to escape the container
+		// this._domNode.style.overflow = 'hidden';
 		this._domNode.appendChild(element);
 		this._domNode.appendChild(this._horizontalScrollbar.domNode.domNode);
 		this._domNode.appendChild(this._verticalScrollbar.domNode.domNode);
