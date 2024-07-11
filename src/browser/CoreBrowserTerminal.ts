@@ -507,7 +507,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.register(this.onFocus(() => this._renderService!.handleFocus()));
 
     this._viewport = this.register(this._instantiationService.createInstance(Viewport, this.element, this.screenElement));
-    this.register(this._viewport.onRequestScrollLines(e => super.scrollLines(e, false)));
+    this.register(this._viewport.onRequestScrollLines(e => {
+      super.scrollLines(e, false);
+      this.refresh(0, this.rows - 1);
+    }));
 
     this._selectionService = this.register(this._instantiationService.createInstance(SelectionService,
       this.element,
