@@ -630,15 +630,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           if (self._customWheelEventHandler && self._customWheelEventHandler(ev as WheelEvent) === false) {
             return false;
           }
-          // TODO: Implement
-          const amount = 0;
-          // const amount = self.viewport!.getLinesScrolled(ev as WheelEvent);
-
-          if (amount === 0) {
+          const deltaY = (ev as WheelEvent).deltaY;
+          if (deltaY === 0) {
             return false;
           }
-
-          action = (ev as WheelEvent).deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
+          action = deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
           but = CoreMouseButton.WHEEL;
           break;
         default:
@@ -798,7 +794,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       if (!this.buffer.hasScrollback) {
         // Convert wheel events into up/down events when the buffer does not have scrollback, this
         // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
-        // TODSO: Impl
+        // TODO: Impl
         const amount = 0; // this.viewport!.getLinesScrolled(ev);
 
         // Do nothing if there's no vertical scroll

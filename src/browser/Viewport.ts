@@ -7,7 +7,8 @@ import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/serv
 import { ViewportConstants } from 'browser/shared/Constants';
 import { EventEmitter, runAndSubscribe } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
+import { CoreMouseEventType } from 'common/Types';
 import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
@@ -32,6 +33,7 @@ export class Viewport extends Disposable {
     screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreBrowserService coreBrowserService: ICoreBrowserService,
+    @ICoreMouseService coreMouseService: ICoreMouseService,
     @IThemeService themeService: IThemeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IRenderService private readonly _renderService: IRenderService
@@ -62,6 +64,12 @@ export class Viewport extends Disposable {
       'fastScrollSensitivity',
       'overviewRulerWidth'
     ], () => this._scrollableElement.updateOptions(this._getChangeOptions())));
+    // Don't handle mouse wheel if wheel events are supported by the current mouse prototcol
+    this.register(coreMouseService.onProtocolChange(type => {
+      this._scrollableElement.updateOptions({
+        handleMouseWheel: !(type & CoreMouseEventType.WHEEL)
+      });
+    }));
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
     this.register(runAndSubscribe(themeService.onChangeColors, () => {
