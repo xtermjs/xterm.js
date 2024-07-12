@@ -119,7 +119,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _parseBuffer: Uint32Array = new Uint32Array(4096);
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
-  private _workCell: CellData = new CellData();
   private _windowTitle = '';
   private _iconName = '';
   private _dirtyRowTracker: IDirtyRowTracker;
