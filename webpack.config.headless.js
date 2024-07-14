@@ -31,7 +31,8 @@ const config = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      headless: path.resolve('./out/headless')
+      headless: path.resolve('./out/headless'),
+      vs: path.resolve('./out/vs')
     }
   },
   output: {
