@@ -44,7 +44,7 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkPr
 import { ThemeService } from 'browser/services/ThemeService';
 import { channels, color } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/Events';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';

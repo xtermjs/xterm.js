@@ -29,7 +29,7 @@ import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/Buffe
 import { OptionsService } from 'common/services/OptionsService';
 import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
-import { forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/Events';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';

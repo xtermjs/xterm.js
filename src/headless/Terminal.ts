@@ -24,7 +24,7 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/Events';
 import { IMarker, ITerminalOptions } from 'common/Types';
 import { Emitter } from 'vs/base/common/event';
 

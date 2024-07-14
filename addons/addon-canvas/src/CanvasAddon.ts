@@ -7,7 +7,7 @@ import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { CanvasAddon as ICanvasApi } from '@xterm/addon-canvas';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/Events';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
 import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';

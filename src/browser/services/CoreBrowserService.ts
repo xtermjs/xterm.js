@@ -5,7 +5,7 @@
 
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService } from './Services';
-import { forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/Events';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Emitter } from 'vs/base/common/event';
 

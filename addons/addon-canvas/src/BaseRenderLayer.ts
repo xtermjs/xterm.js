@@ -12,7 +12,7 @@ import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUt
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/Events';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { isSafari } from 'common/Platform';
 import { ICellData } from 'common/Types';

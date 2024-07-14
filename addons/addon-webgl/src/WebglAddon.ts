@@ -7,7 +7,7 @@ import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { WebglAddon as IWebglApi } from '@xterm/addon-webgl';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/Events';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
