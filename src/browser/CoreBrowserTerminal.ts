@@ -160,7 +160,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));
-    this.register(this._inputHandler.onRequestRefreshRows((e) => this.refresh(e.start, e.end)));
+    this.register(this._inputHandler.onRequestRefreshRows((e) => this.refresh(e?.start ?? 0, e?.end ?? (this.rows - 1))));
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));

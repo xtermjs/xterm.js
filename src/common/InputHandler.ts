@@ -134,7 +134,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private readonly _onRequestBell = this.register(new Emitter<void>());
   public readonly onRequestBell = this._onRequestBell.event;
-  private readonly _onRequestRefreshRows = this.register(new Emitter<{ start: number, end: number }>());
+  private readonly _onRequestRefreshRows = this.register(new Emitter<{ start: number, end: number } | undefined>());
   public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
   private readonly _onRequestReset = this.register(new Emitter<void>());
   public readonly onRequestReset = this._onRequestReset.event;
@@ -1946,10 +1946,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire({
-            start: 0,
-            end: this._bufferService.rows - 1
-          });
+          this._onRequestRefreshRows.fire(undefined);
           this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -2177,10 +2174,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             this.restoreCursor();
           }
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire({
-            start: 0,
-            end: this._bufferService.rows - 1
-          });
+          this._onRequestRefreshRows.fire(undefined);
           this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
