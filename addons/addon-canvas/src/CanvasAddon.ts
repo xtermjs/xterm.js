@@ -7,12 +7,11 @@ import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { CanvasAddon as ICanvasApi } from '@xterm/addon-canvas';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { forwardEvent } from 'common/Events';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
 import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
 import { CanvasRenderer } from './CanvasRenderer';
-import { Emitter } from '../../../src/vs/base/common/event';
+import { Emitter, Event } from '../../../src/vs/base/common/event';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasApi {
   private _terminal?: Terminal;
@@ -55,8 +54,8 @@ export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasA
     setTraceLogger(logService);
 
     this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
-    this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
-    this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
+    this.register(Event.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this.register(Event.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
     renderService.handleResize(bufferService.cols, bufferService.rows);
 

@@ -24,9 +24,8 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { forwardEvent } from 'common/Events';
 import { IMarker, ITerminalOptions } from 'common/Types';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class Terminal extends CoreTerminal {
   private readonly _onBell = this.register(new Emitter<void>());
@@ -50,10 +49,10 @@ export class Terminal extends CoreTerminal {
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this.bell()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
-    this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
-    this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
-    this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-    this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this.register(Event.forward(this._inputHandler.onCursorMove, this._onCursorMove));
+    this.register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
+    this.register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this.register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
   }
 
   /**

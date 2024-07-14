@@ -12,7 +12,6 @@ import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUt
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { forwardEvent } from 'common/Events';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { isSafari } from 'common/Platform';
 import { ICellData } from 'common/Types';
@@ -21,7 +20,7 @@ import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -123,7 +122,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       return;
     }
     this._charAtlas = acquireTextureAtlas(this._terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr);
-    this._charAtlasDisposable.value = forwardEvent(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+    this._charAtlasDisposable.value = Event.forward(this._charAtlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     this._charAtlas.warmUp();
     for (let i = 0; i < this._charAtlas.pages.length; i++) {
       this._bitmapGenerator[i] = new BitmapGenerator(this._charAtlas.pages[i].canvas);

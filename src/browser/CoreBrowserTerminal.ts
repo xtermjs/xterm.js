@@ -44,7 +44,6 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkPr
 import { ThemeService } from 'browser/services/ThemeService';
 import { channels, color } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { forwardEvent } from 'common/Events';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
@@ -58,7 +57,7 @@ import { IDecorationService } from 'common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
-import { Emitter, type Event } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -166,10 +165,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
-    this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
-    this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
-    this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-    this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this.register(Event.forward(this._inputHandler.onCursorMove, this._onCursorMove));
+    this.register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
+    this.register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this.register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
 
     // Setup listeners
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));

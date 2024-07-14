@@ -12,7 +12,6 @@ import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixe
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { forwardEvent } from 'common/Events';
 import { Disposable, MutableDisposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
@@ -26,7 +25,7 @@ import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET
 import { IWebGL2RenderingContext } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { Emitter } from '../../../src/vs/base/common/event';
+import { Emitter, Event } from '../../../src/vs/base/common/event';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -278,8 +277,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (this._charAtlas !== atlas) {
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
       this._charAtlasDisposable.value = getDisposeArrayDisposable([
-        forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
-        forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
+        Event.forward(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
+        Event.forward(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
       ]);
     }
     this._charAtlas = atlas;

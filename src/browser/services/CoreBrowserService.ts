@@ -5,9 +5,8 @@
 
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService } from './Services';
-import { forwardEvent } from 'common/Events';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class CoreBrowserService extends Disposable implements ICoreBrowserService {
   public serviceBrand: undefined;
@@ -30,7 +29,7 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
 
     // Monitor device pixel ratio
     this.register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
-    this.register(forwardEvent(this._screenDprMonitor.onDprChange, this._onDprChange));
+    this.register(Event.forward(this._screenDprMonitor.onDprChange, this._onDprChange));
 
     this.register(
       addDisposableDomListener(this._textarea, 'focus', () => (this._isFocused = true))

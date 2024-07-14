@@ -7,14 +7,13 @@ import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { WebglAddon as IWebglApi } from '@xterm/addon-webgl';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { forwardEvent } from 'common/Events';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { IWebGL2RenderingContext } from './Types';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
-import { Emitter } from '../../../src/vs/base/common/event';
+import { Emitter, Event } from '../../../src/vs/base/common/event';
 
 export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
   private _terminal?: Terminal;
@@ -82,10 +81,10 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
       themeService,
       this._preserveDrawingBuffer
     ));
-    this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
-    this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
-    this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
-    this.register(forwardEvent(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
+    this.register(Event.forward(this._renderer.onContextLoss, this._onContextLoss));
+    this.register(Event.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this.register(Event.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
+    this.register(Event.forward(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
 
     this.register(toDisposable(() => {
