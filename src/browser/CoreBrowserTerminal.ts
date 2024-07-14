@@ -44,7 +44,6 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkPr
 import { ThemeService } from 'browser/services/ThemeService';
 import { channels, color } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
@@ -58,6 +57,7 @@ import { IDecorationService } from 'common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -121,29 +121,29 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this.register(new MutableDisposable());
 
-  private readonly _onCursorMove = this.register(new EventEmitter<void>());
+  private readonly _onCursorMove = this.register(new Emitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onKey = this.register(new EventEmitter<{ key: string, domEvent: KeyboardEvent }>());
+  private readonly _onKey = this.register(new Emitter<{ key: string, domEvent: KeyboardEvent }>());
   public readonly onKey = this._onKey.event;
-  private readonly _onRender = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRender = this.register(new Emitter<{ start: number, end: number }>());
   public readonly onRender = this._onRender.event;
-  private readonly _onSelectionChange = this.register(new EventEmitter<void>());
+  private readonly _onSelectionChange = this.register(new Emitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
-  private readonly _onTitleChange = this.register(new EventEmitter<string>());
+  private readonly _onTitleChange = this.register(new Emitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onBell = this.register(new EventEmitter<void>());
+  private readonly _onBell = this.register(new Emitter<void>());
   public readonly onBell = this._onBell.event;
 
-  private _onFocus = this.register(new EventEmitter<void>());
-  public get onFocus(): IEvent<void> { return this._onFocus.event; }
-  private _onBlur = this.register(new EventEmitter<void>());
-  public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  private _onA11yCharEmitter = this.register(new EventEmitter<string>());
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
-  private _onA11yTabEmitter = this.register(new EventEmitter<number>());
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
-  private _onWillOpen = this.register(new EventEmitter<HTMLElement>());
-  public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
+  private _onFocus = this.register(new Emitter<void>());
+  public get onFocus(): Event<void> { return this._onFocus.event; }
+  private _onBlur = this.register(new Emitter<void>());
+  public get onBlur(): Event<void> { return this._onBlur.event; }
+  private _onA11yCharEmitter = this.register(new Emitter<string>());
+  public get onA11yChar(): Event<string> { return this._onA11yCharEmitter.event; }
+  private _onA11yTabEmitter = this.register(new Emitter<number>());
+  public get onA11yTab(): Event<number> { return this._onA11yTabEmitter.event; }
+  private _onWillOpen = this.register(new Emitter<HTMLElement>());
+  public get onWillOpen(): Event<HTMLElement> { return this._onWillOpen.event; }
 
   constructor(
     options: Partial<ITerminalOptions> = {}
@@ -160,15 +160,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));
-    this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
+    this.register(this._inputHandler.onRequestRefreshRows((e) => this.refresh(e?.start ?? 0, e?.end ?? (this.rows - 1))));
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this.register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
-    this.register(forwardEvent(this._inputHandler.onCursorMove, this._onCursorMove));
-    this.register(forwardEvent(this._inputHandler.onTitleChange, this._onTitleChange));
-    this.register(forwardEvent(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-    this.register(forwardEvent(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this.register(Event.forward(this._inputHandler.onCursorMove, this._onCursorMove));
+    this.register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
+    this.register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this.register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
 
     // Setup listeners
     this.register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
@@ -672,7 +672,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
      * Note: 'mousedown' currently is "always on" and not managed
      * by onProtocolChange.
      */
-    const requestedEvents: { [key: string]: ((ev: Event) => void) | null } = {
+    const requestedEvents: { [key: string]: ((ev: MouseEvent | WheelEvent) => void) | null } = {
       mouseup: null,
       wheel: null,
       mousedrag: null,
@@ -1292,7 +1292,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   // TODO: Remove cancel function and cancelEvents option
-  public cancel(ev: Event, force?: boolean): boolean | undefined {
+  public cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): boolean | undefined {
     if (!this.options.cancelEvents && !force) {
       return;
     }

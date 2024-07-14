@@ -29,7 +29,6 @@ import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/Buffe
 import { OptionsService } from 'common/services/OptionsService';
 import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
-import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
@@ -39,6 +38,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
+import { Emitter, Event } from 'vs/base/common/event';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -59,26 +59,26 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _writeBuffer: WriteBuffer;
   private _windowsWrappingHeuristics = this.register(new MutableDisposable());
 
-  private readonly _onBinary = this.register(new EventEmitter<string>());
+  private readonly _onBinary = this.register(new Emitter<string>());
   public readonly onBinary = this._onBinary.event;
-  private readonly _onData = this.register(new EventEmitter<string>());
+  private readonly _onData = this.register(new Emitter<string>());
   public readonly onData = this._onData.event;
-  protected _onLineFeed = this.register(new EventEmitter<void>());
+  protected _onLineFeed = this.register(new Emitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
-  private readonly _onResize = this.register(new EventEmitter<{ cols: number, rows: number }>());
+  private readonly _onResize = this.register(new Emitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
-  protected readonly _onWriteParsed = this.register(new EventEmitter<void>());
+  protected readonly _onWriteParsed = this.register(new Emitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
   /**
    * Internally we track the source of the scroll but this is meaningless outside the library so
    * it's filtered out.
    */
-  protected _onScrollApi?: EventEmitter<number, void>;
-  protected _onScroll = this.register(new EventEmitter<IScrollEvent, void>());
-  public get onScroll(): IEvent<number, void> {
+  protected _onScrollApi?: Emitter<number>;
+  protected _onScroll = this.register(new Emitter<IScrollEvent>());
+  public get onScroll(): Event<number> {
     if (!this._onScrollApi) {
-      this._onScrollApi = this.register(new EventEmitter<number, void>());
+      this._onScrollApi = this.register(new Emitter<number>());
       this._onScroll.event(ev => {
         this._onScrollApi?.fire(ev.position);
       });
@@ -123,13 +123,13 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Register input handler and handle/forward events
     this._inputHandler = this.register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));
-    this.register(forwardEvent(this._inputHandler.onLineFeed, this._onLineFeed));
+    this.register(Event.forward(this._inputHandler.onLineFeed, this._onLineFeed));
     this.register(this._inputHandler);
 
     // Setup listeners
-    this.register(forwardEvent(this._bufferService.onResize, this._onResize));
-    this.register(forwardEvent(this.coreService.onData, this._onData));
-    this.register(forwardEvent(this.coreService.onBinary, this._onBinary));
+    this.register(Event.forward(this._bufferService.onResize, this._onResize));
+    this.register(Event.forward(this.coreService.onData, this._onData));
+    this.register(Event.forward(this.coreService.onBinary, this._onBinary));
     this.register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom(true)));
     this.register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
     this.register(this.optionsService.onMultipleOptionChange(['windowsMode', 'windowsPty'], () => this._handleWindowsPtyOptionChange()));
@@ -139,7 +139,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     }));
     // Setup WriteBuffer
     this._writeBuffer = this.register(new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult)));
-    this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
+    this.register(Event.forward(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {

@@ -7,19 +7,19 @@ import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { CanvasAddon as ICanvasApi } from '@xterm/addon-canvas';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
 import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
 import { CanvasRenderer } from './CanvasRenderer';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasApi {
   private _terminal?: Terminal;
   private _renderer?: CanvasRenderer;
 
-  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onChangeTextureAtlas = this.register(new Emitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onAddTextureAtlasCanvas = this.register(new Emitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
@@ -54,8 +54,8 @@ export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasA
     setTraceLogger(logService);
 
     this._renderer = new CanvasRenderer(terminal, screenElement, linkifier, bufferService, charSizeService, optionsService, characterJoinerService, coreService, coreBrowserService, decorationService, themeService);
-    this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
-    this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
+    this.register(Event.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this.register(Event.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
     renderService.handleResize(bufferService.cols, bufferService.rows);
 

@@ -6,7 +6,7 @@
 import { FontWeight, Terminal } from '@xterm/xterm';
 import { IColorSet, ITerminal } from 'browser/Types';
 import { IDisposable } from 'common/Types';
-import { IEvent } from 'common/EventEmitter';
+import type { Event } from 'vs/base/common/event';
 
 export interface ICharAtlasConfig {
   customGlyphs: boolean;
@@ -71,7 +71,7 @@ export interface IRenderer extends IDisposable {
    * Fires when the renderer is requesting to be redrawn on the next animation
    * frame but is _not_ a result of content changing (eg. selection changes).
    */
-  readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
+  readonly onRequestRedraw: Event<IRequestRedrawEvent>;
 
   dispose(): void;
   handleDevicePixelRatioChange(): void;
@@ -89,8 +89,8 @@ export interface IRenderer extends IDisposable {
 export interface ITextureAtlas extends IDisposable {
   readonly pages: { canvas: HTMLCanvasElement, version: number }[];
 
-  onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
-  onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  onAddTextureAtlasCanvas: Event<HTMLCanvasElement>;
+  onRemoveTextureAtlasCanvas: Event<HTMLCanvasElement>;
 
   /**
    * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.

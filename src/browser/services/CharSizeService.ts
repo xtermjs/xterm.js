@@ -4,9 +4,9 @@
  */
 
 import { IOptionsService } from 'common/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
@@ -17,7 +17,7 @@ export class CharSizeService extends Disposable implements ICharSizeService {
 
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
-  private readonly _onCharSizeChange = this.register(new EventEmitter<void>());
+  private readonly _onCharSizeChange = this.register(new Emitter<void>());
   public readonly onCharSizeChange = this._onCharSizeChange.event;
 
   constructor(

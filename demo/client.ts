@@ -235,6 +235,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
   document.getElementById('print-cjk').addEventListener('click', addCjk);
   document.getElementById('print-cjk-sgr').addEventListener('click', addCjkRandomSgr);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
@@ -826,6 +827,39 @@ function loadTest(): void {
   }
   const start = performance.now();
   for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
+    // Send ^C to get a new prompt
+    term._core._onData.fire('\x03');
+  });
+}
+
+function loadTestLongLines(): void {
+  const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 500);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024 * 50; i++) {
     for (const d of testData) {
       term.write(d);
     }

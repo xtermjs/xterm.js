@@ -18,6 +18,9 @@
       "browser/*": [
         "../../../src/browser/*"
       ],
+      "vs/*": [
+        "../../../src/vs/*"
+      ],
       "@xterm/addon-canvas": [
         "../typings/addon-canvas.d.ts"
       ]
@@ -38,6 +41,9 @@
     },
     {
       "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../src/vs"
     }
   ]
 }

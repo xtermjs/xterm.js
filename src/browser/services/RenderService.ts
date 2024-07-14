@@ -7,10 +7,10 @@ import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -38,13 +38,13 @@ export class RenderService extends Disposable implements IRenderService {
     columnSelectMode: false
   };
 
-  private readonly _onDimensionsChange = this.register(new EventEmitter<IRenderDimensions>());
+  private readonly _onDimensionsChange = this.register(new Emitter<IRenderDimensions>());
   public readonly onDimensionsChange = this._onDimensionsChange.event;
-  private readonly _onRenderedViewportChange = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRenderedViewportChange = this.register(new Emitter<{ start: number, end: number }>());
   public readonly onRenderedViewportChange = this._onRenderedViewportChange.event;
-  private readonly _onRender = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRender = this.register(new Emitter<{ start: number, end: number }>());
   public readonly onRender = this._onRender.event;
-  private readonly _onRefreshRequest = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRefreshRequest = this.register(new Emitter<{ start: number, end: number }>());
   public readonly onRefreshRequest = this._onRefreshRequest.event;
 
   public get dimensions(): IRenderDimensions { return this._renderer.value!.dimensions; }

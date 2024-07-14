@@ -5,11 +5,11 @@
 
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, disposeArray, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
@@ -23,9 +23,9 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
 
-  private readonly _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  private readonly _onShowLinkUnderline = this.register(new Emitter<ILinkifierEvent>());
   public readonly onShowLinkUnderline = this._onShowLinkUnderline.event;
-  private readonly _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  private readonly _onHideLinkUnderline = this.register(new Emitter<ILinkifierEvent>());
   public readonly onHideLinkUnderline = this._onHideLinkUnderline.event;
 
   constructor(

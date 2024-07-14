@@ -11,7 +11,6 @@ import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { EventEmitter } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -22,6 +21,7 @@ import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -132,32 +132,32 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _activeBuffer: IBuffer;
 
-  private readonly _onRequestBell = this.register(new EventEmitter<void>());
+  private readonly _onRequestBell = this.register(new Emitter<void>());
   public readonly onRequestBell = this._onRequestBell.event;
-  private readonly _onRequestRefreshRows = this.register(new EventEmitter<number, number>());
+  private readonly _onRequestRefreshRows = this.register(new Emitter<{ start: number, end: number } | undefined>());
   public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
-  private readonly _onRequestReset = this.register(new EventEmitter<void>());
+  private readonly _onRequestReset = this.register(new Emitter<void>());
   public readonly onRequestReset = this._onRequestReset.event;
-  private readonly _onRequestSendFocus = this.register(new EventEmitter<void>());
+  private readonly _onRequestSendFocus = this.register(new Emitter<void>());
   public readonly onRequestSendFocus = this._onRequestSendFocus.event;
-  private readonly _onRequestSyncScrollBar = this.register(new EventEmitter<void>());
+  private readonly _onRequestSyncScrollBar = this.register(new Emitter<void>());
   public readonly onRequestSyncScrollBar = this._onRequestSyncScrollBar.event;
-  private readonly _onRequestWindowsOptionsReport = this.register(new EventEmitter<WindowsOptionsReportType>());
+  private readonly _onRequestWindowsOptionsReport = this.register(new Emitter<WindowsOptionsReportType>());
   public readonly onRequestWindowsOptionsReport = this._onRequestWindowsOptionsReport.event;
 
-  private readonly _onA11yChar = this.register(new EventEmitter<string>());
+  private readonly _onA11yChar = this.register(new Emitter<string>());
   public readonly onA11yChar = this._onA11yChar.event;
-  private readonly _onA11yTab = this.register(new EventEmitter<number>());
+  private readonly _onA11yTab = this.register(new Emitter<number>());
   public readonly onA11yTab = this._onA11yTab.event;
-  private readonly _onCursorMove = this.register(new EventEmitter<void>());
+  private readonly _onCursorMove = this.register(new Emitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onLineFeed = this.register(new EventEmitter<void>());
+  private readonly _onLineFeed = this.register(new Emitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
-  private readonly _onScroll = this.register(new EventEmitter<number>());
+  private readonly _onScroll = this.register(new Emitter<number>());
   public readonly onScroll = this._onScroll.event;
-  private readonly _onTitleChange = this.register(new EventEmitter<string>());
+  private readonly _onTitleChange = this.register(new Emitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onColor = this.register(new EventEmitter<IColorEvent>());
+  private readonly _onColor = this.register(new Emitter<IColorEvent>());
   public readonly onColor = this._onColor.event;
 
   private _parseStack: IParseStack = {
@@ -500,7 +500,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     const viewportEnd = this._dirtyRowTracker.end + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
     const viewportStart = this._dirtyRowTracker.start + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
     if (viewportStart < this._bufferService.rows) {
-      this._onRequestRefreshRows.fire(Math.min(viewportStart, this._bufferService.rows - 1), Math.min(viewportEnd, this._bufferService.rows - 1));
+      this._onRequestRefreshRows.fire({
+        start: Math.min(viewportStart, this._bufferService.rows - 1),
+        end: Math.min(viewportEnd, this._bufferService.rows - 1)
+      });
     }
   }
 
@@ -1943,7 +1946,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
+          this._onRequestRefreshRows.fire(undefined);
           this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -2171,7 +2174,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             this.restoreCursor();
           }
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
+          this._onRequestRefreshRows.fire(undefined);
           this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)

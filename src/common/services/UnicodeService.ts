@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { EventEmitter } from 'common/EventEmitter';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IUnicodeService, IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 export class UnicodeService implements IUnicodeService {
   public serviceBrand: any;
@@ -14,7 +14,7 @@ export class UnicodeService implements IUnicodeService {
   private _active: string = '';
   private _activeProvider: IUnicodeVersionProvider;
 
-  private readonly _onChange = new EventEmitter<string>();
+  private readonly _onChange = new Emitter<string>();
   public readonly onChange = this._onChange.event;
 
   public static extractShouldJoin(value: UnicodeCharProperties): boolean {

@@ -5,15 +5,15 @@
 
 import { assert } from 'chai';
 import { DecorationService } from './DecorationService';
-import { EventEmitter } from 'common/EventEmitter';
 import { IMarker } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 const fakeMarker: IMarker = Object.freeze(new class extends Disposable {
   public readonly id = 1;
   public readonly line = 1;
   public readonly isDisposed = false;
-  public readonly onDispose = new EventEmitter<void>().event;
+  public readonly onDispose = new Emitter<void>().event;
 }());
 
 describe('DecorationService', () => {

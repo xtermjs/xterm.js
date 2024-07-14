@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
@@ -65,7 +65,7 @@ export class OptionsService extends Disposable implements IOptionsService {
   public readonly rawOptions: Required<ITerminalOptions>;
   public options: Required<ITerminalOptions>;
 
-  private readonly _onOptionChange = this.register(new EventEmitter<keyof ITerminalOptions>());
+  private readonly _onOptionChange = this.register(new Emitter<keyof ITerminalOptions>());
   public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {

@@ -4,12 +4,12 @@
  */
 
 import { css } from 'common/Color';
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
+import { Emitter } from 'vs/base/common/event';
 
 // Work variables to avoid garbage collection
 let $xmin = 0;
@@ -25,9 +25,9 @@ export class DecorationService extends Disposable implements IDecorationService 
    */
   private readonly _decorations: SortedList<IInternalDecoration> = new SortedList(e => e?.marker.line);
 
-  private readonly _onDecorationRegistered = this.register(new EventEmitter<IInternalDecoration>());
+  private readonly _onDecorationRegistered = this.register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRegistered = this._onDecorationRegistered.event;
-  private readonly _onDecorationRemoved = this.register(new EventEmitter<IInternalDecoration>());
+  private readonly _onDecorationRemoved = this.register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRemoved = this._onDecorationRemoved.event;
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
@@ -95,9 +95,9 @@ class Decoration extends Disposable implements IInternalDecoration {
   public element: HTMLElement | undefined;
   public get isDisposed(): boolean { return this._isDisposed; }
 
-  public readonly onRenderEmitter = this.register(new EventEmitter<HTMLElement>());
+  public readonly onRenderEmitter = this.register(new Emitter<HTMLElement>());
   public readonly onRender = this.onRenderEmitter.event;
-  private readonly _onDispose = this.register(new EventEmitter<void>());
+  private readonly _onDispose = this.register(new Emitter<void>());
   public readonly onDispose = this._onDispose.event;
 
   private _cachedBg: IColor | undefined | null = null;

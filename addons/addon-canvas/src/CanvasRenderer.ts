@@ -9,7 +9,6 @@ import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixe
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
@@ -18,6 +17,7 @@ import { LinkRenderLayer } from './LinkRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { TextRenderLayer } from './TextRenderLayer';
 import { IRenderLayer } from './Types';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class CanvasRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -26,11 +26,11 @@ export class CanvasRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  private readonly _onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>());
+  private readonly _onRequestRedraw = this.register(new Emitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
-  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onChangeTextureAtlas = this.register(new Emitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onAddTextureAtlasCanvas = this.register(new Emitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   constructor(
@@ -55,7 +55,7 @@ export class CanvasRenderer extends Disposable implements IRenderer {
       new CursorRenderLayer(this._terminal, this._screenElement, 3, this._onRequestRedraw, this._bufferService, this._optionsService, coreService, this._coreBrowserService, decorationService, _themeService)
     ];
     for (const layer of this._renderLayers) {
-      forwardEvent(layer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
+      Event.forward(layer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas);
     }
     this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;

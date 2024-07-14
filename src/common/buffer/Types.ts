@@ -4,7 +4,7 @@
  */
 
 import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker, ICharset, IDisposable } from 'common/Types';
-import { IEvent } from 'common/EventEmitter';
+import type { Event } from 'vs/base/common/event';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];
@@ -42,7 +42,7 @@ export interface IBufferSet extends IDisposable {
   normal: IBuffer;
   active: IBuffer;
 
-  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
+  onBufferActivate: Event<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
 
   activateNormalBuffer(): void;
   activateAltBuffer(fillAttr?: IAttributeData): void;

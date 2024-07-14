@@ -12,9 +12,9 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderMode
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -45,7 +45,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
+  public readonly onRequestRedraw = this.register(new Emitter<IRequestRedrawEvent>()).event;
 
   constructor(
     private readonly _terminal: ITerminal,
