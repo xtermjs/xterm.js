@@ -5,7 +5,7 @@
 
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ViewportConstants } from 'browser/shared/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
@@ -16,7 +16,7 @@ import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/commo
 
 export class Viewport extends Disposable {
 
-  protected _onRequestScrollLines = this.register(new Emitter<number>());
+  protected _onRequestScrollLines = this._register(new Emitter<number>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   private _scrollableElement: SmoothScrollableElement;
@@ -40,46 +40,46 @@ export class Viewport extends Disposable {
   ) {
     super();
 
-    const scrollable = this.register(new Scrollable({
+    const scrollable = this._register(new Scrollable({
       forceIntegerValues: false,
       smoothScrollDuration: this._optionsService.rawOptions.smoothScrollDuration,
       // This is used over `IRenderService.addRefreshCallback` since it can be canceled
       scheduleAtNextAnimationFrame: cb => scheduleAtNextAnimationFrame(coreBrowserService.window, cb)
     }));
-    this.register(this._optionsService.onSpecificOptionChange('smoothScrollDuration', () => {
+    this._register(this._optionsService.onSpecificOptionChange('smoothScrollDuration', () => {
       scrollable.setSmoothScrollDuration(this._optionsService.rawOptions.smoothScrollDuration);
     }));
 
-    this._scrollableElement = this.register(new SmoothScrollableElement(screenElement, {
+    this._scrollableElement = this._register(new SmoothScrollableElement(screenElement, {
       vertical: ScrollbarVisibility.Auto,
       horizontal: ScrollbarVisibility.Hidden,
       useShadows: false,
       mouseWheelSmoothScroll: true,
       ...this._getChangeOptions()
     }, scrollable));
-    this.register(this._optionsService.onMultipleOptionChange([
+    this._register(this._optionsService.onMultipleOptionChange([
       'scrollSensitivity',
       'fastScrollSensitivity',
       'overviewRulerWidth'
     ], () => this._scrollableElement.updateOptions(this._getChangeOptions())));
     // Don't handle mouse wheel if wheel events are supported by the current mouse prototcol
-    this.register(coreMouseService.onProtocolChange(type => {
+    this._register(coreMouseService.onProtocolChange(type => {
       this._scrollableElement.updateOptions({
         handleMouseWheel: !(type & CoreMouseEventType.WHEEL)
       });
     }));
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
-    this.register(Event.runAndSubscribe(themeService.onChangeColors, () => {
+    this._register(Event.runAndSubscribe(themeService.onChangeColors, () => {
       this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
     }));
     element.appendChild(this._scrollableElement.getDomNode());
-    this.register(toDisposable(() => this._scrollableElement.getDomNode().remove()));
+    this._register(toDisposable(() => this._scrollableElement.getDomNode().remove()));
 
     this._styleElement = coreBrowserService.window.document.createElement('style');
     screenElement.appendChild(this._styleElement);
-    this.register(toDisposable(() => this._styleElement.remove()));
-    this.register(Event.runAndSubscribe(themeService.onChangeColors, () => {
+    this._register(toDisposable(() => this._styleElement.remove()));
+    this._register(Event.runAndSubscribe(themeService.onChangeColors, () => {
       this._styleElement.textContent = [
         `.xterm .xterm-scrollable-element > .scrollbar > .slider {`,
         `  background: ${themeService.colors.scrollbarSliderBackground.css};`,
@@ -93,10 +93,10 @@ export class Viewport extends Disposable {
       ].join('\n');
     }));
 
-    this.register(this._bufferService.onResize(() => this._queueSync()));
-    this.register(this._bufferService.onScroll(() => this._sync()));
+    this._register(this._bufferService.onResize(() => this._queueSync()));
+    this._register(this._bufferService.onScroll(() => this._sync()));
 
-    this.register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
+    this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
   }
 
   public scrollLines(disp: number): void {

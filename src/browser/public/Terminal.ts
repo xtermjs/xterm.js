@@ -6,7 +6,7 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { CoreBrowserTerminal as TerminalCore } from 'browser/CoreBrowserTerminal';
 import { IBufferRange, ITerminal } from 'browser/Types';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { ITerminalOptions } from 'common/Types';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
@@ -32,8 +32,8 @@ export class Terminal extends Disposable implements ITerminalApi {
   constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
     super();
 
-    this._core = this.register(new TerminalCore(options));
-    this._addonManager = this.register(new AddonManager());
+    this._core = this._register(new TerminalCore(options));
+    this._addonManager = this._register(new AddonManager());
 
     this._publicOptions = { ... this._core.options };
     const getter = (propName: string): any => {
@@ -97,7 +97,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
     if (!this._buffer) {
-      this._buffer = this.register(new BufferNamespaceApi(this._core));
+      this._buffer = this._register(new BufferNamespaceApi(this._core));
     }
     return this._buffer;
   }

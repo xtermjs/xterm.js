@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
@@ -65,7 +65,7 @@ export class OptionsService extends Disposable implements IOptionsService {
   public readonly rawOptions: Required<ITerminalOptions>;
   public options: Required<ITerminalOptions>;
 
-  private readonly _onOptionChange = this.register(new Emitter<keyof ITerminalOptions>());
+  private readonly _onOptionChange = this._register(new Emitter<keyof ITerminalOptions>());
   public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {
@@ -90,7 +90,7 @@ export class OptionsService extends Disposable implements IOptionsService {
 
     // Clear out options that could link outside xterm.js as they could easily cause an embedder
     // memory leak
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this.rawOptions.linkHandler = null;
       this.rawOptions.documentOverride = null;
     }));

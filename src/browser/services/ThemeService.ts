@@ -7,7 +7,7 @@ import { ColorContrastCache } from 'browser/ColorContrastCache';
 import { IThemeService } from 'browser/services/Services';
 import { DEFAULT_ANSI_COLORS, IColorContrastCache, IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { color, css, NULL_COLOR } from 'common/Color';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { IOptionsService, ITheme } from 'common/services/Services';
 import { AllColorIndex, IColor, SpecialColorIndex } from 'common/Types';
 import { Emitter } from 'vs/base/common/event';
@@ -40,7 +40,7 @@ export class ThemeService extends Disposable implements IThemeService {
 
   public get colors(): ReadonlyColorSet { return this._colors; }
 
-  private readonly _onChangeColors = this.register(new Emitter<ReadonlyColorSet>());
+  private readonly _onChangeColors = this._register(new Emitter<ReadonlyColorSet>());
   public readonly onChangeColors = this._onChangeColors.event;
 
   constructor(
@@ -69,8 +69,8 @@ export class ThemeService extends Disposable implements IThemeService {
     this._updateRestoreColors();
     this._setTheme(this._optionsService.rawOptions.theme);
 
-    this.register(this._optionsService.onSpecificOptionChange('minimumContrastRatio', () => this._contrastCache.clear()));
-    this.register(this._optionsService.onSpecificOptionChange('theme', () => this._setTheme(this._optionsService.rawOptions.theme)));
+    this._register(this._optionsService.onSpecificOptionChange('minimumContrastRatio', () => this._contrastCache.clear()));
+    this._register(this._optionsService.onSpecificOptionChange('theme', () => this._setTheme(this._optionsService.rawOptions.theme)));
   }
 
   /**

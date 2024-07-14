@@ -4,7 +4,7 @@
  */
 
 import { clone } from 'common/Clone';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { IDecPrivateModes, IModes } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
@@ -31,13 +31,13 @@ export class CoreService extends Disposable implements ICoreService {
   public modes: IModes;
   public decPrivateModes: IDecPrivateModes;
 
-  private readonly _onData = this.register(new Emitter<string>());
+  private readonly _onData = this._register(new Emitter<string>());
   public readonly onData = this._onData.event;
-  private readonly _onUserInput = this.register(new Emitter<void>());
+  private readonly _onUserInput = this._register(new Emitter<void>());
   public readonly onUserInput = this._onUserInput.event;
-  private readonly _onBinary = this.register(new Emitter<string>());
+  private readonly _onBinary = this._register(new Emitter<string>());
   public readonly onBinary = this._onBinary.event;
-  private readonly _onRequestScrollToBottom = this.register(new Emitter<void>());
+  private readonly _onRequestScrollToBottom = this._register(new Emitter<void>());
   public readonly onRequestScrollToBottom = this._onRequestScrollToBottom.event;
 
   constructor(

@@ -11,7 +11,6 @@ import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixe
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
@@ -26,15 +25,15 @@ import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { Emitter, Event } from 'vs/base/common/event';
 import { addDisposableListener } from 'vs/base/browser/dom';
-import { MutableDisposable } from 'vs/base/common/lifecycle';
+import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
-  private _charAtlasDisposable = this.register(new MutableDisposable());
+  private _charAtlasDisposable = this._register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
-  private _observerDisposable = this.register(new MutableDisposable());
+  private _observerDisposable = this._register(new MutableDisposable());
 
   private _model: RenderModel = new RenderModel();
   private _workCell: ICellData = new CellData();
@@ -43,8 +42,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer: MutableDisposable<RectangleRenderer> = this.register(new MutableDisposable());
-  private _glyphRenderer: MutableDisposable<GlyphRenderer> = this.register(new MutableDisposable());
+  private _rectangleRenderer: MutableDisposable<RectangleRenderer> = this._register(new MutableDisposable());
+  private _glyphRenderer: MutableDisposable<GlyphRenderer> = this._register(new MutableDisposable());
 
   public readonly dimensions: IRenderDimensions;
 
@@ -52,15 +51,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _isAttached: boolean;
   private _contextRestorationTimeout: number | undefined;
 
-  private readonly _onChangeTextureAtlas = this.register(new Emitter<HTMLCanvasElement>());
+  private readonly _onChangeTextureAtlas = this._register(new Emitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onAddTextureAtlasCanvas = this.register(new Emitter<HTMLCanvasElement>());
+  private readonly _onAddTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
-  private readonly _onRemoveTextureAtlasCanvas = this.register(new Emitter<HTMLCanvasElement>());
+  private readonly _onRemoveTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
   public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
-  private readonly _onRequestRedraw = this.register(new Emitter<IRequestRedrawEvent>());
+  private readonly _onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>());
   public readonly onRequestRedraw = this._onRequestRedraw.event;
-  private readonly _onContextLoss = this.register(new Emitter<void>());
+  private readonly _onContextLoss = this._register(new Emitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(
@@ -76,7 +75,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
-    this.register(this._themeService.onChangeColors(() => this._handleColorChange()));
+    this._register(this._themeService.onChangeColors(() => this._handleColorChange()));
 
     this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
 
@@ -89,7 +88,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
     this._updateCursorBlink();
-    this.register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
     this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
 
@@ -103,7 +102,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
 
-    this.register(addDisposableListener(this._canvas, 'webglcontextlost', (e) => {
+    this._register(addDisposableListener(this._canvas, 'webglcontextlost', (e) => {
       console.log('webglcontextlost event received');
       // Prevent the default behavior in order to enable WebGL context restoration.
       e.preventDefault();
@@ -115,7 +114,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
-    this.register(addDisposableListener(this._canvas, 'webglcontextrestored', (e) => {
+    this._register(addDisposableListener(this._canvas, 'webglcontextrestored', (e) => {
       console.warn('webglcontextrestored event received');
       clearTimeout(this._contextRestorationTimeout);
       this._contextRestorationTimeout = undefined;
@@ -127,7 +126,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }));
 
     this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
-    this.register(this._coreBrowserService.onWindowChange(w => {
+    this._register(this._coreBrowserService.onWindowChange(w => {
       this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
     }));
 
@@ -137,7 +136,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
 
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       for (const l of this._renderLayers) {
         l.dispose();
       }
@@ -277,10 +276,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     );
     if (this._charAtlas !== atlas) {
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
-      this._charAtlasDisposable.value = getDisposeArrayDisposable([
+      this._charAtlasDisposable.value = combinedDisposable(
         Event.forward(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
         Event.forward(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
-      ]);
+      );
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();

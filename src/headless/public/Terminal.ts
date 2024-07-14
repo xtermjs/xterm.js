@@ -10,7 +10,7 @@ import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITer
 import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
 import { ITerminalOptions } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import type { Event } from 'vs/base/common/event';
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
@@ -27,8 +27,8 @@ export class Terminal extends Disposable implements ITerminalApi {
   constructor(options?: ITerminalOptions & ITerminalInitOnlyOptions) {
     super();
 
-    this._core = this.register(new TerminalCore(options));
-    this._addonManager = this.register(new AddonManager());
+    this._core = this._register(new TerminalCore(options));
+    this._addonManager = this._register(new AddonManager());
 
     this._publicOptions = { ... this._core.options };
     const getter = (propName: string): any => {
@@ -98,7 +98,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get buffer(): IBufferNamespaceApi {
     this._checkProposedApi();
     if (!this._buffer) {
-      this._buffer = this.register(new BufferNamespaceApi(this._core));
+      this._buffer = this._register(new BufferNamespaceApi(this._core));
     }
     return this._buffer;
   }

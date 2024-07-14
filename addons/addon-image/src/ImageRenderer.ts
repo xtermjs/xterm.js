@@ -6,7 +6,7 @@
 import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from '@xterm/xterm';
 import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { MutableDisposable } from 'vs/base/common/lifecycle';
 
 const PLACEHOLDER_LENGTH = 4096;
@@ -23,7 +23,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
   private _ctx: CanvasRenderingContext2D | null | undefined;
   private _placeholder: HTMLCanvasElement | undefined;
   private _placeholderBitmap: ImageBitmap | undefined;
-  private _optionsRefresh = this.register(new MutableDisposable());
+  private _optionsRefresh = this._register(new MutableDisposable());
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _renderService: IRenderService | undefined;
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
@@ -85,7 +85,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
         this._renderService?.refreshRows(0, this._terminal.rows);
       }
     });
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this.removeLayerFromDom();
       if (this._terminal._core && this._oldOpen) {
         this._terminal._core.open = this._oldOpen;

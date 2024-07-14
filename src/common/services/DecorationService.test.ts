@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { DecorationService } from './DecorationService';
 import { IMarker } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 
 const fakeMarker: IMarker = Object.freeze(new class extends Disposable {
