@@ -6,7 +6,6 @@
 import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
 import { IRenderDimensions, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { IEventEmitter } from 'common/EventEmitter';
 import { MutableDisposable } from 'common/Lifecycle';
 import { isFirefox } from 'common/Platform';
 import { ICellData } from 'common/Types';
@@ -14,6 +13,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
+import type { Emitter } from 'vs/base/common/event';
 
 interface ICursorState {
   x: number;
@@ -33,7 +33,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     terminal: Terminal,
     container: HTMLElement,
     zIndex: number,
-    private readonly _onRequestRedraw: IEventEmitter<IRequestRedrawEvent>,
+    private readonly _onRequestRedraw: Emitter<IRequestRedrawEvent>,
     bufferService: IBufferService,
     optionsService: IOptionsService,
     private readonly _coreService: ICoreService,

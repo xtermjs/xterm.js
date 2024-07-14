@@ -5,7 +5,7 @@
 
 import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IEvent } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
@@ -19,7 +19,7 @@ export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
-  public onResize: IEvent<{ cols: number, rows: number }> = new EventEmitter<{ cols: number, rows: number }>().event;
+  public onResize: IEvent<{ cols: number, rows: number }> = new Emitter<{ cols: number, rows: number }>().event;
   public onScroll: IEvent<number> = new Emitter<number>().event;
   public isUserScrolling: boolean = false;
   constructor(

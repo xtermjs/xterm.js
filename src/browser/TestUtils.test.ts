@@ -4,7 +4,7 @@
  */
 
 import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from '@xterm/xterm';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IEvent } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
@@ -303,7 +303,7 @@ export class MockRenderer implements IRenderer {
 }
 
 export class MockViewport implements IViewport {
-  private readonly _onRequestScrollLines = new EventEmitter<{ amount: number, suppressScrollEvent: boolean }>();
+  private readonly _onRequestScrollLines = new Emitter<{ amount: number, suppressScrollEvent: boolean }>();
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
   public dispose(): void {
     throw new Error('Method not implemented.');
@@ -358,7 +358,7 @@ export class MockCompositionHelper implements ICompositionHelper {
 
 export class MockCoreBrowserService implements ICoreBrowserService {
   public onDprChange = new Emitter<number>().event;
-  public onWindowChange = new EventEmitter<Window & typeof globalThis, void>().event;
+  public onWindowChange = new Emitter<Window & typeof globalThis>().event;
   public serviceBrand: undefined;
   public isFocused: boolean = true;
   public get window(): Window & typeof globalThis {
@@ -392,9 +392,9 @@ export class MockMouseService implements IMouseService {
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
   public onDimensionsChange: IEvent<IRenderDimensions> = new Emitter<IRenderDimensions>().event;
-  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
-  public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
-  public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new Emitter<{ start: number, end: number }>().event;
+  public onRender: IEvent<{ start: number, end: number }, void> = new Emitter<{ start: number, end: number }>().event;
+  public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new Emitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = createRenderDimensions();
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');

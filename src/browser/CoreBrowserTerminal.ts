@@ -44,7 +44,7 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkPr
 import { ThemeService } from 'browser/services/ThemeService';
 import { channels, color } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
+import { IEvent, forwardEvent } from 'common/EventEmitter';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
@@ -124,9 +124,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
   private readonly _onCursorMove = this.register(new Emitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onKey = this.register(new EventEmitter<{ key: string, domEvent: KeyboardEvent }>());
+  private readonly _onKey = this.register(new Emitter<{ key: string, domEvent: KeyboardEvent }>());
   public readonly onKey = this._onKey.event;
-  private readonly _onRender = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRender = this.register(new Emitter<{ start: number, end: number }>());
   public readonly onRender = this._onRender.event;
   private readonly _onSelectionChange = this.register(new Emitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
@@ -161,7 +161,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));
-    this.register(this._inputHandler.onRequestRefreshRows((start, end) => this.refresh(start, end)));
+    this.register(this._inputHandler.onRequestRefreshRows((e) => this.refresh(e.start, e.end)));
     this.register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this.register(this._inputHandler.onRequestReset(() => this.reset()));
     this.register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));

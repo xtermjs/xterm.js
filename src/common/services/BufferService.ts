@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
@@ -23,7 +22,7 @@ export class BufferService extends Disposable implements IBufferService {
   /** Whether the user is scrolling (locks the scroll position) */
   public isUserScrolling: boolean = false;
 
-  private readonly _onResize = this.register(new EventEmitter<{ cols: number, rows: number }>());
+  private readonly _onResize = this.register(new Emitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
   private readonly _onScroll = this.register(new Emitter<number>());
   public readonly onScroll = this._onScroll.event;

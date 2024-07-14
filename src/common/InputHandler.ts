@@ -11,7 +11,6 @@ import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { EventEmitter } from 'common/EventEmitter';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -135,7 +134,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private readonly _onRequestBell = this.register(new Emitter<void>());
   public readonly onRequestBell = this._onRequestBell.event;
-  private readonly _onRequestRefreshRows = this.register(new EventEmitter<number, number>());
+  private readonly _onRequestRefreshRows = this.register(new Emitter<{ start: number, end: number }>());
   public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
   private readonly _onRequestReset = this.register(new Emitter<void>());
   public readonly onRequestReset = this._onRequestReset.event;
@@ -501,7 +500,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     const viewportEnd = this._dirtyRowTracker.end + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
     const viewportStart = this._dirtyRowTracker.start + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
     if (viewportStart < this._bufferService.rows) {
-      this._onRequestRefreshRows.fire(Math.min(viewportStart, this._bufferService.rows - 1), Math.min(viewportEnd, this._bufferService.rows - 1));
+      this._onRequestRefreshRows.fire({
+        start: Math.min(viewportStart, this._bufferService.rows - 1),
+        end: Math.min(viewportEnd, this._bufferService.rows - 1)
+      });
     }
   }
 
@@ -1944,7 +1946,10 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1047: // alt screen buffer
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
+          this._onRequestRefreshRows.fire({
+            start: 0,
+            end: this._bufferService.rows - 1
+          });
           this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -2172,7 +2177,10 @@ export class InputHandler extends Disposable implements IInputHandler {
             this.restoreCursor();
           }
           this._coreService.isCursorInitialized = true;
-          this._onRequestRefreshRows.fire(0, this._bufferService.rows - 1);
+          this._onRequestRefreshRows.fire({
+            start: 0,
+            end: this._bufferService.rows - 1
+          });
           this._onRequestSyncScrollBar.fire();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)

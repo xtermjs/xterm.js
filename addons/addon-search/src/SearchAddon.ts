@@ -5,8 +5,8 @@
 
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable, disposeArray, MutableDisposable, getDisposeArrayDisposable } from 'common/Lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -80,7 +80,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _linesCacheTimeoutId = 0;
   private _linesCacheDisposables = new MutableDisposable();
 
-  private readonly _onDidChangeResults = this.register(new EventEmitter<{ resultIndex: number, resultCount: number }>());
+  private readonly _onDidChangeResults = this.register(new Emitter<{ resultIndex: number, resultCount: number }>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   constructor(options?: Partial<ISearchAddonOptions>) {

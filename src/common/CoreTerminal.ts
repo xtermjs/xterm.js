@@ -29,7 +29,7 @@ import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/Buffe
 import { OptionsService } from 'common/services/OptionsService';
 import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
-import { EventEmitter, IEvent, forwardEvent } from 'common/EventEmitter';
+import { IEvent, forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
@@ -75,11 +75,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    * Internally we track the source of the scroll but this is meaningless outside the library so
    * it's filtered out.
    */
-  protected _onScrollApi?: EventEmitter<number, void>;
-  protected _onScroll = this.register(new EventEmitter<IScrollEvent, void>());
+  protected _onScrollApi?: Emitter<number>;
+  protected _onScroll = this.register(new Emitter<IScrollEvent>());
   public get onScroll(): IEvent<number, void> {
     if (!this._onScrollApi) {
-      this._onScrollApi = this.register(new EventEmitter<number, void>());
+      this._onScrollApi = this.register(new Emitter<number>());
       this._onScroll.event(ev => {
         this._onScrollApi?.fire(ev.position);
       });
