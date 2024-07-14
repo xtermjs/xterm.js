@@ -612,9 +612,6 @@ declare module '@xterm/xterm' {
      * What layer to render the decoration at when {@link backgroundColor} or
      * {@link foregroundColor} are used. `'bottom'` will render under the
      * selection, `'top`' will render above the selection\*.
-     *
-     * *\* The selection will render on top regardless of layer on the canvas
-     * renderer due to how it renders selection separately.*
      */
     readonly layer?: 'bottom' | 'top';
 
@@ -1116,7 +1113,7 @@ declare module '@xterm/xterm' {
      * render together, since they aren't drawn as optimally as individual
      * characters.
      *
-     * NOTE: character joiners are only used by the canvas renderer.
+     * NOTE: character joiners are only used by the webgl renderer.
      *
      * @param handler The function that determines character joins. It is called
      * with a string of text that is eligible for joining and returns an array
@@ -1128,7 +1125,7 @@ declare module '@xterm/xterm' {
 
     /**
      * (EXPERIMENTAL) Deregisters the character joiner if one was registered.
-     * NOTE: character joiners are only used by the canvas renderer.
+     * NOTE: character joiners are only used by the webgl renderer.
      * @param joinerId The character joiner's ID (returned after register)
      */
     deregisterCharacterJoiner(joinerId: number): void;
@@ -1267,7 +1264,7 @@ declare module '@xterm/xterm' {
     refresh(start: number, end: number): void;
 
     /**
-     * Clears the texture atlas of the canvas renderer if it's active. Doing
+     * Clears the texture atlas of the webgl renderer if it's active. Doing
      * this will force a redraw of all glyphs which can workaround issues
      * causing the texture to become corrupt, for example Chromium/Nvidia has an
      * issue where the texture gets messed up when resuming the OS from sleep.

@@ -16,8 +16,6 @@
       "test/playwright/tsconfig.json",
       "addons/addon-attach/src/tsconfig.json",
       "addons/addon-attach/test/tsconfig.json",
-      "addons/addon-canvas/src/tsconfig.json",
-      "addons/addon-canvas/test/tsconfig.json",
       "addons/addon-clipboard/src/tsconfig.json",
       "addons/addon-clipboard/test/tsconfig.json",
       "addons/addon-fit/src/tsconfig.json",

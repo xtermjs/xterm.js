@@ -32,9 +32,6 @@ jobs:
           ./addons/addon-attach/lib/* \
           ./addons/addon-attach/out/* \
           ./addons/addon-attach/out-*/* \
-          ./addons/addon-canvas/lib/* \
-          ./addons/addon-canvas/out/* \
-          ./addons/addon-canvas/out-*/* \
           ./addons/addon-clipboard/lib/* \
           ./addons/addon-clipboard/out/* \
           ./addons/addon-clipboard/out-*/* \
@@ -209,8 +206,6 @@ jobs:
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-attach)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-attach
-    - name: Integration tests (addon-canvas)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-canvas
     - name: Integration tests (addon-clipboard)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-clipboard
     - name: Integration tests (addon-fit)

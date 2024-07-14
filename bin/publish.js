@@ -28,7 +28,6 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-attach'),
-  path.resolve(__dirname, '../addons/addon-canvas'),
   path.resolve(__dirname, '../addons/addon-clipboard'),
   path.resolve(__dirname, '../addons/addon-fit'),
   path.resolve(__dirname, '../addons/addon-image'),
