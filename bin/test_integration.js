@@ -22,7 +22,6 @@ let configs = [
 ];
 const addons = [
   'attach',
-  'canvas',
   'clipboard',
   'fit',
   'image',

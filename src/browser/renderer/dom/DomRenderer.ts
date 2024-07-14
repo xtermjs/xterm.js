@@ -27,9 +27,9 @@ const SELECTION_CLASS = 'xterm-selection';
 let nextTerminalId = 1;
 
 /**
- * A fallback renderer for when canvas is slow. This is not meant to be
- * particularly fast or feature complete, more just stable and usable for when
- * canvas is not an option.
+ * The standard renderer and fallback for when the webgl addon is slow. This is not meant to be
+ * particularly fast and will even lack some features such as custom glyphs, hoever this is more
+ * reliable as webgl may not work on some machines.
  */
 export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;

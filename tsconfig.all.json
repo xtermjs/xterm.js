@@ -7,7 +7,6 @@
     { "path": "./test/benchmark" },
     { "path": "./test/playwright" },
     { "path": "./addons/addon-attach" },
-    { "path": "./addons/addon-canvas" },
     { "path": "./addons/addon-clipboard" },
     { "path": "./addons/addon-fit" },
     { "path": "./addons/addon-image" },

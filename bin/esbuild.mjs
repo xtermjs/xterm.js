@@ -133,7 +133,6 @@ if (config.addon) {
       // Library ESM imports
       "@xterm/xterm": ".",
       "@xterm/addon-attach": "./addons/addon-attach/lib/xterm-addon-attach.mjs",
-      "@xterm/addon-canvas": "./addons/addon-canvas/lib/xterm-addon-canvas.mjs",
       "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/xterm-addon-clipboard.mjs",
       "@xterm/addon-fit": "./addons/addon-fit/lib/xterm-addon-fit.mjs",
       "@xterm/addon-image": "./addons/addon-image/lib/xterm-addon-image.mjs",

@@ -18,7 +18,6 @@ if ('WebAssembly' in window) {
 
 import { Terminal, ITerminalOptions, type IDisposable } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
-import { CanvasAddon } from '@xterm/addon-canvas';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
@@ -33,7 +32,6 @@ export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
   Terminal: typeof Terminal;
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -54,46 +52,43 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
   canChange: boolean;
   ctor: (
     T extends 'attach' ? typeof AttachAddon :
-      T extends 'canvas' ? typeof CanvasAddon :
-        T extends 'clipboard' ? typeof ClipboardAddon :
-          T extends 'fit' ? typeof FitAddon :
-            T extends 'image' ? typeof ImageAddonType :
-              T extends 'ligatures' ? typeof LigaturesAddon :
-                T extends 'search' ? typeof SearchAddon :
-                  T extends 'serialize' ? typeof SerializeAddon :
-                    T extends 'webLinks' ? typeof WebLinksAddon :
-                      T extends 'unicode11' ? typeof Unicode11Addon :
-                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                          T extends 'webgl' ? typeof WebglAddon :
-                            never
+      T extends 'clipboard' ? typeof ClipboardAddon :
+        T extends 'fit' ? typeof FitAddon :
+          T extends 'image' ? typeof ImageAddonType :
+            T extends 'ligatures' ? typeof LigaturesAddon :
+              T extends 'search' ? typeof SearchAddon :
+                T extends 'serialize' ? typeof SerializeAddon :
+                  T extends 'webLinks' ? typeof WebLinksAddon :
+                    T extends 'unicode11' ? typeof Unicode11Addon :
+                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                        T extends 'webgl' ? typeof WebglAddon :
+                          never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
-      T extends 'canvas' ? CanvasAddon :
-        T extends 'clipboard' ? ClipboardAddon :
-          T extends 'fit' ? FitAddon :
-            T extends 'image' ? ImageAddonType :
-              T extends 'ligatures' ? LigaturesAddon :
-                T extends 'search' ? SearchAddon :
-                  T extends 'serialize' ? SerializeAddon :
-                    T extends 'webLinks' ? WebLinksAddon :
-                      T extends 'unicode11' ? Unicode11Addon :
-                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
-                          T extends 'webgl' ? WebglAddon :
-                            never
+      T extends 'clipboard' ? ClipboardAddon :
+        T extends 'fit' ? FitAddon :
+          T extends 'image' ? ImageAddonType :
+            T extends 'ligatures' ? LigaturesAddon :
+              T extends 'search' ? SearchAddon :
+                T extends 'serialize' ? SerializeAddon :
+                  T extends 'webLinks' ? WebLinksAddon :
+                    T extends 'unicode11' ? Unicode11Addon :
+                      T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                        T extends 'webgl' ? WebglAddon :
+                          never
   );
 }
 
 const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
-  canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
   clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
@@ -166,7 +161,6 @@ const disposeRecreateButtonHandler: () => void = () => {
     window.term = null;
     socket = null;
     addons.attach.instance = undefined;
-    addons.canvas.instance = undefined;
     addons.clipboard.instance = undefined;
     addons.fit.instance = undefined;
     addons.image.instance = undefined;
@@ -216,7 +210,6 @@ const createNewWindowButtonHandler: () => void = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
-  window.CanvasAddon = CanvasAddon;
   window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
@@ -647,12 +640,6 @@ function initAddons(term: Terminal): void {
               addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
               addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
-          } else if (name === 'canvas') {
-            setTimeout(() => {
-              setTextureAtlas(addons.canvas.instance.textureAtlas);
-              addons.canvas.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-              addons.canvas.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-            }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'unicodeGraphemes') {
@@ -669,8 +656,6 @@ function initAddons(term: Terminal): void {
       } else {
         if (name === 'webgl') {
           addons.webgl.instance.textureAtlas.remove();
-        } else if (name === 'canvas') {
-          addons.canvas.instance.textureAtlas.remove();
         } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         }
@@ -809,7 +794,7 @@ function writeCustomGlyphHandler(): void {
 }
 
 function loadTest(): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
@@ -842,7 +827,7 @@ function loadTest(): void {
 }
 
 function loadTestLongLines(): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
