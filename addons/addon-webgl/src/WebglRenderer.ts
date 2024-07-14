@@ -25,7 +25,7 @@ import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET
 import { IWebGL2RenderingContext } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { Emitter, Event } from '../../../src/vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];

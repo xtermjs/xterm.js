@@ -11,7 +11,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { setTraceLogger } from 'common/services/LogService';
 import { IBufferService, IDecorationService, ILogService } from 'common/services/Services';
 import { CanvasRenderer } from './CanvasRenderer';
-import { Emitter, Event } from '../../../src/vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class CanvasAddon extends Disposable implements ITerminalAddon , ICanvasApi {
   private _terminal?: Terminal;

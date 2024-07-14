@@ -13,7 +13,7 @@ import { ICoreService, IDecorationService, ILogService, IOptionsService } from '
 import { IWebGL2RenderingContext } from './Types';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
-import { Emitter, Event } from '../../../src/vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
   private _terminal?: Terminal;
