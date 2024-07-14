@@ -7,11 +7,10 @@ import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
-import { MutableDisposable } from 'vs/base/common/lifecycle';
 
 interface ISelectionState {
   start: [number, number] | undefined;
