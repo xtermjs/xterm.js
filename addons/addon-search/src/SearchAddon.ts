@@ -5,8 +5,9 @@
 
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
-import { Disposable, toDisposable, disposeArray, MutableDisposable, getDisposeArrayDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable, disposeArray, getDisposeArrayDisposable } from 'common/Lifecycle';
 import { Emitter } from 'vs/base/common/event';
+import { MutableDisposable } from 'vs/base/common/lifecycle';
 
 export interface ISearchOptions {
   regex?: boolean;
