@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
 import { Disposable, disposeArray, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
 import { Emitter } from 'vs/base/common/event';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
@@ -47,13 +47,13 @@ export class Linkifier extends Disposable implements ILinkifier2 {
       this._clearCurrentLink();
       this._wasResized = true;
     }));
-    this.register(addDisposableDomListener(this._element, 'mouseleave', () => {
+    this.register(addDisposableListener(this._element, 'mouseleave', () => {
       this._isMouseOut = true;
       this._clearCurrentLink();
     }));
-    this.register(addDisposableDomListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
-    this.register(addDisposableDomListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
-    this.register(addDisposableDomListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
+    this.register(addDisposableListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
+    this.register(addDisposableListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
+    this.register(addDisposableListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
   }
 
   private _handleMouseMove(event: MouseEvent): void {

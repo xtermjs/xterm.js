@@ -10,7 +10,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IInstantiationService } from 'common/services/Services';
-import { addDisposableDomListener } from 'browser/Lifecycle';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -115,7 +115,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onKey(e => this._handleKey(e.key)));
     this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
-    this.register(addDisposableDomListener(doc, 'selectionchange', () => this._handleSelectionChange()));
+    this.register(addDisposableListener(doc, 'selectionchange', () => this._handleSelectionChange()));
     this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
 
     this._refreshRowsDimensions();

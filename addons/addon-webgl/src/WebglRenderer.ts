@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { ITerminal } from 'browser/Types';
 import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
@@ -26,6 +25,7 @@ import { IWebGL2RenderingContext } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { Emitter, Event } from 'vs/base/common/event';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -102,7 +102,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
 
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextlost', (e) => {
+    this.register(addDisposableListener(this._canvas, 'webglcontextlost', (e) => {
       console.log('webglcontextlost event received');
       // Prevent the default behavior in order to enable WebGL context restoration.
       e.preventDefault();
@@ -114,7 +114,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
-    this.register(addDisposableDomListener(this._canvas, 'webglcontextrestored', (e) => {
+    this.register(addDisposableListener(this._canvas, 'webglcontextrestored', (e) => {
       console.warn('webglcontextrestored event received');
       clearTimeout(this._contextRestorationTimeout);
       this._contextRestorationTimeout = undefined;

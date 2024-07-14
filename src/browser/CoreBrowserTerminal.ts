@@ -23,7 +23,6 @@
 
 import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from '@xterm/xterm';
 import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
 import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal } from 'browser/Types';
@@ -58,6 +57,7 @@ import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
 import { Emitter, Event } from 'vs/base/common/event';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -330,7 +330,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._bindKeys();
 
     // Bind clipboard functionality
-    this.register(addDisposableDomListener(this.element!, 'copy', (event: ClipboardEvent) => {
+    this.register(addDisposableListener(this.element!, 'copy', (event: ClipboardEvent) => {
       // If mouse events are active it means the selection manager is disabled and
       // copy should be handled by the host program.
       if (!this.hasSelection()) {
@@ -339,19 +339,19 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       copyHandler(event, this._selectionService!);
     }));
     const pasteHandlerWrapper = (event: ClipboardEvent): void => handlePasteEvent(event, this.textarea!, this.coreService, this.optionsService);
-    this.register(addDisposableDomListener(this.textarea!, 'paste', pasteHandlerWrapper));
-    this.register(addDisposableDomListener(this.element!, 'paste', pasteHandlerWrapper));
+    this.register(addDisposableListener(this.textarea!, 'paste', pasteHandlerWrapper));
+    this.register(addDisposableListener(this.element!, 'paste', pasteHandlerWrapper));
 
     // Handle right click context menus
     if (Browser.isFirefox) {
       // Firefox doesn't appear to fire the contextmenu event on right click
-      this.register(addDisposableDomListener(this.element!, 'mousedown', (event: MouseEvent) => {
+      this.register(addDisposableListener(this.element!, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
           rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord);
         }
       }));
     } else {
-      this.register(addDisposableDomListener(this.element!, 'contextmenu', (event: MouseEvent) => {
+      this.register(addDisposableListener(this.element!, 'contextmenu', (event: MouseEvent) => {
         rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord);
       }));
     }
@@ -362,7 +362,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     if (Browser.isLinux) {
       // Use auxclick event over mousedown the latter doesn't seem to work. Note
       // that the regular click event doesn't fire for the middle mouse button.
-      this.register(addDisposableDomListener(this.element!, 'auxclick', (event: MouseEvent) => {
+      this.register(addDisposableListener(this.element!, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
           moveTextAreaUnderMouseCursor(event, this.textarea!, this.screenElement!);
         }
@@ -374,13 +374,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * Apply key handling to the terminal
    */
   private _bindKeys(): void {
-    this.register(addDisposableDomListener(this.textarea!, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
-    this.register(addDisposableDomListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
-    this.register(addDisposableDomListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
-    this.register(addDisposableDomListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
-    this.register(addDisposableDomListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
-    this.register(addDisposableDomListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
-    this.register(addDisposableDomListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
+    this.register(addDisposableListener(this.textarea!, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
+    this.register(addDisposableListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
+    this.register(addDisposableListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
+    this.register(addDisposableListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
+    this.register(addDisposableListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
+    this.register(addDisposableListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
+    this.register(addDisposableListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this.register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
   }
 
@@ -428,7 +428,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this.screenElement = this._document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
-    this.register(addDisposableDomListener(this.screenElement, 'mousemove', (ev: MouseEvent) => this.updateCursorStyle(ev)));
+    this.register(addDisposableListener(this.screenElement, 'mousemove', (ev: MouseEvent) => this.updateCursorStyle(ev)));
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
     this._helperContainer = this._document.createElement('div');
@@ -459,8 +459,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     ));
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
-    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: FocusEvent) => this._handleTextAreaFocus(ev)));
-    this.register(addDisposableDomListener(this.textarea, 'blur', () => this._handleTextAreaBlur()));
+    this.register(addDisposableListener(this.textarea, 'focus', (ev: FocusEvent) => this._handleTextAreaFocus(ev)));
+    this.register(addDisposableListener(this.textarea, 'blur', () => this._handleTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
     this._charSizeService = this._instantiationService.createInstance(CharSizeService, this._document, this._helperContainer);
@@ -532,7 +532,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.register(this._onScroll.event(() => this._selectionService!.refresh()));
 
     this.register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
-    this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
+    this.register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
     if (this.coreMouseService.areMouseEventsActive) {
@@ -759,7 +759,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     /**
      * "Always on" event listeners.
      */
-    this.register(addDisposableDomListener(el, 'mousedown', (ev: MouseEvent) => {
+    this.register(addDisposableListener(el, 'mousedown', (ev: MouseEvent) => {
       ev.preventDefault();
       this.focus();
 
@@ -786,7 +786,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return this.cancel(ev);
     }));
 
-    this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
+    this.register(addDisposableListener(el, 'wheel', (ev: WheelEvent) => {
       // do nothing, if app side handles wheel itself
       if (requestedEvents.wheel) return;
 

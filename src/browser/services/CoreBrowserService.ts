@@ -5,8 +5,8 @@
 
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService } from './Services';
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 export class CoreBrowserService extends Disposable implements ICoreBrowserService {
   public serviceBrand: undefined;
@@ -31,12 +31,8 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
     this.register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
     this.register(Event.forward(this._screenDprMonitor.onDprChange, this._onDprChange));
 
-    this.register(
-      addDisposableDomListener(this._textarea, 'focus', () => (this._isFocused = true))
-    );
-    this.register(
-      addDisposableDomListener(this._textarea, 'blur', () => (this._isFocused = false))
-    );
+    this.register(addDisposableListener(this._textarea, 'focus', () => this._isFocused = true));
+    this.register(addDisposableListener(this._textarea, 'blur', () => this._isFocused = false));
   }
 
   public get window(): Window & typeof globalThis {
@@ -106,7 +102,7 @@ class ScreenDprMonitor extends Disposable {
   }
 
   private _setWindowResizeListener(): void {
-    this._windowResizeListener.value = addDisposableDomListener(this._parentWindow, 'resize', () => this._setDprAndFireIfDiffers());
+    this._windowResizeListener.value = addDisposableListener(this._parentWindow, 'resize', () => this._setDprAndFireIfDiffers());
   }
 
   private _setDprAndFireIfDiffers(): void {
