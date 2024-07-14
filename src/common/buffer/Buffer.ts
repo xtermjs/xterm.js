@@ -161,6 +161,10 @@ export class Buffer implements IBuffer {
       this.lines.maxLength = newMaxLength;
     }
 
+    // if (this._cols > newCols) {
+    //   console.log('increase!');
+    // }
+
     // The following adjustments should only happen if the buffer has been
     // initialized/filled.
     if (this.lines.length > 0) {

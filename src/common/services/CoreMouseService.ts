@@ -3,9 +3,9 @@
  * @license MIT
  */
 import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * Supported default protocols.
@@ -175,7 +175,7 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
   private _activeEncoding: string = '';
   private _lastEvent: ICoreMouseEvent | null = null;
 
-  private readonly _onProtocolChange = this.register(new EventEmitter<CoreMouseEventType>());
+  private readonly _onProtocolChange = this.register(new Emitter<CoreMouseEventType>());
   public readonly onProtocolChange =  this._onProtocolChange.event;
 
   constructor(

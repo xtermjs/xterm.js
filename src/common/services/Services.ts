@@ -4,10 +4,11 @@
  */
 
 import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty } from '@xterm/xterm';
-import { IEvent, IEventEmitter } from 'common/EventEmitter';
+import { IEvent } from 'common/EventEmitter';
 import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
+import type { Emitter } from 'vs/base/common/event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -377,5 +378,5 @@ export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
-  readonly onRenderEmitter: IEventEmitter<HTMLElement>;
+  readonly onRenderEmitter: Emitter<HTMLElement>;
 }

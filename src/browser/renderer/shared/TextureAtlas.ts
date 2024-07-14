@@ -9,13 +9,13 @@ import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_COLOR, channels, color, rgba } from 'common/Color';
-import { EventEmitter } from 'common/EventEmitter';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { IUnicodeService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -79,9 +79,9 @@ export class TextureAtlas implements ITextureAtlas {
   public static maxAtlasPages: number | undefined;
   public static maxTextureSize: number | undefined;
 
-  private readonly _onAddTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
+  private readonly _onAddTextureAtlasCanvas = new Emitter<HTMLCanvasElement>();
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
-  private readonly _onRemoveTextureAtlasCanvas = new EventEmitter<HTMLCanvasElement>();
+  private readonly _onRemoveTextureAtlasCanvas = new Emitter<HTMLCanvasElement>();
   public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
 
   constructor(

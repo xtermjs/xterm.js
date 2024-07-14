@@ -5,18 +5,19 @@
 
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ViewportConstants } from 'browser/shared/Constants';
-import { EventEmitter, runAndSubscribe } from 'common/EventEmitter';
+import { runAndSubscribe } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
+import { Emitter } from 'vs/base/common/event';
 import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
 
 export class Viewport extends Disposable {
 
-  protected _onRequestScrollLines = this.register(new EventEmitter<number>());
+  protected _onRequestScrollLines = this.register(new Emitter<number>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   private _scrollableElement: SmoothScrollableElement;

@@ -4,12 +4,13 @@
  */
 
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
-import { IEvent, IEventEmitter } from 'common/EventEmitter';
+import { IEvent } from 'common/EventEmitter';
 import { Attributes, UnderlineStyle } from 'common/buffer/Constants'; // eslint-disable-line no-unused-vars
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
+import type { Emitter } from 'vs/base/common/event';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;
@@ -67,11 +68,11 @@ export interface ICircularList<T> {
   maxLength: number;
   isFull: boolean;
 
-  onDeleteEmitter: IEventEmitter<IDeleteEvent>;
+  onDeleteEmitter: Emitter<IDeleteEvent>;
   onDelete: IEvent<IDeleteEvent>;
-  onInsertEmitter: IEventEmitter<IInsertEvent>;
+  onInsertEmitter: Emitter<IInsertEvent>;
   onInsert: IEvent<IInsertEvent>;
-  onTrimEmitter: IEventEmitter<number>;
+  onTrimEmitter: Emitter<number>;
   onTrim: IEvent<number>;
 
   get(index: number): T | undefined;

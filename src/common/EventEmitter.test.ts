@@ -4,12 +4,12 @@
  */
 
 import { assert } from 'chai';
-import { EventEmitter } from 'common/EventEmitter';
+import { Emitter } from 'vs/base/common/event';
 
 describe('EventEmitter', () => {
   it('should fire listeners multiple times', () => {
     const order: string[] = [];
-    const emitter = new EventEmitter<number>();
+    const emitter = new Emitter<number>();
     emitter.event(data => order.push(data + 'a'));
     emitter.event(data => order.push(data + 'b'));
     emitter.fire(1);
@@ -19,7 +19,7 @@ describe('EventEmitter', () => {
 
   it('should not fire listeners once disposed', () => {
     const order: string[] = [];
-    const emitter = new EventEmitter<number>();
+    const emitter = new Emitter<number>();
     emitter.event(data => order.push(data + 'a'));
     const disposeB = emitter.event(data => order.push(data + 'b'));
     emitter.event(data => order.push(data + 'c'));

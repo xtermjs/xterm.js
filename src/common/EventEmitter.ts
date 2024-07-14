@@ -4,6 +4,7 @@
  */
 
 import { IDisposable } from 'common/Types';
+import type { Emitter, Event } from 'vs/base/common/event';
 
 interface IListener<T, U = void> {
   (arg1: T, arg2: U): void;
@@ -18,7 +19,7 @@ export interface IEventEmitter<T, U = void> {
   fire(arg1: T, arg2: U): void;
   dispose(): void;
 }
-
+/** @deprecated Use vs/base/common/events version */
 export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
   private _listeners: Set<IListener<T, U>> = new Set();
   private _event?: IEvent<T, U>;
@@ -63,10 +64,11 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
   }
 }
 
-export function forwardEvent<T>(from: IEvent<T>, to: IEventEmitter<T>): IDisposable {
+export function forwardEvent<T>(from: IEvent<T> | Event<T>, to: Emitter<T>): IDisposable {
   return from(e => to.fire(e));
 }
 
+/** @deprecated Use vs/base/common/events version */
 export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T | undefined) => any): IDisposable {
   handler(undefined);
   return event(e => handler(e));

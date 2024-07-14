@@ -13,13 +13,14 @@ import { BufferSet } from 'common/buffer/BufferSet';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
+import { Emitter } from 'vs/base/common/event';
 
 export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
   public onResize: IEvent<{ cols: number, rows: number }> = new EventEmitter<{ cols: number, rows: number }>().event;
-  public onScroll: IEvent<number> = new EventEmitter<number>().event;
+  public onScroll: IEvent<number> = new Emitter<number>().event;
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
@@ -62,7 +63,7 @@ export class MockCoreMouseService implements ICoreMouseService {
   public addProtocol(name: string): void { }
   public reset(): void { }
   public triggerMouseEvent(event: ICoreMouseEvent): boolean { return false; }
-  public onProtocolChange: IEvent<CoreMouseEventType> = new EventEmitter<CoreMouseEventType>().event;
+  public onProtocolChange: IEvent<CoreMouseEventType> = new Emitter<CoreMouseEventType>().event;
   public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
     throw new Error('Method not implemented.');
   }
@@ -94,10 +95,10 @@ export class MockCoreService implements ICoreService {
     sendFocus: false,
     wraparound: true
   };
-  public onData: IEvent<string> = new EventEmitter<string>().event;
-  public onUserInput: IEvent<void> = new EventEmitter<void>().event;
-  public onBinary: IEvent<string> = new EventEmitter<string>().event;
-  public onRequestScrollToBottom: IEvent<void> = new EventEmitter<void>().event;
+  public onData: IEvent<string> = new Emitter<string>().event;
+  public onUserInput: IEvent<void> = new Emitter<void>().event;
+  public onBinary: IEvent<string> = new Emitter<string>().event;
+  public onRequestScrollToBottom: IEvent<void> = new Emitter<void>().event;
   public reset(): void { }
   public triggerDataEvent(data: string, wasUserInput?: boolean): void { }
   public triggerBinaryEvent(data: string): void { }
@@ -117,7 +118,7 @@ export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
   public readonly rawOptions: Required<ITerminalOptions> = clone(DEFAULT_OPTIONS);
   public options: Required<ITerminalOptions> = this.rawOptions;
-  public onOptionChange: IEvent<keyof ITerminalOptions> = new EventEmitter<keyof ITerminalOptions>().event;
+  public onOptionChange: IEvent<keyof ITerminalOptions> = new Emitter<keyof ITerminalOptions>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
@@ -169,7 +170,7 @@ export class MockUnicodeService implements IUnicodeService {
   }
   public versions: string[] = [];
   public activeVersion: string = '';
-  public onChange: IEvent<string> = new EventEmitter<string>().event;
+  public onChange: IEvent<string> = new Emitter<string>().event;
   public wcwidth = (codepoint: number): UnicodeCharWidth => this._provider.wcwidth(codepoint);
   public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     let width = this.wcwidth(codepoint);
@@ -192,8 +193,8 @@ export class MockUnicodeService implements IUnicodeService {
 export class MockDecorationService implements IDecorationService {
   public serviceBrand: any;
   public get decorations(): IterableIterator<IInternalDecoration> { return [].values(); }
-  public onDecorationRegistered = new EventEmitter<IInternalDecoration>().event;
-  public onDecorationRemoved = new EventEmitter<IInternalDecoration>().event;
+  public onDecorationRegistered = new Emitter<IInternalDecoration>().event;
+  public onDecorationRemoved = new Emitter<IInternalDecoration>().event;
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
   public reset(): void { }
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void { }

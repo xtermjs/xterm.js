@@ -24,19 +24,20 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/EventEmitter';
 import { IMarker, ITerminalOptions } from 'common/Types';
+import { Emitter } from 'vs/base/common/event';
 
 export class Terminal extends CoreTerminal {
-  private readonly _onBell = this.register(new EventEmitter<void>());
+  private readonly _onBell = this.register(new Emitter<void>());
   public readonly onBell = this._onBell.event;
-  private readonly _onCursorMove = this.register(new EventEmitter<void>());
+  private readonly _onCursorMove = this.register(new Emitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onTitleChange = this.register(new EventEmitter<string>());
+  private readonly _onTitleChange = this.register(new Emitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onA11yCharEmitter = this.register(new EventEmitter<string>());
+  private readonly _onA11yCharEmitter = this.register(new Emitter<string>());
   public readonly onA11yChar = this._onA11yCharEmitter.event;
-  private readonly _onA11yTabEmitter = this.register(new EventEmitter<number>());
+  private readonly _onA11yTabEmitter = this.register(new Emitter<number>());
   public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   constructor(

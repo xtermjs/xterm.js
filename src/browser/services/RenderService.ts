@@ -11,6 +11,7 @@ import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -38,7 +39,7 @@ export class RenderService extends Disposable implements IRenderService {
     columnSelectMode: false
   };
 
-  private readonly _onDimensionsChange = this.register(new EventEmitter<IRenderDimensions>());
+  private readonly _onDimensionsChange = this.register(new Emitter<IRenderDimensions>());
   public readonly onDimensionsChange = this._onDimensionsChange.event;
   private readonly _onRenderedViewportChange = this.register(new EventEmitter<{ start: number, end: number }>());
   public readonly onRenderedViewportChange = this._onRenderedViewportChange.event;

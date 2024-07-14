@@ -39,6 +39,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
+import { Emitter } from 'vs/base/common/event';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -59,15 +60,15 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _writeBuffer: WriteBuffer;
   private _windowsWrappingHeuristics = this.register(new MutableDisposable());
 
-  private readonly _onBinary = this.register(new EventEmitter<string>());
+  private readonly _onBinary = this.register(new Emitter<string>());
   public readonly onBinary = this._onBinary.event;
-  private readonly _onData = this.register(new EventEmitter<string>());
+  private readonly _onData = this.register(new Emitter<string>());
   public readonly onData = this._onData.event;
-  protected _onLineFeed = this.register(new EventEmitter<void>());
+  protected _onLineFeed = this.register(new Emitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
-  private readonly _onResize = this.register(new EventEmitter<{ cols: number, rows: number }>());
+  private readonly _onResize = this.register(new Emitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
-  protected readonly _onWriteParsed = this.register(new EventEmitter<void>());
+  protected readonly _onWriteParsed = this.register(new Emitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
   /**

@@ -19,6 +19,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { css } from 'common/Color';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { Emitter } from 'vs/base/common/event';
 
 export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -356,7 +357,7 @@ export class MockCompositionHelper implements ICompositionHelper {
 }
 
 export class MockCoreBrowserService implements ICoreBrowserService {
-  public onDprChange = new EventEmitter<number>().event;
+  public onDprChange = new Emitter<number>().event;
   public onWindowChange = new EventEmitter<Window & typeof globalThis, void>().event;
   public serviceBrand: undefined;
   public isFocused: boolean = true;
@@ -372,7 +373,7 @@ export class MockCoreBrowserService implements ICoreBrowserService {
 export class MockCharSizeService implements ICharSizeService {
   public serviceBrand: undefined;
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
-  public onCharSizeChange: IEvent<void> = new EventEmitter<void>().event;
+  public onCharSizeChange: IEvent<void> = new Emitter<void>().event;
   constructor(public width: number, public height: number) {}
   public measure(): void {}
 }
@@ -390,7 +391,7 @@ export class MockMouseService implements IMouseService {
 
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
-  public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
+  public onDimensionsChange: IEvent<IRenderDimensions> = new Emitter<IRenderDimensions>().event;
   public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
   public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
@@ -464,10 +465,10 @@ export class MockSelectionService implements ISelectionService {
   public hasSelection: boolean = false;
   public selectionStart: [number, number] | undefined;
   public selectionEnd: [number, number] | undefined;
-  public onLinuxMouseSelection = new EventEmitter<string>().event;
-  public onRequestRedraw = new EventEmitter<ISelectionRedrawRequestEvent>().event;
-  public onRequestScrollLines = new EventEmitter<ISelectionRequestScrollLinesEvent>().event;
-  public onSelectionChange = new EventEmitter<void>().event;
+  public onLinuxMouseSelection = new Emitter<string>().event;
+  public onRequestRedraw = new Emitter<ISelectionRedrawRequestEvent>().event;
+  public onRequestScrollLines = new Emitter<ISelectionRequestScrollLinesEvent>().event;
+  public onSelectionChange = new Emitter<void>().event;
   public disable(): void {
     throw new Error('Method not implemented.');
   }
@@ -511,7 +512,7 @@ export class MockSelectionService implements ISelectionService {
 
 export class MockThemeService implements IThemeService{
   public serviceBrand: undefined;
-  public onChangeColors = new EventEmitter<ReadonlyColorSet>().event;
+  public onChangeColors = new Emitter<ReadonlyColorSet>().event;
   public restoreColor(slot?: ColorIndex | undefined): void {
     throw new Error('Method not implemented.');
   }

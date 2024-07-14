@@ -22,6 +22,7 @@ import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -132,32 +133,32 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _activeBuffer: IBuffer;
 
-  private readonly _onRequestBell = this.register(new EventEmitter<void>());
+  private readonly _onRequestBell = this.register(new Emitter<void>());
   public readonly onRequestBell = this._onRequestBell.event;
   private readonly _onRequestRefreshRows = this.register(new EventEmitter<number, number>());
   public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
-  private readonly _onRequestReset = this.register(new EventEmitter<void>());
+  private readonly _onRequestReset = this.register(new Emitter<void>());
   public readonly onRequestReset = this._onRequestReset.event;
-  private readonly _onRequestSendFocus = this.register(new EventEmitter<void>());
+  private readonly _onRequestSendFocus = this.register(new Emitter<void>());
   public readonly onRequestSendFocus = this._onRequestSendFocus.event;
-  private readonly _onRequestSyncScrollBar = this.register(new EventEmitter<void>());
+  private readonly _onRequestSyncScrollBar = this.register(new Emitter<void>());
   public readonly onRequestSyncScrollBar = this._onRequestSyncScrollBar.event;
-  private readonly _onRequestWindowsOptionsReport = this.register(new EventEmitter<WindowsOptionsReportType>());
+  private readonly _onRequestWindowsOptionsReport = this.register(new Emitter<WindowsOptionsReportType>());
   public readonly onRequestWindowsOptionsReport = this._onRequestWindowsOptionsReport.event;
 
-  private readonly _onA11yChar = this.register(new EventEmitter<string>());
+  private readonly _onA11yChar = this.register(new Emitter<string>());
   public readonly onA11yChar = this._onA11yChar.event;
-  private readonly _onA11yTab = this.register(new EventEmitter<number>());
+  private readonly _onA11yTab = this.register(new Emitter<number>());
   public readonly onA11yTab = this._onA11yTab.event;
-  private readonly _onCursorMove = this.register(new EventEmitter<void>());
+  private readonly _onCursorMove = this.register(new Emitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onLineFeed = this.register(new EventEmitter<void>());
+  private readonly _onLineFeed = this.register(new Emitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
-  private readonly _onScroll = this.register(new EventEmitter<number>());
+  private readonly _onScroll = this.register(new Emitter<number>());
   public readonly onScroll = this._onScroll.event;
-  private readonly _onTitleChange = this.register(new EventEmitter<string>());
+  private readonly _onTitleChange = this.register(new Emitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onColor = this.register(new EventEmitter<IColorEvent>());
+  private readonly _onColor = this.register(new Emitter<IColorEvent>());
   public readonly onColor = this._onColor.event;
 
   private _parseStack: IParseStack = {

@@ -12,7 +12,7 @@ import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUt
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRasterizedGlyph, IRenderDimensions, ISelectionRenderModel, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/EventEmitter';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { isSafari } from 'common/Platform';
 import { ICellData } from 'common/Types';
@@ -21,6 +21,7 @@ import { WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
+import { Emitter } from 'vs/base/common/event';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -42,7 +43,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   public get canvas(): HTMLCanvasElement { return this._canvas; }
   public get cacheCanvas(): HTMLCanvasElement { return this._charAtlas?.pages[0].canvas!; }
 
-  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onAddTextureAtlasCanvas = this.register(new Emitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
 
   constructor(

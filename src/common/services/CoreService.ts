@@ -4,10 +4,10 @@
  */
 
 import { clone } from 'common/Clone';
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IDecPrivateModes, IModes } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 const DEFAULT_MODES: IModes = Object.freeze({
   insertMode: false
@@ -31,13 +31,13 @@ export class CoreService extends Disposable implements ICoreService {
   public modes: IModes;
   public decPrivateModes: IDecPrivateModes;
 
-  private readonly _onData = this.register(new EventEmitter<string>());
+  private readonly _onData = this.register(new Emitter<string>());
   public readonly onData = this._onData.event;
-  private readonly _onUserInput = this.register(new EventEmitter<void>());
+  private readonly _onUserInput = this.register(new Emitter<void>());
   public readonly onUserInput = this._onUserInput.event;
-  private readonly _onBinary = this.register(new EventEmitter<string>());
+  private readonly _onBinary = this.register(new Emitter<string>());
   public readonly onBinary = this._onBinary.event;
-  private readonly _onRequestScrollToBottom = this.register(new EventEmitter<void>());
+  private readonly _onRequestScrollToBottom = this.register(new Emitter<void>());
   public readonly onRequestScrollToBottom = this._onRequestScrollToBottom.event;
 
   constructor(

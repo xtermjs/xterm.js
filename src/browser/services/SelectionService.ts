@@ -9,7 +9,6 @@ import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { IBufferLine, IDisposable } from 'common/Types';
@@ -17,6 +16,7 @@ import { getRangeLength } from 'common/buffer/BufferRange';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -111,13 +111,13 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _oldSelectionStart: [number, number] | undefined = undefined;
   private _oldSelectionEnd: [number, number] | undefined = undefined;
 
-  private readonly _onLinuxMouseSelection = this.register(new EventEmitter<string>());
+  private readonly _onLinuxMouseSelection = this.register(new Emitter<string>());
   public readonly onLinuxMouseSelection = this._onLinuxMouseSelection.event;
-  private readonly _onRedrawRequest = this.register(new EventEmitter<ISelectionRedrawRequestEvent>());
+  private readonly _onRedrawRequest = this.register(new Emitter<ISelectionRedrawRequestEvent>());
   public readonly onRequestRedraw = this._onRedrawRequest.event;
-  private readonly _onSelectionChange = this.register(new EventEmitter<void>());
+  private readonly _onSelectionChange = this.register(new Emitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
-  private readonly _onRequestScrollLines = this.register(new EventEmitter<ISelectionRequestScrollLinesEvent>());
+  private readonly _onRequestScrollLines = this.register(new Emitter<ISelectionRequestScrollLinesEvent>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   constructor(
