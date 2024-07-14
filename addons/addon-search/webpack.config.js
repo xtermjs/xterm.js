@@ -26,7 +26,7 @@ module.exports = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('../../out/common'),
-      vs: path.resolve('./out/vs')
+      vs: path.resolve('../../out/vs')
     }
   },
   output: {
