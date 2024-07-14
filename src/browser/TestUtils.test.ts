@@ -4,7 +4,6 @@
  */
 
 import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from '@xterm/xterm';
-import { IEvent } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
@@ -19,7 +18,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { css } from 'common/Color';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter, type Event } from 'vs/base/common/event';
 
 export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
@@ -31,23 +30,23 @@ export class TestTerminal extends CoreBrowserTerminal {
 }
 
 export class MockTerminal implements ITerminal {
-  public onBlur!: IEvent<void>;
-  public onFocus!: IEvent<void>;
-  public onA11yChar!: IEvent<string>;
-  public onWriteParsed!: IEvent<void>;
-  public onA11yTab!: IEvent<number>;
-  public onCursorMove!: IEvent<void>;
-  public onLineFeed!: IEvent<void>;
-  public onSelectionChange!: IEvent<void>;
-  public onData!: IEvent<string>;
-  public onBinary!: IEvent<string>;
-  public onTitleChange!: IEvent<string>;
-  public onBell!: IEvent<void>;
-  public onScroll!: IEvent<number>;
-  public onWillOpen!: IEvent<HTMLElement>;
-  public onKey!: IEvent<{ key: string, domEvent: KeyboardEvent }>;
-  public onRender!: IEvent<{ start: number, end: number }>;
-  public onResize!: IEvent<{ cols: number, rows: number }>;
+  public onBlur!: Event<void>;
+  public onFocus!: Event<void>;
+  public onA11yChar!: Event<string>;
+  public onWriteParsed!: Event<void>;
+  public onA11yTab!: Event<number>;
+  public onCursorMove!: Event<void>;
+  public onLineFeed!: Event<void>;
+  public onSelectionChange!: Event<void>;
+  public onData!: Event<string>;
+  public onBinary!: Event<string>;
+  public onTitleChange!: Event<string>;
+  public onBell!: Event<void>;
+  public onScroll!: Event<number>;
+  public onWillOpen!: Event<HTMLElement>;
+  public onKey!: Event<{ key: string, domEvent: KeyboardEvent }>;
+  public onRender!: Event<{ start: number, end: number }>;
+  public onResize!: Event<{ cols: number, rows: number }>;
   public markers!: IMarker[];
   public linkifier: ILinkifier2 | undefined;
   public coreMouseService!: ICoreMouseService;
@@ -194,7 +193,7 @@ export class MockTerminal implements ITerminal {
   public scrollToRow(absoluteRow: number): number {
     throw new Error('Method not implemented.');
   }
-  public cancel(ev: Event, force?: boolean): void {
+  public cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): void {
     throw new Error('Method not implemented.');
   }
   public log(text: string): void {
@@ -268,9 +267,9 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
-  public onRequestRedraw!: IEvent<IRequestRedrawEvent>;
-  public onCanvasResize!: IEvent<{ width: number, height: number }>;
-  public onRender!: IEvent<{ start: number, end: number }>;
+  public onRequestRedraw!: Event<IRequestRedrawEvent>;
+  public onCanvasResize!: Event<{ width: number, height: number }>;
+  public onRender!: Event<{ start: number, end: number }>;
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
@@ -373,7 +372,7 @@ export class MockCoreBrowserService implements ICoreBrowserService {
 export class MockCharSizeService implements ICharSizeService {
   public serviceBrand: undefined;
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
-  public onCharSizeChange: IEvent<void> = new Emitter<void>().event;
+  public onCharSizeChange: Event<void> = new Emitter<void>().event;
   constructor(public width: number, public height: number) {}
   public measure(): void {}
 }
@@ -391,10 +390,10 @@ export class MockMouseService implements IMouseService {
 
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
-  public onDimensionsChange: IEvent<IRenderDimensions> = new Emitter<IRenderDimensions>().event;
-  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new Emitter<{ start: number, end: number }>().event;
-  public onRender: IEvent<{ start: number, end: number }, void> = new Emitter<{ start: number, end: number }>().event;
-  public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new Emitter<{ start: number, end: number }>().event;
+  public onDimensionsChange: Event<IRenderDimensions> = new Emitter<IRenderDimensions>().event;
+  public onRenderedViewportChange: Event<{ start: number, end: number }> = new Emitter<{ start: number, end: number }>().event;
+  public onRender: Event<{ start: number, end: number }> = new Emitter<{ start: number, end: number }>().event;
+  public onRefreshRequest: Event<{ start: number, end: number}> = new Emitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = createRenderDimensions();
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');

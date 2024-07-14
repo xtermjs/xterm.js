@@ -5,14 +5,13 @@
 
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ViewportConstants } from 'browser/shared/Constants';
-import { runAndSubscribe } from 'common/EventEmitter';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
 
 export class Viewport extends Disposable {
@@ -71,7 +70,7 @@ export class Viewport extends Disposable {
     }));
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
-    this.register(runAndSubscribe(themeService.onChangeColors, () => {
+    this.register(Event.runAndSubscribe(themeService.onChangeColors, () => {
       this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
     }));
     element.appendChild(this._scrollableElement.getDomNode());
@@ -80,7 +79,7 @@ export class Viewport extends Disposable {
     this._styleElement = coreBrowserService.window.document.createElement('style');
     screenElement.appendChild(this._styleElement);
     this.register(toDisposable(() => this._styleElement.remove()));
-    this.register(runAndSubscribe(themeService.onChangeColors, () => {
+    this.register(Event.runAndSubscribe(themeService.onChangeColors, () => {
       this._styleElement.textContent = [
         `.xterm .xterm-scrollable-element > .scrollbar > .slider {`,
         `  background: ${themeService.colors.scrollbarSliderBackground.css};`,

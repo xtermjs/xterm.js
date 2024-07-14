@@ -44,7 +44,7 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkPr
 import { ThemeService } from 'browser/services/ThemeService';
 import { channels, color } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
-import { IEvent, forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/EventEmitter';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
@@ -58,7 +58,7 @@ import { IDecorationService } from 'common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter, type Event } from 'vs/base/common/event';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -136,15 +136,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public readonly onBell = this._onBell.event;
 
   private _onFocus = this.register(new Emitter<void>());
-  public get onFocus(): IEvent<void> { return this._onFocus.event; }
+  public get onFocus(): Event<void> { return this._onFocus.event; }
   private _onBlur = this.register(new Emitter<void>());
-  public get onBlur(): IEvent<void> { return this._onBlur.event; }
+  public get onBlur(): Event<void> { return this._onBlur.event; }
   private _onA11yCharEmitter = this.register(new Emitter<string>());
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
+  public get onA11yChar(): Event<string> { return this._onA11yCharEmitter.event; }
   private _onA11yTabEmitter = this.register(new Emitter<number>());
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  public get onA11yTab(): Event<number> { return this._onA11yTabEmitter.event; }
   private _onWillOpen = this.register(new Emitter<HTMLElement>());
-  public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
+  public get onWillOpen(): Event<HTMLElement> { return this._onWillOpen.event; }
 
   constructor(
     options: Partial<ITerminalOptions> = {}
@@ -673,7 +673,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
      * Note: 'mousedown' currently is "always on" and not managed
      * by onProtocolChange.
      */
-    const requestedEvents: { [key: string]: ((ev: Event) => void) | null } = {
+    const requestedEvents: { [key: string]: ((ev: MouseEvent | WheelEvent) => void) | null } = {
       mouseup: null,
       wheel: null,
       mousedrag: null,
@@ -1293,7 +1293,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   // TODO: Remove cancel function and cancelEvents option
-  public cancel(ev: Event, force?: boolean): boolean | undefined {
+  public cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): boolean | undefined {
     if (!this.options.cancelEvents && !force) {
       return;
     }

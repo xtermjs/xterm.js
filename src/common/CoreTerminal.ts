@@ -29,7 +29,7 @@ import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/Buffe
 import { OptionsService } from 'common/services/OptionsService';
 import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
-import { IEvent, forwardEvent } from 'common/EventEmitter';
+import { forwardEvent } from 'common/EventEmitter';
 import { CoreMouseService } from 'common/services/CoreMouseService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
@@ -39,7 +39,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter, type Event } from 'vs/base/common/event';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -77,7 +77,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    */
   protected _onScrollApi?: Emitter<number>;
   protected _onScroll = this.register(new Emitter<IScrollEvent>());
-  public get onScroll(): IEvent<number, void> {
+  public get onScroll(): Event<number> {
     if (!this._onScrollApi) {
       this._onScrollApi = this.register(new Emitter<number>());
       this._onScroll.event(ev => {

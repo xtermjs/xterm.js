@@ -4,8 +4,8 @@
  */
 
 import { IDisposable } from 'common/Types';
-import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import type { Event } from 'vs/base/common/event';
 
 export interface IRequestRedrawEvent {
   start: number;
@@ -23,7 +23,7 @@ export interface IRenderer extends IDisposable {
    * Fires when the renderer is requesting to be redrawn on the next animation
    * frame but is _not_ a result of content changing (eg. selection changes).
    */
-  readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
+  readonly onRequestRedraw: Event<IRequestRedrawEvent>;
 
   handleDevicePixelRatioChange(): void;
   handleResize(cols: number, rows: number): void;
@@ -42,7 +42,7 @@ export interface IRenderLayer extends IDisposable {
   readonly canvas: HTMLCanvasElement;
   readonly cacheCanvas: HTMLCanvasElement;
 
-  readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  readonly onAddTextureAtlasCanvas: Event<HTMLCanvasElement>;
   /**
    * Called when the terminal loses focus.
    */
