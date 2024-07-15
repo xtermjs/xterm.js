@@ -427,8 +427,10 @@ function initOptions(term: Terminal): void {
     'termName',
     'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
+    'documentOverride',
     'linkHandler',
     'logger',
+    'overviewRuler',
     'theme',
     'windowOptions',
     'windowsPty',
@@ -1159,7 +1161,7 @@ function addGraphemeClusters(): void {
 }
 
 function addDecoration(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRuler'] = { width: 14 };
   const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
@@ -1174,7 +1176,7 @@ function addDecoration(): void {
 }
 
 function addOverviewRuler(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRuler'] = { width: 14 };
   term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
   term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
   term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
