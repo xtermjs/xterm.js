@@ -327,10 +327,10 @@ declare module '@xterm/xterm' {
     windowOptions?: IWindowOptions;
 
     /**
-     * The width, in pixels, of the canvas for the overview ruler. The overview
-     * ruler will be hidden when not set.
+     * Controls the visibility and style of the overview ruler which visualizes
+     * decorations underneath the scroll bar.
      */
-    overviewRulerWidth?: number;
+    overviewRuler?: IOverviewRulerOptions;
   }
 
   /**
@@ -387,9 +387,8 @@ declare module '@xterm/xterm' {
     scrollbarSliderActiveBackground?: string;
     /**
      * The border color of the overview ruler. This visually separates the
-     * terminal from the scroll bar when
-     * {@link ITerminalOptions.overviewRulerWidth overviewRulerWidth} is set.
-     * When this is not set it defaults to black (`#000000`).
+     * terminal from the scroll bar when {@link IOverviewRulerOptions.width} is
+     * set. When this is not set it defaults to black (`#000000`).
      */
     overviewRulerBorder?: string;
     /** ANSI black (eg. `\x1b[30m`) */
@@ -617,8 +616,8 @@ declare module '@xterm/xterm' {
 
     /**
      * When defined, renders the decoration in the overview ruler to the right
-     * of the terminal. {@link ITerminalOptions.overviewRulerWidth} must be set
-     * in order to see the overview ruler.
+     * of the terminal. {@link IOverviewRulerOptions.width} must be set in order
+     * to see the overview ruler.
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
@@ -639,6 +638,28 @@ declare module '@xterm/xterm' {
      * being printed to the terminal when `screenReaderMode` is enabled.
      */
     tooMuchOutput: string;
+  }
+
+  export interface IOverviewRulerOptions {
+    /**
+     * When defined, renders decorations in the overview ruler to the right of
+     * the terminal. This must be set in order to see the overview ruler.
+     * @param color The color of the decoration.
+     * @param position The position of the decoration.
+     */
+    width?: number;
+
+    /**
+     * Whether to show the top border of the overview ruler, which uses the
+     * {@link ITheme.overviewRulerBorder} color.
+     */
+    showTopBorder?: boolean;
+
+    /**
+     * Whether to show the bottom border of the overview ruler, which uses the
+     * {@link ITheme.overviewRulerBorder} color.
+     */
+    showBottomBorder?: boolean;
   }
 
   /**
