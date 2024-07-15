@@ -5,8 +5,8 @@
 
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
-import { Disposable, toDisposable, disposeArray, MutableDisposable, getDisposeArrayDisposable } from 'common/Lifecycle';
 import { Emitter } from 'vs/base/common/event';
+import { combinedDisposable, Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 
 export interface ISearchOptions {
   regex?: boolean;
@@ -67,7 +67,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();
   private _highlightDecorations: IHighlight[] = [];
-  private _selectedDecoration: MutableDisposable<IHighlight> = this.register(new MutableDisposable());
+  private _selectedDecoration: MutableDisposable<IHighlight> = this._register(new MutableDisposable());
   private _highlightLimit: number;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
@@ -80,7 +80,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _linesCacheTimeoutId = 0;
   private _linesCacheDisposables = new MutableDisposable();
 
-  private readonly _onDidChangeResults = this.register(new Emitter<{ resultIndex: number, resultCount: number }>());
+  private readonly _onDidChangeResults = this._register(new Emitter<{ resultIndex: number, resultCount: number }>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
 
   constructor(options?: Partial<ISearchAddonOptions>) {
@@ -91,9 +91,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this.register(this._terminal.onWriteParsed(() => this._updateMatches()));
-    this.register(this._terminal.onResize(() => this._updateMatches()));
-    this.register(toDisposable(() => this.clearDecorations()));
+    this._register(this._terminal.onWriteParsed(() => this._updateMatches()));
+    this._register(this._terminal.onResize(() => this._updateMatches()));
+    this._register(toDisposable(() => this.clearDecorations()));
   }
 
   private _updateMatches(): void {
@@ -111,7 +111,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
     this._selectedDecoration.clear();
-    disposeArray(this._highlightDecorations);
+    dispose(this._highlightDecorations);
     this._highlightDecorations = [];
     this._highlightedLines.clear();
     if (!retainCachedSearchTerm) {
@@ -426,11 +426,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     const terminal = this._terminal!;
     if (!this._linesCache) {
       this._linesCache = new Array(terminal.buffer.active.length);
-      this._linesCacheDisposables.value = getDisposeArrayDisposable([
+      this._linesCacheDisposables.value = combinedDisposable(
         terminal.onLineFeed(() => this._destroyLinesCache()),
         terminal.onCursorMove(() => this._destroyLinesCache()),
         terminal.onResize(() => this._destroyLinesCache())
-      ]);
+      );
     }
 
     window.clearTimeout(this._linesCacheTimeoutId);
@@ -678,7 +678,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           const disposables: IDisposable[] = [];
           disposables.push(marker);
           disposables.push(decoration.onRender((e) => this._applyStyles(e, options.activeMatchBorder, true)));
-          disposables.push(decoration.onDispose(() => disposeArray(disposables)));
+          disposables.push(decoration.onDispose(() => dispose(disposables)));
           this._selectedDecoration.value = { decoration, match: result, dispose() { decoration.dispose(); } };
         }
       }
@@ -740,7 +740,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       const disposables: IDisposable[] = [];
       disposables.push(marker);
       disposables.push(findResultDecoration.onRender((e) => this._applyStyles(e, options.matchBorder, false)));
-      disposables.push(findResultDecoration.onDispose(() => disposeArray(disposables)));
+      disposables.push(findResultDecoration.onDispose(() => dispose(disposables)));
     }
     return findResultDecoration;
   }

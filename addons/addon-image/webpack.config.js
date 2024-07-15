@@ -26,7 +26,8 @@ const addon = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('../../out/common'),
-      browser: path.resolve('../../out/browser')
+      browser: path.resolve('../../out/browser'),
+      vs: path.resolve('../../out/vs')
     }
   },
   output: {

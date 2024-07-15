@@ -8,7 +8,7 @@ import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
@@ -131,32 +131,32 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _activeBuffer: IBuffer;
 
-  private readonly _onRequestBell = this.register(new Emitter<void>());
+  private readonly _onRequestBell = this._register(new Emitter<void>());
   public readonly onRequestBell = this._onRequestBell.event;
-  private readonly _onRequestRefreshRows = this.register(new Emitter<{ start: number, end: number } | undefined>());
+  private readonly _onRequestRefreshRows = this._register(new Emitter<{ start: number, end: number } | undefined>());
   public readonly onRequestRefreshRows = this._onRequestRefreshRows.event;
-  private readonly _onRequestReset = this.register(new Emitter<void>());
+  private readonly _onRequestReset = this._register(new Emitter<void>());
   public readonly onRequestReset = this._onRequestReset.event;
-  private readonly _onRequestSendFocus = this.register(new Emitter<void>());
+  private readonly _onRequestSendFocus = this._register(new Emitter<void>());
   public readonly onRequestSendFocus = this._onRequestSendFocus.event;
-  private readonly _onRequestSyncScrollBar = this.register(new Emitter<void>());
+  private readonly _onRequestSyncScrollBar = this._register(new Emitter<void>());
   public readonly onRequestSyncScrollBar = this._onRequestSyncScrollBar.event;
-  private readonly _onRequestWindowsOptionsReport = this.register(new Emitter<WindowsOptionsReportType>());
+  private readonly _onRequestWindowsOptionsReport = this._register(new Emitter<WindowsOptionsReportType>());
   public readonly onRequestWindowsOptionsReport = this._onRequestWindowsOptionsReport.event;
 
-  private readonly _onA11yChar = this.register(new Emitter<string>());
+  private readonly _onA11yChar = this._register(new Emitter<string>());
   public readonly onA11yChar = this._onA11yChar.event;
-  private readonly _onA11yTab = this.register(new Emitter<number>());
+  private readonly _onA11yTab = this._register(new Emitter<number>());
   public readonly onA11yTab = this._onA11yTab.event;
-  private readonly _onCursorMove = this.register(new Emitter<void>());
+  private readonly _onCursorMove = this._register(new Emitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onLineFeed = this.register(new Emitter<void>());
+  private readonly _onLineFeed = this._register(new Emitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
-  private readonly _onScroll = this.register(new Emitter<number>());
+  private readonly _onScroll = this._register(new Emitter<number>());
   public readonly onScroll = this._onScroll.event;
-  private readonly _onTitleChange = this.register(new Emitter<string>());
+  private readonly _onTitleChange = this._register(new Emitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onColor = this.register(new Emitter<IColorEvent>());
+  private readonly _onColor = this._register(new Emitter<IColorEvent>());
   public readonly onColor = this._onColor.event;
 
   private _parseStack: IParseStack = {
@@ -179,12 +179,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
     super();
-    this.register(this._parser);
+    this._register(this._parser);
     this._dirtyRowTracker = new DirtyRowTracker(this._bufferService);
 
     // Track properties used in performance critical code manually to avoid using slow getters
     this._activeBuffer = this._bufferService.buffer;
-    this.register(this._bufferService.buffers.onBufferActivate(e => this._activeBuffer = e.activeBuffer));
+    this._register(this._bufferService.buffers.onBufferActivate(e => this._activeBuffer = e.activeBuffer));
 
     /**
      * custom fallback handlers

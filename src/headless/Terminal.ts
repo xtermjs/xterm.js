@@ -28,15 +28,15 @@ import { IMarker, ITerminalOptions } from 'common/Types';
 import { Emitter, Event } from 'vs/base/common/event';
 
 export class Terminal extends CoreTerminal {
-  private readonly _onBell = this.register(new Emitter<void>());
+  private readonly _onBell = this._register(new Emitter<void>());
   public readonly onBell = this._onBell.event;
-  private readonly _onCursorMove = this.register(new Emitter<void>());
+  private readonly _onCursorMove = this._register(new Emitter<void>());
   public readonly onCursorMove = this._onCursorMove.event;
-  private readonly _onTitleChange = this.register(new Emitter<string>());
+  private readonly _onTitleChange = this._register(new Emitter<string>());
   public readonly onTitleChange = this._onTitleChange.event;
-  private readonly _onA11yCharEmitter = this.register(new Emitter<string>());
+  private readonly _onA11yCharEmitter = this._register(new Emitter<string>());
   public readonly onA11yChar = this._onA11yCharEmitter.event;
-  private readonly _onA11yTabEmitter = this.register(new Emitter<number>());
+  private readonly _onA11yTabEmitter = this._register(new Emitter<number>());
   public readonly onA11yTab = this._onA11yTabEmitter.event;
 
   constructor(
@@ -47,12 +47,12 @@ export class Terminal extends CoreTerminal {
     this._setup();
 
     // Setup InputHandler listeners
-    this.register(this._inputHandler.onRequestBell(() => this.bell()));
-    this.register(this._inputHandler.onRequestReset(() => this.reset()));
-    this.register(Event.forward(this._inputHandler.onCursorMove, this._onCursorMove));
-    this.register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
-    this.register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-    this.register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this._register(this._inputHandler.onRequestBell(() => this.bell()));
+    this._register(this._inputHandler.onRequestReset(() => this.reset()));
+    this._register(Event.forward(this._inputHandler.onCursorMove, this._onCursorMove));
+    this._register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
+    this._register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this._register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
   }
 
   /**

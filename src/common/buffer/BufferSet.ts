@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { IAttributeData } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
@@ -19,7 +19,7 @@ export class BufferSet extends Disposable implements IBufferSet {
   private _alt!: Buffer;
   private _activeBuffer!: Buffer;
 
-  private readonly _onBufferActivate = this.register(new Emitter<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>());
+  private readonly _onBufferActivate = this._register(new Emitter<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>());
   public readonly onBufferActivate = this._onBufferActivate.event;
 
   /**
@@ -31,8 +31,8 @@ export class BufferSet extends Disposable implements IBufferSet {
   ) {
     super();
     this.reset();
-    this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.resize(this._bufferService.cols, this._bufferService.rows)));
-    this.register(this._optionsService.onSpecificOptionChange('tabStopWidth', () => this.setupTabStops()));
+    this._register(this._optionsService.onSpecificOptionChange('scrollback', () => this.resize(this._bufferService.cols, this._bufferService.rows)));
+    this._register(this._optionsService.onSpecificOptionChange('tabStopWidth', () => this.setupTabStops()));
   }
 
   public reset(): void {

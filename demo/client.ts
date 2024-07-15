@@ -694,7 +694,7 @@ function updateFindResults(e: { resultIndex: number, resultCount: number } | und
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
   element.addEventListener(type, handler);
-  term._core.register({ dispose: () => element.removeEventListener(type, handler) });
+  term._core._register({ dispose: () => element.removeEventListener(type, handler) });
 }
 
 function updateTerminalSize(): void {

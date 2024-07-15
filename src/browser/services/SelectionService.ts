@@ -9,7 +9,7 @@ import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import * as Browser from 'common/Platform';
 import { IBufferLine, IDisposable } from 'common/Types';
 import { getRangeLength } from 'common/buffer/BufferRange';
@@ -111,13 +111,13 @@ export class SelectionService extends Disposable implements ISelectionService {
   private _oldSelectionStart: [number, number] | undefined = undefined;
   private _oldSelectionEnd: [number, number] | undefined = undefined;
 
-  private readonly _onLinuxMouseSelection = this.register(new Emitter<string>());
+  private readonly _onLinuxMouseSelection = this._register(new Emitter<string>());
   public readonly onLinuxMouseSelection = this._onLinuxMouseSelection.event;
-  private readonly _onRedrawRequest = this.register(new Emitter<ISelectionRedrawRequestEvent>());
+  private readonly _onRedrawRequest = this._register(new Emitter<ISelectionRedrawRequestEvent>());
   public readonly onRequestRedraw = this._onRedrawRequest.event;
-  private readonly _onSelectionChange = this.register(new Emitter<void>());
+  private readonly _onSelectionChange = this._register(new Emitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
-  private readonly _onRequestScrollLines = this.register(new Emitter<ISelectionRequestScrollLinesEvent>());
+  private readonly _onRequestScrollLines = this._register(new Emitter<ISelectionRequestScrollLinesEvent>());
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   constructor(
@@ -142,14 +142,14 @@ export class SelectionService extends Disposable implements ISelectionService {
       }
     });
     this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._handleTrim(amount));
-    this.register(this._bufferService.buffers.onBufferActivate(e => this._handleBufferActivate(e)));
+    this._register(this._bufferService.buffers.onBufferActivate(e => this._handleBufferActivate(e)));
 
     this.enable();
 
     this._model = new SelectionModel(this._bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
 
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this._removeMouseDownListeners();
     }));
   }

@@ -4,7 +4,7 @@
  */
 import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 
 /**
@@ -175,7 +175,7 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
   private _activeEncoding: string = '';
   private _lastEvent: ICoreMouseEvent | null = null;
 
-  private readonly _onProtocolChange = this.register(new Emitter<CoreMouseEventType>());
+  private readonly _onProtocolChange = this._register(new Emitter<CoreMouseEventType>());
   public readonly onProtocolChange =  this._onProtocolChange.event;
 
   constructor(

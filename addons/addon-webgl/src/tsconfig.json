@@ -29,7 +29,8 @@
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../../node_modules/@types/mocha",
+      "../../../src/vs/typings/thenable"
     ]
   },
   "include": [

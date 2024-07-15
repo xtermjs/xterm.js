@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
@@ -43,7 +43,7 @@ export class WriteBuffer extends Disposable {
   private _syncCalls = 0;
   private _didUserInput = false;
 
-  private readonly _onWriteParsed = this.register(new Emitter<void>());
+  private readonly _onWriteParsed = this._register(new Emitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) {

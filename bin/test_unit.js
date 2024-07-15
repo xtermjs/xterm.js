@@ -12,10 +12,7 @@ const COVERAGE_LINES_THRESHOLD = 40;
 const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out-esbuild');
 
-let testFiles = [
-  './out-esbuild/**/*test.js',
-  './addons/**/out-esbuild/*test.js',
-];
+let testFiles = ['**/out-esbuild/**/*.test.js'];
 
 let flagArgs = [];
 
