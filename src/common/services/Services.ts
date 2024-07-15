@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty } from '@xterm/xterm';
+import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, type IOverviewRulerOptions } from '@xterm/xterm';
 import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
@@ -251,7 +251,7 @@ export interface ITerminalOptions {
   windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
-  overviewRulerWidth?: number;
+  overviewRuler?: IOverviewRulerOptions;
 
   [key: string]: any;
   cancelEvents: boolean;
