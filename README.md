@@ -1,4 +1,4 @@
-# [![xterm.js logo](logo-full.png)](https://xtermjs.org)
+# [![xterm.js logo](images/logo-full.png)](https://xtermjs.org)
 
 Xterm.js is a front-end component written in TypeScript that lets applications bring fully-featured terminals to their users in the browser. It's used by popular projects such as VS Code, Hyper and Theia.
 
@@ -77,7 +77,6 @@ terminal.loadAddon(new WebLinksAddon());
 The xterm.js team maintains the following addons, but anyone can build them:
 
 - [`@xterm/addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-attach): Attaches to a server running a process via a websocket
-- [`@xterm/addon-canvas`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-canvas): Renders xterm.js using a `canvas` element's 2d context
 - [`@xterm/addon-clipboard`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-clipboard): Access the browser's clipboard
 - [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
 - [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
@@ -129,7 +128,6 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js.
 - [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile, and powerful open source code editor that provides an integrated terminal based on xterm.js.
 - [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js.
-- [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
 - [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE.
 - [**Codenvy**](http://www.codenvy.com): Cloud workspaces for development teams.
 - [**CoderPad**](https://coderpad.io): Online interviewing platform for programmers. Run code in many programming languages, with results displayed by xterm.js.
@@ -224,6 +222,9 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Helix Editor Playground**](https://github.com/tomgroenwoldt/helix-editor-playground): Online playground for the terminal based helix editor.
 - [**Coder**](https://github.com/coder/coder): Self-Hosted Remote Development Environments
 - [**Wave Terminal**](https://waveterm.dev): An open-source, ai-native, terminal built for seamless workflows.
+- [**eva**](https://github.com/info24/eva): Eva is a web application for SSH remote login, developed in Go.
+- [**OpenSFTP**](https://opensftp.com): Super beautiful SSH and SFTP integrated workspace client.
+- [**balena**](https://www.balena.io/): Balena is a full-stack solution for developing, deploying, updating, and troubleshooting IoT Edge devices. We use xterm.js to manage & debug devices on [balenaCloud](https://www.balena.io/cloud).
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.

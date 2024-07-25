@@ -1,0 +1,13 @@
+temp/
+
+# Tests
+base/test/
+base/**/test/
+
+# Unwanted modules
+base/node/
+base/parts/
+base/worker/
+
+# Binary files
+base/browser/ui/codicons/codicon/codicon.ttf

@@ -8,6 +8,66 @@
     "showReuseMessage": true
   },
   "tasks": [
+    // Compound tasks
+    {
+      "label": "Development",
+      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+
+    // Demo
+    {
+      "label": "demo-server",
+      "type": "npm",
+      "script": "start",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "xterm-demo"
+      }
+    },
+
+    // Build
+    {
+      "label": "tsc",
+      "type": "npm",
+      "script": "tsc-watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$tsc-watch",
+      "presentation": {
+        "group": "xterm-build"
+      }
+    },
+    {
+      "label": "esbuild",
+      "type": "npm",
+      "script": "esbuild-watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$esbuild-watch",
+      "presentation": {
+        "group": "xterm-build"
+      }
+    },
+    {
+      "label": "esbuild-demo",
+      "type": "npm",
+      "script": "esbuild-demo-watch",
+      "dependsOn": ["esbuild", "tsc"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$esbuild-watch",
+      "presentation": {
+        "group": "xterm-demo"
+      }
+    },
+
+    // Test
     {
       "type": "npm",
       "script": "test",
@@ -16,59 +76,6 @@
         "isDefault": true
       },
       "problemMatcher": []
-    },
-    {
-      "label": "watch",
-      "type": "npm",
-      "script": "watch",
-      "group": "build",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch",
-      "presentation": {
-        "group": "vscode"
-      }
-    },
-    {
-      "label": "start",
-      "type": "npm",
-      "script": "start",
-      "group": "build",
-      "isBackground": true,
-      "problemMatcher": [],
-      "presentation": {
-        "group": "vscode"
-      }
-    },
-    {
-      "label": "Start demo",
-      "dependsOn": ["start", "watch"],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "typescript",
-        "fileLocation": [
-          "relative",
-          "${workspaceFolder}"
-        ],
-        "pattern": [
-          {
-            "regexp": "^([^\\\\s].*)\\\\((\\\\d+,\\\\d+)\\\\):\\\\s*(.*)$",
-            "file": 1,
-            "location": 2,
-            "message": 3
-          }
-        ],
-        "background": {
-          "beginsPattern": "assets by",
-          "endsPattern": "webpack \\d+\\.\\d+\\.\\d+ compiled successfully"
-        }
-      },
-      "presentation": {
-        "group": "vscode"
-      }
     }
   ]
 }

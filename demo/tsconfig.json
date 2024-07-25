@@ -6,14 +6,17 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "addon-attach": ["../addons/addon-attach"],
-      "addon-clipboard": ["../addons/addon-clipboard"],
-      "addon-fit": ["../addons/addon-fit"],
-      "addon-image": ["../addons/addon-image"],
-      "addon-search": ["../addons/addon-search"],
-      "addon-serialize": ["../addons/addon-serialize"],
-      "addon-web-links": ["../addons/addon-web-links"],
-      "addon-webgl": ["../addons/addon-webgl"]
+      "@xterm/addon-attach": ["../addons/addon-attach"],
+      "@xterm/addon-clipboard": ["../addons/addon-clipboard"],
+      "@xterm/addon-fit": ["../addons/addon-fit"],
+      "@xterm/addon-image": ["../addons/addon-image"],
+      "@xterm/addon-search": ["../addons/addon-search"],
+      "@xterm/addon-serialize": ["../addons/addon-serialize"],
+      "@xterm/addon-web-links": ["../addons/addon-web-links"],
+      "@xterm/addon-webgl": ["../addons/addon-webgl"],
+      "@xterm/addon-unicode11": ["../addons/addon-unicode11"],
+      "@xterm/addon-unicode-graphemes": ["../addons/addon-unicode-graphemes"],
+      "@xterm/addon-ligatures": ["../addons/addon-ligatures"]
     }
   },
   "include": [

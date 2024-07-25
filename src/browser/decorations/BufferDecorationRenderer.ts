@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration } from 'common/services/Services';
 
 export class BufferDecorationRenderer extends Disposable {
@@ -28,18 +28,18 @@ export class BufferDecorationRenderer extends Disposable {
     this._container.classList.add('xterm-decoration-container');
     this._screenElement.appendChild(this._container);
 
-    this.register(this._renderService.onRenderedViewportChange(() => this._doRefreshDecorations()));
-    this.register(this._renderService.onDimensionsChange(() => {
+    this._register(this._renderService.onRenderedViewportChange(() => this._doRefreshDecorations()));
+    this._register(this._renderService.onDimensionsChange(() => {
       this._dimensionsChanged = true;
       this._queueRefresh();
     }));
-    this.register(this._coreBrowserService.onDprChange(() => this._queueRefresh()));
-    this.register(this._bufferService.buffers.onBufferActivate(() => {
+    this._register(this._coreBrowserService.onDprChange(() => this._queueRefresh()));
+    this._register(this._bufferService.buffers.onBufferActivate(() => {
       this._altBufferIsActive = this._bufferService.buffer === this._bufferService.buffers.alt;
     }));
-    this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh()));
-    this.register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
-    this.register(toDisposable(() => {
+    this._register(this._decorationService.onDecorationRegistered(() => this._queueRefresh()));
+    this._register(this._decorationService.onDecorationRemoved(decoration => this._removeDecoration(decoration)));
+    this._register(toDisposable(() => {
       this._container.remove();
       this._decorationElements.clear();
     }));
@@ -108,8 +108,13 @@ export class BufferDecorationRenderer extends Disposable {
           element!.remove();
         });
       }
-      element.style.top = `${line * this._renderService.dimensions.css.cell.height}px`;
       element.style.display = this._altBufferIsActive ? 'none' : 'block';
+      if (!this._altBufferIsActive) {
+        element.style.width = `${Math.round((decoration.options.width || 1) * this._renderService.dimensions.css.cell.width)}px`;
+        element.style.height = `${(decoration.options.height || 1) * this._renderService.dimensions.css.cell.height}px`;
+        element.style.top = `${line * this._renderService.dimensions.css.cell.height}px`;
+        element.style.lineHeight = `${this._renderService.dimensions.css.cell.height}px`;
+      }
       decoration.onRenderEmitter.fire(element);
     }
   }

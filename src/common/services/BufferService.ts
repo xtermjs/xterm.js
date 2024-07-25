@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
-import { IAttributeData, IBufferLine, ScrollSource } from 'common/Types';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { IAttributeData, IBufferLine } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { usingNewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine } from 'common/buffer/BufferLine';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 export const MINIMUM_ROWS = 1;
@@ -23,9 +23,9 @@ export class BufferService extends Disposable implements IBufferService {
   /** Whether the user is scrolling (locks the scroll position) */
   public isUserScrolling: boolean = false;
 
-  private readonly _onResize = this.register(new EventEmitter<{ cols: number, rows: number }>());
+  private readonly _onResize = this._register(new Emitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
-  private readonly _onScroll = this.register(new EventEmitter<number>());
+  private readonly _onScroll = this._register(new Emitter<number>());
   public readonly onScroll = this._onScroll.event;
 
   public get buffer(): IBuffer { return this.buffers.active; }
@@ -37,7 +37,7 @@ export class BufferService extends Disposable implements IBufferService {
     super();
     this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
     this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
-    this.buffers = this.register(new BufferSet(optionsService, this));
+    this.buffers = this._register(new BufferSet(optionsService, this));
   }
 
   public resize(cols: number, rows: number): void {
@@ -141,7 +141,7 @@ export class BufferService extends Disposable implements IBufferService {
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void {
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
     const buffer = this.buffer;
     if (disp < 0) {
       if (buffer.ydisp === 0) {

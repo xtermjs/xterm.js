@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { IAttributeData } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and
@@ -19,7 +19,7 @@ export class BufferSet extends Disposable implements IBufferSet {
   private _alt!: Buffer;
   private _activeBuffer!: Buffer;
 
-  private readonly _onBufferActivate = this.register(new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>());
+  private readonly _onBufferActivate = this._register(new Emitter<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>());
   public readonly onBufferActivate = this._onBufferActivate.event;
 
   /**
@@ -31,8 +31,8 @@ export class BufferSet extends Disposable implements IBufferSet {
   ) {
     super();
     this.reset();
-    this.register(this._optionsService.onSpecificOptionChange('scrollback', () => this.resize(this._bufferService.cols, this._bufferService.rows)));
-    this.register(this._optionsService.onSpecificOptionChange('tabStopWidth', () => this.setupTabStops()));
+    this._register(this._optionsService.onSpecificOptionChange('scrollback', () => this.resize(this._bufferService.cols, this._bufferService.rows)));
+    this._register(this._optionsService.onSpecificOptionChange('tabStopWidth', () => this.setupTabStops()));
   }
 
   public reset(): void {

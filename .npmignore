@@ -17,6 +17,9 @@
 !lib/**/*.js
 !lib/**/*.js.map
 
+!lib/**/*.mjs
+!lib/**/*.mjs.map
+
 !lib/**/*.css
 
 # Whitelist - src/

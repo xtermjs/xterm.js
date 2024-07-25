@@ -6,11 +6,11 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IInstantiationService } from 'common/services/Services';
-import { addDisposableDomListener } from 'browser/Lifecycle';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -82,7 +82,7 @@ export class AccessibilityManager extends Disposable {
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityContainer.appendChild(this._liveRegion);
-    this._liveRegionDebouncer = this.register(new TimeBasedDebouncer(this._renderRows.bind(this)));
+    this._liveRegionDebouncer = this._register(new TimeBasedDebouncer(this._renderRows.bind(this)));
 
     if (!this._terminal.element) {
       throw new Error('Cannot enable accessibility before Terminal.open');
@@ -105,22 +105,22 @@ export class AccessibilityManager extends Disposable {
       this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityContainer);
     }
 
-    this.register(this._terminal.onResize(e => this._handleResize(e.rows)));
-    this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
-    this.register(this._terminal.onScroll(() => this._refreshRows()));
+    this._register(this._terminal.onResize(e => this._handleResize(e.rows)));
+    this._register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
+    this._register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this.register(this._terminal.onA11yChar(char => this._handleChar(char)));
-    this.register(this._terminal.onLineFeed(() => this._handleChar('\n')));
-    this.register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
-    this.register(this._terminal.onKey(e => this._handleKey(e.key)));
-    this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
-    this.register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
-    this.register(addDisposableDomListener(doc, 'selectionchange', () => this._handleSelectionChange()));
-    this.register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
+    this._register(this._terminal.onA11yChar(char => this._handleChar(char)));
+    this._register(this._terminal.onLineFeed(() => this._handleChar('\n')));
+    this._register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
+    this._register(this._terminal.onKey(e => this._handleKey(e.key)));
+    this._register(this._terminal.onBlur(() => this._clearLiveRegion()));
+    this._register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
+    this._register(addDisposableListener(doc, 'selectionchange', () => this._handleSelectionChange()));
+    this._register(this._coreBrowserService.onDprChange(() => this._refreshRowsDimensions()));
 
     this._refreshRowsDimensions();
     this._refreshRows();
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       if (DEBUG) {
         this._debugRootContainer!.remove();
       } else {
@@ -151,7 +151,7 @@ export class AccessibilityManager extends Disposable {
       if (char === '\n') {
         this._liveRegionLineCount++;
         if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
-          this._liveRegion.textContent += Strings.tooMuchOutput;
+          this._liveRegion.textContent += Strings.tooMuchOutput.get();
         }
       }
     }

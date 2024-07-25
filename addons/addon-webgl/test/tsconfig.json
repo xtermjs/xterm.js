@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2021",
+    "target": "ESNext",
     "lib": [
       "es2021",
     ],
@@ -21,9 +21,7 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/node",
-      "../../../node_modules/@lunapaint/png-codec",
-      "../../../out-test/playwright/TestUtils",
-      "../../../out-test/playwright/SharedRendererTests"
+      "../../../node_modules/@lunapaint/png-codec"
     ]
   },
   "include": [
@@ -36,6 +34,9 @@
     },
     {
       "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../test/playwright"
     }
   ]
 }

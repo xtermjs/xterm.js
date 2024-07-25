@@ -7,25 +7,25 @@ import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { WebglAddon as IWebglApi } from '@xterm/addon-webgl';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { EventEmitter, forwardEvent } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { IWebGL2RenderingContext } from './Types';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
+import { Emitter, Event } from 'vs/base/common/event';
 
 export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
 
-  private readonly _onChangeTextureAtlas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onChangeTextureAtlas = this._register(new Emitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onAddTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onAddTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
   public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
-  private readonly _onRemoveTextureAtlasCanvas = this.register(new EventEmitter<HTMLCanvasElement>());
+  private readonly _onRemoveTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
   public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
-  private readonly _onContextLoss = this.register(new EventEmitter<void>());
+  private readonly _onContextLoss = this._register(new Emitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
 
   constructor(
@@ -49,7 +49,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
   public activate(terminal: Terminal): void {
     const core = (terminal as any)._core as ITerminal;
     if (!terminal.element) {
-      this.register(core.onWillOpen(() => this.activate(terminal)));
+      this._register(core.onWillOpen(() => this.activate(terminal)));
       return;
     }
 
@@ -70,7 +70,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
     // bundled separately to the core module
     setTraceLogger(logService);
 
-    this._renderer = this.register(new WebglRenderer(
+    this._renderer = this._register(new WebglRenderer(
       terminal,
       characterJoinerService,
       charSizeService,
@@ -81,13 +81,13 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
       themeService,
       this._preserveDrawingBuffer
     ));
-    this.register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
-    this.register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
-    this.register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
-    this.register(forwardEvent(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
+    this._register(Event.forward(this._renderer.onContextLoss, this._onContextLoss));
+    this._register(Event.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this._register(Event.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
+    this._register(Event.forward(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
 
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       const renderService: IRenderService = (this._terminal as any)._core._renderService;
       renderService.setRenderer((this._terminal as any)._core._createRenderer());
       renderService.handleResize(terminal.cols, terminal.rows);

@@ -22,10 +22,14 @@
       ],
       "common/*": [
         "../../src/common/*"
+      ],
+      "vs/*": [
+        "../../src/vs/*"
       ]
     },
-    "target": "es2016",
+    "target": "ESNext",
     "module": "commonjs",
+    "composite": true
   },
   "include": [
     "./**/*",
@@ -37,6 +41,9 @@
     },
     {
       "path": "../../src/common"
+    },
+    {
+      "path": "../../src/vs"
     }
   ]
 }

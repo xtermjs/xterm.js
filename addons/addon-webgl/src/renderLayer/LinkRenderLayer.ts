@@ -26,8 +26,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
   ) {
     super(terminal, container, 'link', zIndex, true, coreBrowserService, optionsService, themeService);
 
-    this.register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
-    this.register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));
+    this._register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
+    this._register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {

@@ -9,7 +9,7 @@ import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
@@ -43,11 +43,11 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
     this._container.appendChild(this._canvas);
-    this.register(this._themeService.onChangeColors(e => {
+    this._register(this._themeService.onChangeColors(e => {
       this._refreshCharAtlas(terminal, e);
       this.reset(terminal);
     }));
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this._canvas.remove();
     }));
   }

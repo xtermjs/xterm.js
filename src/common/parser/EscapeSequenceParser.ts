@@ -5,7 +5,7 @@
 
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IDisposable } from 'common/Types';
 import { Params } from 'common/parser/Params';
 import { OscParser } from 'common/parser/OscParser';
@@ -283,13 +283,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlers = Object.create(null);
     this._csiHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this._csiHandlers = Object.create(null);
       this._executeHandlers = Object.create(null);
       this._escHandlers = Object.create(null);
     }));
-    this._oscParser = this.register(new OscParser());
-    this._dcsParser = this.register(new DcsParser());
+    this._oscParser = this._register(new OscParser());
+    this._dcsParser = this._register(new DcsParser());
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)

@@ -7,11 +7,13 @@
     ],
     "outDir": "../../out",
     "types": [
-      "../../node_modules/@types/mocha"
+      "../../node_modules/@types/mocha",
+      "../vs/typings/thenable.d.ts"
     ],
     "baseUrl": "..",
     "paths": {
-      "common/*": [ "./common/*" ]
+      "common/*": [ "./common/*" ],
+      "vs/*": [ "./vs/*" ]
     }
   },
   "include": [
@@ -19,6 +21,7 @@
     "../../typings/xterm.d.ts"
   ],
   "references": [
-    { "path": "../common" }
+    { "path": "../common" },
+    { "path": "../vs" }
   ]
 }

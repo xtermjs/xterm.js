@@ -2,15 +2,27 @@
   "files.associations": {
     ".eslintrc.json.typings": "jsonc"
   },
+  // Hide output files from the file explorer, comment this out to see the build output
+  "files.exclude": {
+    "**/.nyc_output": true,
+    "**/lib": true,
+    "**/dist": true,
+    "**/out": true,
+    "**/out-*": true,
+  },
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.quoteStyle": "single",
   "mochaExplorer.envPath": ".mocha.env",
   "mochaExplorer.files": [
     "out/**/*.test.js",
-    "addons/**/out/*.test.js"
+    "addons/**/out/*.test.js",
+    "out-*/**/*.test.js",
+    "addons/**/out-*/*.test.js"
   ],
   "mochaExplorer.watch": [
     "out/**/*.js",
-    "addons/**/out/*.js"
+    "addons/**/out/*.js",
+    "out-*/**/*.js",
+    "addons/**/out-*/*.js"
   ]
 }

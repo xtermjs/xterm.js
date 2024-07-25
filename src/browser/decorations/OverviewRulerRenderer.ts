@@ -4,9 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
-import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+
+const enum Constants {
+  OVERVIEW_RULER_BORDER_WIDTH = 1
+}
 
 // Helper objects to avoid excessive calculation and garbage collection during rendering. These are
 // static values for each render and can be accessed using the decoration position as the key.
@@ -34,7 +38,7 @@ export class OverviewRulerRenderer extends Disposable {
   private readonly _ctx: CanvasRenderingContext2D;
   private readonly _colorZoneStore: IColorZoneStore = new ColorZoneStore();
   private get _width(): number {
-    return this._optionsService.options.overviewRulerWidth || 0;
+    return this._optionsService.options.overviewRuler?.width || 0;
   }
   private _animationFrame: number | undefined;
 
@@ -51,6 +55,7 @@ export class OverviewRulerRenderer extends Disposable {
     @IDecorationService private readonly _decorationService: IDecorationService,
     @IRenderService private readonly _renderService: IRenderService,
     @IOptionsService private readonly _optionsService: IOptionsService,
+    @IThemeService private readonly _themeService: IThemeService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
     super();
@@ -58,68 +63,47 @@ export class OverviewRulerRenderer extends Disposable {
     this._canvas.classList.add('xterm-decoration-overview-ruler');
     this._refreshCanvasDimensions();
     this._viewportElement.parentElement?.insertBefore(this._canvas, this._viewportElement);
+    this._register(toDisposable(() => this._canvas?.remove()));
+
     const ctx = this._canvas.getContext('2d');
     if (!ctx) {
       throw new Error('Ctx cannot be null');
     } else {
       this._ctx = ctx;
     }
-    this._registerDecorationListeners();
-    this._registerBufferChangeListeners();
-    this._registerDimensionChangeListeners();
-    this.register(toDisposable(() => {
-      this._canvas?.remove();
-    }));
-  }
 
-  /**
-   * On decoration add or remove, redraw
-   */
-  private _registerDecorationListeners(): void {
-    this.register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
-    this.register(this._decorationService.onDecorationRemoved(() => this._queueRefresh(undefined, true)));
-  }
+    this._register(this._decorationService.onDecorationRegistered(() => this._queueRefresh(undefined, true)));
+    this._register(this._decorationService.onDecorationRemoved(() => this._queueRefresh(undefined, true)));
 
-  /**
-   * On buffer change, redraw
-   * and hide the canvas if the alt buffer is active
-   */
-  private _registerBufferChangeListeners(): void {
-    this.register(this._renderService.onRenderedViewportChange(() => this._queueRefresh()));
-    this.register(this._bufferService.buffers.onBufferActivate(() => {
+    this._register(this._renderService.onRenderedViewportChange(() => this._queueRefresh()));
+    this._register(this._bufferService.buffers.onBufferActivate(() => {
       this._canvas!.style.display = this._bufferService.buffer === this._bufferService.buffers.alt ? 'none' : 'block';
     }));
-    this.register(this._bufferService.onScroll(() => {
+    this._register(this._bufferService.onScroll(() => {
       if (this._lastKnownBufferLength !== this._bufferService.buffers.normal.lines.length) {
         this._refreshDrawHeightConstants();
         this._refreshColorZonePadding();
       }
     }));
-  }
-  /**
-   * On dimension change, update canvas dimensions
-   * and then redraw
-   */
-  private _registerDimensionChangeListeners(): void {
-    // container height changed
-    this.register(this._renderService.onRender((): void => {
+
+    // Container height changed
+    this._register(this._renderService.onRender((): void => {
       if (!this._containerHeight || this._containerHeight !== this._screenElement.clientHeight) {
         this._queueRefresh(true);
         this._containerHeight = this._screenElement.clientHeight;
       }
     }));
-    // overview ruler width changed
-    this.register(this._optionsService.onSpecificOptionChange('overviewRulerWidth', () => this._queueRefresh(true)));
-    // device pixel ratio changed
-    this.register(this._coreBrowserService.onDprChange(() => this._queueRefresh(true)));
-    // set the canvas dimensions
+
+    this._register(this._coreBrowserService.onDprChange(() => this._queueRefresh(true)));
+    this._register(this._optionsService.onSpecificOptionChange('overviewRuler', () => this._queueRefresh(true)));
+    this._register(this._themeService.onChangeColors(() => this._queueRefresh()));
     this._queueRefresh(true);
   }
 
   private _refreshDrawConstants(): void {
     // width
-    const outerWidth = Math.floor(this._canvas.width / 3);
-    const innerWidth = Math.ceil(this._canvas.width / 3);
+    const outerWidth = Math.floor((this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH) / 3);
+    const innerWidth = Math.ceil((this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH) / 3);
     drawWidth.full = this._canvas.width;
     drawWidth.left = outerWidth;
     drawWidth.center = innerWidth;
@@ -127,10 +111,10 @@ export class OverviewRulerRenderer extends Disposable {
     // height
     this._refreshDrawHeightConstants();
     // x
-    drawX.full = 0;
-    drawX.left = 0;
-    drawX.center = drawWidth.left;
-    drawX.right = drawWidth.left + drawWidth.center;
+    drawX.full = Constants.OVERVIEW_RULER_BORDER_WIDTH;
+    drawX.left = Constants.OVERVIEW_RULER_BORDER_WIDTH;
+    drawX.center = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left;
+    drawX.right = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left + drawWidth.center;
   }
 
   private _refreshDrawHeightConstants(): void {
@@ -173,6 +157,7 @@ export class OverviewRulerRenderer extends Disposable {
       this._colorZoneStore.addDecoration(decoration);
     }
     this._ctx.lineWidth = 1;
+    this._renderRulerOutline();
     const zones = this._colorZoneStore.zones;
     for (const zone of zones) {
       if (zone.position !== 'full') {
@@ -186,6 +171,17 @@ export class OverviewRulerRenderer extends Disposable {
     }
     this._shouldUpdateDimensions = false;
     this._shouldUpdateAnchor = false;
+  }
+
+  private _renderRulerOutline(): void {
+    this._ctx.fillStyle = this._themeService.colors.overviewRulerBorder.css;
+    this._ctx.fillRect(0, 0, Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.height);
+    if (this._optionsService.rawOptions.overviewRuler.showTopBorder) {
+      this._ctx.fillRect(Constants.OVERVIEW_RULER_BORDER_WIDTH, 0, this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH, Constants.OVERVIEW_RULER_BORDER_WIDTH);
+    }
+    if (this._optionsService.rawOptions.overviewRuler.showBottomBorder) {
+      this._ctx.fillRect(Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.height - Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.height);
+    }
   }
 
   private _renderColorZone(zone: IColorZone): void {

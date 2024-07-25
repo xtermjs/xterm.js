@@ -7,10 +7,10 @@ import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -21,10 +21,10 @@ interface ISelectionState {
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
 
-  private _renderer: MutableDisposable<IRenderer> = this.register(new MutableDisposable());
+  private _renderer: MutableDisposable<IRenderer> = this._register(new MutableDisposable());
   private _renderDebouncer: IRenderDebouncerWithCallback;
   private _pausedResizeTask = new DebouncedIdleTask();
-  private _observerDisposable = this.register(new MutableDisposable());
+  private _observerDisposable = this._register(new MutableDisposable());
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -38,13 +38,13 @@ export class RenderService extends Disposable implements IRenderService {
     columnSelectMode: false
   };
 
-  private readonly _onDimensionsChange = this.register(new EventEmitter<IRenderDimensions>());
+  private readonly _onDimensionsChange = this._register(new Emitter<IRenderDimensions>());
   public readonly onDimensionsChange = this._onDimensionsChange.event;
-  private readonly _onRenderedViewportChange = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRenderedViewportChange = this._register(new Emitter<{ start: number, end: number }>());
   public readonly onRenderedViewportChange = this._onRenderedViewportChange.event;
-  private readonly _onRender = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRender = this._register(new Emitter<{ start: number, end: number }>());
   public readonly onRender = this._onRender.event;
-  private readonly _onRefreshRequest = this.register(new EventEmitter<{ start: number, end: number }>());
+  private readonly _onRefreshRequest = this._register(new Emitter<{ start: number, end: number }>());
   public readonly onRefreshRequest = this._onRefreshRequest.event;
 
   public get dimensions(): IRenderDimensions { return this._renderer.value!.dimensions; }
@@ -62,23 +62,23 @@ export class RenderService extends Disposable implements IRenderService {
     super();
 
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), coreBrowserService);
-    this.register(this._renderDebouncer);
+    this._register(this._renderDebouncer);
 
-    this.register(coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
+    this._register(coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
 
-    this.register(bufferService.onResize(() => this._fullRefresh()));
-    this.register(bufferService.buffers.onBufferActivate(() => this._renderer.value?.clear()));
-    this.register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
-    this.register(this._charSizeService.onCharSizeChange(() => this.handleCharSizeChanged()));
+    this._register(bufferService.onResize(() => this._fullRefresh()));
+    this._register(bufferService.buffers.onBufferActivate(() => this._renderer.value?.clear()));
+    this._register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._register(this._charSizeService.onCharSizeChange(() => this.handleCharSizeChanged()));
 
     // Do a full refresh whenever any decoration is added or removed. This may not actually result
     // in changes but since decorations should be used sparingly or added/removed all in the same
     // frame this should have minimal performance impact.
-    this.register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
-    this.register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
+    this._register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
+    this._register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
 
     // Clear the renderer when the a change that could affect glyphs occurs
-    this.register(optionsService.onMultipleOptionChange([
+    this._register(optionsService.onMultipleOptionChange([
       'customGlyphs',
       'drawBoldTextInBrightColors',
       'letterSpacing',
@@ -96,15 +96,15 @@ export class RenderService extends Disposable implements IRenderService {
     }));
 
     // Refresh the cursor line when the cursor changes
-    this.register(optionsService.onMultipleOptionChange([
+    this._register(optionsService.onMultipleOptionChange([
       'cursorBlink',
       'cursorStyle'
     ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, true)));
 
-    this.register(themeService.onChangeColors(() => this._fullRefresh()));
+    this._register(themeService.onChangeColors(() => this._fullRefresh()));
 
     this._registerIntersectionObserver(coreBrowserService.window, screenElement);
-    this.register(coreBrowserService.onWindowChange((w) => this._registerIntersectionObserver(w, screenElement)));
+    this._register(coreBrowserService.onWindowChange((w) => this._registerIntersectionObserver(w, screenElement)));
   }
 
   private _registerIntersectionObserver(w: Window & typeof globalThis, screenElement: HTMLElement): void {
