@@ -76,7 +76,7 @@ export class Viewport extends Disposable {
     element.appendChild(this._scrollableElement.getDomNode());
     this._register(toDisposable(() => this._scrollableElement.getDomNode().remove()));
 
-    this._styleElement = coreBrowserService.window.document.createElement('style');
+    this._styleElement = coreBrowserService.mainDocument.createElement('style');
     screenElement.appendChild(this._styleElement);
     this._register(toDisposable(() => this._styleElement.remove()));
     this._register(Event.runAndSubscribe(themeService.onChangeColors, () => {
