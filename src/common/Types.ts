@@ -456,6 +456,8 @@ export type IColorEvent = (IColorReportRequest | IColorSetRequest | IColorRestor
  */
 export interface IInputHandler {
   onTitleChange: Event<string>;
+  readonly unicodeService: IUnicodeService;
+  precedingJoinState: number;
 
   parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean>;
   print(data: Uint32Array, start: number, end: number): void;
