@@ -7,6 +7,7 @@ import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
+import { selectNewBufferLine } from 'common/buffer/BufferLine';
 import { Emitter } from 'vs/base/common/event';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
@@ -31,6 +32,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   linkHandler: null,
   logLevel: 'info',
   logger: null,
+  newBufferLine: true,
   scrollback: 1000,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
@@ -86,6 +88,7 @@ export class OptionsService extends Disposable implements IOptionsService {
     // set up getters and setters for each option
     this.rawOptions = defaultOptions;
     this.options = { ... defaultOptions };
+    selectNewBufferLine(this.options['newBufferLine']);
     this._setupOptions();
 
     // Clear out options that could link outside xterm.js as they could easily cause an embedder
@@ -178,6 +181,9 @@ export class OptionsService extends Disposable implements IOptionsService {
         break;
       case 'minimumContrastRatio':
         value = Math.max(1, Math.min(21, Math.round(value * 10) / 10));
+        break;
+      case 'newBufferLine':
+        selectNewBufferLine(!!value);
         break;
       case 'scrollback':
         value = Math.min(value, 4294967295);

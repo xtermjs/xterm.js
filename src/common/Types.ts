@@ -4,7 +4,7 @@
  */
 
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
-import { Attributes, UnderlineStyle } from 'common/buffer/Constants'; // eslint-disable-line no-unused-vars
+import { Attributes, StyleFlags, UnderlineStyle } from 'common/buffer/Constants'; // eslint-disable-line no-unused-vars
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
@@ -101,6 +101,7 @@ export interface ICharset {
   [key: string]: string | undefined;
 }
 
+// Deprecated
 export type CharData = [number, string, number, number];
 
 export interface IColor {
@@ -136,12 +137,12 @@ export interface IOscLinkData {
 export interface IAttributeData {
   /**
    * "fg" is a 32-bit unsigned integer that stores the foreground color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
+   * significant bits and additional flags in the remaining 8 bits. @deprecated
    */
   fg: number;
   /**
    * "bg" is a 32-bit unsigned integer that stores the background color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
+   * significant bits and additional flags in the remaining 8 bits. @deprecated
    */
   bg: number;
   /**
@@ -163,6 +164,10 @@ export interface IAttributeData {
   isStrikethrough(): number;
   isProtected(): number;
   isOverline(): number;
+
+  getFg(): number; // 26 bits including CM_MASK
+  getBg(): number; // 26 bits including CM_MASK
+  getStyleFlags(): StyleFlags;
 
   /**
    * The color mode of the foreground color which determines how to decode {@link getFgColor},
@@ -210,7 +215,7 @@ export interface IAttributeData {
 /** Cell data */
 export interface ICellData extends IAttributeData {
   content: number;
-  combinedData: string;
+  combinedData: string; // FIXME only if using OldBufferLine
   isCombined(): number;
   getWidth(): number;
   getChars(): string;
@@ -224,20 +229,24 @@ export interface ICellData extends IAttributeData {
  */
 export interface IBufferLine {
   length: number;
-  isWrapped: boolean;
+  /** If the previous line wrapped (overflows) into the current line. */
+  readonly isWrapped: boolean;
+  _isWrapped: boolean; // should only be used OldBufferLine
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
   setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
-  addCodepointToCell(index: number, codePoint: number, width: number): void;
+  addCodepointToCell(index: number, codePoint: number, width: number): void; // DEPRECATED
   insertCells(pos: number, n: number, ch: ICellData): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
+  // @deprecated - only if !usingNewBufferLine()
   copyFrom(line: IBufferLine): void;
+  // @deprecated - only if !usingNewBufferLine()
   clone(): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
@@ -447,6 +456,8 @@ export type IColorEvent = (IColorReportRequest | IColorSetRequest | IColorRestor
  */
 export interface IInputHandler {
   onTitleChange: Event<string>;
+  readonly unicodeService: IUnicodeService;
+  precedingJoinState: number;
 
   parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean>;
   print(data: Uint32Array, start: number, end: number): void;
