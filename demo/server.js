@@ -59,13 +59,16 @@ function startServer() {
     }
     const cols = parseInt(req.query.cols);
     const rows = parseInt(req.query.rows);
-    const term = pty.spawn(process.platform === 'win32' ? 'pwsh.exe' : 'bash', [], {
+    const isWindows = process.platform === 'win32';
+    const term = pty.spawn(isWindows ? 'pwsh.exe' : 'bash', [], {
       name: 'xterm-256color',
       cols: cols ?? 80,
       rows: rows ?? 24,
-      cwd: process.platform === 'win32' ? undefined : env.PWD,
+      cwd: isWindows ? undefined : env.PWD,
       env,
-      encoding: USE_BINARY ? null : 'utf8'
+      encoding: USE_BINARY ? null : 'utf8',
+      useConpty: isWindows,
+      useConptyDll: isWindows,
     });
 
     console.log('Created terminal with PID: ' + term.pid);
