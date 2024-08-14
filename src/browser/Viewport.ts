@@ -94,6 +94,7 @@ export class Viewport extends Disposable {
     }));
 
     this._register(this._bufferService.onResize(() => this._queueSync()));
+    this._register(this._bufferService.buffers.onBufferActivate(() => this._queueSync()));
     this._register(this._bufferService.onScroll(() => this._sync()));
 
     this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
