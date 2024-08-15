@@ -102,7 +102,7 @@ if (config.addon) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`addons/addon-${config.addon}/src/${getAddonEntryPoint(config.addon)}.ts`],
-    outfile: `addons/addon-${config.addon}/lib/xterm-addon-${config.addon}.mjs`,
+    outfile: `addons/addon-${config.addon}/lib/addon-${config.addon}.mjs`,
   };
   outConfig = {
     ...outConfig,
@@ -132,16 +132,16 @@ if (config.addon) {
     alias: {
       // Library ESM imports
       "@xterm/xterm": ".",
-      "@xterm/addon-attach": "./addons/addon-attach/lib/xterm-addon-attach.mjs",
-      "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/xterm-addon-clipboard.mjs",
-      "@xterm/addon-fit": "./addons/addon-fit/lib/xterm-addon-fit.mjs",
-      "@xterm/addon-image": "./addons/addon-image/lib/xterm-addon-image.mjs",
-      "@xterm/addon-search": "./addons/addon-search/lib/xterm-addon-search.mjs",
-      "@xterm/addon-serialize": "./addons/addon-serialize/lib/xterm-addon-serialize.mjs",
-      "@xterm/addon-web-links": "./addons/addon-web-links/lib/xterm-addon-web-links.mjs",
-      "@xterm/addon-webgl": "./addons/addon-webgl/lib/xterm-addon-webgl.mjs",
-      "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/xterm-addon-unicode11.mjs",
-      "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/xterm-addon-unicode-graphemes.mjs",
+      "@xterm/addon-attach": "./addons/addon-attach/lib/addon-attach.mjs",
+      "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/addon-clipboard.mjs",
+      "@xterm/addon-fit": "./addons/addon-fit/lib/addon-fit.mjs",
+      "@xterm/addon-image": "./addons/addon-image/lib/addon-image.mjs",
+      "@xterm/addon-search": "./addons/addon-search/lib/addon-search.mjs",
+      "@xterm/addon-serialize": "./addons/addon-serialize/lib/addon-serialize.mjs",
+      "@xterm/addon-web-links": "./addons/addon-web-links/lib/addon-web-links.mjs",
+      "@xterm/addon-webgl": "./addons/addon-webgl/lib/addon-webgl.mjs",
+      "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/addon-unicode11.mjs",
+      "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/addon-unicode-graphemes.mjs",
 
       // Non-bundled ESM imports
       // HACK: Ligatures imports fs which in the esbuild bundle resolves at runtime _on startup_
