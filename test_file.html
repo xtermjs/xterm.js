@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xterm.js Test</title>
+    <script src="./node_modules/@xterm/xterm/lib/xterm.js"></script>
+    <link rel="stylesheet" href="./css/xterm.css">
+    <script>
+        console.log('Script is running');
+        const terminal = new Terminal({
+            cursorStyle: 'underline',  // Custom user-defined cursor style
+        });
+
+        const userCursorStyle = terminal.options.cursorStyle;
+        console.log('User Cursor Style:', userCursorStyle); // Print the value of userCursorStyle
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded and parsed');
+            terminal.open(document.getElementById('terminal'));
+            console.log('Sending control sequence as given 1');
+            terminal.write('\x1b[5 q');
+            console.log('User Cursor Style:', userCursorStyle);
+            console.log('Current Style:', terminal.options.cursorStyle);
+
+            terminal.focus();
+            console.log('Sending control sequence as given 2');
+            terminal.write('\x1b[0 q');
+            console.log('User Cursor Style:', userCursorStyle);
+            console.log('Current cursor style', terminal.options.cursorStyle)
+            terminal.focus();
+        });
+    </script>
+</head>
+<body>
+    <div id="terminal" style="height: 100%; width: 100%;"></div>
+</body>
+</html>
