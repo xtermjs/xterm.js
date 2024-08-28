@@ -25,6 +25,7 @@ const TEST_IMAGES: [string, IMetrics][] = [
   ['w3c_home_gray.png', { mime: 'image/png', width: 72, height: 48 }],
   ['w3c_home.jpg', { mime: 'image/jpeg', width: 72, height: 48 }],
   ['w3c_home.png', { mime: 'image/png', width: 72, height: 48 }],
+  ['w3c_home_noexif.jpg', { mime: 'image/jpeg', width: 72, height: 48 }],
   ['spinfox.png', { mime: 'image/png', width: 148, height: 148 }],
   ['iphone_hdr_YES.jpg', { mime: 'image/jpeg', width: 3264, height: 2448 }],
   ['nikon-e950.jpg', { mime: 'image/jpeg', width: 800, height: 600 }],
