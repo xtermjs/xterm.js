@@ -9,7 +9,9 @@ const os = require('os');
 const path = require('path');
 
 // Setup auth
-fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
+if (process.env['NPM_AUTH_TOKEN']) {
+  fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
+}
 
 const isDryRun = process.argv.includes('--dry');
 if (isDryRun) {
@@ -118,7 +120,11 @@ function asArray(value) {
 }
 
 function getPublishedVersions(packageJson, version, tag) {
-  const versionsProcess = cp.spawnSync(os.platform === 'win32' ? 'npm.cmd' : 'npm', ['view', packageJson.name, 'versions', '--json']);
+  const versionsProcess = cp.spawnSync(
+    os.platform === 'win32' ? 'npm.cmd' : 'npm',
+    ['view', packageJson.name, 'versions', '--json'],
+    { shell: true }
+  );
   if (versionsProcess.stdout.length === 0 && versionsProcess.stderr) {
     const err = versionsProcess.stderr.toString();
     if (err.indexOf('404 Not Found - GET https://registry.npmjs.org/@xterm') > 0) {
