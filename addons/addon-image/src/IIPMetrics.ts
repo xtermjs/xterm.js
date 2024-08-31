@@ -32,13 +32,8 @@ export function imageType(d: Uint8Array): IMetrics {
       height: d[20] << 24 | d[21] << 16 | d[22] << 8 | d[23]
     };
   }
-  // JPEG: FF D8 FF E0 xx xx JFIF  or  FF D8 FF E1 xx xx Exif 00 00
-  if ((d32[0] === 0xE0FFD8FF || d32[0] === 0xE1FFD8FF)
-    &&  (
-      (d[6] === 0x4a && d[7] === 0x46 && d[8] === 0x49 && d[9] === 0x46)
-        ||  (d[6] === 0x45 && d[7] === 0x78 && d[8] === 0x69 && d[9] === 0x66)
-    )
-  ) {
+  // JPEG: FF D8 FF
+  if (d[0] === 0xFF && d[1] === 0xD8 && d[2] === 0xFF) {
     const [width, height] = jpgSize(d);
     return { mime: 'image/jpeg', width, height };
   }
