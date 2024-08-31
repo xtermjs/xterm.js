@@ -13,14 +13,15 @@ if (process.env['NPM_AUTH_TOKEN']) {
   fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
 }
 
+log('Configuration:', 'green')
 const isDryRun = process.argv.includes('--dry');
 if (isDryRun) {
-  console.log('Publish dry run');
+  log('  Publish dry run');
 }
 
 const allAddons = process.argv.includes('--all-addons');
 if (allAddons) {
-  console.log('Publish all addons');
+  log('  Publish all addons');
 }
 
 const repoCommit = getRepoCommit();
@@ -52,11 +53,10 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-web-links'),
   path.resolve(__dirname, '../addons/addon-webgl')
 ];
-console.log(`Checking if addons need to be published`);
+log(`Checking if addons need to be published`, 'green');
 for (const p of addonPackageDirs) {
   const addon = path.basename(p);
   if (allAddons || changedFiles.some(e => e.includes(addon))) {
-    console.log(`Try publish ${addon}`);
     checkAndPublishPackage(p, repoCommit, peerDependencies);
   }
 }
@@ -75,7 +75,7 @@ function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
-  console.log(`Publishing version: ${nextVersion}`);
+  log(`Publishing version: ${nextVersion}`, 'green');
 
   // Set the version in package.json
   const packageJsonFile = path.join(packageDir, 'package.json');
@@ -84,7 +84,7 @@ function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
   // Set the commit in package.json
   if (repoCommit) {
     packageJson.commit = repoCommit;
-    console.log(`Set commit of ${packageJsonFile} to ${repoCommit}`);
+    log(`Set commit of ${packageJsonFile} to ${repoCommit}`);
   } else {
     throw new Error(`No commit set`);
   }
@@ -92,9 +92,9 @@ function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
   // Set peer dependencies
   if (peerDependencies) {
     packageJson.peerDependencies = peerDependencies;
-    console.log(`Set peerDependencies of ${packageJsonFile} to ${JSON.stringify(peerDependencies)}`);
+    log(`Set peerDependencies of ${packageJsonFile} to ${JSON.stringify(peerDependencies)}`);
   } else {
-    console.log(`Skipping peerDependencies`);
+    log(`Skipping peerDependencies`);
   }
 
   // Write new package.json
@@ -108,17 +108,15 @@ function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
   if (isDryRun) {
     args.push('--dry-run');
   }
-  console.log(`Spawn: npm ${args.join(' ')}`);
+  log(`Spawn: npm ${args.join(' ')}`);
   const result = cp.spawnSync('npm', args, {
     cwd: packageDir,
     stdio: 'inherit'
   });
   if (result.status) {
-    console.error(`Spawn exited with code ${result.status}`);
+    error(`Spawn exited with code ${result.status}`);
     process.exit(result.status);
   }
-
-  console.groupEnd();
 
   return { isStableRelease, nextVersion };
 }
@@ -196,10 +194,29 @@ function getChangedFilesInCommit(commit) {
 }
 
 function updateWebsite() {
-  console.log('Updating website');
+  log('Updating website', 'green');
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'website-'));
   const packageJson = require(path.join(path.resolve(__dirname, '..'), 'package.json'));
   if (!isDryRun) {
     cp.spawnSync('sh', [path.join(__dirname, 'update-website.sh'), packageJson.version], { cwd, stdio: [process.stdin, process.stdout, process.stderr] });
   }
+}
+
+/**
+ * @param {string} message
+ */
+function log(message, color) {
+  let colorSequence = '';
+  switch (color) {
+    case 'green': {
+      colorSequence = '\x1b[32m';
+      break;
+    }
+  }
+  console.info([
+    `[\x1b[2m${new Date().toLocaleTimeString('en-GB')}\x1b[0m] `,
+    colorSequence,
+    message,
+    '\x1b[0m',
+  ].join(''));
 }
