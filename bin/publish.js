@@ -18,14 +18,25 @@ if (isDryRun) {
   console.log('Publish dry run');
 }
 
+const allAddons = process.argv.includes('--all-addons');
+if (allAddons) {
+  console.log('Publish all addons');
+}
+
+const repoCommit = getRepoCommit();
 const changedFiles = getChangedFilesInCommit('HEAD');
 
-// Publish xterm if any files were changed outside of the addons directory
-let isStableRelease = false;
-if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
-  isStableRelease = checkAndPublishPackage(path.resolve(__dirname, '..'));
-  checkAndPublishPackage(path.resolve(__dirname, '../headless'));
-}
+// Always publish xterm, technically this isn't needed if
+// `changedFiles.some(e => e.search(/^addons\//)`, but it's here for convenience to get the right
+// peer dependencies for addons.
+const result = checkAndPublishPackage(path.resolve(__dirname, '..'), repoCommit);
+const isStableRelease = result.isStableRelease;
+const peerDependencies = {
+  '@xterm/xterm': `^${result.nextVersion}`,
+};
+checkAndPublishPackage(path.resolve(__dirname, '../headless'), repoCommit);
+
+// Addon peer dependencies
 
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
@@ -44,9 +55,9 @@ const addonPackageDirs = [
 console.log(`Checking if addons need to be published`);
 for (const p of addonPackageDirs) {
   const addon = path.basename(p);
-  if (changedFiles.some(e => e.includes(addon))) {
+  if (allAddons || changedFiles.some(e => e.includes(addon))) {
     console.log(`Try publish ${addon}`);
-    checkAndPublishPackage(p);
+    checkAndPublishPackage(p, repoCommit, peerDependencies);
   }
 }
 
@@ -55,7 +66,7 @@ if (isStableRelease) {
   updateWebsite();
 }
 
-function checkAndPublishPackage(packageDir) {
+function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
@@ -69,7 +80,24 @@ function checkAndPublishPackage(packageDir) {
   // Set the version in package.json
   const packageJsonFile = path.join(packageDir, 'package.json');
   packageJson.version = nextVersion;
-  console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
+
+  // Set the commit in package.json
+  if (repoCommit) {
+    packageJson.commit = repoCommit;
+    console.log(`Set commit of ${packageJsonFile} to ${repoCommit}`);
+  } else {
+    throw new Error(`No commit set`);
+  }
+
+  // Set peer dependencies
+  if (peerDependencies) {
+    packageJson.peerDependencies = peerDependencies;
+    console.log(`Set peerDependencies of ${packageJsonFile} to ${JSON.stringify(peerDependencies)}`);
+  } else {
+    console.log(`Skipping peerDependencies`);
+  }
+
+  // Write new package.json
   fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
   // Publish
@@ -92,7 +120,17 @@ function checkAndPublishPackage(packageDir) {
 
   console.groupEnd();
 
-  return isStableRelease;
+  return { isStableRelease, nextVersion };
+}
+
+function getRepoCommit() {
+  const commitProcess = cp.spawnSync('git', ['log', '-1', '--format="%H"']);
+  if (commitProcess.stdout.length === 0 && commitProcess.stderr) {
+    const err = versionsProcess.stderr.toString();
+    throw new Error('Could not get repo commit\n' + err);
+  }
+  const output = commitProcess.stdout.toString().trim();
+  return output.replace(/^"/, '').replace(/"$/, '');
 }
 
 function getNextBetaVersion(packageJson) {
