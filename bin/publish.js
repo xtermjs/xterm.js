@@ -32,9 +32,9 @@ const changedFiles = getChangedFilesInCommit('HEAD');
 // peer dependencies for addons.
 const result = checkAndPublishPackage(path.resolve(__dirname, '..'), repoCommit);
 const isStableRelease = result.isStableRelease;
-const peerDependencies = {
+const peerDependencies = result.nextVersion.includes('beta') ? {
   '@xterm/xterm': `^${result.nextVersion}`,
-};
+} : undefined;
 checkAndPublishPackage(path.resolve(__dirname, '../headless'), repoCommit);
 
 // Addon peer dependencies
