@@ -7,7 +7,7 @@ import { Terminal, ITerminalAddon, IEvent } from '@xterm/xterm';
 
 declare module '@xterm/addon-webgl' {
   /**
-   * An xterm.js addon that provides search functionality.
+   * An xterm.js addon that provides hardware-accelerated rendering functionality via WebGL.
    */
   export class WebglAddon implements ITerminalAddon {
     public textureAtlas?: HTMLCanvasElement;
