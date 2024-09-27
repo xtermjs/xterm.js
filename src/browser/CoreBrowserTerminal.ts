@@ -69,7 +69,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
 
-  public linkifier: ILinkifier2 | undefined;
+  private readonly _linkifier: MutableDisposable<ILinkifier2> = this._register(new MutableDisposable());
+  public get linkifier(): ILinkifier2 | undefined { return this._linkifier.value; }
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
   private _viewport: Viewport | undefined;
 
@@ -485,7 +486,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.linkifier = this._register(this._instantiationService.createInstance(Linkifier, this.screenElement));
+    const linkifier = this._linkifier.value = this._register(this._instantiationService.createInstance(Linkifier, this.screenElement));
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
@@ -515,7 +516,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._selectionService = this._register(this._instantiationService.createInstance(SelectionService,
       this.element,
       this.screenElement,
-      this.linkifier
+      linkifier
     ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this._register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));

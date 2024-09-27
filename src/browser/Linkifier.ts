@@ -227,7 +227,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
       return;
     }
 
-    if (this._mouseDownLink === this._currentLink && this._linkAtPosition(this._currentLink.link, position)) {
+    if (this._mouseDownLink && linkEquals(this._mouseDownLink.link, this._currentLink.link) && this._linkAtPosition(this._currentLink.link, position)) {
       this._currentLink.link.activate(event, this._currentLink.link.text);
     }
   }
@@ -390,4 +390,14 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   private _createLinkUnderlineEvent(x1: number, y1: number, x2: number, y2: number, fg: number | undefined): ILinkifierEvent {
     return { x1, y1, x2, y2, cols: this._bufferService.cols, fg };
   }
+}
+
+function linkEquals(a: ILink, b: ILink): boolean {
+  return (
+    a.text === b.text &&
+    a.range.start.x === b.range.start.x &&
+    a.range.start.y === b.range.start.y &&
+    a.range.end.x === b.range.end.x &&
+    a.range.end.y === b.range.end.y
+  );
 }
