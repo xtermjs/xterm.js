@@ -33,6 +33,8 @@
       "addons/addon-unicode-graphemes/src/tsconfig.json",
       "addons/addon-unicode-graphemes/test/tsconfig.json",
       "addons/addon-unicode-graphemes/benchmark/tsconfig.json",
+      "addons/addon-web-fonts/src/tsconfig.json",
+      "addons/addon-web-fonts/test/tsconfig.json",
       "addons/addon-web-links/src/tsconfig.json",
       "addons/addon-web-links/test/tsconfig.json",
       "addons/addon-webgl/src/tsconfig.json",

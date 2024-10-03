@@ -23,6 +23,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
+import { WebFontsAddon } from '@xterm/addon-web-fonts';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -37,6 +38,7 @@ export interface IWindowWithTerminal extends Window {
   ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  WebFontsAddon?: typeof WebFontsAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebglAddon?: typeof WebglAddon; // eslint-disable-line @typescript-eslint/naming-convention
   Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -52,7 +54,7 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webFonts' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -65,11 +67,12 @@ interface IDemoAddon<T extends AddonType> {
             T extends 'ligatures' ? typeof LigaturesAddon :
               T extends 'search' ? typeof SearchAddon :
                 T extends 'serialize' ? typeof SerializeAddon :
-                  T extends 'webLinks' ? typeof WebLinksAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                        T extends 'webgl' ? typeof WebglAddon :
-                          never
+                  T extends 'webFonts' ? typeof WebFontsAddon :
+                    T extends 'webLinks' ? typeof WebLinksAddon :
+                      T extends 'unicode11' ? typeof Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                          T extends 'webgl' ? typeof WebglAddon :
+                            never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -79,11 +82,12 @@ interface IDemoAddon<T extends AddonType> {
             T extends 'ligatures' ? LigaturesAddon :
               T extends 'search' ? SearchAddon :
                 T extends 'serialize' ? SerializeAddon :
-                  T extends 'webLinks' ? WebLinksAddon :
-                    T extends 'unicode11' ? Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
-                        T extends 'webgl' ? WebglAddon :
-                          never
+                  T extends 'webFonts' ? WebFontsAddon :
+                    T extends 'webLinks' ? WebLinksAddon :
+                      T extends 'unicode11' ? Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                          T extends 'webgl' ? WebglAddon :
+                            never
   );
 }
 
@@ -94,6 +98,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
+  webFonts: { name: 'webFonts', ctor: WebFontsAddon, canChange: true },
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
@@ -169,6 +174,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.unicode11.instance = undefined;
     addons.unicodeGraphemes.instance = undefined;
     addons.ligatures.instance = undefined;
+    addons.webFonts.instance = undefined;
     addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
     document.getElementById('dispose').innerHTML = 'Recreate Terminal';
@@ -218,6 +224,7 @@ if (document.location.pathname === '/test') {
   window.Unicode11Addon = Unicode11Addon;
   window.UnicodeGraphemesAddon = UnicodeGraphemesAddon;
   window.LigaturesAddon = LigaturesAddon;
+  window.WebFontsAddon = WebFontsAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
 } else {
@@ -261,7 +268,7 @@ function createTerminal(): void {
       backend: 'conpty',
       buildNumber: 22621
     } : undefined,
-    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
+    fontFamily: '"Roboto Mono", "Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
@@ -278,12 +285,14 @@ function createTerminal(): void {
   } catch (e) {
     console.warn(e);
   }
+  addons.webFonts.instance = new WebFontsAddon();
   addons.webLinks.instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicodeGraphemes.instance);
+  typedTerm.loadAddon(addons.webFonts.instance);
   typedTerm.loadAddon(addons.webLinks.instance);
   typedTerm.loadAddon(addons.clipboard.instance);
 
