@@ -12,7 +12,7 @@ import type { WebFontsAddon as IWebFontsApi } from '@xterm/addon-web-fonts';
  */
 function unquote(s: string): string {
   if (s[0] === '"' && s[s.length - 1] === '"') return s.slice(1, -1);
-  if (s[0] === "'" && s[s.length - 1] === "'") return s.slice(1, -1);
+  if (s[0] === '\'' && s[s.length - 1] === '\'') return s.slice(1, -1);
   return s;
 }
 
@@ -41,12 +41,12 @@ function createFamily(families: string[]): string {
 
 
 function _loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
-  let ffs = Array.from(document.fonts);
+  const ffs = Array.from(document.fonts);
   if (!fonts || !fonts.length) {
     return Promise.all(ffs.map(ff => ff.load()));
   }
   let toLoad: FontFace[] = [];
-  let ffsHashed = ffs.map(ff => WebFontsAddon.hashFontFace(ff));
+  const ffsHashed = ffs.map(ff => WebFontsAddon.hashFontFace(ff));
   for (const font of fonts) {
     if (font instanceof FontFace) {
       const fontHashed = WebFontsAddon.hashFontFace(font);
@@ -85,14 +85,14 @@ export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
 
   /**
    * Force a terminal re-layout by altering `options.FontFamily`.
-   * 
+   *
    * Found webfonts in `fontFamily` are temporarily removed until the webfont
    * resources are fully loaded.
-   * 
+   *
    * This method is meant as a fallback fix for sloppy integrations,
    * that wrongly placed a webfont at the terminal contructor options.
    * It is likely to lead to terminal flickering in all browsers (FOUT).
-   * 
+   *
    * To avoid triggering this fallback in your integration, make sure to have
    * the needed webfonts loaded at the time `terminal.open` is called.
    */
@@ -102,8 +102,9 @@ export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
     const webFamilies = WebFontsAddon.getFontFamilies();
     const dirty: string[] = [];
     const clean: string[] = [];
-    for (const fam of families)
+    for (const fam of families) {
       (webFamilies.indexOf(fam) !== -1 ? dirty : clean).push(fam);
+    }
     if (dirty.length) {
       _loadFonts(dirty).then(() => {
         terminal.options.fontFamily = clean.length ? createFamily(clean) : 'monospace';
@@ -123,8 +124,8 @@ export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
       ff.stretch,
       ff.style,
       ff.unicodeRange,
-      ff.weight,
-    ])
+      ff.weight
+    ]);
   }
 
   /**
@@ -145,7 +146,7 @@ export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
    *                          matching the family names
    * - fontface objects   :   loads given fontfaces and adds them to
    *                          `document.fonts`
-   * 
+   *
    * The returned promise will resolve, when all loading is done.
    */
   public static loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
@@ -159,7 +160,7 @@ export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
 
 
 
-
+/* eslint-disable */
 // TODO: place into test cases
 /*
 (window as any).__roboto = [
