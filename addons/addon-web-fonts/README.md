@@ -72,7 +72,7 @@ const webFontsAddon = new WebFontsAddon();
 terminal.loadAddon(webFontsAddon);
 
 // wait for webfonts to be fully loaded
-await WebFontsAddon.loadFonts(['Web Mono 1', 'Super Powerline']).then(() => {
+WebFontsAddon.loadFonts(['Web Mono 1', 'Super Powerline']).then(() => {
   terminal.open(your_terminal_div_element);
   // more boostrapping goes here ...
 });
@@ -112,7 +112,7 @@ That can be achieved like this:
 const ff1 = new FontFace('New Web Mono', url1, ...);
 const ff2 = new FontFace('New Web Mono', url2, ...);
 // and await their loading
-await WebFontsAddon.loadFonts([ff1, ff2]).then(() => {
+WebFontsAddon.loadFonts([ff1, ff2]).then(() => {
   // apply new webfont to terminal
   terminal.options.fontFamily = 'New Web Mono';
   // since the new font might have slighly different metrics,
@@ -124,7 +124,7 @@ await WebFontsAddon.loadFonts([ff1, ff2]).then(() => {
 document.styleSheets[0].insertRule(
   "@font-face { font-family: 'New Web Mono'; src: url(newfont.woff); }", 0);
 // and await the new font family name
-await WebFontsAddon.loadFonts(['New Web Mono']).then(() => {
+WebFontsAddon.loadFonts(['New Web Mono']).then(() => {
   // apply new webfont to terminal
   terminal.options.fontFamily = 'New Web Mono';
   // since the new font might have slighly different metrics,
