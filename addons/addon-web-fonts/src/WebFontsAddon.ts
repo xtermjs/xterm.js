@@ -25,7 +25,7 @@ function quote(s: string): string {
   const pos = s.match(/([-_a-zA-Z0-9\xA0-\u{10FFFF}]+)/u);
   const neg = s.match(/^(-?\d|--)/m);
   if (!neg && pos && pos[1] === s) return s;
-  return `"${s.replace('"', '\\"')}"`;
+  return `"${s.replace(/"/g, '\\"')}"`;
 }
 
 
