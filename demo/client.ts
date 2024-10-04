@@ -1430,12 +1430,14 @@ function testEvents(): void {
 }
 
 function testWebfonts() {
-  document.getElementById('webfont-kongtime').addEventListener('click', async () => {
+  document.getElementById('webfont-kongtext').addEventListener('click', async () => {
     const ff = new FontFace('Kongtext', "url(/kongtext.regular.ttf) format('truetype')");
     await loadFonts([ff]);
     term.options.fontFamily = 'Kongtext';
     term.options.lineHeight = 1.3;
     addons.fit.instance?.fit();
+    setTimeout(() => term.write('\x1b[?12h\x1b]12;#776CF9\x07\x1b[38;2;119;108;249;48;2;21;8;150m\x1b[2J\x1b[2;5H**** COMMODORE 64 BASIC V2 ****\r\n\r\n 64K RAM SYSTEM  38911 BASIC BYTES FREE\r\n\r\nREADY.\r\nLOAD '), 1000);
+    setTimeout(() => {term.write('🤣\x1b[m\x1b[99;1H'); term.input('\r');}, 5000);
   });
   document.getElementById('webfont-bpdots').addEventListener('click', async () => {
     document.styleSheets[0].insertRule("@font-face { font-family: 'BPdots'; src: url(/bpdots.regular.otf) format('opentype'); weight: 400 }", 0);
