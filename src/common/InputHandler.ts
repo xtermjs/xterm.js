@@ -2734,6 +2734,10 @@ export class InputHandler extends Disposable implements IInputHandler {
   public setCursorStyle(params: IParams): boolean {
     const param = params.params[0] || 1;
     switch (param) {
+      case 0:
+        console.log('Case 0 triggerd');
+        this._optionsService.options.cursorStyle = this._optionsService.options.userCursorStyle || 'block';
+        break;
       case 1:
       case 2:
         this._optionsService.options.cursorStyle = 'block';
