@@ -34,7 +34,10 @@ test.describe('WebLinksAddon', () => {
 
   test.beforeEach(async () => {
     await ctx.page.evaluate(`
-      window.term.reset()
+      window.term.reset();
+    `);
+    await timeout(50);
+    await ctx.page.evaluate(`
       window._linkaddon?.dispose();
       window._linkaddon = new WebLinksAddon();
       window.term.loadAddon(window._linkaddon);
