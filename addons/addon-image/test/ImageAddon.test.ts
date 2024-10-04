@@ -6,7 +6,7 @@
 import test from '@playwright/test';
 import { readFileSync } from 'fs';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
-import { ITestContext, createTestContext, openTerminal, pollFor } from '../../../test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../test/playwright/TestUtils';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
 
 /**
@@ -163,28 +163,35 @@ test.describe('ImageAddon', () => {
     test('testdata default (scrolling with VT240 cursor pos)', async () => {
       const dim = await getDimensions();
       await ctx.proxy.write(SIXEL_SEQ_0);
+      await timeout(50);
       deepStrictEqual(await getCursor(), [0, Math.floor(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
       await ctx.proxy.write('#'.repeat(10) + SIXEL_SEQ_0);
+      await timeout(50);
       deepStrictEqual(await getCursor(), [10, Math.floor(TESTDATA.height/dim.cellHeight) * 2]);
     });
     test('write testdata noScrolling', async () => {
       await ctx.proxy.write('\x1b[?80h' + SIXEL_SEQ_0);
+      await timeout(50);
       deepStrictEqual(await getCursor(), [0, 0]);
       // second draw does not change anything
       await ctx.proxy.write(SIXEL_SEQ_0);
+      await timeout(50);
       deepStrictEqual(await getCursor(), [0, 0]);
     });
     test('testdata cursor always at VT240 pos', async () => {
       const dim = await getDimensions();
       // offset 0
       await ctx.proxy.write(SIXEL_SEQ_0);
+      await timeout(50);
       deepStrictEqual(await getCursor(), [0, Math.floor(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
       await ctx.proxy.write('#'.repeat(10) + SIXEL_SEQ_0);
+      await timeout(50);
       deepStrictEqual(await getCursor(), [10, Math.floor(TESTDATA.height/dim.cellHeight) * 2]);
       // moved by 30 cells (+10 prev)
       await ctx.proxy.write('#'.repeat(30) + SIXEL_SEQ_0);
+      await timeout(50);
       deepStrictEqual(await getCursor(), [10 + 30, Math.floor(TESTDATA.height/dim.cellHeight) * 3]);
     });
   });
@@ -192,6 +199,7 @@ test.describe('ImageAddon', () => {
   test.describe('image lifecycle & eviction', () => {
     test('delete image once scrolled off', async () => {
       await ctx.proxy.write(SIXEL_SEQ_0);
+      await timeout(50);
       pollFor(ctx.page, 'window.imageAddon._storage._images.size', 1);
       // scroll to scrollback + rows - 1
       await ctx.page.evaluate(
@@ -199,7 +207,7 @@ test.describe('ImageAddon', () => {
         (await getScrollbackPlusRows() - 1)
       );
       // wait here, as we have to make sure, that eviction did not yet occur
-      await new Promise(r => setTimeout(r, 100));
+      await timeout(100);
       pollFor(ctx.page, 'window.imageAddon._storage._images.size', 1);
       // scroll one further should delete the image
       await ctx.page.evaluate(() => new Promise(res => (window as any).term.write('\n', res)));
@@ -208,6 +216,7 @@ test.describe('ImageAddon', () => {
     test('get storageUsage', async () => {
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), 0);
       await ctx.proxy.write(SIXEL_SEQ_0);
+      await timeout(50);
       ok(Math.abs((await ctx.page.evaluate<number>('window.imageAddon.storageUsage')) - 640 * 80 * 4 / 1000000) < 0.05);
     });
     test('get/set storageLimit', async () => {
@@ -222,18 +231,19 @@ test.describe('ImageAddon', () => {
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       const usage = await ctx.page.evaluate('window.imageAddon.storageUsage');
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), usage);
       strictEqual(usage as number < 1, true);
     });
     test('set storageLimit removes images synchronously', async () => {
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
+      await timeout(100);
       const usage: number = await ctx.page.evaluate('window.imageAddon.storageUsage');
       const newUsage: number = await ctx.page.evaluate('window.imageAddon.storageLimit = 0.5; window.imageAddon.storageUsage');
       strictEqual(newUsage < usage, true);
@@ -242,30 +252,32 @@ test.describe('ImageAddon', () => {
     test('clear alternate images on buffer change', async () => {
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), 0);
       await ctx.proxy.write('\x1b[?1049h' + SIXEL_SEQ_0);
+      await timeout(50);
       ok(Math.abs((await ctx.page.evaluate<number>('window.imageAddon.storageUsage')) - 640 * 80 * 4 / 1000000) < 0.05);
       await ctx.proxy.write('\x1b[?1049l');
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), 0);
     });
     test('evict tiles by in-place overwrites (only full overwrite tested)', async () => {
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(50);
       await ctx.proxy.write('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      await timeout(50);
       let usage = await ctx.page.evaluate('window.imageAddon.storageUsage');
       while (usage === 0) {
-        await new Promise(r => setTimeout(r, 50));
+        await timeout(50);
         usage = await ctx.page.evaluate('window.imageAddon.storageUsage');
       }
       await ctx.proxy.write('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
-      await new Promise(r => setTimeout(r, 200));  // wait some time and re-check
+      await timeout(200); // wait some time and re-check
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), usage);
     });
     test('manual eviction on alternate buffer must not miss images', async () => {
       await ctx.proxy.write('\x1b[?1049h');
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       const usage: number = await ctx.page.evaluate('window.imageAddon.storageUsage');
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       const newUsage: number = await ctx.page.evaluate('window.imageAddon.storageUsage');
       strictEqual(newUsage, usage);
     });
@@ -274,22 +286,27 @@ test.describe('ImageAddon', () => {
   test.describe('IIP support - testimages', () => {
     test('palette.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[0][0]);
+      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[0][1]);
     });
     test('spinfox.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[1][0]);
+      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[1][1]);
     });
     test('w3c gif', async () => {
       await ctx.proxy.write(TESTDATA_IIP[2][0]);
+      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[2][1]);
     });
     test('w3c jpeg', async () => {
       await ctx.proxy.write(TESTDATA_IIP[3][0]);
+      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[3][1]);
     });
     test('w3c png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[4][0]);
+      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[4][1]);
     });
   });
