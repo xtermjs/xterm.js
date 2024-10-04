@@ -24,6 +24,7 @@ export const enum RowCss {
   UNDERLINE_CLASS = 'xterm-underline',
   OVERLINE_CLASS = 'xterm-overline',
   STRIKETHROUGH_CLASS = 'xterm-strikethrough',
+  BLINK_CLASS = 'xterm-blink',
   CURSOR_CLASS = 'xterm-cursor',
   CURSOR_BLINK_CLASS = 'xterm-cursor-blink',
   CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block',
@@ -298,6 +299,10 @@ export class DomRendererRowFactory {
 
       if (cell.isStrikethrough()) {
         classes.push(RowCss.STRIKETHROUGH_CLASS);
+      }
+
+      if (cell.isBlink()) {
+        classes.push(RowCss.BLINK_CLASS);
       }
 
       // apply link hover underline late, effectively overrides any previous text-decoration
