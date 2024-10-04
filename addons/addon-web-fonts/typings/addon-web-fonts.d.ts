@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2024 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -13,7 +13,7 @@ declare module '@xterm/addon-web-fonts' {
    */
   export class WebFontsAddon implements ITerminalAddon {
     /**
-     * @param forceInitialRelayout Force an initial relayout, if a webfont was found.
+     * @param forceInitialRelayout Force initial relayout, if a webfont was found (default true).
      */
     constructor(forceInitialRelayout?: boolean);
     public activate(terminal: Terminal): void;

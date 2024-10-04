@@ -39,6 +39,9 @@ function startServer() {
     res.sendFile(__dirname + '/style.css');
   });
 
+  app.get('/kongtext.regular.ttf', (req, res) => res.sendFile(__dirname + '/kongtext.regular.ttf'));
+  app.get('/bpdots.regular.otf', (req, res) => res.sendFile(__dirname + '/bpdots.regular.otf'));
+
   app.use('/dist', express.static(__dirname + '/dist'));
   app.use('/src', express.static(__dirname + '/src'));
 

@@ -23,7 +23,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
-import { WebFontsAddon } from '@xterm/addon-web-fonts';
+import { WebFontsAddon, loadFonts } from '@xterm/addon-web-fonts';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -252,6 +252,7 @@ if (document.location.pathname === '/test') {
   addVtButtons();
   initImageAddonExposed();
   testEvents();
+  testWebfonts();
 }
 
 function createTerminal(): void {
@@ -268,7 +269,7 @@ function createTerminal(): void {
       backend: 'conpty',
       buildNumber: 22621
     } : undefined,
-    fontFamily: '"Roboto Mono", "Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
+    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
@@ -1426,4 +1427,22 @@ function initImageAddonExposed(): void {
 function testEvents(): void {
   document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
   document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
+}
+
+function testWebfonts() {
+  document.getElementById('webfont-kongtime').addEventListener('click', async () => {
+    const ff = new FontFace('Kongtext', "url(/kongtext.regular.ttf) format('truetype')");
+    await loadFonts([ff]);
+    term.options.fontFamily = 'Kongtext';
+    term.options.lineHeight = 1.3;
+    addons.fit.instance?.fit();
+  });
+  document.getElementById('webfont-bpdots').addEventListener('click', async () => {
+    document.styleSheets[0].insertRule("@font-face { font-family: 'BPdots'; src: url(/bpdots.regular.otf) format('opentype'); weight: 400 }", 0);
+    await loadFonts(['BPdots']);
+    term.options.fontFamily = 'BPdots';
+    term.options.lineHeight = 1.3;
+    term.options.fontSize = 20;
+    addons.fit.instance?.fit();
+  });
 }
