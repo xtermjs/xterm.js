@@ -62,6 +62,8 @@ async function run() {
       console.error(run.error);
       process.exit(run.status ?? -1);
     }
+
+    process.exit(run.status);
   }
 }
 run();
