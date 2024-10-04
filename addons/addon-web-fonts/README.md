@@ -72,7 +72,7 @@ const webFontsAddon = new WebFontsAddon();
 terminal.loadAddon(webFontsAddon);
 
 // wait for webfonts to be fully loaded
-WebFontsAddon.loadFonts(['Web Mono 1', 'Super Powerline']).then(() => {
+webFontsAddon.loadFonts(['Web Mono 1', 'Super Powerline']).then(() => {
   terminal.open(your_terminal_div_element);
   // more boostrapping goes here ...
 });
@@ -83,13 +83,13 @@ on the initial document load (more precise - by the time this code runs).
 
 Please note, that this code cannot run synchronous anymore, so you will have to split your
 bootstrapping code into several stages. If thats too much of a hassle, you can also move the whole
-bootstrapping under that waiting condition (`loadFonts` is actually a static method):
+bootstrapping under that waiting condition (import `loadFonts` for a static variant):
 ```typescript
 import { Terminal } from '@xterm/xterm';
 import { XYAddon } from '@xterm/addon-xy';
-import { WebFontsAddon } from '@xterm/addon-web-fonts';
+import { WebFontsAddon, loadFonts } from '@xterm/addon-web-fonts';
 
-WebFontsAddon.loadFonts(['Web Mono 1', 'Super Powerline']).then(() => {
+loadFonts(['Web Mono 1', 'Super Powerline']).then(() => {
   // create a `Terminal` instance, now with webfonts
   const terminal = new Terminal({fontFamily: '"Web Mono 1", "Super Powerline", monospace'});
   const xyAddon = new XYAddon();
@@ -112,7 +112,7 @@ That can be achieved like this:
 const ff1 = new FontFace('New Web Mono', url1, ...);
 const ff2 = new FontFace('New Web Mono', url2, ...);
 // and await their loading
-WebFontsAddon.loadFonts([ff1, ff2]).then(() => {
+loadFonts([ff1, ff2]).then(() => {
   // apply new webfont to terminal
   terminal.options.fontFamily = 'New Web Mono';
   // since the new font might have slighly different metrics,
@@ -124,7 +124,7 @@ WebFontsAddon.loadFonts([ff1, ff2]).then(() => {
 document.styleSheets[0].insertRule(
   "@font-face { font-family: 'New Web Mono'; src: url(newfont.woff); }", 0);
 // and await the new font family name
-WebFontsAddon.loadFonts(['New Web Mono']).then(() => {
+loadFonts(['New Web Mono']).then(() => {
   // apply new webfont to terminal
   terminal.options.fontFamily = 'New Web Mono';
   // since the new font might have slighly different metrics,

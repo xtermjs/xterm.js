@@ -8,7 +8,7 @@ import type { WebFontsAddon as IWebFontsApi } from '@xterm/addon-web-fonts';
 
 
 /**
- * Unquote family name.
+ * Unquote a font family name.
  */
 function unquote(s: string): string {
   if (s[0] === '"' && s[s.length - 1] === '"') return s.slice(1, -1);
@@ -18,7 +18,7 @@ function unquote(s: string): string {
 
 
 /**
- * Quote family name.
+ * Quote a font family name conditionally.
  * @see https://mathiasbynens.be/notes/unquoted-font-family
  */
 function quote(s: string): string {
@@ -40,16 +40,46 @@ function createFamily(families: string[]): string {
 }
 
 
+/**
+ * Hash a font face from it properties.
+ * Used in `loadFonts` to avoid bloating
+ * `document.fonts` from multiple calls.
+ */
+function hashFontFace(ff: FontFace): string {
+  return JSON.stringify([
+    unquote(ff.family),
+    ff.stretch,
+    ff.style,
+    ff.unicodeRange,
+    ff.weight
+  ]);
+}
+
+
+/**
+ * Wait for webfont resources to be loaded.
+ *
+ * Without any argument, all fonts currently listed in
+ * `document.fonts` will be loaded.
+ * For a more fine-grained loading strategy you can populate
+ * the `fonts` argument with:
+ * - font families      :   loads all fontfaces in `document.fonts`
+ *                          matching the family names
+ * - fontface objects   :   loads given fontfaces and adds them to
+ *                          `document.fonts`
+ *
+ * The returned promise will resolve, when all loading is done.
+ */
 function _loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
   const ffs = Array.from(document.fonts);
   if (!fonts || !fonts.length) {
     return Promise.all(ffs.map(ff => ff.load()));
   }
   let toLoad: FontFace[] = [];
-  const ffsHashed = ffs.map(ff => WebFontsAddon.hashFontFace(ff));
+  const ffsHashed = ffs.map(ff => hashFontFace(ff));
   for (const font of fonts) {
     if (font instanceof FontFace) {
-      const fontHashed = WebFontsAddon.hashFontFace(font);
+      const fontHashed = hashFontFace(font);
       const idx = ffsHashed.indexOf(fontHashed);
       if (idx === -1) {
         document.fonts.add(font);
@@ -72,85 +102,53 @@ function _loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
 }
 
 
+export async function loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
+  await document.fonts.ready;
+  return _loadFonts(fonts);
+}
+
 
 export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
-  constructor(public forceInitialRelayout: boolean = true) { }
-  public dispose(): void { }
+  private _term: Terminal | undefined;
 
-  public activate(terminal: Terminal): void {
+  constructor(public forceInitialRelayout: boolean = true) { }
+
+  public dispose(): void {
+    this._term = undefined;
+  }
+
+  public activate(term: Terminal): void {
+    this._term = term;
     if (this.forceInitialRelayout) {
-      document.fonts.ready.then(() => this.relayout(terminal));
+      document.fonts.ready.then(() => this.relayout());
     }
   }
 
-  /**
-   * Force a terminal re-layout by altering `options.FontFamily`.
-   *
-   * Found webfonts in `fontFamily` are temporarily removed until the webfont
-   * resources are fully loaded.
-   *
-   * This method is meant as a fallback fix for sloppy integrations,
-   * that wrongly placed a webfont at the terminal contructor options.
-   * It is likely to lead to terminal flickering in all browsers (FOUT).
-   *
-   * To avoid triggering this fallback in your integration, make sure to have
-   * the needed webfonts loaded at the time `terminal.open` is called.
-   */
-  public relayout(terminal: Terminal): void {
-    const family = terminal.options.fontFamily;
+  public async loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
+    return loadFonts(fonts);
+  }
+
+  public async relayout(): Promise<void> {
+    if (!this._term) {
+      return;
+    }
+    await document.fonts.ready;
+    const family = this._term.options.fontFamily;
     const families = splitFamily(family);
-    const webFamilies = WebFontsAddon.getFontFamilies();
+    const webFamilies = Array.from(new Set(Array.from(document.fonts).map(e => unquote(e.family))));
     const dirty: string[] = [];
     const clean: string[] = [];
     for (const fam of families) {
       (webFamilies.indexOf(fam) !== -1 ? dirty : clean).push(fam);
     }
-    if (dirty.length) {
-      _loadFonts(dirty).then(() => {
-        terminal.options.fontFamily = clean.length ? createFamily(clean) : 'monospace';
-        terminal.options.fontFamily = family;
-      });
+    if (!dirty.length) {
+      return;
     }
-  }
-
-  /**
-   * Hash a font face from it properties.
-   * Used in `loadFonts` to avoid bloating
-   * `document.fonts` from multiple calls.
-   */
-  public static hashFontFace(ff: FontFace): string {
-    return JSON.stringify([
-      unquote(ff.family),
-      ff.stretch,
-      ff.style,
-      ff.unicodeRange,
-      ff.weight
-    ]);
-  }
-
-  /**
-   * Return font families known in `document.fonts`.
-   */
-  public static getFontFamilies(): string[] {
-    return Array.from(new Set(Array.from(document.fonts).map(e => unquote(e.family))));
-  }
-
-  /**
-   * Wait for webfont resources to be loaded.
-   *
-   * Without any argument, all fonts currently listed in
-   * `document.fonts` will be loaded.
-   * For a more fine-grained loading strategy you can populate
-   * the `fonts` argument with:
-   * - font families      :   loads all fontfaces in `document.fonts`
-   *                          matching the family names
-   * - fontface objects   :   loads given fontfaces and adds them to
-   *                          `document.fonts`
-   *
-   * The returned promise will resolve, when all loading is done.
-   */
-  public static loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
-    return document.fonts.ready.then(() => _loadFonts(fonts));
+    await _loadFonts(dirty);
+    if (this._term) {
+      this._term.options.fontFamily = clean.length ? createFamily(clean) : 'monospace';
+      this._term.options.fontFamily = family;
+    }
   }
 }
 

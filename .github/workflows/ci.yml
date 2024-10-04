@@ -223,6 +223,8 @@ jobs:
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
     - name: Integration tests (addon-unicode11)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
+    - name: Integration tests (addon-web-fonts)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-fonts
     - name: Integration tests (addon-web-links)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
     - name: Integration tests (addon-webgl)
