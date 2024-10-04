@@ -690,7 +690,7 @@ test.describe('API Integration Tests', () => {
       window.term = new Terminal();
       window.term.dispose();
     `);
-    strictEqual(await ctx.page.evaluate(`window.term._core._isDisposed`), true);
+    strictEqual(await ctx.page.evaluate(`window.term._core._store._isDisposed`), true);
   });
 
   test('dispose (opened)', async () => {
@@ -702,7 +702,7 @@ test.describe('API Integration Tests', () => {
         } catch {}
       }
     `);
-    strictEqual(await ctx.page.evaluate(`window.term._core._isDisposed`), true);
+    strictEqual(await ctx.page.evaluate(`window.term._core._store._isDisposed`), true);
   });
 
   test('render when visible after hidden', async () => {
