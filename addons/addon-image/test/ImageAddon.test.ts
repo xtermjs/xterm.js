@@ -6,7 +6,7 @@
 import test from '@playwright/test';
 import { readFileSync } from 'fs';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
-import { ITestContext, createTestContext, openTerminal, pollFor } from '../../../test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../test/playwright/TestUtils';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
 
 /**
@@ -199,7 +199,7 @@ test.describe('ImageAddon', () => {
         (await getScrollbackPlusRows() - 1)
       );
       // wait here, as we have to make sure, that eviction did not yet occur
-      await new Promise(r => setTimeout(r, 100));
+      await timeout(100);
       pollFor(ctx.page, 'window.imageAddon._storage._images.size', 1);
       // scroll one further should delete the image
       await ctx.page.evaluate(() => new Promise(res => (window as any).term.write('\n', res)));
@@ -222,13 +222,13 @@ test.describe('ImageAddon', () => {
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       const usage = await ctx.page.evaluate('window.imageAddon.storageUsage');
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), usage);
       strictEqual(usage as number < 1, true);
     });
@@ -247,25 +247,26 @@ test.describe('ImageAddon', () => {
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), 0);
     });
     test('evict tiles by in-place overwrites (only full overwrite tested)', async () => {
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(50);
       await ctx.proxy.write('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
+      await timeout(50);
       let usage = await ctx.page.evaluate('window.imageAddon.storageUsage');
       while (usage === 0) {
-        await new Promise(r => setTimeout(r, 50));
+        await timeout(50);
         usage = await ctx.page.evaluate('window.imageAddon.storageUsage');
       }
       await ctx.proxy.write('\x1b[H' + SIXEL_SEQ_0 + '\x1b[100;100H');
-      await new Promise(r => setTimeout(r, 200));  // wait some time and re-check
+      await timeout(200); // wait some time and re-check
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), usage);
     });
     test('manual eviction on alternate buffer must not miss images', async () => {
       await ctx.proxy.write('\x1b[?1049h');
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       const usage: number = await ctx.page.evaluate('window.imageAddon.storageUsage');
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
-      await new Promise(r => setTimeout(r, 50));
+      await timeout(100);
       const newUsage: number = await ctx.page.evaluate('window.imageAddon.storageUsage');
       strictEqual(newUsage, usage);
     });
