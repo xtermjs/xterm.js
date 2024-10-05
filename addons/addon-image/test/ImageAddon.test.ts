@@ -163,35 +163,28 @@ test.describe('ImageAddon', () => {
     test('testdata default (scrolling with VT240 cursor pos)', async () => {
       const dim = await getDimensions();
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await timeout(50);
       deepStrictEqual(await getCursor(), [0, Math.floor(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
       await ctx.proxy.write('#'.repeat(10) + SIXEL_SEQ_0);
-      await timeout(50);
       deepStrictEqual(await getCursor(), [10, Math.floor(TESTDATA.height/dim.cellHeight) * 2]);
     });
     test('write testdata noScrolling', async () => {
       await ctx.proxy.write('\x1b[?80h' + SIXEL_SEQ_0);
-      await timeout(50);
       deepStrictEqual(await getCursor(), [0, 0]);
       // second draw does not change anything
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await timeout(50);
       deepStrictEqual(await getCursor(), [0, 0]);
     });
     test('testdata cursor always at VT240 pos', async () => {
       const dim = await getDimensions();
       // offset 0
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await timeout(50);
       deepStrictEqual(await getCursor(), [0, Math.floor(TESTDATA.height/dim.cellHeight)]);
       // moved to right by 10 cells
       await ctx.proxy.write('#'.repeat(10) + SIXEL_SEQ_0);
-      await timeout(50);
       deepStrictEqual(await getCursor(), [10, Math.floor(TESTDATA.height/dim.cellHeight) * 2]);
       // moved by 30 cells (+10 prev)
       await ctx.proxy.write('#'.repeat(30) + SIXEL_SEQ_0);
-      await timeout(50);
       deepStrictEqual(await getCursor(), [10 + 30, Math.floor(TESTDATA.height/dim.cellHeight) * 3]);
     });
   });
@@ -199,7 +192,6 @@ test.describe('ImageAddon', () => {
   test.describe('image lifecycle & eviction', () => {
     test('delete image once scrolled off', async () => {
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await timeout(50);
       pollFor(ctx.page, 'window.imageAddon._storage._images.size', 1);
       // scroll to scrollback + rows - 1
       await ctx.page.evaluate(
@@ -216,7 +208,6 @@ test.describe('ImageAddon', () => {
     test('get storageUsage', async () => {
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), 0);
       await ctx.proxy.write(SIXEL_SEQ_0);
-      await timeout(50);
       ok(Math.abs((await ctx.page.evaluate<number>('window.imageAddon.storageUsage')) - 640 * 80 * 4 / 1000000) < 0.05);
     });
     test('get/set storageLimit', async () => {
@@ -243,7 +234,6 @@ test.describe('ImageAddon', () => {
     });
     test('set storageLimit removes images synchronously', async () => {
       await ctx.proxy.write(SIXEL_SEQ_0 + SIXEL_SEQ_0 + SIXEL_SEQ_0);
-      await timeout(100);
       const usage: number = await ctx.page.evaluate('window.imageAddon.storageUsage');
       const newUsage: number = await ctx.page.evaluate('window.imageAddon.storageLimit = 0.5; window.imageAddon.storageUsage');
       strictEqual(newUsage < usage, true);
@@ -252,7 +242,6 @@ test.describe('ImageAddon', () => {
     test('clear alternate images on buffer change', async () => {
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), 0);
       await ctx.proxy.write('\x1b[?1049h' + SIXEL_SEQ_0);
-      await timeout(50);
       ok(Math.abs((await ctx.page.evaluate<number>('window.imageAddon.storageUsage')) - 640 * 80 * 4 / 1000000) < 0.05);
       await ctx.proxy.write('\x1b[?1049l');
       strictEqual(await ctx.page.evaluate('window.imageAddon.storageUsage'), 0);
@@ -286,27 +275,22 @@ test.describe('ImageAddon', () => {
   test.describe('IIP support - testimages', () => {
     test('palette.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[0][0]);
-      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[0][1]);
     });
     test('spinfox.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[1][0]);
-      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[1][1]);
     });
     test('w3c gif', async () => {
       await ctx.proxy.write(TESTDATA_IIP[2][0]);
-      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[2][1]);
     });
     test('w3c jpeg', async () => {
       await ctx.proxy.write(TESTDATA_IIP[3][0]);
-      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[3][1]);
     });
     test('w3c png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[4][0]);
-      await timeout(50);
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[4][1]);
     });
   });
