@@ -731,6 +731,10 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   protected abstract data(): Uint32Array;
   abstract resizeData(size: number): void;
   abstract addEmptyDataElements(position: number, count: number): void;
+  protected shouldCleanupMemory(): boolean {
+    return this.dataLength() * CLEANUP_THRESHOLD < this.data().length;
+  }
+
 
   /**
    * primitive getters
@@ -1437,14 +1441,15 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
    * to hold the new buffer line data.
    * Returns a boolean indicating, whether a `cleanupMemory` call would free
    * excess memory (true after shrinking > CLEANUP_THRESHOLD).
+   * NOTE only used for testing?
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
-    /*
     if (cols === this.length) {
-      return this.data().length * 4 * CLEANUP_THRESHOLD < this.data().buffer.byteLength;
+      return this.shouldCleanupMemory();
     }
     const uint32Cells = cols * CELL_SIZE;
     if (cols > this.length) {
+      /*
       if (this.data().buffer.byteLength >= uint32Cells * 4) {
         // optimization: avoid alloc and data copy if buffer has enough room
         this.data() = new Uint32Array(this.data().buffer, 0, uint32Cells);
@@ -1454,13 +1459,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         data.set(this.data());
         this.data() = data;
       }
+      */
       for (let i = this.length; i < cols; ++i) {
         this.setCell(i, fillCellData);
       }
     } else {
       // optimization: just shrink the view on existing buffer
+      /*
       this.data() = this.data().subarray(0, uint32Cells);
-      / *
       // Remove any cut off combined data
       const keys = Object.keys(this._combined);
       for (let i = 0; i < keys.length; i++) {
@@ -1477,11 +1483,10 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           delete this._extendedAttrs[key];
         }
         }
-      * /
+      */
     }
-    */
     this.length = cols;
-    return this.dataLength() * CLEANUP_THRESHOLD < this.data().length;
+    return this.shouldCleanupMemory();
   }
 
   /** fill a line with fillCharData */
@@ -1657,14 +1662,12 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
    * Returns 0 or 1 indicating whether a cleanup happened.
    */
   public cleanupMemory(): number {
-    /*
-    if (this.dataLength() * CLEANUP_THRESHOLD < this.data().length) {
+    if (this.shouldCleanupMemory()) {
       const data = new Uint32Array(this.dataLength());
       data.set(this.data());
       this._data = data;
       return 1;
     }
-    */
     return 0;
   }
 
