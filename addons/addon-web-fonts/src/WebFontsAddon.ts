@@ -94,7 +94,7 @@ function _loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
       const familyFiltered = ffs.filter(ff => font === unquote(ff.family));
       toLoad = toLoad.concat(familyFiltered);
       if (!familyFiltered.length) {
-        console.warn(`font family "${font}" not registered in document.fonts`);
+        return Promise.reject(`font family "${font}" not registered in document.fonts`);
       }
     }
   }
@@ -102,16 +102,15 @@ function _loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
 }
 
 
-export async function loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
-  await document.fonts.ready;
-  return _loadFonts(fonts);
+export function loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
+  return document.fonts.ready.then(() => _loadFonts(fonts));
 }
 
 
 export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
   private _term: Terminal | undefined;
 
-  constructor(public forceInitialRelayout: boolean = true) { }
+  constructor(public initialRelayout: boolean = true) { }
 
   public dispose(): void {
     this._term = undefined;
@@ -119,12 +118,12 @@ export class WebFontsAddon implements ITerminalAddon, IWebFontsApi {
 
   public activate(term: Terminal): void {
     this._term = term;
-    if (this.forceInitialRelayout) {
+    if (this.initialRelayout) {
       document.fonts.ready.then(() => this.relayout());
     }
   }
 
-  public async loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
+  public loadFonts(fonts?: (string | FontFace)[]): Promise<FontFace[]> {
     return loadFonts(fonts);
   }
 

@@ -13,9 +13,9 @@ declare module '@xterm/addon-web-fonts' {
    */
   export class WebFontsAddon implements ITerminalAddon {
     /**
-     * @param forceInitialRelayout Force initial relayout, if a webfont was found (default true).
+     * @param initialRelayout Force initial relayout, if a webfont was found (default true).
      */
-    constructor(forceInitialRelayout?: boolean);
+    constructor(initialRelayout?: boolean);
     public activate(terminal: Terminal): void;
     public dispose(): void;
 
@@ -44,7 +44,7 @@ declare module '@xterm/addon-web-fonts' {
      * Call this method, if a terminal with webfonts is stuck with broken
      * glyph metrics.
      * 
-     * Returns a promise on completion.
+     * The returned promise will resolve, when font loading and layouting are done.
      */
     public relayout(): Promise<void>;
   }
