@@ -143,6 +143,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` display: inline-block;` +   // TODO: find workaround for inline-block (creates ~20% render penalty)
       ` height: 100%;` +
       ` vertical-align: top;` +
+      ` pointer-events: none;` +
       `}`;
 
     this._dimensionsStyleElement.textContent = styles;
