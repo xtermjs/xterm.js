@@ -226,6 +226,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**OpenSFTP**](https://opensftp.com): Super beautiful SSH and SFTP integrated workspace client.
 - [**balena**](https://www.balena.io/): Balena is a full-stack solution for developing, deploying, updating, and troubleshooting IoT Edge devices. We use xterm.js to manage & debug devices on [balenaCloud](https://www.balena.io/cloud).
 - [**Filet Cloud**](https://github.com/fuglaro/filet-cloud): The lean and powerful personal cloud ⛅.
+- [**pyTermTk**](https://github.com/ceccopierangiolieugenio/pyTermTk): Python Terminal Toolkit - a Spiced Up Cross Compatible TUI Library 🌶️, use xterm.js for the [HTML5 exporter](https://ceccopierangiolieugenio.github.io/pyTermTk/sandbox/sandbox.html).
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
