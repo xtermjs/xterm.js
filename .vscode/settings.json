@@ -2,7 +2,6 @@
   "files.associations": {
     ".eslintrc.json.typings": "jsonc"
   },
-  // Hide output files from the file explorer, comment this out to see the build output
   "files.exclude": {
     "**/.nyc_output": true
   },
