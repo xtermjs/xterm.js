@@ -31,14 +31,21 @@ export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
   }
 
   public activate(terminal: Terminal): void {
+    if (!terminal.element) {
+      throw new Error('Cannot activate LigaturesAddon before open is called');
+    }
     this._terminal = terminal;
     this._characterJoinerId = enableLigatures(terminal, this._fallbackLigatures);
+    terminal.element.style.fontFeatureSettings = '"liga" on, "calt" on';
   }
 
   public dispose(): void {
     if (this._characterJoinerId !== undefined) {
       this._terminal?.deregisterCharacterJoiner(this._characterJoinerId);
       this._characterJoinerId = undefined;
+    }
+    if (this._terminal?.element) {
+      this._terminal.element.style.fontFeatureSettings = '';
     }
   }
 }
