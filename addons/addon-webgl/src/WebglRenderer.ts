@@ -314,14 +314,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateCursorBlink();
   }
 
-  public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
-    return -1;
-  }
-
-  public deregisterCharacterJoiner(joinerId: number): boolean {
-    return false;
-  }
-
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
       if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
@@ -510,14 +502,17 @@ export class WebglRenderer extends Disposable implements IRenderer {
           cell = this._workCell;
 
           // Null out non-first cells
-          for (x++; x < lastCharX; x++) {
+          for (x++; x <= lastCharX; x++) {
             j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
             this._model.cells[j] = NULL_CELL_CODE;
+            // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
+            // supported
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
             this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
           }
+          x--; // Go back to the previous update cell for next iteration
         }
       }
     }
