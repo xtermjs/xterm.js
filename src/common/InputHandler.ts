@@ -1221,15 +1221,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 2:
         if (this._optionsService.rawOptions.scrollOnDisplayErase) {
-          let fouldLastLineToKeep = false;
           j = this._bufferService.rows;
-          const x = this._activeBuffer.getBlankLine(this._eraseAttrData());
-          while (j > 0 && !fouldLastLineToKeep) {
-            j--;
+          this._dirtyRowTracker.markRangeDirty(0, j - 1);
+          while (j--) {
             const currentLine = this._activeBuffer.lines.get(this._activeBuffer.ybase + j);
-            if (currentLine?.translateToString() !== x.translateToString()) {
-              fouldLastLineToKeep = true;
-              this._dirtyRowTracker.markRangeDirty(0, j);
+            if (currentLine?.getTrimmedLength()) {
+              break;
             }
           }
           for (; j >= 0; j--) {
