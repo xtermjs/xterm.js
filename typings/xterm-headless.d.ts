@@ -248,6 +248,12 @@ declare module '@xterm/headless' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+
+     /**
+     * If enabled ED2 (clear screen) escape sequence will push erased text to scrollback.
+     * This emulates PuTTY default clear screen behaviour.
+     */
+     scrollOnDisplayErase?: boolean
   }
 
   /**

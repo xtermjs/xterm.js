@@ -1220,12 +1220,30 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._dirtyRowTracker.markDirty(0);
         break;
       case 2:
-        j = this._bufferService.rows;
-        this._dirtyRowTracker.markDirty(j - 1);
-        while (j--) {
-          this._resetBufferLine(j, respectProtect);
+        if (this._optionsService.rawOptions.scrollOnDisplayErase) {
+          let fouldLastLineToKeep = false;
+          j = this._bufferService.rows;
+          const x = this._activeBuffer.getBlankLine(this._eraseAttrData());
+          while (j > 0 && !fouldLastLineToKeep) {
+            j--;
+            const currentLine = this._activeBuffer.lines.get(this._activeBuffer.ybase + j);
+            if (currentLine?.translateToString() !== x.translateToString()) {
+              fouldLastLineToKeep = true;
+              this._dirtyRowTracker.markRangeDirty(0, j);
+            }
+          }
+          for (; j >= 0; j--) {
+            this._bufferService.scroll(this._eraseAttrData());
+          }
         }
-        this._dirtyRowTracker.markDirty(0);
+        else {
+          j = this._bufferService.rows;
+          this._dirtyRowTracker.markDirty(j - 1);
+          while (j--) {
+            this._resetBufferLine(j, respectProtect);
+          }
+          this._dirtyRowTracker.markDirty(0);
+        }
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
