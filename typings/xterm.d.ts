@@ -333,10 +333,11 @@ declare module '@xterm/xterm' {
     overviewRuler?: IOverviewRulerOptions;
 
     /**
-     * If enabled ED2 (clear screen) escape sequence will push erased text to scrollback.
-     * This emulates PuTTY default clear screen behaviour.
+     * If enabled ED2 (clear screen) escape sequence will push
+     * erased text to scrollback.
+     * This emulates PuTTY default clear screen behavior.
      */
-    scrollOnDisplayErase?: boolean
+    scrollOnDisplayErase?: boolean;
   }
 
   /**
