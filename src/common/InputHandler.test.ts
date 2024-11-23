@@ -438,6 +438,37 @@ describe('InputHandler', () => {
       inputHandler.eraseInLine(Params.fromArray([2]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
     });
+    it('ED2 with scrollOnDisplayErase turned on', async () => {
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockLogService(),
+        new MockOptionsService({ scrollOnDisplayErase: true }),
+        new MockOscLinkService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
+      const aLine = Array(bufferService.cols + 1).join('a');
+      // add 2 full lines of text.
+      await inputHandler.parseP(aLine);
+      await inputHandler.parseP(aLine);
+
+      inputHandler.eraseInDisplay(Params.fromArray([2]));
+      // those 2 lines should have been pushed to scrollback.
+      assert.equal(bufferService.rows + 2, bufferService.buffer.lines.length);
+      assert.equal(bufferService.buffer.ybase, 2);
+      assert.equal(bufferService.buffer.lines.get(0)?.translateToString(), aLine);
+      assert.equal(bufferService.buffer.lines.get(1)?.translateToString(), aLine);
+
+      // Move to last line and add more text.
+      bufferService.buffer.y = bufferService.rows - 1;
+      bufferService.buffer.x = 0;
+      await inputHandler.parseP(aLine);
+      inputHandler.eraseInDisplay(Params.fromArray([2]));
+      // Screen should have been scrolled by a full screen size.
+      assert.equal(bufferService.rows * 2 + 2, bufferService.buffer.lines.length);
+    });
     it('eraseInDisplay', async () => {
       const bufferService = new MockBufferService(80, 7);
       const inputHandler = new TestInputHandler(
