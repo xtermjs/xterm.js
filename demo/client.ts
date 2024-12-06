@@ -366,14 +366,19 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
-    const processId = await res.text();
-    pid = processId;
-    socketURL += processId;
-    socket = new WebSocket(socketURL);
-    socket.onopen = runRealTerminal;
-    socket.onclose = runFakeTerminal;
-    socket.onerror = runFakeTerminal;
+    const useRealTerminal = document.getElementById('use-real-terminal');
+    if (useRealTerminal instanceof HTMLInputElement && !useRealTerminal.checked) {
+      runFakeTerminal();
+    } else {
+      const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+      const processId = await res.text();
+      pid = processId;
+      socketURL += processId;
+      socket = new WebSocket(socketURL);
+      socket.onopen = runRealTerminal;
+      socket.onclose = runFakeTerminal;
+      socket.onerror = runFakeTerminal;
+    }
   }, 0);
 }
 

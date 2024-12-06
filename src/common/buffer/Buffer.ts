@@ -315,7 +315,7 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLarger(newCols: number, newRows: number): void {
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA));
+    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA), this._optionsService.rawOptions.reflowCursorLine);
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
@@ -347,6 +347,7 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowSmaller(newCols: number, newRows: number): void {
+    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
     // batched up and only committed once
@@ -367,11 +368,13 @@ export class Buffer implements IBuffer {
         wrappedLines.unshift(nextLine);
       }
 
-      // If these lines contain the cursor don't touch them, the program will handle fixing up
-      // wrapped lines with the cursor
-      const absoluteY = this.ybase + this.y;
-      if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
-        continue;
+      if (!reflowCursorLine) {
+        // If these lines contain the cursor don't touch them, the program will handle fixing up
+        // wrapped lines with the cursor
+        const absoluteY = this.ybase + this.y;
+        if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
+          continue;
+        }
       }
 
       const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();

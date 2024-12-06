@@ -143,6 +143,12 @@ declare module '@xterm/headless' {
     minimumContrastRatio?: number;
 
     /**
+     * Whether to reflow the line containing the cursor when the terminal is resized. Defaults to
+     * false, because shells usually handle this themselves.
+     */
+    reflowCursorLine?: boolean;
+
+    /**
      * Whether to rescale glyphs horizontally that are a single cell wide but
      * have glyphs that would overlap following cell(s). This typically happens
      * for ambiguous width characters (eg. the roman numeral characters U+2160+)
