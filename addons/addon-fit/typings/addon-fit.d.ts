@@ -39,7 +39,7 @@ declare module '@xterm/addon-fit' {
   }
 
   /**
-   * Reprepresents the dimensions of a terminal.
+   * Represents the dimensions of a terminal.
    */
   export interface ITerminalDimensions {
     /**
