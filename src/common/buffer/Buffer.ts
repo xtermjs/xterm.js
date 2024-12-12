@@ -315,7 +315,8 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLarger(newCols: number, newRows: number): void {
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA), this._optionsService.rawOptions.reflowCursorLine);
+    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
+    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA), reflowCursorLine);
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
