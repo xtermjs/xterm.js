@@ -22,7 +22,7 @@ export interface INewLayoutResult {
  * @param nullCell The cell data to use when filling in empty cells.
  * @param reflowCursorLine Whether to reflow the line containing the cursor.
  */
-export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData,reflowCursorLine: boolean): number[] {
+export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData, reflowCursorLine: boolean): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
   const toRemove: number[] = [];
