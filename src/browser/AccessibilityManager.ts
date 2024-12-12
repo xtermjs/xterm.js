@@ -112,7 +112,7 @@ export class AccessibilityManager extends Disposable {
     this._register(this._terminal.onA11yChar(char => this._handleChar(char)));
     this._register(this._terminal.onLineFeed(() => this._handleChar('\n')));
     this._register(this._terminal.onA11yTab(spaceCount => this._handleTab(spaceCount)));
-    this._register(this._terminal.onKey(e => this._handleKey(e.key)));
+    this._register(this._terminal.onData(e => this._handleKey(e)));
     this._register(this._terminal.onBlur(() => this._clearLiveRegion()));
     this._register(this._renderService.onDimensionsChange(() => this._refreshRowsDimensions()));
     this._register(addDisposableListener(doc, 'selectionchange', () => this._handleSelectionChange()));
