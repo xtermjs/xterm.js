@@ -35,6 +35,11 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._core = this._register(new TerminalCore(options));
     this._addonManager = this._register(new AddonManager());
 
+    // Store user's cursor style
+    this._core.options.userCursorStyle = this._core.options.cursorStyle;
+
+
+
     this._publicOptions = { ... this._core.options };
     const getter = (propName: string): any => {
       return this._core.options[propName];
