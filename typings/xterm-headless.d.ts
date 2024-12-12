@@ -143,8 +143,9 @@ declare module '@xterm/headless' {
     minimumContrastRatio?: number;
 
     /**
-     * Whether to reflow the line containing the cursor when the terminal is resized. Defaults to
-     * false, because shells usually handle this themselves.
+     * Whether to reflow the line containing the cursor when the terminal is
+     * resized. Defaults to false, because shells usually handle this
+     * themselves.
      */
     reflowCursorLine?: boolean;
 
