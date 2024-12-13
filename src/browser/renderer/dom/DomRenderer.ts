@@ -161,6 +161,10 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Base CSS
     let styles =
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
+      // Disabling pointer events circumvents a browser behavior that prevents `click` events from
+      // being delivered if the target element is replaced during the click. This happened due to
+      // refresh() being called during the mousedown handler to start a selection.
+      ` pointer-events: none;` +
       ` color: ${colors.foreground.css};` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
