@@ -11,6 +11,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IBufferService } from 'common/services/Services';
 import { ICharacterJoinerService } from 'browser/services/Services';
 
+// FIXME should probably just use plain CellData
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
   // .content carries no meaning for joined CellData, simply nullify it
