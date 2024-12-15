@@ -136,6 +136,7 @@ if (config.addon) {
       "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/addon-clipboard.mjs",
       "@xterm/addon-fit": "./addons/addon-fit/lib/addon-fit.mjs",
       "@xterm/addon-image": "./addons/addon-image/lib/addon-image.mjs",
+      "@xterm/addon-progress": "./addons/addon-progress/lib/addon-progress.mjs",
       "@xterm/addon-search": "./addons/addon-search/lib/addon-search.mjs",
       "@xterm/addon-serialize": "./addons/addon-serialize/lib/addon-serialize.mjs",
       "@xterm/addon-web-links": "./addons/addon-web-links/lib/addon-web-links.mjs",
