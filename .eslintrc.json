@@ -23,6 +23,8 @@
       "addons/addon-image/src/tsconfig.json",
       "addons/addon-image/test/tsconfig.json",
       "addons/addon-ligatures/src/tsconfig.json",
+      "addons/addon-progress/src/tsconfig.json",
+      "addons/addon-progress/test/tsconfig.json",
       "addons/addon-search/src/tsconfig.json",
       "addons/addon-search/test/tsconfig.json",
       "addons/addon-serialize/src/tsconfig.json",

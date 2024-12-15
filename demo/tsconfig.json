@@ -10,6 +10,7 @@
       "@xterm/addon-clipboard": ["../addons/addon-clipboard"],
       "@xterm/addon-fit": ["../addons/addon-fit"],
       "@xterm/addon-image": ["../addons/addon-image"],
+      "@xterm/addon-progress": ["../addons/addon-progress"],
       "@xterm/addon-search": ["../addons/addon-search"],
       "@xterm/addon-serialize": ["../addons/addon-serialize"],
       "@xterm/addon-web-links": ["../addons/addon-web-links"],
