@@ -46,6 +46,7 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-fit'),
   path.resolve(__dirname, '../addons/addon-image'),
   path.resolve(__dirname, '../addons/addon-ligatures'),
+  path.resolve(__dirname, '../addons/addon-progress'),
   path.resolve(__dirname, '../addons/addon-search'),
   path.resolve(__dirname, '../addons/addon-serialize'),
   path.resolve(__dirname, '../addons/addon-unicode11'),

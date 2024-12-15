@@ -25,6 +25,7 @@ const addons = [
   'clipboard',
   'fit',
   'image',
+  'progress',
   'search',
   'serialize',
   'unicode-graphemes',

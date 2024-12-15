@@ -21,6 +21,7 @@ import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { ProgressAddon } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -35,6 +36,7 @@ export interface IWindowWithTerminal extends Window {
   ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ProgressAddon?: typeof ProgressAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -52,7 +54,7 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -63,13 +65,14 @@ interface IDemoAddon<T extends AddonType> {
         T extends 'fit' ? typeof FitAddon :
           T extends 'image' ? typeof ImageAddonType :
             T extends 'ligatures' ? typeof LigaturesAddon :
-              T extends 'search' ? typeof SearchAddon :
-                T extends 'serialize' ? typeof SerializeAddon :
-                  T extends 'webLinks' ? typeof WebLinksAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                        T extends 'webgl' ? typeof WebglAddon :
-                          never
+              T extends 'progress' ? typeof ProgressAddon :
+                T extends 'search' ? typeof SearchAddon :
+                  T extends 'serialize' ? typeof SerializeAddon :
+                    T extends 'webLinks' ? typeof WebLinksAddon :
+                      T extends 'unicode11' ? typeof Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                          T extends 'webgl' ? typeof WebglAddon :
+                            never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -77,13 +80,14 @@ interface IDemoAddon<T extends AddonType> {
         T extends 'fit' ? FitAddon :
           T extends 'image' ? ImageAddonType :
             T extends 'ligatures' ? LigaturesAddon :
-              T extends 'search' ? SearchAddon :
-                T extends 'serialize' ? SerializeAddon :
-                  T extends 'webLinks' ? WebLinksAddon :
-                    T extends 'unicode11' ? Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
-                        T extends 'webgl' ? WebglAddon :
-                          never
+              T extends 'progress' ? ProgressAddon :
+                T extends 'search' ? SearchAddon :
+                  T extends 'serialize' ? SerializeAddon :
+                    T extends 'webLinks' ? WebLinksAddon :
+                      T extends 'unicode11' ? Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                          T extends 'webgl' ? WebglAddon :
+                            never
   );
 }
 
@@ -92,6 +96,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
+  progress: { name: 'progress', ctor: ProgressAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
@@ -213,6 +218,7 @@ if (document.location.pathname === '/test') {
   window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
+  window.ProgressAddon = ProgressAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
@@ -245,6 +251,7 @@ if (document.location.pathname === '/test') {
   addVtButtons();
   initImageAddonExposed();
   testEvents();
+  progressButtons();
 }
 
 function createTerminal(): void {
@@ -271,6 +278,7 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
+  addons.progress.instance = new ProgressAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
@@ -281,6 +289,7 @@ function createTerminal(): void {
   addons.webLinks.instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
+  typedTerm.loadAddon(addons.progress.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicodeGraphemes.instance);
@@ -1422,4 +1431,45 @@ function initImageAddonExposed(): void {
 function testEvents(): void {
   document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
   document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
+}
+
+
+function progressButtons(): void {
+  const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
+  const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
+
+  function progressHandler(state: number, value: number) {
+    // Simulate windows taskbar hack by windows terminal:
+    // Since the taskbar has no means to indicate error/pause state other than by coloring
+    // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
+    // NOTE: This most likely not what you want to do for other progress indicators,
+    //       that have a proper visual state for error/paused
+    value = Math.min(10 + value * 0.9, 100);
+    document.getElementById('progress-percent').style.width = `${value}%`;
+    document.getElementById('progress-percent').style.backgroundColor = COLORS[state];
+    document.getElementById('progress-state').innerText = `State: ${STATES[state]}`;
+
+    document.getElementById('progress-percent').style.display = state === 3 ? 'none' : 'block';
+    document.getElementById('progress-indeterminate').style.display = state === 3 ? 'block' : 'none';
+  }
+
+  const progressAddon = addons.progress.instance;
+  progressAddon.register(progressHandler);
+
+  // apply initial state once to make it visible on page load
+  const {state, value} = progressAddon.progress;
+  progressHandler(state, value);
+
+  document.getElementById('progress-run').addEventListener('click', async () => {
+    term.write('\x1b]9;4;0\x1b\\');
+    for (let i = 0; i <= 100; i += 5) {
+      term.write(`\x1b]9;4;1;${i}\x1b\\`);
+      await new Promise(res => setTimeout(res, 200));
+    }
+  });
+  document.getElementById('progress-0').addEventListener('click', () => term.write('\x1b]9;4;0\x1b\\'));
+  document.getElementById('progress-1').addEventListener('click', () => term.write('\x1b]9;4;1;20\x1b\\'));
+  document.getElementById('progress-2').addEventListener('click', () => term.write('\x1b]9;4;2\x1b\\'));
+  document.getElementById('progress-3').addEventListener('click', () => term.write('\x1b]9;4;3\x1b\\'));
+  document.getElementById('progress-4').addEventListener('click', () => term.write('\x1b]9;4;4\x1b\\'));
 }
