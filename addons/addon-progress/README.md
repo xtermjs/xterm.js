@@ -20,7 +20,7 @@ import { ProgressAddon } from '@xterm/addon-progress';
 const terminal = new Terminal();
 const progressAddon = new ProgressAddon();
 terminal.loadAddon(progressAddon);
-progressAddon.register({state, value} => {
+progressAddon.register((state: number, value: number) => {
   // state: 0-4 integer (see below for meaning)
   // value: 0-100 integer (percent value)
   
