@@ -400,7 +400,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
 
     // If the terminal is already opened
-    if (this.element?.ownerDocument.defaultView && this._coreBrowserService) {
+    if (this.element?.ownerDocument.defaultView && this._coreBrowserService && this.element?.isConnected) {
       // Adjust the window if needed
       if (this.element.ownerDocument.defaultView !== this._coreBrowserService.window) {
         this._coreBrowserService.window = this.element.ownerDocument.defaultView;
