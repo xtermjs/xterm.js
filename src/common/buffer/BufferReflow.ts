@@ -20,8 +20,9 @@ export interface INewLayoutResult {
  * @param newCols The columns after resize.
  * @param bufferAbsoluteY The absolute y position of the cursor (baseY + cursorY).
  * @param nullCell The cell data to use when filling in empty cells.
+ * @param reflowCursorLine Whether to reflow the line containing the cursor.
  */
-export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData): number[] {
+export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData, reflowCursorLine: boolean): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
   const toRemove: number[] = [];
@@ -41,11 +42,13 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
       nextLine = lines.get(++i) as BufferLine;
     }
 
-    // If these lines contain the cursor don't touch them, the program will handle fixing up wrapped
-    // lines with the cursor
-    if (bufferAbsoluteY >= y && bufferAbsoluteY < i) {
-      y += wrappedLines.length - 1;
-      continue;
+    if (!reflowCursorLine) {
+      // If these lines contain the cursor don't touch them, the program will handle fixing up
+      // wrapped lines with the cursor
+      if (bufferAbsoluteY >= y && bufferAbsoluteY < i) {
+        y += wrappedLines.length - 1;
+        continue;
+      }
     }
 
     // Copy buffer data to new locations
