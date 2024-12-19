@@ -12,9 +12,9 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderMode
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -27,9 +27,9 @@ const SELECTION_CLASS = 'xterm-selection';
 let nextTerminalId = 1;
 
 /**
- * A fallback renderer for when canvas is slow. This is not meant to be
- * particularly fast or feature complete, more just stable and usable for when
- * canvas is not an option.
+ * The standard renderer and fallback for when the webgl addon is slow. This is not meant to be
+ * particularly fast and will even lack some features such as custom glyphs, hoever this is more
+ * reliable as webgl may not work on some machines.
  */
 export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;
@@ -45,7 +45,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
+  public readonly onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>()).event;
 
   constructor(
     private readonly _terminal: ITerminal,
@@ -74,9 +74,9 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this.dimensions = createRenderDimensions();
     this._updateDimensions();
-    this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
-    this.register(this._themeService.onChangeColors(e => this._injectCss(e)));
+    this._register(this._themeService.onChangeColors(e => this._injectCss(e)));
     this._injectCss(this._themeService.colors);
 
     this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document);
@@ -85,10 +85,10 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this.register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
-    this.register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
+    this._register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
+    this._register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
 
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
 
       // Outside influences such as React unmounts may manipulate the DOM before our disposal.

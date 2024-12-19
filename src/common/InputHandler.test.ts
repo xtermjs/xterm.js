@@ -5,18 +5,19 @@
 
 import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
+import { IBufferLine, IAttributeData, IColorEvent, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService, MockUnicodeService, MockOscLinkService } from 'common/TestUtils.test';
-import { IBufferService, ICoreService } from 'common/services/Services';
+import { IBufferService, ICoreService, type IOscLinkService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
+import { OscLinkService } from 'common/services/OscLinkService';
 
 
 function getCursor(bufferService: IBufferService): number[] {
@@ -59,6 +60,7 @@ describe('InputHandler', () => {
   let bufferService: IBufferService;
   let coreService: ICoreService;
   let optionsService: MockOptionsService;
+  let oscLinkService: IOscLinkService;
   let inputHandler: TestInputHandler;
 
   beforeEach(() => {
@@ -66,8 +68,9 @@ describe('InputHandler', () => {
     bufferService = new BufferService(optionsService);
     bufferService.resize(80, 30);
     coreService = new CoreService(bufferService, new MockLogService(), optionsService);
+    oscLinkService = new OscLinkService(bufferService);
 
-    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, oscLinkService, new MockCoreMouseService(), new MockUnicodeService());
   });
 
   describe('SL/SR/DECIC/DECDC', () => {
@@ -1981,6 +1984,32 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b]4;0;rgb:aa/bb/cc;45;rgb:1/22/333;123;#001122\x07');
       assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0, color: [170, 187, 204] }, { type: ColorRequestType.SET, index: 123, color: [0, 17, 34] }]]);
       stack.length = 0;
+    });
+    it('8: hyperlink with id', async () => {
+      await inputHandler.parseP('\x1b]8;id=100;http://localhost:3000\x07');
+      assert.notStrictEqual(inputHandler.curAttrData.extended.urlId, 0);
+      assert.deepStrictEqual(
+        oscLinkService.getLinkData(inputHandler.curAttrData.extended.urlId),
+        {
+          id: '100',
+          uri: 'http://localhost:3000'
+        }
+      );
+      await inputHandler.parseP('\x1b]8;;\x07');
+      assert.strictEqual(inputHandler.curAttrData.extended.urlId, 0);
+    });
+    it('8: hyperlink with semi-colon', async () => {
+      await inputHandler.parseP('\x1b]8;;http://localhost:3000;abc=def\x07');
+      assert.notStrictEqual(inputHandler.curAttrData.extended.urlId, 0);
+      assert.deepStrictEqual(
+        oscLinkService.getLinkData(inputHandler.curAttrData.extended.urlId),
+        {
+          id: undefined,
+          uri: 'http://localhost:3000;abc=def'
+        }
+      );
+      await inputHandler.parseP('\x1b]8;;\x07');
+      assert.strictEqual(inputHandler.curAttrData.extended.urlId, 0);
     });
     it('104: restore events', async () => {
       const stack: IColorEvent[] = [];

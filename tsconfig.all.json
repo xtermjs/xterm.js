@@ -4,11 +4,10 @@
   "references": [
     { "path": "./src/browser" },
     { "path": "./src/headless" },
-    { "path": "./test/api" },
     { "path": "./test/benchmark" },
     { "path": "./test/playwright" },
     { "path": "./addons/addon-attach" },
-    { "path": "./addons/addon-canvas" },
+    { "path": "./addons/addon-clipboard" },
     { "path": "./addons/addon-fit" },
     { "path": "./addons/addon-image" },
     { "path": "./addons/addon-ligatures" },

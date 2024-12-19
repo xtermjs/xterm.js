@@ -7,7 +7,7 @@ import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { spawn } from 'node-pty';
 import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
-import { Terminal } from 'browser/Terminal';
+import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
 import { UnicodeGraphemeProvider } from 'UnicodeGraphemeProvider';
 
 
@@ -54,9 +54,9 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
   });
 
   perfContext('write/string/async', () => {
-    let terminal: Terminal;
+    let terminal: CoreBrowserTerminal;
     before(() => {
-      terminal = new Terminal({ cols: 80, rows: 25, scrollback: 1000 });
+      terminal = new CoreBrowserTerminal({ cols: 80, rows: 25, scrollback: 1000 });
       fakedAddonLoad(terminal);
     });
     new ThroughputRuntimeCase('', async () => {
@@ -66,9 +66,9 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
   });
 
   perfContext('write/Utf8/async', () => {
-    let terminal: Terminal;
+    let terminal: CoreBrowserTerminal;
     before(() => {
-      terminal = new Terminal({ cols: 80, rows: 25, scrollback: 1000 });
+      terminal = new CoreBrowserTerminal({ cols: 80, rows: 25, scrollback: 1000 });
     });
     new ThroughputRuntimeCase('', async () => {
       await new Promise<void>(res => terminal.write(content, res));

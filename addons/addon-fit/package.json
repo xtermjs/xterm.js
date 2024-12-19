@@ -6,6 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-fit.js",
+  "module": "lib/addon-fit.mjs",
   "types": "typings/addon-fit.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit",
   "license": "MIT",
@@ -18,7 +19,8 @@
     "build": "../../node_modules/.bin/tsc -p .",
     "prepackage": "npm run build",
     "package": "../../node_modules/.bin/webpack",
-    "prepublishOnly": "npm run package"
+    "prepublishOnly": "npm run package",
+    "start": "node ../../demo/start"
   },
   "peerDependencies": {
     "@xterm/xterm": "^5.0.0"

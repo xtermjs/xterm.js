@@ -7,7 +7,7 @@ import { Terminal, ITerminalAddon, IEvent } from '@xterm/xterm';
 
 declare module '@xterm/addon-webgl' {
   /**
-   * An xterm.js addon that provides search functionality.
+   * An xterm.js addon that provides hardware-accelerated rendering functionality via WebGL.
    */
   export class WebglAddon implements ITerminalAddon {
     public textureAtlas?: HTMLCanvasElement;
@@ -26,6 +26,11 @@ declare module '@xterm/addon-webgl' {
      * An event that is fired when the a new page is added to the texture atlas.
      */
     public readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+
+    /**
+     * An event that is fired when the a page is removed from the texture atlas.
+     */
+    public readonly onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
     constructor(preserveDrawingBuffer?: boolean);
 

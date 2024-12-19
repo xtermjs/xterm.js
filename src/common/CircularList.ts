@@ -4,8 +4,8 @@
  */
 
 import { ICircularList } from 'common/Types';
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 export interface IInsertEvent {
   index: number;
@@ -26,11 +26,11 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
   private _startIndex: number;
   private _length: number;
 
-  public readonly onDeleteEmitter = this.register(new EventEmitter<IDeleteEvent>());
+  public readonly onDeleteEmitter = this._register(new Emitter<IDeleteEvent>());
   public readonly onDelete = this.onDeleteEmitter.event;
-  public readonly onInsertEmitter = this.register(new EventEmitter<IInsertEvent>());
+  public readonly onInsertEmitter = this._register(new Emitter<IInsertEvent>());
   public readonly onInsert = this.onInsertEmitter.event;
-  public readonly onTrimEmitter = this.register(new EventEmitter<number>());
+  public readonly onTrimEmitter = this._register(new Emitter<number>());
   public readonly onTrim = this.onTrimEmitter.event;
 
   constructor(

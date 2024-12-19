@@ -18,6 +18,9 @@
       "browser/*": [
         "../../../src/browser/*"
       ],
+      "vs/*": [
+        "../../../src/vs/*"
+      ],
       "@xterm/addon-webgl": [
         "../typings/addon-webgl.d.ts"
       ]
@@ -26,7 +29,8 @@
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../../node_modules/@types/mocha",
+      "../../../src/vs/typings/thenable"
     ]
   },
   "include": [
@@ -39,6 +43,9 @@
     },
     {
       "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../src/vs"
     }
   ]
 }

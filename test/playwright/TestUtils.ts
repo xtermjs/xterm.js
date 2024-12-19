@@ -7,11 +7,10 @@ import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
 import type { IRenderDimensions } from 'browser/renderer/shared/Types';
 import type { IRenderService } from 'browser/services/Services';
-import type { ICoreTerminal, IMarker } from 'common/Types';
+import type { ICoreTerminal, IDisposable, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
 import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
-import { EventEmitter } from '../../out/common/EventEmitter';
 
 export interface ITestContext {
   browser: Browser;
@@ -33,6 +32,56 @@ export async function createTestContext(browser: Browser): Promise<ITestContext>
     termHandle: await page.evaluateHandle('window.term'),
     proxy
   };
+}
+
+interface IListener<T, U = void> {
+  (arg1: T, arg2: U): void;
+}
+export interface IEvent<T, U = void> {
+  (listener: (arg1: T, arg2: U) => any): IDisposable;
+}
+class EventEmitter<T, U = void> {
+  private _listeners: Set<IListener<T, U>> = new Set();
+  private _event?: IEvent<T, U>;
+  private _disposed: boolean = false;
+
+  public get event(): IEvent<T, U> {
+    if (!this._event) {
+      this._event = (listener: (arg1: T, arg2: U) => any) => {
+        this._listeners.add(listener);
+        const disposable = {
+          dispose: () => {
+            if (!this._disposed) {
+              this._listeners.delete(listener);
+            }
+          }
+        };
+        return disposable;
+      };
+    }
+    return this._event;
+  }
+
+  public fire(arg1: T, arg2: U): void {
+    const queue: IListener<T, U>[] = [];
+    for (const l of this._listeners.values()) {
+      queue.push(l);
+    }
+    for (let i = 0; i < queue.length; i++) {
+      queue[i].call(undefined, arg1, arg2);
+    }
+  }
+
+  public dispose(): void {
+    this.clearListeners();
+    this._disposed = true;
+  }
+
+  public clearListeners(): void {
+    if (this._listeners) {
+      this._listeners.clear();
+    }
+  }
 }
 
 type EnsureAsync<T> = T extends PromiseLike<any> ? T : Promise<T>;
@@ -108,22 +157,32 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
    * Initialize the proxy for a new terminal object.
    */
   public async initTerm(): Promise<void> {
-    for (const emitter of [
-      this._onBell,
-      this._onBinary,
-      this._onCursorMove,
-      this._onData,
-      this._onKey,
-      this._onLineFeed,
-      this._onRender,
-      this._onResize,
-      this._onScroll,
-      this._onSelectionChange,
-      this._onTitleChange,
-      this._onWriteParsed
-    ]) {
-      emitter.clearListeners();
-    }
+    this._onBell.dispose();
+    this._onBinary.dispose();
+    this._onCursorMove.dispose();
+    this._onData.dispose();
+    this._onKey.dispose();
+    this._onLineFeed.dispose();
+    this._onRender.dispose();
+    this._onResize.dispose();
+    this._onScroll.dispose();
+    this._onSelectionChange.dispose();
+    this._onTitleChange.dispose();
+    this._onWriteParsed.dispose();
+
+    this._onBell = new EventEmitter();
+    this._onBinary = new EventEmitter();
+    this._onCursorMove = new EventEmitter();
+    this._onData = new EventEmitter();
+    this._onKey = new EventEmitter();
+    this._onLineFeed = new EventEmitter();
+    this._onRender = new EventEmitter();
+    this._onResize = new EventEmitter();
+    this._onScroll = new EventEmitter();
+    this._onSelectionChange = new EventEmitter();
+    this._onTitleChange = new EventEmitter();
+    this._onWriteParsed = new EventEmitter();
+
     await this.evaluate(([term]) => term.onBell((window as any).onBell));
     await this.evaluate(([term]) => term.onBinary((window as any).onBinary));
     await this.evaluate(([term]) => term.onCursorMove((window as any).onCursorMove));
@@ -140,29 +199,29 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
 
   // #region Events
   private _onBell = new EventEmitter<void>();
-  public readonly onBell = this._onBell.event;
+  public get onBell(): IEvent<void> { return this._onBell.event; }
   private _onBinary = new EventEmitter<string>();
-  public readonly onBinary = this._onBinary.event;
+  public get onBinary(): IEvent<string> { return this._onBinary.event; }
   private _onCursorMove = new EventEmitter<void>();
-  public readonly onCursorMove = this._onCursorMove.event;
+  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onData = new EventEmitter<string>();
-  public readonly onData = this._onData.event;
+  public get onData(): IEvent<string> { return this._onData.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
-  public readonly onKey = this._onKey.event;
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onLineFeed = new EventEmitter<void>();
-  public readonly onLineFeed = this._onLineFeed.event;
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public readonly onRender = this._onRender.event;
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public readonly onResize = this._onResize.event;
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
-  public readonly onScroll = this._onScroll.event;
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onSelectionChange = new EventEmitter<void>();
-  public readonly onSelectionChange = this._onSelectionChange.event;
+  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
-  public readonly onTitleChange = this._onTitleChange.event;
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onWriteParsed = new EventEmitter<void>();
-  public readonly onWriteParsed = this._onWriteParsed.event;
+  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
   // #endregion
 
   // #region Simple properties
@@ -493,9 +552,10 @@ export function getBrowserType(): playwright.BrowserType<playwright.WebKitBrowse
   return browserType;
 }
 
-export function launchBrowser(): Promise<playwright.Browser> {
+export function launchBrowser(opts?: playwright.LaunchOptions): Promise<playwright.Browser> {
   const browserType = getBrowserType();
-  const options: Record<string, unknown> = {
+  const options: playwright.LaunchOptions = {
+    ...opts,
     headless: process.argv.includes('--headless')
   };
 

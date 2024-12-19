@@ -18,6 +18,9 @@
       "common/*": [
         "../../../src/common/*"
       ],
+      "vs/*": [
+        "../../../src/vs/*"
+      ],
       "@xterm/addon-search" : [
         "../typings/addon-search.d.ts"
       ]
@@ -30,6 +33,9 @@
   "references": [
     {
       "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/vs"
     }
   ]
 }

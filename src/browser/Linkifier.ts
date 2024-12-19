@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, disposeArray, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, dispose, toDisposable } from 'vs/base/common/lifecycle';
 import { IDisposable } from 'common/Types';
 import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
+import { Emitter } from 'vs/base/common/event';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
@@ -23,9 +23,9 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
 
-  private readonly _onShowLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  private readonly _onShowLinkUnderline = this._register(new Emitter<ILinkifierEvent>());
   public readonly onShowLinkUnderline = this._onShowLinkUnderline.event;
-  private readonly _onHideLinkUnderline = this.register(new EventEmitter<ILinkifierEvent>());
+  private readonly _onHideLinkUnderline = this._register(new Emitter<ILinkifierEvent>());
   public readonly onHideLinkUnderline = this._onHideLinkUnderline.event;
 
   constructor(
@@ -36,24 +36,25 @@ export class Linkifier extends Disposable implements ILinkifier2 {
     @ILinkProviderService private readonly _linkProviderService: ILinkProviderService
   ) {
     super();
-    this.register(getDisposeArrayDisposable(this._linkCacheDisposables));
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
+      dispose(this._linkCacheDisposables);
+      this._linkCacheDisposables.length = 0;
       this._lastMouseEvent = undefined;
       // Clear out link providers as they could easily cause an embedder memory leak
       this._activeProviderReplies?.clear();
     }));
     // Listen to resize to catch the case where it's resized and the cursor is out of the viewport.
-    this.register(this._bufferService.onResize(() => {
+    this._register(this._bufferService.onResize(() => {
       this._clearCurrentLink();
       this._wasResized = true;
     }));
-    this.register(addDisposableDomListener(this._element, 'mouseleave', () => {
+    this._register(addDisposableListener(this._element, 'mouseleave', () => {
       this._isMouseOut = true;
       this._clearCurrentLink();
     }));
-    this.register(addDisposableDomListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
-    this.register(addDisposableDomListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
-    this.register(addDisposableDomListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
+    this._register(addDisposableListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
+    this._register(addDisposableListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
+    this._register(addDisposableListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
   }
 
   private _handleMouseMove(event: MouseEvent): void {
@@ -226,7 +227,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
       return;
     }
 
-    if (this._mouseDownLink === this._currentLink && this._linkAtPosition(this._currentLink.link, position)) {
+    if (this._mouseDownLink && linkEquals(this._mouseDownLink.link, this._currentLink.link) && this._linkAtPosition(this._currentLink.link, position)) {
       this._currentLink.link.activate(event, this._currentLink.link.text);
     }
   }
@@ -240,7 +241,8 @@ export class Linkifier extends Disposable implements ILinkifier2 {
     if (!startRow || !endRow || (this._currentLink.link.range.start.y >= startRow && this._currentLink.link.range.end.y <= endRow)) {
       this._linkLeave(this._element, this._currentLink.link, this._lastMouseEvent);
       this._currentLink = undefined;
-      disposeArray(this._linkCacheDisposables);
+      dispose(this._linkCacheDisposables);
+      this._linkCacheDisposables.length = 0;
     }
   }
 
@@ -388,4 +390,14 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   private _createLinkUnderlineEvent(x1: number, y1: number, x2: number, y2: number, fg: number | undefined): ILinkifierEvent {
     return { x1, y1, x2, y2, cols: this._bufferService.cols, fg };
   }
+}
+
+function linkEquals(a: ILink, b: ILink): boolean {
+  return (
+    a.text === b.text &&
+    a.range.start.x === b.range.start.x &&
+    a.range.start.y === b.range.start.y &&
+    a.range.end.x === b.range.end.x &&
+    a.range.end.y === b.range.end.y
+  );
 }

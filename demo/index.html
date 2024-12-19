@@ -81,11 +81,13 @@
           <div style="display: inline-block; margin-right: 16px;">
             <dl>
               <dt>Lifecycle</dt>
+              <dd><label for="use-real-terminal"><input type="checkbox" checked id="use-real-terminal" title="This is used to real vs fake terminals" />Use real terminal</label></dd>
               <dd><button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button></dd>
               <dd><button id="create-new-window" title="This is used to test rendering in other windows">Create terminal in new window</button></dd>
 
               <dt>Performance</dt>
               <dd><button id="load-test" title="Write several MB of data to simulate a lot of data coming from the process">Load test</button></dd>
+              <dd><button id="load-test-long-lines" title="Write several MB of data with long lines to simulate a lot of data coming from the process">Load test (long lines)</button></dd>
               <dd><button id="print-cjk" title="Prints the 20977 characters from the CJK Unified Ideographs unicode block">CJK Unified Ideographs</button></dd>
               <dd><button id="print-cjk-sgr" title="Prints the 20977 characters from the CJK Unified Ideographs unicode block with randomized SGR attributes">CJK Unified Ideographs (random SGR)</button></dd>
 

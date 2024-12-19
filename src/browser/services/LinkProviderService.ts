@@ -1,5 +1,5 @@
 import { ILinkProvider, ILinkProviderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IDisposable } from 'common/Types';
 
 export class LinkProviderService extends Disposable implements ILinkProviderService {
@@ -9,7 +9,7 @@ export class LinkProviderService extends Disposable implements ILinkProviderServ
 
   constructor() {
     super();
-    this.register(toDisposable(() => this.linkProviders.length = 0));
+    this._register(toDisposable(() => this.linkProviders.length = 0));
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {

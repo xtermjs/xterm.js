@@ -83,6 +83,8 @@ declare module '@xterm/headless' {
 
     /**
      * The modifier key hold to multiply scroll speed.
+     * @deprecated This option is no longer available and will always use alt.
+     * Setting this will be ignored.
      */
     fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
@@ -139,6 +141,13 @@ declare module '@xterm/headless' {
      * - 21: White on black or black on white.
      */
     minimumContrastRatio?: number;
+
+    /**
+     * Whether to reflow the line containing the cursor when the terminal is
+     * resized. Defaults to false, because shells usually handle this
+     * themselves.
+     */
+    reflowCursorLine?: boolean;
 
     /**
      * Whether to rescale glyphs horizontally that are a single cell wide but

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { ILogService, IOptionsService, LogLevelEnum } from 'common/services/Services';
 
 type LogType = (message?: any, ...optionalParams: any[]) => void;
@@ -42,7 +42,7 @@ export class LogService extends Disposable implements ILogService {
   ) {
     super();
     this._updateLogLevel();
-    this.register(this._optionsService.onSpecificOptionChange('logLevel', () => this._updateLogLevel()));
+    this._register(this._optionsService.onSpecificOptionChange('logLevel', () => this._updateLogLevel()));
 
     // For trace logging, assume the latest created log service is valid
     traceLogger = this;

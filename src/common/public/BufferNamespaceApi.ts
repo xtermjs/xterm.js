@@ -5,15 +5,15 @@
 
 import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from '@xterm/xterm';
 import { BufferApiView } from 'common/public/BufferApiView';
-import { EventEmitter } from 'common/EventEmitter';
 import { ICoreTerminal } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 export class BufferNamespaceApi extends Disposable implements IBufferNamespaceApi {
   private _normal: BufferApiView;
   private _alternate: BufferApiView;
 
-  private readonly _onBufferChange = this.register(new EventEmitter<IBufferApi>());
+  private readonly _onBufferChange = this._register(new Emitter<IBufferApi>());
   public readonly onBufferChange = this._onBufferChange.event;
 
   constructor(private _core: ICoreTerminal) {

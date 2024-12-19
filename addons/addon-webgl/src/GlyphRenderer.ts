@@ -7,7 +7,7 @@ import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUt
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
 import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { Terminal } from '@xterm/xterm';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
@@ -127,7 +127,7 @@ export class GlyphRenderer extends Disposable {
     }
 
     this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(TextureAtlas.maxAtlasPages)));
-    this.register(toDisposable(() => gl.deleteProgram(this._program)));
+    this._register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
@@ -141,7 +141,7 @@ export class GlyphRenderer extends Disposable {
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
     const unitQuadVertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
     const unitQuadVerticesBuffer = gl.createBuffer();
-    this.register(toDisposable(() => gl.deleteBuffer(unitQuadVerticesBuffer)));
+    this._register(toDisposable(() => gl.deleteBuffer(unitQuadVerticesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuadVerticesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, unitQuadVertices, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(VertexAttribLocations.UNIT_QUAD);
@@ -152,13 +152,13 @@ export class GlyphRenderer extends Disposable {
     // triangle strip
     const unitQuadElementIndices = new Uint8Array([0, 1, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
-    this.register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
+    this._register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
     // Setup attributes
     this._attributesBuffer = throwIfFalsy(gl.createBuffer());
-    this.register(toDisposable(() => gl.deleteBuffer(this._attributesBuffer)));
+    this._register(toDisposable(() => gl.deleteBuffer(this._attributesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.enableVertexAttribArray(VertexAttribLocations.OFFSET);
     gl.vertexAttribPointer(VertexAttribLocations.OFFSET, 2, gl.FLOAT, false, BYTES_PER_CELL, 0);
@@ -193,7 +193,7 @@ export class GlyphRenderer extends Disposable {
     this._atlasTextures = [];
     for (let i = 0; i < TextureAtlas.maxAtlasPages; i++) {
       const glTexture = new GLTexture(throwIfFalsy(gl.createTexture()));
-      this.register(toDisposable(() => gl.deleteTexture(glTexture.texture)));
+      this._register(toDisposable(() => gl.deleteTexture(glTexture.texture)));
       gl.activeTexture(gl.TEXTURE0 + i);
       gl.bindTexture(gl.TEXTURE_2D, glTexture.texture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);

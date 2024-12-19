@@ -8,51 +8,33 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-// Use tsc version (yarn watch)
-import { Terminal } from '../out/browser/public/Terminal';
-import { AttachAddon } from '../addons/addon-attach/out/AttachAddon';
-import { CanvasAddon } from '../addons/addon-canvas/out/CanvasAddon';
-import { FitAddon } from '../addons/addon-fit/out/FitAddon';
-import { SearchAddon, ISearchOptions } from '../addons/addon-search/out/SearchAddon';
-import { SerializeAddon } from '../addons/addon-serialize/out/SerializeAddon';
-import { WebLinksAddon } from '../addons/addon-web-links/out/WebLinksAddon';
-import { WebglAddon } from '../addons/addon-webgl/out/WebglAddon';
-import { Unicode11Addon } from '../addons/addon-unicode11/out/Unicode11Addon';
-import { UnicodeGraphemesAddon } from '../addons/addon-unicode-graphemes/out/UnicodeGraphemesAddon';
-import { LigaturesAddon } from '../addons/addon-ligatures/out/LigaturesAddon';
-
-// Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddonType, IImageAddonOptions } from '../addons/addon-image/out/ImageAddon';
-let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
+// HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
+import type { ImageAddon as ImageAddonType, IImageAddonOptions } from '@xterm/addon-image';
+let ImageAddon: typeof ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
-  const imageAddon = require('../addons/addon-image/out/ImageAddon');
+  const imageAddon = require('@xterm/addon-image');
   ImageAddon = imageAddon.ImageAddon;
 }
 
-// Use webpacked version (yarn package)
-// import { Terminal } from '../lib/xterm';
-// import { AttachAddon } from '@xterm/addon-attach';
-// import { FitAddon } from '@xterm/addon-fit';
-// import { ImageAddon } from '@xterm/addon-image';
-// import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
-// import { SerializeAddon } from '@xterm/addon-serialize';
-// import { WebLinksAddon } from '@xterm/addon-web-links';
-// import { WebglAddon } from '@@xterm/addon-webgl';
-// import { Unicode11Addon } from '@xterm/addon-unicode11';
-// import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
-// import { LigaturesAddon } from '@xterm/addon-ligatures';
-
-// Pulling in the module's types relies on the <reference> above, it's looks a
-// little weird here as we're importing "this" module
-import { Terminal as TerminalType, ITerminalOptions, type IDisposable } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable } from '@xterm/xterm';
+import { AttachAddon } from '@xterm/addon-attach';
+import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { FitAddon } from '@xterm/addon-fit';
+import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
+import { SerializeAddon } from '@xterm/addon-serialize';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
 export interface IWindowWithTerminal extends Window {
-  term: TerminalType;
-  Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
+  term: typeof Terminal;
+  Terminal: typeof Terminal;
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  CanvasAddon?: typeof CanvasAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
+  ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -70,43 +52,44 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
   canChange: boolean;
   ctor: (
     T extends 'attach' ? typeof AttachAddon :
-      T extends 'canvas' ? typeof CanvasAddon :
+      T extends 'clipboard' ? typeof ClipboardAddon :
         T extends 'fit' ? typeof FitAddon :
           T extends 'image' ? typeof ImageAddonType :
-            T extends 'search' ? typeof SearchAddon :
-              T extends 'serialize' ? typeof SerializeAddon :
-                T extends 'webLinks' ? typeof WebLinksAddon :
-                  T extends 'unicode11' ? typeof Unicode11Addon :
-                    T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                      T extends 'ligatures' ? typeof LigaturesAddon :
-                        typeof WebglAddon
+            T extends 'ligatures' ? typeof LigaturesAddon :
+              T extends 'search' ? typeof SearchAddon :
+                T extends 'serialize' ? typeof SerializeAddon :
+                  T extends 'webLinks' ? typeof WebLinksAddon :
+                    T extends 'unicode11' ? typeof Unicode11Addon :
+                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                        T extends 'webgl' ? typeof WebglAddon :
+                          never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
-      T extends 'canvas' ? CanvasAddon :
+      T extends 'clipboard' ? ClipboardAddon :
         T extends 'fit' ? FitAddon :
           T extends 'image' ? ImageAddonType :
-            T extends 'search' ? SearchAddon :
-              T extends 'serialize' ? SerializeAddon :
-                T extends 'webLinks' ? WebLinksAddon :
-                  T extends 'webgl' ? WebglAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                        T extends 'ligatures' ? typeof LigaturesAddon :
+            T extends 'ligatures' ? LigaturesAddon :
+              T extends 'search' ? SearchAddon :
+                T extends 'serialize' ? SerializeAddon :
+                  T extends 'webLinks' ? WebLinksAddon :
+                    T extends 'unicode11' ? Unicode11Addon :
+                      T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                        T extends 'webgl' ? WebglAddon :
                           never
   );
 }
 
 const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
-  canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
+  clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
@@ -178,7 +161,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     window.term = null;
     socket = null;
     addons.attach.instance = undefined;
-    addons.canvas.instance = undefined;
+    addons.clipboard.instance = undefined;
     addons.fit.instance = undefined;
     addons.image.instance = undefined;
     addons.search.instance = undefined;
@@ -227,7 +210,7 @@ const createNewWindowButtonHandler: () => void = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
-  window.CanvasAddon = CanvasAddon;
+  window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
   window.SearchAddon = SearchAddon;
@@ -245,6 +228,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
   document.getElementById('print-cjk').addEventListener('click', addCjk);
   document.getElementById('print-cjk-sgr').addEventListener('click', addCjkRandomSgr);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
@@ -282,12 +266,13 @@ function createTerminal(): void {
   } as ITerminalOptions);
 
   // Load addons
-  const typedTerm = term as TerminalType;
+  const typedTerm = term as Terminal;
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
+  addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
     addons.webgl.instance = new WebglAddon();
   } catch (e) {
@@ -300,6 +285,7 @@ function createTerminal(): void {
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicodeGraphemes.instance);
   typedTerm.loadAddon(addons.webLinks.instance);
+  typedTerm.loadAddon(addons.clipboard.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -380,14 +366,19 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
-    const processId = await res.text();
-    pid = processId;
-    socketURL += processId;
-    socket = new WebSocket(socketURL);
-    socket.onopen = runRealTerminal;
-    socket.onclose = runFakeTerminal;
-    socket.onerror = runFakeTerminal;
+    const useRealTerminal = document.getElementById('use-real-terminal');
+    if (useRealTerminal instanceof HTMLInputElement && !useRealTerminal.checked) {
+      runFakeTerminal();
+    } else {
+      const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+      const processId = await res.text();
+      pid = processId;
+      socketURL += processId;
+      socket = new WebSocket(socketURL);
+      socket.onopen = runRealTerminal;
+      socket.onclose = runFakeTerminal;
+      socket.onerror = runFakeTerminal;
+    }
   }, 0);
 }
 
@@ -433,7 +424,7 @@ function runFakeTerminal(): void {
   });
 }
 
-function initOptions(term: TerminalType): void {
+function initOptions(term: Terminal): void {
   const blacklistedOptions = [
     // Internal only options
     'cancelEvents',
@@ -441,16 +432,19 @@ function initOptions(term: TerminalType): void {
     'termName',
     'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
+    'documentOverride',
     'linkHandler',
     'logger',
+    'overviewRuler',
     'theme',
     'windowOptions',
-    'windowsPty'
+    'windowsPty',
+    // Deprecated
+    'fastScrollModifier'
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],
     cursorInactiveStyle: ['outline', 'block', 'bar', 'underline', 'none'],
-    fastScrollModifier: ['none', 'alt', 'ctrl', 'shift'],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -583,6 +577,7 @@ function initOptions(term: TerminalType): void {
               cursor: '#333333',
               cursorAccent: '#ffffff',
               selectionBackground: '#add6ff',
+              overviewRulerBorder: '#aaaaaa',
               black: '#000000',
               blue: '#0451a5',
               brightBlack: '#666666',
@@ -608,7 +603,7 @@ function initOptions(term: TerminalType): void {
   });
 }
 
-function initAddons(term: TerminalType): void {
+function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
   Object.keys(addons).forEach((name: AddonType) => {
     const addon = addons[name];
@@ -625,15 +620,15 @@ function initAddons(term: TerminalType): void {
       term.unicode.activeVersion = '15-graphemes';
     }
     if (name === 'search' && checkbox.checked) {
-      addon.instance.onDidChangeResults(e => updateFindResults(e));
+      addons[name].instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (name === 'image') {
         if (checkbox.checked) {
           const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
           addon.instance = ctorOptionsJson
-            ? new addon.ctor(JSON.parse(ctorOptionsJson))
-            : new addon.ctor();
+            ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
+            : new addons[name].ctor();
           term.loadAddon(addon.instance);
         } else {
           addon.instance!.dispose();
@@ -642,7 +637,8 @@ function initAddons(term: TerminalType): void {
         return;
       }
       if (checkbox.checked) {
-        addon.instance = new addon.ctor();
+        // HACK: Manually remove addons that cannot be changes
+        addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
@@ -651,18 +647,12 @@ function initAddons(term: TerminalType): void {
               addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
               addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
             }, 0);
-          } else if (name === 'canvas') {
-            setTimeout(() => {
-              setTextureAtlas(addons.canvas.instance.textureAtlas);
-              addons.canvas.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-              addons.canvas.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-            }, 0);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'unicodeGraphemes') {
             term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
-            addon.instance.onDidChangeResults(e => updateFindResults(e));
+            addons[name].instance.onDidChangeResults(e => updateFindResults(e));
           }
         }
         catch {
@@ -673,8 +663,6 @@ function initAddons(term: TerminalType): void {
       } else {
         if (name === 'webgl') {
           addons.webgl.instance.textureAtlas.remove();
-        } else if (name === 'canvas') {
-          addons.canvas.instance.textureAtlas.remove();
         } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         }
@@ -711,7 +699,7 @@ function updateFindResults(e: { resultIndex: number, resultCount: number } | und
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
   element.addEventListener(type, handler);
-  term._core.register({ dispose: () => element.removeEventListener(type, handler) });
+  term._core._register({ dispose: () => element.removeEventListener(type, handler) });
 }
 
 function updateTerminalSize(): void {
@@ -813,7 +801,7 @@ function writeCustomGlyphHandler(): void {
 }
 
 function loadTest(): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
@@ -831,6 +819,39 @@ function loadTest(): void {
   }
   const start = performance.now();
   for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
+    // Send ^C to get a new prompt
+    term._core._onData.fire('\x03');
+  });
+}
+
+function loadTestLongLines(): void {
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 500);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024 * 50; i++) {
     for (const d of testData) {
       term.write(d);
     }
@@ -1145,7 +1166,7 @@ function addGraphemeClusters(): void {
 }
 
 function addDecoration(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRuler'] = { width: 14 };
   const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
@@ -1160,7 +1181,7 @@ function addDecoration(): void {
 }
 
 function addOverviewRuler(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRuler'] = { width: 14 };
   term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
   term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
   term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });

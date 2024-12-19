@@ -109,11 +109,13 @@ declare module '@xterm/xterm' {
 
     /**
      * The modifier key hold to multiply scroll speed.
+     * @deprecated This option is no longer available and will always use alt.
+     * Setting this will be ignored.
      */
     fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
-     * The scroll speed multiplier used for fast scrolling.
+     * The scroll speed multiplier used for fast scrolling when `Alt` is held.
      */
     fastScrollSensitivity?: number;
 
@@ -210,6 +212,13 @@ declare module '@xterm/xterm' {
      * - 21: White on black or black on white.
      */
     minimumContrastRatio?: number;
+
+    /**
+     * Whether to reflow the line containing the cursor when the terminal is
+     * resized. Defaults to false, because shells usually handle this
+     * themselves.
+     */
+    reflowCursorLine?: boolean;
 
     /**
      * Whether to rescale glyphs horizontally that are a single cell wide but
@@ -325,10 +334,10 @@ declare module '@xterm/xterm' {
     windowOptions?: IWindowOptions;
 
     /**
-     * The width, in pixels, of the canvas for the overview ruler. The overview
-     * ruler will be hidden when not set.
+     * Controls the visibility and style of the overview ruler which visualizes
+     * decorations underneath the scroll bar.
      */
-    overviewRulerWidth?: number;
+    overviewRuler?: IOverviewRulerOptions;
   }
 
   /**
@@ -368,6 +377,27 @@ declare module '@xterm/xterm' {
      * be transparent)
      */
     selectionInactiveBackground?: string;
+    /**
+     * The scrollbar slider background color. Defaults to
+     * {@link ITerminalOptions.foreground foreground} with 20% opacity.
+     */
+    scrollbarSliderBackground?: string;
+    /**
+     * The scrollbar slider background color when hovered. Defaults to
+     * {@link ITerminalOptions.foreground foreground} with 40% opacity.
+     */
+    scrollbarSliderHoverBackground?: string;
+    /**
+     * The scrollbar slider background color when clicked. Defaults to
+     * {@link ITerminalOptions.foreground foreground} with 50% opacity.
+     */
+    scrollbarSliderActiveBackground?: string;
+    /**
+     * The border color of the overview ruler. This visually separates the
+     * terminal from the scroll bar when {@link IOverviewRulerOptions.width} is
+     * set. When this is not set it defaults to black (`#000000`).
+     */
+    overviewRulerBorder?: string;
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string;
     /** ANSI red (eg. `\x1b[31m`) */
@@ -588,16 +618,13 @@ declare module '@xterm/xterm' {
      * What layer to render the decoration at when {@link backgroundColor} or
      * {@link foregroundColor} are used. `'bottom'` will render under the
      * selection, `'top`' will render above the selection\*.
-     *
-     * *\* The selection will render on top regardless of layer on the canvas
-     * renderer due to how it renders selection separately.*
      */
     readonly layer?: 'bottom' | 'top';
 
     /**
      * When defined, renders the decoration in the overview ruler to the right
-     * of the terminal. {@link ITerminalOptions.overviewRulerWidth} must be set
-     * in order to see the overview ruler.
+     * of the terminal. {@link IOverviewRulerOptions.width} must be set in order
+     * to see the overview ruler.
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
@@ -618,6 +645,28 @@ declare module '@xterm/xterm' {
      * being printed to the terminal when `screenReaderMode` is enabled.
      */
     tooMuchOutput: string;
+  }
+
+  export interface IOverviewRulerOptions {
+    /**
+     * When defined, renders decorations in the overview ruler to the right of
+     * the terminal. This must be set in order to see the overview ruler.
+     * @param color The color of the decoration.
+     * @param position The position of the decoration.
+     */
+    width?: number;
+
+    /**
+     * Whether to show the top border of the overview ruler, which uses the
+     * {@link ITheme.overviewRulerBorder} color.
+     */
+    showTopBorder?: boolean;
+
+    /**
+     * Whether to show the bottom border of the overview ruler, which uses the
+     * {@link ITheme.overviewRulerBorder} color.
+     */
+    showBottomBorder?: boolean;
   }
 
   /**
@@ -1097,7 +1146,7 @@ declare module '@xterm/xterm' {
      * render together, since they aren't drawn as optimally as individual
      * characters.
      *
-     * NOTE: character joiners are only used by the canvas renderer.
+     * NOTE: character joiners are only used by the webgl renderer.
      *
      * @param handler The function that determines character joins. It is called
      * with a string of text that is eligible for joining and returns an array
@@ -1109,7 +1158,7 @@ declare module '@xterm/xterm' {
 
     /**
      * (EXPERIMENTAL) Deregisters the character joiner if one was registered.
-     * NOTE: character joiners are only used by the canvas renderer.
+     * NOTE: character joiners are only used by the webgl renderer.
      * @param joinerId The character joiner's ID (returned after register)
      */
     deregisterCharacterJoiner(joinerId: number): void;
@@ -1248,7 +1297,7 @@ declare module '@xterm/xterm' {
     refresh(start: number, end: number): void;
 
     /**
-     * Clears the texture atlas of the canvas renderer if it's active. Doing
+     * Clears the texture atlas of the webgl renderer if it's active. Doing
      * this will force a redraw of all glyphs which can workaround issues
      * causing the texture to become corrupt, for example Chromium/Nvidia has an
      * issue where the texture gets messed up when resuming the OS from sleep.

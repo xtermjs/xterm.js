@@ -4,9 +4,9 @@
  */
 
 import { IOptionsService } from 'common/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;
@@ -17,7 +17,7 @@ export class CharSizeService extends Disposable implements ICharSizeService {
 
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
-  private readonly _onCharSizeChange = this.register(new EventEmitter<void>());
+  private readonly _onCharSizeChange = this._register(new Emitter<void>());
   public readonly onCharSizeChange = this._onCharSizeChange.event;
 
   constructor(
@@ -27,11 +27,11 @@ export class CharSizeService extends Disposable implements ICharSizeService {
   ) {
     super();
     try {
-      this._measureStrategy = this.register(new TextMetricsMeasureStrategy(this._optionsService));
+      this._measureStrategy = this._register(new TextMetricsMeasureStrategy(this._optionsService));
     } catch {
-      this._measureStrategy = this.register(new DomMeasureStrategy(document, parentElement, this._optionsService));
+      this._measureStrategy = this._register(new DomMeasureStrategy(document, parentElement, this._optionsService));
     }
-    this.register(this._optionsService.onMultipleOptionChange(['fontFamily', 'fontSize'], () => this.measure()));
+    this._register(this._optionsService.onMultipleOptionChange(['fontFamily', 'fontSize'], () => this.measure()));
   }
 
   public measure(): void {

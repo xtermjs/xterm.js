@@ -690,7 +690,7 @@ test.describe('API Integration Tests', () => {
       window.term = new Terminal();
       window.term.dispose();
     `);
-    strictEqual(await ctx.page.evaluate(`window.term._core._isDisposed`), true);
+    strictEqual(await ctx.page.evaluate(`window.term._core._store._isDisposed`), true);
   });
 
   test('dispose (opened)', async () => {
@@ -702,7 +702,7 @@ test.describe('API Integration Tests', () => {
         } catch {}
       }
     `);
-    strictEqual(await ctx.page.evaluate(`window.term._core._isDisposed`), true);
+    strictEqual(await ctx.page.evaluate(`window.term._core._store._isDisposed`), true);
   });
 
   test('render when visible after hidden', async () => {
@@ -760,7 +760,7 @@ test.describe('API Integration Tests', () => {
         await pollFor(ctx.page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 0);
       });
       test('should add an overview ruler when width is set', async () => {
-        await openTerminal(ctx, { overviewRulerWidth: 15 });
+        await openTerminal(ctx, { overviewRuler: { width: 15 } });
         await ctx.page.evaluate(`window.marker1 = window.term.registerMarker(1)`);
         await ctx.page.evaluate(`window.marker2 = window.term.registerMarker(2)`);
         await ctx.page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);

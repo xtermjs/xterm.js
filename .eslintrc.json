@@ -11,13 +11,13 @@
       "src/browser/tsconfig.json",
       "src/common/tsconfig.json",
       "src/headless/tsconfig.json",
-      "test/api/tsconfig.json",
+      "src/vs/tsconfig.json",
       "test/benchmark/tsconfig.json",
       "test/playwright/tsconfig.json",
       "addons/addon-attach/src/tsconfig.json",
       "addons/addon-attach/test/tsconfig.json",
-      "addons/addon-canvas/src/tsconfig.json",
-      "addons/addon-canvas/test/tsconfig.json",
+      "addons/addon-clipboard/src/tsconfig.json",
+      "addons/addon-clipboard/test/tsconfig.json",
       "addons/addon-fit/src/tsconfig.json",
       "addons/addon-fit/test/tsconfig.json",
       "addons/addon-image/src/tsconfig.json",
@@ -42,19 +42,37 @@
   },
   "ignorePatterns": [
     "addons/*/src/third-party/*.ts",
+    "src/vs/*",
     "out/*",
     "out-test/*",
+    "out-esbuild/*",
+    "out-esbuild-test/*",
     "**/inwasm-sdks/*",
     "**/typings/*.d.ts",
     "**/node_modules",
-    "**/*.js"
+    "**/*.js",
+    "**/*.mjs"
   ],
   "plugins": [
+    "@stylistic/ts",
     "@typescript-eslint",
     "jsdoc"
   ],
   "rules": {
-    "no-extra-semi": "error",
+    "@stylistic/ts/indent": [
+      "warn",
+      2
+    ],
+    "@stylistic/ts/semi": [
+      "warn",
+      "always"
+    ],
+    "@stylistic/ts/quotes": [
+      "warn",
+      "single",
+      { "allowTemplateLiterals": true }
+    ],
+
     "@typescript-eslint/array-type": [
       "warn",
       {
@@ -78,10 +96,6 @@
           "constructors": "off"
         }
       }
-    ],
-    "@typescript-eslint/indent": [
-      "warn",
-      2
     ],
     "@typescript-eslint/member-delimiter-style": [
       "warn",
@@ -142,15 +156,7 @@
     "@typescript-eslint/no-useless-constructor": "warn",
     "@typescript-eslint/prefer-namespace-keyword": "warn",
     "@typescript-eslint/type-annotation-spacing": "warn",
-    "@typescript-eslint/quotes": [
-      "warn",
-      "single",
-      { "allowTemplateLiterals": true }
-    ],
-    "@typescript-eslint/semi": [
-      "warn",
-      "always"
-    ],
+
     "comma-dangle": [
       "warn",
       {
@@ -191,6 +197,7 @@
       }
     ],
     "no-eval": "warn",
+    "no-extra-semi": "error",
     "no-irregular-whitespace": "warn",
     "no-restricted-imports": [
       "warn",
