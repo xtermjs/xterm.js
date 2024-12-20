@@ -2714,7 +2714,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Ps SP q  Set cursor style (DECSCUSR, VT520).
-   *   Ps = 0  -> blinking block.
+   *   Ps = 0  -> reset to option.
    *   Ps = 1  -> blinking block (default).
    *   Ps = 2  -> steady block.
    *   Ps = 3  -> blinking underline.
@@ -2724,7 +2724,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
    * Supported cursor styles:
-   *  - empty, 0 or 1: steady block
+   *  - empty, 0: reset to option
+   *  - 1: steady block
    *  - 2: blink block
    *  - 3: steady underline
    *  - 4: blink underline
@@ -2732,23 +2733,30 @@ export class InputHandler extends Disposable implements IInputHandler {
    *  - 6: blink bar
    */
   public setCursorStyle(params: IParams): boolean {
-    const param = params.params[0] || 1;
-    switch (param) {
-      case 1:
-      case 2:
-        this._optionsService.options.cursorStyle = 'block';
-        break;
-      case 3:
-      case 4:
-        this._optionsService.options.cursorStyle = 'underline';
-        break;
-      case 5:
-      case 6:
-        this._optionsService.options.cursorStyle = 'bar';
-        break;
+    const param = params.params[0] ?? 1;
+    if (param === 0) {
+      this._coreService.decPrivateModes.cursorStyle = undefined;
+      this._coreService.decPrivateModes.cursorBlink = undefined;
+    } else {
+      switch (param) {
+        case 0:
+          break;
+        case 1:
+        case 2:
+          this._coreService.decPrivateModes.cursorStyle = 'block';
+          break;
+        case 3:
+        case 4:
+          this._coreService.decPrivateModes.cursorStyle = 'underline';
+          break;
+        case 5:
+        case 6:
+          this._coreService.decPrivateModes.cursorStyle = 'bar';
+          break;
+      }
+      const isBlinking = param % 2 === 1;
+      this._coreService.decPrivateModes.cursorBlink = isBlinking;
     }
-    const isBlinking = param % 2 === 1;
-    this._optionsService.options.cursorBlink = isBlinking;
     return true;
   }
 

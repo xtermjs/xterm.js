@@ -1269,10 +1269,7 @@ function addVtButtons(): void {
     const writeCsiSplit = writeCsi.split('|');
     const prefix = writeCsiSplit.length === 2 ? writeCsiSplit[0] : '';
     const suffix = writeCsiSplit[writeCsiSplit.length - 1];
-    element.addEventListener(`click`, () => {
-      debugger;
-      term.write(csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`));
-    });
+    element.addEventListener(`click`, () => term.write(csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
 
     const desc = document.createElement('span');
     desc.textContent = description;
