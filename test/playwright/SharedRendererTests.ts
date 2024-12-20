@@ -1256,7 +1256,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.focus();
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
     });
-    test.only('#5241 cursorAccent with alpha should blend color with background color', async () => {
+    test('#5241 cursorAccent with alpha should blend color with background color', async () => {
       const theme: ITheme = {
         cursorAccent: '#FF000080'
       };
