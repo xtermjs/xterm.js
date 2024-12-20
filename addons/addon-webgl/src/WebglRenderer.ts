@@ -354,7 +354,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _updateCursorBlink(): void {
-    if (this._terminal.options.cursorBlink) {
+    if (this._coreService.decPrivateModes.cursorBlink ?? this._terminal.options.cursorBlink) {
       this._cursorBlinkStateManager.value = new CursorBlinkStateManager(() => {
         this._requestRedrawCursor();
       }, this._coreBrowserService);
@@ -387,6 +387,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let j: number;
     start = clamp(start, terminal.rows - 1, 0);
     end = clamp(end, terminal.rows - 1, 0);
+    const cursorStyle = this._coreService.decPrivateModes.cursorStyle ?? terminal.options.cursorStyle ?? 'block';
 
     const cursorY = this._terminal.buffer.active.baseY + this._terminal.buffer.active.cursorY;
     const viewportRelativeCursorY = cursorY - terminal.buffer.ydisp;
@@ -450,8 +451,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
               x: cursorX,
               y: viewportRelativeCursorY,
               width: cell.getWidth(),
-              style: this._coreBrowserService.isFocused ?
-                (terminal.options.cursorStyle || 'block') : terminal.options.cursorInactiveStyle,
+              style: this._coreBrowserService.isFocused ? cursorStyle : terminal.options.cursorInactiveStyle,
               cursorWidth: terminal.options.cursorWidth,
               dpr: this._devicePixelRatio
             };
@@ -459,9 +459,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
           }
           if (x >= cursorX && x <= lastCursorX &&
               ((this._coreBrowserService.isFocused &&
-              (terminal.options.cursorStyle || 'block') === 'block') ||
+              cursorStyle === 'block') ||
               (this._coreBrowserService.isFocused === false &&
-              terminal.options.cursorInactiveStyle === 'block'))) {
+              terminal.options.cursorInactiveStyle === 'block'))
+          ) {
             this._cellColorResolver.result.fg =
               Attributes.CM_RGB | (this._themeService.colors.cursorAccent.rgba >> 8 & Attributes.RGB_MASK);
             this._cellColorResolver.result.bg =

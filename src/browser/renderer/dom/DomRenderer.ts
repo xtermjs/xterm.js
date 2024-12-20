@@ -13,7 +13,7 @@ import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/se
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
-import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
 
 
@@ -59,6 +59,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreService private readonly _coreService: ICoreService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IThemeService private readonly _themeService: IThemeService
   ) {
@@ -437,8 +438,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     const buffer = this._bufferService.buffer;
     const cursorAbsoluteY = buffer.ybase + buffer.y;
     const cursorX = Math.min(buffer.x, this._bufferService.cols - 1);
-    const cursorBlink = this._optionsService.rawOptions.cursorBlink;
-    const cursorStyle = this._optionsService.rawOptions.cursorStyle;
+    const cursorBlink = this._coreService.decPrivateModes.cursorBlink ?? this._optionsService.rawOptions.cursorBlink;
+    const cursorStyle = this._coreService.decPrivateModes.cursorStyle ?? this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
 
     for (let y = start; y <= end; y++) {
