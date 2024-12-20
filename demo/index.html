@@ -117,6 +117,47 @@
               <dt>Events Test</dt>
               <dd><button id="event-focus">focus</button></dd>
               <dd><button id="event-blur">blur</button></dd>
+
+              <dt>Progress Addon</dt>
+              <dd><button id="progress-run">full set run</button></dd>
+              <dd><button id="progress-0">state 0: remove</button></dd>
+              <dd><button id="progress-1">state 1: set 20%</button></dd>
+              <dd><button id="progress-2">state 2: error</button></dd>
+              <dd><button id="progress-3">state 3: indeterminate</button></dd>
+              <dd><button id="progress-4">state 4: pause</button></dd>
+              <style>
+                #progress-progress {
+                  border: 1px solid black;
+                  height: 10px;
+                }
+                #progress-percent {
+                  height: 100%;
+                }
+                #progress-indeterminate {
+                  display: none;
+                  position: relative;
+                  height: 100%;
+                }
+                #progress-indeterminate:before {
+                  content: '';
+                  position: absolute;
+                  left: 0;
+                  bottom: 0px;
+                  width: 50px;
+                  height: 10px;
+                  background: blue;
+                  animation: ballbns 1s ease-in-out infinite alternate;
+                }
+                @keyframes ballbns {
+                  0% {  left: 0; transform: translateX(0%); }
+                  100% {  left: 100%; transform: translateX(-100%); }
+                }
+              </style>
+              <dd><div id="progress-progress">
+                <div id="progress-percent"></div>
+                <div id="progress-indeterminate"></div>
+              </div></dd>
+              <dd><div id="progress-state">State:</div></dd>
             </dl>
           </div>
         </div>

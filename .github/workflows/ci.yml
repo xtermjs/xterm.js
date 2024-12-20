@@ -44,6 +44,9 @@ jobs:
           ./addons/addon-ligatures/lib/* \
           ./addons/addon-ligatures/out/* \
           ./addons/addon-ligatures/out-*/* \
+          ./addons/addon-progress/lib/* \
+          ./addons/addon-progress/out/* \
+          ./addons/addon-progress/out-*/* \
           ./addons/addon-search/lib/* \
           ./addons/addon-search/out/* \
           ./addons/addon-search/out-*/* \
@@ -212,6 +215,8 @@ jobs:
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
     - name: Integration tests (addon-image)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
+    - name: Integration tests (addon-progress)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
     - name: Integration tests (addon-search)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
     - name: Integration tests (addon-serialize)
