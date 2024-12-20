@@ -2724,13 +2724,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
    * Supported cursor styles:
-   *  - empty, 0: reset to option
-   *  - 1: steady block
-   *  - 2: blink block
-   *  - 3: steady underline
-   *  - 4: blink underline
-   *  - 5: steady bar
-   *  - 6: blink bar
+   *  - 0: reset to option
+   *  - empty, 1: blinking block
+   *  - 2: steady block
+   *  - 3: blinking underline
+   *  - 4: steady underline
+   *  - 5: blinking bar
+   *  - 6: steady bar
    */
   public setCursorStyle(params: IParams): boolean {
     const param = params.length === 0 ? 1 : params.params[0];
