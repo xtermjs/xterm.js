@@ -2733,14 +2733,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    *  - 6: blink bar
    */
   public setCursorStyle(params: IParams): boolean {
-    const param = params.params[0] ?? 1;
+    const param = params.length === 0 ? 1 : params.params[0];
     if (param === 0) {
       this._coreService.decPrivateModes.cursorStyle = undefined;
       this._coreService.decPrivateModes.cursorBlink = undefined;
     } else {
       switch (param) {
-        case 0:
-          break;
         case 1:
         case 2:
           this._coreService.decPrivateModes.cursorStyle = 'block';
