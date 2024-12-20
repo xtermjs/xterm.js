@@ -16,7 +16,7 @@ if ('WebAssembly' in window) {
   ImageAddon = imageAddon.ImageAddon;
 }
 
-import { Terminal, ITerminalOptions, type IDisposable } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
@@ -131,7 +131,7 @@ const xtermjsTheme = {
   brightCyan: '#72F0FF',
   white: '#F8F8F8',
   brightWhite: '#FFFFFF'
-};
+} satisfies ITheme;
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   addons.fit.instance.fit();

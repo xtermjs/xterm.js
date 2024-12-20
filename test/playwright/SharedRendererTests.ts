@@ -1248,6 +1248,14 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.scrollLines(-2);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
     });
+    test('#5241 cursor with alpha should blend color with background color', async () => {
+      const theme: ITheme = {
+        cursor: '#FF000080'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
+    });
   });
 }
 
