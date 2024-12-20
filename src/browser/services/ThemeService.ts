@@ -83,7 +83,7 @@ export class ThemeService extends Disposable implements IThemeService {
     colors.foreground = parseColor(theme.foreground, DEFAULT_FOREGROUND);
     colors.background = parseColor(theme.background, DEFAULT_BACKGROUND);
     colors.cursor = color.blend(colors.background, parseColor(theme.cursor, DEFAULT_CURSOR));
-    colors.cursorAccent = parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT);
+    colors.cursorAccent = color.blend(colors.background, parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT));
     colors.selectionBackgroundTransparent = parseColor(theme.selectionBackground, DEFAULT_SELECTION);
     colors.selectionBackgroundOpaque = color.blend(colors.background, colors.selectionBackgroundTransparent);
     colors.selectionInactiveBackgroundTransparent = parseColor(theme.selectionInactiveBackground, colors.selectionBackgroundTransparent);
