@@ -220,6 +220,9 @@ export class MockBuffer implements IBuffer {
   public addMarker(y: number): IMarker {
     throw new Error('Method not implemented.');
   }
+  public splitLine(row: number, col: number): void {
+    throw new Error('Method not implemented.');
+  }
   public isCursorInViewport!: boolean;
   public lines!: ICircularList<IBufferLine>;
   public ydisp!: number;
@@ -239,6 +242,9 @@ export class MockBuffer implements IBuffer {
   }
   public getWrappedRangeForLine(y: number): { first: number, last: number } {
     return Buffer.prototype.getWrappedRangeForLine.apply(this, arguments as any);
+  }
+  public reflowRegion(startRow: number, endRow: number, maxRows: number): boolean {
+    throw new Error('Method not implemented.');
   }
   public nextStop(x?: number): number {
     throw new Error('Method not implemented.');
@@ -262,6 +268,9 @@ export class MockBuffer implements IBuffer {
     throw new Error('Method not implemented.');
   }
   public clearAllMarkers(): void {
+    throw new Error('Method not implemented.');
+  }
+  public setWrapped(row: number, value: boolean): void {
     throw new Error('Method not implemented.');
   }
 }
