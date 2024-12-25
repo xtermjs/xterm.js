@@ -18,6 +18,7 @@ export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
 
   private _terminal: Terminal | undefined;
   private _characterJoinerId: number | undefined;
+  private _useWebGl: boolean;
 
   constructor(options?: Partial<ILigatureOptions>) {
     this._fallbackLigatures = (options?.fallbackLigatures || [
@@ -28,6 +29,8 @@ export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
       ':=', ':-', ':+', '<*', '<*>', '*>', '<|', '<|>', '|>', '+:', '-:', '=:', ':>',
       '++', '+++', '<!--', '<!---', '<***>'
     ]).sort((a, b) => b.length - a.length);
+
+    this._useWebGl = options?.useWebGl === undefined ? true : options.useWebGl;
   }
 
   public activate(terminal: Terminal): void {
@@ -35,7 +38,9 @@ export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
       throw new Error('Cannot activate LigaturesAddon before open is called');
     }
     this._terminal = terminal;
-    this._characterJoinerId = enableLigatures(terminal, this._fallbackLigatures);
+    if (this._useWebGl){
+      this._characterJoinerId = enableLigatures(terminal, this._fallbackLigatures);
+    }
     terminal.element.style.fontFeatureSettings = '"liga" on, "calt" on';
   }
 

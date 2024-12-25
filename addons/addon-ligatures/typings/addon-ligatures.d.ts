@@ -53,6 +53,10 @@ declare module '@xterm/addon-ligatures' {
      * ++ +++ <!-- <!--- <***>
      * ```
      */
-    fallbackLigatures: string[]
+    fallbackLigatures: string[],
+     /**
+     Defaults to true. If you do not plan to use WebGL set this to false to increase performance.
+     */
+     useWebGl:boolean
   }
 }
