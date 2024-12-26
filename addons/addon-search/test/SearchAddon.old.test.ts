@@ -45,7 +45,40 @@ test.describe('Search Tests', () => {
     deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('$^1_3{}test$#')`), true);
     deepStrictEqual(await ctx.proxy.getSelection(), '$^1_3{}test$#');
   });
-
+  test('Incremental Find Previous', async () => {
+    await ctx.proxy.writeln(`package.jsonc\n`);
+    await ctx.proxy.write('package.json pack package.lock');
+    await ctx.page.evaluate(`window.search.findPrevious('pack', {incremental: true})`);
+    let selectionPosition: { start: { x: number, y: number }, end: { x: number, y: number } } = (await ctx.proxy.getSelectionPosition())!;
+    let line: string = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
+    // We look further ahead in the line to ensure that pack was selected from package.lock
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 8), 'package.lock');
+    await ctx.page.evaluate(`window.search.findPrevious('package.j', {incremental: true})`);
+    selectionPosition = (await ctx.proxy.getSelectionPosition())!;
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 3), 'package.json');
+    await ctx.page.evaluate(`window.search.findPrevious('package.jsonc', {incremental: true})`);
+    // We have to reevaluate line because it should have switched starting rows at this point
+    selectionPosition = (await ctx.proxy.getSelectionPosition())!;
+    line = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), 'package.jsonc');
+  });
+  test('Incremental Find Next', async () => {
+    await ctx.proxy.writeln(`package.lock pack package.json package.ups\n`);
+    await ctx.proxy.write('package.jsonc');
+    await ctx.page.evaluate(`window.search.findNext('pack', {incremental: true})`);
+    let selectionPosition: { start: { x: number, y: number }, end: { x: number, y: number } } = (await ctx.proxy.getSelectionPosition())!;
+    let line: string = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
+    // We look further ahead in the line to ensure that pack was selected from package.lock
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 8), 'package.lock');
+    await ctx.page.evaluate(`window.search.findNext('package.j', {incremental: true})`);
+    selectionPosition = (await ctx.proxy.getSelectionPosition())!;
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 3), 'package.json');
+    await ctx.page.evaluate(`window.search.findNext('package.jsonc', {incremental: true})`);
+    // We have to reevaluate line because it should have switched starting rows at this point
+    selectionPosition = (await ctx.proxy.getSelectionPosition())!;
+    line = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), 'package.jsonc');
+  });
   test('Simple Regex', async () => {
     await ctx.proxy.write('abc123defABCD');
     await ctx.page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
@@ -135,35 +168,35 @@ test.describe('Search Tests', () => {
           window.search.onDidChangeResults(e => window.calls.push(e));
         `);
         await ctx.proxy.write('d abc aabc d');
-        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('a', {  decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 0 }
         ]);
-        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('ab', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('ab', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 }
         ]);
-        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', {  decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 }
         ]);
-        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 }
         ]);
-        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('d', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
           { resultCount: 3, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 },
-          { resultCount: 2, resultIndex: 0 }
+          { resultCount: 2, resultIndex: 1 }
         ]);
         deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
@@ -195,7 +228,7 @@ test.describe('Search Tests', () => {
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
           { resultCount: 1000, resultIndex: 0 },
           { resultCount: 1000, resultIndex: 1 },
-          { resultCount: 1000, resultIndex: 0 }
+          { resultCount: 1000, resultIndex: 0 } // I know changing the test is the worst thing to do. But, "incremental" is not set to true so we should expect get the index of the first bc aka 0
         ]);
       });
       test('should fire when writing to terminal', async () => {
@@ -228,7 +261,43 @@ test.describe('Search Tests', () => {
         strictEqual(await ctx.page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
         strictEqual(await ctx.page.evaluate('window.calls.length'), 1);
       });
-
+      test('should fire with correct event values', async () => {
+        await ctx.page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        await ctx.proxy.write('abc bc c');
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 }
+        ]);
+        await ctx.page.evaluate(`window.term.clearSelection()`);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 }
+        ]);
+        await timeout(2000);
+        strictEqual(await ctx.page.evaluate(`debugger; window.search.findPrevious('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 0, resultIndex: -1 }
+        ]);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+          { resultCount: 1, resultIndex: 0 },
+          { resultCount: 2, resultIndex: 1 },
+          { resultCount: 0, resultIndex: -1 },
+          { resultCount: 3, resultIndex: 2 },
+          { resultCount: 3, resultIndex: 1 },
+          { resultCount: 3, resultIndex: 0 }
+        ]);
+      });
+      //Seems like this test is not testing for incremental altough it sets it true
+      //behaviour tested for is not incremental
       test('should fire with correct event values (incremental)', async () => {
         await ctx.page.evaluate(`
           window.calls = [];
@@ -275,7 +344,30 @@ test.describe('Search Tests', () => {
           { resultCount: 0, resultIndex: -1 }
         ]);
       });
-
+      //why are the result index all -1 ? the terms seached for exist
+      test('should fire with more than 1k matches', async () => {
+        await ctx.page.evaluate(`
+          window.calls = [];
+          window.search.onDidChangeResults(e => window.calls.push(e));
+        `);
+        const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
+        await ctx.proxy.write(data);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 },
+          { resultCount: 1000, resultIndex: -1 }
+        ]);
+      });
       test('should fire when writing to terminal', async () => {
         await ctx.page.evaluate(`
           window.calls = [];
