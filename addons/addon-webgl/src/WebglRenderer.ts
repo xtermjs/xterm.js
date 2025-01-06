@@ -377,6 +377,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let line: IBufferLine;
     let joinedRanges: [number, number][];
     let isJoined: boolean;
+    let skipJoinedCheckUntilX: number = 0;
+    let isValidJoinRange: boolean = true;
     let lastCharX: number;
     let range: [number, number];
     let chars: string;
@@ -405,6 +407,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       row = y + terminal.buffer.ydisp;
       line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
+      skipJoinedCheckUntilX = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (x = 0; x < terminal.cols; x++) {
         lastBg = this._cellColorResolver.result.bg;
@@ -416,25 +419,41 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // If true, indicates that the current character(s) to draw were joined.
         isJoined = false;
+
+        // Indicates whether this cell is part of a joined range that should be ignored as it cannot
+        // be rendered entirely, like the selection state differs across the range.
+        isValidJoinRange = (x >= skipJoinedCheckUntilX);
+
         lastCharX = x;
 
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
         // and attributes of our input.
-        if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
-          isJoined = true;
+        if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
           range = joinedRanges.shift()!;
 
-          // We already know the exact start and end column of the joined range,
-          // so we get the string and width representing it directly.
-          cell = new JoinedCellData(
-            cell,
-            line!.translateToString(true, range[0], range[1]),
-            range[1] - range[0]
-          );
+          // If the ligature's selection state is not consistent, don't join it. This helps the
+          // selection render correctly regardless whether they should be joined.
+          const firstSelectionState = this._model.selection.isCellSelected(this._terminal, range[0], row);
+          for (i = range[0] + 1; i < range[1]; i++) {
+            isValidJoinRange &&= (firstSelectionState === this._model.selection.isCellSelected(this._terminal, i, row));
+          }
+          if (!isValidJoinRange) {
+            skipJoinedCheckUntilX = range[1];
+          } else {
+            isJoined = true;
 
-          // Skip over the cells occupied by this range in the loop
-          lastCharX = range[1] - 1;
+            // We already know the exact start and end column of the joined range,
+            // so we get the string and width representing it directly.
+            cell = new JoinedCellData(
+              cell,
+              line!.translateToString(true, range[0], range[1]),
+              range[1] - range[0]
+            );
+
+            // Skip over the cells occupied by this range in the loop
+            lastCharX = range[1] - 1;
+          }
         }
 
         chars = cell.getChars();
