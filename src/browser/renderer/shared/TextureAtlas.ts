@@ -75,6 +75,8 @@ export class TextureAtlas implements ITextureAtlas {
   private _workAttributeData: AttributeData = new AttributeData();
 
   private _textureSize: number = 512;
+  // TODO: Use actual value
+  private _deviceMaxTextureSize: number = 2048;
 
   public static maxAtlasPages: number | undefined;
   public static maxTextureSize: number | undefined;
@@ -431,7 +433,7 @@ export class TextureAtlas implements ITextureAtlas {
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._textureSize);
+    const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._deviceMaxTextureSize);
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
     }
@@ -770,6 +772,21 @@ export class TextureAtlas implements ITextureAtlas {
             activeRow = row;
           }
         }
+      }
+
+      // Create a new page for oversized glyphs as they come up
+      if (rasterizedGlyph.size.x > this._textureSize) {
+        // TODO: Move below after page merging to ensure page limit isn't hit
+        const newPage = new AtlasPage(this._document, this._deviceMaxTextureSize);
+        this.pages.push(newPage);
+
+        // Request the model to be cleared to refresh all texture pages.
+        this._requestClearModel = true;
+        this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+
+        newPage.addGlyph(rasterizedGlyph);
+        activePage.fixedRows.push(newPage.currentRow);
+        break;
       }
 
       // Create a new page if too much vertical space would be wasted or there is not enough room
