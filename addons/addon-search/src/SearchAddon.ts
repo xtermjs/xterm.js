@@ -40,7 +40,8 @@ export interface ISearchResult {
   col: number;
   row: number;
   size: number;
-  foundBy?: string;
+  didNotYieldForThisManyRows: number;
+  usedForYield: boolean;
 }
 
 interface IHighlight extends IDisposable {
@@ -299,6 +300,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         this._iterate(searchIterator,++chunkIndex);
       }
       else if (iteratorResult.value !== false){ // search finished without being cancelled
+
         const { direction,chunkSize } = iteratorResult.value;
 
         const startIndex = direction === 'down' ? this._matches.length - chunkSize : 0;
@@ -326,9 +328,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
     let searchDirection: ChunkSearchDirection = 'down';
 
-    let downDirectionLastResult = this._find(term, rowIndex, 0,'down');
-    let upDirectionLastResult = this._find(term, rowIndex - 1, this._terminal!.cols,'up');
+    let downDirectionLastResult = this._find(term, rowIndex, 0,'down',0);
+    let upDirectionLastResult = this._find(term, rowIndex - 1, this._terminal!.cols,'up',0);
 
+
+    let yieldForReachingMaxRowScans = false;
 
     searchDirection =  downDirectionLastResult !== undefined ? 'down' : 'up';
 
@@ -340,28 +344,48 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         return false;
       }
 
-      if (downDirectionLastResult !==undefined && searchDirection==='down'){
+      if (downDirectionLastResult !== undefined && searchDirection==='down'){
 
-        currentChunkMatches.push(downDirectionLastResult);
+        // we need two variable to check for yield on exceeding max row scans
+        // didNotYieldForThisManyRows for the current exection
+        // and usedForYield for the next time we are given execution
+        if (downDirectionLastResult.didNotYieldForThisManyRows < this._chunkSize){
+          if (downDirectionLastResult.usedForYield === false){
+            currentChunkMatches.push(downDirectionLastResult);
+          }
 
-        downDirectionLastResult = this._find(
-          term,
-          // using previous term length will cause problems with regex
-          downDirectionLastResult.row,
-          downDirectionLastResult.col + 1,
-          'down'
-        );
+          downDirectionLastResult = this._find(
+            term,
+            downDirectionLastResult.row,
+            downDirectionLastResult.col + 1,
+            'down',
+            downDirectionLastResult.didNotYieldForThisManyRows
+          );
+
+        } else {
+          yieldForReachingMaxRowScans = true;
+          downDirectionLastResult.didNotYieldForThisManyRows=0;
+        }
 
       } else if (upDirectionLastResult !== undefined && searchDirection === 'up'){
 
-        currentChunkMatches.push(upDirectionLastResult);
+        if (upDirectionLastResult.didNotYieldForThisManyRows < this._chunkSize){
+          if (upDirectionLastResult.usedForYield === false){
+            currentChunkMatches.push(upDirectionLastResult);
+          }
 
-        upDirectionLastResult = this._find(
-          term,
-          upDirectionLastResult.row,
-          upDirectionLastResult.col - 1,
-          'up'
-        );
+          upDirectionLastResult = this._find(
+            term,
+            upDirectionLastResult.row,
+            upDirectionLastResult.col - 1,
+            'up',
+            upDirectionLastResult.didNotYieldForThisManyRows
+          );
+        } else {
+          yieldForReachingMaxRowScans = true;
+          upDirectionLastResult.didNotYieldForThisManyRows=0;
+        }
+
       }
 
       if (this._matches.length + currentChunkMatches.length >= this._highlightLimit) {
@@ -385,9 +409,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       if (
         (currentChunkMatches.length > 0 && currentChunkMatches.length % this._chunkSize === 0) ||
         (downDirectionLastResult === undefined && searchDirection === 'down') ||
-        (upDirectionLastResult === undefined && searchDirection ==='up')
+        (upDirectionLastResult === undefined && searchDirection ==='up') ||
+        yieldForReachingMaxRowScans
       )
       {
+        yieldForReachingMaxRowScans = false;
         if (searchDirection==='down'){
           this._matches.push(...currentChunkMatches);
 
@@ -398,7 +424,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         }
 
         const yieldReturn = { direction:searchDirection,chunkSize:currentChunkMatches.length };
+
         currentChunkMatches=[];
+
         yield yieldReturn;
 
         searchDirection = searchDirection === 'down' ? 'up':'down';
@@ -425,7 +453,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   }
 
 
-  private _find(term: string, startRow: number, startCol: number,direction: ChunkSearchDirection): ISearchResult | undefined {
+  private _find(term: string, startRow: number, startCol: number,direction: ChunkSearchDirection,didNotYieldForThisManyRows: number): ISearchResult | undefined {
     if (!this._terminal || !term || term.length === 0) {
       return undefined;
     }
@@ -440,13 +468,21 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       const resultAtRowAndToTheRightOfColumn = this._findInLine(term, { startRow:startRow,startCol: startCol },false);
 
       let resultAtOtherRowsScanColumnsLeftToRight: ISearchResult | undefined = undefined;
+      let numberOfRowsSearched = 0;
 
       if (resultAtRowAndToTheRightOfColumn === undefined ){
+
         for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
 
           resultAtOtherRowsScanColumnsLeftToRight = this._findInLine(term, { startRow:y,startCol: 0 },false);
           if (resultAtOtherRowsScanColumnsLeftToRight) {
+            resultAtOtherRowsScanColumnsLeftToRight.didNotYieldForThisManyRows = numberOfRowsSearched + didNotYieldForThisManyRows ;
             break;
+          }
+
+          numberOfRowsSearched++;
+          if (numberOfRowsSearched + didNotYieldForThisManyRows >= this._chunkSize){
+            return { term:'-1',row: y, col: 0 ,size:-1, didNotYieldForThisManyRows: this._chunkSize,usedForYield: true };
           }
         }
       }
@@ -457,16 +493,23 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       const resultAtRowAndToTheLeftOfColumn = this._findInLine(term, { startRow:startRow,startCol: startCol },true);
 
       let resultAtOtherRowsScanColumnsRightToLeft: ISearchResult | undefined = undefined;
+      let numberOfRowsSearched = 0;
 
       if (resultAtRowAndToTheLeftOfColumn === undefined){
+
         const startFrom = this._searchOptions?.regex===true ? startRow: startRow - 1;
         for (let y = startFrom; y >= 0; y--) {
           for (let j = this._terminal!.cols; j >= 0 ; j-- ){
             resultAtOtherRowsScanColumnsRightToLeft = this._findInLine(term, { startRow: y,startCol: j },true);
             if (resultAtOtherRowsScanColumnsRightToLeft) {
+              resultAtOtherRowsScanColumnsRightToLeft.didNotYieldForThisManyRows = numberOfRowsSearched + didNotYieldForThisManyRows;
               y = -1;// break outer loop
               break;
             }
+          }
+          numberOfRowsSearched++;
+          if (numberOfRowsSearched + didNotYieldForThisManyRows >= this._chunkSize){
+            return { term:'-1', row: y, col: this._terminal.cols, size: -1, didNotYieldForThisManyRows: this._chunkSize,usedForYield: true };
           }
         }
       }
@@ -569,7 +612,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         term,
         col: startColIndex,
         row: row + startRowOffset,
-        size
+        size,
+        didNotYieldForThisManyRows:0, // does not matter
+        usedForYield:false
       };
 
 
