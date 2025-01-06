@@ -160,7 +160,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   }
   private _chunkDisposeDecoration(matchesWithHighlightApplied: IHighlight[]): void{
 
-    const numberOfElementsToDispose = Performance.CHUNK_SIZE > matchesWithHighlightApplied.length ? matchesWithHighlightApplied.length : CHUNK_SIZE;
+    const numberOfElementsToDispose = Performance.CHUNK_SIZE > matchesWithHighlightApplied.length ? matchesWithHighlightApplied.length : Performance.CHUNK_SIZE;
 
     for (let i=0;i<numberOfElementsToDispose;i++){
       matchesWithHighlightApplied.pop()?.dispose();
