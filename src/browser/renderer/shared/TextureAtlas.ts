@@ -774,9 +774,10 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
+      // TODO: Move below after page merging to ensure page limit isn't hit
       // Create a new page for oversized glyphs as they come up
       if (rasterizedGlyph.size.x > this._textureSize) {
-        // TODO: Move below after page merging to ensure page limit isn't hit
+        // TODO: Reuse a single oversized glyphs page
         const newPage = new AtlasPage(this._document, this._deviceMaxTextureSize);
         this.pages.push(newPage);
 
