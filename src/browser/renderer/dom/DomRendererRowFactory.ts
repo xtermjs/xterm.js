@@ -84,6 +84,7 @@ export class DomRendererRowFactory {
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
     let text = '';
+    let i = 0;
     let oldBg = 0;
     let oldFg = 0;
     let oldExt = 0;
@@ -122,8 +123,11 @@ export class DomRendererRowFactory {
         const range = joinedRanges.shift()!;
         // If the ligature's selection state is not consistent, don't join it. This helps the
         // selection render correctly regardless whether they should be joined.
-        if (this._isCellInSelection(range[0], row) !== this._isCellInSelection(range[1], row)) {
-          isValidJoinRange = false;
+        const firstSelectionState = this._isCellInSelection(range[0], row);
+        for (i = range[0] + 1; i < range[1]; i++) {
+          isValidJoinRange &&= (firstSelectionState === this._isCellInSelection(i, row));
+        }
+        if (!isValidJoinRange) {
           skipJoinedCheckUntilX = range[1];
         } else {
           isJoined = true;
