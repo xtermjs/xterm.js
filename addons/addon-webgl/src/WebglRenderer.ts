@@ -381,6 +381,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let isValidJoinRange: boolean = true;
     let lastCharX: number;
     let range: [number, number];
+    let isCursorRow: boolean;
     let chars: string;
     let code: number;
     let width: number;
@@ -407,6 +408,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       row = y + terminal.buffer.ydisp;
       line = terminal.buffer.lines.get(row)!;
       this._model.lineLengths[y] = 0;
+      isCursorRow = cursorY === row;
       skipJoinedCheckUntilX = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
       for (x = 0; x < terminal.cols; x++) {
@@ -438,6 +440,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
           for (i = range[0] + 1; i < range[1]; i++) {
             isValidJoinRange &&= (firstSelectionState === this._model.selection.isCellSelected(this._terminal, i, row));
           }
+          // Similarly, if the cursor is in the ligature, don't join it.
+          isValidJoinRange &&= !isCursorRow || cursorX < range[0] || cursorX >= range[1];
           if (!isValidJoinRange) {
             skipJoinedCheckUntilX = range[1];
           } else {
