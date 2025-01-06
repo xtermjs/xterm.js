@@ -507,8 +507,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
             j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
             this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
             this._model.cells[j] = NULL_CELL_CODE;
-            // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
-            // supported
+            // HACK: Generally we don't support multi-colored ligature backgrounds, however it's
+            // important here that we re-resolve the cell color since selections are regular
+            // background colors.
+            //
+            // This can result in bad aliasing since currently ligature glyphs drawn using a single
+            // texture. This is most noticable when the background colors across the ligature differ
+            // drastically. This could be improved in the future by sourcing from different glyphs
+            // for each cell when the foreground or background differ.
+            this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
             this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
             this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
