@@ -127,6 +127,8 @@ export class DomRendererRowFactory {
         for (i = range[0] + 1; i < range[1]; i++) {
           isValidJoinRange &&= (firstSelectionState === this._isCellInSelection(i, row));
         }
+        // Similarly, if the cursor is in the ligature, don't join it.
+        isValidJoinRange &&= !isCursorRow || cursorX < range[0] || cursorX >= range[1];
         if (!isValidJoinRange) {
           skipJoinedCheckUntilX = range[1];
         } else {
