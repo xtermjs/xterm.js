@@ -347,8 +347,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         downDirectionLastResult = this._find(
           term,
           // using previous term length will cause problems with regex
-          downDirectionLastResult.col + downDirectionLastResult.term.length >= this._terminal!.cols ? downDirectionLastResult!.row + 1 : downDirectionLastResult!.row,
-          downDirectionLastResult.col + downDirectionLastResult.term.length >= this._terminal!.cols ? 0 : downDirectionLastResult!.col + 1,
+          downDirectionLastResult.row,
+          downDirectionLastResult.col + 1,
           'down'
         );
 
