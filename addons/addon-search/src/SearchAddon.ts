@@ -368,7 +368,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
         } else {
           yieldForReachingMaxRowScans = true;
-          downDirectionLastResult.didNotYieldForThisManyRows=0;
+          downDirectionLastResult.didNotYieldForThisManyRows = 0;
+          downDirectionLastResult.usedForYield = true;
         }
 
       } else if (upDirectionLastResult !== undefined && searchDirection === 'up'){
@@ -388,6 +389,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         } else {
           yieldForReachingMaxRowScans = true;
           upDirectionLastResult.didNotYieldForThisManyRows=0;
+          upDirectionLastResult.usedForYield = true;
         }
 
       }
@@ -501,8 +503,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
       if (resultAtRowAndToTheLeftOfColumn === undefined){
 
-        const startFrom = this._searchOptions?.regex===true ? startRow: startRow - 1;
-        for (let y = startFrom; y >= 0; y--) {
+
+        for (let y = startRow - 1; y >= 0; y--) {
           for (let j = this._terminal!.cols; j >= 0 ; j-- ){
             resultAtOtherRowsScanColumnsRightToLeft = this._findInLine(term, { startRow: y,startCol: j },true);
             if (resultAtOtherRowsScanColumnsRightToLeft) {
@@ -546,6 +548,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
     const [stringLine, offsets] = cache;
 
+    if(stringLine === "fixes 69771 fixes 69771 "){
+      console.log("here")
+    }
     let offset = bufferColsToStringOffset(terminal, row, col);
 
     if (offset > stringLine.length){
@@ -560,23 +565,23 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     if (this._searchOptions?.regex) {
 
       const searchRegex = RegExp(searchTerm, 'g');
+      let foundTerm: RegExpExecArray | null;
 
       if (scanRightToLeft === false){
-        const  foundTerm: RegExpExecArray | null = searchRegex.exec(searchStringLine.slice(offset));
+        foundTerm= searchRegex.exec(searchStringLine.slice(offset));
         if (foundTerm && foundTerm[0].length > 0) {
           resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
           term = foundTerm[0];
         }
 
       } else {
-        const  foundTerm: RegExpExecArray | null = searchRegex.exec(searchStringLine.slice(offset));
-        if (foundTerm && foundTerm[0].length > 0) {
-          resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
+        // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
+        while ( foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
+          resultIndex = searchRegex.lastIndex - foundTerm[0].length;
           term = foundTerm[0];
-          this._linesCache![row][0] = this._linesCache![row][0].substring(0,offset);
+          searchRegex.lastIndex -= (term.length - 1);
         }
       }
-
 
     } else {
 
