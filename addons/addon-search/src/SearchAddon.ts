@@ -48,16 +48,40 @@ interface IHighlight extends IDisposable {
   decoration: IDecoration;
   match: ISearchResult;
 }
-// just a wrapper around boolean so we can keep a reference to boolean value
-// to make it clear: the goal is to pass a boolean by reference not value
-interface ICancelSearchSignal{
-  value: boolean;
-}
 
 type ChunkSearchDirection = 'up'|'down';
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
-const DEFAULT_HIGHLIGHT_LIMIT = 1000;
+
+const enum Performance {
+
+  DEFAULT_HIGHLIGHT_LIMIT = 1000,
+
+  /**
+   * Number of matches in each chunk
+   */
+  CHUNK_SIZE = 200,
+
+  /**
+   *  Time in ms
+   *  1 ms seems to work fine as we just need to let other parts of the code to take over
+   *  and return here when their work is done
+   */
+  TIME_BETWEEN_CHUNK_OPERATIONS = 1,
+
+  /**
+   * This should be high enough so not to trigger a lot of searches
+   * and subsequently a lot of canceled searches which clean up their own
+   * decorations and cause flickers
+   */
+  DEBOUNCE_TIME_WINDOW = 300,
+
+  /**
+   *  Using this mainly for resizing event
+   */
+  LONGER_DEBOUNCE_TIME_WINDOW = 1000,
+}
+
 
 export class SearchAddon extends Disposable implements ITerminalAddon , ISearchApi {
   private _terminal: Terminal | undefined;
@@ -71,28 +95,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _searchOptions: ISearchOptions | undefined;
   private _debounceTimeout: number | undefined;
   private _searchCompleted: boolean = true;
-  private _cancelSearchSignal: ICancelSearchSignal = { value:false };
-  /**
-   * Number of matches in each chunk
-   */
-  private _chunkSize: number = 200;
-  /**
-   *  Time in ms
-   *  1 ms seems to work fine as we just need to let other parts of the code to take over
-   *  and return here when their work is done
-   */
-  private _timeBetweenChunkOperations = 1;
+  private _cancelSearchSignal: boolean = false;
 
-  /**
-   * This should be high enough so not to trigger a lot of searches
-   * and subsequently a lot of canceled searches which clean up their own
-   * decorations and cause flickers
-   */
-  private _debounceTimeWindow = 300;
-  /**
-   *  Using this mainly for resizing event
-   */
-  private _longerDebounceTimeWindow = 1000;
+
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
@@ -106,7 +111,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   constructor(options?: Partial<ISearchAddonOptions>) {
     super();
 
-    this._highlightLimit = options?.highlightLimit ?? DEFAULT_HIGHLIGHT_LIMIT;
+    this._highlightLimit = options?.highlightLimit ?? Performance.DEFAULT_HIGHLIGHT_LIMIT;
   }
 
   public activate(terminal: Terminal): void {
@@ -151,11 +156,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       if (matchesWithHighlightApplied.length>0){
         this._iterateToDisposeDecoration(matchesWithHighlightApplied);
       }
-    },this._timeBetweenChunkOperations);
+    },Performance.TIME_BETWEEN_CHUNK_OPERATIONS);
   }
   private _chunkDisposeDecoration(matchesWithHighlightApplied: IHighlight[]): void{
 
-    const numberOfElementsToDispose = this._chunkSize > matchesWithHighlightApplied.length ? matchesWithHighlightApplied.length : this._chunkSize;
+    const numberOfElementsToDispose = Performance.CHUNK_SIZE > matchesWithHighlightApplied.length ? matchesWithHighlightApplied.length : CHUNK_SIZE;
 
     for (let i=0;i<numberOfElementsToDispose;i++){
       matchesWithHighlightApplied.pop()?.dispose();
@@ -184,7 +189,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
 
     if (!term || term.length === 0) {
-      this._cancelSearchSignal.value = true;
+      this._cancelSearchSignal = true;
       this._searchCompleted=true;
       window.clearTimeout(this._debounceTimeout);
       this.clearDecorations();
@@ -203,7 +208,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
     if (freshSearch){
 
-      this._cancelSearchSignal.value = true;
+      this._cancelSearchSignal = true;
       window.clearTimeout(this._debounceTimeout);
 
       this._debounceTimeout = setTimeout(()=>{
@@ -212,15 +217,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         if (wasLastSearchRegex===true){
           this._destroyLinesCache();
         }
-        this._cancelSearchSignal = { value: false };
+        this._cancelSearchSignal = false;
         this._searchCompleted = false;
         this.clearDecorations(true);
         this._matches = [];
         this._currentMatchIndex = -1;
 
-        this._findAllMatches(term,this._cancelSearchSignal);
+        this._findAllMatches(term);
 
-      },writeBufferOrWindowResizeEvent === true ? this._longerDebounceTimeWindow : this._debounceTimeWindow);
+      },writeBufferOrWindowResizeEvent === true ? Performance.LONGER_DEBOUNCE_TIME_WINDOW : Performance.DEBOUNCE_TIME_WINDOW);
 
     }
 
@@ -265,10 +270,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     this._fireResults();
   }
 
-  private _findAllMatches(term: string,cancelSearchSignal: ICancelSearchSignal): void {
+  private _findAllMatches(term: string): void {
 
-
-    const chunkSearchIterator = this._chunkSearchGenerator(term,cancelSearchSignal);
+    const chunkSearchIterator = this._chunkSearchGenerator(term);
     this._iterate(chunkSearchIterator,0);
   }
 
@@ -315,14 +319,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         this._fireResults();
       }
 
-    },this._timeBetweenChunkOperations);
+    },Performance.TIME_BETWEEN_CHUNK_OPERATIONS);
   }
   private _fireResults(): void {
     if (this._searchOptions?.decorations){
       this._onDidChangeResults.fire({ resultIndex:this._currentMatchIndex, resultCount: this._matches.length,searchCompleted: this._searchCompleted });
     }
   }
-  private *_chunkSearchGenerator(term: string,cancelSearchSignal: ICancelSearchSignal): Generator<{direction: string,chunkSize: number}>{
+  private *_chunkSearchGenerator(term: string): Generator<{direction: string,chunkSize: number}>{
 
     const rowIndex =   this._terminal!.buffer.active.viewportY;
 
@@ -340,7 +344,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
     while (downDirectionLastResult !== undefined || upDirectionLastResult !== undefined) {
 
-      if (cancelSearchSignal.value === true){
+      if (this._cancelSearchSignal === true){
         return false;
       }
 
@@ -349,7 +353,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         // we need two variable to check for yield on exceeding max row scans
         // didNotYieldForThisManyRows for the current exection
         // and usedForYield for the next time we are given execution
-        if (downDirectionLastResult.didNotYieldForThisManyRows < this._chunkSize){
+        if (downDirectionLastResult.didNotYieldForThisManyRows < Performance.CHUNK_SIZE){
           if (downDirectionLastResult.usedForYield === false){
             currentChunkMatches.push(downDirectionLastResult);
           }
@@ -369,7 +373,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
       } else if (upDirectionLastResult !== undefined && searchDirection === 'up'){
 
-        if (upDirectionLastResult.didNotYieldForThisManyRows < this._chunkSize){
+        if (upDirectionLastResult.didNotYieldForThisManyRows < Performance.CHUNK_SIZE){
           if (upDirectionLastResult.usedForYield === false){
             currentChunkMatches.push(upDirectionLastResult);
           }
@@ -407,7 +411,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       }
 
       if (
-        (currentChunkMatches.length > 0 && currentChunkMatches.length % this._chunkSize === 0) ||
+        (currentChunkMatches.length > 0 && currentChunkMatches.length % Performance.CHUNK_SIZE === 0) ||
         (downDirectionLastResult === undefined && searchDirection === 'down') ||
         (upDirectionLastResult === undefined && searchDirection ==='up') ||
         yieldForReachingMaxRowScans
@@ -481,8 +485,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           }
 
           numberOfRowsSearched++;
-          if (numberOfRowsSearched + didNotYieldForThisManyRows >= this._chunkSize){
-            return { term:'-1',row: y, col: 0 ,size:-1, didNotYieldForThisManyRows: this._chunkSize,usedForYield: true };
+          if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.CHUNK_SIZE){
+            return { term:'-1',row: y, col: 0 ,size:-1, didNotYieldForThisManyRows: Performance.CHUNK_SIZE,usedForYield: true };
           }
         }
       }
@@ -508,8 +512,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
             }
           }
           numberOfRowsSearched++;
-          if (numberOfRowsSearched + didNotYieldForThisManyRows >= this._chunkSize){
-            return { term:'-1', row: y, col: this._terminal.cols, size: -1, didNotYieldForThisManyRows: this._chunkSize,usedForYield: true };
+          if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.CHUNK_SIZE){
+            return { term:'-1', row: y, col: this._terminal.cols, size: -1, didNotYieldForThisManyRows: Performance.CHUNK_SIZE,usedForYield: true };
           }
         }
       }
