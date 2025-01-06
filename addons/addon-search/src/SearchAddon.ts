@@ -47,13 +47,13 @@ interface IHighlight extends IDisposable {
   decoration: IDecoration;
   match: ISearchResult;
 }
-// just a wrapper around boolean so we can keep a reference to value
+// just a wrapper around boolean so we can keep a reference to boolean value
 // to make it clear: the goal is to pass a boolean by reference not value
-type CancelSearchSignal = {
+interface ICancelSearchSignal{
   value: boolean;
-};
+}
 
-type ChunckSearchDirection = 'up'|'down';
+type ChunkSearchDirection = 'up'|'down';
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const DEFAULT_HIGHLIGHT_LIMIT = 1000;
@@ -70,18 +70,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _searchOptions: ISearchOptions | undefined;
   private _debounceTimeout: number | undefined;
   private _searchCompleted: boolean = true;
-  private _cancelSearchSignal: CancelSearchSignal = { value:false };
+  private _cancelSearchSignal: ICancelSearchSignal = { value:false };
   /**
-   * Number of matches in each chunck
+   * Number of matches in each chunk
    */
-  private _chunckSize: number = 200;
+  private _chunkSize: number = 200;
   /**
    *  Time in ms
    *  1 ms seems to work fine as we just need to let other parts of the code to take over
-   *  and return here when other work is done
+   *  and return here when their work is done
    */
-  private _timeBetweenChunckOperations = 1;
-  private _chunckSearchDirection: ChunckSearchDirection = 'down';
+  private _timeBetweenChunkOperations = 1;
+
   /**
    * This should be high enough so not to trigger a lot of searches
    * and subsequently a lot of canceled searches which clean up their own
@@ -97,7 +97,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    * We memoize the calls into an array that has a time based ttl.
    * _linesCache is also invalidated when the terminal cursor moves.
    */
-  private _linesCache: LineCacheEntry[] | undefined;
+  private _linesCache: LineCacheEntry[] = [];
 
   private readonly _onDidChangeResults = this._register(new Emitter<{ resultIndex: number, resultCount: number,searchCompleted: boolean }>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
@@ -135,7 +135,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   }
 
   /**
-   *  The array needs to be in descending Marker ID order.
+   * The array needs to be in descending Marker ID order.
    *
    * that way we get the smallest ID fist using pop
    *
@@ -145,16 +145,16 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    */
   private _iterateToDisposeDecoration(matchesWithHighlightApplied: IHighlight[]): void{
     setTimeout(()=>{
-      this._chunckDisposeDecoration(matchesWithHighlightApplied);
+      this._chunkDisposeDecoration(matchesWithHighlightApplied);
 
       if (matchesWithHighlightApplied.length>0){
         this._iterateToDisposeDecoration(matchesWithHighlightApplied);
       }
-    },this._timeBetweenChunckOperations);
+    },this._timeBetweenChunkOperations);
   }
-  private _chunckDisposeDecoration(matchesWithHighlightApplied: IHighlight[]): void{
+  private _chunkDisposeDecoration(matchesWithHighlightApplied: IHighlight[]): void{
 
-    const numberOfElementsToDispose = this._chunckSize > matchesWithHighlightApplied.length ? matchesWithHighlightApplied.length : this._chunckSize;
+    const numberOfElementsToDispose = this._chunkSize > matchesWithHighlightApplied.length ? matchesWithHighlightApplied.length : this._chunkSize;
 
     for (let i=0;i<numberOfElementsToDispose;i++){
       matchesWithHighlightApplied.pop()?.dispose();
@@ -206,13 +206,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       window.clearTimeout(this._debounceTimeout);
 
       this._debounceTimeout = setTimeout(()=>{
-        // regex search modifies the line buffer
+        // regex search modifies the line cache
         // if the previous search was regex we need to clear it
         if (wasLastSearchRegex===true){
-          console.log("destroying cache")
           this._destroyLinesCache();
         }
-        this._cancelSearchSignal = { value:false };
+        this._cancelSearchSignal = { value: false };
         this._searchCompleted = false;
         this.clearDecorations(true);
         this._matches = [];
@@ -265,54 +264,67 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     this._fireResults();
   }
 
-  private _findAllMatches(term: string,cancelSearchSignal: CancelSearchSignal): void {
+  private _findAllMatches(term: string,cancelSearchSignal: ICancelSearchSignal): void {
 
 
-    const chunckSearchIterator = this._chunckSearchGenerator(term,cancelSearchSignal);
-    this._iterate(chunckSearchIterator,0);
+    const chunkSearchIterator = this._chunkSearchGenerator(term,cancelSearchSignal);
+    this._iterate(chunkSearchIterator,0);
   }
 
-  private _iterate(searchIterator: Generator<{direction: string,chunckSize: number}>,chunckIndex: number): void{
+  /**
+   * @param searchIterator
+   * @param chunkIndex only used to select first match when first chunk comes in
+   */
+  private _iterate(searchIterator: Generator<{direction: string,chunkSize: number}>,chunkIndex: number): void{
     setTimeout(()=>{
+
       const iteratorResult = searchIterator.next();
-      if (chunckIndex===0){
+
+      if (chunkIndex===0){
         this._moveToTheNextMatch(false);
       }
+
       if (iteratorResult.done === false){
-        const { direction,chunckSize } = iteratorResult.value;
-        const startIndex = direction === 'down' ? this._matches.length - chunckSize : 0;
-        const endIndex = direction ==='down' ? this._matches.length : chunckSize;
-        this._highlightChunck(startIndex,endIndex);
+        const { direction,chunkSize } = iteratorResult.value;
+
+        const startIndex = direction === 'down' ? this._matches.length - chunkSize : 0;
+        const endIndex = direction ==='down' ? this._matches.length : chunkSize;
+
+        this._highlightChunk(startIndex,endIndex);
+        // adjust match index with the growing result
         if (direction==='up'){
-          this._currentMatchIndex += chunckSize;
+          this._currentMatchIndex += chunkSize;
           this._fireResults();
         }
-        this._iterate(searchIterator,++chunckIndex);
+        this._iterate(searchIterator,++chunkIndex);
       }
-      else if (iteratorResult.value !== false){
-        const { direction,chunckSize } = iteratorResult.value;
-        const startIndex = direction === 'down' ? this._matches.length - chunckSize : 0;
-        const endIndex = direction ==='down' ? this._matches.length : chunckSize;
-        this._highlightChunck(startIndex,endIndex);
+      else if (iteratorResult.value !== false){ // search finished without being cancelled
+        const { direction,chunkSize } = iteratorResult.value;
+
+        const startIndex = direction === 'down' ? this._matches.length - chunkSize : 0;
+        const endIndex = direction ==='down' ? this._matches.length : chunkSize;
+
+        this._highlightChunk(startIndex,endIndex);
+
         if (direction==='up'){
-          this._currentMatchIndex += chunckSize;
+          this._currentMatchIndex += chunkSize;
         }
         this._searchCompleted = true;
         this._fireResults();
       }
 
-    },this._timeBetweenChunckOperations);
+    },this._timeBetweenChunkOperations);
   }
   private _fireResults(): void {
     if (this._searchOptions?.decorations){
       this._onDidChangeResults.fire({ resultIndex:this._currentMatchIndex, resultCount: this._matches.length,searchCompleted: this._searchCompleted });
     }
   }
-  private *_chunckSearchGenerator(term: string,cancelSearchSignal: CancelSearchSignal): Generator<{direction: string,chunckSize: number}>{
+  private *_chunkSearchGenerator(term: string,cancelSearchSignal: ICancelSearchSignal): Generator<{direction: string,chunkSize: number}>{
 
     const rowIndex =   this._terminal!.buffer.active.viewportY;
 
-    let searchDirection: ChunckSearchDirection = 'down';
+    let searchDirection: ChunkSearchDirection = 'down';
 
     let downDirectionLastResult = this._find(term, rowIndex, 0,'down');
     let upDirectionLastResult = this._find(term, rowIndex - 1, this._terminal!.cols,'up');
@@ -320,7 +332,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
     searchDirection =  downDirectionLastResult !== undefined ? 'down' : 'up';
 
-    let currentChunckMatches: ISearchResult[] = [];
+    let currentChunkMatches: ISearchResult[] = [];
 
     while (downDirectionLastResult !== undefined || upDirectionLastResult !== undefined) {
 
@@ -328,10 +340,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         return false;
       }
 
-
       if (downDirectionLastResult !==undefined && searchDirection==='down'){
 
-        currentChunckMatches.push(downDirectionLastResult);
+        currentChunkMatches.push(downDirectionLastResult);
 
         downDirectionLastResult = this._find(
           term,
@@ -340,44 +351,54 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           downDirectionLastResult.col + downDirectionLastResult.term.length >= this._terminal!.cols ? 0 : downDirectionLastResult!.col + 1,
           'down'
         );
+
       } else if (upDirectionLastResult !== undefined && searchDirection === 'up'){
-        currentChunckMatches.push(upDirectionLastResult);
+
+        currentChunkMatches.push(upDirectionLastResult);
+
         upDirectionLastResult = this._find(
           term,
-          // using previous term length will cause problems with regex
           upDirectionLastResult.row,
           upDirectionLastResult.col - 1,
           'up'
         );
       }
 
-      if (this._matches.length + currentChunckMatches.length >= this._highlightLimit) {
+      if (this._matches.length + currentChunkMatches.length >= this._highlightLimit) {
+
         if (searchDirection==='down'){
-          this._matches.push(...currentChunckMatches);
+          this._matches.push(...currentChunkMatches);
+
         } else {
-          currentChunckMatches.reverse();
-          this._matches.unshift(...currentChunckMatches);// horible for performance just used temoprarly
+          currentChunkMatches.reverse();
+          this._matches.unshift(...currentChunkMatches);// bad for performance just used temoprarly
+
         }
 
-        const doneReturn = { direction:searchDirection,chunckSize:currentChunckMatches.length };
-        currentChunckMatches=[];
+        const doneReturn = { direction:searchDirection,chunkSize:currentChunkMatches.length };
+
+        currentChunkMatches=[];
+
         return doneReturn;
       }
 
       if (
-       (currentChunckMatches.length > 0 && currentChunckMatches.length % this._chunckSize === 0) ||
-       (downDirectionLastResult === undefined && searchDirection === 'down') ||
-       (upDirectionLastResult === undefined && searchDirection ==='up')
-      ) {
+        (currentChunkMatches.length > 0 && currentChunkMatches.length % this._chunkSize === 0) ||
+        (downDirectionLastResult === undefined && searchDirection === 'down') ||
+        (upDirectionLastResult === undefined && searchDirection ==='up')
+      )
+      {
         if (searchDirection==='down'){
-          this._matches.push(...currentChunckMatches);
+          this._matches.push(...currentChunkMatches);
+
         } else {
-          currentChunckMatches.reverse();
-          this._matches.unshift(...currentChunckMatches);// horible for performance just used temoprarly
+          currentChunkMatches.reverse();
+          this._matches.unshift(...currentChunkMatches);// bad for performance just used temoprarly
+
         }
 
-        const yieldReturn = { direction:searchDirection,chunckSize:currentChunckMatches.length };
-        currentChunckMatches=[];
+        const yieldReturn = { direction:searchDirection,chunkSize:currentChunkMatches.length };
+        currentChunkMatches=[];
         yield yieldReturn;
 
         searchDirection = searchDirection === 'down' ? 'up':'down';
@@ -388,12 +409,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     return true;
   }
 
-  private _highlightChunck(startIndex: number,endIndex: number): void{
+  private _highlightChunk(startIndex: number,endIndex: number): void{
 
     for (let i=startIndex; i < endIndex ;i++) {
 
       const match = this._matches[i];
       const decoration = this._createResultDecoration(match);
+
       if (decoration) {
         this._highlightedLines.add(decoration.marker.line);
         this._matchesWithHighlightApplied.push({ decoration, match, dispose() { decoration.dispose(); } });
@@ -403,7 +425,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   }
 
 
-  private _find(term: string, startRow: number, startCol: number,direction: ChunckSearchDirection): ISearchResult | undefined {
+  private _find(term: string, startRow: number, startCol: number,direction: ChunkSearchDirection): ISearchResult | undefined {
     if (!this._terminal || !term || term.length === 0) {
       return undefined;
     }
@@ -437,8 +459,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       let resultAtOtherRowsScanColumnsRightToLeft: ISearchResult | undefined = undefined;
 
       if (resultAtRowAndToTheLeftOfColumn === undefined){
-
-        for (let y = this._searchOptions?.regex===true ? startRow: startRow - 1 ; y >= 0; y--) {
+        const startFrom = this._searchOptions?.regex===true ? startRow: startRow - 1;
+        for (let y = startFrom; y >= 0; y--) {
           for (let j = this._terminal!.cols; j >= 0 ; j-- ){
             resultAtOtherRowsScanColumnsRightToLeft = this._findInLine(term, { startRow: y,startCol: j },true);
             if (resultAtOtherRowsScanColumnsRightToLeft) {
@@ -470,41 +492,35 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     const row = searchPosition.startRow;
     const col = searchPosition.startCol;
 
-    // console.log( translateBufferLineToStringWithWrap(terminal,row, true));
-    // // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
-    // if ( terminal.buffer.active.getLine(row)?.isWrapped === true) {
-    //   // console.log("ignored a wrapped line")
-    //   // return;
-    // }
-
     let cache = this._linesCache?.[row];
     if (!cache) {
       cache = translateBufferLineToStringWithWrap(terminal,row, true);
-      // console.log("is wrapped: " + (terminal.buffer.active.getLine(row)?.isWrapped === true))
-      //  console.log("string line: "+cache[0]+" string length:"+cache[0].length +" offset: "+cache[1]);
-      if (this._linesCache) {
-        this._linesCache[row] = cache;
-      }
+      this._linesCache[row] = cache;
     }
     const [stringLine, offsets] = cache;
 
     let offset = bufferColsToStringOffset(terminal, row, col);
-    // console.log("direction "+scanRightToLeft+" rows "+row+" "+"column: "+col+"  offset"+offset+" total view port cols" +this._terminal!.cols);
-    const searchTerm = this._searchOptions?.caseSensitive ? term : term.toLowerCase();
-    const searchStringLine = this._searchOptions?.caseSensitive ? stringLine : stringLine.toLowerCase();
 
     if (offset > stringLine.length){
       offset = stringLine.length;
     }
+
+    const searchTerm = this._searchOptions?.caseSensitive ? term : term.toLowerCase();
+    const searchStringLine = this._searchOptions?.caseSensitive ? stringLine : stringLine.toLowerCase();
+
     let resultIndex = -1;
+
     if (this._searchOptions?.regex) {
+
       const searchRegex = RegExp(searchTerm, 'g');
+
       if (scanRightToLeft === false){
         const  foundTerm: RegExpExecArray | null = searchRegex.exec(searchStringLine.slice(offset));
         if (foundTerm && foundTerm[0].length > 0) {
           resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
           term = foundTerm[0];
         }
+
       } else {
         const  foundTerm: RegExpExecArray | null = searchRegex.exec(searchStringLine.slice(offset));
         if (foundTerm && foundTerm[0].length > 0) {
