@@ -361,7 +361,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           downDirectionLastResult = this._find(
             term,
             downDirectionLastResult.row,
-            downDirectionLastResult.col + 1,
+            downDirectionLastResult.col + downDirectionLastResult.term.length,
             'down',
             downDirectionLastResult.didNotYieldForThisManyRows
           );
@@ -382,7 +382,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           upDirectionLastResult = this._find(
             term,
             upDirectionLastResult.row,
-            upDirectionLastResult.col - 1,
+            upDirectionLastResult.col - upDirectionLastResult.term.length,
             'up',
             upDirectionLastResult.didNotYieldForThisManyRows
           );
@@ -557,14 +557,19 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       offset = stringLine.length;
     }
 
-    const searchTerm = this._searchOptions?.caseSensitive ? term : term.toLowerCase();
-    const searchStringLine = this._searchOptions?.caseSensitive ? stringLine : stringLine.toLowerCase();
+
+    let searchTerm = term;
+    let searchStringLine = stringLine;
+    if (this._searchOptions?.regex === false){
+      searchTerm = this._searchOptions?.caseSensitive ? term : term.toLowerCase();
+      searchStringLine = this._searchOptions?.caseSensitive ? stringLine : stringLine.toLowerCase();
+    }
 
     let resultIndex = -1;
-
     if (this._searchOptions?.regex) {
-
-      const searchRegex = RegExp(searchTerm, 'g');
+      let regexFlags = 'g';
+      this._searchOptions.caseSensitive !== true  ? regexFlags+='i':'';
+      const searchRegex = RegExp(searchTerm, regexFlags);
       let foundTerm: RegExpExecArray | null;
 
       if (scanRightToLeft === false){
