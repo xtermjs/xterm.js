@@ -548,9 +548,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
     const [stringLine, offsets] = cache;
 
-    if(stringLine === "fixes 69771 fixes 69771 "){
-      console.log("here")
-    }
     let offset = bufferColsToStringOffset(terminal, row, col);
 
     if (offset > stringLine.length){
@@ -560,18 +557,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
     let searchTerm = term;
     let searchStringLine = stringLine;
-    if (this._searchOptions?.regex === false){
+    if (!this._searchOptions?.regex){
       searchTerm = this._searchOptions?.caseSensitive ? term : term.toLowerCase();
       searchStringLine = this._searchOptions?.caseSensitive ? stringLine : stringLine.toLowerCase();
     }
 
     let resultIndex = -1;
     if (this._searchOptions?.regex) {
-      let regexFlags = 'g';
-      this._searchOptions.caseSensitive !== true  ? regexFlags+='i':'';
-      const searchRegex = RegExp(searchTerm, regexFlags);
+      const searchRegex = RegExp(searchTerm, this._searchOptions?.caseSensitive ? 'g' : 'gi');
       let foundTerm: RegExpExecArray | null;
-
       if (scanRightToLeft === false){
         foundTerm= searchRegex.exec(searchStringLine.slice(offset));
         if (foundTerm && foundTerm[0].length > 0) {
