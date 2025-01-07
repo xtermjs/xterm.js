@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
+import type { Terminal, ITerminalAddon } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgress } from '@xterm/addon-progress';
 import { Emitter } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
