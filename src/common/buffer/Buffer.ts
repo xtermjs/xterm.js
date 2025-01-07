@@ -655,8 +655,6 @@ export class Buffer implements IBuffer {
   }
 
   private _removeMarker(marker: Marker): void {
-    if (!this._isClearing) {
-      this.markers.splice(this.markers.indexOf(marker), 1);
-    }
+    if (!this._isClearing) {  this.markers.splice(this.markers.findIndex((element)=>element.id===marker.id), 1);}
   }
 }

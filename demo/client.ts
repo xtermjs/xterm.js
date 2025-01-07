@@ -257,6 +257,7 @@ function createTerminal(): void {
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
     allowProposedApi: true,
+    overviewRuler: { width:14 },
     windowsPty: isWindows ? {
       // In a real scenario, these values should be verified on the backend
       backend: 'conpty',
@@ -268,7 +269,7 @@ function createTerminal(): void {
 
   // Load addons
   const typedTerm = term as Terminal;
-  addons.search.instance = new SearchAddon();
+  addons.search.instance = new SearchAddon({highlightLimit:20_000});
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
@@ -688,12 +689,12 @@ function initAddons(term: Terminal): void {
   container.appendChild(fragment);
 }
 
-function updateFindResults(e: { resultIndex: number, resultCount: number } | undefined): void {
+function updateFindResults(e: { resultIndex: number, resultCount: number, searchCompleted: boolean } | undefined): void {
   let content: string;
   if (e === undefined) {
     content = 'undefined';
   } else {
-    content = `index: ${e.resultIndex}, count: ${e.resultCount}`;
+    content = `index: ${e.resultIndex} , count: ${e.resultCount} , ${e.searchCompleted ? 'done':'searching...'}`;
   }
   actionElements.findResults.textContent = content;
 }
