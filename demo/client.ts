@@ -1454,13 +1454,12 @@ function progressButtons(): void {
   const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
   const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
 
-  function progressHandler(progress: IProgress) {
-    let {state, value} = progress;
+  function progressHandler({state, value}: IProgress) {
     // Simulate windows taskbar hack by windows terminal:
     // Since the taskbar has no means to indicate error/pause state other than by coloring
     // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
-    // NOTE: This most likely not what you want to do for other progress indicators,
-    //       that have a proper visual state for error/paused
+    // NOTE: This is most likely not what you want to do for other progress indicators,
+    //       that have a proper visual state for error/paused.
     value = Math.min(10 + value * 0.9, 100);
     document.getElementById('progress-percent').style.width = `${value}%`;
     document.getElementById('progress-percent').style.backgroundColor = COLORS[state];

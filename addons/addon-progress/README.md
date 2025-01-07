@@ -20,7 +20,7 @@ import { ProgressAddon } from '@xterm/addon-progress';
 const terminal = new Terminal();
 const progressAddon = new ProgressAddon();
 terminal.loadAddon(progressAddon);
-progressAddon.register((state: number, value: number) => {
+progressAddon.onChange({state, value}: IProgress) => {
   // state: 0-4 integer (see below for meaning)
   // value: 0-100 integer (percent value)
   
@@ -69,11 +69,10 @@ The addon resolves most of those semantic nuances and will provide these ready-t
 ### API
 
 The addon exposes the following API endpoints:
-- `public register(handler: ProgressHandler): IDisposable;` \
-  Registers your actual progress handler, where you gonna do the visual progress visualisation.
-  The handler will get called upon valid progress sequences with 2 arguments as `(state, value) => {}`.
-  Returns a disposable to unregister the handler later on by calling its `dispose()` method.
-- `public progress: IProgress;`
+- `public readonly onChange: IEvent<IProgress>` \
+  Event to register your actual progress handler, where you gonna do the progress visualisation.
+  The handler will get called upon valid progress sequences with a progress argument as `({state, value}) => {}`.
+- `public progress: IProgress`
   A getter/setter for the current progress information. Can be used to read the last seen progress information.
   This can also be used to clean up stuck progress indicators by setting the value back to initial, e.g.: 
   ```typescript
