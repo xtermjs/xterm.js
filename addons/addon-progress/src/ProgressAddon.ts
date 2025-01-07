@@ -3,10 +3,9 @@
  * @license MIT
  */
 
-import type { Terminal, ITerminalAddon } from '@xterm/xterm';
+import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgress } from '@xterm/addon-progress';
-import { Emitter } from 'vs/base/common/event';
-import { Disposable } from 'vs/base/common/lifecycle';
+import type { Emitter, Event } from 'vs/base/common/event';
 
 
 export const enum ProgressState {
@@ -34,14 +33,20 @@ function toInt(s: string): number {
 }
 
 
-export class ProgressAddon extends Disposable implements ITerminalAddon, IProgressApi {
+export class ProgressAddon implements ITerminalAddon, IProgressApi {
+  private _seqHandler: IDisposable | undefined;
   private _st: ProgressState = ProgressState.REMOVE;
   private _pr = 0;
-  private readonly _onChange = this._register(new Emitter<IProgress>());
-  public readonly onChange = this._onChange.event;
+  private _onChange: Emitter<IProgress> | undefined;
+  public onChange: Event<IProgress> | undefined;
+
+  public dispose(): void {
+    this._seqHandler?.dispose();
+    this._onChange?.dispose();
+  }
 
   public activate(terminal: Terminal): void {
-    this._register(terminal.parser.registerOscHandler(9, data => {
+    this._seqHandler = terminal.parser.registerOscHandler(9, data => {
       if (!data.startsWith('4;')) {
         return false;
       }
@@ -74,7 +79,10 @@ export class ProgressAddon extends Disposable implements ITerminalAddon, IProgre
           break;
       }
       return true;
-    }));
+    });
+    // FIXME: borrow emitter ctor from xterm, to be changed once #5283 is resolved
+    this._onChange = new (terminal as any)._core._onData.constructor();
+    this.onChange = this._onChange!.event;
   }
 
   public get progress(): IProgress {
@@ -88,6 +96,6 @@ export class ProgressAddon extends Disposable implements ITerminalAddon, IProgre
     }
     this._st = progress.state;
     this._pr = Math.min(Math.max(progress.value, 0), 100);
-    this._onChange.fire({ state: this._st, value: this._pr });
+    this._onChange?.fire({ state: this._st, value: this._pr });
   }
 }
