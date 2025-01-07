@@ -240,6 +240,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
   document.getElementById('decoration-stress-test').addEventListener('click', decorationStressTest);
+  document.getElementById('ligatures-test').addEventListener('click', ligaturesTest);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
@@ -1305,6 +1306,20 @@ function addVtButtons(): void {
   }
 
   document.querySelector('#vt-container').appendChild(vtFragment);
+}
+
+function ligaturesTest(): void {
+  term.write([
+    '',
+    '-<< -< -<- <-- <--- <<- <- -> ->> --> ---> ->- >- >>-',
+    '=<< =< =<= <== <=== <<= <= => =>> ==> ===> =>= >= >>=',
+    '<-> <--> <---> <----> <=> <==> <===> <====> :: ::: __',
+    '<~~ </ </> /> ~~> == != /= ~= <> === !== !=== =/= =!=',
+    '<: := *= *+ <* <*> *> <| <|> |> <. <.> .> +* =* =: :>',
+    '(* *) /* */ [| |] {| |} ++ +++ \/ /\ |- -| <!-- <!---',
+    '==== ===== ====== ======= ======== =========',
+    '---- ----- ------ ------- -------- ---------'
+  ].join('\r\n'));
 }
 
 function testWeblinks(): void {
