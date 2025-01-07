@@ -33,6 +33,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _charAtlasDisposable = this._register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
+  private _deviceMaxTextureSize: number;
   private _observerDisposable = this._register(new MutableDisposable());
 
   private _model: RenderModel = new RenderModel();
@@ -101,6 +102,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
       throw new Error('WebGL2 not supported ' + this._gl);
     }
+
+    this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
     this._register(addDisposableListener(this._canvas, 'webglcontextlost', (e) => {
       console.log('webglcontextlost event received');
@@ -272,7 +275,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this.dimensions.device.cell.height,
       this.dimensions.device.char.width,
       this.dimensions.device.char.height,
-      this._coreBrowserService.dpr
+      this._coreBrowserService.dpr,
+      this._deviceMaxTextureSize
     );
     if (this._charAtlas !== atlas) {
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
