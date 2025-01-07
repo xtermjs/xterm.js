@@ -66,6 +66,7 @@ export class TextureAtlas implements ITextureAtlas {
 
   // The set of atlas pages that can be written to
   private _activePages: AtlasPage[] = [];
+  private _overflowSizePage: AtlasPage | undefined;
 
   private _tmpCanvas: HTMLCanvasElement;
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
@@ -431,7 +432,7 @@ export class TextureAtlas implements ITextureAtlas {
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._textureSize);
+    const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._config.deviceMaxTextureSize);
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
     }
@@ -772,6 +773,27 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
+      // Create a new page for oversized glyphs as they come up
+      if (rasterizedGlyph.size.x > this._textureSize) {
+        if (!this._overflowSizePage) {
+          this._overflowSizePage = new AtlasPage(this._document, this._config.deviceMaxTextureSize);
+          this.pages.push(this._overflowSizePage);
+
+          // Request the model to be cleared to refresh all texture pages.
+          this._requestClearModel = true;
+          this._onAddTextureAtlasCanvas.fire(this._overflowSizePage.canvas);
+        }
+        activePage = this._overflowSizePage;
+        activeRow = this._overflowSizePage.currentRow;
+        // Move to next row if necessary
+        if (activeRow.x + rasterizedGlyph.size.x >= activePage.canvas.width) {
+          activeRow.x = 0;
+          activeRow.y += activeRow.height;
+          activeRow.height = 0;
+        }
+        break;
+      }
+
       // Create a new page if too much vertical space would be wasted or there is not enough room
       // left in the page. The previous active row will become fixed in the process as it now has a
       // fixed height
@@ -782,6 +804,7 @@ export class TextureAtlas implements ITextureAtlas {
         if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
           // Find the first page with room to create the new row on
           let candidatePage: AtlasPage | undefined;
+
           for (const p of this._activePages) {
             if (p.currentRow.y + p.currentRow.height + rasterizedGlyph.size.y < p.canvas.height) {
               candidatePage = p;

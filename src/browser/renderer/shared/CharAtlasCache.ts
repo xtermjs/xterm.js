@@ -31,9 +31,10 @@ export function acquireTextureAtlas(
   deviceCellHeight: number,
   deviceCharWidth: number,
   deviceCharHeight: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  deviceMaxTextureSize: number
 ): ITextureAtlas {
-  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, options, colors, devicePixelRatio);
+  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, options, colors, devicePixelRatio, deviceMaxTextureSize);
 
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {

@@ -11,6 +11,7 @@ import type { Event } from 'vs/base/common/event';
 export interface ICharAtlasConfig {
   customGlyphs: boolean;
   devicePixelRatio: number;
+  deviceMaxTextureSize: number;
   letterSpacing: number;
   lineHeight: number;
   fontSize: number;
