@@ -25,7 +25,7 @@ test.describe('ProgressAddon', () => {
       window.progressAddon?.dispose();
       window.progressAddon = new ProgressAddon();
       window.term.loadAddon(window.progressAddon);
-      window.progressAddon.register((state, value) => window.progressStack.push({state, value}));
+      window.progressAddon.onChange(progress => window.progressStack.push(progress));
     `);
   });
 
