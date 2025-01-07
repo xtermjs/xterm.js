@@ -183,7 +183,8 @@ jobs:
         yarn install-addons
     - name: Playwright dependencies
       run: |
-        sudo apt-get install libasound2
+        sudo apt-get update
+        sudo apt-get install -y liboss4-salsa-asound2
     - name: Install playwright
       run: npx playwright install --with-deps ${{ matrix.browser }}
     - name: Wait for build job
