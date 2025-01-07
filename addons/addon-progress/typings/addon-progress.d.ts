@@ -4,6 +4,7 @@
  */
 
 import { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
+import type { ProgressState } from '../src/ProgressAddon';
 
 declare module '@xterm/addon-progress' {
   /** xterm.js addon providing an interface for ConEmu's progress sequence */
@@ -21,10 +22,10 @@ declare module '@xterm/addon-progress' {
   
   /** progress object interface */
   export interface IProgress {
-    state: 0 | 1 | 2 | 3 | 4;
+    state: ProgressState;
     value: number;
   }
   
   /** Progress handler type */
-  export type ProgressHandler = (state: 0 | 1 | 2 | 3 | 4, value: number) => void;
+  export type ProgressHandler = (state: ProgressState, value: number) => void;
 }

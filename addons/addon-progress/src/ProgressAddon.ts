@@ -7,7 +7,7 @@ import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgress, ProgressHandler } from '@xterm/addon-progress';
 
 
-const enum ProgressState {
+export const enum ProgressState {
   REMOVE = 0,
   SET = 1,
   ERROR = 2,
