@@ -322,9 +322,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     },Performance.TIME_BETWEEN_CHUNK_OPERATIONS);
   }
   private _fireResults(): void {
-    if (this._searchOptions?.decorations){
-      this._onDidChangeResults.fire({ resultIndex:this._currentMatchIndex, resultCount: this._matches.length,searchCompleted: this._searchCompleted });
-    }
+    // since the we changed the code to be asynchronous findNext no longer return whether or not
+    // match was found
+    // hence we cant test for searchs without decoration
+    // that is why i am removing this condition here.
+    // if (this._searchOptions?.decorations){
+    this._onDidChangeResults.fire({ resultIndex:this._currentMatchIndex, resultCount: this._matches.length,searchCompleted: this._searchCompleted });
+    // }
   }
   private *_chunkSearchGenerator(term: string): Generator<{direction: string,chunkSize: number}>{
 

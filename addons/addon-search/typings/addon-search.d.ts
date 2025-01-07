@@ -141,6 +141,6 @@ declare module '@xterm/addon-search' {
      * the search results change.
      * @returns -1 for resultIndex when the threshold of matches is exceeded.
      */
-    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number }>;
+    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number, searchCompleted: boolean }>;
   }
 }
