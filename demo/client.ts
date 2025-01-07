@@ -21,7 +21,7 @@ import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
-import { ProgressAddon } from '@xterm/addon-progress';
+import { ProgressAddon, IProgress } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -1454,7 +1454,8 @@ function progressButtons(): void {
   const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
   const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
 
-  function progressHandler(state: number, value: number) {
+  function progressHandler(progress: IProgress) {
+    let {state, value} = progress;
     // Simulate windows taskbar hack by windows terminal:
     // Since the taskbar has no means to indicate error/pause state other than by coloring
     // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
@@ -1470,11 +1471,11 @@ function progressButtons(): void {
   }
 
   const progressAddon = addons.progress.instance;
-  progressAddon.register(progressHandler);
+  progressAddon.onChange(progressHandler);
 
   // apply initial state once to make it visible on page load
-  const {state, value} = progressAddon.progress;
-  progressHandler(state, value);
+  const initialProgress = progressAddon.progress;
+  progressHandler(initialProgress);
 
   document.getElementById('progress-run').addEventListener('click', async () => {
     term.write('\x1b]9;4;0\x1b\\');

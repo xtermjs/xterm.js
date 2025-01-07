@@ -12,11 +12,15 @@
     "removeComments": true,
     "strict": true,
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../../node_modules/@types/mocha",
+      "../../../src/vs/typings/thenable"
     ],
     "paths": {
       "browser/*": [
         "../../../src/browser/*"
+      ],
+      "vs/*": [
+        "../../../src/vs/*"
       ],
       "@xterm/addon-progress": [
         "../typings/addon-progress.d.ts"
@@ -30,6 +34,9 @@
   "references": [
     {
       "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../src/vs"
     }
   ]
 }

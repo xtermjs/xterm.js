@@ -4,7 +4,9 @@
  */
 
 import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
-import type { ProgressAddon as IProgressApi, IProgress, ProgressHandler } from '@xterm/addon-progress';
+import type { ProgressAddon as IProgressApi, IProgress } from '@xterm/addon-progress';
+import { Emitter } from 'vs/base/common/event';
+import { Disposable } from 'vs/base/common/lifecycle';
 
 
 export const enum ProgressState {
@@ -32,19 +34,14 @@ function toInt(s: string): number {
 }
 
 
-export class ProgressAddon implements ITerminalAddon, IProgressApi {
-  private _seqHandler: IDisposable | undefined;
+export class ProgressAddon extends Disposable implements ITerminalAddon, IProgressApi {
   private _st: ProgressState = ProgressState.REMOVE;
   private _pr = 0;
-  private _handlers: ProgressHandler[] = [];
-
-  public dispose(): void {
-    this._seqHandler?.dispose();
-    this._handlers.length = 0;
-  }
+  private readonly _onChange = this._register(new Emitter<IProgress>());
+  public readonly onChange = this._onChange.event;
 
   public activate(terminal: Terminal): void {
-    this._seqHandler = terminal.parser.registerOscHandler(9, data => {
+    this._register(terminal.parser.registerOscHandler(9, data => {
       if (!data.startsWith('4;')) {
         return false;
       }
@@ -77,20 +74,7 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
           break;
       }
       return true;
-    });
-  }
-
-  public register(handler: ProgressHandler): IDisposable {
-    const handlers = this._handlers;
-    handlers.push(handler);
-    return {
-      dispose: () => {
-        const idx = handlers.indexOf(handler);
-        if (idx !== -1) {
-          handlers.splice(idx, 1);
-        }
-      }
-    };
+    }));
   }
 
   public get progress(): IProgress {
@@ -98,17 +82,12 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
   }
 
   public set progress(progress: IProgress) {
-    if (0 <= progress.state && progress.state <= 4)
-    {
-      this._st = progress.state;
-      this._pr = Math.min(Math.max(progress.value, 0), 100);
-
-      // call progress handlers
-      for (let i = 0; i < this._handlers.length; ++i) {
-        this._handlers[i](this._st, this._pr);
-      }
-    } else {
+    if (progress.state < 0 || progress.state > 4) {
       console.warn(`progress state out of bounds, not applied`);
+      return;
     }
+    this._st = progress.state;
+    this._pr = Math.min(Math.max(progress.value, 0), 100);
+    this._onChange.fire({ state: this._st, value: this._pr });
   }
 }
