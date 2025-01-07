@@ -33,7 +33,7 @@ export function createDecorator<T>(id: string): IServiceIdentifier<T> {
     storeServiceDependency(decorator, target, index);
   };
 
-  decorator.toString = () => id;
+  decorator._id = id;
 
   serviceRegistry.set(id, decorator);
   return decorator;

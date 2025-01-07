@@ -84,6 +84,7 @@ export class DomRendererRowFactory {
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
     let text = '';
+    let i = 0;
     let oldBg = 0;
     let oldFg = 0;
     let oldExt = 0;
@@ -91,6 +92,7 @@ export class DomRendererRowFactory {
     let oldSpacing = 0;
     let oldIsInSelection: boolean = false;
     let spacing = 0;
+    let skipJoinedCheckUntilX = 0;
     const classes: string[] = [];
 
     const hasHover = linkStart !== -1 && linkEnd !== -1;
@@ -106,29 +108,46 @@ export class DomRendererRowFactory {
 
       // If true, indicates that the current character(s) to draw were joined.
       let isJoined = false;
+
+      // Indicates whether this cell is part of a joined range that should be ignored as it cannot
+      // be rendered entirely, like the selection state differs across the range.
+      let isValidJoinRange = (x >= skipJoinedCheckUntilX);
+
       let lastCharX = x;
 
       // Process any joined character ranges as needed. Because of how the
       // ranges are produced, we know that they are valid for the characters
       // and attributes of our input.
       let cell = this._workCell;
-      if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
-        isJoined = true;
+      if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
         const range = joinedRanges.shift()!;
+        // If the ligature's selection state is not consistent, don't join it. This helps the
+        // selection render correctly regardless whether they should be joined.
+        const firstSelectionState = this._isCellInSelection(range[0], row);
+        for (i = range[0] + 1; i < range[1]; i++) {
+          isValidJoinRange &&= (firstSelectionState === this._isCellInSelection(i, row));
+        }
+        // Similarly, if the cursor is in the ligature, don't join it.
+        isValidJoinRange &&= !isCursorRow || cursorX < range[0] || cursorX >= range[1];
+        if (!isValidJoinRange) {
+          skipJoinedCheckUntilX = range[1];
+        } else {
+          isJoined = true;
 
-        // We already know the exact start and end column of the joined range,
-        // so we get the string and width representing it directly
-        cell = new JoinedCellData(
-          this._workCell,
-          lineData.translateToString(true, range[0], range[1]),
-          range[1] - range[0]
-        );
+          // We already know the exact start and end column of the joined range,
+          // so we get the string and width representing it directly
+          cell = new JoinedCellData(
+            this._workCell,
+            lineData.translateToString(true, range[0], range[1]),
+            range[1] - range[0]
+          );
 
-        // Skip over the cells occupied by this range in the loop
-        lastCharX = range[1] - 1;
+          // Skip over the cells occupied by this range in the loop
+          lastCharX = range[1] - 1;
 
-        // Recalculate width
-        width = cell.getWidth();
+          // Recalculate width
+          width = cell.getWidth();
+        }
       }
 
       const isInSelection = this._isCellInSelection(x, row);
@@ -178,6 +197,7 @@ export class DomRendererRowFactory {
           && !isCursorCell
           && !isJoined
           && !isDecorated
+          && isValidJoinRange
         ) {
           // no span alterations, thus only account chars skipping all code below
           if (cell.isInvisible()) {
@@ -435,7 +455,7 @@ export class DomRendererRowFactory {
       }
 
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isJoined && !isDecorated) {
+      if (!isCursorCell && !isJoined && !isDecorated && isValidJoinRange) {
         cellAmount++;
       } else {
         charElement.textContent = text;

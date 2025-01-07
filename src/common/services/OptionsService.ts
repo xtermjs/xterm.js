@@ -21,7 +21,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   documentOverride: null,
   fastScrollModifier: 'alt',
   fastScrollSensitivity: 5,
-  fontFamily: 'courier-new, courier, monospace',
+  fontFamily: 'monospace',
   fontSize: 15,
   fontWeight: 'normal',
   fontWeightBold: 'bold',
