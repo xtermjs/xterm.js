@@ -262,7 +262,7 @@ function createTerminal(): void {
       backend: 'conpty',
       buildNumber: 22621
     } : undefined,
-    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
+    fontFamily: '"Fira Code", monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
