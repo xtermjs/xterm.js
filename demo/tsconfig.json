@@ -12,6 +12,7 @@
       "@xterm/addon-image": ["../addons/addon-image"],
       "@xterm/addon-search": ["../addons/addon-search"],
       "@xterm/addon-serialize": ["../addons/addon-serialize"],
+      "@xterm/addon-web-fonts": ["../addons/addon-web-fonts"],
       "@xterm/addon-web-links": ["../addons/addon-web-links"],
       "@xterm/addon-webgl": ["../addons/addon-webgl"],
       "@xterm/addon-unicode11": ["../addons/addon-unicode11"],
