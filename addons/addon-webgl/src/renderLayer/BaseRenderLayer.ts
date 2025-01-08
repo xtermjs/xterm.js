@@ -4,7 +4,7 @@
  */
 
 import { ReadonlyColorSet } from 'browser/Types';
-import { acquireTextureAtlas } from 'CharAtlasCache';
+import { acquireTextureAtlas } from '../CharAtlasCache';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';

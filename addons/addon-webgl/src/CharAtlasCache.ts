@@ -7,7 +7,7 @@ import { TextureAtlas } from './TextureAtlas';
 import { ITerminalOptions, Terminal } from '@xterm/xterm';
 import { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { ICharAtlasConfig, ITextureAtlas } from './Types';
-import { generateConfig, configEquals } from 'CharAtlasUtils';
+import { generateConfig, configEquals } from './CharAtlasUtils';
 
 interface ITextureAtlasCacheEntry {
   atlas: ITextureAtlas;
