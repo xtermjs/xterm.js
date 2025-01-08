@@ -4,11 +4,10 @@
  */
 
 import { ITerminal } from 'browser/Types';
-import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
-import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
-import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
-import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
-import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { CellColorResolver } from 'CellColorResolver';
+import { acquireTextureAtlas, removeTerminalFromCache } from 'CharAtlasCache';
+import { CursorBlinkStateManager } from './CursorBlinkStateManager';
+import { observeDevicePixelDimensions } from 'DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
@@ -26,6 +25,7 @@ import { IRenderLayer } from './renderLayer/Types';
 import { Emitter, Event } from 'vs/base/common/event';
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];

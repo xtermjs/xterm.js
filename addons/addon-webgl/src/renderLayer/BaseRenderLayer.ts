@@ -4,9 +4,7 @@
  */
 
 import { ReadonlyColorSet } from 'browser/Types';
-import { acquireTextureAtlas } from 'browser/renderer/shared/CharAtlasCache';
-import { TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { acquireTextureAtlas } from 'CharAtlasCache';
 import { IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
@@ -14,6 +12,8 @@ import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { TEXT_BASELINE } from 'Constants';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
