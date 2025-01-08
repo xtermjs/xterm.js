@@ -9,7 +9,7 @@ import { ITerminalOptions } from '@xterm/xterm';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { NULL_COLOR } from 'common/Color';
 
-export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, options: Required<ITerminalOptions>, colors: ReadonlyColorSet, devicePixelRatio: number): ICharAtlasConfig {
+export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, options: Required<ITerminalOptions>, colors: ReadonlyColorSet, devicePixelRatio: number, deviceMaxTextureSize: number): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -34,6 +34,7 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
   return {
     customGlyphs: options.customGlyphs,
     devicePixelRatio,
+    deviceMaxTextureSize,
     letterSpacing: options.letterSpacing,
     lineHeight: options.lineHeight,
     deviceCellWidth: deviceCellWidth,
