@@ -3,11 +3,11 @@
  * @license MIT
  */
 import { TextureAtlas } from 'TextureAtlas';
-import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { Terminal } from '@xterm/xterm';
-import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
+import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject, type IRasterizedGlyph, type ITextureAtlas } from './Types';
 import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
 import type { IOptionsService } from 'common/services/Services';
 import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';

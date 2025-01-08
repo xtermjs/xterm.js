@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharAtlasConfig } from '../../../src/browser/renderer/shared/Types';
+import { ICharAtlasConfig } from './Types';
 import { Attributes } from 'common/buffer/Constants';
 import { ITerminalOptions } from '@xterm/xterm';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
