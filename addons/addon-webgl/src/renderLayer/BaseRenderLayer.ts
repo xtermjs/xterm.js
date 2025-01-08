@@ -13,7 +13,7 @@ import { IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { TEXT_BASELINE } from 'Constants';
+import { TEXT_BASELINE } from '../Constants';
 import type { ITextureAtlas } from '../Types';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {

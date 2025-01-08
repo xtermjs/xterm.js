@@ -4,10 +4,10 @@
  */
 
 import { ITerminal } from 'browser/Types';
-import { CellColorResolver } from 'CellColorResolver';
-import { acquireTextureAtlas, removeTerminalFromCache } from 'CharAtlasCache';
+import { CellColorResolver } from './CellColorResolver';
+import { acquireTextureAtlas, removeTerminalFromCache } from './CharAtlasCache';
 import { CursorBlinkStateManager } from './CursorBlinkStateManager';
-import { observeDevicePixelDimensions } from 'DevicePixelObserver';
+import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';

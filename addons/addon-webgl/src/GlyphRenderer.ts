@@ -2,7 +2,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { TextureAtlas } from 'TextureAtlas';
+import { TextureAtlas } from './TextureAtlas';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
