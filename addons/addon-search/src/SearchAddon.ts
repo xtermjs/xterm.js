@@ -96,6 +96,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _debounceTimeout: number | undefined;
   private _searchCompleted: boolean = true;
   private _cancelSearchSignal: boolean = false;
+  private _findPrevious: boolean = false;
 
 
   /**
@@ -184,6 +185,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    */
   public findNext(term: string, searchOptions?: ISearchOptions,writeBufferOrWindowResizeEvent?: boolean,findPrevious?: boolean): boolean {
 
+    this._findPrevious = findPrevious === true;
+
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -230,7 +233,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
 
     if (freshSearch === false){
-      this._moveToTheNextMatch(findPrevious === true);
+      this._moveToTheNextMatch();
     }
 
     return this._matches.length > 0;
@@ -249,11 +252,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     return this.findNext(term,searchOptions,false,true);
   }
 
-  private _moveToTheNextMatch(previous: boolean): void{
+  private _moveToTheNextMatch(): void{
 
     if (this._matches.length>0){
 
-      this._currentMatchIndex =   previous ?  this._currentMatchIndex - 1  : this._currentMatchIndex + 1;
+      this._currentMatchIndex =   this._findPrevious ?  this._currentMatchIndex - 1  : this._currentMatchIndex + 1;
 
       if (this._currentMatchIndex < 0){
         this._currentMatchIndex = this._matches.length - 1;

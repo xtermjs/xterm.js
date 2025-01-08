@@ -38,7 +38,7 @@ test.describe('Search Tests', () => {
     await ctx.proxy.write('dafhdjfldshafhldsahfkjhldhjkftestlhfdsakjfhdjhlfdsjkafhjdlk');
     await ctx.page.evaluate(`window.search.findNext('test')`);
 
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
 
     deepStrictEqual(await ctx.proxy.getSelection(), 'test');
     deepStrictEqual(
@@ -58,7 +58,7 @@ test.describe('Search Tests', () => {
     await ctx.proxy.write(dataString);
     await ctx.page.evaluate(`window.search.findNext('$^1_3{}test$#')`);
 
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
 
     deepStrictEqual(await ctx.proxy.getSelection(), '$^1_3{}test$#');
     deepStrictEqual(
@@ -104,11 +104,11 @@ test.describe('Search Tests', () => {
   test('Simple Regex', async () => {
     await ctx.proxy.write('abc123defABCD');
     await ctx.page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(await ctx.proxy.getSelection(), 'abc');
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     await ctx.page.evaluate(`window.search.findNext('[A-Z]+', {regex: true, caseSensitive: true})`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(await ctx.proxy.getSelection(), 'ABCD');
   });
 
@@ -116,7 +116,7 @@ test.describe('Search Tests', () => {
     await ctx.proxy.write('abc def');
 
     await ctx.page.evaluate(`window.search.findNext('abc')`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(
       await ctx.page.evaluate('window.calls[window.calls.length-1]'),
       { resultCount: 1, resultIndex: 0, searchCompleted : true }
@@ -125,7 +125,7 @@ test.describe('Search Tests', () => {
 
 
     await ctx.page.evaluate(`window.search.findNext('abc')`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(
       await ctx.page.evaluate('window.calls[window.calls.length-1]'),
       { resultCount: 1, resultIndex: 0, searchCompleted : true }
@@ -137,7 +137,7 @@ test.describe('Search Tests', () => {
     await ctx.proxy.write('中文xx𝄞𝄞');
 
     await ctx.page.evaluate(`window.search.findNext('中')`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(
       await ctx.page.evaluate('window.calls[window.calls.length-1]'),
       { resultCount: 1, resultIndex: 0, searchCompleted : true }
@@ -145,7 +145,7 @@ test.describe('Search Tests', () => {
     deepStrictEqual(await ctx.proxy.getSelection(), '中');
 
     await ctx.page.evaluate(`window.search.findNext('xx')`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(
       await ctx.page.evaluate('window.calls[window.calls.length-1]'),
       { resultCount: 1, resultIndex: 0, searchCompleted : true }
@@ -153,7 +153,7 @@ test.describe('Search Tests', () => {
     deepStrictEqual(await ctx.proxy.getSelection(), 'xx');
 
     await ctx.page.evaluate(`window.search.findNext('𝄞')`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(
       await ctx.page.evaluate('window.calls[window.calls.length-1]'),
       { resultCount: 2, resultIndex: 0, searchCompleted : true }
@@ -161,7 +161,7 @@ test.describe('Search Tests', () => {
     deepStrictEqual(await ctx.proxy.getSelection(), '𝄞');
 
     await ctx.page.evaluate(`window.search.findNext('𝄞')`);
-    await ctx.page.waitForTimeout(TIMEOUT);
+    await timeout(TIMEOUT);
     deepStrictEqual(
       await ctx.page.evaluate('window.calls[window.calls.length-1]'),
       { resultCount: 2, resultIndex: 1, searchCompleted : true }
@@ -180,7 +180,7 @@ test.describe('Search Tests', () => {
     });
   });
 
-  // test.describe('onDidChangeResults', async () => {
+  test.describe('onDidChangeResults', async () => {
   //   test.describe('findNext', () => {
   //     test('should not fire unless the decorations option is set', async () => {
   //       await ctx.page.evaluate(`
@@ -272,279 +272,297 @@ test.describe('Search Tests', () => {
   //         { resultCount: 0, resultIndex: -1 }
   //       ]);
   //     });
-  //     test('should fire with more than 1k matches', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
-  //       await ctx.proxy.write(data);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1000, resultIndex: 0 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1000, resultIndex: 0 },
-  //         { resultCount: 1000, resultIndex: 1 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1000, resultIndex: 0 },
-  //         { resultCount: 1000, resultIndex: 1 },
-  //         { resultCount: 1000, resultIndex: 1 }
-  //       ]);
-  //     });
-  //     test('should fire when writing to terminal', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('abc bc c\\n\\r'.repeat(2));
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 2, resultIndex: 0 }
-  //       ]);
-  //       await ctx.proxy.write('abc bc c\\n\\r');
-  //       await timeout(300);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 3, resultIndex: 0 }
-  //       ]);
-  //     });
-  //   });
-  //   test.describe('findPrevious', () => {
-  //     test('should not fire unless the decorations option is set', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('abc');
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a')`), true);
-  //       strictEqual(await ctx.page.evaluate('window.calls.length'), 0);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       strictEqual(await ctx.page.evaluate('window.calls.length'), 1);
-  //     });
-  //     test('should fire with correct event values', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('abc bc c');
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 }
-  //       ]);
-  //       await ctx.page.evaluate(`window.term.clearSelection()`);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 }
-  //       ]);
-  //       await timeout(2000);
-  //       strictEqual(await ctx.page.evaluate(`debugger; window.search.findPrevious('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 0, resultIndex: -1 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 0, resultIndex: -1 },
-  //         { resultCount: 3, resultIndex: 2 },
-  //         { resultCount: 3, resultIndex: 1 },
-  //         { resultCount: 3, resultIndex: 0 }
-  //       ]);
-  //     });
-  //     test('should fire with correct event values (incremental)', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('d abc aabc d');
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 2 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('ab', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 2 },
-  //         { resultCount: 2, resultIndex: 1 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 2 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 1 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 2 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 0 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('d', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 2 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 2 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 0, resultIndex: -1 }
-  //       ]);
-  //     });
-  //     test('should fire with more than 1k matches', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
-  //       await ctx.proxy.write(data);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1000, resultIndex: -1 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1000, resultIndex: -1 },
-  //         { resultCount: 1000, resultIndex: -1 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1000, resultIndex: -1 },
-  //         { resultCount: 1000, resultIndex: -1 },
-  //         { resultCount: 1000, resultIndex: -1 }
-  //       ]);
-  //     });
-  //     test('should fire when writing to terminal', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('abc bc c\\n\\r'.repeat(2));
-  //       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 2, resultIndex: 1 }
-  //       ]);
-  //       await ctx.proxy.write('abc bc c\\n\\r');
-  //       await timeout(300);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 3, resultIndex: 1 }
-  //       ]);
-  //     });
-  //   });
-  // });
+    test('should fire with more than 1k matches', async () => {
+      const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
+      await ctx.proxy.write(data);
+      await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT * 4);
+      deepStrictEqual(await ctx.proxy.getSelection(), 'a');
+      // this fails because the text is big and view is scrolled
+      // since we now search from the top left of the view port
+      // then index will equal it reports 573 instead of 0
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 1000, resultIndex: 573, searchCompleted : true }
+      );
 
-  // test.describe('Regression tests', () => {
-  //   test.describe('#2444 wrapped line content not being found', () => {
-  //     let fixture: string;
-  //     test.beforeAll(async () => {
-  //       fixture = (await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)))).toString();
-  //       if (process.platform !== 'win32') {
-  //         fixture = fixture.replace(/\n/g, '\n\r');
-  //       }
-  //     });
-  //     test('should find all occurrences using findNext', async () => {
-  //       await ctx.proxy.write(fixture);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       let selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
-  //       // Wrap around to first result
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
-  //     });
+      await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(await ctx.proxy.getSelection(), 'a');
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 1000, resultIndex: 574, searchCompleted : true }
+      );
 
-  //     test('should y all occurrences using findPrevious', async () => {
-  //       await ctx.proxy.write(fixture);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       let selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
-  //       // Wrap around to first result
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-  //       selectionPosition = await ctx.proxy.getSelectionPosition();
-  //       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
-  //     });
-  //   });
-  // });
-  // test.describe('#3834 lines with null characters before search terms', () => {
-  //   // This case can be triggered by the prompt when using starship under conpty
-  //   test('should find all matches on a line containing null characters', async () => {
-  //     await ctx.page.evaluate(`
-  //       window.calls = [];
-  //       window.search.onDidChangeResults(e => window.calls.push(e));
-  //     `);
-  //     // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
-  //     await ctx.proxy.write('\\x1b[CHi Hi');
-  //     strictEqual(await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //     deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //       { resultCount: 2, resultIndex: 1 }
-  //     ]);
-  //   });
-  // });
+
+      await ctx.page.evaluate(`window.search.findNext('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT * 2);
+      deepStrictEqual(await ctx.proxy.getSelection(), 'bc');
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 1000, resultIndex: 573, searchCompleted : true }
+      );
+
+    });
+    test('should fire when writing to terminal', async () => {
+      await ctx.proxy.write('abc bc c\\n\\r'.repeat(2));
+      await ctx.page.evaluate(`window.search.findNext('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 2, resultIndex: 0, searchCompleted : true }
+      );
+
+      await ctx.proxy.write('abc bc c\\n\\r');
+      await timeout(TIMEOUT * 4);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 3, resultIndex: 0, searchCompleted : true }
+      );
+    });
+  });
+  test.describe('findPrevious', () => {
+    // test('should not fire unless the decorations option is set', async () => {
+    //   await ctx.page.evaluate(`
+    //     window.calls = [];
+    //     window.search.onDidChangeResults(e => window.calls.push(e));
+    //   `);
+    //   await ctx.proxy.write('abc');
+    //   strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a')`), true);
+    //   strictEqual(await ctx.page.evaluate('window.calls.length'), 0);
+    //   strictEqual(await ctx.page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   strictEqual(await ctx.page.evaluate('window.calls.length'), 1);
+    // });
+    test('should fire with correct event values', async () => {
+
+      await ctx.proxy.write('abc bc c');
+      await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 1, resultIndex: 0, searchCompleted : true });
+
+
+      await ctx.page.evaluate(`window.term.clearSelection()`);
+      await ctx.page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 2, resultIndex: 1, searchCompleted : true }
+      );
+
+      await timeout(2000);
+
+      await ctx.page.evaluate(`debugger; window.search.findPrevious('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 0, resultIndex: -1, searchCompleted : true }
+      );
+      await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 3, resultIndex: 2, searchCompleted : true }
+      );
+      await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 3, resultIndex: 1, searchCompleted : true }
+      );
+      await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 3, resultIndex: 0, searchCompleted : true }
+      );
+    });
+    // test('should fire with correct event values (incremental)', async () => {
+    //   await ctx.page.evaluate(`
+    //     window.calls = [];
+    //     window.search.onDidChangeResults(e => window.calls.push(e));
+    //   `);
+    //   await ctx.proxy.write('d abc aabc d');
+    //   deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 3, resultIndex: 2 }
+    //   ]);
+    //   deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('ab', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 3, resultIndex: 2 },
+    //     { resultCount: 2, resultIndex: 1 }
+    //   ]);
+    //   deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 3, resultIndex: 2 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 2, resultIndex: 1 }
+    //   ]);
+    //   deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 3, resultIndex: 2 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 2, resultIndex: 0 }
+    //   ]);
+    //   deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('d', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 3, resultIndex: 2 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 2, resultIndex: 0 },
+    //     { resultCount: 2, resultIndex: 1 }
+    //   ]);
+    //   deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 3, resultIndex: 2 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 2, resultIndex: 0 },
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 0, resultIndex: -1 }
+    //   ]);
+    // });
+    // test('should fire with more than 1k matches', async () => {
+    //   await ctx.page.evaluate(`
+    //     window.calls = [];
+    //     window.search.onDidChangeResults(e => window.calls.push(e));
+    //   `);
+    //   const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
+    //   await ctx.proxy.write(data);
+    //   strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 1000, resultIndex: -1 }
+    //   ]);
+    //   strictEqual(await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 1000, resultIndex: -1 },
+    //     { resultCount: 1000, resultIndex: -1 }
+    //   ]);
+    //   strictEqual(await ctx.page.evaluate(`window.search.findPrevious('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 1000, resultIndex: -1 },
+    //     { resultCount: 1000, resultIndex: -1 },
+    //     { resultCount: 1000, resultIndex: -1 }
+    //   ]);
+    // });
+    // test('should fire when writing to terminal', async () => {
+    //   await ctx.page.evaluate(`
+    //     window.calls = [];
+    //     window.search.onDidChangeResults(e => window.calls.push(e));
+    //   `);
+    //   await ctx.proxy.write('abc bc c\\n\\r'.repeat(2));
+    //   strictEqual(await ctx.page.evaluate(`window.search.findPrevious('abc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 2, resultIndex: 1 }
+    //   ]);
+    //   await ctx.proxy.write('abc bc c\\n\\r');
+    //   await timeout(300);
+    //   deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //     { resultCount: 2, resultIndex: 1 },
+    //     { resultCount: 3, resultIndex: 1 }
+    //   ]);
+    // });
+  });
 });
+
+// test.describe('Regression tests', () => {
+//   test.describe('#2444 wrapped line content not being found', () => {
+//     let fixture: string;
+//     test.beforeAll(async () => {
+//       fixture = (await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)))).toString();
+//       if (process.platform !== 'win32') {
+//         fixture = fixture.replace(/\n/g, '\n\r');
+//       }
+//     });
+//     test('should find all occurrences using findNext', async () => {
+//       await ctx.proxy.write(fixture);
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       let selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
+//       // Wrap around to first result
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
+//     });
+
+//     test('should y all occurrences using findPrevious', async () => {
+//       await ctx.proxy.write(fixture);
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       let selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
+//       // Wrap around to first result
+//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
+//       selectionPosition = await ctx.proxy.getSelectionPosition();
+//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
+//     });
+//   });
+// });
+// test.describe('#3834 lines with null characters before search terms', () => {
+//   // This case can be triggered by the prompt when using starship under conpty
+//   test('should find all matches on a line containing null characters', async () => {
+//     await ctx.page.evaluate(`
+//       window.calls = [];
+//       window.search.onDidChangeResults(e => window.calls.push(e));
+//     `);
+//     // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
+//     await ctx.proxy.write('\\x1b[CHi Hi');
+//     strictEqual(await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+//     deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+//       { resultCount: 2, resultIndex: 1 }
+//     ]);
+//   });
+// });
+// });
 
 function makeData(length: number): string {
   let result = '';
