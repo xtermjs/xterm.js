@@ -47,18 +47,26 @@ test.describe('Search Tests', () => {
     );
   });
 
-  // test('Scrolling Search', async () => {
-  //   let dataString = '';
-  //   for (let i = 0; i < 100; i++) {
-  //     if (i === 52) {
-  //       dataString += '$^1_3{}test$#';
-  //     }
-  //     dataString += makeData(50);
-  //   }
-  //   await ctx.proxy.write(dataString);
-  //   deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('$^1_3{}test$#')`), true);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), '$^1_3{}test$#');
-  // });
+  test('Scrolling Search', async () => {
+    let dataString = '';
+    for (let i = 0; i < 100; i++) {
+      if (i === 52) {
+        dataString += '$^1_3{}test$#';
+      }
+      dataString += makeData(50);
+    }
+    await ctx.proxy.write(dataString);
+    await ctx.page.evaluate(`window.search.findNext('$^1_3{}test$#')`);
+
+    await ctx.page.waitForTimeout(TIMEOUT);
+
+    deepStrictEqual(await ctx.proxy.getSelection(), '$^1_3{}test$#');
+    deepStrictEqual(
+      await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+      { resultCount: 1, resultIndex: 0, searchCompleted : true }
+    );
+  });
+
   // test('Incremental Find Previous', async () => {
   //   await ctx.proxy.writeln(`package.jsonc\n`);
   //   await ctx.proxy.write('package.json pack package.lock');
@@ -93,42 +101,84 @@ test.describe('Search Tests', () => {
   //   line = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
   //   deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), 'package.jsonc');
   // });
-  // test('Simple Regex', async () => {
-  //   await ctx.proxy.write('abc123defABCD');
-  //   await ctx.page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), 'abc');
-  //   await ctx.page.evaluate(`window.search.findNext('[A-Z]+', {regex: true, caseSensitive: true})`);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), 'ABCD');
-  // });
+  test('Simple Regex', async () => {
+    await ctx.proxy.write('abc123defABCD');
+    await ctx.page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(await ctx.proxy.getSelection(), 'abc');
+    await ctx.page.waitForTimeout(TIMEOUT);
+    await ctx.page.evaluate(`window.search.findNext('[A-Z]+', {regex: true, caseSensitive: true})`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(await ctx.proxy.getSelection(), 'ABCD');
+  });
 
-  // test('Search for single result twice should not unselect it', async () => {
-  //   await ctx.proxy.write('abc def');
-  //   deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc')`), true);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), 'abc');
-  //   deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc')`), true);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), 'abc');
-  // });
+  test('Search for single result twice should not unselect it', async () => {
+    await ctx.proxy.write('abc def');
 
-  // test('Search for result bounding with wide unicode chars', async () => {
-  //   await ctx.proxy.write('中文xx𝄞𝄞');
-  //   deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('中')`), true);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), '中');
-  //   deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('xx')`), true);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), 'xx');
-  //   deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('𝄞')`), true);
-  //   deepStrictEqual(await ctx.proxy.getSelection(), '𝄞');
-  //   deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('𝄞')`), true);
-  //   deepStrictEqual(await ctx.proxy.getSelectionPosition(), {
-  //     start: {
-  //       x: 7,
-  //       y: 0
-  //     },
-  //     end: {
-  //       x: 8,
-  //       y: 0
-  //     }
-  //   });
-  // });
+    await ctx.page.evaluate(`window.search.findNext('abc')`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(
+      await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+      { resultCount: 1, resultIndex: 0, searchCompleted : true }
+    );
+    deepStrictEqual(await ctx.proxy.getSelection(), 'abc');
+
+
+    await ctx.page.evaluate(`window.search.findNext('abc')`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(
+      await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+      { resultCount: 1, resultIndex: 0, searchCompleted : true }
+    );
+    deepStrictEqual(await ctx.proxy.getSelection(), 'abc');
+  });
+
+  test('Search for result bounding with wide unicode chars', async () => {
+    await ctx.proxy.write('中文xx𝄞𝄞');
+
+    await ctx.page.evaluate(`window.search.findNext('中')`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(
+      await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+      { resultCount: 1, resultIndex: 0, searchCompleted : true }
+    );
+    deepStrictEqual(await ctx.proxy.getSelection(), '中');
+
+    await ctx.page.evaluate(`window.search.findNext('xx')`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(
+      await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+      { resultCount: 1, resultIndex: 0, searchCompleted : true }
+    );
+    deepStrictEqual(await ctx.proxy.getSelection(), 'xx');
+
+    await ctx.page.evaluate(`window.search.findNext('𝄞')`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(
+      await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+      { resultCount: 2, resultIndex: 0, searchCompleted : true }
+    );
+    deepStrictEqual(await ctx.proxy.getSelection(), '𝄞');
+
+    await ctx.page.evaluate(`window.search.findNext('𝄞')`);
+    await ctx.page.waitForTimeout(TIMEOUT);
+    deepStrictEqual(
+      await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+      { resultCount: 2, resultIndex: 1, searchCompleted : true }
+    );
+    deepStrictEqual(await ctx.proxy.getSelection(), '𝄞');
+
+    deepStrictEqual(await ctx.proxy.getSelectionPosition(), {
+      start: {
+        x: 7,
+        y: 0
+      },
+      end: {
+        x: 8,
+        y: 0
+      }
+    });
+  });
 
   // test.describe('onDidChangeResults', async () => {
   //   test.describe('findNext', () => {

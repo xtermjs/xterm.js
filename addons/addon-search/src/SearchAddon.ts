@@ -87,7 +87,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _terminal: Terminal | undefined;
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();
-  private _currentMatchIndex: number = 0;
+  private _currentMatchIndex: number = -1;
   private _matches: ISearchResult[] = [];
   private _matchesWithHighlightApplied: IHighlight[] = [];
   private _selectedDecoration: MutableDisposable<IHighlight> = this._register(new MutableDisposable());
@@ -297,7 +297,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
         this._highlightChunk(startIndex,endIndex);
         // adjust match index with the growing result
-        if (direction==='up'){
+        if (direction==='up' && chunkIndex !== 0){
           this._currentMatchIndex += chunkSize;
           this._fireResults();
         }
@@ -312,7 +312,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
         this._highlightChunk(startIndex,endIndex);
 
-        if (direction==='up'){
+        if (direction==='up' && chunkIndex !== 0){
           this._currentMatchIndex += chunkSize;
         }
         this._searchCompleted = true;
@@ -365,7 +365,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           downDirectionLastResult = this._find(
             term,
             downDirectionLastResult.row,
-            downDirectionLastResult.col + downDirectionLastResult.term.length,
+            downDirectionLastResult.col + this._getNumberOfCharInString(downDirectionLastResult.term),
             'down',
             downDirectionLastResult.didNotYieldForThisManyRows
           );
@@ -386,7 +386,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           upDirectionLastResult = this._find(
             term,
             upDirectionLastResult.row,
-            upDirectionLastResult.col - upDirectionLastResult.term.length,
+            upDirectionLastResult.col - this._getNumberOfCharInString(upDirectionLastResult.term),
             'up',
             upDirectionLastResult.didNotYieldForThisManyRows
           );
@@ -552,10 +552,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
     const [stringLine, offsets] = cache;
 
+    const numberOfCharactersInStringLine = this._getNumberOfCharInString(stringLine);
     let offset = bufferColsToStringOffset(terminal, row, col);
 
-    if (offset > stringLine.length){
-      offset = stringLine.length;
+
+    if (offset > numberOfCharactersInStringLine && scanRightToLeft){
+      offset = numberOfCharactersInStringLine;
     }
 
 
@@ -632,7 +634,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
     }
   }
-
+  /**
+   * this will count wide characters as one not two unlike string.length
+   *
+   * we need this since indexOf works the number of characters not UTF-16 bytes
+   */
+  private _getNumberOfCharInString(str: string): number{
+    return Array.from(str).length;
+  }
   private _didOptionsChange(lastSearchOptions: ISearchOptions, searchOptions?: ISearchOptions): boolean {
     if (!searchOptions) {
       return false;
