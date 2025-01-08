@@ -81,6 +81,7 @@
           <div style="display: inline-block; margin-right: 16px;">
             <dl>
               <dt>Lifecycle</dt>
+              <dd><label for="use-real-terminal"><input type="checkbox" checked id="use-real-terminal" title="This is used to real vs fake terminals" />Use real terminal</label></dd>
               <dd><button id="dispose" title="This is used to testing memory leaks">Dispose terminal</button></dd>
               <dd><button id="create-new-window" title="This is used to test rendering in other windows">Create terminal in new window</button></dd>
 
@@ -104,6 +105,9 @@
               <dd><button id="add-decoration" title="Add a decoration to the terminal">Decoration</button></dd>
               <dd><button id="add-overview-ruler" title="Add an overview ruler to the terminal">Add Overview Ruler</button></dd>
               <dd><button id="decoration-stress-test" title="Toggle between adding and removing a decoration to each line">Stress Test</button></dd>
+
+              <dt>Ligatures Addon</dt>
+              <dd><button id="ligatures-test" title="Write common ligatures sequences">Common ligatures</button></dd>
 
               <dt>Weblinks Addon</dt>
               <dd><button id="weblinks-test" title="Various url conditions from demo data, hover&click to test">Test URLs</button></dd>

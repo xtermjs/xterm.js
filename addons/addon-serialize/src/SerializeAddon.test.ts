@@ -222,7 +222,7 @@ describe('SerializeAddon', () => {
 
     it('empty terminal with default options', async () => {
       const output = serializeAddon.serializeAsHTML();
-      assert.equal((output.match(/color: #000000; background-color: #ffffff; font-family: courier-new, courier, monospace; font-size: 15px;/g) || []).length, 1, output);
+      assert.equal((output.match(/color: #000000; background-color: #ffffff; font-family: monospace; font-size: 15px;/g) || []).length, 1, output);
     });
 
     it('empty terminal with custom options', async () => {
@@ -242,7 +242,7 @@ describe('SerializeAddon', () => {
       const output = serializeAddon.serializeAsHTML({
         includeGlobalBackground: true
       });
-      assert.equal((output.match(/color: #ffffff; background-color: #000000; font-family: courier-new, courier, monospace; font-size: 15px;/g) || []).length, 1, output);
+      assert.equal((output.match(/color: #ffffff; background-color: #000000; font-family: monospace; font-size: 15px;/g) || []).length, 1, output);
     });
 
     it('cells with custom color styling', async () => {

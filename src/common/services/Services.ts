@@ -124,6 +124,7 @@ export interface ICharsetService {
 export interface IServiceIdentifier<T> {
   (...args: any[]): void;
   type: T;
+  _id: string;
 }
 
 export interface IBrandedService {
@@ -237,6 +238,7 @@ export interface ITerminalOptions {
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
+  reflowCursorLine?: boolean;
   rescaleOverlappingGlyphs?: boolean;
   rightClickSelectsWord?: boolean;
   rows?: number;
