@@ -4,10 +4,10 @@
  */
 
 import { IColorContrastCache } from 'browser/Types';
-import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
+import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
+import { tryDrawCustomChar } from './CustomGlyphs';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
 import { NULL_COLOR, channels, color, rgba } from 'common/Color';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
