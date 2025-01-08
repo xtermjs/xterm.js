@@ -11,6 +11,7 @@ import type { Event } from 'vs/base/common/event';
 export interface ICharAtlasConfig {
   customGlyphs: boolean;
   devicePixelRatio: number;
+  deviceMaxTextureSize: number;
   letterSpacing: number;
   lineHeight: number;
   fontSize: number;
@@ -107,8 +108,8 @@ export interface ITextureAtlas extends IDisposable {
    * Clear all glyphs from the texture atlas.
    */
   clearTexture(): void;
-  getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph;
-  getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph;
+  getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph;
+  getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph;
 }
 
 /**
