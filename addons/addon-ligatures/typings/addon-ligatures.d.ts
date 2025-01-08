@@ -23,7 +23,10 @@ declare module '@xterm/addon-ligatures' {
     constructor(options?: Partial<ILigatureOptions>);
 
     /**
-     * Activates the addon
+     * Activates the addon. Note that if webgl is also being used, that addon
+     * should be reactivated after ligatures is activated in order to apply
+     * {@link ILigatureOptions.fontFeatureSettings} to the texture atlas.
+     *
      *
      * @param terminal The terminal the addon is being loaded in.
      */
@@ -40,19 +43,28 @@ declare module '@xterm/addon-ligatures' {
    */
   export interface ILigatureOptions {
     /**
-     * Fallback ligatures to use when the font access API is either not supported by the browser or
-     * access is denied. The default set of ligatures is taken from Iosevka's default "calt"
-     * ligation set: https://typeof.net/Iosevka/
+     * Fallback ligatures to use when the font access API is either not
+     * supported by the browser or access is denied. The default set of
+     * ligatures is taken from Iosevka's default "calt" ligation set:
+     * https://typeof.net/Iosevka/
      *
      * ```
      * <-- <--- <<- <- -> ->> --> --->
      * <== <=== <<= <= => =>> ==> ===> >= >>=
-     * <-> <--> <---> <----> <=> <==> <===> <====> -------->
-     * <~~ <~ ~> ~~> :: ::: == != === !==
-     * := :- :+ <* <*> *> <| <|> |> +: -: =: :>
-     * ++ +++ <!-- <!--- <***>
-     * ```
+     * <-> <--> <---> <----> <=> <==> <===> <====> :: :::
+     * <~~ </ </> /> ~~> == != /= ~= <> === !== !===
+     * <: := *= *+ <* <*> *> <| <|> |> +* =* =: :>
+     * /* <close block comment> +++ <!-- <!---
      */
     fallbackLigatures: string[]
+
+    /**
+     * The CSS `font-feature-settings` value to use for enabling ligatures. This
+     * also supports font variants for example with a value like
+     * `"calt" on, "ss03"`.
+     *
+     * The default value is `"calt" on`.
+     */
+    fontFeatureSettings: string;
   }
 }
