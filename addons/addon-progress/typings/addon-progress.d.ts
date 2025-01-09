@@ -37,6 +37,9 @@ declare module '@xterm/addon-progress' {
 
     /**
      * Gets or sets the current progress tracked by the addon.
+     * This can also be used to reset a stuck progress indicator
+     * back to initial with `{state: 0, value: 0}`
+     * or to restore an indicator.
      */
     public progress: IProgress;
   }

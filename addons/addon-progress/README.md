@@ -24,7 +24,7 @@ progressAddon.onChange({state, value}: IProgress) => {
   // state: 0-4 integer (see below for meaning)
   // value: 0-100 integer (percent value)
   
-  // do your visualisation based on state/progress here
+  // do your visualisation based on state/value here
   ...
 });
 ```
@@ -65,16 +65,3 @@ The addon resolves most of those semantic nuances and will provide these ready-t
 - For the indeterminate state (3) a value notion will be ignored.
   It still emits the value as `{state: 3, value: lastValue}`. Keep in mind not use that value while
   that state is active, as a task might have entered that state without a proper reset at the beginning.
-
-### API
-
-The addon exposes the following API endpoints:
-- `public readonly onChange: IEvent<IProgress>` \
-  Event to register your actual progress handler, where you gonna do the progress visualisation.
-  The handler will get called upon valid progress sequences with a progress argument as `({state, value}) => {}`.
-- `public progress: IProgress`
-  A getter/setter for the current progress information. Can be used to read the last seen progress information.
-  This can also be used to clean up stuck progress indicators by setting the value back to initial, e.g.: 
-  ```typescript
-  progressAddon.progress = {state: 0, value: 0};
-  ```
