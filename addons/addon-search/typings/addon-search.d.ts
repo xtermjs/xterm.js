@@ -136,10 +136,13 @@ declare module '@xterm/addon-search' {
      */
     public clearActiveDecoration(): void;
 
+
     /**
-     * When decorations are enabled, fires when
-     * the search results change.
-     * @returns -1 for resultIndex when the threshold of matches is exceeded.
+     * Fired everytime search progresses; until the search completes.
+     * @property {number} resultIndex - not final until seachedCompleyed is true.
+     * @property {number} resultCount - not final until searchCompleted is true.
+     * @property {boolean} searchCompleted.
+     * @returns  an IDisposable to stop listening.
      */
     readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number, searchCompleted: boolean }>;
   }
