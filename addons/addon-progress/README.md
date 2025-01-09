@@ -29,6 +29,8 @@ progressAddon.onChange({state, value}: IProgressState) => {
 });
 ```
 
+See the full [API](https://github.com/xtermjs/xterm.js/blob/master/addons/addon-progress/typings/addon-progress.d.ts) for more advanced usage.
+
 ### Sequence
 
 The sequence to set progress information has the following format:
