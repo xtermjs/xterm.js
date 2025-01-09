@@ -465,104 +465,126 @@ test.describe('Search Tests', () => {
     //   ]);
     // });
   });
+  test.describe('Regression tests', () => {
+    test.describe('#2444 wrapped line content not being found', () => {
+      let fixture: string;
+      test.beforeAll(async () => {
+        fixture = (await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)))).toString();
+        if (process.platform !== 'win32') {
+          fixture = fixture.replace(/\n/g, '\n\r');
+        }
+      });
+      test('should find all occurrences using findNext', async () => {
+        await ctx.proxy.write(fixture);
+        // since we now search from the top left of the viewport not the top of the buffer
+        // we need to scroll all the way up
+        await ctx.page.evaluate('window.term.scrollToTop()');
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        let selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
+        // Wrap around to first result
+        await ctx.page.evaluate(`window.search.findNext('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
+      });
+
+      test('should y all occurrences using findPrevious', async () => {
+        await ctx.proxy.write(fixture);
+        await ctx.page.evaluate('window.term.scrollToTop()');
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        let selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
+        // Wrap around to first result
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
+      });
+    });
+  });
+  test.describe('#3834 lines with null characters before search terms', () => {
+    // This case can be triggered by the prompt when using starship under conpty
+    test('should find all matches on a line containing null characters', async () => {
+      // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
+      await ctx.proxy.write('\\x1b[CHi Hi');
+      await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 2, resultIndex: 1, searchCompleted: true }
+      );
+    });
+  });
+
 });
 
-// test.describe('Regression tests', () => {
-//   test.describe('#2444 wrapped line content not being found', () => {
-//     let fixture: string;
-//     test.beforeAll(async () => {
-//       fixture = (await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)))).toString();
-//       if (process.platform !== 'win32') {
-//         fixture = fixture.replace(/\n/g, '\n\r');
-//       }
-//     });
-//     test('should find all occurrences using findNext', async () => {
-//       await ctx.proxy.write(fixture);
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       let selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
-//       // Wrap around to first result
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
-//     });
 
-//     test('should y all occurrences using findPrevious', async () => {
-//       await ctx.proxy.write(fixture);
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       let selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 135 }, end: { x: 7, y: 135 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 127 }, end: { x: 17, y: 127 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 126 }, end: { x: 7, y: 126 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 115 }, end: { x: 17, y: 115 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 1, y: 114 }, end: { x: 7, y: 114 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 96 }, end: { x: 30, y: 96 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
-//       // Wrap around to first result
-//       deepStrictEqual(await ctx.page.evaluate(`window.search.findPrevious('opencv')`), true);
-//       selectionPosition = await ctx.proxy.getSelectionPosition();
-//       deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
-//     });
-//   });
-// });
-// test.describe('#3834 lines with null characters before search terms', () => {
-//   // This case can be triggered by the prompt when using starship under conpty
-//   test('should find all matches on a line containing null characters', async () => {
-//     await ctx.page.evaluate(`
-//       window.calls = [];
-//       window.search.onDidChangeResults(e => window.calls.push(e));
-//     `);
-//     // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
-//     await ctx.proxy.write('\\x1b[CHi Hi');
-//     strictEqual(await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-//     deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-//       { resultCount: 2, resultIndex: 1 }
-//     ]);
-//   });
-// });
-// });
 
 function makeData(length: number): string {
   let result = '';

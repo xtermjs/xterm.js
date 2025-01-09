@@ -289,7 +289,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       const iteratorResult = searchIterator.next();
 
       if (chunkIndex===0){
-        this._moveToTheNextMatch(false);
+        this._moveToTheNextMatch();
       }
 
       if (iteratorResult.done === false){
