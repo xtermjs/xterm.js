@@ -5,7 +5,7 @@
 
 import { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { Event } from 'vs/base/common/event';
-import type { ProgressState } from '../src/ProgressAddon';
+
 
 declare module '@xterm/addon-progress' {
   /**
@@ -33,7 +33,7 @@ declare module '@xterm/addon-progress' {
     /**
      * An event that fires when the tracked progress changes.
      */
-    public readonly onChange: Event<IProgress> | undefined;
+    public readonly onChange: Event<IProgressState> | undefined;
 
     /**
      * Gets or sets the current progress tracked by the addon.
@@ -41,14 +41,14 @@ declare module '@xterm/addon-progress' {
      * back to initial with `{state: 0, value: 0}`
      * or to restore an indicator.
      */
-    public progress: IProgress;
+    public progress: IProgressState;
   }
   
   /**
-   * Progress tracked by the addon.
+   * Progress state tracked by the addon.
    */
-  export interface IProgress {
-    state: ProgressState;
+  export interface IProgressState {
+    state: 0 | 1 | 2 | 3 | 4;
     value: number;
   }
 }

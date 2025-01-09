@@ -15,12 +15,12 @@ npm install --save @xterm/addon-progress
 
 ```ts
 import { Terminal } from '@xterm/xterm';
-import { ProgressAddon } from '@xterm/addon-progress';
+import { ProgressAddon, IProgressState } from '@xterm/addon-progress';
 
 const terminal = new Terminal();
 const progressAddon = new ProgressAddon();
 terminal.loadAddon(progressAddon);
-progressAddon.onChange({state, value}: IProgress) => {
+progressAddon.onChange({state, value}: IProgressState) => {
   // state: 0-4 integer (see below for meaning)
   // value: 0-100 integer (percent value)
   

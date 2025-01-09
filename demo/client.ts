@@ -21,7 +21,7 @@ import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
-import { ProgressAddon, IProgress } from '@xterm/addon-progress';
+import { ProgressAddon, IProgressState } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -1454,7 +1454,7 @@ function progressButtons(): void {
   const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
   const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
 
-  function progressHandler({state, value}: IProgress) {
+  function progressHandler({state, value}: IProgressState) {
     // Simulate windows taskbar hack by windows terminal:
     // Since the taskbar has no means to indicate error/pause state other than by coloring
     // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %

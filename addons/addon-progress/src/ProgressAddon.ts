@@ -4,11 +4,11 @@
  */
 
 import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
-import type { ProgressAddon as IProgressApi, IProgress } from '@xterm/addon-progress';
+import type { ProgressAddon as IProgressApi, IProgressState } from '@xterm/addon-progress';
 import type { Emitter, Event } from 'vs/base/common/event';
 
 
-export const enum ProgressState {
+const enum ProgressType {
   REMOVE = 0,
   SET = 1,
   ERROR = 2,
@@ -35,10 +35,10 @@ function toInt(s: string): number {
 
 export class ProgressAddon implements ITerminalAddon, IProgressApi {
   private _seqHandler: IDisposable | undefined;
-  private _st: ProgressState = ProgressState.REMOVE;
+  private _st: ProgressType = ProgressType.REMOVE;
   private _pr = 0;
-  private _onChange: Emitter<IProgress> | undefined;
-  public onChange: Event<IProgress> | undefined;
+  private _onChange: Emitter<IProgressState> | undefined;
+  public onChange: Event<IProgressState> | undefined;
 
   public dispose(): void {
     this._seqHandler?.dispose();
@@ -62,19 +62,19 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
       const pr = toInt(parts[2]);
 
       switch (st) {
-        case ProgressState.REMOVE:
+        case ProgressType.REMOVE:
           this.progress = { state: st, value: 0 };
           break;
-        case ProgressState.SET:
+        case ProgressType.SET:
           if (pr < 0) return true;  // faulty sequence, just exit
           this.progress = { state: st, value: pr };
           break;
-        case ProgressState.ERROR:
-        case ProgressState.PAUSE:
+        case ProgressType.ERROR:
+        case ProgressType.PAUSE:
           if (pr < 0) return true;  // faulty sequence, just exit
           this.progress = { state: st, value: pr || this._pr };
           break;
-        case ProgressState.INDETERMINATE:
+        case ProgressType.INDETERMINATE:
           this.progress = { state: st, value: this._pr };
           break;
       }
@@ -85,11 +85,11 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
     this.onChange = this._onChange!.event;
   }
 
-  public get progress(): IProgress {
+  public get progress(): IProgressState {
     return { state: this._st, value: this._pr };
   }
 
-  public set progress(progress: IProgress) {
+  public set progress(progress: IProgressState) {
     if (progress.state < 0 || progress.state > 4) {
       console.warn(`progress state out of bounds, not applied`);
       return;
