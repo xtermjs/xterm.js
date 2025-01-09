@@ -181,109 +181,103 @@ test.describe('Search Tests', () => {
   });
 
   test.describe('onDidChangeResults', async () => {
-  //   test.describe('findNext', () => {
-  //     test('should not fire unless the decorations option is set', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('abc');
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('a')`), true);
-  //       strictEqual(await ctx.page.evaluate('window.calls.length'), 0);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       strictEqual(await ctx.page.evaluate('window.calls.length'), 1);
-  //     });
-  //     test('should fire with correct event values', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('abc bc c');
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 0, resultIndex: -1 }
-  //       ]);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       strictEqual(await ctx.page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 1, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 0, resultIndex: -1 },
-  //         { resultCount: 3, resultIndex: 0 },
-  //         { resultCount: 3, resultIndex: 1 },
-  //         { resultCount: 3, resultIndex: 2 }
-  //       ]);
-  //     });
-  //     test('should fire with correct event values (incremental)', async () => {
-  //       await ctx.page.evaluate(`
-  //         window.calls = [];
-  //         window.search.onDidChangeResults(e => window.calls.push(e));
-  //       `);
-  //       await ctx.proxy.write('d abc aabc d');
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 0 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('ab', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('d', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 1 }
-  //       ]);
-  //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
-  //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
-  //         { resultCount: 3, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 0 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 2, resultIndex: 1 },
-  //         { resultCount: 0, resultIndex: -1 }
-  //       ]);
-  //     });
+    test.describe('findNext', () => {
+    //      // The only way to get results now is to listen to onDidChangeResults
+    //      // because we are doing things asynchronously
+    //      // Option1 is to fire on all, which is the way the code is behaving at this point to allow others test to be run
+    //      // with this option we remove this test.
+    //      // Option2 is to leave this intact, and add a public method for consumers to read the results.
+    //      // Options 3: is there a way to detect testing environment in the add-on ?
+    //      test('should not fire unless the decorations option is set', async () => {
+    //       await ctx.proxy.write('abc');
+    //       strictEqual(await ctx.page.evaluate(`window.search.findNext('a')`), true);
+    //       strictEqual(await ctx.page.evaluate('window.calls.length'), 0);
+    //       strictEqual(await ctx.page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //       strictEqual(await ctx.page.evaluate('window.calls.length'), 1);
+    //     });
+      test('should fire with correct event values', async () => {
+        await ctx.proxy.write('abc bc c');
+        await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+        await timeout(TIMEOUT);
+        deepStrictEqual(await ctx.page.evaluate('window.calls[window.calls.length - 1 ]'),
+          { resultCount: 1, resultIndex: 0, searchCompleted: true }
+        );
+        await ctx.page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+        await timeout(TIMEOUT);
+        deepStrictEqual(await ctx.page.evaluate('window.calls[window.calls.length - 1 ]'),
+          { resultCount: 2, resultIndex: 0, searchCompleted: true  });
+
+        await ctx.page.evaluate(`window.search.findNext('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+        await timeout(TIMEOUT);
+        deepStrictEqual(await ctx.page.evaluate('window.calls[window.calls.length - 1 ]'),
+          { resultCount: 0, resultIndex: -1, searchCompleted: true  });
+
+        await ctx.page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+        await timeout(TIMEOUT);
+        await ctx.page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+        await timeout(TIMEOUT);
+        await ctx.page.evaluate(`window.search.findNext('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+        await timeout(TIMEOUT);
+
+        deepStrictEqual(await ctx.page.evaluate('window.calls[window.calls.length - 1 ]'),
+          { resultCount: 3, resultIndex: 2, searchCompleted: true  });
+      });
+    //     test('should fire with correct event values (incremental)', async () => {
+    //       await ctx.page.evaluate(`
+    //         window.calls = [];
+    //         window.search.onDidChangeResults(e => window.calls.push(e));
+    //       `);
+    //       await ctx.proxy.write('d abc aabc d');
+    //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('a', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //         { resultCount: 3, resultIndex: 0 }
+    //       ]);
+    //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('ab', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //         { resultCount: 3, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 }
+    //       ]);
+    //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //         { resultCount: 3, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 }
+    //       ]);
+    //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abc', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //         { resultCount: 3, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 1 }
+    //       ]);
+    //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('d', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+    //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //         { resultCount: 3, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 1 },
+    //         { resultCount: 2, resultIndex: 1 }
+    //       ]);
+    //       deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('abcd', { incremental: true, decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+    //       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+    //         { resultCount: 3, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 0 },
+    //         { resultCount: 2, resultIndex: 1 },
+    //         { resultCount: 2, resultIndex: 1 },
+    //         { resultCount: 0, resultIndex: -1 }
+    //       ]);
+    });
     test('should fire with more than 1k matches', async () => {
       const data = ('a bc'.repeat(10) + '\\n\\r').repeat(150);
       await ctx.proxy.write(data);
+      await ctx.page.evaluate('window.term.scrollToTop()');
       await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
       await timeout(TIMEOUT * 4);
       deepStrictEqual(await ctx.proxy.getSelection(), 'a');
-      // this fails because the text is big and view is scrolled
-      // since we now search from the top left of the view port
-      // then index will equal it reports 573 instead of 0
       deepStrictEqual(
         await ctx.page.evaluate('window.calls[window.calls.length-1]'),
-        { resultCount: 1000, resultIndex: 573, searchCompleted : true }
+        { resultCount: 1000, resultIndex: 0, searchCompleted : true }
       );
 
       await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
@@ -291,7 +285,7 @@ test.describe('Search Tests', () => {
       deepStrictEqual(await ctx.proxy.getSelection(), 'a');
       deepStrictEqual(
         await ctx.page.evaluate('window.calls[window.calls.length-1]'),
-        { resultCount: 1000, resultIndex: 574, searchCompleted : true }
+        { resultCount: 1000, resultIndex: 1, searchCompleted : true }
       );
 
 
@@ -300,7 +294,7 @@ test.describe('Search Tests', () => {
       deepStrictEqual(await ctx.proxy.getSelection(), 'bc');
       deepStrictEqual(
         await ctx.page.evaluate('window.calls[window.calls.length-1]'),
-        { resultCount: 1000, resultIndex: 573, searchCompleted : true }
+        { resultCount: 1000, resultIndex: 0, searchCompleted : true }
       );
 
     });
