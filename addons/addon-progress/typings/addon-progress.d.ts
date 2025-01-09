@@ -31,7 +31,7 @@ declare module '@xterm/addon-progress' {
     /**
      * An event that fires when the tracked progress changes.
      */
-    public readonly onChange: IEvent<IProgressState> | undefined;
+    public readonly onChange: IEvent<IProgressState>;
 
     /**
      * Gets or sets the current progress tracked by the addon. This can be used
