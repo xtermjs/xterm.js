@@ -646,17 +646,25 @@ function initAddons(term: Terminal): void {
         }
         return;
       }
+      function postInitWebgl(): void {
+        setTimeout(() => {
+          setTextureAtlas(addons.webgl.instance.textureAtlas);
+          addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+          addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+        }, 500);
+      }
+      function preDisposeWebgl(): void {
+        if (addons.webgl.instance.textureAtlas) {
+          addons.webgl.instance.textureAtlas.remove();
+        }
+      }
       if (checkbox.checked) {
         // HACK: Manually remove addons that cannot be changes
         addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
-            setTimeout(() => {
-              setTextureAtlas(addons.webgl.instance.textureAtlas);
-              addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-              addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-            }, 0);
+            postInitWebgl();
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'unicodeGraphemes') {
@@ -672,12 +680,23 @@ function initAddons(term: Terminal): void {
         }
       } else {
         if (name === 'webgl') {
-          addons.webgl.instance.textureAtlas.remove();
+          preDisposeWebgl();
         } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
         addon.instance = undefined;
+      }
+      if (name === 'ligatures') {
+        // Recreate webgl when ligatures are toggled so texture atlas picks up any font feature
+        // settings changes
+        if (addons.webgl.instance) {
+          preDisposeWebgl();
+          addons.webgl.instance.dispose();
+          addons.webgl.instance = new addons.webgl.ctor();
+          term.loadAddon(addons.webgl.instance);
+          postInitWebgl();
+        }
       }
     });
     const label = document.createElement('label');

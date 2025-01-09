@@ -4,12 +4,11 @@
  */
 
 import { ITerminal } from 'browser/Types';
-import { CellColorResolver } from 'browser/renderer/shared/CellColorResolver';
-import { acquireTextureAtlas, removeTerminalFromCache } from 'browser/renderer/shared/CharAtlasCache';
-import { CursorBlinkStateManager } from 'browser/renderer/shared/CursorBlinkStateManager';
-import { observeDevicePixelDimensions } from 'browser/renderer/shared/DevicePixelObserver';
-import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { CellColorResolver } from './CellColorResolver';
+import { acquireTextureAtlas, removeTerminalFromCache } from './CharAtlasCache';
+import { CursorBlinkStateManager } from './CursorBlinkStateManager';
+import { observeDevicePixelDimensions } from './DevicePixelObserver';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
@@ -20,12 +19,13 @@ import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
 import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
-import { IWebGL2RenderingContext } from './Types';
+import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { Emitter, Event } from 'vs/base/common/event';
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];

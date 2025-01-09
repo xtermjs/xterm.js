@@ -115,8 +115,7 @@ function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
     stdio: 'inherit'
   });
   if (result.status) {
-    error(`Spawn exited with code ${result.status}`);
-    process.exit(result.status);
+    throw new Error(`Spawn exited with code ${result.status}`);
   }
 
   return { isStableRelease, nextVersion };

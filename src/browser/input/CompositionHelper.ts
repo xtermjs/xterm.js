@@ -93,7 +93,8 @@ export class CompositionHelper {
    */
   public keydown(ev: KeyboardEvent): boolean {
     if (this._isComposing || this._isSendingComposition) {
-      if (ev.keyCode === 229) {
+      if (ev.keyCode === 20 || ev.keyCode === 229) {
+        // 20 is CapsLock, 229 is Enter
         // Continue composing if the keyCode is the "composition character"
         return false;
       }
