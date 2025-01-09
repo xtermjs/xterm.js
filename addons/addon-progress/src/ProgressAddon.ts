@@ -37,8 +37,9 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
   private _seqHandler: IDisposable | undefined;
   private _st: ProgressType = ProgressType.REMOVE;
   private _pr = 0;
-  private _onChange: Emitter<IProgressState> | undefined;
-  public onChange: Event<IProgressState> | undefined;
+  // HACK: This uses ! to align with the API, this should be fixed when 5283 is resolved
+  private _onChange!: Emitter<IProgressState>;
+  public onChange!: Event<IProgressState>;
 
   public dispose(): void {
     this._seqHandler?.dispose();
