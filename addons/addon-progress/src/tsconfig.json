@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "dom",
+      "es2015"
+    ],
+    "rootDir": ".",
+    "outDir": "../out",
+    "sourceMap": true,
+    "removeComments": true,
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha",
+      "../../../src/vs/typings/thenable"
+    ],
+    "paths": {
+      "browser/*": [
+        "../../../src/browser/*"
+      ],
+      "vs/*": [
+        "../../../src/vs/*"
+      ],
+      "@xterm/addon-progress": [
+        "../typings/addon-progress.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../src/vs"
+    }
+  ]
+}
