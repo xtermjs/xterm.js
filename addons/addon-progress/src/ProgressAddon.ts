@@ -7,8 +7,10 @@ import { Terminal, ITerminalAddon, IDisposable, EmitterCtorType, IEmitter, IEven
 import type { ProgressAddon as IProgressApi, IProgressState } from '@xterm/addon-progress';
 
 // to use impl parts:
+
 // in 3rd party addons
-//import { EmitterAddon } from '@xterm/xterm';
+// import { EmitterAddon } from '@xterm/xterm';
+
 // in xtermjs repo addons
 import { EmitterAddon } from 'shared/shared';
 
@@ -45,9 +47,9 @@ export class ProgressAddon extends EmitterAddon implements ITerminalAddon, IProg
   private _onChange: IEmitter<IProgressState>;
   public onChange: IEvent<IProgressState>;
 
-  constructor(protected readonly emitterCtor: EmitterCtorType) {
-    super(emitterCtor);
-    this._onChange = new this.emitterCtor<IProgressState>();
+  constructor(protected readonly _emitterCtor: EmitterCtorType) {
+    super(_emitterCtor);
+    this._onChange = new this._emitterCtor<IProgressState>();
     this.onChange = this._onChange.event;
   }
 

@@ -16,7 +16,7 @@ declare module '@xterm/addon-progress' {
     /**
      * Creates a new progress addon
      */
-    constructor(emitterCtor: EmitterCtorType);
+    constructor(_emitterCtor: EmitterCtorType);
 
     /**
      * Activates the addon

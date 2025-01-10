@@ -15,7 +15,7 @@ export class DisposableAddon implements IDisposable {
     this._store = new storeCtor();
   }
 
-  dispose(): void {
+  public dispose(): void {
     this._store.dispose();
   }
 }
@@ -23,7 +23,7 @@ export class DisposableAddon implements IDisposable {
 
 export class EmitterAddon {
   constructor(
-    protected readonly emitterCtor: EmitterCtorType
+    protected readonly _emitterCtor: EmitterCtorType
   ) {}
 }
 
@@ -33,12 +33,12 @@ export class DisposableEmitterAddon implements IDisposable {
 
   constructor(
     readonly storeCtor: DisposableStoreCtorType,
-    protected readonly emitterCtor: EmitterCtorType
+    protected readonly _emitterCtor: EmitterCtorType
   ) {
     this._store = new storeCtor();
   }
 
-  dispose(): void {
+  public dispose(): void {
     this._store.dispose();
   }
 }

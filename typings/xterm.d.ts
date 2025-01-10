@@ -2011,16 +2011,16 @@ declare module '@xterm/xterm' {
   export class DisposableAddon implements IDisposable {
     protected readonly _store: IDisposableStore;
     constructor(storeCtor: DisposableStoreCtorType);
-    dispose(): void;
+    public dispose(): void;
   }
   export class EmitterAddon {
-    protected readonly emitterCtor: EmitterCtorType;
-    constructor(emitterCtor: EmitterCtorType);
+    protected readonly _emitterCtor: EmitterCtorType;
+    constructor(_emitterCtor: EmitterCtorType);
   }
   export class DisposableEmitterAddon implements IDisposable {
     protected readonly _store: IDisposableStore;
-    protected readonly emitterCtor: EmitterCtorType;
-    constructor(storeCtor: DisposableStoreCtorType, emitterCtor: EmitterCtorType);
-    dispose(): void;
+    protected readonly _emitterCtor: EmitterCtorType;
+    constructor(storeCtor: DisposableStoreCtorType, _emitterCtor: EmitterCtorType);
+    public dispose(): void;
   }
 }
