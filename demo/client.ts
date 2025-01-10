@@ -44,6 +44,8 @@ export interface IWindowWithTerminal extends Window {
   Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
   UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon; // eslint-disable-line @typescript-eslint/naming-convention
   LigaturesAddon?: typeof LigaturesAddon; // eslint-disable-line @typescript-eslint/naming-convention
+
+  emitterCtor?: typeof emitterCtor;
 }
 declare let window: IWindowWithTerminal;
 
@@ -226,6 +228,8 @@ if (document.location.pathname === '/test') {
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
+
+  window.emitterCtor = emitterCtor;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
