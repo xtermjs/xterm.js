@@ -11,8 +11,8 @@ export { Emitter } from 'vs/base/common/event';
 export class DisposableAddon implements IDisposable {
   protected readonly _store: IDisposableStore;
 
-  constructor(storeCtor: DisposableStoreCtorType) {
-    this._store = new storeCtor();
+  constructor(protected readonly _storeCtor: DisposableStoreCtorType) {
+    this._store = new _storeCtor();
   }
 
   public dispose(): void {
@@ -32,10 +32,10 @@ export class DisposableEmitterAddon implements IDisposable {
   protected readonly _store: IDisposableStore;
 
   constructor(
-    protected readonly storeCtor: DisposableStoreCtorType,
+    protected readonly _storeCtor: DisposableStoreCtorType,
     protected readonly _emitterCtor: EmitterCtorType
   ) {
-    this._store = new storeCtor();
+    this._store = new _storeCtor();
   }
 
   public dispose(): void {
