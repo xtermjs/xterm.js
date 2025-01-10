@@ -2007,8 +2007,8 @@ declare module '@xterm/xterm' {
     deleteAndLeak<T extends IDisposable>(o: T): void;
   }
 
-  export type EmitterCtorType = new<T>() => IEmitter<T>
-  export type DisposableStoreCtorType = new() => IDisposableStore
+  export type EmitterCtorType = new<T>() => IEmitter<T>;
+  export type DisposableStoreCtorType = new() => IDisposableStore;
 
   export class DisposableAddon implements IDisposable {
     protected readonly _store: IDisposableStore;
