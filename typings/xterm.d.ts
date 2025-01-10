@@ -1987,7 +1987,8 @@ declare module '@xterm/xterm' {
      */
     isDisposed: boolean;
     /**
-     * Dispose of all registered disposables but do not mark this object as disposed.
+     * Dispose of all registered disposables but do not mark this object
+     * as disposed.
      */
     clear(): void;
     /**
@@ -1995,7 +1996,8 @@ declare module '@xterm/xterm' {
      */
     add<T extends IDisposable>(o: T): T;
     /**
-     * Deletes a disposable from store and disposes of it. This will not throw or warn and proceed to dispose the
+     * Deletes a disposable from store and disposes of it.
+     * This will not throw or warn and proceed to dispose the
      * disposable even when the disposable is not part in the store.
      */
     delete<T extends IDisposable>(o: T): void;
@@ -2005,7 +2007,7 @@ declare module '@xterm/xterm' {
     deleteAndLeak<T extends IDisposable>(o: T): void;
   }
 
-  export type EmitterCtorType = { new<T>(): IEmitter<T> };
+  export type EmitterCtorType = { new<T>(): IEmitter<T>; }
   export type DisposableStoreCtorType = { new(): IDisposableStore; }
 
   export class DisposableAddon implements IDisposable {
