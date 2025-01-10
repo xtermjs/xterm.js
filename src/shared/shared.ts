@@ -32,7 +32,7 @@ export class DisposableEmitterAddon implements IDisposable {
   protected readonly _store: IDisposableStore;
 
   constructor(
-    readonly storeCtor: DisposableStoreCtorType,
+    protected readonly storeCtor: DisposableStoreCtorType,
     protected readonly _emitterCtor: EmitterCtorType
   ) {
     this._store = new storeCtor();
