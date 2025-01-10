@@ -280,10 +280,9 @@ export class Terminal extends Disposable implements ITerminalApi {
  * so they can be used on addon ctors already.
  */
 export {
-  DisposableStore as disposableStoreCtor,
-  toDisposable,
-  Emitter as emitterCtor,
   DisposableAddon,
   EmitterAddon,
   DisposableEmitterAddon
 } from 'shared/shared';
+export { DisposableStore as disposableStoreCtor, toDisposable } from 'vs/base/common/lifecycle';
+export { Emitter as emitterCtor } from 'vs/base/common/event';

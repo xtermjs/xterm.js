@@ -5,8 +5,6 @@
 
 import { IDisposable, IDisposableStore, DisposableStoreCtorType, EmitterCtorType } from '@xterm/xterm';
 
-export { DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
-export { Emitter } from 'vs/base/common/event';
 
 export class DisposableAddon implements IDisposable {
   protected readonly _store: IDisposableStore;
