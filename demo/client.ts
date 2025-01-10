@@ -16,7 +16,7 @@ if ('WebAssembly' in window) {
   ImageAddon = imageAddon.ImageAddon;
 }
 
-import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable, type ITheme, emitterCtor } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
@@ -279,7 +279,7 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
-  addons.progress.instance = new ProgressAddon();
+  addons.progress.instance = new ProgressAddon(emitterCtor);
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
@@ -660,7 +660,7 @@ function initAddons(term: Terminal): void {
       }
       if (checkbox.checked) {
         // HACK: Manually remove addons that cannot be changes
-        addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
+        //addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {

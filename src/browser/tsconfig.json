@@ -13,7 +13,8 @@
     "baseUrl": "..",
     "paths": {
       "common/*": [ "./common/*" ],
-      "vs/*": [ "./vs/*" ]
+      "vs/*": [ "./vs/*" ],
+      "shared/*": [ "./shared/*" ],
     }
   },
   "include": [
@@ -22,6 +23,7 @@
   ],
   "references": [
     { "path": "../common" },
-    { "path": "../vs" }
+    { "path": "../vs" },
+    { "path": "../shared" },
   ]
 }

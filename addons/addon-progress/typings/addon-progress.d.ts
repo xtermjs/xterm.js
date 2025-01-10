@@ -3,19 +3,20 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IDisposable, IEvent } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IDisposable, IEvent, EmitterCtorType } from '@xterm/xterm';
+import { EmitterAddon } from 'shared/shared';
 
 declare module '@xterm/addon-progress' {
   /**
    * An xterm.js addon that provides an interface for ConEmu's progress
    * sequence.
    */
-  export class ProgressAddon implements ITerminalAddon, IDisposable {
+  export class ProgressAddon extends EmitterAddon implements ITerminalAddon, IDisposable {
 
     /**
      * Creates a new progress addon
      */
-    constructor();
+    constructor(emitterCtor: EmitterCtorType);
 
     /**
      * Activates the addon

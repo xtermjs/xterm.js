@@ -1,0 +1,24 @@
+{
+  "extends": "../tsconfig-library-base",
+  "compilerOptions": {
+    "lib": [
+      "es2015",
+      "es2016.Array.Include"
+    ],
+    "outDir": "../../out",
+    "types": [
+      "../../node_modules/@types/mocha"
+    ],
+    "baseUrl": "..",
+    "paths": {
+      "vs/*": [ "./vs/*" ]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../../typings/xterm.d.ts"
+  ],
+  "references": [
+    { "path": "../vs" }
+  ]
+}

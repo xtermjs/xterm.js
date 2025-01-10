@@ -3,9 +3,14 @@
  * @license MIT
  */
 
-import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IDisposable, EmitterCtorType, IEmitter, IEvent } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgressState } from '@xterm/addon-progress';
-import type { Emitter, Event } from 'vs/base/common/event';
+
+// to use impl parts:
+// in 3rd party addons
+//import { EmitterAddon } from '@xterm/xterm';
+// in xtermjs repo addons
+import { EmitterAddon } from 'shared/shared';
 
 
 const enum ProgressType {
@@ -33,13 +38,18 @@ function toInt(s: string): number {
 }
 
 
-export class ProgressAddon implements ITerminalAddon, IProgressApi {
+export class ProgressAddon extends EmitterAddon implements ITerminalAddon, IProgressApi {
   private _seqHandler: IDisposable | undefined;
   private _st: ProgressType = ProgressType.REMOVE;
   private _pr = 0;
-  // HACK: This uses ! to align with the API, this should be fixed when 5283 is resolved
-  private _onChange!: Emitter<IProgressState>;
-  public onChange!: Event<IProgressState>;
+  private _onChange: IEmitter<IProgressState>;
+  public onChange: IEvent<IProgressState>;
+
+  constructor(protected readonly emitterCtor: EmitterCtorType) {
+    super(emitterCtor);
+    this._onChange = new this.emitterCtor<IProgressState>();
+    this.onChange = this._onChange.event;
+  }
 
   public dispose(): void {
     this._seqHandler?.dispose();
@@ -81,9 +91,6 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
       }
       return true;
     });
-    // FIXME: borrow emitter ctor from xterm, to be changed once #5283 is resolved
-    this._onChange = new (terminal as any)._core._onData.constructor();
-    this.onChange = this._onChange!.event;
   }
 
   public get progress(): IProgressState {
