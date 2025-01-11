@@ -25,6 +25,8 @@ const MINIMUM_ROWS = 1;
 
 export class FitAddon implements ITerminalAddon , IFitApi {
   private _terminal: Terminal | undefined;
+  private _lastAvailableHeight: number | undefined;
+  private _lastAvailableWidth: number | undefined;
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
@@ -45,6 +47,11 @@ export class FitAddon implements ITerminalAddon , IFitApi {
     if (this._terminal.rows !== dims.rows || this._terminal.cols !== dims.cols) {
       core._renderService.clear();
       this._terminal.resize(dims.cols, dims.rows);
+      // Fill in less than one row
+      if (this._lastAvailableHeight && this._lastAvailableWidth && this._terminal.screenElement) {
+        this._terminal.screenElement.style.width = `${this._lastAvailableWidth}px`;
+        this._terminal.screenElement.style.height = `${this._lastAvailableHeight}px`;
+      }
     }
   }
 
@@ -83,6 +90,8 @@ export class FitAddon implements ITerminalAddon , IFitApi {
     const elementPaddingHor = elementPadding.right + elementPadding.left;
     const availableHeight = parentElementHeight - elementPaddingVer;
     const availableWidth = parentElementWidth - elementPaddingHor - scrollbarWidth;
+    this._lastAvailableHeight = availableHeight;
+    this._lastAvailableWidth = availableWidth;
     const geometry = {
       cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / dims.css.cell.width)),
       rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / dims.css.cell.height))
