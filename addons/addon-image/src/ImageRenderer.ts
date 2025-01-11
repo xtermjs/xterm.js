@@ -4,9 +4,9 @@
  */
 
 import { toRGBA8888 } from 'sixel/lib/Colors';
-import { IDisposable } from '@xterm/xterm';
+import { IDisposable, IMutableDisposable, ISharedExports } from '@xterm/xterm';
 import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
-import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { AddonDisposable } from 'common/shared/AddonDisposable';
 
 const PLACEHOLDER_LENGTH = 4096;
 const PLACEHOLDER_HEIGHT = 24;
@@ -17,12 +17,12 @@ const PLACEHOLDER_HEIGHT = 24;
  * - add canvas layer to DOM (browser only for now)
  * - draw image tiles onRender
  */
-export class ImageRenderer extends Disposable implements IDisposable {
+export class ImageRenderer extends AddonDisposable implements IDisposable {
   public canvas: HTMLCanvasElement | undefined;
   private _ctx: CanvasRenderingContext2D | null | undefined;
   private _placeholder: HTMLCanvasElement | undefined;
   private _placeholderBitmap: ImageBitmap | undefined;
-  private _optionsRefresh = this._register(new MutableDisposable());
+  private _optionsRefresh: IMutableDisposable<IDisposable>;
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _renderService: IRenderService | undefined;
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
@@ -67,8 +67,8 @@ export class ImageRenderer extends Disposable implements IDisposable {
   }
 
 
-  constructor(private _terminal: ITerminalExt) {
-    super();
+  constructor(sharedExports: ISharedExports, private _terminal: ITerminalExt) {
+    super(sharedExports);
     this._oldOpen = this._terminal._core.open;
     this._terminal._core.open = (parent: HTMLElement): void => {
       this._oldOpen?.call(this._terminal._core, parent);
@@ -78,13 +78,14 @@ export class ImageRenderer extends Disposable implements IDisposable {
       this._open();
     }
     // hack to spot fontSize changes
+    this._optionsRefresh = new sharedExports.MutableDisposable();
     this._optionsRefresh.value = this._terminal._core.optionsService.onOptionChange(option => {
       if (option === 'fontSize') {
         this.rescaleCanvas();
         this._renderService?.refreshRows(0, this._terminal.rows);
       }
     });
-    this._register(toDisposable(() => {
+    this._register(sharedExports.toDisposable(() => {
       this.removeLayerFromDom();
       if (this._terminal._core && this._oldOpen) {
         this._terminal._core.open = this._oldOpen;

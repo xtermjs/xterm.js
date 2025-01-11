@@ -280,8 +280,7 @@ function createTerminal(): void {
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
-  addons.image.instance = new ImageAddon();
-  //addons.progress.instance = new ProgressAddon(Terminal as unknown as IXtermSharedImports);
+  addons.image.instance = new ImageAddon(sharedExports);
   addons.progress.instance = new ProgressAddon(sharedExports);
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
@@ -640,8 +639,8 @@ function initAddons(term: Terminal): void {
         if (checkbox.checked) {
           const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
           addon.instance = ctorOptionsJson
-            ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
-            : new addons[name].ctor();
+            ? new addons[name].ctor(sharedExports, JSON.parse(ctorOptionsJson))
+            : new addons[name].ctor(sharedExports);
           term.loadAddon(addon.instance);
         } else {
           addon.instance!.dispose();

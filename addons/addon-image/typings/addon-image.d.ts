@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, ISharedExports } from '@xterm/xterm';
 
 declare module '@xterm/addon-image' {
   export interface IImageAddonOptions {
@@ -79,7 +79,7 @@ declare module '@xterm/addon-image' {
   }
 
   export class ImageAddon implements ITerminalAddon {
-    constructor(options?: IImageAddonOptions);
+    constructor(sharedExports: ISharedExports, options?: IImageAddonOptions);
     public activate(terminal: Terminal): void;
     public dispose(): void;
 

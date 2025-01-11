@@ -8,6 +8,7 @@ import { readFileSync } from 'fs';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../test/playwright/TestUtils';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
+import { ISharedExports } from '@xterm/xterm';
 
 /**
  * Plugin ctor options.
@@ -27,7 +28,7 @@ export interface IImageAddonOptions {
 
 // eslint-disable-next-line
 declare const ImageAddon: {
-  new(options?: Partial<IImageAddonOptions>): any;
+  new(sharedExports: ISharedExports, options?: Partial<IImageAddonOptions>): any;
 };
 
 interface ITestData {
@@ -91,7 +92,7 @@ test.describe('ImageAddon', () => {
     await ctx.page.evaluate(`
       window.term.reset()
       window.imageAddon?.dispose();
-      window.imageAddon = new ImageAddon({ sixelPaletteLimit: 512 });
+      window.imageAddon = new ImageAddon(sharedExports, { sixelPaletteLimit: 512 });
       window.term.loadAddon(window.imageAddon);
     `);
   });
@@ -152,7 +153,7 @@ test.describe('ImageAddon', () => {
         iipSizeLimit: 1000
       };
       await ctx.page.evaluate(opts => {
-        (window as any).imageAddonCustom = new ImageAddon(opts.opts);
+        (window as any).imageAddonCustom = new ImageAddon((window as any).sharedExports, opts.opts);
         (window as any).term.loadAddon((window as any).imageAddonCustom);
       }, { opts: customSettings });
       deepStrictEqual(await ctx.page.evaluate(`window.imageAddonCustom._opts`), customSettings);

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { ITerminalAddon, IDisposable } from '@xterm/xterm';
+import type { ITerminalAddon, IDisposable, ISharedExports } from '@xterm/xterm';
 import type { ImageAddon as IImageApi } from '@xterm/addon-image';
 import { IIPHandler } from './IIPHandler';
 import { ImageRenderer } from './ImageRenderer';
@@ -57,7 +57,7 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
   private _terminal: ITerminalExt | undefined;
   private _handlers: Map<String, IResetHandler> = new Map();
 
-  constructor(opts?: Partial<IImageAddonOptions>) {
+  constructor(private _sharedExports: ISharedExports, opts?: Partial<IImageAddonOptions>) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
     this._defaultOpts = Object.assign({}, DEFAULT_OPTIONS, opts);
   }
@@ -80,7 +80,7 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
     this._terminal = terminal;
 
     // internal data structures
-    this._renderer = new ImageRenderer(terminal);
+    this._renderer = new ImageRenderer(this._sharedExports, terminal);
     this._storage = new ImageStorage(terminal, this._renderer, this._opts);
 
     // enable size reports

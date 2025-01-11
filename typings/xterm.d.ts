@@ -1963,6 +1963,7 @@ declare module '@xterm/xterm' {
    */
   export interface ISharedExports {
     readonly DisposableStore: new() => IDisposableStore;
+    readonly MutableDisposable: new<T extends IDisposable>() => IMutableDisposable<T>;
     readonly Emitter: new<T>() => IEmitter<T>;
     readonly toDisposable: (fn: () => void) => IDisposable;
   }
@@ -1982,5 +1983,10 @@ declare module '@xterm/xterm' {
     add<T extends IDisposable>(o: T): T;
     delete<T extends IDisposable>(o: T): void;
     deleteAndLeak<T extends IDisposable>(o: T): void;
+  }
+  export interface IMutableDisposable<T> extends IDisposable {
+    value: T | undefined;
+    clear(): void;
+    dispose(): void;
   }
 }

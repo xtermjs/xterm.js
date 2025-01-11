@@ -6,7 +6,7 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { CoreBrowserTerminal as TerminalCore } from 'browser/CoreBrowserTerminal';
 import { IBufferRange, ITerminal } from 'browser/Types';
-import { Disposable, DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, DisposableStore, toDisposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { ITerminalOptions } from 'common/Types';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
@@ -22,6 +22,7 @@ import { type Event, Emitter } from 'vs/base/common/event';
  */
 export const sharedExports: ISharedExports = {
   DisposableStore,
+  MutableDisposable,
   Emitter,
   toDisposable
 };

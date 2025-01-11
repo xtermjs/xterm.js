@@ -27,7 +27,7 @@ module.exports = {
     alias: {
       common: path.resolve('../../out/common'),
       browser: path.resolve('../../out/browser'),
-      vs: path.resolve('../../out/vs'),
+      vs: path.resolve('../../out/vs')
     }
   },
   output: {
