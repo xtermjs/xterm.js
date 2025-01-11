@@ -28,7 +28,6 @@ module.exports = {
       common: path.resolve('../../out/common'),
       browser: path.resolve('../../out/browser'),
       vs: path.resolve('../../out/vs'),
-      shared: path.resolve('../../out/shared')
     }
   },
   output: {

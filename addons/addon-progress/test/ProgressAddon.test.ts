@@ -23,7 +23,7 @@ test.describe('ProgressAddon', () => {
       window.progressStack = [];
       window.term.reset();
       window.progressAddon?.dispose();
-      window.progressAddon = new ProgressAddon(emitterCtor);
+      window.progressAddon = new ProgressAddon(sharedExports);
       window.term.loadAddon(window.progressAddon);
       window.progressAddon.onChange(progress => window.progressStack.push(progress));
     `);

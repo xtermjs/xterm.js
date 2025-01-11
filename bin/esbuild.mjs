@@ -176,7 +176,6 @@ if (config.addon) {
       'src/browser/**/*.ts',
       'src/common/**/*.ts',
       'src/headless/**/*.ts',
-      'src/shared/**/*.ts',
       'src/vs/base/**/*.ts',
       'src/vs/patches/**/*.ts'
     ],

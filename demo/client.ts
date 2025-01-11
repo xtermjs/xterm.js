@@ -16,7 +16,7 @@ if ('WebAssembly' in window) {
   ImageAddon = imageAddon.ImageAddon;
 }
 
-import { Terminal, ITerminalOptions, type IDisposable, type ITheme, emitterCtor } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable, type ITheme, sharedExports, ISharedExports } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
@@ -32,6 +32,7 @@ import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
   Terminal: typeof Terminal;
+  sharedExports: ISharedExports;
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -44,8 +45,6 @@ export interface IWindowWithTerminal extends Window {
   Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
   UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon; // eslint-disable-line @typescript-eslint/naming-convention
   LigaturesAddon?: typeof LigaturesAddon; // eslint-disable-line @typescript-eslint/naming-convention
-
-  emitterCtor?: typeof emitterCtor;
 }
 declare let window: IWindowWithTerminal;
 
@@ -216,6 +215,7 @@ const createNewWindowButtonHandler: () => void = () => {
 
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
+  window.sharedExports = sharedExports;
   window.AttachAddon = AttachAddon;
   window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
@@ -228,8 +228,6 @@ if (document.location.pathname === '/test') {
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
-
-  window.emitterCtor = emitterCtor;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
@@ -283,7 +281,8 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
-  addons.progress.instance = new ProgressAddon(emitterCtor);
+  //addons.progress.instance = new ProgressAddon(Terminal as unknown as IXtermSharedImports);
+  addons.progress.instance = new ProgressAddon(sharedExports);
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
@@ -664,6 +663,7 @@ function initAddons(term: Terminal): void {
       }
       if (checkbox.checked) {
         // HACK: Manually remove addons that cannot be changes
+        // FIXME: re-enable this once done with the sharedExports
         //addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);

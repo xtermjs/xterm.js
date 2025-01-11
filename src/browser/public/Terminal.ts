@@ -6,14 +6,26 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { CoreBrowserTerminal as TerminalCore } from 'browser/CoreBrowserTerminal';
 import { IBufferRange, ITerminal } from 'browser/Types';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable, DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
 import { ITerminalOptions } from 'common/Types';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from '@xterm/xterm';
-import { type Event } from 'vs/base/common/event';
+import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling, ISharedExports } from '@xterm/xterm';
+import { type Event, Emitter } from 'vs/base/common/event';
+
+
+/**
+ * EXPERIMENTAL:
+ * Expose certain building blocks on the module to be used at runtime in addons.
+ */
+export const sharedExports: ISharedExports = {
+  DisposableStore,
+  Emitter,
+  toDisposable
+};
+
 
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
@@ -272,17 +284,3 @@ export class Terminal extends Disposable implements ITerminalApi {
     }
   }
 }
-
-
-/**
- * Expose often needed vs/* parts in addons.
- * Exposed statically on the xterm package,
- * so they can be used on addon ctors already.
- */
-export {
-  DisposableAddon,
-  EmitterAddon,
-  DisposableEmitterAddon
-} from 'shared/shared';
-export { DisposableStore as disposableStoreCtor, toDisposable } from 'vs/base/common/lifecycle';
-export { Emitter as emitterCtor } from 'vs/base/common/event';

@@ -3,16 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IDisposable, EmitterCtorType, IEmitter, IEvent } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IDisposable, IEmitter, IEvent, ISharedExports } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgressState } from '@xterm/addon-progress';
-
-// to use impl parts:
-
-// in 3rd party addons
-// import { EmitterAddon } from '@xterm/xterm';
-
-// in xtermjs repo addons
-import { EmitterAddon } from 'shared/shared';
 
 
 const enum ProgressType {
@@ -40,16 +32,15 @@ function toInt(s: string): number {
 }
 
 
-export class ProgressAddon extends EmitterAddon implements ITerminalAddon, IProgressApi {
+export class ProgressAddon implements ITerminalAddon, IProgressApi {
   private _seqHandler: IDisposable | undefined;
   private _st: ProgressType = ProgressType.REMOVE;
   private _pr = 0;
   private _onChange: IEmitter<IProgressState>;
   public onChange: IEvent<IProgressState>;
 
-  constructor(protected readonly _emitterCtor: EmitterCtorType) {
-    super(_emitterCtor);
-    this._onChange = new this._emitterCtor<IProgressState>();
+  constructor(sharedExports: ISharedExports) {
+    this._onChange = new sharedExports.Emitter<IProgressState>();
     this.onChange = this._onChange.event;
   }
 

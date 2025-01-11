@@ -22,9 +22,6 @@
       "vs/*": [
         "../../../src/vs/*"
       ],
-      "shared/*": [
-        "../../../src/shared/*"
-      ],
       "@xterm/addon-progress": [
         "../typings/addon-progress.d.ts"
       ]
@@ -40,9 +37,6 @@
     },
     {
       "path": "../../../src/vs"
-    },
-    {
-      "path": "../../../src/shared"
     }
   ]
 }
