@@ -285,7 +285,7 @@ function createTerminal(): void {
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
-    addons.webgl.instance = new WebglAddon();
+    addons.webgl.instance = new WebglAddon(sharedExports);
   } catch (e) {
     console.warn(e);
   }
@@ -696,7 +696,7 @@ function initAddons(term: Terminal): void {
         if (addons.webgl.instance) {
           preDisposeWebgl();
           addons.webgl.instance.dispose();
-          addons.webgl.instance = new addons.webgl.ctor();
+          addons.webgl.instance = new addons.webgl.ctor(sharedExports);
           term.loadAddon(addons.webgl.instance);
           postInitWebgl();
         }

@@ -7,13 +7,13 @@ import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, FgFlags } from 'common/buffer/Constants';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IColor } from 'common/Types';
-import { Terminal } from '@xterm/xterm';
+import { ISharedExports, Terminal } from '@xterm/xterm';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { AddonDisposable } from 'common/shared/AddonDisposable';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -73,7 +73,7 @@ let $g = 0;
 let $b = 0;
 let $a = 0;
 
-export class RectangleRenderer extends Disposable {
+export class RectangleRenderer extends AddonDisposable {
 
   private _program: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
@@ -86,17 +86,18 @@ export class RectangleRenderer extends Disposable {
   private _verticesCursor: Vertices = new Vertices();
 
   constructor(
+    private _sharedExports: ISharedExports,
     private _terminal: Terminal,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions,
     private readonly _themeService: IThemeService
   ) {
-    super();
+    super(_sharedExports);
 
     const gl = this._gl;
 
     this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
-    this._register(toDisposable(() => gl.deleteProgram(this._program)));
+    this._register(_sharedExports.toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
@@ -108,7 +109,7 @@ export class RectangleRenderer extends Disposable {
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
     const unitQuadVertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
     const unitQuadVerticesBuffer = gl.createBuffer();
-    this._register(toDisposable(() => gl.deleteBuffer(unitQuadVerticesBuffer)));
+    this._register(_sharedExports.toDisposable(() => gl.deleteBuffer(unitQuadVerticesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuadVerticesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, unitQuadVertices, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(VertexAttribLocations.UNIT_QUAD);
@@ -119,13 +120,13 @@ export class RectangleRenderer extends Disposable {
     // triangle strip
     const unitQuadElementIndices = new Uint8Array([0, 1, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
-    this._register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
+    this._register(_sharedExports.toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
     // Setup attributes
     this._attributesBuffer = throwIfFalsy(gl.createBuffer());
-    this._register(toDisposable(() => gl.deleteBuffer(this._attributesBuffer)));
+    this._register(_sharedExports.toDisposable(() => gl.deleteBuffer(this._attributesBuffer)));
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.enableVertexAttribArray(VertexAttribLocations.POSITION);
     gl.vertexAttribPointer(VertexAttribLocations.POSITION, 2, gl.FLOAT, false, BYTES_PER_RECTANGLE, 0);

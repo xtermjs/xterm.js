@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { toDisposable, IDisposable } from 'vs/base/common/lifecycle';
+import { ISharedExports, IDisposable } from '@xterm/xterm';
 
-export function observeDevicePixelDimensions(element: HTMLElement, parentWindow: Window & typeof globalThis, callback: (deviceWidth: number, deviceHeight: number) => void): IDisposable {
+export function observeDevicePixelDimensions(sharedExports: ISharedExports, element: HTMLElement, parentWindow: Window & typeof globalThis, callback: (deviceWidth: number, deviceHeight: number) => void): IDisposable {
   // Observe any resizes to the element and extract the actual pixel size of the element if the
   // devicePixelContentBoxSize API is supported. This allows correcting rounding errors when
   // converting between CSS pixels and device pixels which causes blurry rendering when device
@@ -36,5 +36,5 @@ export function observeDevicePixelDimensions(element: HTMLElement, parentWindow:
     observer.disconnect();
     observer = undefined;
   }
-  return toDisposable(() => observer?.disconnect());
+  return sharedExports.toDisposable(() => observer?.disconnect());
 }

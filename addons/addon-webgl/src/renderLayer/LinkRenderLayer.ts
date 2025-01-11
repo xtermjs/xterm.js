@@ -9,13 +9,14 @@ import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
-import { Terminal } from '@xterm/xterm';
+import { ISharedExports, Terminal } from '@xterm/xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent | undefined;
 
   constructor(
+    sharedExports: ISharedExports,
     container: HTMLElement,
     zIndex: number,
     terminal: Terminal,
@@ -24,7 +25,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
     optionsService: IOptionsService,
     themeService: IThemeService
   ) {
-    super(terminal, container, 'link', zIndex, true, coreBrowserService, optionsService, themeService);
+    super(sharedExports, terminal, container, 'link', zIndex, true, coreBrowserService, optionsService, themeService);
 
     this._register(linkifier2.onShowLinkUnderline(e => this._handleShowLinkUnderline(e)));
     this._register(linkifier2.onHideLinkUnderline(e => this._handleHideLinkUnderline(e)));

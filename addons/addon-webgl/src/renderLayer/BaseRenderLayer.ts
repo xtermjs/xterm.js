@@ -7,16 +7,17 @@ import { ReadonlyColorSet } from 'browser/Types';
 import { acquireTextureAtlas } from '../CharAtlasCache';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
-import { Terminal } from '@xterm/xterm';
+import { ISharedExports, Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TEXT_BASELINE } from '../Constants';
 import type { ITextureAtlas } from '../Types';
+import { AddonDisposable } from 'common/shared/AddonDisposable';
 
-export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
+
+export abstract class BaseRenderLayer extends AddonDisposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx!: CanvasRenderingContext2D;
   private _deviceCharWidth: number = 0;
@@ -29,6 +30,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   protected _charAtlas: ITextureAtlas | undefined;
 
   constructor(
+    private _sharedExports: ISharedExports,
     terminal: Terminal,
     private _container: HTMLElement,
     id: string,
@@ -38,7 +40,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     protected readonly _optionsService: IOptionsService,
     protected readonly _themeService: IThemeService
   ) {
-    super();
+    super(_sharedExports);
     this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
@@ -48,7 +50,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       this._refreshCharAtlas(terminal, e);
       this.reset(terminal);
     }));
-    this._register(toDisposable(() => {
+    this._register(_sharedExports.toDisposable(() => {
       this._canvas.remove();
     }));
   }
@@ -96,7 +98,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
       return;
     }
 
-    this._charAtlas = acquireTextureAtlas(terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr, 2048);
+    this._charAtlas = acquireTextureAtlas(this._sharedExports, terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr, 2048);
     this._charAtlas.warmUp();
   }
 

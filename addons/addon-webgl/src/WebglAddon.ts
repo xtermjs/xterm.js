@@ -3,32 +3,33 @@
  * @license MIT
  */
 
-import type { ITerminalAddon, Terminal } from '@xterm/xterm';
+import type { ISharedExports, ITerminalAddon, Terminal, IEmitter, IEvent, IDisposable } from '@xterm/xterm';
 import type { WebglAddon as IWebglApi } from '@xterm/addon-webgl';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { getSafariVersion, isSafari } from 'common/Platform';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { IWebGL2RenderingContext } from './Types';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
-import { Emitter, Event } from 'vs/base/common/event';
+import { AddonDisposable } from 'common/shared/AddonDisposable';
+import { forwardEvent } from './WebglUtils';
 
-export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
+export class WebglAddon extends AddonDisposable implements ITerminalAddon , IWebglApi {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
 
-  private readonly _onChangeTextureAtlas = this._register(new Emitter<HTMLCanvasElement>());
-  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onAddTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
-  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
-  private readonly _onRemoveTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
-  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
-  private readonly _onContextLoss = this._register(new Emitter<void>());
-  public readonly onContextLoss = this._onContextLoss.event;
+  private readonly _onChangeTextureAtlas: IEmitter<HTMLCanvasElement>;
+  public readonly onChangeTextureAtlas: IEvent<HTMLCanvasElement>;
+  private readonly _onAddTextureAtlasCanvas: IEmitter<HTMLCanvasElement>;
+  public readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  private readonly _onRemoveTextureAtlasCanvas: IEmitter<HTMLCanvasElement>;
+  public readonly onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  private readonly _onContextLoss: IEmitter<void>;
+  public readonly onContextLoss: IEvent<void>;
 
   constructor(
+    private _sharedExports: ISharedExports,
     private _preserveDrawingBuffer?: boolean
   ) {
     if (isSafari && getSafariVersion() < 16) {
@@ -43,7 +44,16 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
         throw new Error('Webgl2 is only supported on Safari 16 and above');
       }
     }
-    super();
+    super(_sharedExports);
+
+    this._onChangeTextureAtlas = this._register(new _sharedExports.Emitter<HTMLCanvasElement>());
+    this.onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+    this._onAddTextureAtlasCanvas = this._register(new _sharedExports.Emitter<HTMLCanvasElement>());
+    this.onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+    this._onRemoveTextureAtlasCanvas = this._register(new _sharedExports.Emitter<HTMLCanvasElement>());
+    this.onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
+    this._onContextLoss = this._register(new _sharedExports.Emitter<void>());
+    this.onContextLoss = this._onContextLoss.event;
   }
 
   public activate(terminal: Terminal): void {
@@ -71,6 +81,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
     setTraceLogger(logService);
 
     this._renderer = this._register(new WebglRenderer(
+      this._sharedExports,
       terminal,
       characterJoinerService,
       charSizeService,
@@ -81,13 +92,13 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
       themeService,
       this._preserveDrawingBuffer
     ));
-    this._register(Event.forward(this._renderer.onContextLoss, this._onContextLoss));
-    this._register(Event.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
-    this._register(Event.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
-    this._register(Event.forward(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
+    this._register(forwardEvent(this._renderer.onContextLoss, this._onContextLoss));
+    this._register(forwardEvent(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this._register(forwardEvent(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
+    this._register(forwardEvent(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
 
-    this._register(toDisposable(() => {
+    this._register(this._sharedExports.toDisposable(() => {
       if ((this._terminal as any)._core._store._isDisposed) {
         return;
       }

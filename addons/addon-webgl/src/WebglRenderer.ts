@@ -15,26 +15,25 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { Terminal } from '@xterm/xterm';
+import { ISharedExports, Terminal, IMutableDisposable, IDisposable, IEmitter, IEvent } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
 import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
 import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { Emitter, Event } from 'vs/base/common/event';
-import { addDisposableListener } from 'vs/base/browser/dom';
-import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { AddonDisposable } from 'common/shared/AddonDisposable';
+import { forwardEvent } from './WebglUtils';
 
-export class WebglRenderer extends Disposable implements IRenderer {
+export class WebglRenderer extends AddonDisposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
-  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
-  private _charAtlasDisposable = this._register(new MutableDisposable());
+  private _cursorBlinkStateManager: IMutableDisposable<CursorBlinkStateManager>;
+  private _charAtlasDisposable: IMutableDisposable<IDisposable>;
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
   private _deviceMaxTextureSize: number;
-  private _observerDisposable = this._register(new MutableDisposable());
+  private _observerDisposable: IMutableDisposable<IDisposable>;
 
   private _model: RenderModel = new RenderModel();
   private _workCell: ICellData = new CellData();
@@ -43,8 +42,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer: MutableDisposable<RectangleRenderer> = this._register(new MutableDisposable());
-  private _glyphRenderer: MutableDisposable<GlyphRenderer> = this._register(new MutableDisposable());
+  private _rectangleRenderer: IMutableDisposable<RectangleRenderer>;
+  private _glyphRenderer: IMutableDisposable<GlyphRenderer>;
 
   public readonly dimensions: IRenderDimensions;
 
@@ -52,18 +51,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _isAttached: boolean;
   private _contextRestorationTimeout: number | undefined;
 
-  private readonly _onChangeTextureAtlas = this._register(new Emitter<HTMLCanvasElement>());
-  public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
-  private readonly _onAddTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
-  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
-  private readonly _onRemoveTextureAtlasCanvas = this._register(new Emitter<HTMLCanvasElement>());
-  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
-  private readonly _onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>());
-  public readonly onRequestRedraw = this._onRequestRedraw.event;
-  private readonly _onContextLoss = this._register(new Emitter<void>());
-  public readonly onContextLoss = this._onContextLoss.event;
+  private readonly _onChangeTextureAtlas: IEmitter<HTMLCanvasElement>;
+  public readonly onChangeTextureAtlas: IEvent<HTMLCanvasElement>;
+  private readonly _onAddTextureAtlasCanvas: IEmitter<HTMLCanvasElement>;
+  public readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  private readonly _onRemoveTextureAtlasCanvas: IEmitter<HTMLCanvasElement>;
+  public readonly onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  private readonly _onRequestRedraw: IEmitter<IRequestRedrawEvent>;
+  public readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
+  private readonly _onContextLoss: IEmitter<void>;
+  public readonly onContextLoss: IEvent<void>;
 
   constructor(
+    private _sharedExports: ISharedExports,
     private _terminal: Terminal,
     private readonly _characterJoinerService: ICharacterJoinerService,
     private readonly _charSizeService: ICharSizeService,
@@ -74,7 +74,24 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _themeService: IThemeService,
     preserveDrawingBuffer?: boolean
   ) {
-    super();
+    super(_sharedExports);
+
+    this._cursorBlinkStateManager = new _sharedExports.MutableDisposable();
+    this._charAtlasDisposable = this._register(new _sharedExports.MutableDisposable());
+    this._observerDisposable = this._register(new _sharedExports.MutableDisposable());
+    this._rectangleRenderer = this._register(new _sharedExports.MutableDisposable());
+    this._glyphRenderer = this._register(new _sharedExports.MutableDisposable());
+
+    this._onChangeTextureAtlas = this._register(new _sharedExports.Emitter<HTMLCanvasElement>());
+    this.onChangeTextureAtlas = this._onChangeTextureAtlas.event;
+    this._onAddTextureAtlasCanvas = this._register(new _sharedExports.Emitter<HTMLCanvasElement>());
+    this.onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+    this._onRemoveTextureAtlasCanvas = this._register(new _sharedExports.Emitter<HTMLCanvasElement>());
+    this.onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
+    this._onRequestRedraw = this._register(new _sharedExports.Emitter<IRequestRedrawEvent>());
+    this.onRequestRedraw = this._onRequestRedraw.event;
+    this._onContextLoss = this._register(new _sharedExports.Emitter<void>());
+    this.onContextLoss = this._onContextLoss.event;
 
     this._register(this._themeService.onChangeColors(() => this._handleColorChange()));
 
@@ -83,7 +100,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core = (this._terminal as any)._core;
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService)
+      new LinkRenderLayer(_sharedExports, this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService)
     ];
     this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
@@ -128,9 +145,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._requestRedrawViewport();
     }));
 
-    this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+    this._observerDisposable.value = observeDevicePixelDimensions(this._sharedExports, this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
     this._register(this._coreBrowserService.onWindowChange(w => {
-      this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+      this._observerDisposable.value = observeDevicePixelDimensions(this._sharedExports, this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
     }));
 
     this._core.screenElement!.appendChild(this._canvas);
@@ -139,7 +156,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
 
-    this._register(toDisposable(() => {
+    this._register(_sharedExports.toDisposable(() => {
       for (const l of this._renderLayers) {
         l.dispose();
       }
@@ -248,8 +265,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Initializes members dependent on WebGL context state.
    */
   private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
-    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService);
-    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._optionsService);
+    this._rectangleRenderer.value = new RectangleRenderer(this._sharedExports, this._terminal, this._gl, this.dimensions, this._themeService);
+    this._glyphRenderer.value = new GlyphRenderer(this._sharedExports, this._terminal, this._gl, this.dimensions, this._optionsService);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
@@ -268,6 +285,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
 
     const atlas = acquireTextureAtlas(
+      this._sharedExports,
       this._terminal,
       this._optionsService.rawOptions,
       this._themeService.colors,
@@ -280,10 +298,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     );
     if (this._charAtlas !== atlas) {
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
-      this._charAtlasDisposable.value = combinedDisposable(
-        Event.forward(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
-        Event.forward(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
-      );
+      const disposables = [
+        forwardEvent(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
+        forwardEvent(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
+      ];
+      this._charAtlasDisposable.value = this._sharedExports.toDisposable(() => {
+        for (let i = 0; i < disposables.length; ++i) disposables[i].dispose();
+        disposables.length = 0;
+      });
     }
     this._charAtlas = atlas;
     this._charAtlas.warmUp();
@@ -674,4 +696,43 @@ export class JoinedCellData extends AttributeData implements ICellData {
 
 function clamp(value: number, max: number, min: number = 0): number {
   return Math.max(Math.min(value, max), min);
+}
+
+
+
+
+/** borrowed from vs */
+class DomListener implements IDisposable {
+	private _handler: (e: any) => void;
+	private _node: EventTarget;
+	private readonly _type: string;
+	private readonly _options: boolean | AddEventListenerOptions;
+
+	constructor(node: EventTarget, type: string, handler: (e: any) => void, options?: boolean | AddEventListenerOptions) {
+		this._node = node;
+		this._type = type;
+		this._handler = handler;
+		this._options = (options || false);
+		this._node.addEventListener(this._type, this._handler, this._options);
+	}
+
+	dispose(): void {
+		if (!this._handler) {
+			// Already disposed
+			return;
+		}
+
+		this._node.removeEventListener(this._type, this._handler, this._options);
+
+		// Prevent leakers from holding on to the dom or handler func
+		this._node = null!;
+		this._handler = null!;
+	}
+}
+
+export function addDisposableListener<K extends keyof GlobalEventHandlersEventMap>(node: EventTarget, type: K, handler: (event: GlobalEventHandlersEventMap[K]) => void, useCapture?: boolean): IDisposable;
+export function addDisposableListener(node: EventTarget, type: string, handler: (event: any) => void, useCapture?: boolean): IDisposable;
+export function addDisposableListener(node: EventTarget, type: string, handler: (event: any) => void, options: AddEventListenerOptions): IDisposable;
+export function addDisposableListener(node: EventTarget, type: string, handler: (event: any) => void, useCaptureOrOptions?: boolean | AddEventListenerOptions): IDisposable {
+	return new DomListener(node, type, handler, useCaptureOrOptions);
 }

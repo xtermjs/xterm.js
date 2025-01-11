@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { IDisposable, IEmitter, IEvent } from '@xterm/xterm';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 /**
@@ -60,4 +61,8 @@ export class GLTexture {
     this.texture = texture;
     this.version = -1;
   }
+}
+
+export function forwardEvent<T>(from: IEvent<T>, to: IEmitter<T>): IDisposable {
+  return from(e => to.fire(e));
 }
