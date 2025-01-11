@@ -22,7 +22,7 @@ test.describe('Search Tests', () => {
     await ctx.page.evaluate(`
       window.term.reset()
       window.search?.dispose();
-      window.search = new SearchAddon();
+      window.search = new SearchAddon(sharedExports);
       window.term.loadAddon(window.search);
     `);
   });

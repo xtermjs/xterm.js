@@ -277,7 +277,7 @@ function createTerminal(): void {
 
   // Load addons
   const typedTerm = term as Terminal;
-  addons.search.instance = new SearchAddon();
+  addons.search.instance = new SearchAddon(sharedExports);
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon(sharedExports);

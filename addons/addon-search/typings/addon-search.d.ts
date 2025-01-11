@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IEvent } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IEvent, ISharedExports } from '@xterm/xterm';
 
 declare module '@xterm/addon-search' {
   /**
@@ -95,7 +95,7 @@ declare module '@xterm/addon-search' {
      * Creates a new search addon.
      * @param options Options for the search addon.
      */
-    constructor(options?: Partial<ISearchAddonOptions>);
+    constructor(sharedExports: ISharedExports, options?: Partial<ISearchAddonOptions>);
 
     /**
      * Activates the addon
