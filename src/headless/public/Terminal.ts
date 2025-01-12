@@ -6,12 +6,25 @@
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, ITerminalInitOnlyOptions, IUnicodeHandling, Terminal as ITerminalApi } from '@xterm/headless';
+import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, ITerminalInitOnlyOptions, IUnicodeHandling, Terminal as ITerminalApi, ISharedExports } from '@xterm/headless';
 import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
 import { ITerminalOptions } from 'common/Types';
-import { Disposable } from 'vs/base/common/lifecycle';
-import type { Event } from 'vs/base/common/event';
+import { Disposable, DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
+import { type Event, Emitter } from 'vs/base/common/event';
+
+
+/**
+ * EXPERIMENTAL:
+ * Expose certain building blocks on the module to be used at runtime in addons.
+ */
+export const sharedExports: ISharedExports = {
+  DisposableStore,
+  Emitter,
+  toDisposable
+};
+
+
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */

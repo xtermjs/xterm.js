@@ -4,7 +4,7 @@
  */
 
 import { TextureAtlas } from './TextureAtlas';
-import { ITerminalOptions, Terminal } from '@xterm/xterm';
+import { ISharedExports, ITerminalOptions, Terminal } from '@xterm/xterm';
 import { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { ICharAtlasConfig, ITextureAtlas } from './Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
@@ -24,6 +24,7 @@ const charAtlasCache: ITextureAtlasCacheEntry[] = [];
  * one that is in use by another terminal.
  */
 export function acquireTextureAtlas(
+  sharedExports: ISharedExports,
   terminal: Terminal,
   options: Required<ITerminalOptions>,
   colors: ReadonlyColorSet,
@@ -67,7 +68,7 @@ export function acquireTextureAtlas(
 
   const core: ITerminal = (terminal as any)._core;
   const newEntry: ITextureAtlasCacheEntry = {
-    atlas: new TextureAtlas(document, newConfig, core.unicodeService),
+    atlas: new TextureAtlas(sharedExports, document, newConfig, core.unicodeService),
     config: newConfig,
     ownedBy: [terminal]
   };

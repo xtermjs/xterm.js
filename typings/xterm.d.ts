@@ -1956,4 +1956,37 @@ declare module '@xterm/xterm' {
      */
     readonly wraparoundMode: boolean;
   }
+
+  /**
+   * EXPERIMENTAL:
+   * Module exposure of certain building blocks to be used at runtime in addons.
+   */
+  export interface ISharedExports {
+    readonly DisposableStore: new() => IDisposableStore;
+    readonly MutableDisposable: new<T extends IDisposable>() => IMutableDisposable<T>;
+    readonly Emitter: new<T>() => IEmitter<T>;
+    readonly toDisposable: (fn: () => void) => IDisposable;
+  }
+
+  export const sharedExports: ISharedExports;
+
+  // FIXME: @Tyriar - plz have a look at the following interfaces and
+  // to what degree those should be exposed or get stripped down
+  export interface IEmitter<T> extends IDisposable {
+    event: IEvent<T>;
+    fire(event: T): void;
+    hasListeners(): boolean;
+  }
+  export interface IDisposableStore extends IDisposable {
+    isDisposed: boolean;
+    clear(): void;
+    add<T extends IDisposable>(o: T): T;
+    delete<T extends IDisposable>(o: T): void;
+    deleteAndLeak<T extends IDisposable>(o: T): void;
+  }
+  export interface IMutableDisposable<T> extends IDisposable {
+    value: T | undefined;
+    clear(): void;
+    dispose(): void;
+  }
 }

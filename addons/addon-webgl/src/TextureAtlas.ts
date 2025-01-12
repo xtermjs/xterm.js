@@ -15,7 +15,7 @@ import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { IUnicodeService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { ISharedExports, IEmitter, IEvent } from '@xterm/xterm';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -80,16 +80,22 @@ export class TextureAtlas implements ITextureAtlas {
   public static maxAtlasPages: number | undefined;
   public static maxTextureSize: number | undefined;
 
-  private readonly _onAddTextureAtlasCanvas = new Emitter<HTMLCanvasElement>();
-  public readonly onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
-  private readonly _onRemoveTextureAtlasCanvas = new Emitter<HTMLCanvasElement>();
-  public readonly onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
+  private readonly _onAddTextureAtlasCanvas: IEmitter<HTMLCanvasElement>;
+  public readonly onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  private readonly _onRemoveTextureAtlasCanvas: IEmitter<HTMLCanvasElement>;
+  public readonly onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
   constructor(
+    _sharedExports: ISharedExports,
     private readonly _document: Document,
     private readonly _config: ICharAtlasConfig,
     private readonly _unicodeService: IUnicodeService
   ) {
+    this._onAddTextureAtlasCanvas = new _sharedExports.Emitter<HTMLCanvasElement>();
+    this.onAddTextureAtlasCanvas = this._onAddTextureAtlasCanvas.event;
+    this._onRemoveTextureAtlasCanvas = new _sharedExports.Emitter<HTMLCanvasElement>();
+    this.onRemoveTextureAtlasCanvas = this._onRemoveTextureAtlasCanvas.event;
+
     this._createNewPage();
     this._tmpCanvas = createCanvas(
       _document,

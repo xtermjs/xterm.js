@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IDisposable, IEmitter, IEvent, ISharedExports } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgressState } from '@xterm/addon-progress';
-import type { Emitter, Event } from 'vs/base/common/event';
 
 
 const enum ProgressType {
@@ -37,9 +36,13 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
   private _seqHandler: IDisposable | undefined;
   private _st: ProgressType = ProgressType.REMOVE;
   private _pr = 0;
-  // HACK: This uses ! to align with the API, this should be fixed when 5283 is resolved
-  private _onChange!: Emitter<IProgressState>;
-  public onChange!: Event<IProgressState>;
+  private _onChange: IEmitter<IProgressState>;
+  public onChange: IEvent<IProgressState>;
+
+  constructor(sharedExports: ISharedExports) {
+    this._onChange = new sharedExports.Emitter<IProgressState>();
+    this.onChange = this._onChange.event;
+  }
 
   public dispose(): void {
     this._seqHandler?.dispose();
@@ -81,9 +84,6 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
       }
       return true;
     });
-    // FIXME: borrow emitter ctor from xterm, to be changed once #5283 is resolved
-    this._onChange = new (terminal as any)._core._onData.constructor();
-    this.onChange = this._onChange!.event;
   }
 
   public get progress(): IProgressState {
