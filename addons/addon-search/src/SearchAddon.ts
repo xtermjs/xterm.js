@@ -201,7 +201,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       this._fireResults();
       return false;
     }
-    const wasLastSearchRegex = this._searchOptions?.regex === true;
 
     const didOptionsChanged = this._searchOptions ? this._didOptionsChange(this._searchOptions, searchOptions) : false;
     this._searchOptions = searchOptions;
@@ -215,11 +214,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       window.clearTimeout(this._debounceTimeout);
 
       this._debounceTimeout = setTimeout(()=>{
-        // regex search modifies the line cache
-        // if the previous search was regex we need to clear it
-        if (wasLastSearchRegex===true){
-          this._destroyLinesCache();
-        }
         this._cancelSearchSignal = false;
         this._searchCompleted = false;
         this.clearDecorations(true);
