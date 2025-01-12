@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { ISharedExports, ITerminalAddon, Terminal, IEmitter, IEvent, IDisposable } from '@xterm/xterm';
+import type { ISharedExports, ITerminalAddon, Terminal, IEmitter, IEvent } from '@xterm/xterm';
 import type { WebglAddon as IWebglApi } from '@xterm/addon-webgl';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
