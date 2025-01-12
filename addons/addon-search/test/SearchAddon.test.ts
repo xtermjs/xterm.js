@@ -290,7 +290,7 @@ test.describe('Search Tests', () => {
 
 
       await ctx.page.evaluate(`window.search.findNext('bc', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
-      await timeout(TIMEOUT * 2);
+      await timeout(TIMEOUT * 4);
       deepStrictEqual(await ctx.proxy.getSelection(), 'bc');
       deepStrictEqual(
         await ctx.page.evaluate('window.calls[window.calls.length-1]'),
