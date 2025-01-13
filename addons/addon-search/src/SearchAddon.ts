@@ -8,6 +8,8 @@ import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
 import { Emitter } from 'vs/base/common/event';
 import { Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { stringLengthToBufferSize,bufferColsToStringOffset,translateBufferLineToStringWithWrap,LineCacheEntry } from './BufferToStringDataTransformers';
+import { PriorityTaskQueue } from 'common/TaskQueue';
+
 export interface ISearchOptions {
   regex?: boolean;
   wholeWord?: boolean;
@@ -97,7 +99,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _searchCompleted: boolean = true;
   private _cancelSearchSignal: boolean = false;
   private _findPrevious: boolean = false;
-
+  private _chunkIndex: number = 0;
+  private _chunkSearchIterator: Generator<{direction: string,chunkSize: number}> | null = null;
 
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
@@ -269,54 +272,56 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   private _findAllMatches(term: string): void {
 
-    const chunkSearchIterator = this._chunkSearchGenerator(term);
-    this._iterate(chunkSearchIterator,0);
+    this._chunkSearchIterator = this._chunkSearchGenerator(term);
+    this._chunkIndex = 0;
+    const taskQueue = new PriorityTaskQueue();
+    taskQueue.enqueue(()=> this._iterate());
   }
-
   /**
-   * @param searchIterator
-   * @param chunkIndex only used to select first match when first chunk comes in
+   * Search for term and returns once Performance.ChunkSize number of lines or matches is exceeded
    */
-  private _iterate(searchIterator: Generator<{direction: string,chunkSize: number}>,chunkIndex: number): void{
-    setTimeout(()=>{
+  private _iterate(): boolean{
 
-      const iteratorResult = searchIterator.next();
+    const iteratorResult = this._chunkSearchIterator!.next();
 
-      if (chunkIndex===0){
-        this._moveToTheNextMatch();
-      }
+    if (this._chunkIndex ===0){
+      this._moveToTheNextMatch();
+    }
 
-      if (iteratorResult.done === false){
-        const { direction,chunkSize } = iteratorResult.value;
+    if (iteratorResult.done === false){
+      const { direction,chunkSize } = iteratorResult.value;
 
-        const startIndex = direction === 'down' ? this._matches.length - chunkSize : 0;
-        const endIndex = direction ==='down' ? this._matches.length : chunkSize;
+      const startIndex = direction === 'down' ? this._matches.length - chunkSize : 0;
+      const endIndex = direction ==='down' ? this._matches.length : chunkSize;
 
-        this._highlightChunk(startIndex,endIndex);
-        // adjust match index with the growing result
-        if (direction==='up' && chunkIndex !== 0){
-          this._currentMatchIndex += chunkSize;
-          this._fireResults();
-        }
-        this._iterate(searchIterator,++chunkIndex);
-      }
-      else if (iteratorResult.value !== false){ // search finished without being cancelled
-
-        const { direction,chunkSize } = iteratorResult.value;
-
-        const startIndex = direction === 'down' ? this._matches.length - chunkSize : 0;
-        const endIndex = direction ==='down' ? this._matches.length : chunkSize;
-
-        this._highlightChunk(startIndex,endIndex);
-
-        if (direction==='up' && chunkIndex !== 0){
-          this._currentMatchIndex += chunkSize;
-        }
-        this._searchCompleted = true;
+      this._highlightChunk(startIndex,endIndex);
+      // adjust match index with the growing result
+      if (direction==='up' && this._chunkIndex !== 0){
+        this._currentMatchIndex += chunkSize;
         this._fireResults();
       }
+      this._chunkIndex++;
+      return true;
+    }
 
-    },Performance.TIME_BETWEEN_CHUNK_OPERATIONS);
+    if (iteratorResult.value !== false){ // search finished without being cancelled
+
+      const { direction,chunkSize } = iteratorResult.value;
+
+      const startIndex = direction === 'down' ? this._matches.length - chunkSize : 0;
+      const endIndex = direction ==='down' ? this._matches.length : chunkSize;
+
+      this._highlightChunk(startIndex,endIndex);
+
+      if (direction==='up' && this._chunkIndex !== 0){
+        this._currentMatchIndex += chunkSize;
+      }
+      this._searchCompleted = true;
+      this._fireResults();
+      return false;
+    }
+    return false;
+
   }
   private _fireResults(): void {
     // since the we changed the code to be asynchronous findNext no longer return whether or not
