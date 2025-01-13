@@ -65,6 +65,12 @@ const enum Performance {
   CHUNK_SIZE = 200,
 
   /**
+   * Used to yield execution when CHUNK_SIZE number of mactches
+   * Were not found in this number of lines
+   */
+  LINE_LIMIT = 200,
+
+  /**
    *  Time in ms
    *  1 ms seems to work fine as we just need to let other parts of the code to take over
    *  and return here when their work is done
@@ -276,7 +282,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     taskQueue.enqueue(()=> this._iterate());
   }
   /**
-   * Search for term and returns once Performance.ChunkSize number of lines or matches is exceeded
+   * Search for term and returns once Performance.Chunk_SIZE or Performance.LINE_LIMIT is exceeded
    */
   private _iterate(): boolean{
 
@@ -357,7 +363,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         // we need two variable to check for yield on exceeding max row scans
         // didNotYieldForThisManyRows for the current exection
         // and usedForYield for the next time we are given execution
-        if (downDirectionLastResult.didNotYieldForThisManyRows < Performance.CHUNK_SIZE){
+        if (downDirectionLastResult.didNotYieldForThisManyRows < Performance.LINE_LIMIT){
           if (downDirectionLastResult.usedForYield === false){
             currentChunkMatches.push(downDirectionLastResult);
           }
@@ -378,7 +384,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
       } else if (upDirectionLastResult !== undefined && searchDirection === 'up'){
 
-        if (upDirectionLastResult.didNotYieldForThisManyRows < Performance.CHUNK_SIZE){
+        if (upDirectionLastResult.didNotYieldForThisManyRows < Performance.LINE_LIMIT){
           if (upDirectionLastResult.usedForYield === false){
             currentChunkMatches.push(upDirectionLastResult);
           }
