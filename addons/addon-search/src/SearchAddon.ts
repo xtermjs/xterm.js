@@ -68,7 +68,7 @@ const enum Performance {
    * Used to yield execution when CHUNK_SIZE number of mactches
    * Were not found in this number of lines
    */
-  LINE_LIMIT = 200,
+  LINE_LIMIT = 100,
 
   /**
    *  Time in ms
@@ -497,8 +497,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           }
 
           numberOfRowsSearched++;
-          if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.CHUNK_SIZE){
-            return { term:'-1',row: y, col: 0 ,size:-1, didNotYieldForThisManyRows: Performance.CHUNK_SIZE,usedForYield: true };
+          if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.LINE_LIMIT){
+            return { term:'-1',row: y, col: 0 ,size:-1, didNotYieldForThisManyRows: Performance.LINE_LIMIT,usedForYield: true };
           }
         }
       }
@@ -513,9 +513,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
       if (resultAtRowAndToTheLeftOfColumn === undefined){
 
-
         for (let y = startRow - 1; y >= 0; y--) {
-          for (let j = this._terminal!.cols; j >= 0 ; j-- ){
+
+          const stringLine = this._getLine(y)[0];
+          const indexOfLastCharacterInTheLine = this._getNumberOfCharInString(stringLine);
+
+          for (let j = indexOfLastCharacterInTheLine; j >= 0 ; j-- ){
             resultAtOtherRowsScanColumnsRightToLeft = this._findInLine(term, { startRow: y,startCol: j },true);
             if (resultAtOtherRowsScanColumnsRightToLeft) {
               resultAtOtherRowsScanColumnsRightToLeft.didNotYieldForThisManyRows = numberOfRowsSearched + didNotYieldForThisManyRows;
@@ -524,8 +527,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
             }
           }
           numberOfRowsSearched++;
-          if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.CHUNK_SIZE){
-            return { term:'-1', row: y, col: this._terminal.cols, size: -1, didNotYieldForThisManyRows: Performance.CHUNK_SIZE,usedForYield: true };
+          if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.LINE_LIMIT){
+            return { term:'-1', row: y, col: this._terminal.cols, size: -1, didNotYieldForThisManyRows: Performance.LINE_LIMIT, usedForYield: true };
           }
         }
       }
@@ -533,6 +536,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
 
     return out;
+  }
+
+  private _getLine(row: number): any{
+    let cache = this._linesCache?.[row];
+    if (!cache) {
+      cache = translateBufferLineToStringWithWrap(this._terminal!,row, true);
+      this._linesCache[row] = cache;
+    }
+    return cache;
   }
 
   /**
@@ -551,12 +563,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     const row = searchPosition.startRow;
     const col = searchPosition.startCol;
 
-    let cache = this._linesCache?.[row];
-    if (!cache) {
-      cache = translateBufferLineToStringWithWrap(terminal,row, true);
-      this._linesCache[row] = cache;
-    }
-    const [stringLine, offsets] = cache;
+
+    const [stringLine, offsets] = this._getLine(row);
 
     const numberOfCharactersInStringLine = this._getNumberOfCharInString(stringLine);
     let offset = bufferColsToStringOffset(terminal, row, col);
