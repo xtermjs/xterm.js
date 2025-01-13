@@ -136,7 +136,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
     this._selectedDecoration.clear();
-    this._iterateToDisposeDecoration(this._matchesWithHighlightApplied.reverse());
+    const iterator = this._chunkDisposeDecorationGenerator(this._matchesWithHighlightApplied.reverse());
+    const taskQueue = new PriorityTaskQueue();
+    taskQueue.enqueue(()=> !iterator.next().done);
     this._matchesWithHighlightApplied = [];
     this._highlightedLines.clear();
     if (!retainCachedSearchTerm) {
@@ -153,23 +155,16 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    * does an ascending linear search
    * @param matchesWithHighlightApplied
    */
-  private _iterateToDisposeDecoration(matchesWithHighlightApplied: IHighlight[]): void{
-    setTimeout(()=>{
-      this._chunkDisposeDecoration(matchesWithHighlightApplied);
+  private *_chunkDisposeDecorationGenerator(matchesWithHighlightApplied: IHighlight[]): Generator{
 
-      if (matchesWithHighlightApplied.length>0){
-        this._iterateToDisposeDecoration(matchesWithHighlightApplied);
+    for (let i = matchesWithHighlightApplied.length ;i >= 0;i--){
+
+      if (i % Performance.CHUNK_SIZE === 0){
+        yield;
       }
-    },Performance.TIME_BETWEEN_CHUNK_OPERATIONS);
-  }
-  private _chunkDisposeDecoration(matchesWithHighlightApplied: IHighlight[]): void{
 
-    const numberOfElementsToDispose = Performance.CHUNK_SIZE > matchesWithHighlightApplied.length ? matchesWithHighlightApplied.length : Performance.CHUNK_SIZE;
-
-    for (let i=0;i<numberOfElementsToDispose;i++){
       matchesWithHighlightApplied.pop()?.dispose();
     }
-
   }
 
   public clearActiveDecoration(): void {
@@ -214,15 +209,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     if (freshSearch){
 
       this._cancelSearchSignal = true;
+
+      this.clearDecorations(true);
+      this._matches = [];
+
+      this._searchCompleted = false;
+      this._currentMatchIndex = -1;
+
       window.clearTimeout(this._debounceTimeout);
 
       this._debounceTimeout = setTimeout(()=>{
-        this._cancelSearchSignal = false;
-        this._searchCompleted = false;
-        this.clearDecorations(true);
-        this._matches = [];
-        this._currentMatchIndex = -1;
 
+        this._cancelSearchSignal = false;
         this._findAllMatches(term);
 
       },writeBufferOrWindowResizeEvent === true ? Performance.LONGER_DEBOUNCE_TIME_WINDOW : Performance.DEBOUNCE_TIME_WINDOW);
