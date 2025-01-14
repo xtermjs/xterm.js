@@ -515,10 +515,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
         for (let y = startRow - 1; y >= 0; y--) {
 
-          const stringLine = this._getLine(y)[0];
-          const indexOfLastCharacterInTheLine = this._getNumberOfCharInString(stringLine);
+          const stringLine = this._getRow(y);
+          const indexOfLastCharacterInRow = this._getNumberOfCharInString(stringLine);
 
-          for (let j = indexOfLastCharacterInTheLine; j >= 0 ; j-- ){
+          for (let j = indexOfLastCharacterInRow; j >= 0 ; j-- ){
             resultAtOtherRowsScanColumnsRightToLeft = this._findInLine(term, { startRow: y,startCol: j },true);
             if (resultAtOtherRowsScanColumnsRightToLeft) {
               resultAtOtherRowsScanColumnsRightToLeft.didNotYieldForThisManyRows = numberOfRowsSearched + didNotYieldForThisManyRows;
@@ -538,13 +538,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     return out;
   }
 
-  private _getLine(row: number): any{
+  private _getRow(row: number): any{
     let cache = this._linesCache?.[row];
     if (!cache) {
       cache = translateBufferLineToStringWithWrap(this._terminal!,row, true);
       this._linesCache[row] = cache;
     }
-    return cache;
+    let [stringLine, offsets] = cache;
+
+    if (offsets.length > 1){
+      stringLine = stringLine.substring(0,offsets[1]);
+    }
+    return stringLine;
   }
 
   /**
@@ -559,24 +564,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    * @returns The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition,scanRightToLeft: boolean): ISearchResult | undefined {
-    const terminal = this._terminal!;
     const row = searchPosition.startRow;
     const col = searchPosition.startCol;
 
-
-    const [stringLine, offsets] = this._getLine(row);
-
-    const numberOfCharactersInStringLine = this._getNumberOfCharInString(stringLine);
-    let offset = bufferColsToStringOffset(terminal, row, col);
-
-
-    if (offset > numberOfCharactersInStringLine && scanRightToLeft){
-      offset = numberOfCharactersInStringLine;
-    }
-
+    const stringLine = this._getRow(row);
 
     let searchTerm = term;
     let searchStringLine = stringLine;
+
     if (!this._searchOptions?.regex){
       searchTerm = this._searchOptions?.caseSensitive ? term : term.toLowerCase();
       searchStringLine = this._searchOptions?.caseSensitive ? stringLine : stringLine.toLowerCase();
@@ -587,15 +582,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       const searchRegex = RegExp(searchTerm, this._searchOptions?.caseSensitive ? 'g' : 'gi');
       let foundTerm: RegExpExecArray | null;
       if (scanRightToLeft === false){
-        foundTerm= searchRegex.exec(searchStringLine.slice(offset));
+        foundTerm= searchRegex.exec(searchStringLine.slice(col));
         if (foundTerm && foundTerm[0].length > 0) {
-          resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
+          resultIndex = col + (searchRegex.lastIndex - foundTerm[0].length);
           term = foundTerm[0];
         }
 
       } else {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
-        while ( foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
+        while ( foundTerm = searchRegex.exec(searchStringLine.slice(0, col))) {
           resultIndex = searchRegex.lastIndex - foundTerm[0].length;
           term = foundTerm[0];
           searchRegex.lastIndex -= (term.length - 1);
@@ -605,10 +600,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     } else {
 
       if (scanRightToLeft === false) {
-        resultIndex = searchStringLine.indexOf(searchTerm, offset);
+        resultIndex = searchStringLine.indexOf(searchTerm, col);
 
       } else {
-        resultIndex = searchStringLine.substring(0,offset).lastIndexOf(searchTerm);
+        resultIndex = searchStringLine.substring(0,col).lastIndexOf(searchTerm);
 
       }
     }
@@ -620,27 +615,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         return;
       }
 
-      // Adjust the row number and search index if needed since a "line" of text can span multiple
-      // rows
-      let startRowOffset = 0;
-      while (startRowOffset < offsets.length - 1 && resultIndex >= offsets[startRowOffset + 1]) {
-        startRowOffset++;
-      }
-      let endRowOffset = startRowOffset;
-      while (endRowOffset < offsets.length - 1 && resultIndex + term.length >= offsets[endRowOffset + 1]) {
-        endRowOffset++;
-      }
-      const startColOffset = resultIndex - offsets[startRowOffset];
-      const endColOffset = resultIndex + term.length - offsets[endRowOffset];
-      const startColIndex = stringLengthToBufferSize(terminal,row + startRowOffset, startColOffset);
-      const endColIndex = stringLengthToBufferSize(terminal,row + endRowOffset, endColOffset);
-      const size = endColIndex - startColIndex + terminal.cols * (endRowOffset - startRowOffset);
-
       return {
         term,
-        col: startColIndex,
-        row: row + startRowOffset,
-        size,
+        col: resultIndex,
+        row: row,
+        size: this._getNumberOfCharInString(term),
         didNotYieldForThisManyRows:0, // does not matter
         usedForYield:false
       };
