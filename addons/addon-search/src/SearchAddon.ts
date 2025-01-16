@@ -7,7 +7,6 @@ import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/
 import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
 import { Emitter } from 'vs/base/common/event';
 import { Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { stringLengthToBufferSize,bufferColsToStringOffset,translateBufferLineToStringWithWrap,LineCacheEntry } from './BufferToStringDataTransformers';
 import { PriorityTaskQueue } from 'common/TaskQueue';
 
 export interface ISearchOptions {
@@ -39,7 +38,8 @@ export interface ISearchAddonOptions {
 
 export interface ISearchResult {
   term: string;
-  col: number;
+  cellCol: number;
+  graphemeIndexInString: number;
   row: number;
   size: number;
   didNotYieldForThisManyRows: number;
@@ -113,7 +113,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    * We memoize the calls into an array that has a time based ttl.
    * _linesCache is also invalidated when the terminal cursor moves.
    */
-  private _linesCache: LineCacheEntry[] = [];
+  private _linesCache: (string | undefined) [] = [];
 
   private readonly _onDidChangeResults = this._register(new Emitter<{ resultIndex: number, resultCount: number,searchCompleted: boolean }>());
   public readonly onDidChangeResults = this._onDidChangeResults.event;
@@ -371,7 +371,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           downDirectionLastResult = this._find(
             term,
             downDirectionLastResult.row,
-            downDirectionLastResult.col + this._getNumberOfCharInString(downDirectionLastResult.term),
+            downDirectionLastResult.graphemeIndexInString + this._getNumberOfGraphemes(downDirectionLastResult.term),
             'down',
             downDirectionLastResult.didNotYieldForThisManyRows
           );
@@ -392,7 +392,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           upDirectionLastResult = this._find(
             term,
             upDirectionLastResult.row,
-            upDirectionLastResult.col - this._getNumberOfCharInString(upDirectionLastResult.term),
+            upDirectionLastResult.graphemeIndexInString - this._getNumberOfGraphemes(upDirectionLastResult.term),
             'up',
             upDirectionLastResult.didNotYieldForThisManyRows
           );
@@ -498,7 +498,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
           numberOfRowsSearched++;
           if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.LINE_LIMIT){
-            return { term:'-1',row: y, col: 0 ,size:-1, didNotYieldForThisManyRows: Performance.LINE_LIMIT,usedForYield: true };
+            return { term:'-1',row: y, cellCol: 0 ,graphemeIndexInString: 0,size:-1, didNotYieldForThisManyRows: Performance.LINE_LIMIT,usedForYield: true };
           }
         }
       }
@@ -516,9 +516,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         for (let y = startRow - 1; y >= 0; y--) {
 
           const stringLine = this._getRow(y);
-          const indexOfLastCharacterInRow = this._getNumberOfCharInString(stringLine);
 
-          for (let j = indexOfLastCharacterInRow; j >= 0 ; j-- ){
+          for (let j = stringLine.length; j >= 0 ; j-- ){
             resultAtOtherRowsScanColumnsRightToLeft = this._findInLine(term, { startRow: y,startCol: j },true);
             if (resultAtOtherRowsScanColumnsRightToLeft) {
               resultAtOtherRowsScanColumnsRightToLeft.didNotYieldForThisManyRows = numberOfRowsSearched + didNotYieldForThisManyRows;
@@ -528,7 +527,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
           }
           numberOfRowsSearched++;
           if (numberOfRowsSearched + didNotYieldForThisManyRows >= Performance.LINE_LIMIT){
-            return { term:'-1', row: y, col: this._terminal.cols, size: -1, didNotYieldForThisManyRows: Performance.LINE_LIMIT, usedForYield: true };
+            return { term:'-1', row: y, cellCol: this._terminal.cols, graphemeIndexInString:this._terminal.cols, size: -1, didNotYieldForThisManyRows: Performance.LINE_LIMIT, usedForYield: true };
           }
         }
       }
@@ -540,16 +539,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   private _getRow(row: number): any{
     let cache = this._linesCache?.[row];
+
     if (!cache) {
-      cache = translateBufferLineToStringWithWrap(this._terminal!,row, true);
+      cache = this._terminal!.buffer.active.getLine(row)?.translateToString(true) ?? '';
       this._linesCache[row] = cache;
     }
-    let [stringLine, offsets] = cache;
 
-    if (offsets.length > 1){
-      stringLine = stringLine.substring(0,offsets[1]);
-    }
-    return stringLine;
+    return cache;
   }
 
   /**
@@ -614,12 +610,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       if (this._searchOptions?.wholeWord && !this._isWholeWord(resultIndex, searchStringLine, term)) {
         return;
       }
-
+      const col = this._getNumberOfTerminalCellsOccupied(stringLine.substring(0,resultIndex));
       return {
         term,
-        col: resultIndex,
+        cellCol: col ,
+        graphemeIndexInString: resultIndex,
         row: row,
-        size: this._getNumberOfCharInString(term),
+        size: this._getNumberOfTerminalCellsOccupied(term),
         didNotYieldForThisManyRows:0, // does not matter
         usedForYield:false
       };
@@ -627,12 +624,44 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
     }
   }
+
+  private _isWideCharacter(char: string): boolean {
+    const codePoint = char.codePointAt(0);
+
+    if (codePoint === undefined){
+      return false;
+    }
+    // Check CJK Unified Ideographs
+    if (codePoint >= 0x4E00 && codePoint <= 0x9FFF) return true;
+
+    // Check Fullwidth and Halfwidth Forms
+    if (codePoint >= 0xFF01 && codePoint <= 0xFF60) return true;
+
+    // Check additional wide characters (e.g., CJK Compatibility Ideographs)
+    if (codePoint >= 0xF900 && codePoint <= 0xFAFF) return true;
+
+    return false;
+  }
+
+  private _getNumberOfTerminalCellsOccupied(str: string): number{
+
+    let wide = 0;
+    const numberOfGraphemes = this._getNumberOfGraphemes(str);
+
+    for (let i=0;i<str.length;i++){
+      if (this._isWideCharacter(str[i])){
+        wide++;
+      }
+    }
+    return numberOfGraphemes + wide;
+  }
   /**
-   * this will count wide characters as one not two unlike string.length
-   *
-   * we need this since indexOf works the number of characters not UTF-16 bytes
+   * Unlike sting.length which returns the number of UTF-16 chunks (2 Bytes)
+   * this returns number of graphemes
+   * So a surrugate pair (i.e. a pair of UTF-16 (i.e 2 * 2 Bytes === 4 Bytes)) is counted as one.
+   * we need this since indexOf works the number of graphemes
    */
-  private _getNumberOfCharInString(str: string): number{
+  private _getNumberOfGraphemes(str: string): number{
     return Array.from(str).length;
   }
   private _didOptionsChange(lastSearchOptions: ISearchOptions, searchOptions?: ISearchOptions): boolean {
@@ -705,13 +734,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       terminal.clearSelection();
       return false;
     }
-    terminal.select(result.col, result.row, result.size);
+    terminal.select(result.cellCol, result.row, result.size);
     if (this._searchOptions?.decorations) {
       const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
       if (marker) {
         const decoration = terminal.registerDecoration({
           marker,
-          x: result.col,
+          x: result.cellCol,
           width: result.size,
           backgroundColor: this._searchOptions?.decorations.activeMatchBackground,
           layer: 'top',
@@ -773,7 +802,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
     const findResultDecoration = terminal.registerDecoration({
       marker,
-      x: result.col,
+      x: result.cellCol,
       width: result.size,
       backgroundColor: this._searchOptions?.decorations?.matchBackground,
       overviewRulerOptions: this._highlightedLines.has(marker.line) ? undefined : {
