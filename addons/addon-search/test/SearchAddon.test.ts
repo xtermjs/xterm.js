@@ -329,7 +329,7 @@ test.describe('Search Tests', () => {
     // });
     test('should fire with correct event values', async () => {
 
-      await ctx.proxy.write('abc bc c');
+      await ctx.proxy.write('abc bc bc');
       await ctx.page.evaluate(`window.search.findPrevious('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
       await timeout(TIMEOUT);
       deepStrictEqual(
@@ -342,9 +342,16 @@ test.describe('Search Tests', () => {
       await timeout(TIMEOUT);
       deepStrictEqual(
         await ctx.page.evaluate('window.calls[window.calls.length-1]'),
-        { resultCount: 2, resultIndex: 1, searchCompleted : true }
+        { resultCount: 3, resultIndex: 0, searchCompleted : true }
       );
 
+      await ctx.page.evaluate(`window.term.clearSelection()`);
+      await ctx.page.evaluate(`window.search.findPrevious('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 3, resultIndex: 2, searchCompleted : true }
+      );
       await timeout(2000);
 
       await ctx.page.evaluate(`debugger; window.search.findPrevious('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
@@ -357,6 +364,12 @@ test.describe('Search Tests', () => {
       await timeout(TIMEOUT);
       deepStrictEqual(
         await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 3, resultIndex: 0, searchCompleted : true }
+      );
+      await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(
+        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
         { resultCount: 3, resultIndex: 2, searchCompleted : true }
       );
       await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
@@ -364,12 +377,6 @@ test.describe('Search Tests', () => {
       deepStrictEqual(
         await ctx.page.evaluate('window.calls[window.calls.length-1]'),
         { resultCount: 3, resultIndex: 1, searchCompleted : true }
-      );
-      await ctx.page.evaluate(`window.search.findPrevious('c', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
-      await timeout(TIMEOUT);
-      deepStrictEqual(
-        await ctx.page.evaluate('window.calls[window.calls.length-1]'),
-        { resultCount: 3, resultIndex: 0, searchCompleted : true }
       );
     });
     // test('should fire with correct event values (incremental)', async () => {
