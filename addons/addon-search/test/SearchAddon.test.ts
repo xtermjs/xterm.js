@@ -579,11 +579,16 @@ test.describe('Search Tests', () => {
     // This case can be triggered by the prompt when using starship under conpty
     test('should find all matches on a line containing null characters', async () => {
       // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
-      await ctx.proxy.write('\\x1b[CHi Hi');
+      await ctx.proxy.write('\\x1b[CHi Hi Hi');
       await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
       await timeout(TIMEOUT);
       deepStrictEqual(await ctx.page.evaluate('window.calls[window.calls.length-1]'),
-        { resultCount: 2, resultIndex: 1, searchCompleted: true }
+        { resultCount: 3, resultIndex: 0, searchCompleted: true }
+      );
+      await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
+      await timeout(TIMEOUT);
+      deepStrictEqual(await ctx.page.evaluate('window.calls[window.calls.length-1]'),
+        { resultCount: 3, resultIndex: 2, searchCompleted: true }
       );
     });
   });
