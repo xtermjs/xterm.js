@@ -628,7 +628,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
   }
 
-  private _isWideCharacter(char: string): boolean {
+  private _isWideGrapheme(char: string,nextChar: string): boolean {
     const codePoint = char.codePointAt(0);
 
     if (codePoint === undefined){
@@ -643,6 +643,25 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     // Check additional wide characters (e.g., CJK Compatibility Ideographs)
     if (codePoint >= 0xF900 && codePoint <= 0xFAFF) return true;
 
+    // surrogates
+    if (codePoint>= 0xD800 && codePoint<= 0xDBFF){
+
+      const scalar = ((char.codePointAt(0)! - 0xD800) * 0x400) + (nextChar.codePointAt(0)! - 0xDC00) + 0x10000;
+      if (
+        (scalar >= 0x1F300 && scalar <= 0x1F5FF) || // Miscellaneous Symbols and Pictographs
+        (scalar >= 0x1F600 && scalar <= 0x1F64F) || // Emoticons
+        (scalar >= 0x1F680 && scalar <= 0x1F6FF) || // Transport and Map Symbols
+        (scalar >= 0x1F700 && scalar <= 0x1F77F) || // Alchemical Symbols
+        (scalar >= 0x1F900 && scalar <= 0x1F9FF) || // Supplemental Symbols and Pictographs
+        (scalar >= 0x1FA70 && scalar <= 0x1FAFF) || // Symbols and Pictographs Extended-A
+        (scalar >= 0x2600 && scalar <= 0x26FF) ||   // Miscellaneous Symbols
+        (scalar >= 0x2700 && scalar <= 0x27BF)      // Dingbats
+      ) {
+        return true;
+      }
+    }
+
+
     return false;
   }
 
@@ -652,7 +671,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     const numberOfGraphemes = this._getNumberOfGraphemes(str);
 
     for (let i=0;i<str.length;i++){
-      if (this._isWideCharacter(str[i])){
+      if (this._isWideGrapheme(str[i],i+1 < str.length ? str[i+1]:'')){
         wide++;
       }
     }
