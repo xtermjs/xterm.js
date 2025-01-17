@@ -522,6 +522,10 @@ test.describe('Search Tests', () => {
         await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
         await timeout(TIMEOUT);
         let selectionPosition = await ctx.proxy.getSelectionPosition();
+        deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
+        await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
+        await timeout(TIMEOUT);
+        selectionPosition = await ctx.proxy.getSelectionPosition();
         deepStrictEqual(selectionPosition, { start: { x: 11, y: 136 }, end: { x: 17, y: 136 } });
         await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
         await timeout(TIMEOUT);
@@ -551,11 +555,12 @@ test.describe('Search Tests', () => {
         await timeout(TIMEOUT);
         selectionPosition = await ctx.proxy.getSelectionPosition();
         deepStrictEqual(selectionPosition, { start: { x: 24, y: 76 }, end: { x: 30, y: 76 } });
+
         await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
         await timeout(TIMEOUT);
         selectionPosition = await ctx.proxy.getSelectionPosition();
         deepStrictEqual(selectionPosition, { start: { x: 24, y: 53 }, end: { x: 30, y: 53 } });
-        // Wrap around to first result
+
         await ctx.page.evaluate(`window.search.findPrevious('opencv')`);
         await timeout(TIMEOUT);
         selectionPosition = await ctx.proxy.getSelectionPosition();

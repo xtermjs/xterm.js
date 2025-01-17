@@ -255,11 +255,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   private _moveToTheNextMatch(): void{
 
-    if (this._matches.length>0){
+    if (this._matches.length > 0){
 
       this._currentMatchIndex =   this._findPrevious ?  this._currentMatchIndex - 1  : this._currentMatchIndex + 1;
 
-      if (this._currentMatchIndex < 0){
+      if (this._currentMatchIndex === -2){
+        // this case occurs with findPrevious on fresh search
+        this._currentMatchIndex = 0;
+      } else  if (this._currentMatchIndex === -1){
         this._currentMatchIndex = this._matches.length - 1;
       } else {
         this._currentMatchIndex %= this._matches.length;
