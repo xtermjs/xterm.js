@@ -71,13 +71,6 @@ const enum Performance {
   LINE_LIMIT = 100,
 
   /**
-   *  Time in ms
-   *  1 ms seems to work fine as we just need to let other parts of the code to take over
-   *  and return here when their work is done
-   */
-  TIME_BETWEEN_CHUNK_OPERATIONS = 1,
-
-  /**
    * This should be high enough so not to trigger a lot of searches
    * and subsequently a lot of canceled searches which clean up their own
    * decorations and cause flickers
@@ -216,7 +209,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
       this._cancelSearchSignal = true;
 
-      this.clearDecorations(true);
       this._matches = [];
 
       this._searchCompleted = false;
@@ -231,6 +223,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
       },writeBufferOrWindowResizeEvent === true ? Performance.LONGER_DEBOUNCE_TIME_WINDOW : Performance.DEBOUNCE_TIME_WINDOW);
 
+      this.clearDecorations(true);
     }
 
     if (freshSearch === false){
@@ -613,13 +606,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       if (this._searchOptions?.wholeWord && !this._isWholeWord(resultIndex, searchStringLine, term)) {
         return;
       }
-      const col = this._getNumberOfTerminalCellsOccupied(stringLine.substring(0,resultIndex));
+      const col = this._getNumberOfBufferCellsOccupied(stringLine.substring(0,resultIndex));
       return {
         term,
         cellCol: col ,
         graphemeIndexInString: resultIndex,
         row: row,
-        size: this._getNumberOfTerminalCellsOccupied(term),
+        size: this._getNumberOfBufferCellsOccupied(term),
         didNotYieldForThisManyRows:0, // does not matter
         usedForYield:false
       };
@@ -665,7 +658,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     return false;
   }
 
-  private _getNumberOfTerminalCellsOccupied(str: string): number{
+  private _getNumberOfBufferCellsOccupied(str: string): number{
 
     let wide = 0;
     const numberOfGraphemes = this._getNumberOfGraphemes(str);

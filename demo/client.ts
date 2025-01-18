@@ -143,7 +143,7 @@ function getSearchOptions(): ISearchOptions {
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
     caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
     decorations: (document.getElementById('highlight-all-matches') as HTMLInputElement).checked ? {
-      matchBackground: '#232422',
+      matchBackground: '#0000ff',
       matchBorder: '#555753',
       matchOverviewRuler: '#555753',
       activeMatchBackground: '#ef2929',
