@@ -102,9 +102,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _chunkSearchIterator: Generator<{direction: string,chunkSize: number}> | null = null;
 
   /**
-   * translateBufferLineToStringWithWrap is a fairly expensive call.
-   * We memoize the calls into an array that has a time based ttl.
-   * _linesCache is also invalidated when the terminal cursor moves.
+   * Buffer lines in string format
+   * _linesCache is invalidated when the terminal cursor moves.
    */
   private _linesCache: (string | undefined) [] = [];
 
@@ -171,16 +170,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   }
 
   /**
-   * Find next match of the term (from the start or the end) , then scroll to and select it. If it
+   * Find next match starting from top left of the viewport donwwards.
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
    * @param writeBufferChanged
    * @param findPrevious find the previous match
-   * @param dontMoveCursor
-   * @returns Whether a result was found.
    */
-  public findNext(term: string, searchOptions?: ISearchOptions,writeBufferOrWindowResizeEvent?: boolean,findPrevious?: boolean): boolean {
+  public findNext(term: string, searchOptions?: ISearchOptions,writeBufferOrWindowResizeEvent?: boolean,findPrevious?: boolean): void {
 
     this._findPrevious = findPrevious === true;
 
@@ -196,7 +193,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       this._matches=[];
       this._currentMatchIndex=-1;
       this._fireResults();
-      return false;
     }
 
     const didOptionsChanged = this._searchOptions ? this._didOptionsChange(this._searchOptions, searchOptions) : false;
@@ -230,20 +226,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       this._moveToTheNextMatch();
     }
 
-    return this._matches.length > 0;
-
   }
 
   /**
-   * Find the previous instance of the term, then scroll to and select it. If it
+   * On first call gets the next match starting from top left of the viewport donwwards.
+   * On subsequent calls gets the previous match i.e., upwards.
    * doesn't exist, do nothing.
    * @param term The search term.
    * @param searchOptions Search options.
-   * @returns Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+  public findPrevious(term: string, searchOptions?: ISearchOptions): void {
 
-    return this.findNext(term,searchOptions,false,true);
+    this.findNext(term,searchOptions,false,true);
   }
 
   private _moveToTheNextMatch(): void{
@@ -278,13 +272,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     taskQueue.enqueue(()=> this._iterate());
   }
   /**
-   * Search for term and returns once Performance.Chunk_SIZE or Performance.LINE_LIMIT is exceeded
+   * Search for term and returns once Performance.CHUNK_SIZE or Performance.LINE_LIMIT is exceeded
    */
   private _iterate(): boolean{
 
     const iteratorResult = this._chunkSearchIterator!.next();
 
-    if (this._chunkIndex ===0){
+    if (this._chunkIndex === 0){
       this._moveToTheNextMatch();
     }
 
@@ -324,13 +318,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
 
   }
   private _fireResults(): void {
-    // since the we changed the code to be asynchronous findNext no longer return whether or not
-    // match was found
-    // hence we cant test for searchs without decoration
-    // that is why i am removing this condition here.
-    // if (this._searchOptions?.decorations){
     this._onDidChangeResults.fire({ resultIndex:this._currentMatchIndex, resultCount: this._matches.length,searchCompleted: this._searchCompleted });
-    // }
   }
   private *_chunkSearchGenerator(term: string): Generator<{direction: string,chunkSize: number}>{
 
@@ -545,14 +533,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   }
 
   /**
-   * Searches a line for a search term. Takes the provided terminal line and searches the text line,
-   * which may contain subsequent terminal lines if the text is wrapped. If the provided line number
-   * is part of a wrapped text line that started on an earlier line then it is skipped since it will
-   * be properly searched when the terminal line that the text starts on is searched.
    * @param term The search term.
    * @param searchPosition The position to start the search.
-   * @param isReverseSearch Whether the search should start from the right side of the terminal and
-   * search to the left.
+   * @param scanRightToLeft
    * @returns The search result if it was found.
    */
   protected _findInLine(term: string, searchPosition: ISearchPosition,scanRightToLeft: boolean): ISearchResult | undefined {
@@ -613,7 +596,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         graphemeIndexInString: resultIndex,
         row: row,
         size: this._getNumberOfBufferCellsOccupied(term),
-        didNotYieldForThisManyRows:0, // does not matter
+        didNotYieldForThisManyRows:0,
         usedForYield:false
       };
 
@@ -671,14 +654,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     return numberOfGraphemes + wide;
   }
   /**
-   * Unlike sting.length which returns the number of UTF-16 chunks (2 Bytes)
+   * Unlike sting.length which returns the number of UTF-16 (2 Bytes)
    * this returns number of graphemes
-   * So a surrugate pair (i.e. a pair of UTF-16 (i.e 2 * 2 Bytes === 4 Bytes)) is counted as one.
-   * we need this since indexOf works the number of graphemes
+   * So a surrogate pair (i.e. a pair of UTF-16 (i.e 2 * 2 Bytes === 4 Bytes)) is counted as one.
+   * we need this since indexOf works with the number of graphemes
    */
   private _getNumberOfGraphemes(str: string): number{
     return Array.from(str).length;
   }
+
   private _didOptionsChange(lastSearchOptions: ISearchOptions, searchOptions?: ISearchOptions): boolean {
     if (!searchOptions) {
       return false;

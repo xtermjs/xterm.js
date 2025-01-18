@@ -114,7 +114,7 @@ declare module '@xterm/addon-search' {
      * @param term The search term.
      * @param searchOptions The options for the search.
      */
-    public findNext(term: string, searchOptions?: ISearchOptions): boolean;
+    public findNext(term: string, searchOptions?: ISearchOptions): void;
 
     /**
      * Search backwards for the previous result that matches the search term and
@@ -122,7 +122,7 @@ declare module '@xterm/addon-search' {
      * @param term The search term.
      * @param searchOptions The options for the search.
      */
-    public findPrevious(term: string, searchOptions?: ISearchOptions): boolean;
+    public findPrevious(term: string, searchOptions?: ISearchOptions): void;
 
     /**
      * Clears the decorations and selection
