@@ -13,7 +13,7 @@ import { ITestContext, createTestContext, openTerminal, timeout } from '../../..
  * TIMEOUT should equal debounceTime + processing time for search to finish
  * for small search tests this could be a 0 when PriorityTaskQueue is used
  */
-const TIMEOUT= 350;
+const TIMEOUT= 310;
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
@@ -182,19 +182,14 @@ test.describe('Search Tests', () => {
 
   test.describe('onDidChangeResults', async () => {
     test.describe('findNext', () => {
-    //      // The only way to get results now is to listen to onDidChangeResults
-    //      // because we are doing things asynchronously
-    //      // Option1 is to fire on all, which is the way the code is behaving at this point to allow others test to be run
-    //      // with this option we remove this test.
-    //      // Option2 is to leave this intact, and add a public method for consumers to read the results.
-    //      // Options 3: is there a way to detect testing environment in the add-on ?
-    //      test('should not fire unless the decorations option is set', async () => {
-    //       await ctx.proxy.write('abc');
-    //       strictEqual(await ctx.page.evaluate(`window.search.findNext('a')`), true);
-    //       strictEqual(await ctx.page.evaluate('window.calls.length'), 0);
-    //       strictEqual(await ctx.page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
-    //       strictEqual(await ctx.page.evaluate('window.calls.length'), 1);
-    //     });
+
+      //      test('should not fire unless the decorations option is set', async () => {
+      //       await ctx.proxy.write('abc');
+      //       strictEqual(await ctx.page.evaluate(`window.search.findNext('a')`), true);
+      //       strictEqual(await ctx.page.evaluate('window.calls.length'), 0);
+      //       strictEqual(await ctx.page.evaluate(`window.search.findNext('b', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
+      //       strictEqual(await ctx.page.evaluate('window.calls.length'), 1);
+      //     });
       test('should fire with correct event values', async () => {
         await ctx.proxy.write('abc bc c');
         await ctx.page.evaluate(`window.search.findNext('a', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`);
