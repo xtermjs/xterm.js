@@ -13,12 +13,12 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
 
   private _isFocused = false;
   private _cachedIsFocused: boolean | undefined = undefined;
-  private _screenDprMonitor = this._register(new ScreenDprMonitor(this._window));
+  private _screenDprMonitor;
 
-  private readonly _onDprChange = this._register(new Emitter<number>());
-  public readonly onDprChange = this._onDprChange.event;
-  private readonly _onWindowChange = this._register(new Emitter<Window & typeof globalThis>());
-  public readonly onWindowChange = this._onWindowChange.event;
+  private readonly _onDprChange;
+  public readonly onDprChange;
+  private readonly _onWindowChange;
+  public readonly onWindowChange;
 
   constructor(
     private _textarea: HTMLTextAreaElement,
@@ -26,7 +26,14 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
     public readonly mainDocument: Document
   ) {
     super();
-
+    
+    this._screenDprMonitor = new ScreenDprMonitor(this._window);
+    this._onDprChange = this.register(new EventEmitter<number>());
+    this.onDprChange = this._onDprChange.event;
+    this._onWindowChange =
+        this.register(new EventEmitter<Window&typeof globalThis>());
+    this.onWindowChange = this._onWindowChange.event;
+    
     // Monitor device pixel ratio
     this._register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
     this._register(Event.forward(this._screenDprMonitor.onDprChange, this._onDprChange));
