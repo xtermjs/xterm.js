@@ -108,7 +108,7 @@ jobs:
       run: |
         yarn --frozen-lockfile
         yarn install-addons
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -150,7 +150,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         job: build
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -191,7 +191,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         job: build
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -249,7 +249,7 @@ jobs:
         yarn install-addons
     - name: Install playwright
       run: npx playwright install
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
