@@ -76,6 +76,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
+    // IMPORTANT: Canvas initialization and fetching of the context must be first in order to
+    // prevent possible listeners leaking and continuing to operate after the WebglRenderer has been
+    // discarded.
+    this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
+    const contextAttributes = {
+      antialias: false,
+      depth: false,
+      preserveDrawingBuffer
+    };
+    this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
+    if (!this._gl) {
+      throw new Error('WebGL2 not supported ' + this._gl);
+    }
+
     this._register(this._themeService.onChangeColors(() => this._handleColorChange()));
 
     this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
@@ -90,18 +104,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._updateCursorBlink();
     this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
-
-    this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
-
-    const contextAttributes = {
-      antialias: false,
-      depth: false,
-      preserveDrawingBuffer
-    };
-    this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
-    if (!this._gl) {
-      throw new Error('WebGL2 not supported ' + this._gl);
-    }
 
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
