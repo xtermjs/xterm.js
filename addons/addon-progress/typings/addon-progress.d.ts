@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IDisposable, IEvent } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IDisposable, IEvent, ISharedExports } from '@xterm/xterm';
+
 
 declare module '@xterm/addon-progress' {
   /**
@@ -15,7 +16,7 @@ declare module '@xterm/addon-progress' {
     /**
      * Creates a new progress addon
      */
-    constructor();
+    constructor(sharedExports: ISharedExports);
 
     /**
      * Activates the addon

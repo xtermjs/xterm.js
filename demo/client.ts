@@ -16,7 +16,7 @@ if ('WebAssembly' in window) {
   ImageAddon = imageAddon.ImageAddon;
 }
 
-import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable, type ITheme, sharedExports, ISharedExports } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
@@ -32,6 +32,7 @@ import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
   Terminal: typeof Terminal;
+  sharedExports: ISharedExports;
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -214,6 +215,7 @@ const createNewWindowButtonHandler: () => void = () => {
 
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
+  window.sharedExports = sharedExports;
   window.AttachAddon = AttachAddon;
   window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
@@ -275,15 +277,15 @@ function createTerminal(): void {
 
   // Load addons
   const typedTerm = term as Terminal;
-  addons.search.instance = new SearchAddon();
+  addons.search.instance = new SearchAddon(sharedExports);
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
-  addons.image.instance = new ImageAddon();
-  addons.progress.instance = new ProgressAddon();
+  addons.image.instance = new ImageAddon(sharedExports);
+  addons.progress.instance = new ProgressAddon(sharedExports);
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
-    addons.webgl.instance = new WebglAddon();
+    addons.webgl.instance = new WebglAddon(sharedExports);
   } catch (e) {
     console.warn(e);
   }
@@ -637,8 +639,8 @@ function initAddons(term: Terminal): void {
         if (checkbox.checked) {
           const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
           addon.instance = ctorOptionsJson
-            ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
-            : new addons[name].ctor();
+            ? new addons[name].ctor(sharedExports, JSON.parse(ctorOptionsJson))
+            : new addons[name].ctor(sharedExports);
           term.loadAddon(addon.instance);
         } else {
           addon.instance!.dispose();
@@ -660,7 +662,8 @@ function initAddons(term: Terminal): void {
       }
       if (checkbox.checked) {
         // HACK: Manually remove addons that cannot be changes
-        addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
+        // FIXME: re-enable this once done with the sharedExports
+        //addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
@@ -693,7 +696,7 @@ function initAddons(term: Terminal): void {
         if (addons.webgl.instance) {
           preDisposeWebgl();
           addons.webgl.instance.dispose();
-          addons.webgl.instance = new addons.webgl.ctor();
+          addons.webgl.instance = new addons.webgl.ctor(sharedExports);
           term.loadAddon(addons.webgl.instance);
           postInitWebgl();
         }
