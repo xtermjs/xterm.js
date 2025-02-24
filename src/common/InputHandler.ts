@@ -430,7 +430,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     let cursorStartY = this._activeBuffer.y;
     let start = 0;
     const wasPaused = this._parseStack.paused;
-    usingNewBufferLine() && this._activeBuffer.reflowRegion(this._activeBuffer.ybase, this._activeBuffer.lines.length, -1);
 
     if (wasPaused) {
       // assumption: _parseBuffer never mutates between async calls
@@ -539,7 +538,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (this._activeBuffer.y >= this._bufferService.rows) {
             buffer.y = this._bufferService.rows - 1;
-            // FIXME overwrite last line - not impemented
+            // FIXME overwrite last line - not implemented
             col = cols;
           } else {
             buffer.splitLine(buffer.y, col);

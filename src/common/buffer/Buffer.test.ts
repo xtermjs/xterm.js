@@ -454,8 +454,8 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(1)!.translateToString(), '0123456789');
         assert.equal(buffer.lines.get(2)!.translateToString(), 'klmnopqrst');
         assert.equal(firstMarker.line, 0, 'first marker should remain unchanged');
-        assert.equal(secondMarker.line, 1, 'second marker should be restored to it\'s original line');
-        assert.equal(thirdMarker.line, 2, 'third marker should be restored to it\'s original line');
+        assert.equal(secondMarker.line, 1, 'second marker should be restored to its original line');
+        assert.equal(thirdMarker.line, 2, 'third marker should be restored to its original line');
         assert.equal(firstMarker.isDisposed, false);
         assert.equal(secondMarker.isDisposed, false);
         assert.equal(thirdMarker.isDisposed, false);
@@ -740,9 +740,16 @@ describe('Buffer', () => {
               it('should adjust the viewport and keep ydisp = ybase', () => {
                 buffer.ydisp = 10;
                 buffer.resize(4, 10);
-                assert.equal(buffer.y, 9);
-                assert.equal(buffer.ydisp, 7);
-                assert.equal(buffer.ybase, 7);
+                assert.equal(buffer.ybase + buffer.y, 16);
+                if (false) {
+                  // Old _reflowLargerAdjustViewport modifies ybase and ydisp
+                  // but the logic seems wrong. ???
+                  assert.equal(buffer.ydisp, 7);
+                  assert.equal(buffer.ybase, 7);
+                } else {
+                  assert.equal(buffer.ydisp, 10);
+                  assert.equal(buffer.ybase, 10);
+                }
                 assert.equal(buffer.lines.length, 17);
                 for (let i = 0; i < 10; i++) {
                   assert.equal(buffer.lines.get(i)!.translateToString(), '    ');

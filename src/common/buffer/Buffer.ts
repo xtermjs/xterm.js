@@ -29,6 +29,7 @@ export class Buffer implements IBuffer {
   public lines: CircularList<IBufferLine>;
   public ydisp: number = 0;
   public ybase: number = 0;
+  /** Row number, relative to ybase. */
   public y: number = 0;
   public x: number = 0;
   public scrollBottom: number;
@@ -118,11 +119,13 @@ export class Buffer implements IBuffer {
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
 
-  public splitLine(row: number, col: number): void {
+  public splitLine(row: number, col: number): void { // FIXME col is unused
     const bufferService = this._bufferService;
     const curRow = this.lines.get(this.ybase + row - 1) as NewBufferLine;
     const nextRow = this.lines.get(this.ybase + row) as NewBufferLine;
-    curRow.moveToLineColumn(curRow.logicalStartColumn() + bufferService.cols);
+    let startColumn = curRow.logicalStartColumn() + bufferService.cols;
+    curRow.moveToLineColumn(startColumn);
+    startColumn = curRow._cachedColumn();
     // FIXME: nextRow.logicalLine().deleteCellsOnly(bufferService.cols - col);
     let newRow;
     if (nextRow.isWrapped) {
@@ -132,7 +135,7 @@ export class Buffer implements IBuffer {
       // append nextRow contents to end of curRow.logicalLine()
       this.lines.set(this.ybase + row, newRow);
     }
-    curRow.setStartFromCache(newRow);
+    newRow.setStartFromCache(curRow, startColumn);``
   }
 
   public setWrapped(absrow: number, value: boolean): void {
@@ -149,21 +152,7 @@ export class Buffer implements IBuffer {
     } else {
       const prevRow = this.lines.get(absrow - 1) as NewBufferLine;
       const curRow = line as WrappedBufferLine;
-      const oldStartColumn = curRow.logicalStartColumn();
-      prevRow.nextRowSameLine = undefined;
-      const oldLine = prevRow.logicalLine();
-      const startIndex = oldLine._splitIfNeeded(oldStartColumn);
-      const cell = new CellData();
-      curRow.loadCell(oldStartColumn, cell);
-      const newRow = new LogicalBufferLine(line.length, cell, curRow, startIndex);
-      newRow.nextRowSameLine = curRow.nextRowSameLine;
-      const oldStart = curRow.startIndex;
-      for (let nextRow = newRow.nextRowSameLine; nextRow; nextRow = nextRow.nextRowSameLine) {
-        nextRow.startColumn -= oldStartColumn;
-        nextRow.startIndex -= oldStart;
-        nextRow._logicalLine = newRow;
-      }
-      oldLine._dataLength = startIndex;
+      const newRow = curRow.asUnwrapped(prevRow);
       this.lines.set(absrow, newRow);
     }
   }
@@ -231,7 +220,7 @@ export class Buffer implements IBuffer {
 
     // The following adjustments should only happen if the buffer has been
     // initialized/filled.
-    if (! usingNewBufferLine() && this.lines.length > 0) {
+    if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
@@ -310,12 +299,26 @@ export class Buffer implements IBuffer {
     this.scrollBottom = newRows - 1;
 
     if (usingNewBufferLine()) {
-      const lazyReflow = true;
+      const lazyReflow = false; // FUTURE - change to true?
       const reflowNow = this._isReflowEnabled && this._cols !== newCols && ! lazyReflow;
       this._cols = newCols;
       this._rows = newRows;
       this.reflowRegion(reflowNow ? 0 : this.ydisp, this.lines.length,
         reflowNow? -1 : newRows);
+      // Reduce max length if needed after adjustments, this is done after as it
+      // would otherwise cut data from the bottom of the buffer.
+      if (newMaxLength < this.lines.maxLength) {
+        // Trim from the top of the buffer and adjust ybase and ydisp.
+        const amountToTrim = this.lines.length - newMaxLength;
+        if (amountToTrim > 0) {
+          this.setWrapped(amountToTrim, false);
+          this.lines.trimStart(amountToTrim);
+          this.ybase = Math.max(this.ybase - amountToTrim, 0);
+          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+          this.savedY = Math.max(this.savedY - amountToTrim, 0);
+        }
+        this.lines.maxLength = newMaxLength;
+      }
       this._fixupPosition();
     } else { // !usingNewBufferLine()
       if (this._isReflowEnabled) {
@@ -376,7 +379,7 @@ export class Buffer implements IBuffer {
 
   // Only if USE_NewBufferLine
   public reflowRegion(startRow: number, endRow: number, maxRows: number): void {
-    if (startRow >= this.lastReflowNeeded) {
+    if (startRow > this.lastReflowNeeded) {
       return;
     }
     if (endRow >= this.lastReflowNeeded) {
@@ -397,6 +400,10 @@ export class Buffer implements IBuffer {
     const ySavedOld = this.savedY;
     let ySaved = ySavedOld;
     let deltaSoFar = 0;
+    // Record buffer insert/delete events
+    const insertEvents: IInsertEvent[] = [];
+    let oldRows: (IBufferLine|undefined)[] = [];
+    for (let j = 0; j < this.lines.length; j++) { oldRows.push(this.lines.get(j));}
     for (let row = startRow; row < endRow;) {
       if (maxRows >= 0 && newRows.length > maxRows) {
         endRow = row;
@@ -407,7 +414,7 @@ export class Buffer implements IBuffer {
       if (line instanceof LogicalBufferLine && line.reflowNeeded) {
         let curRow: NewBufferLine = line;
 
-        let logicalX, logicalSavedX;
+        let logicalX, logicalSavedX = this.savedX;
         let oldWrapCount = 0; // number of following wrapped lines
         let nextRow = curRow;
         for (; ; oldWrapCount++) {
@@ -443,7 +450,7 @@ export class Buffer implements IBuffer {
           const newRow = newRow1 instanceof WrappedBufferLine
             ? (row++, newRow1)
             : new WrappedBufferLine(curRow);
-          line.setStartFromCache(newRow);
+          newRow.setStartFromCache(line, startCol);
           newRows.push(newRow);
           curRow = newRow;
         }
@@ -467,11 +474,18 @@ export class Buffer implements IBuffer {
           yAbs = startRow + i - 1 + deltaSoFar;
           this.x = logicalX - newRows[i-1].logicalStartColumn();
         }
-        if (logicalSavedX !== undefined) { // update cursor x and y
+        if (logicalSavedX !== undefined) { // update cursor savedX and savedY
           let i = newWrapStart;
           while (i < newRows.length && newRows[i].logicalStartColumn() <= logicalSavedX) { i++; }
           ySaved = startRow + i - 1 + deltaSoFar;
           this.savedX = logicalSavedX - newRows[i-1].logicalStartColumn();
+        }
+        if (newWrapCount != oldWrapCount) {
+          // Create insert events for later
+          insertEvents.push({
+            index: lineRow + deltaSoFar + 1,
+            amount: newWrapCount - oldWrapCount
+          });
         }
         deltaSoFar += newWrapCount - oldWrapCount;
       } else {
@@ -494,15 +508,37 @@ export class Buffer implements IBuffer {
     }
     this.y = yAbs - this.ybase;
     this.savedY = ySaved;
-    // FIXME. This calls onDeleteEmitter and onInsertEmitter events,
-    // which we want handled at finer granularity.
     const oldLinesCount = this.lines.length;
-    this.lines.splice(startRow, endRow - startRow, ...newRows);
-    const trimmed = oldLinesCount + newRows.length - (endRow - startRow)
-      - this.lines.length;
-    if (trimmed > 0) {
-      this.ybase -= trimmed;
-      this.ydisp -= trimmed;
+    let trimNeeded = oldLinesCount + newRows.length - (endRow - startRow)
+            - this.lines.maxLength;
+    if (trimNeeded > 0) {
+      this.ybase -= trimNeeded;
+      this.ydisp -= trimNeeded;
+      if (trimNeeded > startRow) {
+        const trimNew = trimNeeded - startRow;
+        const firstNewRow = newRows[trimNew];
+        if (firstNewRow instanceof WrappedBufferLine) {
+          newRows[trimNew] = firstNewRow.asUnwrapped(/*PREVIOUS*/);
+        }
+        newRows.splice(0, trimNew);
+        trimNeeded -= trimNew;
+      }
+    }
+    this.lines.spliceNoTrim(startRow, endRow - startRow, newRows, false);
+    if (trimNeeded > 0) {
+      this.setWrapped(trimNeeded,false);
+      this.lines.trimIfNeeded();
+    }
+    // Update markers
+    const insertCount = insertEvents.length;
+    for (let i = 0; i < insertCount; i++) {
+      const event = insertEvents[i];
+      if (event.amount < 0) {
+        event.amount = - event.amount;
+        this.lines.onDeleteEmitter.fire(event);
+      } else {
+        this.lines.onInsertEmitter.fire(event);
+      }
     }
     this._fixupPosition();
   }
@@ -527,12 +563,13 @@ export class Buffer implements IBuffer {
     while (this.lines.length < rows) {
       this.lines.push(new LogicalBufferLine(cols));
     }
-    if (this.lines.length - this.ybase < rows) {
-      const adjust = rows - this.lines.length + this.ybase;
-      this.ybase -= adjust;
-      this.y += adjust;
+    const adjust = this.lines.length - this.ybase - rows;
+    if (adjust > 0) {
+      this.ybase += adjust;
+      this.y -= adjust;
     }
-    this.ydisp = Math.max(0, Math.min(this.ydisp, this.lines.length - rows));
+    const yy=this.ydisp;
+    this.ydisp = Math.max(0, Math.min(this.ydisp, this.lines.length));
   }
 
   // DEPRECATED - only if !usingNewBufferLine()
