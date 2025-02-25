@@ -952,8 +952,12 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   /** Move to column 'index', which is a LineColumn.
    * Return encoded 'content' (code value with width and possible IS_COMBINED_MARK) of following character, if any.
-   * If at SKIP_COLUMNS or after end then the code value is 0 and the width is 1.
-   * If in the middle of a multi-column character, the code value is 0 and the width is 0.
+   * If index is the middle of a multi-column character: leaves the position before the character;
+   * the return value specifices the code value 0 and the width 0.
+   * If index is in the middle of a SKIP_COLUMNS: leaves the position cache before the SKIP_COLUMNS;
+   * the return value specifices the code value 0 and width 1.
+   * If index would take us past _dataLength: Set the position to _dataLength;
+   * the return value specifices the code value 0 and width 1.
    */
   public moveToLineColumn(index: LineColumn, endColumn = Infinity, stopEarly: boolean = false): number {
     let curColumn = this._cachedColumn();
@@ -1793,7 +1797,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
 
   public setWrapped(previousLine: NewBufferLine): WrappedBufferLine {
     const column = this.logicalStartColumn() + previousLine.length;
-    previousLine.moveToLineColumn(column);
+    const content = previousLine.moveToLineColumn(column);
     const neededPadding = column - previousLine._cachedColumn();
     const startLine = previousLine.logicalLine();
     let startLength = startLine._dataLength;
@@ -1817,7 +1821,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     }
     const newRow = new WrappedBufferLine(previousLine);
     newRow.nextRowSameLine = this.nextRowSameLine;
-    newRow.setStartFromCache(startLine, column);
+    newRow.setStartFromCache(startLine, column, content);
     for (let following = this.nextRowSameLine; following;
       following = following?.nextRowSameLine) {
       following.startColumn += newRow.startColumn;
@@ -1961,8 +1965,8 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
     this.length = logicalLine.length;
   }
 
-  public setStartFromCache(line: NewBufferLine, column: LineColumn): void {
-    this.startColumn = column;
+  public setStartFromCache(line: NewBufferLine, column: LineColumn, content: number): void {
+    this.startColumn = content === 0 ? line._cachedColumn() : column;
     this.startIndex = line._cachedDataIndex();
     this.startIndexColumn = line._cachedColumn();
     this.startBg = line._cachedBg();

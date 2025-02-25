@@ -124,8 +124,6 @@ export class Buffer implements IBuffer {
     const curRow = this.lines.get(this.ybase + row - 1) as NewBufferLine;
     const nextRow = this.lines.get(this.ybase + row) as NewBufferLine;
     let startColumn = curRow.logicalStartColumn() + bufferService.cols;
-    curRow.moveToLineColumn(startColumn);
-    startColumn = curRow._cachedColumn();
     // FIXME: nextRow.logicalLine().deleteCellsOnly(bufferService.cols - col);
     let newRow;
     if (nextRow.isWrapped) {
@@ -135,7 +133,8 @@ export class Buffer implements IBuffer {
       // append nextRow contents to end of curRow.logicalLine()
       this.lines.set(this.ybase + row, newRow);
     }
-    newRow.setStartFromCache(curRow, startColumn);``
+    const content = curRow.moveToLineColumn(startColumn);
+    newRow.setStartFromCache(curRow, startColumn, content);
   }
 
   public setWrapped(absrow: number, value: boolean): void {
@@ -439,18 +438,19 @@ export class Buffer implements IBuffer {
         // Loop over new WrappedBufferLines for current LogicalBufferLine,
         // based on newCols width. Re-use old WrappedBufferLine if available.
         for (;;) {
-          line.moveToLineColumn(startCol + newCols);
+          const endCol = startCol + newCols;
+          const content = line.moveToLineColumn(endCol);
           const idata = line._cachedDataIndex();
           if (idata >= dataLength) {
             curRow.nextRowSameLine = undefined;
             break;
           }
-          startCol = line._cachedColumn();
           const newRow1 = row < endRow && this.lines.get(row);
           const newRow = newRow1 instanceof WrappedBufferLine
             ? (row++, newRow1)
             : new WrappedBufferLine(curRow);
-          newRow.setStartFromCache(line, startCol);
+          newRow.setStartFromCache(line, endCol, content);
+          startCol = newRow.startColumn;
           newRows.push(newRow);
           curRow = newRow;
         }
