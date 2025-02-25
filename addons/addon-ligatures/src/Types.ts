@@ -5,4 +5,5 @@
 
 export interface ILigatureOptions {
   fallbackLigatures: string[];
+  fontFeatureSettings: string;
 }

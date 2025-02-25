@@ -69,7 +69,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _helperContainer: HTMLElement | undefined;
   private _compositionView: HTMLElement | undefined;
 
-  public linkifier: ILinkifier2 | undefined;
+  private readonly _linkifier: MutableDisposable<ILinkifier2> = this._register(new MutableDisposable());
+  public get linkifier(): ILinkifier2 | undefined { return this._linkifier.value; }
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
   private _viewport: Viewport | undefined;
 
@@ -436,7 +437,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.screenElement.appendChild(this._helperContainer);
     fragment.appendChild(this.screenElement);
 
-    this.textarea = this._document.createElement('textarea');
+    const textarea = this.textarea = this._document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel.get());
     if (!Browser.isChromeOS) {
@@ -448,6 +449,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
+    this._register(this.optionsService.onSpecificOptionChange('disableStdin', () => textarea.readOnly = this.optionsService.rawOptions.disableStdin));
+    this.textarea.readOnly = this.optionsService.rawOptions.disableStdin;
 
     // Register the core browser service before the generic textarea handlers are registered so it
     // handles them first. Otherwise the renderers may use the wrong focus state.
@@ -485,7 +488,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._mouseService = this._instantiationService.createInstance(MouseService);
     this._instantiationService.setService(IMouseService, this._mouseService);
 
-    this.linkifier = this._register(this._instantiationService.createInstance(Linkifier, this.screenElement));
+    const linkifier = this._linkifier.value = this._register(this._instantiationService.createInstance(Linkifier, this.screenElement));
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
@@ -515,7 +518,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._selectionService = this._register(this._instantiationService.createInstance(SelectionService,
       this.element,
       this.screenElement,
-      this.linkifier
+      linkifier
     ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this._register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));

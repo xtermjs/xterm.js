@@ -202,38 +202,38 @@ describe('InputHandler', () => {
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, undefined);
+      assert.equal(coreService.decPrivateModes.cursorBlink, undefined);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([1]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([2]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([3]));
-      assert.equal(optionsService.options['cursorStyle'], 'underline');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([4]));
-      assert.equal(optionsService.options['cursorStyle'], 'underline');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([5]));
-      assert.equal(optionsService.options['cursorStyle'], 'bar');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([6]));
-      assert.equal(optionsService.options['cursorStyle'], 'bar');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
     });
   });
   describe('setMode', () => {

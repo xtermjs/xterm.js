@@ -11,6 +11,7 @@
     { "path": "./addons/addon-fit" },
     { "path": "./addons/addon-image" },
     { "path": "./addons/addon-ligatures" },
+    { "path": "./addons/addon-progress" },
     { "path": "./addons/addon-search" },
     { "path": "./addons/addon-serialize" },
     { "path": "./addons/addon-unicode11" },

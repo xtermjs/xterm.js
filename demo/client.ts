@@ -16,11 +16,12 @@ if ('WebAssembly' in window) {
   ImageAddon = imageAddon.ImageAddon;
 }
 
-import { Terminal, ITerminalOptions, type IDisposable } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { ProgressAddon, IProgressState } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -35,6 +36,7 @@ export interface IWindowWithTerminal extends Window {
   ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
   ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ProgressAddon?: typeof ProgressAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
@@ -52,7 +54,7 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -63,13 +65,14 @@ interface IDemoAddon<T extends AddonType> {
         T extends 'fit' ? typeof FitAddon :
           T extends 'image' ? typeof ImageAddonType :
             T extends 'ligatures' ? typeof LigaturesAddon :
-              T extends 'search' ? typeof SearchAddon :
-                T extends 'serialize' ? typeof SerializeAddon :
-                  T extends 'webLinks' ? typeof WebLinksAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                        T extends 'webgl' ? typeof WebglAddon :
-                          never
+              T extends 'progress' ? typeof ProgressAddon :
+                T extends 'search' ? typeof SearchAddon :
+                  T extends 'serialize' ? typeof SerializeAddon :
+                    T extends 'webLinks' ? typeof WebLinksAddon :
+                      T extends 'unicode11' ? typeof Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                          T extends 'webgl' ? typeof WebglAddon :
+                            never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -77,13 +80,14 @@ interface IDemoAddon<T extends AddonType> {
         T extends 'fit' ? FitAddon :
           T extends 'image' ? ImageAddonType :
             T extends 'ligatures' ? LigaturesAddon :
-              T extends 'search' ? SearchAddon :
-                T extends 'serialize' ? SerializeAddon :
-                  T extends 'webLinks' ? WebLinksAddon :
-                    T extends 'unicode11' ? Unicode11Addon :
-                      T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
-                        T extends 'webgl' ? WebglAddon :
-                          never
+              T extends 'progress' ? ProgressAddon :
+                T extends 'search' ? SearchAddon :
+                  T extends 'serialize' ? SerializeAddon :
+                    T extends 'webLinks' ? WebLinksAddon :
+                      T extends 'unicode11' ? Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                          T extends 'webgl' ? WebglAddon :
+                            never
   );
 }
 
@@ -92,6 +96,7 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
   clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
+  progress: { name: 'progress', ctor: ProgressAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
@@ -131,7 +136,7 @@ const xtermjsTheme = {
   brightCyan: '#72F0FF',
   white: '#F8F8F8',
   brightWhite: '#FFFFFF'
-};
+} satisfies ITheme;
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   addons.fit.instance.fit();
@@ -213,6 +218,7 @@ if (document.location.pathname === '/test') {
   window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
+  window.ProgressAddon = ProgressAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
@@ -240,11 +246,13 @@ if (document.location.pathname === '/test') {
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
   document.getElementById('decoration-stress-test').addEventListener('click', decorationStressTest);
+  document.getElementById('ligatures-test').addEventListener('click', ligaturesTest);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
   initImageAddonExposed();
   testEvents();
+  progressButtons();
 }
 
 function createTerminal(): void {
@@ -261,7 +269,7 @@ function createTerminal(): void {
       backend: 'conpty',
       buildNumber: 22621
     } : undefined,
-    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
+    fontFamily: '"Fira Code", monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
@@ -271,6 +279,7 @@ function createTerminal(): void {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
+  addons.progress.instance = new ProgressAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
@@ -281,6 +290,7 @@ function createTerminal(): void {
   addons.webLinks.instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
+  typedTerm.loadAddon(addons.progress.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicodeGraphemes.instance);
@@ -366,14 +376,19 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
-    const processId = await res.text();
-    pid = processId;
-    socketURL += processId;
-    socket = new WebSocket(socketURL);
-    socket.onopen = runRealTerminal;
-    socket.onclose = runFakeTerminal;
-    socket.onerror = runFakeTerminal;
+    const useRealTerminal = document.getElementById('use-real-terminal');
+    if (useRealTerminal instanceof HTMLInputElement && !useRealTerminal.checked) {
+      runFakeTerminal();
+    } else {
+      const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+      const processId = await res.text();
+      pid = processId;
+      socketURL += processId;
+      socket = new WebSocket(socketURL);
+      socket.onopen = runRealTerminal;
+      socket.onclose = runFakeTerminal;
+      socket.onerror = runFakeTerminal;
+    }
   }, 0);
 }
 
@@ -631,17 +646,25 @@ function initAddons(term: Terminal): void {
         }
         return;
       }
+      function postInitWebgl(): void {
+        setTimeout(() => {
+          setTextureAtlas(addons.webgl.instance.textureAtlas);
+          addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+          addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+        }, 500);
+      }
+      function preDisposeWebgl(): void {
+        if (addons.webgl.instance.textureAtlas) {
+          addons.webgl.instance.textureAtlas.remove();
+        }
+      }
       if (checkbox.checked) {
         // HACK: Manually remove addons that cannot be changes
         addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
-            setTimeout(() => {
-              setTextureAtlas(addons.webgl.instance.textureAtlas);
-              addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-              addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-            }, 0);
+            postInitWebgl();
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'unicodeGraphemes') {
@@ -657,12 +680,23 @@ function initAddons(term: Terminal): void {
         }
       } else {
         if (name === 'webgl') {
-          addons.webgl.instance.textureAtlas.remove();
+          preDisposeWebgl();
         } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
         addon.instance = undefined;
+      }
+      if (name === 'ligatures') {
+        // Recreate webgl when ligatures are toggled so texture atlas picks up any font feature
+        // settings changes
+        if (addons.webgl.instance) {
+          preDisposeWebgl();
+          addons.webgl.instance.dispose();
+          addons.webgl.instance = new addons.webgl.ctor();
+          term.loadAddon(addons.webgl.instance);
+          postInitWebgl();
+        }
       }
     });
     const label = document.createElement('label');
@@ -1261,9 +1295,9 @@ function addVtButtons(): void {
 
     const element = document.createElement('button');
     element.textContent = name;
-    writeCsi.split('');
-    const prefix = writeCsi.length === 2 ? writeCsi[0] : '';
-    const suffix = writeCsi[writeCsi.length - 1];
+    const writeCsiSplit = writeCsi.split('|');
+    const prefix = writeCsiSplit.length === 2 ? writeCsiSplit[0] : '';
+    const suffix = writeCsiSplit[writeCsiSplit.length - 1];
     element.addEventListener(`click`, () => term.write(csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
 
     const desc = document.createElement('span');
@@ -1276,22 +1310,23 @@ function addVtButtons(): void {
   }
   const vtFragment = document.createDocumentFragment();
   const buttonSpecs: { [key: string]: { label: string, description: string, paramCount?: number }} = {
-    A:    { label: 'CUU ↑',  description: 'Cursor Up Ps Times' },
-    B:    { label: 'CUD ↓',  description: 'Cursor Down Ps Times' },
-    C:    { label: 'CUF →',  description: 'Cursor Forward Ps Times' },
-    D:    { label: 'CUB ←',  description: 'Cursor Backward Ps Times' },
-    E:    { label: 'CNL',    description: 'Cursor Next Line Ps Times' },
-    F:    { label: 'CPL',    description: 'Cursor Preceding Line Ps Times' },
-    G:    { label: 'CHA',    description: 'Cursor Character Absolute' },
-    H:    { label: 'CUP',    description: 'Cursor Position [row;column]', paramCount: 2 },
-    I:    { label: 'CHT',    description: 'Cursor Forward Tabulation Ps tab stops' },
-    J:    { label: 'ED',     description: 'Erase in Display' },
-    '?J': { label: 'DECSED', description: 'Erase in Display' },
-    K:    { label: 'EL',     description: 'Erase in Line' },
-    '?K': { label: 'DECSEL', description: 'Erase in Line' },
-    L:    { label: 'IL',     description: 'Insert Ps Line(s)' },
-    M:    { label: 'DL',     description: 'Delete Ps Line(s)' },
-    P:    { label: 'DCH',    description: 'Delete Ps Character(s)' }
+    A:     { label: 'CUU ↑',    description: 'Cursor Up Ps Times' },
+    B:     { label: 'CUD ↓',    description: 'Cursor Down Ps Times' },
+    C:     { label: 'CUF →',    description: 'Cursor Forward Ps Times' },
+    D:     { label: 'CUB ←',    description: 'Cursor Backward Ps Times' },
+    E:     { label: 'CNL',      description: 'Cursor Next Line Ps Times' },
+    F:     { label: 'CPL',      description: 'Cursor Preceding Line Ps Times' },
+    G:     { label: 'CHA',      description: 'Cursor Character Absolute' },
+    H:     { label: 'CUP',      description: 'Cursor Position [row;column]', paramCount: 2 },
+    I:     { label: 'CHT',      description: 'Cursor Forward Tabulation Ps tab stops' },
+    J:     { label: 'ED',       description: 'Erase in Display' },
+    '?|J': { label: 'DECSED',   description: 'Erase in Display' },
+    K:     { label: 'EL',       description: 'Erase in Line' },
+    '?|K': { label: 'DECSEL',   description: 'Erase in Line' },
+    L:     { label: 'IL',       description: 'Insert Ps Line(s)' },
+    M:     { label: 'DL',       description: 'Delete Ps Line(s)' },
+    P:     { label: 'DCH',      description: 'Delete Ps Character(s)' },
+    ' q':  { label: 'DECSCUSR', description: 'Set Cursor Style', paramCount: 1 }
   };
   for (const s of Object.keys(buttonSpecs)) {
     const spec = buttonSpecs[s];
@@ -1299,6 +1334,20 @@ function addVtButtons(): void {
   }
 
   document.querySelector('#vt-container').appendChild(vtFragment);
+}
+
+function ligaturesTest(): void {
+  term.write([
+    '',
+    '-<< -< -<- <-- <--- <<- <- -> ->> --> ---> ->- >- >>-',
+    '=<< =< =<= <== <=== <<= <= => =>> ==> ===> =>= >= >>=',
+    '<-> <--> <---> <----> <=> <==> <===> <====> :: ::: __',
+    '<~~ </ </> /> ~~> == != /= ~= <> === !== !=== =/= =!=',
+    '<: := *= *+ <* <*> *> <| <|> |> <. <.> .> +* =* =: :>',
+    '(* *) /* */ [| |] {| |} ++ +++ \/ /\ |- -| <!-- <!---',
+    '==== ===== ====== ======= ======== =========',
+    '---- ----- ------ ------- -------- ---------'
+  ].join('\r\n'));
 }
 
 function testWeblinks(): void {
@@ -1417,4 +1466,45 @@ function initImageAddonExposed(): void {
 function testEvents(): void {
   document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
   document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
+}
+
+
+function progressButtons(): void {
+  const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
+  const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
+
+  function progressHandler({state, value}: IProgressState) {
+    // Simulate windows taskbar hack by windows terminal:
+    // Since the taskbar has no means to indicate error/pause state other than by coloring
+    // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
+    // NOTE: This is most likely not what you want to do for other progress indicators,
+    //       that have a proper visual state for error/paused.
+    value = Math.min(10 + value * 0.9, 100);
+    document.getElementById('progress-percent').style.width = `${value}%`;
+    document.getElementById('progress-percent').style.backgroundColor = COLORS[state];
+    document.getElementById('progress-state').innerText = `State: ${STATES[state]}`;
+
+    document.getElementById('progress-percent').style.display = state === 3 ? 'none' : 'block';
+    document.getElementById('progress-indeterminate').style.display = state === 3 ? 'block' : 'none';
+  }
+
+  const progressAddon = addons.progress.instance;
+  progressAddon.onChange(progressHandler);
+
+  // apply initial state once to make it visible on page load
+  const initialProgress = progressAddon.progress;
+  progressHandler(initialProgress);
+
+  document.getElementById('progress-run').addEventListener('click', async () => {
+    term.write('\x1b]9;4;0\x1b\\');
+    for (let i = 0; i <= 100; i += 5) {
+      term.write(`\x1b]9;4;1;${i}\x1b\\`);
+      await new Promise(res => setTimeout(res, 200));
+    }
+  });
+  document.getElementById('progress-0').addEventListener('click', () => term.write('\x1b]9;4;0\x1b\\'));
+  document.getElementById('progress-1').addEventListener('click', () => term.write('\x1b]9;4;1;20\x1b\\'));
+  document.getElementById('progress-2').addEventListener('click', () => term.write('\x1b]9;4;2\x1b\\'));
+  document.getElementById('progress-3').addEventListener('click', () => term.write('\x1b]9;4;3\x1b\\'));
+  document.getElementById('progress-4').addEventListener('click', () => term.write('\x1b]9;4;4\x1b\\'));
 }

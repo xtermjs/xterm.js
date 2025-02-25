@@ -25,6 +25,7 @@ const addons = [
   'clipboard',
   'fit',
   'image',
+  'progress',
   'search',
   'serialize',
   'unicode-graphemes',
@@ -62,6 +63,8 @@ async function run() {
       console.error(run.error);
       process.exit(run.status ?? -1);
     }
+
+    process.exit(run.status);
   }
 }
 run();

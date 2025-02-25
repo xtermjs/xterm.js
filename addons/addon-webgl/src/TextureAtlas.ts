@@ -4,10 +4,10 @@
  */
 
 import { IColorContrastCache } from 'browser/Types';
-import { DIM_OPACITY, TEXT_BASELINE } from 'browser/renderer/shared/Constants';
-import { tryDrawCustomChar } from 'browser/renderer/shared/CustomGlyphs';
+import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
+import { tryDrawCustomChar } from './CustomGlyphs';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 'browser/renderer/shared/Types';
+import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
 import { NULL_COLOR, channels, color, rgba } from 'common/Color';
 import { FourKeyMap } from 'common/MultiKeyMap';
 import { IdleTaskQueue } from 'common/TaskQueue';
@@ -66,6 +66,7 @@ export class TextureAtlas implements ITextureAtlas {
 
   // The set of atlas pages that can be written to
   private _activePages: AtlasPage[] = [];
+  private _overflowSizePage: AtlasPage | undefined;
 
   private _tmpCanvas: HTMLCanvasElement;
   // A temporary context that glyphs are drawn to before being transfered to the atlas.
@@ -102,6 +103,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public dispose(): void {
+    this._tmpCanvas.remove();
     for (const page of this.pages) {
       page.canvas.remove();
     }
@@ -121,7 +123,7 @@ export class TextureAtlas implements ITextureAtlas {
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
         if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
-          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT);
+          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, false, undefined);
           this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
         }
       });
@@ -241,12 +243,12 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, restrictToCellHeight);
+  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMapCombined, chars, bg, fg, ext, restrictToCellHeight, domContainer);
   }
 
-  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean): IRasterizedGlyph {
-    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, restrictToCellHeight);
+  public getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
+    return this._getFromCacheMap(this._cacheMap, code, bg, fg, ext, restrictToCellHeight, domContainer);
   }
 
   /**
@@ -258,11 +260,12 @@ export class TextureAtlas implements ITextureAtlas {
     bg: number,
     fg: number,
     ext: number,
-    restrictToCellHeight: boolean = false
+    restrictToCellHeight: boolean,
+    domContainer: HTMLElement | undefined
   ): IRasterizedGlyph {
     $glyph = cacheMap.get(key, bg, fg, ext);
     if (!$glyph) {
-      $glyph = this._drawToCache(key, bg, fg, ext, restrictToCellHeight);
+      $glyph = this._drawToCache(key, bg, fg, ext, restrictToCellHeight, domContainer);
       cacheMap.set(key, bg, fg, ext, $glyph);
     }
     return $glyph;
@@ -422,16 +425,24 @@ export class TextureAtlas implements ITextureAtlas {
     return this._config.colors.contrastCache;
   }
 
-  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean = false): IRasterizedGlyph {
+  private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     // Uncomment for debugging
     // console.log(`draw to cache "${chars}"`, bg, fg, ext);
 
+    // Attach the canvas to the DOM in order to inherit font-feature-settings
+    // from the parent elements. This is necessary for ligatures and variants to
+    // work.
+    if (domContainer && this._tmpCanvas.parentElement !== domContainer) {
+      this._tmpCanvas.style.display = 'none';
+      domContainer.append(this._tmpCanvas);
+    }
+
     // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
     // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
     // giant ligatures (eg. =====>) don't impact overall performance.
-    const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._textureSize);
+    const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._config.deviceMaxTextureSize);
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
     }
@@ -772,6 +783,27 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
+      // Create a new page for oversized glyphs as they come up
+      if (rasterizedGlyph.size.x > this._textureSize) {
+        if (!this._overflowSizePage) {
+          this._overflowSizePage = new AtlasPage(this._document, this._config.deviceMaxTextureSize);
+          this.pages.push(this._overflowSizePage);
+
+          // Request the model to be cleared to refresh all texture pages.
+          this._requestClearModel = true;
+          this._onAddTextureAtlasCanvas.fire(this._overflowSizePage.canvas);
+        }
+        activePage = this._overflowSizePage;
+        activeRow = this._overflowSizePage.currentRow;
+        // Move to next row if necessary
+        if (activeRow.x + rasterizedGlyph.size.x >= activePage.canvas.width) {
+          activeRow.x = 0;
+          activeRow.y += activeRow.height;
+          activeRow.height = 0;
+        }
+        break;
+      }
+
       // Create a new page if too much vertical space would be wasted or there is not enough room
       // left in the page. The previous active row will become fixed in the process as it now has a
       // fixed height
@@ -782,6 +814,7 @@ export class TextureAtlas implements ITextureAtlas {
         if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
           // Find the first page with room to create the new row on
           let candidatePage: AtlasPage | undefined;
+
           for (const p of this._activePages) {
             if (p.currentRow.y + p.currentRow.height + rasterizedGlyph.size.y < p.canvas.height) {
               candidatePage = p;

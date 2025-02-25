@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2024 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
 const path = require('path');
 
-const addonName = 'LigaturesAddon';
-const mainFile = 'addon-ligatures.js';
+const addonName = 'ProgressAddon';
+const mainFile = 'addon-progress.js';
 
 module.exports = {
   entry: `./out/${addonName}.js`,
@@ -21,6 +21,15 @@ module.exports = {
       }
     ]
   },
+  resolve: {
+    modules: ['./node_modules'],
+    extensions: [ '.js' ],
+    alias: {
+      common: path.resolve('../../out/common'),
+      browser: path.resolve('../../out/browser'),
+      vs: path.resolve('../../out/vs')
+    }
+  },
   output: {
     filename: mainFile,
     path: path.resolve('./lib'),
@@ -29,21 +38,5 @@ module.exports = {
     // Force usage of globalThis instead of global / self. (This is cross-env compatible)
     globalObject: 'globalThis',
   },
-  mode: 'production',
-  externals: {
-    'fs': 'commonjs fs',
-    'path': 'commonjs path',
-    'stream': 'commonjs stream',
-    'util': 'commonjs util'
-  },
-  resolve: {
-    // The ligature modules contains fallbacks for node environments, we never want to browserify them
-    fallback: {
-      fs: false,
-      os: false,
-      path: false,
-      stream: false,
-      util: false
-    }
-  }
+  mode: 'production'
 };
