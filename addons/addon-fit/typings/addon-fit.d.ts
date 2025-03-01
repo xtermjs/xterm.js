@@ -29,8 +29,9 @@ declare module '@xterm/addon-fit' {
 
     /**
      * Resizes the terminal to the dimensions of its containing element.
+     * @param dims The dimensions to fit the terminal into.
      */
-    public fit(): void;
+    public fit(dims?: ITerminalDimensions): void;
 
     /**
      * Gets the proposed dimensions that will be used for a fit.

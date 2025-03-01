@@ -32,8 +32,8 @@ export class FitAddon implements ITerminalAddon , IFitApi {
 
   public dispose(): void {}
 
-  public fit(): void {
-    const dims = this.proposeDimensions();
+  public fit(dims?: ITerminalDimensions): void {
+    dims = dims ?? this.proposeDimensions();
     if (!dims || !this._terminal || isNaN(dims.cols) || isNaN(dims.rows)) {
       return;
     }
