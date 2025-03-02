@@ -27,6 +27,7 @@ export function utf32ToString(data: Uint32Array, start: number = 0, end: number 
   let result = '';
   for (let i = start; i < end; ++i) {
     let codepoint = data[i];
+    codepoint &= 0x1FFFFF; // Needed if data is _data field of BufferLine.
     if (codepoint > 0xFFFF) {
       // JS strings are encoded as UTF16, thus a non BMP codepoint gets converted into a surrogate
       // pair conversion rules:

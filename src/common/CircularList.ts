@@ -153,14 +153,16 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @param deleteCount The number of elements to delete.
    * @param items The items to insert.
    */
-  public splice(start: number, deleteCount: number, ...items: T[]): void {
+  public spliceNoTrim(start: number, deleteCount: number, items: T[], fireEvents: boolean = true): void {
     // Delete items
     if (deleteCount) {
       for (let i = start; i < this._length - deleteCount; i++) {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
       }
       this._length -= deleteCount;
-      this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
+      if (fireEvents) {
+        this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
+      }
     }
 
     // Add items
@@ -170,19 +172,23 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
     for (let i = 0; i < items.length; i++) {
       this._array[this._getCyclicIndex(start + i)] = items[i];
     }
-    if (items.length) {
+    if (items.length && fireEvents) {
       this.onInsertEmitter.fire({ index: start, amount: items.length });
     }
-
-    // Adjust length as needed
-    if (this._length + items.length > this._maxLength) {
-      const countToTrim = (this._length + items.length) - this._maxLength;
+    this._length += items.length;
+  }
+  public trimIfNeeded(): void {
+    if (this._length > this._maxLength) {
+      const countToTrim = this._length - this._maxLength;
       this._startIndex += countToTrim;
       this._length = this._maxLength;
       this.onTrimEmitter.fire(countToTrim);
-    } else {
-      this._length += items.length;
     }
+  }
+  public splice(start: number, deleteCount: number, ...items: T[]): void {
+    this.spliceNoTrim(start, deleteCount, items);
+    // Adjust length as needed
+    this.trimIfNeeded();
   }
 
   /**
