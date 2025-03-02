@@ -724,8 +724,6 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   // Length of data() array.
   abstract dataLength(): number;
-  // Key is index in _data array that has STYLE_FLAGS kind with HAS_EXTENDED.
-  protected _extendedAttrs: IExtendedAttrs[] = [];
 
   public abstract logicalLine(): LogicalBufferLine;
   public abstract logicalStartColumn(): LineColumn;
@@ -788,8 +786,10 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   public showData(startColumn = 0, endColumn = Infinity): string {
     let s = '';
     let curColumn = 0;
+    const data = this.data();
+    const lline = this.logicalLine();
     for (let i = 0; i < this.dataLength() && curColumn < endColumn; i++) {
-      const word = this.data()[i];
+      const word = data[i];
       const kind = BufferLine.wKind(word);
       let code: string | number = kind;
       const wnum = word & 0xfffffff;
@@ -836,7 +836,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         } else if (kind === DataKind.STYLE_FLAGS) {
           value = '#' + (wnum & 0xfffffff).toString(16);
           if (wnum & StyleFlags.HAS_EXTENDED) {
-              const extended = this._extendedAttrs[i];
+              const extended = lline._extendedAttrs[i];
               if (! extended) { value += " (missing ext)"; }
               else {
                   switch (extended.underlineStyle) {
@@ -879,7 +879,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       error('default BG only');
     }
     for (let idata = 0; idata < this.dataLength(); idata++) {
-      const word = this.data()[idata];
+      const word = data[idata];
       const kind = BufferLine.wKind(word);
       switch (kind) {
         case DataKind.FG:
@@ -887,7 +887,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           break;
         case DataKind.STYLE_FLAGS:
           if ((word & StyleFlags.HAS_EXTENDED) != 0
-          && ! this._extendedAttrs[idata]) {
+          && ! this.logicalLine()._extendedAttrs[idata]) {
             error("missed ExtendedAttributes")
           }
           break;
@@ -1065,7 +1065,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const word = styleFlagsIndex < 0 ? 0 : this.data()[styleFlagsIndex];
     cursor.setStyleFlags(word);
     if ((word & StyleFlags.HAS_EXTENDED) !== 0) {
-      cursor.extended = this._extendedAttrs[styleFlagsIndex]!;
+      cursor.extended = this.logicalLine()._extendedAttrs[styleFlagsIndex]!;
     }
     if (content & Content.IS_COMBINED_MASK) {
       // FIXME do this lazily, in CellData.getChars
@@ -1155,6 +1155,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const styleFlagsIndex = this._cachedStyleFlagsIndex();
     const oldStyle = styleFlagsIndex < 0 ? 0 : (this.data()[styleFlagsIndex] & 0xfffffff);
     let data = this.data();
+    const extendedAttrs = this.logicalLine()._extendedAttrs;
     const idata0 = idata;
     let dataLength = this.dataLength();
     for (; idata < dataLength; idata++) {
@@ -1180,7 +1181,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     }
     let needFg = newFg !== oldFg;
     let needBg = newBg !== oldBg;
-    let oldExt = (oldStyle & StyleFlags.HAS_EXTENDED) && this._extendedAttrs[styleFlagsIndex];
+    let oldExt = (oldStyle & StyleFlags.HAS_EXTENDED) && extendedAttrs[styleFlagsIndex];
     let newExt = (newStyle & StyleFlags.HAS_EXTENDED) && attrs.extended;
     let needStyle = newStyle !== oldStyle || oldExt !== newExt;
     const add1 = extendToEnd ? 1 : 2;
@@ -1197,7 +1198,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
       }
       if (needStyle) {
         if (newStyle & StyleFlags.HAS_EXTENDED)
-        {this._extendedAttrs[idata] = attrs.extended;}
+        {extendedAttrs[idata] = attrs.extended;}
         this._cacheSetStyleFlagsIndex(idata);
         data[idata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, newStyle);
       }
@@ -1209,7 +1210,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         }
         if (needStyle) {
           if ((oldStyle & StyleFlags.HAS_EXTENDED) !== 0 && oldExt)
-            {this._extendedAttrs[xdata] = oldExt;}
+            {extendedAttrs[xdata] = oldExt;}
           data[xdata++] = BufferLine.wSet1(DataKind.STYLE_FLAGS, oldStyle);
         }
        if (needBg) {
@@ -1604,6 +1605,9 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   public get logicalWidth(): number { return this.getTrimmedLength(false, true); } 
   //logicalWidth: number = 0; // FIXME needs work updating this
   public reflowNeeded: boolean = false;
+
+  // Key is index in _data array that has STYLE_FLAGS kind with HAS_EXTENDED.
+  _extendedAttrs: IExtendedAttrs[] = [];
 
   // Maybe move these to to Buffer? Would save space. but with API complications.
   _cache1: number = 0;

@@ -29,7 +29,7 @@ export class CellData extends AttributeData implements ICellData {
   public content = 0;
   public fg = 0;
   public bg = 0;
-  public extended: IExtendedAttrs = new ExtendedAttrs();
+
   public combinedData = '';
 
   public copyFrom(src: CellData): void {
