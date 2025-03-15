@@ -405,7 +405,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should handle BCE correctly', () => {
-      const nullCell = lineData.loadCell(0, new CellData());
+      const nullCell = CellData.fromChar(' ');
       nullCell.bg = Attributes.CM_P16 | 1;
       lineData.setCell(2, nullCell);
       nullCell.bg = Attributes.CM_P16 | 2;
@@ -418,7 +418,7 @@ describe('DomRendererRowFactory', () => {
     });
 
     it('should handle BCE for multiple cells', () => {
-      const nullCell = lineData.loadCell(0, new CellData());
+      const nullCell = CellData.fromChar(' ');
       nullCell.bg = Attributes.CM_P16 | 1;
       lineData.setCell(0, nullCell);
       let spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
@@ -451,7 +451,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '€', 1, '€'.charCodeAt(0)]));
       lineData.setCell(2, CellData.fromCharData([DEFAULT_ATTR, 'c', 1, 'c'.charCodeAt(0)]));
       lineData.setCell(3, CellData.fromCharData([DEFAULT_ATTR, '語', 2, 'c'.charCodeAt(0)]));
-      lineData.setCell(4, CellData.fromCharData([DEFAULT_ATTR, '𝄞', 1, 'c'.charCodeAt(0)]));
+      lineData.setCell(5, CellData.fromCharData([DEFAULT_ATTR, '𝄞', 1, 'c'.charCodeAt(0)]));
       const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, 5, EMPTY_WIDTH, -1, -1);
       assert.equal(extractHtml(spans),
         '<span>a</span><span style="letter-spacing: 3px;">€</span><span>c語</span><span style="letter-spacing: -2px;">𝄞</span>'
@@ -502,7 +502,7 @@ describe('DomRendererRowFactory', () => {
   }
 
   function createEmptyLineData(cols: number): IBufferLine {
-    const lineData = new BufferLine(cols);
+    const lineData = BufferLine.make(cols);
     for (let i = 0; i < cols; i++) {
       lineData.setCell(i, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]));
     }

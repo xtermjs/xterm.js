@@ -10,7 +10,6 @@ import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { channels, color } from 'common/Color';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
@@ -44,7 +43,7 @@ export class DomRendererRowFactory {
 
   constructor(
     private readonly _document: Document,
-    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService,
+    @ICharacterJoinerService private readonly _characterJoinerService: ICharacterJoinerService, // FIXME remove
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @ICoreService private readonly _coreService: ICoreService,
@@ -71,9 +70,9 @@ export class DomRendererRowFactory {
     linkStart: number,
     linkEnd: number
   ): HTMLSpanElement[] {
+    const cell = this._workCell;
 
     const elements: HTMLSpanElement[] = [];
-    const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
     const colors = this._themeService.colors;
 
     let lineLength = lineData.getNoBgTrimmedLength();
@@ -99,7 +98,7 @@ export class DomRendererRowFactory {
 
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._workCell);
-      let width = this._workCell.getWidth();
+      const width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -118,6 +117,7 @@ export class DomRendererRowFactory {
       // Process any joined character ranges as needed. Because of how the
       // ranges are produced, we know that they are valid for the characters
       // and attributes of our input.
+      /*
       let cell = this._workCell;
       if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
         const range = joinedRanges.shift()!;
@@ -149,6 +149,7 @@ export class DomRendererRowFactory {
           width = cell.getWidth();
         }
       }
+      */
 
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
