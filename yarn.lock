@@ -1669,9 +1669,9 @@ cross-env@^7.0.3:
     cross-spawn "^7.0.1"
 
 cross-spawn@^7.0.0, cross-spawn@^7.0.1, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
-  version "7.0.3"
-  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.3.tgz#f73a85b9d5d41d045551c177e2882d4ac85728a6"
-  integrity sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==
+  version "7.0.6"
+  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.6.tgz#8a58fe78f00dcd70c370451759dfbfaf03e8ee9f"
+  integrity sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==
   dependencies:
     path-key "^3.1.0"
     shebang-command "^2.0.0"
@@ -3296,10 +3296,10 @@ node-preload@^0.2.1:
   dependencies:
     process-on-spawn "^1.0.0"
 
-node-pty@1.1.0-beta19:
-  version "1.1.0-beta19"
-  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-1.1.0-beta19.tgz#a74dc04429903c5ac49ee81a15a24590da67d4f3"
-  integrity sha512-/p4Zu56EYDdXjjaLWzrIlFyrBnND11LQGP0/L6GEVGURfCNkAlHc3Twg/2I4NPxghimHXgvDlwp7Z2GtvDIh8A==
+node-pty@^1.1.0-beta31:
+  version "1.1.0-beta9"
+  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-1.1.0-beta9.tgz#ed643cb3b398d031b4e31c216e8f3b0042435f1d"
+  integrity sha512-/Ue38pvXJdgRZ3+me1FgfglLd301GhJN0NStiotdt61tm43N5htUyR/IXOUzOKuNaFmCwIhy6nwb77Ky41LMbw==
   dependencies:
     node-addon-api "^7.1.0"
 

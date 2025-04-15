@@ -499,12 +499,16 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     const [stringLine, offsets] = cache;
 
     const offset = this._bufferColsToStringOffset(row, col);
-    const searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
-    const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
+    let searchTerm = term;
+    let searchStringLine = stringLine;
+    if (!searchOptions.regex) {
+      searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
+      searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
+    }
 
     let resultIndex = -1;
     if (searchOptions.regex) {
-      const searchRegex = RegExp(searchTerm, 'g');
+      const searchRegex = RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
       let foundTerm: RegExpExecArray | null;
       if (isReverseSearch) {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..offset

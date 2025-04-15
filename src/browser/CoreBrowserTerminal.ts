@@ -437,7 +437,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.screenElement.appendChild(this._helperContainer);
     fragment.appendChild(this.screenElement);
 
-    this.textarea = this._document.createElement('textarea');
+    const textarea = this.textarea = this._document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel.get());
     if (!Browser.isChromeOS) {
@@ -449,6 +449,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
+    this._register(this.optionsService.onSpecificOptionChange('disableStdin', () => textarea.readOnly = this.optionsService.rawOptions.disableStdin));
+    this.textarea.readOnly = this.optionsService.rawOptions.disableStdin;
 
     // Register the core browser service before the generic textarea handlers are registered so it
     // handles them first. Otherwise the renderers may use the wrong focus state.

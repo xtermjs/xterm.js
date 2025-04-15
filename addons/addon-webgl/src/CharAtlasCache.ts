@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
+import { TextureAtlas } from './TextureAtlas';
 import { ITerminalOptions, Terminal } from '@xterm/xterm';
 import { ITerminal, ReadonlyColorSet } from 'browser/Types';
-import { ICharAtlasConfig, ITextureAtlas } from 'browser/renderer/shared/Types';
-import { generateConfig, configEquals } from 'browser/renderer/shared/CharAtlasUtils';
+import { ICharAtlasConfig, ITextureAtlas } from './Types';
+import { generateConfig, configEquals } from './CharAtlasUtils';
 
 interface ITextureAtlasCacheEntry {
   atlas: ITextureAtlas;
@@ -31,9 +31,10 @@ export function acquireTextureAtlas(
   deviceCellHeight: number,
   deviceCharWidth: number,
   deviceCharHeight: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  deviceMaxTextureSize: number
 ): ITextureAtlas {
-  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, options, colors, devicePixelRatio);
+  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, options, colors, devicePixelRatio, deviceMaxTextureSize);
 
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {

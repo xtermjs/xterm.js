@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { is256Color } from 'browser/renderer/shared/CharAtlasUtils';
+import { is256Color } from '../CharAtlasUtils';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';

@@ -44,6 +44,9 @@ jobs:
           ./addons/addon-ligatures/lib/* \
           ./addons/addon-ligatures/out/* \
           ./addons/addon-ligatures/out-*/* \
+          ./addons/addon-progress/lib/* \
+          ./addons/addon-progress/out/* \
+          ./addons/addon-progress/out-*/* \
           ./addons/addon-search/lib/* \
           ./addons/addon-search/out/* \
           ./addons/addon-search/out-*/* \
@@ -63,7 +66,7 @@ jobs:
           ./addons/addon-webgl/out/* \
           ./addons/addon-webgl/out-*st/*
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: compressed-build.zip
@@ -105,7 +108,7 @@ jobs:
       run: |
         yarn --frozen-lockfile
         yarn install-addons
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -147,7 +150,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         job: build
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -167,9 +170,9 @@ jobs:
     strategy:
       matrix:
         node-version: [18] # just one as integration tests are about testing in browser
-        runs-on: [ubuntu] # macos is flaky
+        runs-on: [ubuntu-22.04] # macos is flaky
         browser: [chromium, firefox, webkit]
-    runs-on: ${{ matrix.runs-on }}-latest
+    runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}.x
@@ -188,7 +191,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         job: build
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -212,6 +215,8 @@ jobs:
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
     - name: Integration tests (addon-image)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
+    - name: Integration tests (addon-progress)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
     - name: Integration tests (addon-search)
       run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
     - name: Integration tests (addon-serialize)
@@ -244,7 +249,7 @@ jobs:
         yarn install-addons
     - name: Install playwright
       run: npx playwright install
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
