@@ -258,6 +258,13 @@ declare module '@xterm/xterm' {
     scrollback?: number;
 
     /**
+     * If enabled the Erase in Display All (ED2) escape sequence will push
+     * erased text to scrollback, instead of clearing only the viewport portion.
+     * This emulates PuTTY's default clear screen behavior.
+     */
+    scrollOnDisplayErase?: boolean;
+
+    /**
      * Whether to scroll to the bottom whenever there is some user input. The
      * default is true.
      */
@@ -338,13 +345,6 @@ declare module '@xterm/xterm' {
      * decorations underneath the scroll bar.
      */
     overviewRuler?: IOverviewRulerOptions;
-
-    /**
-     * If enabled ED2 (clear screen) escape sequence will push
-     * erased text to scrollback.
-     * This emulates PuTTY default clear screen behavior.
-     */
-    scrollOnDisplayErase?: boolean;
   }
 
   /**
