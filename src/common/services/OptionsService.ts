@@ -32,6 +32,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   logLevel: 'info',
   logger: null,
   scrollback: 1000,
+  scrollOnDisplayErase: false,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
   screenReaderMode: false,
@@ -55,8 +56,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false,
-  overviewRuler: {},
-  scrollOnDisplayErase: false
+  overviewRuler: {}
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
