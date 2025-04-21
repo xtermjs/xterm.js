@@ -262,7 +262,7 @@ declare module '@xterm/xterm' {
      * erased text to scrollback, instead of clearing only the viewport portion.
      * This emulates PuTTY's default clear screen behavior.
      */
-    scrollOnDisplayErase?: boolean;
+    scrollOnEraseInDisplay?: boolean;
 
     /**
      * Whether to scroll to the bottom whenever there is some user input. The

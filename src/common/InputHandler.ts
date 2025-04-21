@@ -1220,7 +1220,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._dirtyRowTracker.markDirty(0);
         break;
       case 2:
-        if (this._optionsService.rawOptions.scrollOnDisplayErase) {
+        if (this._optionsService.rawOptions.scrollOnEraseInDisplay) {
           j = this._bufferService.rows;
           this._dirtyRowTracker.markRangeDirty(0, j - 1);
           while (j--) {

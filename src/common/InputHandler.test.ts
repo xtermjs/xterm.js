@@ -438,13 +438,13 @@ describe('InputHandler', () => {
       inputHandler.eraseInLine(Params.fromArray([2]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
     });
-    it('ED2 with scrollOnDisplayErase turned on', async () => {
+    it('ED2 with scrollOnEraseInDisplay turned on', async () => {
       const inputHandler = new TestInputHandler(
         bufferService,
         new MockCharsetService(),
         new MockCoreService(),
         new MockLogService(),
-        new MockOptionsService({ scrollOnDisplayErase: true }),
+        new MockOptionsService({ scrollOnEraseInDisplay: true }),
         new MockOscLinkService(),
         new MockCoreMouseService(),
         new MockUnicodeService()

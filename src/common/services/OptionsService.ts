@@ -32,7 +32,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   logLevel: 'info',
   logger: null,
   scrollback: 1000,
-  scrollOnDisplayErase: false,
+  scrollOnEraseInDisplay: false,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
   screenReaderMode: false,

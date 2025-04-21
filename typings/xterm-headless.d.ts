@@ -191,7 +191,7 @@ declare module '@xterm/headless' {
      * erased text to scrollback, instead of clearing only the viewport portion.
      * This emulates PuTTY's default clear screen behavior.
      */
-    scrollOnDisplayErase?: boolean;
+    scrollOnEraseInDisplay?: boolean;
 
     /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
