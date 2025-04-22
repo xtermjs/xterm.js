@@ -187,6 +187,13 @@ declare module '@xterm/headless' {
     scrollback?: number;
 
     /**
+     * If enabled the Erase in Display All (ED2) escape sequence will push
+     * erased text to scrollback, instead of clearing only the viewport portion.
+     * This emulates PuTTY's default clear screen behavior.
+     */
+    scrollOnEraseInDisplay?: boolean;
+
+    /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
      */
     scrollSensitivity?: number;
