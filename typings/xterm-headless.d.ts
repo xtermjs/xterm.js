@@ -833,6 +833,10 @@ declare module '@xterm/headless' {
 
     /**
      * Write data to the terminal.
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
@@ -844,6 +848,10 @@ declare module '@xterm/headless' {
 
     /**
      * Writes data to the terminal, followed by a break line character (\n).
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
