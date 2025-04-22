@@ -1166,18 +1166,7 @@ declare module '@xterm/xterm' {
     deregisterCharacterJoiner(joinerId: number): void;
 
     /**
-     * Adds a marker to the normal buffer and returns it.  
-     * NOTE: If you are synchronously writing data line-by-line (as in, doing 
-     * multiple `term.writeln()`before the terminal re-rendering), the cursorY 
-     * position will not be updated until after all pending terminal writes, 
-     * which will result in the markers offset being calculated from the
-     * position cursorY was when your batch of writes started.  
-     * Dealing with this issue by setting `cursorYOffset` to be index of this 
-     * line in your batch will fail if you have any line wraps prior to it.  
-     * Instead, consider registering a marker inside a write callback, eg.:
-     * ```ts
-     * term.writeln(data, () => term.registerMarker(...))
-     * ```
+     * Adds a marker to the normal buffer and returns it.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
@@ -1280,7 +1269,8 @@ declare module '@xterm/xterm' {
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     write(data: string | Uint8Array, callback?: () => void): void;
 
@@ -1290,7 +1280,8 @@ declare module '@xterm/xterm' {
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
