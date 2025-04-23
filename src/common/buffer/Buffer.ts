@@ -320,7 +320,37 @@ export class Buffer implements IBuffer {
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
+
+      // For conpty, it has its own copy of the buffer _without scrollback_ internally. Its behavior
+      // when reflowing larger is to insert empty lines at the bottom of the buffer as when lines
+      // unwrap conpty's view cannot pull scrollback down, so it adds empty lines at the end.
+      let removedInViewport = 0;
+      const isWindowsMode = this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined;
+      if (isWindowsMode) {
+        for (let i = (toRemove.length / 2) - 1; i >= 0; i--) {
+          if (toRemove[i * 2 + 0] > this.ybase + removedInViewport) {
+            removedInViewport += toRemove[i * 2 + 1];
+          }
+        }
+      }
+
       this._reflowLargerAdjustViewport(newCols, newRows, newLayoutResult.countRemoved);
+
+      // Apply empty lines for any removed in viewport for conpty.
+      if (isWindowsMode) {
+        if (removedInViewport > 0) {
+          for (let i = 0; i < removedInViewport; i++) {
+            // Just add the new missing rows on Windows as conpty reprints the screen with it's
+            // view of the world. Once a line enters scrollback for conpty it remains there
+            this.lines.push(new BufferLine(newCols, this.getNullCell(DEFAULT_ATTR_DATA)));
+          }
+          if (this.ybase === this.ydisp) {
+            this.ydisp += removedInViewport;
+          }
+          this.ybase += removedInViewport;
+          this.y -= removedInViewport;
+        }
+      }
     }
   }
 
@@ -352,7 +382,7 @@ export class Buffer implements IBuffer {
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
     // batched up and only committed once
-    const toInsert = [];
+    const toInsert: { start: number, newLines: IBufferLine[] }[] = [];
     let countToInsert = 0;
     // Go backwards as many lines may be trimmed and this will avoid considering them
     for (let y = this.lines.length - 1; y >= 0; y--) {
@@ -467,6 +497,20 @@ export class Buffer implements IBuffer {
       this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
     }
 
+    // For conpty, it has its own copy of the buffer _without scrollback_ internally. Its behavior
+    // when reflowing smaller is to reflow all lines inside the viewport, and removing empty or
+    // whitespace only lines from the bottom, until non-whitespace is hit in order to prevent
+    // content from being pushed into the scrollback.
+    let addedInViewport = 0;
+    const isWindowsMode = this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined;
+    if (isWindowsMode) {
+      for (let i = toInsert.length - 1; i >= 0; i--) {
+        if (toInsert[i].start > this.ybase + addedInViewport) {
+          addedInViewport += toInsert[i].newLines.length;
+        }
+      }
+    }
+
     // Rearrange lines in the buffer if there are any insertions, this is done at the end rather
     // than earlier so that it's a single O(n) pass through the buffer, instead of O(n^2) from many
     // costly calls to CircularList.splice.
@@ -518,6 +562,35 @@ export class Buffer implements IBuffer {
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
         this.lines.onTrimEmitter.fire(amountToTrim);
+      }
+    }
+
+    // Apply empty lines to remove calculated earlier for conpty.
+    if (isWindowsMode) {
+      if (addedInViewport > 0) {
+        let emptyLinesAtBottom = 0;
+        for (let i = this.lines.length - 1; i >= this.ybase + this.y; i--) {
+          const line = this.lines.get(i) as BufferLine;
+          if (line.isWrapped || line.getTrimmedLength() > 0) {
+            break;
+          }
+          emptyLinesAtBottom++;
+        }
+        const emptyLinesToRemove = Math.min(addedInViewport, emptyLinesAtBottom);
+        if (emptyLinesToRemove > 0) {
+          for (let i = 0; i < emptyLinesToRemove; i++) {
+            this.lines.pop();
+          }
+          if (this.ybase === this.ydisp) {
+            this.ydisp -= emptyLinesToRemove;
+          }
+          this.ybase -= emptyLinesToRemove;
+          this.y += emptyLinesToRemove;
+          this.lines.onDeleteEmitter.fire({
+            index: this.lines.length - emptyLinesToRemove,
+            amount: emptyLinesToRemove
+          });
+        }
       }
     }
   }
