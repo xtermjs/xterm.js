@@ -139,7 +139,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     [this._rectangleRenderer.value, this._glyphRenderer.value] = this._initializeWebGLState();
 
-    this._isAttached = this._coreBrowserService.window.document.body.contains(this._core.screenElement!);
+    this._isAttached = this._core.screenElement!.isConnected;
 
     this._register(toDisposable(() => {
       for (const l of this._renderLayers) {
@@ -322,7 +322,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     if (!this._isAttached) {
-      if (this._coreBrowserService.window.document.body.contains(this._core.screenElement!) && this._charSizeService.width && this._charSizeService.height) {
+      if (this._core.screenElement?.isConnected && this._charSizeService.width && this._charSizeService.height) {
         this._updateDimensions();
         this._refreshCharAtlas();
         this._isAttached = true;
