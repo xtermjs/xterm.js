@@ -15,7 +15,7 @@ test.beforeAll(async ({ browser }) => {
   await openTerminal(ctx);
   ctxWrapper.value = ctx;
   await ctx.page.evaluate(`
-    window.addon = new window.WebglAddon(true);
+    window.addon = new window.WebglAddon(sharedExports, true);
     window.term.loadAddon(window.addon);
   `);
 });
@@ -31,7 +31,7 @@ test.describe('WebGL Renderer Integration Tests', async () => {
   injectSharedRendererTests(ctxWrapper);
   injectSharedRendererTestsStandalone(ctxWrapper, async () => {
     await ctx.page.evaluate(`
-      window.addon = new window.WebglAddon(true);
+      window.addon = new window.WebglAddon(sharedExports, true);
       window.term.loadAddon(window.addon);
     `);
   });

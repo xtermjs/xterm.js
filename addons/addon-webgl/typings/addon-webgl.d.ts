@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon, IEvent } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IEvent, ISharedExports } from '@xterm/xterm';
 
 declare module '@xterm/addon-webgl' {
   /**
@@ -32,7 +32,7 @@ declare module '@xterm/addon-webgl' {
      */
     public readonly onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
-    constructor(preserveDrawingBuffer?: boolean);
+    constructor(sharedExports: ISharedExports, preserveDrawingBuffer?: boolean);
 
     /**
      * Activates the addon.
