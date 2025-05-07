@@ -306,6 +306,11 @@ export class TextureAtlas implements ITextureAtlas {
         break;
     }
 
+    // Ignore alpha channel when allowTransparency is false
+    if (!this._config.allowTransparency) {
+      result = color.opaque(result);
+    }
+
     return result;
   }
 
