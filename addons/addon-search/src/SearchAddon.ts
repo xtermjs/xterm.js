@@ -58,6 +58,11 @@ interface IHighlight extends IDisposable {
   match: ISearchResult;
 }
 
+interface IMultiHighlight extends IDisposable {
+  decorations: IDecoration[];
+  match: ISearchResult;
+}
+
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 const DEFAULT_HIGHLIGHT_LIMIT = 1000;
@@ -67,7 +72,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();
   private _highlightDecorations: IHighlight[] = [];
-  private _selectedDecoration: MutableDisposable<IHighlight> = this._register(new MutableDisposable());
+  private _selectedDecoration: MutableDisposable<IMultiHighlight> = this._register(new MutableDisposable());
   private _highlightLimit: number;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
@@ -179,12 +184,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       );
     }
     for (const match of searchResultsWithHighlight) {
-      const decoration = this._createResultDecoration(match, searchOptions.decorations!);
-      if (decoration) {
-        this._highlightedLines.add(decoration.marker.line);
-        this._highlightDecorations.push({ decoration, match, dispose() { decoration.dispose(); } });
+      const decorations = this._createResultDecorations(match, searchOptions.decorations!, false);
+      if (decorations) {
+        for (const decoration of decorations) {
+          this._storeDecoration(decoration, match);
+        }
       }
     }
+  }
+
+  private _storeDecoration(decoration: IDecoration, match: ISearchResult): void {
+    this._highlightedLines.add(decoration.marker.line);
+    this._highlightDecorations.push({ decoration, match, dispose() { decoration.dispose(); } });
   }
 
   private _find(term: string, startRow: number, startCol: number, searchOptions?: ISearchOptions): ISearchResult | undefined {
@@ -666,25 +677,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
     terminal.select(result.col, result.row, result.size);
     if (options) {
-      const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
-      if (marker) {
-        const decoration = terminal.registerDecoration({
-          marker,
-          x: result.col,
-          width: result.size,
-          backgroundColor: options.activeMatchBackground,
-          layer: 'top',
-          overviewRulerOptions: {
-            color: options.activeMatchColorOverviewRuler
-          }
-        });
-        if (decoration) {
-          const disposables: IDisposable[] = [];
-          disposables.push(marker);
-          disposables.push(decoration.onRender((e) => this._applyStyles(e, options.activeMatchBorder, true)));
-          disposables.push(decoration.onDispose(() => dispose(disposables)));
-          this._selectedDecoration.value = { decoration, match: result, dispose() { decoration.dispose(); } };
-        }
+      const decorations = this._createResultDecorations(result, options, true);
+      if (decorations) {
+        this._selectedDecoration.value = { decorations, match: result, dispose() { dispose(decorations); } };
       }
     }
 
@@ -724,28 +719,45 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    * @param options the options for the decoration
    * @returns the {@link IDecoration} or undefined if the marker has already been disposed of
    */
-  private _createResultDecoration(result: ISearchResult, options: ISearchDecorationOptions): IDecoration | undefined {
+  private _createResultDecorations(result: ISearchResult, options: ISearchDecorationOptions, isActiveResult: boolean): IDecoration[] | undefined {
     const terminal = this._terminal!;
-    const marker = terminal.registerMarker(-terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row);
-    if (!marker) {
-      return undefined;
+
+    // Gather decoration ranges for this match as it could wrap
+    const decorationRanges: [number, number, number][] = [];
+    let currentCol = result.col;
+    let remainingSize = result.size;
+    let markerOffset = -terminal.buffer.active.baseY - terminal.buffer.active.cursorY + result.row;
+    while (remainingSize > 0) {
+      const amountThisRow = Math.min(terminal.cols - currentCol, remainingSize);
+      decorationRanges.push([markerOffset, currentCol, amountThisRow]);
+      currentCol = 0;
+      remainingSize -= amountThisRow;
+      markerOffset++;
     }
-    const findResultDecoration = terminal.registerDecoration({
-      marker,
-      x: result.col,
-      width: result.size,
-      backgroundColor: options.matchBackground,
-      overviewRulerOptions: this._highlightedLines.has(marker.line) ? undefined : {
-        color: options.matchOverviewRuler,
-        position: 'center'
+
+    // Create the decorations
+    const decorations: IDecoration[] = [];
+    for (const range of decorationRanges) {
+      const marker = terminal.registerMarker(range[0]);
+      const decoration = terminal.registerDecoration({
+        marker,
+        x: range[1],
+        width: range[2],
+        backgroundColor: isActiveResult ? options.activeMatchBackground : options.matchBackground,
+        overviewRulerOptions: this._highlightedLines.has(marker.line) ? undefined : {
+          color: isActiveResult ? options.activeMatchColorOverviewRuler : options.matchOverviewRuler,
+          position: 'center'
+        }
+      });
+      if (decoration) {
+        const disposables: IDisposable[] = [];
+        disposables.push(marker);
+        disposables.push(decoration.onRender((e) => this._applyStyles(e, isActiveResult ? options.activeMatchBorder : options.matchBorder, false)));
+        disposables.push(decoration.onDispose(() => dispose(disposables)));
+        decorations.push(decoration);
       }
-    });
-    if (findResultDecoration) {
-      const disposables: IDisposable[] = [];
-      disposables.push(marker);
-      disposables.push(findResultDecoration.onRender((e) => this._applyStyles(e, options.matchBorder, false)));
-      disposables.push(findResultDecoration.onDispose(() => dispose(disposables)));
     }
-    return findResultDecoration;
+
+    return decorations.length === 0 ? undefined : decorations;
   }
 }
