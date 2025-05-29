@@ -123,19 +123,18 @@ describe('Keyboard', () => {
     });
 
     describe('On non-macOS platforms', () => {
-      // Evalueate alt + arrow key movement, which is a feature of terminal emulators but not VT100
-      // http://unix.stackexchange.com/a/108106
-      it('should return \\x1b[5D for alt+left', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 37 }, { isMac: false }).key, '\x1b[1;5D'); // CSI 5 D
+      // Alt + arrow keys should now emit the standard Alt escape sequences instead of Ctrl sequences
+      it('should return \\x1b[1;3D for alt+left', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 37 }, { isMac: false }).key, '\x1b[1;3D'); // Standard Alt+Left
       });
-      it('should return \\x1b[5C for alt+right', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 39 }, { isMac: false }).key, '\x1b[1;5C'); // CSI 5 C
+      it('should return \\x1b[1;3C for alt+right', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 39 }, { isMac: false }).key, '\x1b[1;3C'); // Standard Alt+Right
       });
-      it('should return \\x1b[5D for alt+up', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 38 }, { isMac: false }).key, '\x1b[1;5A'); // CSI 5 D
+      it('should return \\x1b[1;3A for alt+up', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 38 }, { isMac: false }).key, '\x1b[1;3A'); // Standard Alt+Up
       });
-      it('should return \\x1b[5C for alt+down', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 40 }, { isMac: false }).key, '\x1b[1;5B'); // CSI 5 C
+      it('should return \\x1b[1;3B for alt+down', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 40 }, { isMac: false }).key, '\x1b[1;3B'); // Standard Alt+Down
       });
       it('should return \\x1ba for alt+a', () => {
         assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 65 }, { isMac: false }).key, '\x1ba');
@@ -149,17 +148,17 @@ describe('Keyboard', () => {
     });
 
     describe('On macOS platforms', () => {
-      it('should return \\x1bb for alt+left', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 37 }, { isMac: true }).key, '\x1bb'); // CSI 5 D
+      it('should return \\x1b[1;3D for alt+left', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 37 }, { isMac: true }).key, '\x1b[1;3D'); // Standard Alt+Left
       });
-      it('should return \\x1bf for alt+right', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 39 }, { isMac: true }).key, '\x1bf'); // CSI 5 C
+      it('should return \\x1b[1;3C for alt+right', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 39 }, { isMac: true }).key, '\x1b[1;3C'); // Standard Alt+Right
       });
-      it('should return \\x1bb for alt+up', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 38 }, { isMac: true }).key, '\x1b[1;3A'); // CSI 5 D
+      it('should return \\x1b[1;3A for alt+up', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 38 }, { isMac: true }).key, '\x1b[1;3A'); // Standard Alt+Up
       });
-      it('should return \\x1bf for alt+down', () => {
-        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 40 }, { isMac: true }).key, '\x1b[1;3B'); // CSI 5 C
+      it('should return \\x1b[1;3B for alt+down', () => {
+        assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 40 }, { isMac: true }).key, '\x1b[1;3B'); // Standard Alt+Down
       });
       it('should return undefined for alt+a', () => {
         assert.strictEqual(testEvaluateKeyboardEvent({ altKey: true, keyCode: 65 }, { isMac: true }).key, undefined);
@@ -176,11 +175,11 @@ describe('Keyboard', () => {
       });
     });
 
-    it('should return \\x1b[5A for alt+up', () => {
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 38 }).key, '\x1b[1;5A'); // CSI 5 A
+    it('should return \\x1b[1;3A for alt+up', () => {
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 38 }).key, '\x1b[1;3A'); // Standard Alt+Up
     });
-    it('should return \\x1b[5B for alt+down', () => {
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 40 }).key, '\x1b[1;5B'); // CSI 5 B
+    it('should return \\x1b[1;3B for alt+down', () => {
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 40 }).key, '\x1b[1;3B'); // Standard Alt+Down
     });
     it('should return the correct escape sequence for modified F1-F12 keys', () => {
       assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 112 }).key, '\x1b[1;2P');
