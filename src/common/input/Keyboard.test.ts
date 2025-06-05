@@ -342,7 +342,7 @@ describe('Keyboard', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 65 }).key, '\x1bA'); // alt+shift+a
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 72 }).key, '\x1bH'); // alt+shift+h
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 90 }).key, '\x1bZ'); // alt+shift+z
-      
+
       // Test alt without shift produces lowercase letters
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 65 }).key, '\x1ba'); // alt+a
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 72 }).key, '\x1bh'); // alt+h
