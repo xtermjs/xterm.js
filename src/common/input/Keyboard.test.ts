@@ -336,6 +336,19 @@ describe('Keyboard', () => {
       assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 49, key: '!' }).key, '!');
     });
 
+    // Characters using alt+shift sequences (letters)
+    it('should return proper sequences for alt+shift+letter combinations', () => {
+      // Test alt+shift combinations produce uppercase letters
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 65 }).key, '\x1bA'); // alt+shift+a
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 72 }).key, '\x1bH'); // alt+shift+h
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 90 }).key, '\x1bZ'); // alt+shift+z
+
+      // Test alt without shift produces lowercase letters
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 65 }).key, '\x1ba'); // alt+a
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 72 }).key, '\x1bh'); // alt+h
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 90 }).key, '\x1bz'); // alt+z
+    });
+
     it('should return proper sequence for ctrl+@', () => {
       assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 50, key: '@' }).key, '\x00');
     });
