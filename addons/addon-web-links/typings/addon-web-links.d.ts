@@ -14,6 +14,10 @@ declare module '@xterm/addon-web-links' {
     /**
      * Creates a new web links addon.
      * @param handler The callback when the link is called.
+     *
+     * Note that this may not work when the terminal is hosted inside an iframe,
+     * in that case provide a custom handler in that case being mindful of
+     * possible security issues like reverse tabnapping.
      * @param options Options for the link provider.
      */
     constructor(handler?: (event: MouseEvent, uri: string) => void, options?: ILinkProviderOptions);
