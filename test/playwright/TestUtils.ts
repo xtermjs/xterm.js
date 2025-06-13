@@ -412,7 +412,7 @@ class TerminalCoreProxy {
   }
 }
 
-export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}, testOptions: { loadUnicodeGraphemesAddon: boolean } = { loadUnicodeGraphemesAddon: true }): Promise<void> {
+export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}, { useShadowDom = false, loadUnicodeGraphemesAddon = true }: { loadUnicodeGraphemesAddon?: boolean, useShadowDom?: boolean } = { }): Promise<void> {
   await ctx.page.evaluate(`
   if ('term' in window) {
     try {
@@ -423,13 +423,48 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
   // HACK: Tests may have side effects that could cause the terminal not to be removed. This
   //       assertion catches this case early.
   strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
-  await ctx.page.evaluate(`
+
+  let script = `
     window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
-    window.term.open(document.querySelector('#terminal-container'));
-  `);
+    let element = document.querySelector('#terminal-container');
+
+    // Remove shadow root if it exists
+    const newElement = element.cloneNode(false);
+    element.replaceWith(newElement);
+    element = newElement
+`;
+
+
+  if (useShadowDom) {
+    script += `
+    const shadowRoot = element.attachShadow({ mode: "open" });
+
+    // Copy parent styles to shadow DOM
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    styles.forEach((styleEl) => {
+      const clone = document.createElement('link');
+      clone.rel = 'stylesheet';
+      clone.href = styleEl.href;
+      shadowRoot.appendChild(clone);
+    });
+
+    // Create new element inside the shadow DOM
+    element = document.createElement('div');
+    element.style.width = '100%';
+    element.style.height = '100%';
+    shadowRoot.appendChild(element);
+    `;
+  }
+
+  script += `
+    window.term.open(element);
+  `;
+
+  await ctx.page.evaluate(script);
+
   // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
   // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
-  if (testOptions.loadUnicodeGraphemesAddon) {
+  if (loadUnicodeGraphemesAddon) {
     await ctx.page.evaluate(`
       window.unicode = new UnicodeGraphemesAddon();
       window.term.loadAddon(window.unicode);
