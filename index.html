@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Xterm.js Example</title>
+  <!-- Add xterm.css -->
+  <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
+  <!-- Add xterm.js -->
+  <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
+</head>
+<body>
+  <!-- Terminal container -->
+  <div id="terminal" style="width: 600px; height: 400px;"></div>
+
+  <script>
+    // Instantiate the Terminal object
+    const terminal = new Terminal();
+    // Attach the terminal to the div
+    terminal.open(document.getElementById('terminal'));
+    // Optional: Write a welcome message
+    terminal.write('Welcome to xterm.js!\r\n');
+  </script>
+</body>
+</html>
