@@ -231,7 +231,7 @@ export interface ITerminalOptions {
   fontWeightBold?: FontWeight;
   ignoreBracketedPasteMode?: boolean;
   letterSpacing?: number;
-  lineHeight?: number;
+  lineHeight?: number | string;
   linkHandler?: ILinkHandler | null;
   logLevel?: LogLevel;
   logger?: ILogger | null;

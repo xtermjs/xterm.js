@@ -27,6 +27,19 @@ import { addDisposableListener } from 'vs/base/browser/dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
+/**
+ * Calculates the line height in pixels based on the lineHeight option and character height.
+ */
+function calculateLineHeightInPixels(lineHeight: number | string, charHeight: number): number {
+  if (typeof lineHeight === 'string' && lineHeight.endsWith('px')) {
+    const pxValue = parseFloat(lineHeight.slice(0, -2));
+    // Ensure the pixel value is at least as large as the character height
+    return Math.max(pxValue, charHeight);
+  }
+  // Numeric lineHeight acts as a multiplier
+  return Math.floor(charHeight * (lineHeight as number));
+}
+
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
@@ -570,14 +583,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // cell.
     this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * this._devicePixelRatio);
 
-    // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
-    // floored since lineHeight can never be lower then 1, this guarentees the device cell height
-    // will always be larger than device char height.
-    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
+    // Calculate the device cell height, supporting both numeric multipliers and 'px' values
+    this.dimensions.device.cell.height = calculateLineHeightInPixels(this._optionsService.rawOptions.lineHeight, this.dimensions.device.char.height);
 
     // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
     // correctly within the cell.
-    this.dimensions.device.char.top = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
+    const isDefaultLineHeight = (typeof this._optionsService.rawOptions.lineHeight === 'number' && this._optionsService.rawOptions.lineHeight === 1) ||
+                               (typeof this._optionsService.rawOptions.lineHeight === 'string' && this.dimensions.device.cell.height === this.dimensions.device.char.height);
+    this.dimensions.device.char.top = isDefaultLineHeight ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
 
     // Calculate the device cell width, taking the letterSpacing into account.
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
