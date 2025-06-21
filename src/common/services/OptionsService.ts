@@ -172,10 +172,29 @@ export class OptionsService extends Disposable implements IOptionsService {
       case 'cursorWidth':
         value = Math.floor(value);
         // Fall through for bounds check
-      case 'lineHeight':
       case 'tabStopWidth':
         if (value < 1) {
           throw new Error(`${key} cannot be less than 1, value: ${value}`);
+        }
+        break;
+      case 'lineHeight':
+        if (typeof value === 'string') {
+          // Handle 'px' format
+          if (value.endsWith('px')) {
+            const pxValue = parseFloat(value.slice(0, -2));
+            if (isNaN(pxValue) || pxValue < 1) {
+              throw new Error(`${key} with 'px' format must be a valid number >= 1, value: ${value}`);
+            }
+            // Keep the string value as-is for downstream processing
+          } else {
+            throw new Error(`${key} string value must end with 'px', value: ${value}`);
+          }
+        } else if (typeof value === 'number') {
+          if (value < 1) {
+            throw new Error(`${key} cannot be less than 1, value: ${value}`);
+          }
+        } else {
+          throw new Error(`${key} must be a number or string with 'px' suffix, value: ${value}`);
         }
         break;
       case 'minimumContrastRatio':

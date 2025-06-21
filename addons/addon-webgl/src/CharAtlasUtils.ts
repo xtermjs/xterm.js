@@ -10,6 +10,15 @@ import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { NULL_COLOR } from 'common/Color';
 
 export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, options: Required<ITerminalOptions>, colors: ReadonlyColorSet, devicePixelRatio: number, deviceMaxTextureSize: number): ICharAtlasConfig {
+  // Convert lineHeight to a numeric multiplier for the char atlas
+  // If it's a px value, calculate the equivalent multiplier
+  let lineHeightMultiplier: number = typeof options.lineHeight === 'number' ? options.lineHeight : 1;
+  if (typeof options.lineHeight === 'string' && options.lineHeight.endsWith('px')) {
+    const pxValue = parseFloat(options.lineHeight.slice(0, -2));
+    // Calculate the multiplier based on font size
+    lineHeightMultiplier = pxValue / options.fontSize;
+  }
+  
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -36,7 +45,7 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
     devicePixelRatio,
     deviceMaxTextureSize,
     letterSpacing: options.letterSpacing,
-    lineHeight: options.lineHeight,
+    lineHeight: lineHeightMultiplier,
     deviceCellWidth: deviceCellWidth,
     deviceCellHeight: deviceCellHeight,
     deviceCharWidth: deviceCharWidth,
