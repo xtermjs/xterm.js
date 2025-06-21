@@ -32,8 +32,8 @@ export class FitAddon implements ITerminalAddon , IFitApi {
 
   public dispose(): void {}
 
-  public fit(): void {
-    const dims = this.proposeDimensions();
+  public fit(rect: object | undefined): void {
+    const dims = this.proposeDimensions(rect);
     if (!dims || !this._terminal || isNaN(dims.cols) || isNaN(dims.rows)) {
       return;
     }
@@ -48,7 +48,7 @@ export class FitAddon implements ITerminalAddon , IFitApi {
     }
   }
 
-  public proposeDimensions(): ITerminalDimensions | undefined {
+  public proposeDimensions(rect: object | undefined): ITerminalDimensions | undefined {
     if (!this._terminal) {
       return undefined;
     }
@@ -70,8 +70,8 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       : (this._terminal.options.overviewRuler?.width || ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
     const parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
-    const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-    const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
+    const parentElementHeight = (rect && rect.height) ? rect.height : parseInt(parentElementStyle.getPropertyValue('height'));
+    const parentElementWidth = (rect && rect.width) ? rect.width : Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
     const elementStyle = window.getComputedStyle(this._terminal.element);
     const elementPadding = {
       top: parseInt(elementStyle.getPropertyValue('padding-top')),
