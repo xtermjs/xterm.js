@@ -18,7 +18,7 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
     // Calculate the multiplier based on font size
     lineHeightMultiplier = pxValue / options.fontSize;
   }
-  
+
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
