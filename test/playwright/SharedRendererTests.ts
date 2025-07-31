@@ -1280,10 +1280,10 @@ enum CellColorPosition {
  * treatment.
  */
 export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext, setupCb: () => Promise<void> | void): void {
-  test.describe('standalone tests', () => {
+  const setupTests = ({ shadowDom }: { shadowDom: boolean }): void => {
     test.beforeEach(async () => {
       // Recreate terminal
-      await openTerminal(ctx.value);
+      await openTerminal(ctx.value, {}, { useShadowDom: shadowDom });
       await ctx.value.page.evaluate(`
         window.term.options.minimumContrastRatio = 1;
         window.term.options.allowTransparency = false;
@@ -1308,6 +1308,13 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
         await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       });
     });
+  };
+
+  test.describe('standalone tests', () => {
+    setupTests({ shadowDom: false });
+  });
+  test.describe('standalone tests (Shadow dom)', () => {
+    setupTests({ shadowDom: true });
   });
 }
 
