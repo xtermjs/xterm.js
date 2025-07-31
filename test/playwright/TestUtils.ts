@@ -412,7 +412,14 @@ class TerminalCoreProxy {
   }
 }
 
-export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}, { useShadowDom = false, loadUnicodeGraphemesAddon = true }: { loadUnicodeGraphemesAddon?: boolean, useShadowDom?: boolean } = { }): Promise<void> {
+export async function openTerminal(
+  ctx: ITestContext,
+  options: ITerminalOptions | ITerminalInitOnlyOptions = {},
+  testOptions: { useShadowDom?: boolean, loadUnicodeGraphemesAddon?: boolean } = {}
+): Promise<void> {
+  testOptions.useShadowDom ??= false;
+  testOptions.loadUnicodeGraphemesAddon ??= true;
+
   await ctx.page.evaluate(`
   if ('term' in window) {
     try {
@@ -435,7 +442,7 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
 `;
 
 
-  if (useShadowDom) {
+  if (testOptions.useShadowDom) {
     script += `
     const shadowRoot = element.attachShadow({ mode: "open" });
 
@@ -464,7 +471,7 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
 
   // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
   // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
-  if (loadUnicodeGraphemesAddon) {
+  if (testOptions.loadUnicodeGraphemesAddon) {
     await ctx.page.evaluate(`
       window.unicode = new UnicodeGraphemesAddon();
       window.term.loadAddon(window.unicode);
