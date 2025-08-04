@@ -258,6 +258,13 @@ declare module '@xterm/xterm' {
     scrollback?: number;
 
     /**
+     * If enabled the Erase in Display All (ED2) escape sequence will push
+     * erased text to scrollback, instead of clearing only the viewport portion.
+     * This emulates PuTTY's default clear screen behavior.
+     */
+    scrollOnEraseInDisplay?: boolean;
+
+    /**
      * Whether to scroll to the bottom whenever there is some user input. The
      * default is true.
      */
@@ -1258,21 +1265,31 @@ declare module '@xterm/xterm' {
 
     /**
      * Write data to the terminal.
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     write(data: string | Uint8Array, callback?: () => void): void;
 
     /**
      * Writes data to the terminal, followed by a break line character (\n).
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     writeln(data: string | Uint8Array, callback?: () => void): void;
 

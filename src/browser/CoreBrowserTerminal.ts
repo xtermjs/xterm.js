@@ -532,7 +532,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea!.focus();
       this.textarea!.select();
     }));
-    this._register(this._onScroll.event(() => this._selectionService!.refresh()));
+    this._register(Event.any(
+      this._onScroll.event,
+      this._inputHandler.onScroll
+    )(() => {
+      this._selectionService!.refresh();
+      this._viewport?.queueSync();
+    }));
 
     this._register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
     this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
