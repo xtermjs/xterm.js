@@ -1101,6 +1101,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const content = this.moveToColumn(index);
     cursor.content = content;
     cursor.setFg(this._cachedFg());
+    cursor.content = content;
+    cursor.setFg(this._cachedFg());
     cursor.setBg(this._cachedBg());
     const styleFlagsIndex = this._cachedStyleFlagsIndex();
     const word = styleFlagsIndex < 0 ? 0 : this.data()[styleFlagsIndex];
@@ -1645,6 +1647,20 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   override _cachedFg(): number { return this._cache3; }
 
   protected _cachedColumnInRow(): RowColumn { return (this.logicalLine()._cache1 & 0xFFFF); }
+
+  /** create a new clone */
+  public clone(): IBufferLine {
+    const newLine = new LogicalBufferLine(0);
+    newLine._data = new Uint32Array(this._data);
+    newLine._dataLength = this._dataLength;
+    newLine.length = this.length;
+    for (const el in this._extendedAttrs) {
+      newLine._extendedAttrs[el] = this._extendedAttrs[el];
+    }
+    newLine._isWrapped = this.isWrapped;
+    return newLine;
+  }
+
 
   // count can be negative
   addEmptyDataElements(position: number, count: number): void {
