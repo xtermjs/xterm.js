@@ -173,71 +173,72 @@ describe('BufferLine', function(): void {
   });
   it('insertCells', function(): void {
     const line = BufferLine.make(3);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.insertCells(1, 3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
+    line.setCell(0, CellData.fromChar('a', 1, 1));
+    line.setCell(1, CellData.fromChar('b', 1, 2));
+    line.setCell(2, CellData.fromChar('c', 1, 3));
+    line.insertCells(1, 3, CellData.fromChar('d', 1, 4));
     assert.deepEqual(lineToArray(line), [
-      [1, 'a', 0, 'a'.charCodeAt(0)],
-      [4, 'd', 0, 'd'.charCodeAt(0)],
-      [4, 'd', 0, 'd'.charCodeAt(0)]
+      [1, 'a', 1, 'a'.charCodeAt(0)],
+      [4, 'd', 1, 'd'.charCodeAt(0)],
+      [4, 'd', 1, 'd'.charCodeAt(0)]
     ]);
+    (line as any).xyz = 0;
   });
   it('deleteCells', function(): void {
     const line = BufferLine.make(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    line.deleteCells(1, 2, CellData.fromCharData([6, 'f', 0, 'f'.charCodeAt(0)]));
+    line.setCell(0, CellData.fromChar('a', 1, 1));
+    line.setCell(1, CellData.fromChar('b', 1, 2));
+    line.setCell(2, CellData.fromChar('c', 1, 3));
+    line.setCell(3, CellData.fromChar('d', 1, 4));
+    line.setCell(4, CellData.fromChar('e', 1, 5));
+    line.deleteCells(1, 2, CellData.fromChar('f', 1, 6));
     assert.deepEqual(lineToArray(line), [
-      [1, 'a', 0, 'a'.charCodeAt(0)],
-      [4, 'd', 0, 'd'.charCodeAt(0)],
-      [5, 'e', 0, 'e'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)]
+      [1, 'a', 1, 'a'.charCodeAt(0)],
+      [4, 'd', 1, 'd'.charCodeAt(0)],
+      [5, 'e', 1, 'e'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)]
     ]);
   });
   it('replaceCells', function(): void {
     const line = BufferLine.make(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    line.replaceCells(2, 4, CellData.fromCharData([6, 'f', 0, 'f'.charCodeAt(0)]));
+    line.setCell(0, CellData.fromChar('a', 1, 1));
+    line.setCell(1, CellData.fromChar('b', 1, 2));
+    line.setCell(2, CellData.fromChar('c', 1, 3));
+    line.setCell(3, CellData.fromChar('d', 1, 4));
+    line.setCell(4, CellData.fromChar('e', 1, 5));
+    line.replaceCells(2, 4, CellData.fromChar('f', 1, 6));
     assert.deepEqual(lineToArray(line), [
-      [1, 'a', 0, 'a'.charCodeAt(0)],
-      [2, 'b', 0, 'b'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)],
-      [5, 'e', 0, 'e'.charCodeAt(0)]
+      [1, 'a', 1, 'a'.charCodeAt(0)],
+      [2, 'b', 1, 'b'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)],
+      [5, 'e', 1, 'e'.charCodeAt(0)]
     ]);
   });
   it('fill', function(): void {
     const line = BufferLine.make(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    line.fill(CellData.fromCharData([123, 'z', 0, 'z'.charCodeAt(0)]));
+    line.setCell(0, CellData.fromChar('a', 1, 1));
+    line.setCell(1, CellData.fromChar('b', 1, 2));
+    line.setCell(2, CellData.fromChar('c', 1, 3));
+    line.setCell(3, CellData.fromChar('d', 1, 4));
+    line.setCell(4, CellData.fromChar('e', 1, 5));
+    line.fill(CellData.fromChar('z', 1, 123));
     assert.deepEqual(lineToArray(line), [
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)]
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)]
     ]);
   });
   it('clone', function(): void {
     const line = BufferLine.make(5, undefined, true);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
+    line.setCell(0, CellData.fromChar('a', 1, 1));
+    line.setCell(1, CellData.fromChar('b', 1, 2));
+    line.setCell(2, CellData.fromChar('c', 1, 3));
+    line.setCell(3, CellData.fromChar('d', 1, 4));
+    line.setCell(4, CellData.fromChar('e', 1, 5));
     const line2 = line.clone();
     assert.deepEqual(lineToArray(line2), lineToArray(line));
     assert.equal(line2.length, line.length);
@@ -245,12 +246,12 @@ describe('BufferLine', function(): void {
   });
   it('copyFrom', function(): void {
     const line = BufferLine.make(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    const line2 = BufferLine.make(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), true);
+    line.setCell(0, CellData.fromChar('a', 1, 1));
+    line.setCell(1, CellData.fromChar('b', 1, 2));
+    line.setCell(2, CellData.fromChar('c', 1, 3));
+    line.setCell(3, CellData.fromChar('d', 1, 4));
+    line.setCell(4, CellData.fromChar('e', 1, 5));
+    const line2 = BufferLine.make(5, CellData.fromChar('a', 1, 1), true);
     line2.copyFrom(line);
     assert.deepEqual(lineToArray(line2), lineToArray(line));
     assert.equal(line2.length, line.length);
