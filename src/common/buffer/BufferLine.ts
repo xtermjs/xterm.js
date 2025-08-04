@@ -812,7 +812,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
         case DataKind.CHAR_W2: code = 'C2'; nextColumn += 2; break;
       }
 
-      if (startColumn < nextColumn) {
+      if (startColumn <= nextColumn) {
         if (s) {
           s += ', ';
         }
@@ -940,12 +940,34 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     } else {
       n = width - pos;
     }
-    this.preInsert(this.logicalStartColumn() + pos, fillCellData);
-    const idata = this._cachedDataIndex();
-    this.addEmptyDataElements(idata, 1);
-    // Ideally should optimize for adjacent SKIP_COLUMNS (as in eraseCells).
-    // However, typically is followed by replacing the new empty cells.
-    this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
+    this.insertCellsOnly(pos, n, fillCellData);
+  }
+
+  private insertCellsOnly(pos: RowColumn, n: number, fillCellData: ICellData): void {
+    if (!(fillCellData.content & Content.IS_COMBINED_MASK)
+      && fillCellData.getWidth() === 1) {
+      // Optimization
+      this.preInsert(this.logicalStartColumn() + pos, fillCellData);
+      const idata = this._cachedDataIndex();
+      const code = fillCellData.getCode();
+      if (code === NULL_CELL_CODE) {
+        this.addEmptyDataElements(idata, 1);
+        this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
+      } else {
+        this.addEmptyDataElements(idata, n);
+        for (let i = 0; i < n; ++i) {
+          this.data()[idata+i] = BufferLine.wSet1(DataKind.CHAR_W1, code);
+        }
+      }
+    } else {
+      this.moveToColumn(this.logicalStartColumn() + pos);
+      const idata = this._cachedDataIndex();
+      this.addEmptyDataElements(idata, 1);
+      this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
+      for (let i = 0; i < n; ++i) {
+        this.setCell(pos + i, fillCellData);
+      }
+    }
   }
 
   /** Move to column 'index', which is a RowColumn.
@@ -969,12 +991,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
    * @param index The goal, as a LineColumn.
    * @param splitIfNeeded. If splitIfNeeded > 0 and the goal is in the middle
    *   of a double-wide character, replace letter by two SKIP-COLUMNS entries.
-   *   If splitIfNeeded == 2 and goal is in middle of SKIP_COLUMNS or
+   *   If splitIfNeeded >= 2 and goal is in middle of SKIP_COLUMNS or
    *   after end of the row, split or add a SKIP_COLUMNS entry.
+   *   If splitIfNeeded >= 3, stop early, before style words.
    * @param endColumn Don't move past this LineColumn.
    *    Used mainly to limit movement to the current row.
    */
   public moveToLineColumn(index: LineColumn, splitIfNeeded: number = 0, endColumn = Infinity): number {
+    const stopEarly = splitIfNeeded >= 3;
     let curColumn = this._cachedColumn();
     if (index < curColumn) {
       // FIXME can sometimes do better
@@ -989,7 +1013,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let word;
     let kind;
     let content = 0;
-    while (todo >= 0) {
+    while (stopEarly ? todo > 0 : todo >= 0) {
       if (idata >= this.dataLength() || curColumn >= endColumn) {
         word = NULL_DATA_WORD;
         kind = DataKind.SKIP_COLUMNS;
@@ -1098,13 +1122,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     const idata = this._cachedDataIndex();
     const curColumn = this._cachedColumn();
     this.logicalLine().deleteCellsOnly(idata, n);
+    this.insertCellsOnly(this.length - n, n, fillCellData); // FIXME logical
   }
 
   /** Insert attributes as necesssary into data array.
    * Cached position will be adjusted to at index but with specified attributes.
    */
   protected preInsert(index: LineColumn, attrs: IAttributeData, extendToEnd: boolean = false): boolean {
-    this.moveToLineColumn(index, 2);
+    this.moveToLineColumn(index, 3);
     let idata = this._cachedDataIndex();
     // set attributes
     const newFg = attrs.getFg();
@@ -1113,7 +1138,7 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let oldFg = this._cachedFg();
     let oldBg = this._cachedBg();
     const styleFlagsIndex = this._cachedStyleFlagsIndex();
-    const oldStyle = styleFlagsIndex < 0 ? 0 : (this.data()[styleFlagsIndex] & 0xfffffff);
+    let oldStyle = styleFlagsIndex < 0 ? 0 : (this.data()[styleFlagsIndex] & 0xfffffff);
     let data = this.data();
     const extendedAttrs = this.logicalLine()._extendedAttrs;
     const idata0 = idata;
@@ -1129,12 +1154,13 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
             done = false;
           }
           break;
-          case DataKind.FG:
-            if ((word & 0x3ffffff) === newFg) {
-              oldFg = newFg;
-              done = false;
-            }
-            break;
+        case DataKind.FG:
+          if ((word & 0x3ffffff) === newFg) {
+            oldFg = newFg;
+            done = false;
+          }
+          break;
+          // FIXME StyleFlags
       }
       if (done) {
         break;
@@ -1147,8 +1173,8 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
     let needStyle = newStyle !== oldStyle || oldExt !== newExt;
     const add1 = extendToEnd ? 1 : 2;
     let add = (needBg?add1:0) + (needFg?add1:0) + (needStyle?add1:0);
-    if (add ) {
-      add =(needBg?add1:0) + (needFg?add1:0) + (needStyle?add1:0);
+    if (add) {
+      add = (needBg?add1:0) + (needFg?add1:0) + (needStyle?add1:0);
       this.addEmptyDataElements(idata, add - (idata0 - idata));
       data = this.data();
       if (needFg) {
@@ -1265,12 +1291,12 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   public eraseCells(start: RowColumn, end: RowColumn, attrs: IAttributeData): void {
     const startColumn = this.logicalStartColumn();
-    if (end === Infinity && this.nextRowSameLine) { end = this.length; }
+    end = Math.min(end, this.length);
     const count = end - start;
     start += startColumn;
     end += startColumn;
+    this.moveToLineColumn(start, 2);
     let idata = this._cachedDataIndex();
-    //const colOffset = start - this._cachedColumn();
     const lline = this.logicalLine();
     lline.deleteCellsOnly(idata, count);
     this.preInsert(start, attrs, end === Infinity);
@@ -1386,19 +1412,30 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   // DEPRECATED
   public addCodepointToCell(index: number, codePoint: number, width: number): void {
-    const content = this.moveToColumn(index);
-    const idata = this._cachedDataIndex();
-    const clEnd = this.clusterEnd(idata);
-    this.addEmptyDataElements(clEnd, 1);
-    const nContinued = clEnd - idata;
-    const data = this.data();
-    const startWord = data[idata];
-    const startChar = startWord & 0x1FFFFF;
-    width = width || (BufferLine.wKind(startWord) === DataKind.CLUSTER_START_W2 ? 2 : 1);
-    const kind = width === 2 ? DataKind.CLUSTER_START_W2 : DataKind.CLUSTER_START_W1;
-    data[idata] = BufferLine.wSet1(kind,
-      startChar + (nContinued << 21));
-    data[clEnd] = BufferLine.wSet1(DataKind.CLUSTER_CONTINUED, codePoint);
+    const cell = this.loadCell(index, new CellData());
+    let content = cell.content;
+    if (cell.content & Content.IS_COMBINED_MASK) {
+      cell.combinedData += stringFromCodePoint(codePoint);
+    } else {
+      if (content & Content.CODEPOINT_MASK) {
+        // normal case for combining chars:
+        //  - move current leading char + new one into combined string
+        //  - set combined flag
+        cell.combinedData = stringFromCodePoint(content & Content.CODEPOINT_MASK) + stringFromCodePoint(codePoint);
+        content &= ~Content.CODEPOINT_MASK; // set codepoint in buffer to 0
+        content |= Content.IS_COMBINED_MASK;
+      } else {
+        // should not happen - we actually have no data in the cell yet
+        // simply set the data in the cell buffer with a width of 1
+        content = codePoint | (1 << Content.WIDTH_SHIFT);
+      }
+    }
+    if (width) {
+      content &= ~Content.WIDTH_MASK;
+      content |= width << Content.WIDTH_SHIFT;
+    }
+    cell.content = content;
+    this.setCell(index, cell);
   }
 
   /**
@@ -1475,12 +1512,13 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
   public getTrimmedLength(countBackground: boolean = false, logical: boolean = false): number {
     let cols = 0;
     let skipped = 0;
-    const startColumn = logical ? 0 : this.logicalStartColumn(); // FIXME startIndex
+    const startIndex = !logical && this instanceof WrappedBufferLine
+    ? this.startIndex : 0;
     const data = this.data();
     const end = this.nextRowSameLine && ! logical ? this.nextRowSameLine.startIndex : this.dataLength();
     let bg = this._cachedBg();
     let bgCol = 0;
-    for (let idata = startColumn; idata < end; idata++) {
+    for (let idata = startIndex; idata < end; idata++) {
       const word = data[idata];
       const kind = BufferLine.wKind(word);
       const w = kind === DataKind.CHAR_W2 || kind === DataKind.CLUSTER_START_W2 ? 2 : 1;
@@ -1495,12 +1533,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
           break;
         case DataKind.SKIP_COLUMNS:
           skipped += BufferLine.wSkipCount(word);
+          if (idata === startIndex && this instanceof WrappedBufferLine) {
+             skipped -= this.startColumn = this.startIndexColumn;
+          }
           break;
         case DataKind.CLUSTER_START_W1:
         case DataKind.CLUSTER_START_W2:
-          const ncontinued = BufferLine.wContinuedCount(word);
-          wcols = w * (ncontinued + 1);
-          idata += ncontinued;
+          idata += BufferLine.wContinuedCount(word);
+          wcols = w;
           break;
         case DataKind.CHAR_W1:
         case DataKind.CHAR_W2:
@@ -1543,10 +1583,14 @@ export abstract class NewBufferLine extends BufferLine implements IBufferLine {
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = -1, outColumns?: number[], skipReplace: string = WHITESPACE_CELL_CHAR): string {
     const lineStart = this.logicalStartColumn();
-    const logicalEndColumn = endCol >= 0 ? lineStart + endCol
+    let logicalEndColumn = endCol >= 0 ? lineStart + endCol
       : this.nextRowSameLine ? this.nextRowSameLine.logicalStartColumn()
       : lineStart + this.length;
-    let s = this.logicalLine().translateLogicalToString(trimRight, lineStart + startCol, logicalEndColumn, outColumns, skipReplace);
+    if (trimRight) {
+      logicalEndColumn = Math.min(logicalEndColumn, lineStart + this.getTrimmedLength());
+    }
+
+  let s = this.logicalLine().translateLogicalToString(false, lineStart + startCol, logicalEndColumn, outColumns, skipReplace);
     if (!trimRight && endCol < 0) { s += ' '.repeat(this.length - logicalEndColumn + lineStart)}
     if (outColumns && lineStart !== 0) {
       for (let i = outColumns.length; --i >= 0; ) {
@@ -1669,7 +1713,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     let extended = undefined; // cursor.getStyleFlags(); // FIXME handle extendedattrs
 
     // Move start backwards before style entries.
-      // The goal is to remove no-longer needed style entries.
+    // The goal is to remove no-longer needed style entries.
     while (idata > 0) {
       let skipItem = true;
       const word = data[idata-1];
@@ -1812,8 +1856,9 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
       if (pendingSkips > 0) {
         s += skipReplace.repeat(pendingSkips);
         if (outColumns) {
+          const col0 = col - pendingSkips;
           for (let i = 0; i < pendingSkips; ++i) {
-            outColumns.push(col + i * skipReplaceLength);
+            outColumns.push(col0 + i * skipReplaceLength);
           }
         }
         pendingSkips = 0;
@@ -1865,11 +1910,15 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     if (col < startCol) { col = startCol; }
     if (! trimRight && col < endCol && endCol !== Infinity) {
       pendingSkips += endCol - col;
+      col = endCol;
+    }
+    if (! trimRight) {
+      //col += pendingSkips;
+      emitPendingSkips();
     }
     if (outColumns) {
       outColumns.push(col);
     }
-    if (! trimRight) { emitPendingSkips(); }
     return s;
   }
 
@@ -1881,6 +1930,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
 
 export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
   _logicalLine: LogicalBufferLine;
+
   /** Number of logical columns in previous rows.
    * Also: logical column number (column number assuming infinitely-wide
    * terminal) corresponding to the start of this row.
@@ -1890,17 +1940,24 @@ export class WrappedBufferLine extends NewBufferLine implements IBufferLine {
    * different when a wide character at column W-1 must wrap "early".
    */
   startColumn: LineColumn = 0;
-  // DEPRECATE FIXME startIndex doesn't work in the case of when soft line-break is inside a SKIP_COLUMNS.
-  // startIndex, startFg, startBg, startStyle are primaraily used by _cacheReset
-  // to optimize moveToColumn on same row.  It might be best to get rid of them;
-  // to mitigate the performance cost we could support backwards movement by moveToColumn.
-  // Changing Data>FG etc to use xor-encoding would help. TODO.
-  /** Index in data array containing first column. */
+
+  /** Index in data array containing first column.
+   * If _data[startIndex] is a SKIP_COLUMNS, some columns might be the
+   * end of the previous row, and some might be the current row.
+   * In that case, startColumn-startIndexColumn is the number of columns
+   * in the previous row.
+   */
   startIndex: number = 0;
+
   /** Column number corresponding to startIndex.
    * Usually the same as startColumn, but may be less if startIndex refers to a SKIP_COLUMNS.
    */
   startIndexColumn: number = 0;
+
+  // startIndex, startFg, startBg, startStyle are  used by _cacheReset
+  // to optimize moveToColumn on same row.  It might be best to get rid of them;
+  // to mitigate the performance cost we could support backwards movement by moveToColumn.
+  // Changing Data>FG etc to use xor-encoding would help. TODO.
   startFg: number = 0;
   startBg: number = 0;
   startStyle: number = -1;

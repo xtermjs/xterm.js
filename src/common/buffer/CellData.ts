@@ -25,7 +25,9 @@ export class CellData extends AttributeData implements ICellData {
     return obj;
   }
 
-  /** Primitives from terminal buffer. */
+  /** Primitives from terminal buffer.
+   * @deprecated
+  */
   public content = 0;
   public fg = 0;
   public bg = 0;

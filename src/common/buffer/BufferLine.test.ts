@@ -477,7 +477,7 @@ describe('BufferLine', function(): void {
     });
     it('should add char to combining string in cell', () => {
       const line = BufferLine.make(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      const cell = line .loadCell(0, new CellData());
+      const cell = line.loadCell(0, new CellData());
       cell.setFromCharData([123, 'e\u0301', 1, 'e\u0301'.charCodeAt(1)]);
       line.setCell(0, cell);
       line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);

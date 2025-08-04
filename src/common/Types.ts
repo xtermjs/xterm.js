@@ -215,7 +215,7 @@ export interface IAttributeData {
 /** Cell data */
 export interface ICellData extends IAttributeData {
   content: number;
-  combinedData: string; // FIXME only if using OldBufferLine
+  combinedData: string;
   isCombined(): number;
   getWidth(): number;
   getChars(): string;

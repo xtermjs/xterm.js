@@ -190,7 +190,7 @@ describe('SelectionService', () => {
       selectionService.selectWordAt([15, 0]);
       assert.equal(selectionService.selectionText, 'ij"');
     });
-    it('should expand upwards or downards for wrapped lines', () => {
+    it('should expand upwards or downwards for wrapped lines', () => {
       buffer.lines.set(0, stringToRow('                 foo'));
       buffer.lines.set(1, stringToRow('bar                 '));
       buffer.setWrapped(1, true);
