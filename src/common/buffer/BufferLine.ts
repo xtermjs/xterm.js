@@ -1621,18 +1621,18 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   _cache3: number = 0;
   _cache4: number = -1;
 
-  constructor(cols: number, fillCellData?: IAttributeData, src?: WrappedBufferLine, startIndex?: number) {
+  constructor(cols: number, fillCellData?: IAttributeData, src?: WrappedBufferLine, startIndex: number = 0, data: Uint32Array = new Uint32Array(cols)) {
     super();
     // MAYBE: const buffer = new ArrayBuffer(0, { maxByteLength: 6 * cols });
     // const buffer = new ArrayBuffer(4 * cols, { maxByteLength: 6 * cols });
     if (src) {
       const lline = src.logicalLine();
-      const oldStart = startIndex || 0;
+      const oldStart = startIndex;
       this._data = lline._data.slice(oldStart);
       this._dataLength = lline._dataLength - oldStart;
       this._extendedAttrs = lline._extendedAttrs.slice(oldStart);
     } else {
-      this._data = new Uint32Array(cols);
+      this._data = data;
       this._dataLength = 0;
     }
     this.length = cols;
@@ -1648,6 +1648,23 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
 
   protected _cachedColumnInRow(): RowColumn { return (this.logicalLine()._cache1 & 0xFFFF); }
 
+  /** Creates a new LogicalBufferLine but reuses old _data buffer.
+   * The oldLine_data buffer is resized to _dataLength,
+   * while the old _data buffer is reused for the new line.
+   */
+  public static makeAndTrim(cols: number, fillCellData?: IAttributeData, oldLine?: LogicalBufferLine): LogicalBufferLine {
+    if (oldLine && oldLine._data.length > oldLine._dataLength) {
+      const oldData = oldLine._data;
+      oldLine._data = oldData.slice(0, oldLine._dataLength);
+      const newLine = new LogicalBufferLine(cols, undefined, undefined, 0, oldData);
+      newLine._data = oldData;
+      if (fillCellData) { newLine.preInsert(0, fillCellData); }
+      return newLine;
+    } else {
+      return new LogicalBufferLine(cols, fillCellData);
+    }
+  }
+
   /** create a new clone */
   public clone(): IBufferLine {
     const newLine = new LogicalBufferLine(0);
@@ -1660,7 +1677,6 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
     newLine._isWrapped = this.isWrapped;
     return newLine;
   }
-
 
   // count can be negative
   addEmptyDataElements(position: number, count: number): void {
@@ -1690,7 +1706,7 @@ export class LogicalBufferLine extends NewBufferLine implements IBufferLine {
   resizeData(size: number): void {
     if (size > this.data().length) {
       // buffer = new ArrayBuffer(buffer.byteLength, { maxByteLength: 6 * size });
-      const dataNew = new Uint32Array((3 * size) >> 1);
+      const dataNew = new Uint32Array((3 * size) >> 1); // FIXME
       dataNew.set(this._data);
       this.logicalLine()._data = dataNew;
     }

@@ -70,7 +70,13 @@ export class BufferService extends Disposable implements IBufferService {
         const oldLine = buffer.lines.get(buffer.ybase + buffer.y) as NewBufferLine;
         newLine = new WrappedBufferLine(oldLine);
       } else {
-        newLine = new LogicalBufferLine(this.cols, eraseAttr);
+        const bottom = buffer.lines.get(bottomRow);
+        if (bottom instanceof NewBufferLine) {
+          // trim bottoms _data buffer, and reuse for newLine.
+          newLine = LogicalBufferLine.makeAndTrim(this.cols, eraseAttr, bottom.logicalLine());
+        } else {
+          newLine = new LogicalBufferLine(this.cols, eraseAttr);
+        }
       }
     } else {
       newLine = this._cachedBlankLine;
