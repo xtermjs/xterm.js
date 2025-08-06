@@ -231,7 +231,6 @@ export interface IBufferLine {
   length: number;
   /** If the previous line wrapped (overflows) into the current line. */
   readonly isWrapped: boolean;
-  _isWrapped: boolean; // should only be used OldBufferLine
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
@@ -244,9 +243,9 @@ export interface IBufferLine {
   resize(cols: number, fill: ICellData): boolean;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
-  // @deprecated - only if !usingNewBufferLine()
+  // @deprecated
   copyFrom(line: IBufferLine): void;
-  // @deprecated - only if !usingNewBufferLine()
+  // @deprecated
   clone(): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;

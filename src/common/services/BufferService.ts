@@ -6,7 +6,7 @@
 import { Disposable } from 'vs/base/common/lifecycle';
 import { IAttributeData, IBufferLine } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { usingNewBufferLine, NewBufferLine, LogicalBufferLine, WrappedBufferLine } from 'common/buffer/BufferLine';
+import { LogicalBufferLine, WrappedBufferLine } from 'common/buffer/BufferLine';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
@@ -65,30 +65,12 @@ export class BufferService extends Disposable implements IBufferService {
     const bottomRow = buffer.ybase + buffer.scrollBottom;
 
     let newLine: IBufferLine | undefined;
-    if (usingNewBufferLine()) {
-      if (isWrapped) {
-        const oldLine = buffer.lines.get(buffer.ybase + buffer.y) as NewBufferLine;
-        newLine = new WrappedBufferLine(oldLine);
-      } else {
-        const bottom = buffer.lines.get(bottomRow);
-        if (bottom instanceof NewBufferLine) {
-          // trim bottoms _data buffer, and reuse for newLine.
-          newLine = LogicalBufferLine.makeAndTrim(this.cols, eraseAttr, bottom.logicalLine());
-        } else {
-          newLine = new LogicalBufferLine(this.cols, eraseAttr);
-        }
-      }
+    if (isWrapped) {
+      const oldLine = buffer.lines.get(buffer.ybase + buffer.y) as BufferLine;
+      newLine = new WrappedBufferLine(oldLine);
     } else {
-      newLine = this._cachedBlankLine;
-      if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg || newLine instanceof NewBufferLine) {
-        newLine = buffer.getBlankLine(eraseAttr, isWrapped);
-        this._cachedBlankLine = newLine;
-      }
-      newLine._isWrapped = isWrapped;
-      if (buffer.scrollTop !== 0 || bottomRow !== buffer.lines.length - 1
-        || ! buffer.lines.isFull) {
-        newLine = newLine.clone();
-      }
+      const bottom = buffer.lines.get(bottomRow);
+      newLine = LogicalBufferLine.makeAndTrim(this.cols, eraseAttr, bottom);
     }
 
     if (buffer.scrollTop === 0) {
@@ -99,11 +81,9 @@ export class BufferService extends Disposable implements IBufferService {
       if (bottomRow === buffer.lines.length - 1) {
         if (! willBufferBeTrimmed) {
           buffer.lines.push(newLine);
-        } else if (usingNewBufferLine()) {
+        } else {
           buffer.lines.recycle(); // ignore result
           buffer.lines.set(bottomRow, newLine);
-        } else {
-          buffer.lines.recycle().copyFrom(newLine);
         }
       } else {
         buffer.lines.splice(bottomRow + 1, 0, newLine);

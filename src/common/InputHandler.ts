@@ -10,7 +10,7 @@ import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { usingNewBufferLine, BufferLine, OldBufferLine, NewBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
@@ -510,25 +510,17 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public print(data: Uint32Array, start: number, end: number): void {
     const curAttr = this._curAttrData;
-    const bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
-    if (bufferRow instanceof NewBufferLine) {
-      this._printNew(data, start, end, bufferRow, curAttr);
-    } else {
-      this._printOld(data, start, end, bufferRow, curAttr);
-    }
-  }
-
-  private _printNew(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
+    let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const cols = this._bufferService.cols;
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     // if (charset) replace character; FIXME ok to do it in-place?
-    let col = (bufferRow as NewBufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, this._coreService);
+    let col = (bufferRow as BufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, this._coreService);
     while (col > cols) {
       // autowrap - DECAWM
       // automatically wraps to the beginning of the next line
       if (wraparoundMode) {
-        const oldRow = bufferRow as NewBufferLine;
+        const oldRow = bufferRow as BufferLine;
         // this._activeBuffer.x = oldWidth;
         const buffer = this._activeBuffer
         if (buffer.y === this._activeBuffer.scrollBottom) {
@@ -546,7 +538,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
         bufferRow = this._activeBuffer.lines.get(buffer.ybase + buffer.y)!;
         // usually same as cols, but may be less in case of wide characters.
-        const prevCols = (bufferRow as NewBufferLine).logicalStartColumn() - oldRow.logicalStartColumn();
+        const prevCols = (bufferRow as BufferLine).logicalStartColumn() - oldRow.logicalStartColumn();
         col = col - prevCols;
         // row changed, get it again
         /*
@@ -568,146 +560,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
     this._activeBuffer.x = col;
-  }
-
-  private _printOld(data: Uint32Array, start: number, end: number, bufferRow: IBufferLine, curAttr: IAttributeData): void {
-    let code: number;
-    let chWidth: number;
-    const charset = this._charsetService.charset;
-    const screenReaderMode = this._optionsService.rawOptions.screenReaderMode;
-    const cols = this._bufferService.cols;
-    const wraparoundMode = this._coreService.decPrivateModes.wraparound;
-    const insertMode = this._coreService.modes.insertMode;
-
-    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
-
-    // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
-    if (this._activeBuffer.x && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x - 1) === 2) {
-      bufferRow.setCellFromCodepoint(this._activeBuffer.x - 1, 0, 1, curAttr);
-    }
-
-    let precedingJoinState = this._parser.precedingJoinState;
-    for (let pos = start; pos < end; ++pos) {
-      code = data[pos];
-
-      // get charset replacement character
-      // charset is only defined for ASCII, therefore we only
-      // search for an replacement char if code < 127
-      if (code < 127 && charset) {
-        const ch = charset[String.fromCharCode(code)];
-        if (ch) {
-          code = ch.charCodeAt(0);
-        }
-      }
-
-      const currentInfo = this.unicodeService.charProperties(code, precedingJoinState);
-      chWidth = UnicodeService.extractWidth(currentInfo);
-      const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
-      const oldWidth = shouldJoin ? UnicodeService.extractWidth(precedingJoinState) : 0;
-      precedingJoinState = currentInfo;
-
-      if (screenReaderMode) {
-        this._onA11yChar.fire(stringFromCodePoint(code));
-      }
-      if (this._getCurrentLinkId()) {
-        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
-      }
-
-      // goto next line if ch would overflow
-      // NOTE: To avoid costly width checks here,
-      // the terminal does not allow a cols < 2.
-      if (this._activeBuffer.x + chWidth - oldWidth > cols) {
-        // autowrap - DECAWM
-        // automatically wraps to the beginning of the next line
-        if (wraparoundMode) {
-          const oldRow = bufferRow;
-          let oldCol = this._activeBuffer.x - oldWidth;
-          this._activeBuffer.x = oldWidth;
-          this._activeBuffer.y++;
-          if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
-            this._activeBuffer.y--;
-            this._bufferService.scroll(this._eraseAttrData(), true);
-          } else {
-            if (this._activeBuffer.y >= this._bufferService.rows) {
-              this._activeBuffer.y = this._bufferService.rows - 1;
-            }
-            // The line already exists (eg. the initial viewport), mark it as a
-            // wrapped line
-            this._activeBuffer.setWrapped(this._activeBuffer.ybase + this._activeBuffer.y, true);
-          }
-          // row changed, get it again
-          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
-          if (oldWidth > 0 && bufferRow instanceof BufferLine) {
-            // Combining character widens 1 column to 2.
-            // Move old character to next line.
-            bufferRow.copyCellsFrom(oldRow as BufferLine,
-              oldCol, 0, oldWidth, false);
-          }
-          // clear left over cells to the right
-          while (oldCol < cols) {
-            oldRow.setCellFromCodepoint(oldCol++, 0, 1, curAttr);
-          }
-        } else {
-          this._activeBuffer.x = cols - 1;
-          if (chWidth === 2) {
-            // FIXME: check for xterm behavior
-            // What to do here? We got a wide char that does not fit into last cell
-            continue;
-          }
-        }
-      }
-
-      // insert combining char at last cursor position
-      // this._activeBuffer.x should never be 0 for a combining char
-      // since they always follow a cell consuming char
-      // therefore we can test for this._activeBuffer.x to avoid overflow left
-      if (shouldJoin && this._activeBuffer.x) {
-        const offset = bufferRow.getWidth(this._activeBuffer.x - 1) ? 1 : 2;
-        // if empty cell after fullwidth, need to go 2 cells back
-        // it is save to step 2 cells back here
-        // since an empty cell is only set by fullwidth chars
-        (bufferRow as OldBufferLine).addCodepointToCell(this._activeBuffer.x - offset,
-          code, chWidth);
-        for (let delta = chWidth - oldWidth; --delta >= 0; ) {
-          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
-        }
-        continue;
-      }
-
-      // insert mode: move characters to right
-      if (insertMode) {
-        // right shift cells according to the width
-        bufferRow.insertCells(this._activeBuffer.x, chWidth - oldWidth, this._activeBuffer.getNullCell(curAttr));
-        // test last cell - since the last cell has only room for
-        // a halfwidth char any fullwidth shifted there is lost
-        // and will be set to empty cell
-        if (bufferRow.getWidth(cols - 1) === 2) {
-          bufferRow.setCellFromCodepoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr);
-        }
-      }
-
-      // write current char to buffer and advance cursor
-      bufferRow.setCellFromCodepoint(this._activeBuffer.x++, code, chWidth, curAttr);
-
-      // fullwidth char - also set next cell to placeholder stub and advance cursor
-      // for graphemes bigger than fullwidth we can simply loop to zero
-      // we already made sure above, that this._activeBuffer.x + chWidth will not overflow right
-      if (chWidth > 0) {
-        while (--chWidth) {
-          // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
-        }
-      }
-    }
-
-    this._parser.precedingJoinState = precedingJoinState;
-
-    // handle wide chars: reset cell to the right if it is second cell of a wide char
-    if (this._activeBuffer.x < cols && end - start > 0 && bufferRow.getWidth(this._activeBuffer.x) === 0 && !bufferRow.hasContent(this._activeBuffer.x)) {
-      bufferRow.setCellFromCodepoint(this._activeBuffer.x, 0, 1, curAttr);
-    }
-
-    this._dirtyRowTracker.markDirty(this._activeBuffer.y);
   }
 
   /**
@@ -1205,12 +1057,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const row = this._activeBuffer.ybase + y;
-    const line = this._activeBuffer.lines.get(row)!;
+    const line = this._activeBuffer.lines.get(row) as BufferLine;
     const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
     if (clearWrap && end === Infinity) {
       this._activeBuffer.setWrapped(row + 1, false);
     }
-    if (! respectProtect && line instanceof NewBufferLine) {
+    if (! respectProtect) {
       line.eraseCells(start, end, fill);
     } else {
       line.replaceCells(start, end, fill, respectProtect);
@@ -1230,18 +1082,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     const line = buffer.lines.get(row);
     if (line) {
       const eraseAttrs = this._eraseAttrData();
-      const wasNewBufferLine = line instanceof NewBufferLine;
-      if (wasNewBufferLine && ! respectProtect) {
+      if (! respectProtect) {
         line.eraseCells(0, this._bufferService.cols, eraseAttrs);
       } else {
         line.fill(this._activeBuffer.getNullCell(eraseAttrs), respectProtect);
       }
       buffer.clearMarkers(row);
       buffer.setWrapped(row, false);
-      if (wasNewBufferLine !== usingNewBufferLine()) {
-        const fill = this._activeBuffer.getNullCell(eraseAttrs);
-        buffer.lines.set(row, BufferLine.make(line.length, fill));
-      }
     }
   }
 
