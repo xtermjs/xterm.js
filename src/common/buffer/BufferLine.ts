@@ -242,11 +242,15 @@ export abstract class BufferLine implements IBufferLine {
       let code: string | number = kind;
       const wnum = word & 0xfffffff;
       let nextColumn = curColumn;
+      let skip = curColumn < startColumn;
       switch (kind) {
         case DataKind.FG: code = 'FG'; break;
         case DataKind.BG: code = 'BG'; break;
         case DataKind.STYLE_FLAGS: code = 'STYLE'; break;
-        case DataKind.SKIP_COLUMNS: code = 'SKIP'; nextColumn += wnum; break;
+        case DataKind.SKIP_COLUMNS: code = 'SKIP';
+          nextColumn += wnum;
+          skip = nextColumn <= startColumn;
+          break;
         case DataKind.CLUSTER_START_W1: code = 'CL1'; nextColumn += 1; break;
         case DataKind.CLUSTER_START_W2: code = 'CL2'; nextColumn += 2; break;
         case DataKind.CLUSTER_CONTINUED: code = 'CL_CONT'; break;
@@ -254,7 +258,7 @@ export abstract class BufferLine implements IBufferLine {
         case DataKind.CHAR_W2: code = 'C2'; nextColumn += 2; break;
       }
 
-      if (startColumn <= nextColumn) {
+      if (! skip) {
         if (s) {
           s += ', ';
         }
@@ -753,6 +757,10 @@ export abstract class BufferLine implements IBufferLine {
         idata--;
         lline._dataLength = idata;
       } else {
+        if (this instanceof WrappedBufferLine && idata === this.startIndex) {
+          this.startIndex--;
+          this.startIndexColumn -= skipped;
+        }
         data[idata-1] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, skipped + count);
       }
     } else {
@@ -971,7 +979,7 @@ export abstract class BufferLine implements IBufferLine {
         case DataKind.SKIP_COLUMNS:
           skipped += BufferLine.wSkipCount(word);
           if (idata === startIndex && this instanceof WrappedBufferLine) {
-             skipped -= this.startColumn = this.startIndexColumn;
+             skipped -= this.startColumn - this.startIndexColumn;
           }
           break;
         case DataKind.CLUSTER_START_W1:

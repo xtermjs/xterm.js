@@ -1083,7 +1083,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (line) {
       const eraseAttrs = this._eraseAttrData();
       if (! respectProtect) {
-        line.eraseCells(0, this._bufferService.cols, eraseAttrs);
+        (line as BufferLine).eraseCells(0, this._bufferService.cols, eraseAttrs);
       } else {
         line.fill(this._activeBuffer.getNullCell(eraseAttrs), respectProtect);
       }
