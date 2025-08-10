@@ -121,8 +121,13 @@ export abstract class BufferLine implements IBufferLine {
   }
 
   static make(cols: number, fillCellData?: ICellData, isWrapped: boolean = false): BufferLine {
-    // if (isWrapped) new WrappedBufferLine(...);
-    return new LogicalBufferLine(cols, fillCellData);
+    const line = new LogicalBufferLine(cols, fillCellData);
+    if (isWrapped) {
+      const wline = new WrappedBufferLine(line);
+      if (fillCellData) { wline.replaceCells(0, cols, fillCellData); }
+      return wline;
+    }
+    return line;
   }
 
   /** From a Uint23 in _data, extract the DataKind bits. */
@@ -942,18 +947,6 @@ export abstract class BufferLine implements IBufferLine {
     this.replaceCells(0, this.length, fillCellData, respectProtect);
   }
 
-  // @deprecated - only used for testing
-  public copyFrom(xline: BufferLine): void {
-    alert('copyFrom');
-  }
-
-  /** create a new clone */
-  public clone(): IBufferLine {
-    alert('BufferLine.clone');
-    const newLine = new LogicalBufferLine(0);
-    return newLine;
-  }
-
   public getTrimmedLength(countBackground: boolean = false, logical: boolean = false): number {
     let cols = 0;
     let skipped = 0;
@@ -1048,22 +1041,23 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
   _cache3: number = 0;
   _cache4: number = -1;
 
-  constructor(cols: number, fillCellData?: IAttributeData, src?: WrappedBufferLine, startIndex: number = 0, data: Uint32Array = new Uint32Array(cols)) {
+  constructor(cols: number, fillCellData?: ICellData, src?: WrappedBufferLine, startIndex: number = 0, data: Uint32Array = new Uint32Array(cols)) {
     super();
     // MAYBE: const buffer = new ArrayBuffer(0, { maxByteLength: 6 * cols });
     // const buffer = new ArrayBuffer(4 * cols, { maxByteLength: 6 * cols });
+    this.length = cols;
     if (src) {
       const lline = src.logicalLine();
       const oldStart = startIndex;
       this._data = lline._data.slice(oldStart);
       this._dataLength = lline._dataLength - oldStart;
       this._extendedAttrs = lline._extendedAttrs.slice(oldStart);
+      if (fillCellData) { this.preInsert(0, fillCellData); }
     } else {
       this._data = data;
       this._dataLength = 0;
+      if (fillCellData) { this.replaceCells(0, this.length, fillCellData, false); }
     }
-    this.length = cols;
-    if (fillCellData) { this.preInsert(0, fillCellData); }
   }
   public override logicalLine(): LogicalBufferLine { return this; }
   public override logicalStartColumn(): LineColumn { return 0; }
@@ -1079,7 +1073,7 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
    * The oldLine_data buffer is resized to _dataLength,
    * while the old _data buffer is reused for the new line.
    */
-  public static makeAndTrim(cols: number, fillCellData?: IAttributeData, oldRow?: IBufferLine): LogicalBufferLine {
+  public static makeAndTrim(cols: number, fillCellData?: ICellData, oldRow?: IBufferLine): LogicalBufferLine {
     if (oldRow) {
       const oldLine = (oldRow as BufferLine).logicalLine();
       if (oldLine._data.length > oldLine._dataLength) {
@@ -1092,18 +1086,6 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
       }
     }
     return new LogicalBufferLine(cols, fillCellData);
-  }
-
-  /** create a new clone */
-  public clone(): IBufferLine {
-    const newLine = new LogicalBufferLine(0);
-    newLine._data = new Uint32Array(this._data);
-    newLine._dataLength = this._dataLength;
-    newLine.length = this.length;
-    for (const el in this._extendedAttrs) {
-      newLine._extendedAttrs[el] = this._extendedAttrs[el];
-    }
-    return newLine;
   }
 
   // count can be negative

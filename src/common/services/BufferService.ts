@@ -6,7 +6,7 @@
 import { Disposable } from 'vs/base/common/lifecycle';
 import { IAttributeData, IBufferLine } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { LogicalBufferLine, WrappedBufferLine } from 'common/buffer/BufferLine';
+import { BufferLine, LogicalBufferLine, WrappedBufferLine } from 'common/buffer/BufferLine';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
@@ -70,7 +70,7 @@ export class BufferService extends Disposable implements IBufferService {
       newLine = new WrappedBufferLine(oldLine);
     } else {
       const bottom = buffer.lines.get(bottomRow);
-      newLine = LogicalBufferLine.makeAndTrim(this.cols, eraseAttr, bottom);
+      newLine = LogicalBufferLine.makeAndTrim(this.cols, buffer.getNullCell(eraseAttr), bottom);
     }
 
     if (buffer.scrollTop === 0) {
