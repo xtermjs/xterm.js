@@ -232,7 +232,7 @@ export abstract class BufferLine implements IBufferLine {
   }
 
   public showRowData(): string {
-    return (this.isWrapped ? '(wrapped)' : '')
+    return (this instanceof WrappedBufferLine ? '(wrapped)' : '')
       + this.showData(this.logicalStartColumn(), this.nextRowSameLine ? this.nextRowSameLine?.logicalStartColumn() : Infinity);
   }
   /* Human-readable display of data() array, for debugging */
@@ -1099,7 +1099,7 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
     }
     this._dataLength += count;
     for (let next = this.nextRowSameLine; next; next = next.nextRowSameLine) {
-      if (next.startIndex > position)
+      if (count < 0 ? next.startIndex >= position - count: next.startIndex > position)
       {next.startIndex += count;}
     }
     if (count < 0) {
