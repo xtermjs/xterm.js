@@ -1057,18 +1057,18 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
     const row = this._activeBuffer.ybase + y;
-    const line = this._activeBuffer.lines.get(row) as BufferLine;
-    const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
+    if (clearWrap && start === 0) {
+      this._activeBuffer.setWrapped(row, false);
+    }
     if (clearWrap && end === Infinity) {
       this._activeBuffer.setWrapped(row + 1, false);
     }
+    const line = this._activeBuffer.lines.get(row) as BufferLine;
+    const fill = this._activeBuffer.getNullCell(this._eraseAttrData());
     if (! respectProtect) {
       line.eraseCells(start, end, fill);
     } else {
       line.replaceCells(start, end, fill, respectProtect);
-    }
-    if (clearWrap && start === 0) {
-      this._activeBuffer.setWrapped(row, false);
     }
   }
 
@@ -1439,9 +1439,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const row = this._activeBuffer.ybase + y;
+      this._activeBuffer.setWrapped(row, false);
       const line = this._activeBuffer.lines.get(row)!;
       line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1463,9 +1463,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const row = this._activeBuffer.ybase + y;
+      this._activeBuffer.setWrapped(row, false);
       const line = this._activeBuffer.lines.get(row)!;
       line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1487,9 +1487,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
       const row = this._activeBuffer.ybase + y;
+      this._activeBuffer.setWrapped(row, false);
       const line = this._activeBuffer.lines.get(row)!;
       line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
