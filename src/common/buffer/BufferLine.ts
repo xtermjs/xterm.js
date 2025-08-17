@@ -182,7 +182,7 @@ export abstract class BufferLine implements IBufferLine {
   public abstract logicalStartColumn(): LineColumn;
   protected abstract data(): Uint32Array;
   abstract resizeData(size: number): void;
-  abstract addEmptyDataElements(position: number, count: number): void;
+  abstract addEmptyDataElements(position: number, count: number, insertBeforeEnd?: boolean): void;
   protected shouldCleanupMemory(): boolean {
     return this.dataLength() * CLEANUP_THRESHOLD < this.data().length;
   }
@@ -402,7 +402,7 @@ export abstract class BufferLine implements IBufferLine {
       const idata = this._cachedDataIndex();
       const code = fillCellData.getCode();
       if (code === NULL_CELL_CODE) {
-        this.addEmptyDataElements(idata, 1);
+        this.addEmptyDataElements(idata, 1, true);
         this.data()[idata] = BufferLine.wSet1(DataKind.SKIP_COLUMNS, n);
       } else {
         this.addEmptyDataElements(idata, n);
@@ -1089,7 +1089,7 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
   }
 
   // count can be negative
-  addEmptyDataElements(position: number, count: number): void {
+  addEmptyDataElements(position: number, count: number, insertBeforeEnd?: boolean) {
     const oldDataLength = this._dataLength;
     this.resizeData(oldDataLength + count);
     if (count < 0) {
@@ -1099,7 +1099,7 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
     }
     this._dataLength += count;
     for (let next = this.nextRowSameLine; next; next = next.nextRowSameLine) {
-      if (count < 0 ? next.startIndex >= position - count: next.startIndex > position)
+      if (count < 0 ? next.startIndex >= position - count: insertBeforeEnd ? next.startIndex >= position : next.startIndex > position)
       {next.startIndex += count;}
     }
     if (count < 0) {
@@ -1429,8 +1429,8 @@ export class WrappedBufferLine extends BufferLine implements IBufferLine {
   public override dataLength(): number { return this._logicalLine.dataLength(); }
   public override _cachedBg(): number { return this._logicalLine._cachedBg(); }
   public override _cachedFg(): number { return this._logicalLine._cachedFg(); }
-  addEmptyDataElements(position: number, count: number): void {
-    this._logicalLine.addEmptyDataElements(position, count);
+  addEmptyDataElements(position: number, count: number, insertBeforeEnd?: boolean): void {
+    this._logicalLine.addEmptyDataElements(position, count, insertBeforeEnd);
   }
   protected _cachedColumnInRow(): RowColumn { return (this.logicalLine()._cache1 & 0xFFFF) - this.startIndexColumn; }
   protected _cacheReset(): void {
