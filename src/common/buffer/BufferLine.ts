@@ -953,10 +953,13 @@ export abstract class BufferLine implements IBufferLine {
     const startIndex = !logical && this instanceof WrappedBufferLine
     ? this.startIndex : 0;
     const data = this.data();
-    const end = this.nextRowSameLine && ! logical ? this.nextRowSameLine.startIndex : this.dataLength();
-    let bg = this._cachedBg();
+    const dlen = this.dataLength();
+    const endColumn = this.nextRowSameLine && ! logical ? this.nextRowSameLine.startColumn : Infinity;
+    const startColumn = !logical && this instanceof WrappedBufferLine ? this.startColumn : 0;
+    let bg = this._cachedBg(); // FIXME ?
     let bgCol = 0;
-    for (let idata = startIndex; idata < end; idata++) {
+    let col = startColumn;
+    for (let idata = startIndex; col < endColumn && idata < dlen; idata++) {
       const word = data[idata];
       const kind = BufferLine.wKind(word);
       const w = kind === DataKind.CHAR_W2 || kind === DataKind.CLUSTER_START_W2 ? 2 : 1;
@@ -970,10 +973,12 @@ export abstract class BufferLine implements IBufferLine {
         case DataKind.STYLE_FLAGS:
           break;
         case DataKind.SKIP_COLUMNS:
-          skipped += BufferLine.wSkipCount(word);
+          let skip = BufferLine.wSkipCount(word);
           if (idata === startIndex && this instanceof WrappedBufferLine) {
-             skipped -= this.startColumn - this.startIndexColumn;
+             skip -= this.startColumn - this.startIndexColumn;
           }
+          col += skip;
+          skipped += skip;
           break;
         case DataKind.CLUSTER_START_W1:
         case DataKind.CLUSTER_START_W2:
@@ -987,6 +992,7 @@ export abstract class BufferLine implements IBufferLine {
         case DataKind.CLUSTER_CONTINUED:
           break; // should be skipped
       }
+      col += wcols;
       if (wcols) {
         cols += skipped + wcols;
         skipped = 0;
