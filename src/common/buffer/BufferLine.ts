@@ -1460,7 +1460,7 @@ export class WrappedBufferLine extends BufferLine implements IBufferLine {
     const oldStartColumn = this.logicalStartColumn();
     prevRow.nextRowSameLine = undefined;
     const oldLine = prevRow.logicalLine();
-    oldLine.moveToColumn(oldStartColumn, 1);
+    oldLine.moveToLineColumn(oldStartColumn, 1);
     const startIndex = oldLine._cachedDataIndex();
     const cell = new CellData();
     this.loadCell(oldStartColumn, cell);
