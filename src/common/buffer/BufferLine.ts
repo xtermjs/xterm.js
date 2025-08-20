@@ -728,7 +728,12 @@ export abstract class BufferLine implements IBufferLine {
     }
     const lastChar = idata;
     inputHandler.precedingJoinState = precedingJoinState;
-    if (! insertMode && idata < this.dataLength()) {
+    if (insertMode) {
+      let deleteStartColumn = lstart + this.length;
+      this.moveToLineColumn(deleteStartColumn, 1);
+      inext = this._cachedDataIndex();
+      this.logicalLine().deleteCellsOnly(inext, curColumn - startColumn);
+    } else if (idata < this.dataLength()) {
       this.logicalLine().deleteCellsOnly(inext, curColumn - startColumn);
     }
     curColumn -= lstart;
