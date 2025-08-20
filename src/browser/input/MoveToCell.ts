@@ -199,7 +199,9 @@ function bufferLine(
   let currentRow = startRow;
   let bufferStr = '';
 
-  while (currentCol !== endCol || currentRow !== endRow) {
+  while ((currentCol !== endCol || currentRow !== endRow) &&
+         currentRow >= 0 &&
+         currentRow < bufferService.buffer.lines.length) {
     currentCol += forward ? 1 : -1;
 
     if (forward && currentCol > bufferService.cols - 1) {
