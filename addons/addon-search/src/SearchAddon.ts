@@ -351,7 +351,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       let resultIndex = -1;
       if (this._selectedDecoration.value) {
         const selectedMatch = this._selectedDecoration.value.match;
-        // Problem: this.highlightDecorations.length was showing all lines of highlighted.
         for (let i = 0; i < this._searchResultsWithHighlight.length; i++) {
           const match = this._searchResultsWithHighlight[i];
           if (match.row === selectedMatch.row && match.col === selectedMatch.col && match.size === selectedMatch.size) {
