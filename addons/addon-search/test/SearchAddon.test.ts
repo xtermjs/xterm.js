@@ -480,6 +480,57 @@ test.describe('Search Tests', () => {
       ]);
     });
   });
+
+  test.describe('Wrapped line search functionality', () => {
+    test('should correctly count matches across multiple wrapped lines', async () => {
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+
+      const content = 'a'.repeat(300);
+      await ctx.proxy.write(content);
+      strictEqual(await ctx.page.evaluate(`window.search.findNext('${content}', { decorations: { activeMatchColorOverviewRuler: '#ff0000', matchOverviewRuler: '#ffff00' } })`), true);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 }
+      ]);
+    });
+
+    test('should handle reverse search across wrapped lines', async () => {
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+
+      const content = 'x'.repeat(300);
+      await ctx.proxy.write(content);
+      strictEqual(await ctx.page.evaluate(`window.search.findPrevious('${content}', { decorations: { activeMatchColorOverviewRuler: '#ff0000', matchOverviewRuler: '#ffff00' } })`), true);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 }
+      ]);
+    });
+
+    test('should update counts when content changes across wrapped lines', async () => {
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+
+      const content = 'z'.repeat(300);
+      await ctx.proxy.write(content);
+      strictEqual(await ctx.page.evaluate(`window.search.findNext('${content}', { decorations: { activeMatchColorOverviewRuler: '#ff0000', matchOverviewRuler: '#ffff00' } })`), true);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 }
+      ]);
+
+      await ctx.proxy.write('\\n\\r' + content);
+      await timeout(300);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 },
+        { resultCount: 2, resultIndex: 0 }
+      ]);
+    });
+  });
 });
 
 function makeData(length: number): string {

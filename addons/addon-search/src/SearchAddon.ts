@@ -72,6 +72,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();
   private _highlightDecorations: IHighlight[] = [];
+  private _searchResultsWithHighlight: ISearchResult[] = [];
   private _selectedDecoration: MutableDisposable<IMultiHighlight> = this._register(new MutableDisposable());
   private _highlightLimit: number;
   private _lastSearchOptions: ISearchOptions | undefined;
@@ -118,6 +119,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     this._selectedDecoration.clear();
     dispose(this._highlightDecorations);
     this._highlightDecorations = [];
+    this._searchResultsWithHighlight = [];
     this._highlightedLines.clear();
     if (!retainCachedSearchTerm) {
       this._cachedSearchTerm = undefined;
@@ -167,15 +169,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     // new search, clear out the old decorations
     this.clearDecorations(true);
 
-    const searchResultsWithHighlight: ISearchResult[] = [];
     let prevResult: ISearchResult | undefined = undefined;
     let result = this._find(term, 0, 0, searchOptions);
     while (result && (prevResult?.row !== result.row || prevResult?.col !== result.col)) {
-      if (searchResultsWithHighlight.length >= this._highlightLimit) {
+      if (this._searchResultsWithHighlight.length >= this._highlightLimit) {
         break;
       }
       prevResult = result;
-      searchResultsWithHighlight.push(prevResult);
+      this._searchResultsWithHighlight.push(prevResult);
       result = this._find(
         term,
         prevResult.col + prevResult.term.length >= this._terminal.cols ? prevResult.row + 1 : prevResult.row,
@@ -183,7 +184,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
         searchOptions
       );
     }
-    for (const match of searchResultsWithHighlight) {
+    for (const match of this._searchResultsWithHighlight) {
       const decorations = this._createResultDecorations(match, searchOptions.decorations!, false);
       if (decorations) {
         for (const decoration of decorations) {
@@ -350,15 +351,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       let resultIndex = -1;
       if (this._selectedDecoration.value) {
         const selectedMatch = this._selectedDecoration.value.match;
-        for (let i = 0; i < this._highlightDecorations.length; i++) {
-          const match = this._highlightDecorations[i].match;
+        for (let i = 0; i < this._searchResultsWithHighlight.length; i++) {
+          const match = this._searchResultsWithHighlight[i];
           if (match.row === selectedMatch.row && match.col === selectedMatch.col && match.size === selectedMatch.size) {
             resultIndex = i;
             break;
           }
         }
       }
-      this._onDidChangeResults.fire({ resultIndex, resultCount: this._highlightDecorations.length });
+      this._onDidChangeResults.fire({ resultIndex, resultCount: this._searchResultsWithHighlight.length });
     }
   }
 
