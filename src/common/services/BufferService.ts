@@ -151,5 +151,4 @@ export class BufferService extends Disposable implements IBufferService {
       this._onScroll.fire(buffer.ydisp);
     }
   }
-
 }
