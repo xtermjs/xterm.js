@@ -18,10 +18,9 @@ export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
-  private readonly _onResize = new Emitter<{ cols: number, rows: number }>();
-  public readonly onResize: Event<{ cols: number, rows: number }> = this._onResize.event;
+  public onResize: Event<{ cols: number, rows: number }> = new Emitter<{ cols: number, rows: number }>().event;
+  public onScroll: Event<number> = new Emitter<number>().event;
   private readonly _onScroll = new Emitter<number>();
-  public readonly onScroll: Event<number> = this._onScroll.event;
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
