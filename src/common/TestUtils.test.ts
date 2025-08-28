@@ -18,8 +18,10 @@ export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
-  public onResize: Event<{ cols: number, rows: number }> = new Emitter<{ cols: number, rows: number }>().event;
-  public onScroll: Event<number> = new Emitter<number>().event;
+  private readonly _onResize = new Emitter<{ cols: number, rows: number }>();
+  public readonly onResize: Event<{ cols: number, rows: number }> = this._onResize.event;
+  private readonly _onScroll = new Emitter<number>();
+  public readonly onScroll: Event<number> = this._onScroll.event;
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
@@ -47,7 +49,8 @@ export class MockBufferService implements IBufferService {
     throw new Error('Method not implemented.');
   }
   public syncScrollPosition(): void {
-    // Mock implementation - no-op for tests
+    // Fire scroll event with current buffer position
+    this._onScroll.fire(this.buffer.ydisp);
   }
   public resize(cols: number, rows: number): void {
     this.cols = cols;

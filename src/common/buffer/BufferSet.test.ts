@@ -84,47 +84,32 @@ describe('BufferSet', () => {
   });
 
   describe('scroll position synchronization', () => {
-    it('should sync scroll position when switching from alt back to normal buffer', () => {
+    it('should call syncScrollPosition when switching from alt back to normal buffer', () => {
       bufferSet.activateNormalBuffer();
 
       const originalYDisp = 50;
       bufferSet.normal.ydisp = originalYDisp;
       bufferSet.normal.ybase = 100;
-
-      // Track onScroll events fired by the buffer service
-      let scrollEventFired = false;
-      let scrollEventPosition = -1;
-
       const mockBufferService = (bufferSet as any)._bufferService as MockBufferService;
-      const originalOnScroll = mockBufferService.onScroll;
 
-      // Mock the onScroll event to track when it's called
-      const scrollEmitter = new Emitter<number>();
-      mockBufferService.onScroll = scrollEmitter.event;
-
-      // Override syncScrollPosition to actually fire the event
+      let syncScrollPositionCalled = false;
+      const originalSyncScrollPosition = mockBufferService.syncScrollPosition.bind(mockBufferService);
       mockBufferService.syncScrollPosition = () => {
-        scrollEventFired = true;
-        scrollEventPosition = bufferSet.normal.ydisp;
-        scrollEmitter.fire(bufferSet.normal.ydisp);
+        syncScrollPositionCalled = true;
+        originalSyncScrollPosition();
       };
-
 
       bufferSet.activateAltBuffer();
       assert.equal(bufferSet.normal.ydisp, originalYDisp, 'Normal buffer ydisp should be preserved');
-
-      // Reset scroll event tracking
-      scrollEventFired = false;
-      scrollEventPosition = -1;
-
+      syncScrollPositionCalled = false;
       bufferSet.activateNormalBuffer();
+
       assert.equal(bufferSet.normal.ydisp, originalYDisp, 'Normal buffer ydisp should be restored');
-      assert.equal(scrollEventFired, true, 'syncScrollPosition should have fired scroll event');
-      assert.equal(scrollEventPosition, originalYDisp, 'Scroll event should contain correct position');
+      assert.equal(syncScrollPositionCalled, true, 'activateNormalBuffer should call syncScrollPosition');
       assert.equal(bufferSet.active, bufferSet.normal, 'Normal buffer should be active');
     });
 
-    it('should preserve normal buffer scroll position even when alt buffer has different position', () => {
+    it('should preserve normal buffer scroll position when switching back from alt buffer', () => {
       bufferSet.activateNormalBuffer();
       const normalScrollPos = 80;
       bufferSet.normal.ydisp = normalScrollPos;
@@ -133,19 +118,33 @@ describe('BufferSet', () => {
       bufferSet.activateAltBuffer();
       bufferSet.alt.ydisp = 0;
       bufferSet.alt.ybase = 0;
+      bufferSet.activateNormalBuffer();
 
+      assert.equal(bufferSet.normal.ydisp, normalScrollPos, 'Normal buffer should maintain its scroll position');
+      assert.equal(bufferSet.active, bufferSet.normal, 'Normal buffer should be active');
+      assert.notEqual(bufferSet.normal.ydisp, bufferSet.alt.ydisp, 'Normal and alt buffer should have different scroll positions');
+    });
+
+    it('should fire scroll event with correct position when syncScrollPosition is called', () => {
       const mockBufferService = (bufferSet as any)._bufferService as MockBufferService;
-      let syncedPosition = -1;
-
-      // Track the position that gets synced
-      mockBufferService.syncScrollPosition = () => {
-        syncedPosition = bufferSet.normal.ydisp;
-      };
 
       bufferSet.activateNormalBuffer();
-      assert.equal(bufferSet.normal.ydisp, normalScrollPos, 'Normal buffer should maintain its scroll position');
-      assert.equal(syncedPosition, normalScrollPos, 'syncScrollPosition should sync with normal buffer position');
-      assert.notEqual(syncedPosition, bufferSet.alt.ydisp, 'Sync position should not match alt buffer position');
+      const testScrollPosition = 42;
+
+      mockBufferService.buffer.ydisp = testScrollPosition;
+      assert.equal(mockBufferService.buffer.ydisp, testScrollPosition, 'Active buffer ydisp should be set correctly');
+
+      let scrollEventFired = false;
+      let scrollEventPosition = -1;
+
+      mockBufferService.onScroll((position: number) => {
+        scrollEventFired = true;
+        scrollEventPosition = position;
+      });
+
+      mockBufferService.syncScrollPosition();
+      assert.equal(scrollEventFired, true, 'syncScrollPosition should fire scroll event');
+      assert.equal(scrollEventPosition, testScrollPosition, `Scroll event should contain current buffer ydisp`);
     });
   });
 });
