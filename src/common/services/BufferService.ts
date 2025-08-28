@@ -148,4 +148,11 @@ export class BufferService extends Disposable implements IBufferService {
       this._onScroll.fire(buffer.ydisp);
     }
   }
+
+  /**
+   * Synchronize the scroll position by firing a scroll event with the current buffer's ydisp.
+   */
+  public syncScrollPosition(): void {
+    this._onScroll.fire(this.buffer.ydisp);
+  }
 }

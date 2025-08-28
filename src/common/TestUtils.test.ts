@@ -46,6 +46,9 @@ export class MockBufferService implements IBufferService {
   public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
     throw new Error('Method not implemented.');
   }
+  public syncScrollPosition(): void {
+    // Mock implementation - no-op for tests
+  }
   public resize(cols: number, rows: number): void {
     this.cols = cols;
     this.rows = rows;

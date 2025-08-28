@@ -91,6 +91,8 @@ export class BufferSet extends Disposable implements IBufferSet {
       activeBuffer: this._normal,
       inactiveBuffer: this._alt
     });
+    // Prevent scrollbar "teleport" to top of the terminal, from previous alt buffer.
+    this._bufferService.syncScrollPosition();
   }
 
   /**
