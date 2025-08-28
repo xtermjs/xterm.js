@@ -22,7 +22,6 @@ export interface IBufferService {
   onScroll: Event<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
-  syncScrollPosition(): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }

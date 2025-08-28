@@ -29,6 +29,10 @@ export class MockBufferService implements IBufferService {
     optionsService: IOptionsService = new MockOptionsService()
   ) {
     this.buffers = new BufferSet(optionsService, this);
+    // Listen to buffer activation events and automatically fire scroll events
+    this.buffers.onBufferActivate(e => {
+      this._onScroll.fire(e.activeBuffer.ydisp);
+    });
   }
   public scrollPages(pageCount: number): void {
     throw new Error('Method not implemented.');
@@ -47,10 +51,6 @@ export class MockBufferService implements IBufferService {
   }
   public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
     throw new Error('Method not implemented.');
-  }
-  public syncScrollPosition(): void {
-    // Fire scroll event with current buffer position
-    this._onScroll.fire(this.buffer.ydisp);
   }
   public resize(cols: number, rows: number): void {
     this.cols = cols;

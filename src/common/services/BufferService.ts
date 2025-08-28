@@ -37,6 +37,9 @@ export class BufferService extends Disposable implements IBufferService {
     this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
     this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
     this.buffers = this._register(new BufferSet(optionsService, this));
+    this._register(this.buffers.onBufferActivate(e => {
+      this._onScroll.fire(e.activeBuffer.ydisp);
+    }));
   }
 
   public resize(cols: number, rows: number): void {
@@ -149,10 +152,4 @@ export class BufferService extends Disposable implements IBufferService {
     }
   }
 
-  /**
-   * Synchronize the scroll position by firing a scroll event with the current buffer's ydisp.
-   */
-  public syncScrollPosition(): void {
-    this._onScroll.fire(this.buffer.ydisp);
-  }
 }
