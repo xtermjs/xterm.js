@@ -646,6 +646,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           if (deltaY === 0) {
             return false;
           }
+          const lines = self._consumeWheelEvent(ev as WheelEvent);
+          if (lines === 0) {
+            return false;
+          }
           action = deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
           but = CoreMouseButton.WHEEL;
           break;
@@ -817,6 +821,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           return false;
         }
 
+        const lines = self._consumeWheelEvent(ev as WheelEvent);
+        if (lines === 0) {
+          return false;
+        }
+
         // Construct and send sequences
         const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
         this.coreService.triggerDataEvent(sequence, true);
@@ -825,6 +834,38 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }, { passive: false }));
   }
 
+  // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
+  // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
+  // quick fix and could have a more robust solution in place that reset the value when needed.
+  private _wheelPartialScroll: number = 0;
+
+  /**
+   * Gets the number of pixels scrolled by the mouse event taking into account what type of delta
+   * is being used.
+   * @param ev The mouse wheel event.
+   */
+  private _consumeWheelEvent(ev: WheelEvent): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0 || ev.shiftKey) {
+      return 0;
+    }
+
+    if (!this._coreBrowserService || !this._renderService) {
+      return 0;
+    }
+    // Fallback to WheelEvent.DOM_DELTA_LINE
+    const targetWheelEventPixels = this._renderService.dimensions.device.cell.height / this._coreBrowserService.dpr;
+    let amount = 1;
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
+      amount /= targetWheelEventPixels + 0.0; // Prevent integer division
+      this._wheelPartialScroll += amount;
+      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
+      this._wheelPartialScroll %= 1;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._bufferService.rows;
+    }
+    return amount;
+  }
 
   /**
    * Tells the renderer to refresh terminal content between two rows (inclusive) at the next
