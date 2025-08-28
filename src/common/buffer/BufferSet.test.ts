@@ -7,7 +7,6 @@ import { assert } from 'chai';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { Buffer } from 'common/buffer/Buffer';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
-import { Emitter } from 'vs/base/common/event';
 
 describe('BufferSet', () => {
   let bufferSet: BufferSet;
@@ -82,5 +81,4 @@ describe('BufferSet', () => {
       assert.equal(bufferSet.alt.markers.length, 0);
     });
   });
-
 });
