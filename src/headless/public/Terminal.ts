@@ -11,7 +11,7 @@ import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
 import { ITerminalOptions } from 'common/Types';
 import { Disposable } from 'vs/base/common/lifecycle';
-import type { Event } from 'vs/base/common/event';
+import { Event } from 'vs/base/common/event';
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
@@ -81,6 +81,10 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onScroll(): Event<number> { return this._core.onScroll; }
   public get onTitleChange(): Event<string> { return this._core.onTitleChange; }
   public get onWriteParsed(): Event<void> { return this._core.onWriteParsed; }
+  public get onRowChange(): Event<{ start: number, end: number }> {
+    this._checkProposedApi();
+    return Event.map(this._core.onRowChange, e => ({ start: e.start, end: e.end }));
+  }
 
   public get parser(): IParser {
     this._checkProposedApi();
@@ -186,7 +190,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
   public loadAddon(addon: ITerminalAddon): void {
     // TODO: This could cause issues if the addon calls renderer apis
-    this._addonManager.loadAddon(this as any, addon);
+    this._addonManager.loadAddon(this as any, addon as any);
   }
 
   private _verifyIntegers(...values: number[]): void {

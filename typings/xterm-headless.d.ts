@@ -749,6 +749,13 @@ declare module '@xterm/headless' {
     onResize: IEvent<{ cols: number, rows: number }>;
 
     /**
+     * Adds an event listener for when buffer rows change during parsing. The event
+     * value contains the range of rows that changed.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onRowChange: IEvent<{ start: number, end: number }>;
+
+    /**
      * Adds an event listener for when a scroll occurs. The event value is the
      * new position of the viewport.
      * @returns an `IDisposable` to stop listening.

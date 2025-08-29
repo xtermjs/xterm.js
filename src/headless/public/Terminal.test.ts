@@ -241,6 +241,92 @@ describe('Headless API Tests', function (): void {
       await writeSync('\x07');
       deepStrictEqual(calls, [true]);
     });
+
+    it('onRowChange', async () => {
+      let callCount = 0;
+      term.onRowChange(() => callCount++);
+      strictEqual(callCount, 0);
+      await writeSync('hello');
+      strictEqual(callCount, 1);
+      await writeSync('\nworld');
+      strictEqual(callCount, 2);
+    });
+
+    it('onRowChange - cursor positioning', async () => {
+      term = new Terminal({ rows: 25, cols: 80, allowProposedApi: true });
+      const calls: Array<{ start: number, end: number }> = [];
+      term.onRowChange(e => calls.push(e));
+
+      // Basic cursor movements
+      await writeSync('\x1b[10;40Htest');  // Move to middle, write
+      strictEqual(calls.length, 1);
+      strictEqual(calls[0].start, 0);
+      strictEqual(calls[0].end, 9);
+
+      // Multiple cursor movements in one write
+      calls.length = 0;
+      await writeSync('\x1b[5;20Ha\x1b[15;60Hb\x1b[20;10Hc');
+      strictEqual(calls.length, 1);
+      strictEqual(calls[0].start, 4);
+      strictEqual(calls[0].end, 19);
+
+      // Large scrollback buffer test
+      const termScroll = new Terminal({ rows: 10, cols: 80, scrollback: 1000, allowProposedApi: true });
+      const scrollCalls: Array<{ start: number, end: number }> = [];
+      termScroll.onRowChange(e => scrollCalls.push(e));
+
+      // Fill and scroll beyond viewport - validate all events
+      for (let i = 0; i < 30; i++) {
+        const beforeCount = scrollCalls.length;
+        await new Promise<void>(resolve => termScroll.write(`Line ${i}\n`, resolve));
+        strictEqual(scrollCalls.length, beforeCount + 1);
+        const event = scrollCalls[scrollCalls.length - 1];
+        if (i < 9) {
+          // Before scrolling: current row + linefeed to next row
+          strictEqual(event.start, i);
+          strictEqual(event.end, i + 1);
+        } else {
+          // After scrolling starts: entire viewport
+          strictEqual(event.start, 0);
+          strictEqual(event.end, 9);
+        }
+      }
+
+      // Cursor movement in scrolled terminal
+      scrollCalls.length = 0;
+      await new Promise<void>(resolve => termScroll.write('\x1b[5;40HX', resolve));
+      strictEqual(scrollCalls.length, 1);
+      strictEqual(scrollCalls[0].start, 4);
+      strictEqual(scrollCalls[0].end, 9);
+    });
+
+    it('onRowChange - scrolling', async () => {
+      term = new Terminal({ rows: 3, cols: 5, allowProposedApi: true });
+      const calls: Array<{ start: number, end: number }> = [];
+      term.onRowChange(e => calls.push(e));
+
+      // Fill terminal
+      await writeSync('line1\nline2\nline3');
+      calls.length = 0;
+
+      // Cause scroll
+      await writeSync('\nline4');
+      strictEqual(calls.length, 1);
+      strictEqual(calls[0].start, 0);
+      strictEqual(calls[0].end, 2);
+    });
+
+    it('onRowChange - text wrapping', async () => {
+      term = new Terminal({ rows: 3, cols: 5, allowProposedApi: true });
+      const calls: Array<{ start: number, end: number }> = [];
+      term.onRowChange(e => calls.push(e));
+
+      // Write text that wraps
+      await writeSync('verylongtext');
+      strictEqual(calls.length, 1);
+      strictEqual(calls[0].start, 0);
+      strictEqual(calls[0].end, 2);
+    });
   });
 
   describe('buffer', () => {
