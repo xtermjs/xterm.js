@@ -174,6 +174,7 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
   private _lastEvent: ICoreMouseEvent | null = null;
+  private _wheelPartialScroll: number = 0;
 
   private readonly _onProtocolChange = this._register(new Emitter<CoreMouseEventType>());
   public readonly onProtocolChange =  this._onProtocolChange.event;
@@ -229,6 +230,35 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
     this.activeProtocol = 'NONE';
     this.activeEncoding = 'DEFAULT';
     this._lastEvent = null;
+    this._wheelPartialScroll = 0;
+  }
+
+  /**
+   * Processes a wheel event, accounting for partial scrolls for trackpad, mouse scrolls.
+   * This prevents hyper-sensitive scrolling in alt buffer.
+   */
+  public consumeWhellEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0 || ev.shiftKey) {
+      return 0;
+    }
+
+    if (cellHeight === undefined || dpr === undefined) {
+      return 0;
+    }
+
+    // Fallback to WheelEvent.DOM_DELTA_LINE
+    const targetWheelEventPixels = cellHeight / dpr;
+    let amount = 1;
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
+      amount /= targetWheelEventPixels + 0.0; // Prevent integer division
+      this._wheelPartialScroll += amount;
+      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
+      this._wheelPartialScroll %= 1;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._bufferService.rows;
+    }
+    return amount;
   }
 
   /**
