@@ -843,7 +843,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
 
-
   /**
    * Tells the renderer to refresh terminal content between two rows (inclusive) at the next
    * opportunity.
