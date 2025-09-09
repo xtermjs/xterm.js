@@ -269,18 +269,10 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
   }
 
   private _applyScrollModifier(amount: number, ev: WheelEvent): number {
-    const modifier = this._optionsService.rawOptions.fastScrollModifier; // QUESTION: This is always alt. Seems deprecated via: https://github.com/xtermjs/xterm.js/blob/5.5.0/src/browser/Viewport.ts
-    // Problem is that modifier always seem 'alt' even when ev.ctrlKey is true, for example.
-    // May need to tweak conditional to: if any of `ev.altKey || ev.ctrlKey || ev.shiftKey` is true
-
     // Multiply the scroll speed when the modifier key is pressed
-    if ((modifier === 'alt' && ev.altKey) ||
-      (modifier === 'ctrl' && ev.ctrlKey) ||
-      (modifier === 'shift' && ev.shiftKey)) {
-
+    if (ev.altKey || ev.ctrlKey || ev.shiftKey) {
       return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
     }
-
     return amount * this._optionsService.rawOptions.scrollSensitivity;
   }
 
