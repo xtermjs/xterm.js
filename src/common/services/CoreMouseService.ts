@@ -278,8 +278,6 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
       (modifier === 'ctrl' && ev.ctrlKey) ||
       (modifier === 'shift' && ev.shiftKey)) {
 
-      console.log('fast scroll sensitivity: ', this._optionsService.rawOptions.fastScrollSensitivity);
-      console.log('regular scroll sensitivity: ', this._optionsService.rawOptions.scrollSensitivity);
       return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
     }
 
