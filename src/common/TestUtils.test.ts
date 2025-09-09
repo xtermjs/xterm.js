@@ -67,7 +67,7 @@ export class MockCoreMouseService implements ICoreMouseService {
     throw new Error('Method not implemented.');
   }
   public consumeWheelEvent(ev: WheelEvent, cellHeight: number, dpr: number): number {
-    return 1; // Return a simple mock value
+    return 1;
   }
 }
 
