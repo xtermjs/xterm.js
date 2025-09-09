@@ -251,8 +251,7 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
     const targetWheelEventPixels = cellHeight / dpr;
     let amount = 1;
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
-      const pixelAmount = ev.deltaY;
-      amount = pixelAmount / (targetWheelEventPixels + 0.0); // Prevent integer division
+      amount = ev.deltaY / (targetWheelEventPixels + 0.0); // Prevent integer division
       this._wheelPartialScroll += amount;
       amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
       this._wheelPartialScroll %= 1;
