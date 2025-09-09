@@ -177,7 +177,7 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
   private _wheelPartialScroll: number = 0;
 
   private readonly _onProtocolChange = this._register(new Emitter<CoreMouseEventType>());
-  public readonly onProtocolChange =  this._onProtocolChange.event;
+  public readonly onProtocolChange = this._onProtocolChange.event;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
@@ -270,12 +270,16 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
 
   private _applyScrollModifier(amount: number, ev: WheelEvent): number {
     const modifier = this._optionsService.rawOptions.fastScrollModifier; // QUESTION: This is always alt. Seems deprecated via: https://github.com/xtermjs/xterm.js/blob/5.5.0/src/browser/Viewport.ts
-    console.log('what is this modifier: ', modifier);
+    // Problem is that modifier always seem 'alt' even when ev.ctrlKey is true, for example.
+    // Maybe this doesnt matter because all of alt, ctrl, shift does same operation?
 
     // Multiply the scroll speed when the modifier key is pressed
     if ((modifier === 'alt' && ev.altKey) ||
-        (modifier === 'ctrl' && ev.ctrlKey) ||
-        (modifier === 'shift' && ev.shiftKey)) {
+      (modifier === 'ctrl' && ev.ctrlKey) ||
+      (modifier === 'shift' && ev.shiftKey)) {
+
+      console.log('fast scroll sensitivity: ', this._optionsService.rawOptions.fastScrollSensitivity);
+      console.log('regular scroll sensitivity: ', this._optionsService.rawOptions.scrollSensitivity);
       return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
     }
 
