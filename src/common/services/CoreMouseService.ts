@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
+import { IBufferService, ICoreService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
@@ -181,7 +181,8 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
-    @ICoreService private readonly _coreService: ICoreService
+    @ICoreService private readonly _coreService: ICoreService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
     // register default protocols and encodings
@@ -247,11 +248,17 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
       return 0;
     }
 
-    // Fallback to WheelEvent.DOM_DELTA_LINE
     const targetWheelEventPixels = cellHeight / dpr;
-    let amount = 1;
+    let amount = this._applyScrollModifier(ev.deltaY, ev);
+
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
-      amount = ev.deltaY / (targetWheelEventPixels + 0.0); // Prevent integer division
+      amount /= (targetWheelEventPixels + 0.0); // Prevent integer division
+
+      const isLikelyTrackpad = Math.abs(ev.deltaY) < 50;
+      if (isLikelyTrackpad) {
+        amount *= 0.3;
+      }
+
       this._wheelPartialScroll += amount;
       amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
       this._wheelPartialScroll %= 1;
@@ -259,6 +266,20 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
       amount *= this._bufferService.rows;
     }
     return amount;
+  }
+
+  private _applyScrollModifier(amount: number, ev: WheelEvent): number {
+    const modifier = this._optionsService.rawOptions.fastScrollModifier; // QUESTION: This is always alt. Seems deprecated via: https://github.com/xtermjs/xterm.js/blob/5.5.0/src/browser/Viewport.ts
+    console.log('what is this modifier: ', modifier);
+
+    // Multiply the scroll speed when the modifier key is pressed
+    if ((modifier === 'alt' && ev.altKey) ||
+        (modifier === 'ctrl' && ev.ctrlKey) ||
+        (modifier === 'shift' && ev.shiftKey)) {
+      return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
+    }
+
+    return amount * this._optionsService.rawOptions.scrollSensitivity;
   }
 
   /**
