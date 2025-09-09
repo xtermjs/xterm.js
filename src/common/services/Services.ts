@@ -62,7 +62,7 @@ export interface ICoreMouseService {
   /**
    * Process wheel event taking partial scroll into account.
    */
-  consumeWhellEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number;
+  consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number;
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');

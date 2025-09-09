@@ -646,7 +646,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           if (deltaY === 0) {
             return false;
           }
-          const lines = self.coreMouseService.consumeWhellEvent(
+          const lines = self.coreMouseService.consumeWheelEvent(
             ev as WheelEvent,
             self._renderService?.dimensions?.device?.cell?.height,
             self._coreBrowserService?.dpr
@@ -825,7 +825,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           return false;
         }
 
-        const lines = self.coreMouseService.consumeWhellEvent(
+        const lines = self.coreMouseService.consumeWheelEvent(
           ev as WheelEvent,
           self._renderService?.dimensions?.device?.cell?.height,
           self._coreBrowserService?.dpr

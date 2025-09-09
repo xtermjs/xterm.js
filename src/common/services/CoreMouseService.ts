@@ -237,7 +237,7 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
    * Processes a wheel event, accounting for partial scrolls for trackpad, mouse scrolls.
    * This prevents hyper-sensitive scrolling in alt buffer.
    */
-  public consumeWhellEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
+  public consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
     // Do nothing if it's not a vertical scroll event
     if (ev.deltaY === 0 || ev.shiftKey) {
       return 0;
@@ -251,7 +251,8 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
     const targetWheelEventPixels = cellHeight / dpr;
     let amount = 1;
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
-      amount /= targetWheelEventPixels + 0.0; // Prevent integer division
+      const pixelAmount = ev.deltaY;
+      amount = pixelAmount / (targetWheelEventPixels + 0.0); // Prevent integer division
       this._wheelPartialScroll += amount;
       amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
       this._wheelPartialScroll %= 1;
