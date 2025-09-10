@@ -71,6 +71,9 @@ export class MockCoreMouseService implements ICoreMouseService {
   public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
     throw new Error('Method not implemented.');
   }
+  public consumeWheelEvent(ev: WheelEvent, cellHeight: number, dpr: number): number {
+    return 1;
+  }
 }
 
 export class MockCharsetService implements ICharsetService {

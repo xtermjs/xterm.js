@@ -58,6 +58,11 @@ export interface ICoreMouseService {
    * Human readable version of mouse events.
    */
   explainEvents(events: CoreMouseEventType): { [event: string]: boolean };
+
+  /**
+   * Process wheel event taking partial scroll into account.
+   */
+  consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number;
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');
