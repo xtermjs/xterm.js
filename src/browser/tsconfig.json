@@ -7,8 +7,7 @@
     ],
     "outDir": "../../out",
     "types": [
-      "../../node_modules/@types/mocha",
-      "../vs/typings/thenable.d.ts"
+      "../../node_modules/@types/mocha"
     ],
     "baseUrl": "..",
     "paths": {
