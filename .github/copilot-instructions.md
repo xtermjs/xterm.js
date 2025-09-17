@@ -6,5 +6,43 @@ Please follow these guidelines when contributing:
 
 - Install dependencies: `npm install && npm run setup`
 - Build and bundle demo: `npm run build && npm run esbuild`
-- Run unit tests: `npm run test-unit`
-- Run playwright-based integration tests: `npm run test-integration`
+
+## Unit tests
+
+Unit tests are run with `yarn test-unit`:
+
+```sh
+# All unit tests
+yarn test-unit
+
+# Absolute file path
+yarn test-unit out-esbuild/browser/Terminal.test.js
+
+# Filter by wildcard
+yarn test-unit out-esbuild/**/Terminal.test.js
+
+# Specific addon unit tests tests
+yarn test-unit addons/addon-image/out-esbuild/*.test.js
+
+# Multiple files
+yarn test-unit out-esbuild/**/Terminal.test.js out-esbuild/**/InputHandler.test.js
+```
+
+These use mocha to run all `.test.js` files within the esbuild output (`out-esbuild/`).
+
+## Integration tests
+
+Integration tests are run with `yarn test-integration`:
+
+```sh
+# All integration tests
+yarn test-integration
+
+# Core integration tests
+yarn test-integration --suite=core
+
+# Specific addon integration tests
+yarn test-integration --suite=addon-search
+```
+
+These use `@playwright/test` to run all tests within the esbuild test output (`out-esbuild-test/`).
