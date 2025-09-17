@@ -68,11 +68,32 @@ interface IMultiHighlight extends IDisposable {
   match: ISearchResult;
 }
 
-const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?';
-const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
-const DEFAULT_HIGHLIGHT_LIMIT = 1000;
+/**
+ * Configuration constants for the search addon functionality.
+ */
+const enum Constants {
+  /**
+   * Characters that are considered non-word characters for search boundary detection. These
+   * characters are used to determine word boundaries when performing whole-word searches. Includes
+   * common punctuation, symbols, and whitespace characters.
+   */
+  NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?',
 
-export class SearchAddon extends Disposable implements ITerminalAddon , ISearchApi {
+  /**
+   * Time-to-live for cached search results in milliseconds. After this duration, cached search
+   * results will be invalidated to ensure they remain consistent with terminal content changes.
+   */
+  LINES_CACHE_TIME_TO_LIVE = 15000,
+
+  /**
+   * Default maximum number of search results to highlight simultaneously. This limit prevents
+   * performance degradation when searching for very common terms that would result in excessive
+   * highlighting decorations.
+   */
+  DEFAULT_HIGHLIGHT_LIMIT = 1000
+}
+
+export class SearchAddon extends Disposable implements ITerminalAddon, ISearchApi {
   private _terminal: Terminal | undefined;
   private _cachedSearchTerm: string | undefined;
   private _highlightedLines: Set<number> = new Set();
@@ -97,7 +118,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
   constructor(options?: Partial<ISearchAddonOptions>) {
     super();
 
-    this._highlightLimit = options?.highlightLimit ?? DEFAULT_HIGHLIGHT_LIMIT;
+    this._highlightLimit = options?.highlightLimit ?? Constants.DEFAULT_HIGHLIGHT_LIMIT;
   }
 
   public activate(terminal: Terminal): void {
@@ -451,7 +472,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
 
     window.clearTimeout(this._linesCacheTimeoutId);
-    this._linesCacheTimeoutId = window.setTimeout(() => this._destroyLinesCache(), LINES_CACHE_TIME_TO_LIVE);
+    this._linesCacheTimeoutId = window.setTimeout(() => this._destroyLinesCache(), Constants.LINES_CACHE_TIME_TO_LIVE);
   }
 
   private _destroyLinesCache(): void {
@@ -471,8 +492,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
    * @param term the substring that starts at searchIndex
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
-    return ((searchIndex === 0) || (NON_WORD_CHARACTERS.includes(line[searchIndex - 1]))) &&
-      (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.includes(line[searchIndex + term.length])));
+    return ((searchIndex === 0) || (Constants.NON_WORD_CHARACTERS.includes(line[searchIndex - 1]))) &&
+      (((searchIndex + term.length) === line.length) || (Constants.NON_WORD_CHARACTERS.includes(line[searchIndex + term.length])));
   }
 
   /**
