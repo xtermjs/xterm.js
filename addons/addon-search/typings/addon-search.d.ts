@@ -76,6 +76,21 @@ declare module '@xterm/addon-search' {
   }
 
   /**
+   * Event data fired when search results change.
+   */
+  export interface ISearchResultChangeEvent {
+    /**
+     * The index of the currently active result, -1 when the threshold of matches is exceeded.
+     */
+    resultIndex: number;
+
+    /**
+     * The total number of search results found.
+     */
+    resultCount: number;
+  }
+
+  /**
    * Options for the search addon.
    */
   export interface ISearchAddonOptions {
@@ -139,8 +154,7 @@ declare module '@xterm/addon-search' {
     /**
      * When decorations are enabled, fires when
      * the search results change.
-     * @returns -1 for resultIndex when the threshold of matches is exceeded.
      */
-    readonly onDidChangeResults: IEvent<{ resultIndex: number, resultCount: number }>;
+    readonly onDidChangeResults: IEvent<ISearchResultChangeEvent>;
   }
 }
