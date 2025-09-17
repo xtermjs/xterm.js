@@ -4,26 +4,12 @@
  */
 
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
-import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
+import type { SearchAddon as ISearchApi, ISearchOptions, ISearchDecorationOptions } from '@xterm/addon-search';
 import { Emitter } from 'vs/base/common/event';
 import { combinedDisposable, Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 
-export interface ISearchOptions {
-  regex?: boolean;
-  wholeWord?: boolean;
-  caseSensitive?: boolean;
-  incremental?: boolean;
-  decorations?: ISearchDecorationOptions;
+interface IInternalSearchOptions {
   noScroll?: boolean;
-}
-
-interface ISearchDecorationOptions {
-  matchBackground?: string;
-  matchBorder?: string;
-  matchOverviewRuler: string;
-  activeMatchBackground?: string;
-  activeMatchBorder?: string;
-  activeMatchColorOverviewRuler: string;
 }
 
 export interface ISearchPosition {
@@ -110,7 +96,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
       this._highlightTimeout = setTimeout(() => {
         const term = this._cachedSearchTerm;
         this._cachedSearchTerm = undefined;
-        this.findPrevious(term!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
+        // Pass noScroll as true for internal incremental update
+        this._findPreviousAndSelect(term!, this._lastSearchOptions, { noScroll: true });
+        this._fireResults(this._lastSearchOptions);
+        this._cachedSearchTerm = term;
       }, 200);
     }
   }
@@ -237,7 +226,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     return result;
   }
 
-  private _findNextAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
+  private _findNextAndSelect(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
@@ -302,7 +291,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
 
     // Set selection and scroll if a result was found
-    return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
+    return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
@@ -363,7 +352,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
   }
 
-  private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
+  private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -428,7 +417,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon , ISearchA
     }
 
     // Set selection and scroll if a result was found
-    return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
+    return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
   /**
