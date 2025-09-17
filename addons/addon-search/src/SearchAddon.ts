@@ -4,26 +4,12 @@
  */
 
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
-import type { SearchAddon as ISearchApi } from '@xterm/addon-search';
+import type { SearchAddon as ISearchApi, ISearchOptions, ISearchDecorationOptions } from '@xterm/addon-search';
 import { Emitter, Event } from 'vs/base/common/event';
 import { combinedDisposable, Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 
-export interface ISearchOptions {
-  regex?: boolean;
-  wholeWord?: boolean;
-  caseSensitive?: boolean;
-  incremental?: boolean;
-  decorations?: ISearchDecorationOptions;
+interface IInternalSearchOptions {
   noScroll?: boolean;
-}
-
-interface ISearchDecorationOptions {
-  matchBackground?: string;
-  matchBorder?: string;
-  matchOverviewRuler: string;
-  activeMatchBackground?: string;
-  activeMatchBorder?: string;
-  activeMatchColorOverviewRuler: string;
 }
 
 export interface ISearchPosition {
@@ -136,7 +122,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       this._highlightTimeout = setTimeout(() => {
         const term = this._cachedSearchTerm;
         this._cachedSearchTerm = undefined;
-        this.findPrevious(term!, { ...this._lastSearchOptions, incremental: true, noScroll: true });
+        this.findPrevious(term!, { ...this._lastSearchOptions, incremental: true }, { noScroll: true });
       }, 200);
     }
   }
@@ -163,7 +149,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param searchOptions Search options.
    * @returns Whether a result was found.
    */
-  public findNext(term: string, searchOptions?: ISearchOptions): boolean {
+  public findNext(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -175,7 +161,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
     }
 
-    const found = this._findNextAndSelect(term, searchOptions);
+    const found = this._findNextAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._cachedSearchTerm = term;
 
@@ -263,7 +249,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return result;
   }
 
-  private _findNextAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
+  private _findNextAndSelect(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal || !term || term.length === 0) {
       this._terminal?.clearSelection();
       this.clearDecorations();
@@ -328,7 +314,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
 
     // Set selection and scroll if a result was found
-    return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
+    return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
@@ -337,7 +323,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param searchOptions Search options.
    * @returns Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+  public findPrevious(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -349,7 +335,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
     }
 
-    const found = this._findPreviousAndSelect(term, searchOptions);
+    const found = this._findPreviousAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._cachedSearchTerm = term;
 
@@ -389,7 +375,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
   }
 
-  private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions): boolean {
+  private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -454,7 +440,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
 
     // Set selection and scroll if a result was found
-    return this._selectResult(result, searchOptions?.decorations, searchOptions?.noScroll);
+    return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
   /**
