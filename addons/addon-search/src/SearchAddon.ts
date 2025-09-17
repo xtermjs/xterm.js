@@ -7,6 +7,7 @@ import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/
 import type { SearchAddon as ISearchApi, ISearchOptions, ISearchDecorationOptions } from '@xterm/addon-search';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { disposableTimeout } from 'vs/base/common/async';
 import { SearchLineCache } from './SearchLineCache';
 
 interface IInternalSearchOptions {
@@ -34,8 +35,6 @@ export interface ISearchResult {
   size: number;
 }
 
-
-
 interface IHighlight extends IDisposable {
   decoration: IDecoration;
   match: ISearchResult;
@@ -57,8 +56,6 @@ const enum Constants {
    */
   NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?',
 
-
-
   /**
    * Default maximum number of search results to highlight simultaneously. This limit prevents
    * performance degradation when searching for very common terms that would result in excessive
@@ -73,10 +70,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _highlightedLines: Set<number> = new Set();
   private _highlightDecorations: IHighlight[] = [];
   private _searchResultsWithHighlight: ISearchResult[] = [];
-  private _selectedDecoration: MutableDisposable<IMultiHighlight> = this._register(new MutableDisposable());
+  private _selectedDecoration = this._register(new MutableDisposable<IMultiHighlight>());
   private _highlightLimit: number;
   private _lastSearchOptions: ISearchOptions | undefined;
-  private _highlightTimeout: number | undefined;
+  private _highlightTimeout = this._register(new MutableDisposable<IDisposable>());
   private _lineCache = this._register(new MutableDisposable<SearchLineCache>());
 
   private readonly _onDidChangeResults = this._register(new Emitter<ISearchResultChangeEvent>());
@@ -97,11 +94,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   }
 
   private _updateMatches(): void {
-    if (this._highlightTimeout) {
-      window.clearTimeout(this._highlightTimeout);
-    }
+    this._highlightTimeout.clear();
     if (this._cachedSearchTerm && this._lastSearchOptions?.decorations) {
-      this._highlightTimeout = setTimeout(() => {
+      this._highlightTimeout.value = disposableTimeout(() => {
         const term = this._cachedSearchTerm;
         this._cachedSearchTerm = undefined;
         this.findPrevious(term!, { ...this._lastSearchOptions, incremental: true }, { noScroll: true });

@@ -5,6 +5,7 @@
 
 import type { Terminal } from '@xterm/xterm';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { disposableTimeout } from 'vs/base/common/async';
 
 export type LineCacheEntry = [
   /**
@@ -35,7 +36,7 @@ export class SearchLineCache extends Disposable {
    * _linesCache is also invalidated when the terminal cursor moves.
    */
   private _linesCache: LineCacheEntry[] | undefined;
-  private _linesCacheTimeoutId = 0;
+  private _linesCacheTimeout = this._register(new MutableDisposable());
   private _linesCacheDisposables = this._register(new MutableDisposable());
 
   constructor(private _terminal: Terminal) {
@@ -56,17 +57,13 @@ export class SearchLineCache extends Disposable {
       );
     }
 
-    window.clearTimeout(this._linesCacheTimeoutId);
-    this._linesCacheTimeoutId = window.setTimeout(() => this._destroyLinesCache(), Constants.LINES_CACHE_TIME_TO_LIVE);
+    this._linesCacheTimeout.value = disposableTimeout(() => this._destroyLinesCache(), Constants.LINES_CACHE_TIME_TO_LIVE);
   }
 
   private _destroyLinesCache(): void {
     this._linesCache = undefined;
     this._linesCacheDisposables.clear();
-    if (this._linesCacheTimeoutId) {
-      window.clearTimeout(this._linesCacheTimeoutId);
-      this._linesCacheTimeoutId = 0;
-    }
+    this._linesCacheTimeout.clear();
   }
 
   public getLineFromCache(row: number): LineCacheEntry | undefined {
