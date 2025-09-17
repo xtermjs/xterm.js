@@ -122,10 +122,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       this._highlightTimeout = setTimeout(() => {
         const term = this._cachedSearchTerm;
         this._cachedSearchTerm = undefined;
-        // Pass noScroll as true for internal incremental update
-        this._findPreviousAndSelect(term!, this._lastSearchOptions, { noScroll: true });
-        this._fireResults(this._lastSearchOptions);
-        this._cachedSearchTerm = term;
+        this.findPrevious(term!, { ...this._lastSearchOptions, incremental: true }, { noScroll: true });
       }, 200);
     }
   }
@@ -152,7 +149,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param searchOptions Search options.
    * @returns Whether a result was found.
    */
-  public findNext(term: string, searchOptions?: ISearchOptions): boolean {
+  public findNext(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -164,7 +161,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
     }
 
-    const found = this._findNextAndSelect(term, searchOptions);
+    const found = this._findNextAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._cachedSearchTerm = term;
 
@@ -326,7 +323,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param searchOptions Search options.
    * @returns Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+  public findPrevious(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -338,7 +335,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
     }
 
-    const found = this._findPreviousAndSelect(term, searchOptions);
+    const found = this._findPreviousAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._cachedSearchTerm = term;
 
