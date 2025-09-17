@@ -19,8 +19,8 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('Search Tests', () => {
 
   test.beforeEach(async () => {
+    await ctx.proxy.reset();
     await ctx.page.evaluate(`
-      window.term.reset()
       window.search?.dispose();
       window.search = new SearchAddon();
       window.term.loadAddon(window.search);

@@ -646,6 +646,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           if (deltaY === 0) {
             return false;
           }
+          const lines = self.coreMouseService.consumeWheelEvent(
+            ev as WheelEvent,
+            self._renderService?.dimensions?.device?.cell?.height,
+            self._coreBrowserService?.dpr
+          );
+          if (lines === 0) {
+            return false;
+          }
           action = deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
           but = CoreMouseButton.WHEEL;
           break;
@@ -814,6 +822,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
         // Do nothing if there's no vertical scroll
         const deltaY = (ev as WheelEvent).deltaY;
         if (deltaY === 0) {
+          return false;
+        }
+
+        const lines = self.coreMouseService.consumeWheelEvent(
+          ev as WheelEvent,
+          self._renderService?.dimensions?.device?.cell?.height,
+          self._coreBrowserService?.dpr
+        );
+        if (lines === 0) {
           return false;
         }
 

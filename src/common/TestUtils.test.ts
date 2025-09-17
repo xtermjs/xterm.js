@@ -20,6 +20,7 @@ export class MockBufferService implements IBufferService {
   public buffers: IBufferSet = {} as any;
   public onResize: Event<{ cols: number, rows: number }> = new Emitter<{ cols: number, rows: number }>().event;
   public onScroll: Event<number> = new Emitter<number>().event;
+  private readonly _onScroll = new Emitter<number>();
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
@@ -27,6 +28,10 @@ export class MockBufferService implements IBufferService {
     optionsService: IOptionsService = new MockOptionsService()
   ) {
     this.buffers = new BufferSet(optionsService, this);
+    // Listen to buffer activation events and automatically fire scroll events
+    this.buffers.onBufferActivate(e => {
+      this._onScroll.fire(e.activeBuffer.ydisp);
+    });
   }
   public scrollPages(pageCount: number): void {
     throw new Error('Method not implemented.');
@@ -65,6 +70,9 @@ export class MockCoreMouseService implements ICoreMouseService {
   public onProtocolChange: Event<CoreMouseEventType> = new Emitter<CoreMouseEventType>().event;
   public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
     throw new Error('Method not implemented.');
+  }
+  public consumeWheelEvent(ev: WheelEvent, cellHeight: number, dpr: number): number {
+    return 1;
   }
 }
 
