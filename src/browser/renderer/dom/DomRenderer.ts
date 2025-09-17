@@ -24,6 +24,19 @@ const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 
+/**
+ * Calculates the line height in pixels based on the lineHeight option and character height.
+ */
+function calculateLineHeightInPixels(lineHeight: number | string, charHeight: number): number {
+  if (typeof lineHeight === 'string' && lineHeight.endsWith('px')) {
+    const pxValue = parseFloat(lineHeight.slice(0, -2));
+    // Ensure the pixel value is at least as large as the character height
+    return Math.max(pxValue, charHeight);
+  }
+  // Numeric lineHeight acts as a multiplier
+  return Math.floor(charHeight * (lineHeight as number));
+}
+
 let nextTerminalId = 1;
 
 /**
@@ -116,7 +129,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this.dimensions.device.char.width = this._charSizeService.width * dpr;
     this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * dpr);
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
-    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
+    this.dimensions.device.cell.height = calculateLineHeightInPixels(this._optionsService.rawOptions.lineHeight, this.dimensions.device.char.height);
     this.dimensions.device.char.left = 0;
     this.dimensions.device.char.top = 0;
     this.dimensions.device.canvas.width = this.dimensions.device.cell.width * this._bufferService.cols;
