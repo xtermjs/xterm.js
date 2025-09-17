@@ -6,7 +6,8 @@
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi, ISearchOptions, ISearchDecorationOptions } from '@xterm/addon-search';
 import { Emitter, Event } from 'vs/base/common/event';
-import { combinedDisposable, Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { SearchLineCache } from './SearchLineCache';
 
 interface IInternalSearchOptions {
   noScroll?: boolean;
@@ -33,16 +34,7 @@ export interface ISearchResult {
   size: number;
 }
 
-type LineCacheEntry = [
-  /**
-   * The string representation of a line (as opposed to the buffer cell representation).
-   */
-  lineAsString: string,
-  /**
-   * The offsets where each line starts when the entry describes a wrapped line.
-   */
-  lineOffsets: number[]
-];
+
 
 interface IHighlight extends IDisposable {
   decoration: IDecoration;
@@ -65,11 +57,7 @@ const enum Constants {
    */
   NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\\;:"\',./<>?',
 
-  /**
-   * Time-to-live for cached search results in milliseconds. After this duration, cached search
-   * results will be invalidated to ensure they remain consistent with terminal content changes.
-   */
-  LINES_CACHE_TIME_TO_LIVE = 15000,
+
 
   /**
    * Default maximum number of search results to highlight simultaneously. This limit prevents
@@ -89,14 +77,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _highlightLimit: number;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _highlightTimeout: number | undefined;
-  /**
-   * translateBufferLineToStringWithWrap is a fairly expensive call.
-   * We memoize the calls into an array that has a time based ttl.
-   * _linesCache is also invalidated when the terminal cursor moves.
-   */
-  private _linesCache: LineCacheEntry[] | undefined;
-  private _linesCacheTimeoutId = 0;
-  private _linesCacheDisposables = new MutableDisposable();
+  private _lineCache = this._register(new MutableDisposable<SearchLineCache>());
 
   private readonly _onDidChangeResults = this._register(new Emitter<ISearchResultChangeEvent>());
   public get onDidChangeResults(): Event<ISearchResultChangeEvent> { return this._onDidChangeResults.event; }
@@ -109,6 +90,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
+    this._lineCache.value = new SearchLineCache(terminal);
     this._register(this._terminal.onWriteParsed(() => this._updateMatches()));
     this._register(this._terminal.onResize(() => this._updateMatches()));
     this._register(toDisposable(() => this.clearDecorations()));
@@ -223,7 +205,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
     let result: ISearchResult | undefined = undefined;
 
-    this._initLinesCache();
+    this._lineCache.value!.initLinesCache();
 
     const searchPosition: ISearchPosition = {
       startRow,
@@ -271,7 +253,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
     }
 
-    this._initLinesCache();
+    this._lineCache.value!.initLinesCache();
 
     const searchPosition: ISearchPosition = {
       startRow,
@@ -392,7 +374,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     let startCol = this._terminal.cols;
     const isReverseSearch = true;
 
-    this._initLinesCache();
+    this._lineCache.value!.initLinesCache();
     const searchPosition: ISearchPosition = {
       startRow,
       startCol
@@ -443,32 +425,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
-  /**
-   * Sets up a line cache with a ttl
-   */
-  private _initLinesCache(): void {
-    const terminal = this._terminal!;
-    if (!this._linesCache) {
-      this._linesCache = new Array(terminal.buffer.active.length);
-      this._linesCacheDisposables.value = combinedDisposable(
-        terminal.onLineFeed(() => this._destroyLinesCache()),
-        terminal.onCursorMove(() => this._destroyLinesCache()),
-        terminal.onResize(() => this._destroyLinesCache())
-      );
-    }
 
-    window.clearTimeout(this._linesCacheTimeoutId);
-    this._linesCacheTimeoutId = window.setTimeout(() => this._destroyLinesCache(), Constants.LINES_CACHE_TIME_TO_LIVE);
-  }
-
-  private _destroyLinesCache(): void {
-    this._linesCache = undefined;
-    this._linesCacheDisposables.clear();
-    if (this._linesCacheTimeoutId) {
-      window.clearTimeout(this._linesCacheTimeoutId);
-      this._linesCacheTimeoutId = 0;
-    }
-  }
 
   /**
    * A found substring is a whole word if it doesn't have an alphanumeric character directly
@@ -513,12 +470,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       searchPosition.startCol += terminal.cols;
       return this._findInLine(term, searchPosition, searchOptions);
     }
-    let cache = this._linesCache?.[row];
+    let cache = this._lineCache.value!.getLineFromCache(row);
     if (!cache) {
-      cache = this._translateBufferLineToStringWithWrap(row, true);
-      if (this._linesCache) {
-        this._linesCache[row] = cache;
-      }
+      cache = this._lineCache.value!.translateBufferLineToStringWithWrap(row, true);
+      this._lineCache.value!.setLineInCache(row, cache);
     }
     const [stringLine, offsets] = cache;
 
@@ -639,42 +594,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return offset;
   }
 
-  /**
-   * Translates a buffer line to a string, including subsequent lines if they are wraps.
-   * Wide characters will count as two columns in the resulting string. This
-   * function is useful for getting the actual text underneath the raw selection
-   * position.
-   * @param lineIndex The index of the line being translated.
-   * @param trimRight Whether to trim whitespace to the right.
-   */
-  private _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): LineCacheEntry {
-    const terminal = this._terminal!;
-    const strings = [];
-    const lineOffsets = [0];
-    let line = terminal.buffer.active.getLine(lineIndex);
-    while (line) {
-      const nextLine = terminal.buffer.active.getLine(lineIndex + 1);
-      const lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      let string = line.translateToString(!lineWrapsToNext && trimRight);
-      if (lineWrapsToNext && nextLine) {
-        const lastCell = line.getCell(line.length - 1);
-        const lastCellIsNull = lastCell && lastCell.getCode() === 0 && lastCell.getWidth() === 1;
-        // a wide character wrapped to the next line
-        if (lastCellIsNull && nextLine.getCell(0)?.getWidth() === 2) {
-          string = string.slice(0, -1);
-        }
-      }
-      strings.push(string);
-      if (lineWrapsToNext) {
-        lineOffsets.push(lineOffsets[lineOffsets.length - 1] + string.length);
-      } else {
-        break;
-      }
-      lineIndex++;
-      line = nextLine;
-    }
-    return [strings.join(''), lineOffsets];
-  }
+
 
   /**
    * Selects and scrolls to a result.
