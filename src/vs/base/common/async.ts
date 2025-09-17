@@ -124,7 +124,7 @@ export function raceTimeout<T>(promise: Promise<T>, timeout: number, onTimeout?:
 	]);
 }
 
-export function asPromise<T>(callback: () => T | Thenable<T>): Promise<T> {
+export function asPromise<T>(callback: () => T | PromiseLike<T>): Promise<T> {
 	return new Promise<T>((resolve, reject) => {
 		const item = callback();
 		if (isThenable<T>(item)) {
