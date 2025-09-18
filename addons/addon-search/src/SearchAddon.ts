@@ -4,31 +4,22 @@
  */
 
 import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
-import type { SearchAddon as ISearchApi, ISearchOptions, ISearchDecorationOptions } from '@xterm/addon-search';
+import type { SearchAddon as ISearchApi, ISearchOptions, ISearchDecorationOptions, ISearchAddonOptions, ISearchResultChangeEvent } from '@xterm/addon-search';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { disposableTimeout } from 'vs/base/common/async';
 import { SearchLineCache } from './SearchLineCache';
 
 interface IInternalSearchOptions {
-  noScroll?: boolean;
+  noScroll: boolean;
 }
 
-export interface ISearchPosition {
+interface ISearchPosition {
   startCol: number;
   startRow: number;
 }
 
-export interface ISearchResultChangeEvent {
-  resultIndex: number;
-  resultCount: number;
-}
-
-export interface ISearchAddonOptions {
-  highlightLimit: number;
-}
-
-export interface ISearchResult {
+interface ISearchResult {
   term: string;
   col: number;
   row: number;
