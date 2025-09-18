@@ -42,6 +42,7 @@
     "test": "npm run test-unit",
     "posttest": "npm run lint",
     "lint": "eslint -c .eslintrc.json --max-warnings 0 --ext .ts src/ addons/",
+    "lint-fix": "eslint -c .eslintrc.json --fix --ext .ts src/ addons/",
     "lint-api": "eslint --no-eslintrc -c .eslintrc.json.typings --max-warnings 0 --no-ignore --ext .d.ts typings/",
     "test-unit": "node ./bin/test_unit.js",
     "test-unit-coverage": "node ./bin/test_unit.js --coverage",

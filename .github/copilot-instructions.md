@@ -7,6 +7,10 @@ Please follow these guidelines when contributing:
 - Install dependencies: `npm install && npm run setup`
 - Build and bundle demo: `npm run build && npm run esbuild`
 
+## Coding guidelines
+
+- Do not write comments in unit tests unless the test is particularly complex. When they are complex, add the descriptions into the assertion calls where possible.
+
 ## Unit tests
 
 Unit tests are run with `yarn test-unit`:
