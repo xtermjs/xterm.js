@@ -10,7 +10,7 @@ import type { SearchLineCache } from './SearchLineCache';
 /**
  * Represents the position to start a search from.
  */
-export interface ISearchPosition {
+interface ISearchPosition {
   startCol: number;
   startRow: number;
 }

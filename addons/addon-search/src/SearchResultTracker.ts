@@ -4,6 +4,7 @@
  */
 
 import type { ISearchResultChangeEvent } from '@xterm/addon-search';
+import type { IDisposable } from '@xterm/xterm';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
 import type { ISearchResult } from './SearchEngine';
@@ -11,9 +12,8 @@ import type { ISearchResult } from './SearchEngine';
 /**
  * Interface for managing a currently selected decoration.
  */
-export interface ISelectedDecoration {
+interface ISelectedDecoration extends IDisposable {
   match: ISearchResult;
-  dispose(): void;
 }
 
 /**

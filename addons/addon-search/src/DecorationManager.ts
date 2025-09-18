@@ -11,7 +11,7 @@ import type { ISearchResult } from './SearchEngine';
 /**
  * Interface for managing a highlight decoration.
  */
-export interface IHighlight extends IDisposable {
+interface IHighlight extends IDisposable {
   decoration: IDecoration;
   match: ISearchResult;
 }
@@ -19,7 +19,7 @@ export interface IHighlight extends IDisposable {
 /**
  * Interface for managing multiple decorations for a single match.
  */
-export interface IMultiHighlight extends IDisposable {
+interface IMultiHighlight extends IDisposable {
   decorations: IDecoration[];
   match: ISearchResult;
 }
