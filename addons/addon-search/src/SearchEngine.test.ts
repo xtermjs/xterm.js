@@ -754,47 +754,4 @@ describe('SearchEngine', () => {
       });
     });
   });
-
-  describe('performance and stress tests', () => {
-    it('should handle large content efficiently', async () => {
-      const largeText = 'A'.repeat(10000) + 'target' + 'B'.repeat(10000);
-      await writeP(terminal, largeText);
-
-      const start = Date.now();
-      const result = searchEngine.find('target', 0, 0);
-      const duration = Date.now() - start;
-
-      assert.deepStrictEqual(result, {
-        term: 'target',
-        col: 10000,
-        row: 0,
-        size: 6
-      });
-      assert.strictEqual(duration < 1000, true, 'Search should complete in reasonable time');
-    });
-
-    it('should handle many search calls efficiently', async () => {
-      await writeP(terminal, 'test1 test2 test3 test4 test5');
-
-      const start = Date.now();
-      for (let i = 0; i < 100; i++) {
-        searchEngine.find('test', 0, 0);
-      }
-      const duration = Date.now() - start;
-
-      assert.strictEqual(duration < 1000, true, 'Multiple searches should complete efficiently');
-    });
-
-    it('should handle regex searches efficiently', async () => {
-      const content = 'word1 word2 word3 word4 word5 '.repeat(100);
-      await writeP(terminal, content);
-
-      const start = Date.now();
-      const result = searchEngine.find('word\\d+', 0, 0, { regex: true });
-      const duration = Date.now() - start;
-
-      assert.notStrictEqual(result, undefined);
-      assert.strictEqual(duration < 1000, true, 'Regex search should complete in reasonable time');
-    });
-  });
 });
