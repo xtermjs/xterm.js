@@ -18,6 +18,9 @@
       "common/*": [
         "../../../src/common/*"
       ],
+      "browser/*": [
+        "../../../src/browser/*"
+      ],
       "vs/*": [
         "../../../src/vs/*"
       ],
@@ -33,6 +36,9 @@
   "references": [
     {
       "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/browser"
     },
     {
       "path": "../../../src/vs"

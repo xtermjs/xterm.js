@@ -39,7 +39,7 @@ export class SearchLineCache extends Disposable {
   private _linesCacheTimeout = this._register(new MutableDisposable());
   private _linesCacheDisposables = this._register(new MutableDisposable());
 
-  constructor(private _terminal: Terminal) {
+  constructor(private readonly _terminal: Terminal) {
     super();
     this._register(toDisposable(() => this._destroyLinesCache()));
   }
