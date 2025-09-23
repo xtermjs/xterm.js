@@ -1,3 +1,5 @@
+import * as dom from 'vs/base/browser/dom';
+
 /**
  * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
@@ -5,7 +7,7 @@
 
 export function getCoordsRelativeToElement(window: Pick<Window, 'getComputedStyle'>, event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
   const rect = element.getBoundingClientRect();
-  const elementStyle = window.getComputedStyle(element);
+  const elementStyle = dom.getComputedStyle(element);
   const leftPadding = parseInt(elementStyle.getPropertyValue('padding-left'));
   const topPadding = parseInt(elementStyle.getPropertyValue('padding-top'));
   return [
