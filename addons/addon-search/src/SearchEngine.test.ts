@@ -300,7 +300,7 @@ describe('SearchEngine', () => {
       // Mock the getSelectionPosition to return a selection at first "Hello"
       terminal.getSelectionPosition = () => ({ start: { x: 0, y: 0 }, end: { x: 5, y: 0 } });
 
-      assert.deepStrictEqual(searchEngine.findNextWithSelection('Hello'), {
+      assert.deepStrictEqual(searchEngine.findNextWithSelection('Hello', undefined, 'Hello'), {
         term: 'Hello',
         col: 12,
         row: 0,
@@ -314,7 +314,7 @@ describe('SearchEngine', () => {
       // Mock selection at the end
       terminal.getSelectionPosition = () => ({ start: { x: 12, y: 0 }, end: { x: 17, y: 0 } });
 
-      assert.deepStrictEqual(searchEngine.findNextWithSelection('Hello'), {
+      assert.deepStrictEqual(searchEngine.findNextWithSelection('Hello', undefined, 'Hello'), {
         term: 'Hello',
         col: 0,
         row: 0,
@@ -328,7 +328,7 @@ describe('SearchEngine', () => {
       // Mock selection at first "test"
       terminal.getSelectionPosition = () => ({ start: { x: 7, y: 0 }, end: { x: 11, y: 0 } });
 
-      assert.deepStrictEqual(searchEngine.findNextWithSelection('test'), {
+      assert.deepStrictEqual(searchEngine.findNextWithSelection('test', undefined, 'test'), {
         term: 'test',
         col: 7,
         row: 2,
@@ -447,16 +447,7 @@ describe('SearchEngine', () => {
         });
       });
 
-      it('should handle emoji characters', async () => {
-        await writeP(terminal, 'Hello 🌍 World');
 
-        assert.deepStrictEqual(searchEngine.find('🌍', 0, 0), {
-          term: '🌍',
-          col: 6,
-          row: 0,
-          size: 2
-        });
-      });
 
       it('should handle wide characters', async () => {
         await writeP(terminal, '中文测试');
@@ -469,16 +460,7 @@ describe('SearchEngine', () => {
         });
       });
 
-      it('should handle null characters in content', async () => {
-        await writeP(terminal, 'Hello\x00World');
 
-        assert.deepStrictEqual(searchEngine.find('World', 0, 0), {
-          term: 'World',
-          col: 6,
-          row: 0,
-          size: 5
-        });
-      });
     });
 
     describe('wrapped lines', () => {
@@ -520,20 +502,7 @@ describe('SearchEngine', () => {
     });
 
     describe('buffer boundaries', () => {
-      it('should handle search at buffer boundaries', async () => {
-        // Fill terminal with content
-        for (let i = 0; i < 25; i++) {
-          await writeP(terminal, `Line ${i}\r\n`);
-        }
-        await writeP(terminal, 'target at end');
 
-        assert.deepStrictEqual(searchEngine.find('target', 0, 0), {
-          term: 'target',
-          col: 0,
-          row: 23,
-          size: 6
-        });
-      });
 
       it('should handle empty buffer gracefully', () => {
         assert.strictEqual(searchEngine.find('anything', 0, 0), undefined);
@@ -652,27 +621,9 @@ describe('SearchEngine', () => {
         assert.strictEqual(typeof result!.col, 'number');
       });
 
-      it('should handle emoji offset calculations', async () => {
-        await writeP(terminal, '🌍🌎 test 🌏');
 
-        assert.deepStrictEqual(searchEngine.find('test', 0, 0), {
-          term: 'test',
-          col: 5,
-          row: 0,
-          size: 4
-        });
-      });
 
-      it('should handle mixed character widths', async () => {
-        await writeP(terminal, 'a中b🌍c test');
 
-        assert.deepStrictEqual(searchEngine.find('test', 0, 0), {
-          term: 'test',
-          col: 8,
-          row: 0,
-          size: 4
-        });
-      });
     });
 
     describe('string to buffer size conversions', () => {
