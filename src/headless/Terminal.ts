@@ -38,6 +38,8 @@ export class Terminal extends CoreTerminal {
   public readonly onA11yChar = this._onA11yCharEmitter.event;
   private readonly _onA11yTabEmitter = this._register(new Emitter<number>());
   public readonly onA11yTab = this._onA11yTabEmitter.event;
+  private readonly _onRowChange = this._register(new Emitter<{ start: number, end: number }>());
+  public readonly onRowChange = this._onRowChange.event;
 
   constructor(
     options: ITerminalOptions = {}
@@ -53,6 +55,11 @@ export class Terminal extends CoreTerminal {
     this._register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
     this._register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
     this._register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this._register(this._inputHandler.onRequestRefreshRows(e => {
+      if (e) {
+        this._onRowChange.fire({ start: e.start, end: e.end });
+      }
+    }));
   }
 
   /**
