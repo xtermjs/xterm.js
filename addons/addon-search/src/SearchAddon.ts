@@ -157,7 +157,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return false;
     }
 
-    const result = this._engine.findNextWithSelection(term, searchOptions);
+    const result = this._engine.findNextWithSelection(term, searchOptions, this._state.cachedSearchTerm);
     return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
@@ -200,7 +200,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return false;
     }
 
-    const result = this._engine.findPreviousWithSelection(term, searchOptions);
+    const result = this._engine.findPreviousWithSelection(term, searchOptions, this._state.cachedSearchTerm);
     return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 

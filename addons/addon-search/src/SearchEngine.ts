@@ -91,9 +91,10 @@ export class SearchEngine {
    * Find the next occurrence of a term with wrapping and selection management.
    * @param term The search term.
    * @param searchOptions Search options.
+   * @param cachedSearchTerm The cached search term to determine incremental behavior.
    * @returns The search result if found, undefined otherwise.
    */
-  public findNextWithSelection(term: string, searchOptions?: ISearchOptions): ISearchResult | undefined {
+  public findNextWithSelection(term: string, searchOptions?: ISearchOptions, cachedSearchTerm?: string): ISearchResult | undefined {
     if (!term || term.length === 0) {
       this._terminal.clearSelection();
       return undefined;
@@ -105,8 +106,13 @@ export class SearchEngine {
     let startCol = 0;
     let startRow = 0;
     if (prevSelectedPos) {
-      startCol = prevSelectedPos.end.x;
-      startRow = prevSelectedPos.end.y;
+      if (cachedSearchTerm === term) {
+        startCol = prevSelectedPos.end.x;
+        startRow = prevSelectedPos.end.y;
+      } else {
+        startCol = prevSelectedPos.start.x;
+        startRow = prevSelectedPos.start.y;
+      }
     }
 
     this._lineCache.initLinesCache();
@@ -155,9 +161,10 @@ export class SearchEngine {
    * Find the previous occurrence of a term with wrapping and selection management.
    * @param term The search term.
    * @param searchOptions Search options.
+   * @param cachedSearchTerm The cached search term to determine if expansion should occur.
    * @returns The search result if found, undefined otherwise.
    */
-  public findPreviousWithSelection(term: string, searchOptions?: ISearchOptions): ISearchResult | undefined {
+  public findPreviousWithSelection(term: string, searchOptions?: ISearchOptions, cachedSearchTerm?: string): ISearchResult | undefined {
     if (!term || term.length === 0) {
       this._terminal.clearSelection();
       return undefined;
@@ -180,12 +187,14 @@ export class SearchEngine {
     if (prevSelectedPos) {
       searchPosition.startRow = startRow = prevSelectedPos.start.y;
       searchPosition.startCol = startCol = prevSelectedPos.start.x;
-      // Try to expand selection to right first.
-      result = this._findInLine(term, searchPosition, searchOptions, false);
-      if (!result) {
-        // If selection was not able to be expanded to the right, then try reverse search
-        searchPosition.startRow = startRow = prevSelectedPos.end.y;
-        searchPosition.startCol = startCol = prevSelectedPos.end.x;
+      if (cachedSearchTerm !== term) {
+        // Try to expand selection to right first.
+        result = this._findInLine(term, searchPosition, searchOptions, false);
+        if (!result) {
+          // If selection was not able to be expanded to the right, then try reverse search
+          searchPosition.startRow = startRow = prevSelectedPos.end.y;
+          searchPosition.startCol = startCol = prevSelectedPos.end.x;
+        }
       }
     }
 
