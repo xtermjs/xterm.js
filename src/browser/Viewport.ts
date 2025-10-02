@@ -94,7 +94,12 @@ export class Viewport extends Disposable {
     }));
 
     this._register(this._bufferService.onResize(() => this.queueSync()));
-    this._register(this._bufferService.buffers.onBufferActivate(() => this.queueSync()));
+    this._register(this._bufferService.buffers.onBufferActivate(() => {
+      // Reset _latestYDisp when switching buffers to prevent stale scroll position
+      // from alt buffer contaminating normal buffer scroll position
+      this._latestYDisp = undefined;
+      this.queueSync();
+    }));
     this._register(this._bufferService.onScroll(() => this._sync()));
 
     this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
@@ -160,7 +165,6 @@ export class Viewport extends Disposable {
     // If ydisp has been changed by some other component (input/buffer), then stop animating smooth
     // scroll and scroll there immediately.
     if (ydisp !== this._latestYDisp) {
-      this._latestYDisp = ydisp;
       this._scrollableElement.setScrollPosition({
         scrollTop: ydisp * this._renderService.dimensions.css.cell.height
       });
