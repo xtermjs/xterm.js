@@ -126,6 +126,14 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
     if (num < 127) return 1;
     if (num < 65536) return table[num] as CharWidth;
     if (bisearch(num, HIGH_COMBINING)) return 0;
+
+    // Modern emoji support
+    // Emoji and symbols that should be treated as wide characters (width 2)
+    // These ranges cover most emoji introduced in Unicode 6.0+
+    if (num >= 0x1F000 && num <= 0x1FFFF) return 2;  // Miscellaneous Symbols and Pictographs, Emoticons, etc.
+    if (num >= 0x2600 && num <= 0x26FF) return 2;    // Miscellaneous Symbols
+    if (num >= 0x2700 && num <= 0x27BF) return 2;    // Dingbats
+
     if ((num >= 0x20000 && num <= 0x2fffd) || (num >= 0x30000 && num <= 0x3fffd)) return 2;
     return 1;
   }
