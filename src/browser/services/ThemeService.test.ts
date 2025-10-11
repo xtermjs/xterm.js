@@ -5,8 +5,9 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ThemeService, DEFAULT_ANSI_COLORS } from 'browser/services/ThemeService';
+import { ThemeService } from 'browser/services/ThemeService';
 import { OptionsService } from 'common/services/OptionsService';
+import { DEFAULT_ANSI_COLORS } from 'browser/Types';
 
 describe('ThemeService', () => {
   let themeService: ThemeService;

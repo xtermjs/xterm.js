@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IEvent, IEventEmitter } from 'common/EventEmitter';
+import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, type IOverviewRulerOptions } from '@xterm/xterm';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, CursorInactiveStyle, IOscLinkData } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { IDecorationOptions, IDecoration, ILinkHandler, IWindowsPty, ILogger } from 'xterm';
+import type { Emitter, Event } from 'vs/base/common/event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -18,16 +18,18 @@ export interface IBufferService {
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
   isUserScrolling: boolean;
-  onResize: IEvent<{ cols: number, rows: number }>;
-  onScroll: IEvent<number>;
+  onResize: Event<{ cols: number, rows: number }>;
+  onScroll: Event<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
-  scrollLines(disp: number, suppressScrollEvent?: boolean, source?: ScrollSource): void;
+  scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   resize(cols: number, rows: number): void;
   reset(): void;
 }
 
 export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
 export interface ICoreMouseService {
+  serviceBrand: undefined;
+
   activeProtocol: string;
   activeEncoding: string;
   areMouseEventsActive: boolean;
@@ -50,12 +52,17 @@ export interface ICoreMouseService {
   /**
    * Event to announce changes in mouse tracking.
    */
-  onProtocolChange: IEvent<CoreMouseEventType>;
+  onProtocolChange: Event<CoreMouseEventType>;
 
   /**
    * Human readable version of mouse events.
    */
   explainEvents(events: CoreMouseEventType): { [event: string]: boolean };
+
+  /**
+   * Process wheel event taking partial scroll into account.
+   */
+  consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number;
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');
@@ -72,10 +79,10 @@ export interface ICoreService {
   readonly modes: IModes;
   readonly decPrivateModes: IDecPrivateModes;
 
-  readonly onData: IEvent<string>;
-  readonly onUserInput: IEvent<void>;
-  readonly onBinary: IEvent<string>;
-  readonly onRequestScrollToBottom: IEvent<void>;
+  readonly onData: Event<string>;
+  readonly onUserInput: Event<void>;
+  readonly onBinary: Event<string>;
+  readonly onRequestScrollToBottom: Event<void>;
 
   reset(): void;
 
@@ -122,6 +129,7 @@ export interface ICharsetService {
 export interface IServiceIdentifier<T> {
   (...args: any[]): void;
   type: T;
+  _id: string;
 }
 
 export interface IBrandedService {
@@ -184,7 +192,7 @@ export interface IOptionsService {
   /**
    * Adds an event listener for when any option changes.
    */
-  readonly onOptionChange: IEvent<keyof ITerminalOptions>;
+  readonly onOptionChange: Event<keyof ITerminalOptions>;
 
   /**
    * Adds an event listener for when a specific option changes, this is a convenience method that is
@@ -217,7 +225,9 @@ export interface ITerminalOptions {
   cursorInactiveStyle?: CursorInactiveStyle;
   customGlyphs?: boolean;
   disableStdin?: boolean;
+  documentOverride?: any | null;
   drawBoldTextInBrightColors?: boolean;
+  /** @deprecated No longer supported */
   fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
   fastScrollSensitivity?: number;
   fontSize?: number;
@@ -233,6 +243,8 @@ export interface ITerminalOptions {
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
+  reflowCursorLine?: boolean;
+  rescaleOverlappingGlyphs?: boolean;
   rightClickSelectsWord?: boolean;
   rows?: number;
   screenReaderMode?: boolean;
@@ -246,7 +258,8 @@ export interface ITerminalOptions {
   windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
-  overviewRulerWidth?: number;
+  overviewRuler?: IOverviewRulerOptions;
+  scrollOnEraseInDisplay?: boolean;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -261,6 +274,10 @@ export interface ITheme {
   selectionForeground?: string;
   selectionBackground?: string;
   selectionInactiveBackground?: string;
+  scrollbarSliderBackground?: string;
+  scrollbarSliderHoverBackground?: string;
+  scrollbarSliderActiveBackground?: string;
+  overviewRulerBorder?: string;
   black?: string;
   red?: string;
   green?: string;
@@ -296,6 +313,29 @@ export interface IOscLinkService {
   getLinkData(linkId: number): IOscLinkData | undefined;
 }
 
+/*
+ * Width and Grapheme_Cluster_Break properties of a character as a bit mask.
+ *
+ * bit 0: shouldJoin - should combine with preceding character.
+ * bit 1..2: wcwidth - see UnicodeCharWidth.
+ * bit 3..31: class of character (currently only 4 bits are used).
+ *   This is used to determined grapheme clustering - i.e. which codepoints
+ *   are to be combined into a single compound character.
+ *
+ * Use the UnicodeService static function createPropertyValue to create a
+ * UnicodeCharProperties; use extractShouldJoin, extractWidth, and
+ * extractCharKind to extract the components.
+ */
+export type UnicodeCharProperties = number;
+
+/**
+ * Width in columns of a character.
+ * In a CJK context, "half-width" characters (such as Latin) are width 1,
+ * while "full-width" characters (such as Kanji) are 2 columns wide.
+ * Combining characters (such as accents) are width 0.
+ */
+export type UnicodeCharWidth = 0 | 1 | 2;
+
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
   serviceBrand: undefined;
@@ -306,26 +346,33 @@ export interface IUnicodeService {
   /** Currently active version. */
   activeVersion: string;
   /** Event triggered, when activate version changed. */
-  readonly onChange: IEvent<string>;
+  readonly onChange: Event<string>;
 
   /**
    * Unicode version dependent
    */
-  wcwidth(codepoint: number): number;
+  wcwidth(codepoint: number): UnicodeCharWidth;
   getStringCellWidth(s: string): number;
+  /**
+   * Return character width and type for grapheme clustering.
+   * If preceding != 0, it is the return code from the previous character;
+   * in that case the result specifies if the characters should be joined.
+   */
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
 export interface IUnicodeVersionProvider {
   readonly version: string;
-  wcwidth(ucs: number): 0 | 1 | 2;
+  wcwidth(ucs: number): UnicodeCharWidth;
+  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 
 export const IDecorationService = createDecorator<IDecorationService>('DecorationService');
 export interface IDecorationService extends IDisposable {
   serviceBrand: undefined;
   readonly decorations: IterableIterator<IInternalDecoration>;
-  readonly onDecorationRegistered: IEvent<IInternalDecoration>;
-  readonly onDecorationRemoved: IEvent<IInternalDecoration>;
+  readonly onDecorationRegistered: Event<IInternalDecoration>;
+  readonly onDecorationRemoved: Event<IInternalDecoration>;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   reset(): void;
   /**
@@ -338,5 +385,5 @@ export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
-  readonly onRenderEmitter: IEventEmitter<HTMLElement>;
+  readonly onRenderEmitter: Emitter<HTMLElement>;
 }

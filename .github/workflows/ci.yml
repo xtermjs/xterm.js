@@ -19,35 +19,54 @@ jobs:
         cache: 'yarn'
     - name: Install dependencies
       run: yarn --frozen-lockfile
-    - name: Build
+    - name: Setup and run tsc
       run: yarn setup
+    - name: Esbuild
+      run: yarn esbuild
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
+          ./lib/* \
           ./out/* \
-          ./out-test/* \
-          ./addons/xterm-addon-attach/out/* \
-          ./addons/xterm-addon-attach/out-test/* \
-          ./addons/xterm-addon-canvas/out/* \
-          ./addons/xterm-addon-canvas/out-test/* \
-          ./addons/xterm-addon-fit/out/* \
-          ./addons/xterm-addon-fit/out-test/* \
-          ./addons/xterm-addon-image/out/* \
-          ./addons/xterm-addon-image/out-test/* \
-          ./addons/xterm-addon-ligatures/out/* \
-          ./addons/xterm-addon-ligatures/out-test/* \
-          ./addons/xterm-addon-search/out/* \
-          ./addons/xterm-addon-search/out-test/* \
-          ./addons/xterm-addon-serialize/out/* \
-          ./addons/xterm-addon-serialize/out-test/* \
-          ./addons/xterm-addon-unicode11/out/* \
-          ./addons/xterm-addon-unicode11/out-test/* \
-          ./addons/xterm-addon-web-links/out/* \
-          ./addons/xterm-addon-web-links/out-test/* \
-          ./addons/xterm-addon-webgl/out/* \
-          ./addons/xterm-addon-webgl/out-test/*
+          ./out-*/* \
+          ./addons/addon-attach/lib/* \
+          ./addons/addon-attach/out/* \
+          ./addons/addon-attach/out-*/* \
+          ./addons/addon-clipboard/lib/* \
+          ./addons/addon-clipboard/out/* \
+          ./addons/addon-clipboard/out-*/* \
+          ./addons/addon-fit/lib/* \
+          ./addons/addon-fit/out/* \
+          ./addons/addon-fit/out-*/* \
+          ./addons/addon-image/lib/* \
+          ./addons/addon-image/out/* \
+          ./addons/addon-image/out-*/* \
+          ./addons/addon-ligatures/lib/* \
+          ./addons/addon-ligatures/out/* \
+          ./addons/addon-ligatures/out-*/* \
+          ./addons/addon-progress/lib/* \
+          ./addons/addon-progress/out/* \
+          ./addons/addon-progress/out-*/* \
+          ./addons/addon-search/lib/* \
+          ./addons/addon-search/out/* \
+          ./addons/addon-search/out-*/* \
+          ./addons/addon-serialize/lib/* \
+          ./addons/addon-serialize/out/* \
+          ./addons/addon-serialize/out-*/* \
+          ./addons/addon-unicode11/lib/* \
+          ./addons/addon-unicode11/out/* \
+          ./addons/addon-unicode11/out-*/* \
+          ./addons/addon-unicode-graphemes/lib/* \
+          ./addons/addon-unicode-graphemes/out/* \
+          ./addons/addon-unicode-graphemes/out-*/* \
+          ./addons/addon-web-links/lib/* \
+          ./addons/addon-web-links/out/* \
+          ./addons/addon-web-links/out-*/* \
+          ./addons/addon-webgl/lib/* \
+          ./addons/addon-webgl/out/* \
+          ./addons/addon-webgl/out-*st/*
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: compressed-build.zip
@@ -68,6 +87,8 @@ jobs:
         yarn --frozen-lockfile
         yarn install-addons
     - name: Lint code
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096
       run: yarn lint
     - name: Lint API
       run: yarn lint-api
@@ -87,7 +108,7 @@ jobs:
       run: |
         yarn --frozen-lockfile
         yarn install-addons
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -106,7 +127,7 @@ jobs:
         ./node_modules/.bin/nyc report --reporter=cobertura
         exit $EXIT_CODE
 
-  test-unit-parallel:
+  test-unit:
     timeout-minutes: 20
     strategy:
       matrix:
@@ -129,7 +150,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         job: build
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -144,89 +165,14 @@ jobs:
     - name: Unit tests
       run: yarn test-unit --forbid-only
 
-  test-unit:
-    needs: build
-    timeout-minutes: 20
-    strategy:
-      matrix:
-        node-version: [16]
-        runs-on: [ubuntu, macos, windows]
-    runs-on: ${{ matrix.runs-on }}-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}.x
-        cache: 'yarn'
-    - name: Install dependencies
-      run: |
-        yarn --frozen-lockfile
-        yarn install-addons
-    - uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
-    - name: Unzip artifacts
-      shell: bash
-      run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-        else
-          unzip -o compressed-build.zip
-        fi
-        ls -R
-    - name: Unit tests
-      run: yarn test-unit --forbid-only
-
-  test-api-parallel:
+  test-integration:
     timeout-minutes: 20
     strategy:
       matrix:
         node-version: [18] # just one as integration tests are about testing in browser
-        runs-on: [ubuntu] # macos is flaky
-        browser: [chromium, firefox]
-    runs-on: ${{ matrix.runs-on }}-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}.x
-        cache: 'yarn'
-    - name: Install dependencies
-      run: |
-        yarn --frozen-lockfile
-        yarn install-addons
-    - name: Install playwright
-      run: npx playwright install
-    - name: Wait for build job
-      uses: NathanFirmo/wait-for-other-job@v1.1.1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        job: build
-    - uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
-    - name: Unzip artifacts
-      shell: bash
-      run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-        else
-          unzip -o compressed-build.zip
-        fi
-        ls -R
-    - name: Integration tests (${{ matrix.browser }})
-      run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
-
-  test-playwright-parallel:
-    timeout-minutes: 20
-    strategy:
-      matrix:
-        node-version: [18] # just one as integration tests are about testing in browser
-        runs-on: [ubuntu] # macos is flaky
+        runs-on: [ubuntu-22.04] # macos is flaky
         browser: [chromium, firefox, webkit]
-    runs-on: ${{ matrix.runs-on }}-latest
+    runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}.x
@@ -245,7 +191,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         job: build
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -258,19 +204,38 @@ jobs:
         fi
         ls -R
     - name: Build demo
-      run: yarn build-demo
-    - name: Integration tests
-      run: yarn test-playwright-${{ matrix.browser }} --forbid-only
+      run: yarn esbuild-demo
+    - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
+    - name: Integration tests (addon-attach)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-attach
+    - name: Integration tests (addon-clipboard)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-clipboard
+    - name: Integration tests (addon-fit)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
+    - name: Integration tests (addon-image)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
+    - name: Integration tests (addon-progress)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
+    - name: Integration tests (addon-search)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
+    - name: Integration tests (addon-serialize)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-serialize
+    - name: Integration tests (addon-unicode-graphemes)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
+    - name: Integration tests (addon-unicode11)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
+    - name: Integration tests (addon-web-links)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
+    - name: Integration tests (addon-webgl)
+      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
 
-  test-api:
+  release-dry-run:
     needs: build
-    timeout-minutes: 20
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18] # just one as integration tests are about testing in browser
-        runs-on: [windows] # macos is flaky
-        browser: [chromium, firefox]
-    runs-on: ${{ matrix.runs-on }}-latest
+        node-version: [18]
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}.x
@@ -284,7 +249,7 @@ jobs:
         yarn install-addons
     - name: Install playwright
       run: npx playwright install
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -296,5 +261,9 @@ jobs:
           unzip -o compressed-build.zip
         fi
         ls -R
-    - name: Integration tests (${{ matrix.browser }})
-      run: yarn test-api-${{ matrix.browser }} --headless --forbid-only
+    - name: Package headless
+      run: |
+        yarn package-headless
+        node ./bin/package_headless.js
+    - name: Publish to npm (dry run)
+      run: node ./bin/publish.js --dry

@@ -1,0 +1,28 @@
+{
+  "name": "@xterm/addon-attach",
+  "version": "0.11.0",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/addon-attach.js",
+  "module": "lib/addon-attach.mjs",
+  "types": "typings/addon-attach.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-attach",
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "xterm",
+    "xterm.js"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc -p .",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package",
+    "start": "node ../../demo/start"
+  },
+  "peerDependencies": {
+    "@xterm/xterm": "^5.0.0"
+  }
+}

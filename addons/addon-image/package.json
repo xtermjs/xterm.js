@@ -1,0 +1,33 @@
+{
+  "name": "@xterm/addon-image",
+  "version": "0.8.0",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/addon-image.js",
+  "module": "lib/addon-image.mjs",
+  "types": "typings/addon-image.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image",
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "image",
+    "sixel",
+    "xterm",
+    "xterm.js"
+  ],
+  "scripts": {
+    "prepackage": "../../node_modules/.bin/tsc -p .",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package",
+    "start": "node ../../demo/start"
+  },
+  "peerDependencies": {
+    "@xterm/xterm": "^5.2.0"
+  },
+  "devDependencies": {
+    "sixel": "^0.16.0",
+    "xterm-wasm-parts": "^0.1.0"
+  }
+}

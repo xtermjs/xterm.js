@@ -31,7 +31,8 @@ const config = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      headless: path.resolve('./out/headless')
+      headless: path.resolve('./out/headless'),
+      vs: path.resolve('./out/vs')
     }
   },
   output: {
@@ -39,8 +40,10 @@ const config = {
     path: path.resolve('./headless/lib-headless'),
     library: {
       type: 'commonjs'
-    }
+    },
+    // Force usage of globalThis instead of global / self. (This is cross-env compatible)
+    globalObject: 'globalThis',
   },
-  mode: 'production'
+  mode: 'production',
 };
 module.exports = config;

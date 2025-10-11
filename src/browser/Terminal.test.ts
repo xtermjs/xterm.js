@@ -3,13 +3,13 @@
  * @license MIT
  */
 
+import { MockCompositionHelper, MockRenderer, MockViewport, TestTerminal } from 'browser/TestUtils.test';
+import type { IBrowser } from 'browser/Types';
 import { assert } from 'chai';
-import { MockViewport, MockCompositionHelper, MockRenderer, TestTerminal } from 'browser/TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockUnicodeService } from 'common/TestUtils.test';
-import { IMarker, ScrollSource } from 'common/Types';
-import { ICoreService } from 'common/services/Services';
+import { IMarker } from 'common/Types';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -28,8 +28,7 @@ describe('Terminal', () => {
     term = new TestTerminal(termOptions);
     term.refresh = () => { };
     (term as any).renderer = new MockRenderer();
-    term.viewport = new MockViewport();
-    term.viewport.onRequestScrollLines(e => term.scrollLines(e.amount, e.suppressScrollEvent, ScrollSource.VIEWPORT));
+    (term as any).viewport = new MockViewport();
     (term as any)._compositionHelper = new MockCompositionHelper();
     (term as any).element = {
       classList: {
@@ -571,12 +570,9 @@ describe('Terminal', () => {
     });
 
     describe('with macOptionIsMeta', () => {
-      let originalIsMac: boolean;
       beforeEach(() => {
-        originalIsMac = term.browser.isMac;
         term.options.macOptionIsMeta = true;
       });
-      afterEach(() => term.browser.isMac = originalIsMac);
 
       it('should interfere with the alt key on keyDown', () => {
         evKeyDown.altKey = true;
@@ -589,12 +585,12 @@ describe('Terminal', () => {
     });
 
     describe('On Mac OS', () => {
-      let originalIsMac: boolean;
+      let originalBrowser: IBrowser;
       beforeEach(() => {
-        originalIsMac = term.browser.isMac;
-        term.browser.isMac = true;
+        originalBrowser = term.browser;
+        term.browser = { ...originalBrowser, isMac: true };
       });
-      afterEach(() => term.browser.isMac = originalIsMac);
+      afterEach(() => term.browser = originalBrowser);
 
       it('should not interfere with the alt key on keyDown', () => {
         evKeyDown.altKey = true;
@@ -656,12 +652,12 @@ describe('Terminal', () => {
     });
 
     describe('On MS Windows', () => {
-      let originalIsWindows: boolean;
+      let originalBrowser: IBrowser;
       beforeEach(() => {
-        originalIsWindows = term.browser.isWindows;
-        term.browser.isWindows = true;
+        originalBrowser = term.browser;
+        term.browser = { ...originalBrowser, isWindows: true };
       });
-      afterEach(() => term.browser.isWindows = originalIsWindows);
+      afterEach(() => term.browser = originalBrowser);
 
       it('should not interfere with the alt + ctrl key on keyDown', () => {
         evKeyPress.altKey = true;

@@ -4,18 +4,19 @@
   "references": [
     { "path": "./src/browser" },
     { "path": "./src/headless" },
-    { "path": "./test/api" },
     { "path": "./test/benchmark" },
     { "path": "./test/playwright" },
-    { "path": "./addons/xterm-addon-attach" },
-    { "path": "./addons/xterm-addon-canvas" },
-    { "path": "./addons/xterm-addon-fit" },
-    { "path": "./addons/xterm-addon-image" },
-    { "path": "./addons/xterm-addon-ligatures" },
-    { "path": "./addons/xterm-addon-search" },
-    { "path": "./addons/xterm-addon-serialize" },
-    { "path": "./addons/xterm-addon-unicode11" },
-    { "path": "./addons/xterm-addon-web-links" },
-    { "path": "./addons/xterm-addon-webgl" }
+    { "path": "./addons/addon-attach" },
+    { "path": "./addons/addon-clipboard" },
+    { "path": "./addons/addon-fit" },
+    { "path": "./addons/addon-image" },
+    { "path": "./addons/addon-ligatures" },
+    { "path": "./addons/addon-progress" },
+    { "path": "./addons/addon-search" },
+    { "path": "./addons/addon-serialize" },
+    { "path": "./addons/addon-unicode11" },
+    { "path": "./addons/addon-unicode-graphemes" },
+    { "path": "./addons/addon-web-links" },
+    { "path": "./addons/addon-webgl" }
   ]
 }

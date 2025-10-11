@@ -45,25 +45,28 @@ export class WidthCache implements IDisposable {
   private _container: HTMLDivElement;
   private _measureElements: HTMLSpanElement[] = [];
 
-  constructor(_document: Document) {
+  constructor(_document: Document, _helperContainer: HTMLElement) {
     this._container = _document.createElement('div');
-    this._container.style.position = 'absolute';
-    this._container.style.top = '-50000px';
-    this._container.style.width = '50000px';
+    this._container.classList.add('xterm-width-cache-measure-container');
+    this._container.setAttribute('aria-hidden', 'true');
     // SP should stack in spans
     this._container.style.whiteSpace = 'pre';
     // avoid undercuts in non-monospace fonts from kerning
     this._container.style.fontKerning = 'none';
 
     const regular = _document.createElement('span');
+    regular.classList.add('xterm-char-measure-element');
 
     const bold = _document.createElement('span');
+    bold.classList.add('xterm-char-measure-element');
     bold.style.fontWeight = 'bold';
 
     const italic = _document.createElement('span');
+    italic.classList.add('xterm-char-measure-element');
     italic.style.fontStyle = 'italic';
 
     const boldItalic = _document.createElement('span');
+    boldItalic.classList.add('xterm-char-measure-element');
     boldItalic.style.fontWeight = 'bold';
     boldItalic.style.fontStyle = 'italic';
 
@@ -74,7 +77,7 @@ export class WidthCache implements IDisposable {
     this._container.appendChild(italic);
     this._container.appendChild(boldItalic);
 
-    _document.body.appendChild(this._container);
+    _helperContainer.appendChild(this._container);
 
     this.clear();
   }
@@ -131,9 +134,14 @@ export class WidthCache implements IDisposable {
   public get(c: string, bold: boolean | number, italic: boolean | number): number {
     let cp = 0;
     if (!bold && !italic && c.length === 1 && (cp = c.charCodeAt(0)) < WidthCacheSettings.FLAT_SIZE) {
-      return this._flat[cp] !== WidthCacheSettings.FLAT_UNSET
-        ? this._flat[cp]
-        : (this._flat[cp] = this._measure(c, 0));
+      if (this._flat[cp] !== WidthCacheSettings.FLAT_UNSET) {
+        return this._flat[cp];
+      }
+      const width = this._measure(c, 0);
+      if (width > 0) {
+        this._flat[cp] = width;
+      }
+      return width;
     }
     let key = c;
     if (bold) key += 'B';
@@ -144,7 +152,9 @@ export class WidthCache implements IDisposable {
       if (bold) variant |= FontVariant.BOLD;
       if (italic) variant |= FontVariant.ITALIC;
       width = this._measure(c, variant);
-      this._holey!.set(key, width);
+      if (width > 0) {
+        this._holey!.set(key, width);
+      }
     }
     return width;
   }

@@ -8,10 +8,10 @@ import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { color, rgba } from 'common/Color';
+import { channels, color } from 'common/Color';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
-import { excludeFromContrastRatioDemands } from 'browser/renderer/shared/RendererUtils';
+import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { IColorContrastCache } from 'browser/Types';
@@ -84,6 +84,7 @@ export class DomRendererRowFactory {
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
     let text = '';
+    let i = 0;
     let oldBg = 0;
     let oldFg = 0;
     let oldExt = 0;
@@ -91,6 +92,7 @@ export class DomRendererRowFactory {
     let oldSpacing = 0;
     let oldIsInSelection: boolean = false;
     let spacing = 0;
+    let skipJoinedCheckUntilX = 0;
     const classes: string[] = [];
 
     const hasHover = linkStart !== -1 && linkEnd !== -1;
@@ -106,29 +108,46 @@ export class DomRendererRowFactory {
 
       // If true, indicates that the current character(s) to draw were joined.
       let isJoined = false;
+
+      // Indicates whether this cell is part of a joined range that should be ignored as it cannot
+      // be rendered entirely, like the selection state differs across the range.
+      let isValidJoinRange = (x >= skipJoinedCheckUntilX);
+
       let lastCharX = x;
 
       // Process any joined character ranges as needed. Because of how the
       // ranges are produced, we know that they are valid for the characters
       // and attributes of our input.
       let cell = this._workCell;
-      if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
-        isJoined = true;
+      if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
         const range = joinedRanges.shift()!;
+        // If the ligature's selection state is not consistent, don't join it. This helps the
+        // selection render correctly regardless whether they should be joined.
+        const firstSelectionState = this._isCellInSelection(range[0], row);
+        for (i = range[0] + 1; i < range[1]; i++) {
+          isValidJoinRange &&= (firstSelectionState === this._isCellInSelection(i, row));
+        }
+        // Similarly, if the cursor is in the ligature, don't join it.
+        isValidJoinRange &&= !isCursorRow || cursorX < range[0] || cursorX >= range[1];
+        if (!isValidJoinRange) {
+          skipJoinedCheckUntilX = range[1];
+        } else {
+          isJoined = true;
 
-        // We already know the exact start and end column of the joined range,
-        // so we get the string and width representing it directly
-        cell = new JoinedCellData(
-          this._workCell,
-          lineData.translateToString(true, range[0], range[1]),
-          range[1] - range[0]
-        );
+          // We already know the exact start and end column of the joined range,
+          // so we get the string and width representing it directly
+          cell = new JoinedCellData(
+            this._workCell,
+            lineData.translateToString(true, range[0], range[1]),
+            range[1] - range[0]
+          );
 
-        // Skip over the cells occupied by this range in the loop
-        lastCharX = range[1] - 1;
+          // Skip over the cells occupied by this range in the loop
+          lastCharX = range[1] - 1;
 
-        // Recalculate width
-        width = cell.getWidth();
+          // Recalculate width
+          width = cell.getWidth();
+        }
       }
 
       const isInSelection = this._isCellInSelection(x, row);
@@ -178,9 +197,14 @@ export class DomRendererRowFactory {
           && !isCursorCell
           && !isJoined
           && !isDecorated
+          && isValidJoinRange
         ) {
           // no span alterations, thus only account chars skipping all code below
-          text += chars;
+          if (cell.isInvisible()) {
+            text += WHITESPACE_CELL_CHAR;
+          } else {
+            text += chars;
+          }
           cellAmount++;
           continue;
         } else {
@@ -214,7 +238,7 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (!this._coreService.isCursorHidden && isCursorCell) {
+      if (!this._coreService.isCursorHidden && isCursorCell && this._coreService.isCursorInitialized) {
         classes.push(RowCss.CURSOR_CLASS);
         if (this._coreBrowserService.isFocused) {
           if (cursorBlink) {
@@ -372,7 +396,7 @@ export class DomRendererRowFactory {
           classes.push(`xterm-bg-${bg}`);
           break;
         case Attributes.CM_RGB:
-          resolvedBg = rgba.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
+          resolvedBg = channels.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
           this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
           break;
         case Attributes.CM_DEFAULT:
@@ -404,7 +428,7 @@ export class DomRendererRowFactory {
           }
           break;
         case Attributes.CM_RGB:
-          const color = rgba.toColor(
+          const color = channels.toColor(
             (fg >> 16) & 0xFF,
             (fg >>  8) & 0xFF,
             (fg      ) & 0xFF
@@ -415,7 +439,7 @@ export class DomRendererRowFactory {
           break;
         case Attributes.CM_DEFAULT:
         default:
-          if (!this._applyMinimumContrast(charElement, resolvedBg, colors.foreground, cell, bgOverride, undefined)) {
+          if (!this._applyMinimumContrast(charElement, resolvedBg, colors.foreground, cell, bgOverride, fgOverride)) {
             if (isInverse) {
               classes.push(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
             }
@@ -431,7 +455,7 @@ export class DomRendererRowFactory {
       }
 
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isJoined && !isDecorated) {
+      if (!isCursorCell && !isJoined && !isDecorated && isValidJoinRange) {
         cellAmount++;
       } else {
         charElement.textContent = text;
@@ -454,7 +478,7 @@ export class DomRendererRowFactory {
   }
 
   private _applyMinimumContrast(element: HTMLElement, bg: IColor, fg: IColor, cell: ICellData, bgOverride: IColor | undefined, fgOverride: IColor | undefined): boolean {
-    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || excludeFromContrastRatioDemands(cell.getCode())) {
+    if (this._optionsService.rawOptions.minimumContrastRatio === 1 || treatGlyphAsBackgroundColor(cell.getCode())) {
       return false;
     }
 

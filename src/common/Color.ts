@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { isNode } from 'common/Platform';
 import { IColor, IColorRGB } from 'common/Types';
 
 let $r = 0;
@@ -32,6 +31,13 @@ export namespace channels {
     // on LE systems, before it can be used for direct 32-bit buffer writes.
     // >>> 0 forces an unsigned int
     return (r << 24 | g << 16 | b << 8 | a) >>> 0;
+  }
+
+  export function toColor(r: number, g: number, b: number, a?: number): IColor {
+    return {
+      css: channels.toCss(r, g, b, a),
+      rgba: channels.toRgba(r, g, b, a)
+    };
   }
 }
 
@@ -70,7 +76,7 @@ export namespace color {
     if (!result) {
       return undefined;
     }
-    return rgba.toColor(
+    return channels.toColor(
       (result >> 24 & 0xFF),
       (result >> 16 & 0xFF),
       (result >> 8  & 0xFF)
@@ -110,9 +116,11 @@ export namespace color {
  * '#rrggbbaa').
  */
 export namespace css {
+  // Attempt to set get the shared canvas context
   let $ctx: CanvasRenderingContext2D | undefined;
   let $litmusColor: CanvasGradient | undefined;
-  if (!isNode) {
+  try {
+    // This is guaranteed to run in the first window, so document should be correct
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
@@ -124,6 +132,9 @@ export namespace css {
       $ctx.globalCompositeOperation = 'copy';
       $litmusColor = $ctx.createLinearGradient(0, 0, 1, 1);
     }
+  }
+  catch {
+    // noop
   }
 
   /**
@@ -141,14 +152,14 @@ export namespace css {
           $r = parseInt(css.slice(1, 2).repeat(2), 16);
           $g = parseInt(css.slice(2, 3).repeat(2), 16);
           $b = parseInt(css.slice(3, 4).repeat(2), 16);
-          return rgba.toColor($r, $g, $b);
+          return channels.toColor($r, $g, $b);
         }
         case 5: { // #rgba
           $r = parseInt(css.slice(1, 2).repeat(2), 16);
           $g = parseInt(css.slice(2, 3).repeat(2), 16);
           $b = parseInt(css.slice(3, 4).repeat(2), 16);
           $a = parseInt(css.slice(4, 5).repeat(2), 16);
-          return rgba.toColor($r, $g, $b, $a);
+          return channels.toColor($r, $g, $b, $a);
         }
         case 7: // #rrggbb
           return {
@@ -170,7 +181,7 @@ export namespace css {
       $g = parseInt(rgbaMatch[2]);
       $b = parseInt(rgbaMatch[3]);
       $a = Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF);
-      return rgba.toColor($r, $g, $b, $a);
+      return channels.toColor($r, $g, $b, $a);
     }
 
     // Validate the context is available for canvas-based color parsing
@@ -244,6 +255,23 @@ export namespace rgb {
  * Helper functions where the source type is "rgba" (number: 0xrrggbbaa).
  */
 export namespace rgba {
+  export function blend(bg: number, fg: number): number {
+    $a = (fg & 0xFF) / 0xFF;
+    if ($a === 1) {
+      return fg;
+    }
+    const fgR = (fg >> 24) & 0xFF;
+    const fgG = (fg >> 16) & 0xFF;
+    const fgB = (fg >> 8) & 0xFF;
+    const bgR = (bg >> 24) & 0xFF;
+    const bgG = (bg >> 16) & 0xFF;
+    const bgB = (bg >> 8) & 0xFF;
+    $r = bgR + Math.round((fgR - bgR) * $a);
+    $g = bgG + Math.round((fgG - bgG) * $a);
+    $b = bgB + Math.round((fgB - bgB) * $a);
+    return channels.toRgba($r, $g, $b);
+  }
+
   /**
    * Given a foreground color and a background color, either increase or reduce the luminance of the
    * foreground color until the specified contrast ratio is met. If pure white or black is hit
@@ -324,16 +352,8 @@ export namespace rgba {
     return (fgR << 24 | fgG << 16 | fgB << 8 | 0xFF) >>> 0;
   }
 
-  // FIXME: Move this to channels NS?
   export function toChannels(value: number): [number, number, number, number] {
     return [(value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF];
-  }
-
-  export function toColor(r: number, g: number, b: number, a?: number): IColor {
-    return {
-      css: channels.toCss(r, g, b, a),
-      rgba: channels.toRgba(r, g, b, a)
-    };
   }
 }
 

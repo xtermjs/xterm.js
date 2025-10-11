@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
@@ -12,15 +11,16 @@ import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
-import { Terminal } from 'browser/Terminal';
+import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
 import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { css } from 'common/Color';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { Emitter, type Event } from 'vs/base/common/event';
 
-export class TestTerminal extends Terminal {
+export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
   public keyDown(ev: any): boolean | undefined { return this._keyDown(ev); }
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
@@ -30,24 +30,25 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
-  public onBlur!: IEvent<void>;
-  public onFocus!: IEvent<void>;
-  public onA11yChar!: IEvent<string>;
-  public onWriteParsed!: IEvent<void>;
-  public onA11yTab!: IEvent<number>;
-  public onCursorMove!: IEvent<void>;
-  public onLineFeed!: IEvent<void>;
-  public onSelectionChange!: IEvent<void>;
-  public onData!: IEvent<string>;
-  public onBinary!: IEvent<string>;
-  public onTitleChange!: IEvent<string>;
-  public onBell!: IEvent<void>;
-  public onScroll!: IEvent<number>;
-  public onWillOpen!: IEvent<HTMLElement>;
-  public onKey!: IEvent<{ key: string, domEvent: KeyboardEvent }>;
-  public onRender!: IEvent<{ start: number, end: number }>;
-  public onResize!: IEvent<{ cols: number, rows: number }>;
+  public onBlur!: Event<void>;
+  public onFocus!: Event<void>;
+  public onA11yChar!: Event<string>;
+  public onWriteParsed!: Event<void>;
+  public onA11yTab!: Event<number>;
+  public onCursorMove!: Event<void>;
+  public onLineFeed!: Event<void>;
+  public onSelectionChange!: Event<void>;
+  public onData!: Event<string>;
+  public onBinary!: Event<string>;
+  public onTitleChange!: Event<string>;
+  public onBell!: Event<void>;
+  public onScroll!: Event<number>;
+  public onWillOpen!: Event<HTMLElement>;
+  public onKey!: Event<{ key: string, domEvent: KeyboardEvent }>;
+  public onRender!: Event<{ start: number, end: number }>;
+  public onResize!: Event<{ cols: number, rows: number }>;
   public markers!: IMarker[];
+  public linkifier: ILinkifier2 | undefined;
   public coreMouseService!: ICoreMouseService;
   public coreService!: ICoreService;
   public optionsService!: IOptionsService;
@@ -71,6 +72,9 @@ export class MockTerminal implements ITerminal {
   public focus(): void {
     throw new Error('Method not implemented.');
   }
+  public input(data: string, wasUserInput: boolean = true): void {
+    throw new Error('Method not implemented.');
+  }
   public resize(columns: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
@@ -84,6 +88,9 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  public attachCustomWheelEventHandler(customWheelEventHandler: (event: WheelEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
   public registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable {
@@ -148,7 +155,6 @@ export class MockTerminal implements ITerminal {
   }
   public bracketedPasteMode!: boolean;
   public renderer!: IRenderer;
-  public linkifier2!: ILinkifier2;
   public isFocused!: boolean;
   public options!: Required<ITerminalOptions>;
   public element!: HTMLElement;
@@ -187,7 +193,7 @@ export class MockTerminal implements ITerminal {
   public scrollToRow(absoluteRow: number): number {
     throw new Error('Method not implemented.');
   }
-  public cancel(ev: Event, force?: boolean): void {
+  public cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): void {
     throw new Error('Method not implemented.');
   }
   public log(text: string): void {
@@ -261,9 +267,9 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
-  public onRequestRedraw!: IEvent<IRequestRedrawEvent>;
-  public onCanvasResize!: IEvent<{ width: number, height: number }>;
-  public onRender!: IEvent<{ start: number, end: number }>;
+  public onRequestRedraw!: Event<IRequestRedrawEvent>;
+  public onCanvasResize!: Event<{ width: number, height: number }>;
+  public onRender!: Event<{ start: number, end: number }>;
   public dispose(): void {
     throw new Error('Method not implemented.');
   }
@@ -296,7 +302,7 @@ export class MockRenderer implements IRenderer {
 }
 
 export class MockViewport implements IViewport {
-  private readonly _onRequestScrollLines = new EventEmitter<{ amount: number, suppressScrollEvent: boolean }>();
+  private readonly _onRequestScrollLines = new Emitter<{ amount: number, suppressScrollEvent: boolean }>();
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
   public dispose(): void {
     throw new Error('Method not implemented.');
@@ -350,10 +356,15 @@ export class MockCompositionHelper implements ICompositionHelper {
 }
 
 export class MockCoreBrowserService implements ICoreBrowserService {
+  public onDprChange = new Emitter<number>().event;
+  public onWindowChange = new Emitter<Window & typeof globalThis>().event;
   public serviceBrand: undefined;
   public isFocused: boolean = true;
   public get window(): Window & typeof globalThis {
     throw Error('Window object not available in tests');
+  }
+  public get mainDocument(): Document {
+    throw Error('Document object not available in tests');
   }
   public dpr: number = 1;
 }
@@ -361,7 +372,7 @@ export class MockCoreBrowserService implements ICoreBrowserService {
 export class MockCharSizeService implements ICharSizeService {
   public serviceBrand: undefined;
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
-  public onCharSizeChange: IEvent<void> = new EventEmitter<void>().event;
+  public onCharSizeChange: Event<void> = new Emitter<void>().event;
   constructor(public width: number, public height: number) {}
   public measure(): void {}
 }
@@ -379,10 +390,10 @@ export class MockMouseService implements IMouseService {
 
 export class MockRenderService implements IRenderService {
   public serviceBrand: undefined;
-  public onDimensionsChange: IEvent<IRenderDimensions> = new EventEmitter<IRenderDimensions>().event;
-  public onRenderedViewportChange: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
-  public onRender: IEvent<{ start: number, end: number }, void> = new EventEmitter<{ start: number, end: number }>().event;
-  public onRefreshRequest: IEvent<{ start: number, end: number}, void> = new EventEmitter<{ start: number, end: number }>().event;
+  public onDimensionsChange: Event<IRenderDimensions> = new Emitter<IRenderDimensions>().event;
+  public onRenderedViewportChange: Event<{ start: number, end: number }> = new Emitter<{ start: number, end: number }>().event;
+  public onRender: Event<{ start: number, end: number }> = new Emitter<{ start: number, end: number }>().event;
+  public onRefreshRequest: Event<{ start: number, end: number}> = new Emitter<{ start: number, end: number }>().event;
   public dimensions: IRenderDimensions = createRenderDimensions();
   public refreshRows(start: number, end: number): void {
     throw new Error('Method not implemented.');
@@ -453,10 +464,10 @@ export class MockSelectionService implements ISelectionService {
   public hasSelection: boolean = false;
   public selectionStart: [number, number] | undefined;
   public selectionEnd: [number, number] | undefined;
-  public onLinuxMouseSelection = new EventEmitter<string>().event;
-  public onRequestRedraw = new EventEmitter<ISelectionRedrawRequestEvent>().event;
-  public onRequestScrollLines = new EventEmitter<ISelectionRequestScrollLinesEvent>().event;
-  public onSelectionChange = new EventEmitter<void>().event;
+  public onLinuxMouseSelection = new Emitter<string>().event;
+  public onRequestRedraw = new Emitter<ISelectionRedrawRequestEvent>().event;
+  public onRequestScrollLines = new Emitter<ISelectionRequestScrollLinesEvent>().event;
+  public onSelectionChange = new Emitter<void>().event;
   public disable(): void {
     throw new Error('Method not implemented.');
   }
@@ -500,7 +511,7 @@ export class MockSelectionService implements ISelectionService {
 
 export class MockThemeService implements IThemeService{
   public serviceBrand: undefined;
-  public onChangeColors = new EventEmitter<ReadonlyColorSet>().event;
+  public onChangeColors = new Emitter<ReadonlyColorSet>().event;
   public restoreColor(slot?: ColorIndex | undefined): void {
     throw new Error('Method not implemented.');
   }

@@ -3,8 +3,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es2015",
-      "es2016.Array.Include"
+      "es2021"
     ],
     "outDir": "../../out",
     "types": [
@@ -12,7 +11,8 @@
     ],
     "baseUrl": "..",
     "paths": {
-      "common/*": [ "./common/*" ]
+      "common/*": [ "./common/*" ],
+      "vs/*": [ "./vs/*" ]
     }
   },
   "include": [
@@ -20,6 +20,7 @@
     "../../typings/xterm.d.ts"
   ],
   "references": [
-    { "path": "../common" }
+    { "path": "../common" },
+    { "path": "../vs" }
   ]
 }

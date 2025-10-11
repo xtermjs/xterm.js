@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
@@ -18,9 +18,10 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cursorInactiveStyle: 'outline',
   customGlyphs: true,
   drawBoldTextInBrightColors: true,
+  documentOverride: null,
   fastScrollModifier: 'alt',
   fastScrollSensitivity: 5,
-  fontFamily: 'courier-new, courier, monospace',
+  fontFamily: 'monospace',
   fontSize: 15,
   fontWeight: 'normal',
   fontWeightBold: 'bold',
@@ -31,6 +32,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   logLevel: 'info',
   logger: null,
   scrollback: 1000,
+  scrollOnEraseInDisplay: false,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
   screenReaderMode: false,
@@ -43,6 +45,8 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: {},
+  reflowCursorLine: false,
+  rescaleOverlappingGlyphs: false,
   rightClickSelectsWord: isMac,
   windowOptions: {},
   windowsMode: false,
@@ -52,7 +56,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false,
-  overviewRulerWidth: 0
+  overviewRuler: {}
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
@@ -63,7 +67,7 @@ export class OptionsService extends Disposable implements IOptionsService {
   public readonly rawOptions: Required<ITerminalOptions>;
   public options: Required<ITerminalOptions>;
 
-  private readonly _onOptionChange = this.register(new EventEmitter<keyof ITerminalOptions>());
+  private readonly _onOptionChange = this._register(new Emitter<keyof ITerminalOptions>());
   public readonly onOptionChange = this._onOptionChange.event;
 
   constructor(options: Partial<ITerminalOptions>) {
@@ -85,6 +89,13 @@ export class OptionsService extends Disposable implements IOptionsService {
     this.rawOptions = defaultOptions;
     this.options = { ... defaultOptions };
     this._setupOptions();
+
+    // Clear out options that could link outside xterm.js as they could easily cause an embedder
+    // memory leak
+    this._register(toDisposable(() => {
+      this.rawOptions.linkHandler = null;
+      this.rawOptions.documentOverride = null;
+    }));
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention

@@ -8,53 +8,41 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-// Use tsc version (yarn watch)
-import { Terminal } from '../out/browser/public/Terminal';
-import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
-import { CanvasAddon } from '../addons/xterm-addon-canvas/out/CanvasAddon';
-import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
-import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
-import { SerializeAddon } from '../addons/xterm-addon-serialize/out/SerializeAddon';
-import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
-import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
-import { Unicode11Addon } from '../addons/xterm-addon-unicode11/out/Unicode11Addon';
-import { LigaturesAddon } from '../addons/xterm-addon-ligatures/out/LigaturesAddon';
-
-// Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddonType, IImageAddonOptions } from '../addons/xterm-addon-image/out/ImageAddon';
-let ImageAddon: ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
+// HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
+import type { ImageAddon as ImageAddonType, IImageAddonOptions } from '@xterm/addon-image';
+let ImageAddon: typeof ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
-  const imageAddon = require('../addons/xterm-addon-image/out/ImageAddon');
+  const imageAddon = require('@xterm/addon-image');
   ImageAddon = imageAddon.ImageAddon;
 }
 
-// Use webpacked version (yarn package)
-// import { Terminal } from '../lib/xterm';
-// import { AttachAddon } from 'xterm-addon-attach';
-// import { FitAddon } from 'xterm-addon-fit';
-// import { ImageAddon } from 'xterm-addon-image';
-// import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
-// import { SerializeAddon } from 'xterm-addon-serialize';
-// import { WebLinksAddon } from 'xterm-addon-web-links';
-// import { WebglAddon } from 'xterm-addon-webgl';
-// import { Unicode11Addon } from 'xterm-addon-unicode11';
-// import { LigaturesAddon } from 'xterm-addon-ligatures';
-
-// Pulling in the module's types relies on the <reference> above, it's looks a
-// little weird here as we're importing "this" module
-import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
+import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
+import { AttachAddon } from '@xterm/addon-attach';
+import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { FitAddon } from '@xterm/addon-fit';
+import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { ProgressAddon, IProgressState } from '@xterm/addon-progress';
+import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
+import { SerializeAddon } from '@xterm/addon-serialize';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
 export interface IWindowWithTerminal extends Window {
-  term: TerminalType;
-  Terminal?: typeof TerminalType; // eslint-disable-line @typescript-eslint/naming-convention
+  term: typeof Terminal;
+  Terminal: typeof Terminal;
   AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
   FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ImageAddon?: typeof ImageAddonType; // eslint-disable-line @typescript-eslint/naming-convention
+  ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  ProgressAddon?: typeof ProgressAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
   SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
   WebglAddon?: typeof WebglAddon; // eslint-disable-line @typescript-eslint/naming-convention
   Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
+  UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon; // eslint-disable-line @typescript-eslint/naming-convention
   LigaturesAddon?: typeof LigaturesAddon; // eslint-disable-line @typescript-eslint/naming-convention
 }
 declare let window: IWindowWithTerminal;
@@ -66,48 +54,55 @@ let socket;
 let pid;
 let autoResize: boolean = true;
 
-type AddonType = 'attach' | 'canvas' | 'fit' | 'image' | 'search' | 'serialize' | 'unicode11' | 'webLinks' | 'webgl' | 'ligatures';
+type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
 interface IDemoAddon<T extends AddonType> {
   name: T;
   canChange: boolean;
   ctor: (
     T extends 'attach' ? typeof AttachAddon :
-      T extends 'canvas' ? typeof CanvasAddon :
+      T extends 'clipboard' ? typeof ClipboardAddon :
         T extends 'fit' ? typeof FitAddon :
           T extends 'image' ? typeof ImageAddonType :
-            T extends 'search' ? typeof SearchAddon :
-              T extends 'serialize' ? typeof SerializeAddon :
-                T extends 'webLinks' ? typeof WebLinksAddon :
-                  T extends 'unicode11' ? typeof Unicode11Addon :
-                    T extends 'ligatures' ? typeof LigaturesAddon :
-                      typeof WebglAddon
+            T extends 'ligatures' ? typeof LigaturesAddon :
+              T extends 'progress' ? typeof ProgressAddon :
+                T extends 'search' ? typeof SearchAddon :
+                  T extends 'serialize' ? typeof SerializeAddon :
+                    T extends 'webLinks' ? typeof WebLinksAddon :
+                      T extends 'unicode11' ? typeof Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                          T extends 'webgl' ? typeof WebglAddon :
+                            never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
-      T extends 'canvas' ? CanvasAddon :
+      T extends 'clipboard' ? ClipboardAddon :
         T extends 'fit' ? FitAddon :
           T extends 'image' ? ImageAddonType :
-            T extends 'search' ? SearchAddon :
-              T extends 'serialize' ? SerializeAddon :
-                T extends 'webLinks' ? WebLinksAddon :
-                  T extends 'webgl' ? WebglAddon :
-                    T extends 'unicode11' ? typeof Unicode11Addon :
-                      T extends 'ligatures' ? typeof LigaturesAddon :
-                        never
+            T extends 'ligatures' ? LigaturesAddon :
+              T extends 'progress' ? ProgressAddon :
+                T extends 'search' ? SearchAddon :
+                  T extends 'serialize' ? SerializeAddon :
+                    T extends 'webLinks' ? WebLinksAddon :
+                      T extends 'unicode11' ? Unicode11Addon :
+                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                          T extends 'webgl' ? WebglAddon :
+                            never
   );
 }
 
 const addons: { [T in AddonType]: IDemoAddon<T> } = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
-  canvas: { name: 'canvas', ctor: CanvasAddon, canChange: true },
+  clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
+  progress: { name: 'progress', ctor: ProgressAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
+  unicodeGraphemes: { name: 'unicodeGraphemes', ctor: UnicodeGraphemesAddon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
 };
 
@@ -124,6 +119,7 @@ const xtermjsTheme = {
   foreground: '#F8F8F8',
   background: '#2D2E2C',
   selectionBackground: '#5DA5D533',
+  selectionInactiveBackground: '#555555AA',
   black: '#1E1E1D',
   brightBlack: '#262625',
   red: '#CE5C5C',
@@ -140,7 +136,7 @@ const xtermjsTheme = {
   brightCyan: '#72F0FF',
   white: '#F8F8F8',
   brightWhite: '#FFFFFF'
-};
+} satisfies ITheme;
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   addons.fit.instance.fit();
@@ -170,12 +166,13 @@ const disposeRecreateButtonHandler: () => void = () => {
     window.term = null;
     socket = null;
     addons.attach.instance = undefined;
-    addons.canvas.instance = undefined;
+    addons.clipboard.instance = undefined;
     addons.fit.instance = undefined;
     addons.image.instance = undefined;
     addons.search.instance = undefined;
     addons.serialize.instance = undefined;
     addons.unicode11.instance = undefined;
+    addons.unicodeGraphemes.instance = undefined;
     addons.ligatures.instance = undefined;
     addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
@@ -218,11 +215,14 @@ const createNewWindowButtonHandler: () => void = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
+  window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
+  window.ProgressAddon = ProgressAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
   window.Unicode11Addon = Unicode11Addon;
+  window.UnicodeGraphemesAddon = UnicodeGraphemesAddon;
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
@@ -234,6 +234,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
+  document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
   document.getElementById('print-cjk').addEventListener('click', addCjk);
   document.getElementById('print-cjk-sgr').addEventListener('click', addCjkRandomSgr);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
@@ -241,13 +242,17 @@ if (document.location.pathname === '/test') {
   document.getElementById('ansi-colors').addEventListener('click', ansiColorsTest);
   document.getElementById('osc-hyperlinks').addEventListener('click', addAnsiHyperlink);
   document.getElementById('sgr-test').addEventListener('click', sgrTest);
+  document.getElementById('add-grapheme-clusters').addEventListener('click', addGraphemeClusters);
   document.getElementById('add-decoration').addEventListener('click', addDecoration);
   document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
+  document.getElementById('decoration-stress-test').addEventListener('click', decorationStressTest);
+  document.getElementById('ligatures-test').addEventListener('click', ligaturesTest);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   document.getElementById('bce').addEventListener('click', coloredErase);
   addVtButtons();
   initImageAddonExposed();
   testEvents();
+  progressButtons();
 }
 
 function createTerminal(): void {
@@ -264,17 +269,19 @@ function createTerminal(): void {
       backend: 'conpty',
       buildNumber: 22621
     } : undefined,
-    fontFamily: '"Fira Code", courier-new, courier, monospace, "Powerline Extra Symbols"',
+    fontFamily: '"Fira Code", monospace, "Powerline Extra Symbols"',
     theme: xtermjsTheme
   } as ITerminalOptions);
 
   // Load addons
-  const typedTerm = term as TerminalType;
+  const typedTerm = term as Terminal;
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
-  addons.unicode11.instance = new Unicode11Addon();
+  addons.progress.instance = new ProgressAddon();
+  addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
+  addons.clipboard.instance = new ClipboardAddon();
   try {  // try to start with webgl renderer (might throw on older safari/webkit)
     addons.webgl.instance = new WebglAddon();
   } catch (e) {
@@ -283,10 +290,12 @@ function createTerminal(): void {
   addons.webLinks.instance = new WebLinksAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
+  typedTerm.loadAddon(addons.progress.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);
-  typedTerm.loadAddon(addons.unicode11.instance);
+  typedTerm.loadAddon(addons.unicodeGraphemes.instance);
   typedTerm.loadAddon(addons.webLinks.instance);
+  typedTerm.loadAddon(addons.clipboard.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -367,14 +376,19 @@ function createTerminal(): void {
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
-    const processId = await res.text();
-    pid = processId;
-    socketURL += processId;
-    socket = new WebSocket(socketURL);
-    socket.onopen = runRealTerminal;
-    socket.onclose = runFakeTerminal;
-    socket.onerror = runFakeTerminal;
+    const useRealTerminal = document.getElementById('use-real-terminal');
+    if (useRealTerminal instanceof HTMLInputElement && !useRealTerminal.checked) {
+      runFakeTerminal();
+    } else {
+      const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+      const processId = await res.text();
+      pid = processId;
+      socketURL += processId;
+      socket = new WebSocket(socketURL);
+      socket.onopen = runRealTerminal;
+      socket.onclose = runFakeTerminal;
+      socket.onerror = runFakeTerminal;
+    }
   }, 0);
 }
 
@@ -420,7 +434,7 @@ function runFakeTerminal(): void {
   });
 }
 
-function initOptions(term: TerminalType): void {
+function initOptions(term: Terminal): void {
   const blacklistedOptions = [
     // Internal only options
     'cancelEvents',
@@ -428,16 +442,19 @@ function initOptions(term: TerminalType): void {
     'termName',
     'cols', 'rows', // subsumed by "size" (colsRows) option
     // Complex option
+    'documentOverride',
     'linkHandler',
     'logger',
+    'overviewRuler',
     'theme',
     'windowOptions',
-    'windowsPty'
+    'windowsPty',
+    // Deprecated
+    'fastScrollModifier'
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],
     cursorInactiveStyle: ['outline', 'block', 'bar', 'underline', 'none'],
-    fastScrollModifier: ['none', 'alt', 'ctrl', 'shift'],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -448,9 +465,7 @@ function initOptions(term: TerminalType): void {
   };
   const options = Object.getOwnPropertyNames(term.options);
   const booleanOptions = [];
-  const numberOptions = [
-    'overviewRulerWidth'
-  ];
+  const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
     switch (typeof term.options[o]) {
       case 'boolean':
@@ -572,6 +587,7 @@ function initOptions(term: TerminalType): void {
               cursor: '#333333',
               cursorAccent: '#ffffff',
               selectionBackground: '#add6ff',
+              overviewRulerBorder: '#aaaaaa',
               black: '#000000',
               blue: '#0451a5',
               brightBlack: '#666666',
@@ -597,7 +613,7 @@ function initOptions(term: TerminalType): void {
   });
 }
 
-function initAddons(term: TerminalType): void {
+function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
   Object.keys(addons).forEach((name: AddonType) => {
     const addon = addons[name];
@@ -610,16 +626,19 @@ function initAddons(term: TerminalType): void {
     if (name === 'unicode11' && checkbox.checked) {
       term.unicode.activeVersion = '11';
     }
+    if (name === 'unicodeGraphemes' && checkbox.checked) {
+      term.unicode.activeVersion = '15-graphemes';
+    }
     if (name === 'search' && checkbox.checked) {
-      addon.instance.onDidChangeResults(e => updateFindResults(e));
+      addons[name].instance.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (name === 'image') {
         if (checkbox.checked) {
           const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
           addon.instance = ctorOptionsJson
-            ? new addon.ctor(JSON.parse(ctorOptionsJson))
-            : new addon.ctor();
+            ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
+            : new addons[name].ctor();
           term.loadAddon(addon.instance);
         } else {
           addon.instance!.dispose();
@@ -627,26 +646,31 @@ function initAddons(term: TerminalType): void {
         }
         return;
       }
+      function postInitWebgl(): void {
+        setTimeout(() => {
+          setTextureAtlas(addons.webgl.instance.textureAtlas);
+          addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+          addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+        }, 500);
+      }
+      function preDisposeWebgl(): void {
+        if (addons.webgl.instance.textureAtlas) {
+          addons.webgl.instance.textureAtlas.remove();
+        }
+      }
       if (checkbox.checked) {
-        addon.instance = new addon.ctor();
+        // HACK: Manually remove addons that cannot be changes
+        addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
-            setTimeout(() => {
-              setTextureAtlas(addons.webgl.instance.textureAtlas);
-              addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-              addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-            }, 0);
-          } else if (name === 'canvas') {
-            setTimeout(() => {
-              setTextureAtlas(addons.canvas.instance.textureAtlas);
-              addons.canvas.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-              addons.canvas.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-            }, 0);
+            postInitWebgl();
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
+          } else if (name === 'unicodeGraphemes') {
+            term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
-            addon.instance.onDidChangeResults(e => updateFindResults(e));
+            addons[name].instance.onDidChangeResults(e => updateFindResults(e));
           }
         }
         catch {
@@ -656,14 +680,23 @@ function initAddons(term: TerminalType): void {
         }
       } else {
         if (name === 'webgl') {
-          addons.webgl.instance.textureAtlas.remove();
-        } else if (name === 'canvas') {
-          addons.canvas.instance.textureAtlas.remove();
-        } else if (name === 'unicode11') {
+          preDisposeWebgl();
+        } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         }
         addon.instance!.dispose();
         addon.instance = undefined;
+      }
+      if (name === 'ligatures') {
+        // Recreate webgl when ligatures are toggled so texture atlas picks up any font feature
+        // settings changes
+        if (addons.webgl.instance) {
+          preDisposeWebgl();
+          addons.webgl.instance.dispose();
+          addons.webgl.instance = new addons.webgl.ctor();
+          term.loadAddon(addons.webgl.instance);
+          postInitWebgl();
+        }
       }
     });
     const label = document.createElement('label');
@@ -695,7 +728,7 @@ function updateFindResults(e: { resultIndex: number, resultCount: number } | und
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
   element.addEventListener(type, handler);
-  term._core.register({ dispose: () => element.removeEventListener(type, handler) });
+  term._core._register({ dispose: () => element.removeEventListener(type, handler) });
 }
 
 function updateTerminalSize(): void {
@@ -797,7 +830,7 @@ function writeCustomGlyphHandler(): void {
 }
 
 function loadTest(): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : !!addons.canvas.instance ? 'canvas' : 'dom';
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
@@ -815,6 +848,39 @@ function loadTest(): void {
   }
   const start = performance.now();
   for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
+    // Send ^C to get a new prompt
+    term._core._onData.fire('\x03');
+  });
+}
+
+function loadTestLongLines(): void {
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 500);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024 * 50; i++) {
     for (const d of testData) {
       term.write(d);
     }
@@ -1110,8 +1176,26 @@ function getRandomSgr(): string {
   return randomSgrAttributes[Math.floor(Math.random() * randomSgrAttributes.length)];
 }
 
+function addGraphemeClusters(): void {
+  term.write('\n\n\r');
+  term.writeln('🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣 [Simple emoji v6: 10 cells, v15: 20 cells]');
+  term.writeln('\u{1F476}\u{1F3FF}\u{1F476} [baby with emoji modifier fitzpatrick type-6; baby]');
+  term.writeln('\u{1F469}\u200d\u{1f469}\u200d\u{1f466} [woman+zwj+woman+zwj+boy]');
+  term.writeln('\u{1F64B}\u{1F64B}\u{200D}\u{2642}\u{FE0F} [person/man raising hand]');
+  term.writeln('\u{1F3CB}\u{FE0F}=\u{1F3CB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F} [person lifting weights emoji; woman lighting weights, medium dark]');
+  term.writeln('\u{1F469}\u{1F469}\u{200D}\u{1F393}\u{1F468}\u{1F3FF}\u{200D}\u{1F393} [woman; woman student; man student dark]');
+  term.writeln('\u{1f1f3}\u{1f1f4}_ [REGIONAL INDICATOR SYMBOL LETTER N and RI O]');
+  term.writeln('\u{1f1f3}_\u{1f1f4} {RI N; underscore; RI O]');
+  term.writeln('\u0061\u0301 [letter a with acute accent]');
+  term.writeln('\u1100\u1161\u11A8=\u1100\u1161= [Korean Jamo]');
+  term.writeln('\uAC00=\uD685= [Hangul syllables (pre-composed)]');
+  term.writeln('(\u26b0\ufe0e) [coffin with text_presentation]');
+  term.writeln('(\u26b0\ufe0f) [coffin with Emoji_presentation]');
+  term.writeln('<E\u0301\ufe0fg\ufe0fa\ufe0fl\ufe0fi\ufe0f\ufe0ft\ufe0fe\u0301\ufe0f> [Égalité (using separate acute) emoij_presentation]');
+}
+
 function addDecoration(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRuler'] = { width: 14 };
   const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
@@ -1126,7 +1210,7 @@ function addDecoration(): void {
 }
 
 function addOverviewRuler(): void {
-  term.options['overviewRulerWidth'] = 15;
+  term.options['overviewRuler'] = { width: 14 };
   term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
   term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
   term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
@@ -1135,6 +1219,33 @@ function addOverviewRuler(): void {
   term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' } });
   term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
   term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
+}
+
+let decorationStressTestDecorations: IDisposable[] | undefined;
+function decorationStressTest(): void {
+  if (decorationStressTestDecorations) {
+    for (const d of decorationStressTestDecorations) {
+      d.dispose();
+    }
+    decorationStressTestDecorations = undefined;
+  } else {
+    const t = term as Terminal;
+    const buffer = t.buffer.active;
+    const cursorY = buffer.baseY + buffer.cursorY;
+    decorationStressTestDecorations = [];
+    for (const x of [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]) {
+      for (let y = 0; y < t.buffer.active.length; y++) {
+        const cursorOffsetY = y - cursorY;
+        decorationStressTestDecorations.push(t.registerDecoration({
+          marker: t.registerMarker(cursorOffsetY),
+          x,
+          width: 4,
+          backgroundColor: '#FF0000',
+          overviewRulerOptions: { color: '#FF0000' }
+        }));
+      }
+    }
+  }
 }
 
 (console as any).image = (source: ImageData | HTMLCanvasElement, scale: number = 1) => {
@@ -1184,9 +1295,9 @@ function addVtButtons(): void {
 
     const element = document.createElement('button');
     element.textContent = name;
-    writeCsi.split('');
-    const prefix = writeCsi.length === 2 ? writeCsi[0] : '';
-    const suffix = writeCsi[writeCsi.length - 1];
+    const writeCsiSplit = writeCsi.split('|');
+    const prefix = writeCsiSplit.length === 2 ? writeCsiSplit[0] : '';
+    const suffix = writeCsiSplit[writeCsiSplit.length - 1];
     element.addEventListener(`click`, () => term.write(csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
 
     const desc = document.createElement('span');
@@ -1199,22 +1310,23 @@ function addVtButtons(): void {
   }
   const vtFragment = document.createDocumentFragment();
   const buttonSpecs: { [key: string]: { label: string, description: string, paramCount?: number }} = {
-    A:    { label: 'CUU ↑',  description: 'Cursor Up Ps Times' },
-    B:    { label: 'CUD ↓',  description: 'Cursor Down Ps Times' },
-    C:    { label: 'CUF →',  description: 'Cursor Forward Ps Times' },
-    D:    { label: 'CUB ←',  description: 'Cursor Backward Ps Times' },
-    E:    { label: 'CNL',    description: 'Cursor Next Line Ps Times' },
-    F:    { label: 'CPL',    description: 'Cursor Preceding Line Ps Times' },
-    G:    { label: 'CHA',    description: 'Cursor Character Absolute' },
-    H:    { label: 'CUP',    description: 'Cursor Position [row;column]', paramCount: 2 },
-    I:    { label: 'CHT',    description: 'Cursor Forward Tabulation Ps tab stops' },
-    J:    { label: 'ED',     description: 'Erase in Display' },
-    '?J': { label: 'DECSED', description: 'Erase in Display' },
-    K:    { label: 'EL',     description: 'Erase in Line' },
-    '?K': { label: 'DECSEL', description: 'Erase in Line' },
-    L:    { label: 'IL',     description: 'Insert Ps Line(s)' },
-    M:    { label: 'DL',     description: 'Delete Ps Line(s)' },
-    P:    { label: 'DCH',    description: 'Delete Ps Character(s)' }
+    A:     { label: 'CUU ↑',    description: 'Cursor Up Ps Times' },
+    B:     { label: 'CUD ↓',    description: 'Cursor Down Ps Times' },
+    C:     { label: 'CUF →',    description: 'Cursor Forward Ps Times' },
+    D:     { label: 'CUB ←',    description: 'Cursor Backward Ps Times' },
+    E:     { label: 'CNL',      description: 'Cursor Next Line Ps Times' },
+    F:     { label: 'CPL',      description: 'Cursor Preceding Line Ps Times' },
+    G:     { label: 'CHA',      description: 'Cursor Character Absolute' },
+    H:     { label: 'CUP',      description: 'Cursor Position [row;column]', paramCount: 2 },
+    I:     { label: 'CHT',      description: 'Cursor Forward Tabulation Ps tab stops' },
+    J:     { label: 'ED',       description: 'Erase in Display' },
+    '?|J': { label: 'DECSED',   description: 'Erase in Display' },
+    K:     { label: 'EL',       description: 'Erase in Line' },
+    '?|K': { label: 'DECSEL',   description: 'Erase in Line' },
+    L:     { label: 'IL',       description: 'Insert Ps Line(s)' },
+    M:     { label: 'DL',       description: 'Delete Ps Line(s)' },
+    P:     { label: 'DCH',      description: 'Delete Ps Character(s)' },
+    ' q':  { label: 'DECSCUSR', description: 'Set Cursor Style', paramCount: 1 }
   };
   for (const s of Object.keys(buttonSpecs)) {
     const spec = buttonSpecs[s];
@@ -1222,6 +1334,20 @@ function addVtButtons(): void {
   }
 
   document.querySelector('#vt-container').appendChild(vtFragment);
+}
+
+function ligaturesTest(): void {
+  term.write([
+    '',
+    '-<< -< -<- <-- <--- <<- <- -> ->> --> ---> ->- >- >>-',
+    '=<< =< =<= <== <=== <<= <= => =>> ==> ===> =>= >= >>=',
+    '<-> <--> <---> <----> <=> <==> <===> <====> :: ::: __',
+    '<~~ </ </> /> ~~> == != /= ~= <> === !== !=== =/= =!=',
+    '<: := *= *+ <* <*> *> <| <|> |> <. <.> .> +* =* =: :>',
+    '(* *) /* */ [| |] {| |} ++ +++ \/ /\ |- -| <!-- <!---',
+    '==== ===== ====== ======= ======== =========',
+    '---- ----- ------ ------- -------- ---------'
+  ].join('\r\n'));
 }
 
 function testWeblinks(): void {
@@ -1340,4 +1466,45 @@ function initImageAddonExposed(): void {
 function testEvents(): void {
   document.getElementById('event-focus').addEventListener('click', ()=> term.focus());
   document.getElementById('event-blur').addEventListener('click', ()=> term.blur());
+}
+
+
+function progressButtons(): void {
+  const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
+  const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
+
+  function progressHandler({state, value}: IProgressState) {
+    // Simulate windows taskbar hack by windows terminal:
+    // Since the taskbar has no means to indicate error/pause state other than by coloring
+    // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
+    // NOTE: This is most likely not what you want to do for other progress indicators,
+    //       that have a proper visual state for error/paused.
+    value = Math.min(10 + value * 0.9, 100);
+    document.getElementById('progress-percent').style.width = `${value}%`;
+    document.getElementById('progress-percent').style.backgroundColor = COLORS[state];
+    document.getElementById('progress-state').innerText = `State: ${STATES[state]}`;
+
+    document.getElementById('progress-percent').style.display = state === 3 ? 'none' : 'block';
+    document.getElementById('progress-indeterminate').style.display = state === 3 ? 'block' : 'none';
+  }
+
+  const progressAddon = addons.progress.instance;
+  progressAddon.onChange(progressHandler);
+
+  // apply initial state once to make it visible on page load
+  const initialProgress = progressAddon.progress;
+  progressHandler(initialProgress);
+
+  document.getElementById('progress-run').addEventListener('click', async () => {
+    term.write('\x1b]9;4;0\x1b\\');
+    for (let i = 0; i <= 100; i += 5) {
+      term.write(`\x1b]9;4;1;${i}\x1b\\`);
+      await new Promise(res => setTimeout(res, 200));
+    }
+  });
+  document.getElementById('progress-0').addEventListener('click', () => term.write('\x1b]9;4;0\x1b\\'));
+  document.getElementById('progress-1').addEventListener('click', () => term.write('\x1b]9;4;1;20\x1b\\'));
+  document.getElementById('progress-2').addEventListener('click', () => term.write('\x1b]9;4;2\x1b\\'));
+  document.getElementById('progress-3').addEventListener('click', () => term.write('\x1b]9;4;3\x1b\\'));
+  document.getElementById('progress-4').addEventListener('click', () => term.write('\x1b]9;4;4\x1b\\'));
 }

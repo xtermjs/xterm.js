@@ -1,4 +1,4 @@
-# [![xterm.js logo](logo-full.png)](https://xtermjs.org)
+# [![xterm.js logo](images/logo-full.png)](https://xtermjs.org)
 
 Xterm.js is a front-end component written in TypeScript that lets applications bring fully-featured terminals to their users in the browser. It's used by popular projects such as VS Code, Hyper and Theia.
 
@@ -21,7 +21,7 @@ Xterm.js is a front-end component written in TypeScript that lets applications b
 First, you need to install the module, we ship exclusively through [npm](https://www.npmjs.com/), so you need that installed and then add xterm.js as a dependency by running:
 
 ```bash
-npm install xterm
+npm install @xterm/xterm
 ```
 
 To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your HTML page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself. Finally, instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
@@ -30,8 +30,8 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 <!doctype html>
   <html>
     <head>
-      <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
-      <script src="node_modules/xterm/lib/xterm.js"></script>
+      <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css" />
+      <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
     </head>
     <body>
       <div id="terminal"></div>
@@ -49,7 +49,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 The recommended way to load xterm.js is via the ES6 module syntax:
 
 ```javascript
-import { Terminal } from 'xterm';
+import { Terminal } from '@xterm/xterm';
 ```
 
 ### Addons
@@ -59,14 +59,14 @@ import { Terminal } from 'xterm';
 Addons are separate modules that extend the `Terminal` by building on the [xterm.js API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts). To use an addon, you first need to install it in your project:
 
 ```bash
-npm i -S xterm-addon-web-links
+npm i -S @xterm/addon-web-links
 ```
 
 Then import the addon, instantiate it and call `Terminal.loadAddon`:
 
 ```ts
-import { Terminal } from 'xterm';
-import { WebLinksAddon } from 'xterm-addon-web-links';
+import { Terminal } from '@xterm/xterm';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 
 const terminal = new Terminal();
 // Load WebLinksAddon on terminal, this is all that's needed to get web links
@@ -76,10 +76,15 @@ terminal.loadAddon(new WebLinksAddon());
 
 The xterm.js team maintains the following addons, but anyone can build them:
 
-- [`xterm-addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-attach): Attaches to a server running a process via a websocket
-- [`xterm-addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-fit): Fits the terminal to the containing element
-- [`xterm-addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-search): Adds search functionality
-- [`xterm-addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-web-links): Adds web link detection and interaction
+- [`@xterm/addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-attach): Attaches to a server running a process via a websocket
+- [`@xterm/addon-clipboard`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-clipboard): Access the browser's clipboard
+- [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
+- [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
+- [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality
+- [`@xterm/addon-serialize`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize): Serializes the terminal's buffer to a VT sequences or HTML
+- [`@xterm/addon-unicode11`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-unicode11): Updates character widths to their unicode11 values
+- [`@xterm/addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-links): Adds web link detection and interaction
+- [`@xterm/addon-webgl`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-webgl): Renders xterm.js using a `canvas` element's webgl2 context
 
 ## Browser Support
 
@@ -108,7 +113,7 @@ All current and past releases are available on this repo's [Releases page](https
 Our CI releases beta builds to npm for every change that goes into master. Install the latest beta build with:
 
 ```bash
-npm install -S xterm@beta
+npm install -S @xterm/xterm@beta
 ```
 
 These should generally be stable, but some bugs may slip in. We recommend using the beta build primarily to test out new features and to verify bug fixes.
@@ -123,7 +128,6 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js.
 - [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile, and powerful open source code editor that provides an integrated terminal based on xterm.js.
 - [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js.
-- [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
 - [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE.
 - [**Codenvy**](http://www.codenvy.com): Cloud workspaces for development teams.
 - [**CoderPad**](https://coderpad.io): Online interviewing platform for programmers. Run code in many programming languages, with results displayed by xterm.js.
@@ -217,6 +221,14 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Cloudtutor.io**](https://cloudtutor.io): innovative online learning platform that offers users access to an interactive lab.
 - [**Helix Editor Playground**](https://github.com/tomgroenwoldt/helix-editor-playground): Online playground for the terminal based helix editor.
 - [**Coder**](https://github.com/coder/coder): Self-Hosted Remote Development Environments
+- [**Wave Terminal**](https://waveterm.dev): An open-source, ai-native, terminal built for seamless workflows.
+- [**eva**](https://github.com/info24/eva): Eva is a web application for SSH remote login, developed in Go.
+- [**OpenSFTP**](https://opensftp.com): Super beautiful SSH and SFTP integrated workspace client.
+- [**balena**](https://www.balena.io/): Balena is a full-stack solution for developing, deploying, updating, and troubleshooting IoT Edge devices. We use xterm.js to manage & debug devices on [balenaCloud](https://www.balena.io/cloud).
+- [**Filet Cloud**](https://github.com/fuglaro/filet-cloud): The lean and powerful personal cloud ⛅.
+- [**pyTermTk**](https://github.com/ceccopierangiolieugenio/pyTermTk): Python Terminal Toolkit - a Spiced Up Cross Compatible TUI Library 🌶️, use xterm.js for the [HTML5 exporter](https://ceccopierangiolieugenio.github.io/pyTermTk/sandbox/sandbox.html).
+- [**ecmaOS**](https://ecmaos.sh): A kernel and suite of applications tying modern web technologies into a browser-based operating system.
+- [**LabEx**](https://labex.io): Interactive learning platform with hands-on labs and xterm.js-based online terminals, focused on learn-by-doing approach.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.

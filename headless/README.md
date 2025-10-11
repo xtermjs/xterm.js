@@ -15,7 +15,7 @@ npm install xterm-headless
 Then import as you would a regular node package. The recommended way to load `xterm-headless` is with TypeScript and the ES6 module syntax:
 
 ```javascript
-import { Terminal } from 'xterm-headless';
+import { Terminal } from '@xterm/headless';
 ```
 
 ## API

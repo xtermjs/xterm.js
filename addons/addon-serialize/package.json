@@ -1,0 +1,31 @@
+{
+  "name": "@xterm/addon-serialize",
+  "version": "0.13.0",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/addon-serialize.js",
+  "module": "lib/addon-serialize.mjs",
+  "types": "typings/addon-serialize.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize",
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "xterm",
+    "xterm.js"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc -p .",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package",
+    "start": "node ../../demo/start",
+    "benchmark": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json",
+    "benchmark-baseline": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --baseline out-benchmark/benchmark/*benchmark.js",
+    "benchmark-eval": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --eval out-benchmark/benchmark/*benchmark.js"
+  },
+  "peerDependencies": {
+    "@xterm/xterm": "^5.0.0"
+  }
+}

@@ -59,13 +59,16 @@ function startServer() {
     }
     const cols = parseInt(req.query.cols);
     const rows = parseInt(req.query.rows);
-    const term = pty.spawn(process.platform === 'win32' ? 'pwsh.exe' : 'bash', [], {
+    const isWindows = process.platform === 'win32';
+    const term = pty.spawn(isWindows ? 'pwsh.exe' : 'bash', [], {
       name: 'xterm-256color',
       cols: cols ?? 80,
       rows: rows ?? 24,
-      cwd: process.platform === 'win32' ? undefined : env.PWD,
+      cwd: isWindows ? undefined : env.PWD,
       env,
-      encoding: USE_BINARY ? null : 'utf8'
+      encoding: USE_BINARY ? null : 'utf8',
+      useConpty: isWindows,
+      useConptyDll: isWindows,
     });
 
     console.log('Created terminal with PID: ' + term.pid);
@@ -184,5 +187,13 @@ function startServer() {
   console.log('App listening to http://127.0.0.1:' + port);
   app.listen(port, host, 0);
 }
+
+// HACK: There is an EPIPE error thrown when reloading a page. This only seems to happen on Windows
+// and it's unclear why it happens. Suppressing the error here since this is just the demo server.
+process.on('uncaughtException', (error) => {
+  if (process.platform === 'win32' && error.message === 'read EPIPE') {
+    return;
+  }
+});
 
 module.exports = startServer;

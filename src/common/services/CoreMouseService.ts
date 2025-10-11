@@ -2,10 +2,10 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IBufferService, ICoreService, ICoreMouseService } from 'common/services/Services';
-import { EventEmitter } from 'common/EventEmitter';
+import { IBufferService, ICoreService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * Supported default protocols.
@@ -167,18 +167,22 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
  * To send a mouse event call `triggerMouseEvent`.
  */
 export class CoreMouseService extends Disposable implements ICoreMouseService {
+  public serviceBrand: any;
+
   private _protocols: { [name: string]: ICoreMouseProtocol } = {};
   private _encodings: { [name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
   private _lastEvent: ICoreMouseEvent | null = null;
+  private _wheelPartialScroll: number = 0;
 
-  private readonly _onProtocolChange = this.register(new EventEmitter<CoreMouseEventType>());
-  public readonly onProtocolChange =  this._onProtocolChange.event;
+  private readonly _onProtocolChange = this._register(new Emitter<CoreMouseEventType>());
+  public readonly onProtocolChange = this._onProtocolChange.event;
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
-    @ICoreService private readonly _coreService: ICoreService
+    @ICoreService private readonly _coreService: ICoreService,
+    @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
     // register default protocols and encodings
@@ -227,6 +231,49 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
     this.activeProtocol = 'NONE';
     this.activeEncoding = 'DEFAULT';
     this._lastEvent = null;
+    this._wheelPartialScroll = 0;
+  }
+
+  /**
+   * Processes a wheel event, accounting for partial scrolls for trackpad, mouse scrolls.
+   * This prevents hyper-sensitive scrolling in alt buffer.
+   */
+  public consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0 || ev.shiftKey) {
+      return 0;
+    }
+
+    if (cellHeight === undefined || dpr === undefined) {
+      return 0;
+    }
+
+    const targetWheelEventPixels = cellHeight / dpr;
+    let amount = this._applyScrollModifier(ev.deltaY, ev);
+
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
+      amount /= (targetWheelEventPixels + 0.0); // Prevent integer division
+
+      const isLikelyTrackpad = Math.abs(ev.deltaY) < 50;
+      if (isLikelyTrackpad) {
+        amount *= 0.3;
+      }
+
+      this._wheelPartialScroll += amount;
+      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
+      this._wheelPartialScroll %= 1;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._bufferService.rows;
+    }
+    return amount;
+  }
+
+  private _applyScrollModifier(amount: number, ev: WheelEvent): number {
+    // Multiply the scroll speed when the modifier key is pressed
+    if (ev.altKey || ev.ctrlKey || ev.shiftKey) {
+      return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
+    }
+    return amount * this._optionsService.rawOptions.scrollSensitivity;
   }
 
   /**

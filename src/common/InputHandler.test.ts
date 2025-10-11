@@ -5,18 +5,19 @@
 
 import { assert } from 'chai';
 import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
+import { IBufferLine, IAttributeData, IColorEvent, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService, MockUnicodeService, MockOscLinkService } from 'common/TestUtils.test';
-import { IBufferService, ICoreService } from 'common/services/Services';
+import { IBufferService, ICoreService, type IOscLinkService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
+import { OscLinkService } from 'common/services/OscLinkService';
 
 
 function getCursor(bufferService: IBufferService): number[] {
@@ -59,6 +60,7 @@ describe('InputHandler', () => {
   let bufferService: IBufferService;
   let coreService: ICoreService;
   let optionsService: MockOptionsService;
+  let oscLinkService: IOscLinkService;
   let inputHandler: TestInputHandler;
 
   beforeEach(() => {
@@ -66,8 +68,9 @@ describe('InputHandler', () => {
     bufferService = new BufferService(optionsService);
     bufferService.resize(80, 30);
     coreService = new CoreService(bufferService, new MockLogService(), optionsService);
+    oscLinkService = new OscLinkService(bufferService);
 
-    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, oscLinkService, new MockCoreMouseService(), new MockUnicodeService());
   });
 
   describe('SL/SR/DECIC/DECDC', () => {
@@ -199,38 +202,38 @@ describe('InputHandler', () => {
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, undefined);
+      assert.equal(coreService.decPrivateModes.cursorBlink, undefined);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([1]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([2]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([3]));
-      assert.equal(optionsService.options['cursorStyle'], 'underline');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([4]));
-      assert.equal(optionsService.options['cursorStyle'], 'underline');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([5]));
-      assert.equal(optionsService.options['cursorStyle'], 'bar');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([6]));
-      assert.equal(optionsService.options['cursorStyle'], 'bar');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
     });
   });
   describe('setMode', () => {
@@ -434,6 +437,37 @@ describe('InputHandler', () => {
       bufferService.buffer.x = 40;
       inputHandler.eraseInLine(Params.fromArray([2]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
+    });
+    it('ED2 with scrollOnEraseInDisplay turned on', async () => {
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockLogService(),
+        new MockOptionsService({ scrollOnEraseInDisplay: true }),
+        new MockOscLinkService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
+      const aLine = Array(bufferService.cols + 1).join('a');
+      // add 2 full lines of text.
+      await inputHandler.parseP(aLine);
+      await inputHandler.parseP(aLine);
+
+      inputHandler.eraseInDisplay(Params.fromArray([2]));
+      // those 2 lines should have been pushed to scrollback.
+      assert.equal(bufferService.rows + 2, bufferService.buffer.lines.length);
+      assert.equal(bufferService.buffer.ybase, 2);
+      assert.equal(bufferService.buffer.lines.get(0)?.translateToString(), aLine);
+      assert.equal(bufferService.buffer.lines.get(1)?.translateToString(), aLine);
+
+      // Move to last line and add more text.
+      bufferService.buffer.y = bufferService.rows - 1;
+      bufferService.buffer.x = 0;
+      await inputHandler.parseP(aLine);
+      inputHandler.eraseInDisplay(Params.fromArray([2]));
+      // Screen should have been scrolled by a full screen size.
+      assert.equal(bufferService.rows * 2 + 2, bufferService.buffer.lines.length);
     });
     it('eraseInDisplay', async () => {
       const bufferService = new MockBufferService(80, 7);
@@ -1981,6 +2015,32 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b]4;0;rgb:aa/bb/cc;45;rgb:1/22/333;123;#001122\x07');
       assert.deepEqual(stack, [[{ type: ColorRequestType.SET, index: 0, color: [170, 187, 204] }, { type: ColorRequestType.SET, index: 123, color: [0, 17, 34] }]]);
       stack.length = 0;
+    });
+    it('8: hyperlink with id', async () => {
+      await inputHandler.parseP('\x1b]8;id=100;http://localhost:3000\x07');
+      assert.notStrictEqual(inputHandler.curAttrData.extended.urlId, 0);
+      assert.deepStrictEqual(
+        oscLinkService.getLinkData(inputHandler.curAttrData.extended.urlId),
+        {
+          id: '100',
+          uri: 'http://localhost:3000'
+        }
+      );
+      await inputHandler.parseP('\x1b]8;;\x07');
+      assert.strictEqual(inputHandler.curAttrData.extended.urlId, 0);
+    });
+    it('8: hyperlink with semi-colon', async () => {
+      await inputHandler.parseP('\x1b]8;;http://localhost:3000;abc=def\x07');
+      assert.notStrictEqual(inputHandler.curAttrData.extended.urlId, 0);
+      assert.deepStrictEqual(
+        oscLinkService.getLinkData(inputHandler.curAttrData.extended.urlId),
+        {
+          id: undefined,
+          uri: 'http://localhost:3000;abc=def'
+        }
+      );
+      await inputHandler.parseP('\x1b]8;;\x07');
+      assert.strictEqual(inputHandler.curAttrData.extended.urlId, 0);
     });
     it('104: restore events', async () => {
       const stack: IColorEvent[] = [];

@@ -7,13 +7,14 @@ import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererR
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
+import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ILinkifier2, ILinkifierEvent, ReadonlyColorSet } from 'browser/Types';
+import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
-import { EventEmitter } from 'common/EventEmitter';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'vs/base/common/event';
 
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -25,11 +26,10 @@ const SELECTION_CLASS = 'xterm-selection';
 
 let nextTerminalId = 1;
 
-
 /**
- * A fallback renderer for when canvas is slow. This is not meant to be
- * particularly fast or feature complete, more just stable and usable for when
- * canvas is not an option.
+ * The standard renderer and fallback for when the webgl addon is slow. This is not meant to be
+ * particularly fast and will even lack some features such as custom glyphs, hoever this is more
+ * reliable as webgl may not work on some machines.
  */
 export class DomRenderer extends Disposable implements IRenderer {
   private _rowFactory: DomRendererRowFactory;
@@ -41,38 +41,43 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
+  private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = this.register(new EventEmitter<IRequestRedrawEvent>()).event;
+  public readonly onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>()).event;
 
   constructor(
+    private readonly _terminal: ITerminal,
+    private readonly _document: Document,
     private readonly _element: HTMLElement,
     private readonly _screenElement: HTMLElement,
     private readonly _viewportElement: HTMLElement,
+    private readonly _helperContainer: HTMLElement,
     private readonly _linkifier2: ILinkifier2,
     @IInstantiationService instantiationService: IInstantiationService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreService private readonly _coreService: ICoreService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IThemeService private readonly _themeService: IThemeService
   ) {
     super();
-    this._rowContainer = document.createElement('div');
+    this._rowContainer = this._document.createElement('div');
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
     this._rowContainer.style.lineHeight = 'normal';
     this._rowContainer.setAttribute('aria-hidden', 'true');
     this._refreshRowElements(this._bufferService.cols, this._bufferService.rows);
-    this._selectionContainer = document.createElement('div');
+    this._selectionContainer = this._document.createElement('div');
     this._selectionContainer.classList.add(SELECTION_CLASS);
     this._selectionContainer.setAttribute('aria-hidden', 'true');
 
     this.dimensions = createRenderDimensions();
     this._updateDimensions();
-    this.register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
 
-    this.register(this._themeService.onChangeColors(e => this._injectCss(e)));
+    this._register(this._themeService.onChangeColors(e => this._injectCss(e)));
     this._injectCss(this._themeService.colors);
 
     this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document);
@@ -81,10 +86,10 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
-    this.register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
-    this.register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
+    this._register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
+    this._register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
 
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
 
       // Outside influences such as React unmounts may manipulate the DOM before our disposal.
@@ -96,7 +101,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._dimensionsStyleElement.remove();
     }));
 
-    this._widthCache = new WidthCache(document);
+    this._widthCache = new WidthCache(this._document, this._helperContainer);
     this._widthCache.setFont(
       this._optionsService.rawOptions.fontFamily,
       this._optionsService.rawOptions.fontSize,
@@ -130,7 +135,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     if (!this._dimensionsStyleElement) {
-      this._dimensionsStyleElement = document.createElement('style');
+      this._dimensionsStyleElement = this._document.createElement('style');
       this._screenElement.appendChild(this._dimensionsStyleElement);
     }
 
@@ -150,13 +155,17 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   private _injectCss(colors: ReadonlyColorSet): void {
     if (!this._themeStyleElement) {
-      this._themeStyleElement = document.createElement('style');
+      this._themeStyleElement = this._document.createElement('style');
       this._screenElement.appendChild(this._themeStyleElement);
     }
 
     // Base CSS
     let styles =
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
+      // Disabling pointer events circumvents a browser behavior that prevents `click` events from
+      // being delivered if the target element is replaced during the click. This happened due to
+      // refresh() being called during the mousedown handler to start a selection.
+      ` pointer-events: none;` +
       ` color: ${colors.foreground.css};` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
@@ -179,14 +188,23 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` font-style: italic;` +
       `}`;
     // Blink animation
+    const blinkAnimationUnderlineId = `blink_underline_${this._terminalClass}`;
+    const blinkAnimationBarId = `blink_bar_${this._terminalClass}`;
+    const blinkAnimationBlockId = `blink_block_${this._terminalClass}`;
     styles +=
-      `@keyframes blink_box_shadow` + `_` + this._terminalClass + ` {` +
+      `@keyframes ${blinkAnimationUnderlineId} {` +
       ` 50% {` +
       `  border-bottom-style: hidden;` +
       ` }` +
       `}`;
     styles +=
-      `@keyframes blink_block` + `_` + this._terminalClass + ` {` +
+      `@keyframes ${blinkAnimationBarId} {` +
+      ` 50% {` +
+      `  box-shadow: none;` +
+      ` }` +
+      `}`;
+    styles +=
+      `@keyframes ${blinkAnimationBlockId} {` +
       ` 0% {` +
       `  background-color: ${colors.cursor.css};` +
       `  color: ${colors.cursorAccent.css};` +
@@ -198,15 +216,25 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}`;
     // Cursor
     styles +=
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}:not(.${RowCss.CURSOR_STYLE_BLOCK_CLASS}) {` +
-      ` animation: blink_box_shadow` + `_` + this._terminalClass + ` 1s step-end infinite;` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      ` animation: ${blinkAnimationUnderlineId} 1s step-end infinite;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} {` +
+      ` animation: ${blinkAnimationBarId} 1s step-end infinite;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
-      ` animation: blink_block` + `_` + this._terminalClass + ` 1s step-end infinite;` +
+      ` animation: ${blinkAnimationBlockId} 1s step-end infinite;` +
       `}` +
+      // !important helps fix an issue where the cursor will not render on top of the selection,
+      // however it's very hard to fix this issue and retain the blink animation without the use of
+      // !important. So this edge case fails when cursor blink is on.
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` background-color: ${colors.cursor.css};` +
       ` color: ${colors.cursorAccent.css};` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS}:not(.${RowCss.CURSOR_BLINK_CLASS}) {` +
+      ` background-color: ${colors.cursor.css} !important;` +
+      ` color: ${colors.cursorAccent.css} !important;` +
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_OUTLINE_CLASS} {` +
       ` outline: 1px solid ${colors.cursor.css};` +
@@ -276,7 +304,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _refreshRowElements(cols: number, rows: number): void {
     // Add missing elements
     for (let i = this._rowElements.length; i <= rows; i++) {
-      const row = document.createElement('div');
+      const row = this._document.createElement('div');
       this._rowContainer.appendChild(row);
       this._rowElements.push(row);
     }
@@ -289,6 +317,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public handleResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
+    this.handleSelectionChanged(this._selectionRenderModel.selectionStart, this._selectionRenderModel.selectionEnd, this._selectionRenderModel.columnSelectMode);
   }
 
   public handleCharSizeChanged(): void {
@@ -299,6 +328,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
+    this.renderRows(0, this._bufferService.rows - 1);
   }
 
   public handleFocus(): void {
@@ -317,19 +347,19 @@ export class DomRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._bufferService.buffer.ydisp;
-    const viewportEndRow = end[1] - this._bufferService.buffer.ydisp;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, this._bufferService.rows - 1);
-
-    // No need to draw the selection
-    if (viewportCappedStartRow >= this._bufferService.rows || viewportCappedEndRow < 0) {
+    this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
+    if (!this._selectionRenderModel.hasSelection) {
       return;
     }
 
+    // Translate from buffer position to viewport position
+    const viewportStartRow = this._selectionRenderModel.viewportStartRow;
+    const viewportEndRow = this._selectionRenderModel.viewportEndRow;
+    const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
+    const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
+
     // Create the selections
-    const documentFragment = document.createDocumentFragment();
+    const documentFragment = this._document.createDocumentFragment();
 
     if (columnSelectMode) {
       const isXFlipped = start[0] > end[0];
@@ -361,11 +391,17 @@ export class DomRenderer extends Disposable implements IRenderer {
    * @param colEnd The end columns.
    */
   private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
-    const element = document.createElement('div');
+    const element = this._document.createElement('div');
+    const left = colStart * this.dimensions.css.cell.width;
+    let width = this.dimensions.css.cell.width * (colEnd - colStart);
+    if (left + width > this.dimensions.css.canvas.width) {
+      width = this.dimensions.css.canvas.width - left;
+    }
+
     element.style.height = `${rowCount * this.dimensions.css.cell.height}px`;
     element.style.top = `${row * this.dimensions.css.cell.height}px`;
-    element.style.left = `${colStart * this.dimensions.css.cell.width}px`;
-    element.style.width = `${this.dimensions.css.cell.width * (colEnd - colStart)}px`;
+    element.style.left = `${left}px`;
+    element.style.width = `${width}px`;
     return element;
   }
 
@@ -406,8 +442,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     const buffer = this._bufferService.buffer;
     const cursorAbsoluteY = buffer.ybase + buffer.y;
     const cursorX = Math.min(buffer.x, this._bufferService.cols - 1);
-    const cursorBlink = this._optionsService.rawOptions.cursorBlink;
-    const cursorStyle = this._optionsService.rawOptions.cursorStyle;
+    const cursorBlink = this._coreService.decPrivateModes.cursorBlink ?? this._optionsService.rawOptions.cursorBlink;
+    const cursorStyle = this._coreService.decPrivateModes.cursorStyle ?? this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
 
     for (let y = start; y <= end; y++) {

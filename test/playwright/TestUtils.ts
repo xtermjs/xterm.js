@@ -7,13 +7,10 @@ import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
 import type { IRenderDimensions } from 'browser/renderer/shared/Types';
 import type { IRenderService } from 'browser/services/Services';
-import type { ICoreTerminal, IMarker } from 'common/Types';
+import type { ICoreTerminal, IDisposable, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from 'xterm';
-import { EventEmitter } from '../../out/common/EventEmitter';
-// TODO: We could avoid needing this
-import deepEqual = require('deep-equal');
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
 
 export interface ITestContext {
   browser: Browser;
@@ -35,6 +32,56 @@ export async function createTestContext(browser: Browser): Promise<ITestContext>
     termHandle: await page.evaluateHandle('window.term'),
     proxy
   };
+}
+
+interface IListener<T, U = void> {
+  (arg1: T, arg2: U): void;
+}
+export interface IEvent<T, U = void> {
+  (listener: (arg1: T, arg2: U) => any): IDisposable;
+}
+class EventEmitter<T, U = void> {
+  private _listeners: Set<IListener<T, U>> = new Set();
+  private _event?: IEvent<T, U>;
+  private _disposed: boolean = false;
+
+  public get event(): IEvent<T, U> {
+    if (!this._event) {
+      this._event = (listener: (arg1: T, arg2: U) => any) => {
+        this._listeners.add(listener);
+        const disposable = {
+          dispose: () => {
+            if (!this._disposed) {
+              this._listeners.delete(listener);
+            }
+          }
+        };
+        return disposable;
+      };
+    }
+    return this._event;
+  }
+
+  public fire(arg1: T, arg2: U): void {
+    const queue: IListener<T, U>[] = [];
+    for (const l of this._listeners.values()) {
+      queue.push(l);
+    }
+    for (let i = 0; i < queue.length; i++) {
+      queue[i].call(undefined, arg1, arg2);
+    }
+  }
+
+  public dispose(): void {
+    this.clearListeners();
+    this._disposed = true;
+  }
+
+  public clearListeners(): void {
+    if (this._listeners) {
+      this._listeners.clear();
+    }
+  }
 }
 
 type EnsureAsync<T> = T extends PromiseLike<any> ? T : Promise<T>;
@@ -77,6 +124,7 @@ type TerminalProxyCustomOverrides = 'buffer' | (
   'options' |
   'open' |
   'attachCustomKeyEventHandler' |
+  'attachCustomWheelEventHandler' |
   'registerLinkProvider' |
   'registerCharacterJoiner' |
   'deregisterCharacterJoiner' |
@@ -108,22 +156,32 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
    * Initialize the proxy for a new terminal object.
    */
   public async initTerm(): Promise<void> {
-    for (const emitter of [
-      this._onBell,
-      this._onBinary,
-      this._onCursorMove,
-      this._onData,
-      this._onKey,
-      this._onLineFeed,
-      this._onRender,
-      this._onResize,
-      this._onScroll,
-      this._onSelectionChange,
-      this._onTitleChange,
-      this._onWriteParsed
-    ]) {
-      emitter.clearListeners();
-    }
+    this._onBell.dispose();
+    this._onBinary.dispose();
+    this._onCursorMove.dispose();
+    this._onData.dispose();
+    this._onKey.dispose();
+    this._onLineFeed.dispose();
+    this._onRender.dispose();
+    this._onResize.dispose();
+    this._onScroll.dispose();
+    this._onSelectionChange.dispose();
+    this._onTitleChange.dispose();
+    this._onWriteParsed.dispose();
+
+    this._onBell = new EventEmitter();
+    this._onBinary = new EventEmitter();
+    this._onCursorMove = new EventEmitter();
+    this._onData = new EventEmitter();
+    this._onKey = new EventEmitter();
+    this._onLineFeed = new EventEmitter();
+    this._onRender = new EventEmitter();
+    this._onResize = new EventEmitter();
+    this._onScroll = new EventEmitter();
+    this._onSelectionChange = new EventEmitter();
+    this._onTitleChange = new EventEmitter();
+    this._onWriteParsed = new EventEmitter();
+
     await this.evaluate(([term]) => term.onBell((window as any).onBell));
     await this.evaluate(([term]) => term.onBinary((window as any).onBinary));
     await this.evaluate(([term]) => term.onCursorMove((window as any).onCursorMove));
@@ -140,29 +198,29 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
 
   // #region Events
   private _onBell = new EventEmitter<void>();
-  public readonly onBell = this._onBell.event;
+  public get onBell(): IEvent<void> { return this._onBell.event; }
   private _onBinary = new EventEmitter<string>();
-  public readonly onBinary = this._onBinary.event;
+  public get onBinary(): IEvent<string> { return this._onBinary.event; }
   private _onCursorMove = new EventEmitter<void>();
-  public readonly onCursorMove = this._onCursorMove.event;
+  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onData = new EventEmitter<string>();
-  public readonly onData = this._onData.event;
+  public get onData(): IEvent<string> { return this._onData.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
-  public readonly onKey = this._onKey.event;
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onLineFeed = new EventEmitter<void>();
-  public readonly onLineFeed = this._onLineFeed.event;
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public readonly onRender = this._onRender.event;
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public readonly onResize = this._onResize.event;
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
-  public readonly onScroll = this._onScroll.event;
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onSelectionChange = new EventEmitter<void>();
-  public readonly onSelectionChange = this._onSelectionChange.event;
+  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
-  public readonly onTitleChange = this._onTitleChange.event;
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
   private _onWriteParsed = new EventEmitter<void>();
-  public readonly onWriteParsed = this._onWriteParsed.event;
+  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
   // #endregion
 
   // #region Simple properties
@@ -217,6 +275,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
       return new Promise(r => term.writeln(typeof data === 'string' ? data : new Uint8Array(data), r));
     }, [await this.getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
+  public async input(data: string, wasUserInput: boolean = true): Promise<void> { return this.evaluate(([term]) => term.input(data, wasUserInput)); }
   public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const); }
   public async registerMarker(y?: number | undefined): Promise<IMarker> { return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const); }
   public async registerDecoration(decorationOptions: IDecorationOptions): Promise<IDecoration | undefined> { return this._page.evaluate(([term, decorationOptions]) => term.registerDecoration(decorationOptions), [await this.getHandle(), decorationOptions] as const); }
@@ -353,7 +412,14 @@ class TerminalCoreProxy {
   }
 }
 
-export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}): Promise<void> {
+export async function openTerminal(
+  ctx: ITestContext,
+  options: ITerminalOptions | ITerminalInitOnlyOptions = {},
+  testOptions: { useShadowDom?: boolean, loadUnicodeGraphemesAddon?: boolean } = {}
+): Promise<void> {
+  testOptions.useShadowDom ??= false;
+  testOptions.loadUnicodeGraphemesAddon ??= true;
+
   await ctx.page.evaluate(`
   if ('term' in window) {
     try {
@@ -364,45 +430,140 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
   // HACK: Tests may have side effects that could cause the terminal not to be removed. This
   //       assertion catches this case early.
   strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
-  await ctx.page.evaluate(`
-    window.term = new Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
-    window.term.open(document.querySelector('#terminal-container'));
-  `);
+
+  let script = `
+    window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
+    let element = document.querySelector('#terminal-container');
+
+    // Remove shadow root if it exists
+    const newElement = element.cloneNode(false);
+    element.replaceWith(newElement);
+    element = newElement
+`;
+
+
+  if (testOptions.useShadowDom) {
+    script += `
+    const shadowRoot = element.attachShadow({ mode: "open" });
+
+    // Copy parent styles to shadow DOM
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    styles.forEach((styleEl) => {
+      const clone = document.createElement('link');
+      clone.rel = 'stylesheet';
+      clone.href = styleEl.href;
+      shadowRoot.appendChild(clone);
+    });
+
+    // Create new element inside the shadow DOM
+    element = document.createElement('div');
+    element.style.width = '100%';
+    element.style.height = '100%';
+    shadowRoot.appendChild(element);
+    `;
+  }
+
+  script += `
+    window.term.open(element);
+  `;
+
+  await ctx.page.evaluate(script);
+
+  // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
+  // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
+  if (testOptions.loadUnicodeGraphemesAddon) {
+    await ctx.page.evaluate(`
+      window.unicode = new UnicodeGraphemesAddon();
+      window.term.loadAddon(window.unicode);
+      window.term.unicode.activeVersion = '15-graphemes';
+    `);
+  }
   await ctx.page.waitForSelector('.xterm-rows');
   ctx.termHandle = await ctx.page.evaluateHandle('window.term');
   await ctx.proxy.initTerm();
 }
 
 
+export type MaybeAsync<T> = Promise<T> | T;
 
-export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => Promise<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
-  stack ??= new Error().stack;
+interface IPollForOptions<T> {
+  equalityFn?: (a: T, b: T) => boolean;
+  maxDuration?: number;
+  stack?: string;
+}
+
+export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, options?: IPollForOptions<T>): Promise<void> {
+  if (!options) {
+    options = {};
+  }
+  options.stack ??= new Error().stack;
   if (preFn) {
     await preFn();
   }
   const result = typeof evalOrFn === 'string' ? await page.evaluate(evalOrFn) : await evalOrFn();
 
   if (process.env.DEBUG) {
-    console.log('pollFor result: ', JSON.stringify(result));
+    console.log('pollFor\n  actual: ', JSON.stringify(result), '  expected: ', JSON.stringify(val));
   }
 
-  if (!deepEqual(result, val)) {
-    if (maxDuration === undefined) {
-      maxDuration = 2000;
+  let equalityCheck: boolean;
+  if (options.equalityFn) {
+    equalityCheck = options.equalityFn(result as T, val);
+  } else {
+    equalityCheck = true;
+    try {
+      deepStrictEqual(result, val);
+    } catch (e) {
+      equalityCheck = false;
     }
-    if (maxDuration <= 0) {
+  }
+
+  if (!equalityCheck) {
+    if (options.maxDuration === undefined) {
+      options.maxDuration = 2000;
+    }
+    if (options.maxDuration <= 0) {
       deepStrictEqual(result, val, ([
         `pollFor max duration exceeded.`,
         (`Last comparison: ` +
-          `${typeof result === 'object' ? JSON.stringify(result) : result} !== ` +
-          `${typeof val === 'object' ? JSON.stringify(val) : val}`),
-        `Stack: ${stack}`
+          `${typeof result === 'object' ? JSON.stringify(result) : result} (actual) !== ` +
+          `${typeof val === 'object' ? JSON.stringify(val) : val} (expected)`),
+        `Stack: ${options.stack}`
       ].join('\n')));
     }
     return new Promise<void>(r => {
-      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, maxDuration! - 10, stack)), 10);
+      setTimeout(() => r(pollFor(page, evalOrFn, val, preFn, {
+        ...options,
+        maxDuration: options!.maxDuration! - 10,
+        stack: options!.stack
+      })), 10);
     });
   }
+}
+
+export async function pollForApproximate<T>(page: playwright.Page, marginOfError: number, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, maxDuration?: number, stack?: string): Promise<void> {
+  await pollFor(page, evalOrFn, val, preFn, {
+    maxDuration,
+    stack,
+    equalityFn: (a, b) => {
+      if (a === b) {
+        return true;
+      }
+      if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+        let success = true;
+        for (let i = 0 ; i < a.length; i++) {
+          if (Math.abs(a[i] - b[i]) > marginOfError) {
+            success = false;
+            break;
+          }
+        }
+        if (success) {
+          return true;
+        }
+      }
+      return false;
+    }
+  });
 }
 
 export async function writeSync(page: playwright.Page, data: string): Promise<void> {
@@ -432,9 +593,10 @@ export function getBrowserType(): playwright.BrowserType<playwright.WebKitBrowse
   return browserType;
 }
 
-export function launchBrowser(): Promise<playwright.Browser> {
+export function launchBrowser(opts?: playwright.LaunchOptions): Promise<playwright.Browser> {
   const browserType = getBrowserType();
-  const options: Record<string, unknown> = {
+  const options: playwright.LaunchOptions = {
+    ...opts,
     headless: process.argv.includes('--headless')
   };
 

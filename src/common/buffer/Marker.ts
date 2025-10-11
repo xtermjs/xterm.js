@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { EventEmitter } from 'common/EventEmitter';
-import { disposeArray } from 'common/Lifecycle';
 import { IDisposable, IMarker } from 'common/Types';
+import { Emitter } from 'vs/base/common/event';
+import { dispose } from 'vs/base/common/lifecycle';
 
 export class Marker implements IMarker {
   private static _nextId = 1;
@@ -16,7 +16,7 @@ export class Marker implements IMarker {
   private readonly _id: number = Marker._nextId++;
   public get id(): number { return this._id; }
 
-  private readonly _onDispose = this.register(new EventEmitter<void>());
+  private readonly _onDispose = this.register(new Emitter<void>());
   public readonly onDispose = this._onDispose.event;
 
   constructor(
@@ -32,7 +32,7 @@ export class Marker implements IMarker {
     this.line = -1;
     // Emit before super.dispose such that dispose listeners get a change to react
     this._onDispose.fire();
-    disposeArray(this._disposables);
+    dispose(this._disposables);
     this._disposables.length = 0;
   }
 

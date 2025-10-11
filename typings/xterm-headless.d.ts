@@ -7,7 +7,7 @@
  * to be stable and consumed by external programs.
  */
 
-declare module 'xterm-headless' {
+declare module '@xterm/headless' {
   /**
    * A string representing log level.
    */
@@ -83,6 +83,8 @@ declare module 'xterm-headless' {
 
     /**
      * The modifier key hold to multiply scroll speed.
+     * @deprecated This option is no longer available and will always use alt.
+     * Setting this will be ignored.
      */
     fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
@@ -141,6 +143,30 @@ declare module 'xterm-headless' {
     minimumContrastRatio?: number;
 
     /**
+     * Whether to reflow the line containing the cursor when the terminal is
+     * resized. Defaults to false, because shells usually handle this
+     * themselves.
+     */
+    reflowCursorLine?: boolean;
+
+    /**
+     * Whether to rescale glyphs horizontally that are a single cell wide but
+     * have glyphs that would overlap following cell(s). This typically happens
+     * for ambiguous width characters (eg. the roman numeral characters U+2160+)
+     * which aren't featured in monospace fonts. This is an important feature
+     * for achieving GB18030 compliance.
+     *
+     * The following glyphs will never be rescaled:
+     *
+     * - Emoji glyphs
+     * - Powerline glyphs
+     * - Nerd font glyphs
+     *
+     * Note that this doesn't work with the DOM renderer. The default is false.
+     */
+    rescaleOverlappingGlyphs?: boolean;
+
+    /**
      * Whether to select the word under the cursor on right click, this is
      * standard behavior in a lot of macOS applications.
      */
@@ -156,9 +182,16 @@ declare module 'xterm-headless' {
     /**
      * The amount of scrollback in the terminal. Scrollback is the amount of
      * rows that are retained when lines are scrolled beyond the initial
-     * viewport.
+     * viewport. Defaults to 1000.
      */
     scrollback?: number;
+
+    /**
+     * If enabled the Erase in Display All (ED2) escape sequence will push
+     * erased text to scrollback, instead of clearing only the viewport portion.
+     * This emulates PuTTY's default clear screen behavior.
+     */
+    scrollOnEraseInDisplay?: boolean;
 
     /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
@@ -698,6 +731,17 @@ declare module 'xterm-headless' {
     onLineFeed: IEvent<void>;
 
     /**
+     * Adds an event listener for when data has been parsed by the terminal,
+     * after {@link write} is called. This event is useful to listen for any
+     * changes in the buffer.
+     *
+     * This fires at most once per frame, after data parsing completes. Note
+     * that this can fire when there are still writes pending if there is a lot
+     * of data.
+     */
+    onWriteParsed: IEvent<void>;
+
+    /**
      * Adds an event listener for when the terminal is resized. The event value
      * contains the new size.
      * @returns an `IDisposable` to stop listening.
@@ -717,6 +761,18 @@ declare module 'xterm-headless' {
      * @returns an `IDisposable` to stop listening.
      */
     onTitleChange: IEvent<string>;
+
+    /**
+     * Input data to application side. The data is treated the same way input
+     * typed into the terminal would (ie. the {@link onData} event will fire).
+     * @param data The data to forward to the application.
+     * @param wasUserInput Whether the input is genuine user input. This is true
+     * by default and triggers additionalbehavior like focus or selection
+     * clearing. Set this to false if the data sent should not be treated like
+     * user input would, for example passing an escape sequence to the
+     * application.
+     */
+    input(data: string, wasUserInput?: boolean): void;
 
     /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
@@ -777,21 +833,31 @@ declare module 'xterm-headless' {
 
     /**
      * Write data to the terminal.
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     write(data: string | Uint8Array, callback?: () => void): void;
 
     /**
      * Writes data to the terminal, followed by a break line character (\n).
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
@@ -1240,6 +1306,7 @@ declare module 'xterm-headless' {
      * Unicode version dependent wcwidth implementation.
      */
     wcwidth(codepoint: number): 0 | 1 | 2;
+    charProperties(codepoint: number, preceding: number): number;
   }
 
   /**

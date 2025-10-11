@@ -9,41 +9,56 @@ const os = require('os');
 const path = require('path');
 
 // Setup auth
-fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
+if (process.env['NPM_AUTH_TOKEN']) {
+  fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
+}
 
+log('Configuration:', 'green')
 const isDryRun = process.argv.includes('--dry');
 if (isDryRun) {
-  console.log('Publish dry run');
+  log('  Publish dry run');
 }
 
+const allAddons = process.argv.includes('--all-addons');
+if (allAddons) {
+  log('  Publish all addons');
+}
+
+const repoCommit = getRepoCommit();
 const changedFiles = getChangedFilesInCommit('HEAD');
 
-// Publish xterm if any files were changed outside of the addons directory
-let isStableRelease = false;
-if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
-  isStableRelease = checkAndPublishPackage(path.resolve(__dirname, '..'));
-  checkAndPublishPackage(path.resolve(__dirname, '../headless'));
-}
+// Always publish xterm, technically this isn't needed if
+// `changedFiles.some(e => e.search(/^addons\//)`, but it's here for convenience to get the right
+// peer dependencies for addons.
+const result = checkAndPublishPackage(path.resolve(__dirname, '..'), repoCommit);
+const isStableRelease = result.isStableRelease;
+const peerDependencies = result.nextVersion.includes('beta') ? {
+  '@xterm/xterm': `^${result.nextVersion}`,
+} : undefined;
+checkAndPublishPackage(path.resolve(__dirname, '../headless'), repoCommit);
+
+// Addon peer dependencies
 
 // Publish addons if any files were changed inside of the addon
 const addonPackageDirs = [
-  path.resolve(__dirname, '../addons/xterm-addon-attach'),
-  path.resolve(__dirname, '../addons/xterm-addon-canvas'),
-  path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  // path.resolve(__dirname, '../addons/xterm-addon-image'),
-  path.resolve(__dirname, '../addons/xterm-addon-ligatures'),
-  path.resolve(__dirname, '../addons/xterm-addon-search'),
-  path.resolve(__dirname, '../addons/xterm-addon-serialize'),
-  path.resolve(__dirname, '../addons/xterm-addon-unicode11'),
-  path.resolve(__dirname, '../addons/xterm-addon-web-links'),
-  path.resolve(__dirname, '../addons/xterm-addon-webgl')
+  path.resolve(__dirname, '../addons/addon-attach'),
+  path.resolve(__dirname, '../addons/addon-clipboard'),
+  path.resolve(__dirname, '../addons/addon-fit'),
+  path.resolve(__dirname, '../addons/addon-image'),
+  path.resolve(__dirname, '../addons/addon-ligatures'),
+  path.resolve(__dirname, '../addons/addon-progress'),
+  path.resolve(__dirname, '../addons/addon-search'),
+  path.resolve(__dirname, '../addons/addon-serialize'),
+  path.resolve(__dirname, '../addons/addon-unicode11'),
+  // path.resolve(__dirname, '../addons/addon-unicode-graphemes'),
+  path.resolve(__dirname, '../addons/addon-web-links'),
+  path.resolve(__dirname, '../addons/addon-webgl')
 ];
-console.log(`Checking if addons need to be published`);
+log(`Checking if addons need to be published`, 'green');
 for (const p of addonPackageDirs) {
   const addon = path.basename(p);
-  if (changedFiles.some(e => e.includes(addon))) {
-    console.log(`Try publish ${addon}`);
-    checkAndPublishPackage(p);
+  if (allAddons || changedFiles.some(e => e.includes(addon))) {
+    checkAndPublishPackage(p, repoCommit, peerDependencies);
   }
 }
 
@@ -52,7 +67,7 @@ if (isStableRelease) {
   updateWebsite();
 }
 
-function checkAndPublishPackage(packageDir) {
+function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
@@ -61,41 +76,64 @@ function checkAndPublishPackage(packageDir) {
 
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
-  console.log(`Publishing version: ${nextVersion}`);
+  log(`Publishing version: ${nextVersion}`, 'green');
 
   // Set the version in package.json
   const packageJsonFile = path.join(packageDir, 'package.json');
   packageJson.version = nextVersion;
-  console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
+
+  // Set the commit in package.json
+  if (repoCommit) {
+    packageJson.commit = repoCommit;
+    log(`Set commit of ${packageJsonFile} to ${repoCommit}`);
+  } else {
+    throw new Error(`No commit set`);
+  }
+
+  // Set peer dependencies
+  if (peerDependencies) {
+    packageJson.peerDependencies = peerDependencies;
+    log(`Set peerDependencies of ${packageJsonFile} to ${JSON.stringify(peerDependencies)}`);
+  } else {
+    log(`Skipping peerDependencies`);
+  }
+
+  // Write new package.json
   fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
   // Publish
-  const args = ['publish'];
+  const args = ['publish', '--access', 'public'];
   if (!isStableRelease) {
     args.push('--tag', 'beta');
   }
   if (isDryRun) {
     args.push('--dry-run');
   }
-  console.log(`Spawn: npm ${args.join(' ')}`);
+  log(`Spawn: npm ${args.join(' ')}`);
   const result = cp.spawnSync('npm', args, {
     cwd: packageDir,
     stdio: 'inherit'
   });
   if (result.status) {
-    console.error(`Spawn exited with code ${result.status}`);
-    process.exit(result.status);
+    throw new Error(`Spawn exited with code ${result.status}`);
   }
 
-  console.groupEnd();
+  return { isStableRelease, nextVersion };
+}
 
-  return isStableRelease;
+function getRepoCommit() {
+  const commitProcess = cp.spawnSync('git', ['log', '-1', '--format="%H"']);
+  if (commitProcess.stdout.length === 0 && commitProcess.stderr) {
+    const err = versionsProcess.stderr.toString();
+    throw new Error('Could not get repo commit\n' + err);
+  }
+  const output = commitProcess.stdout.toString().trim();
+  return output.replace(/^"/, '').replace(/"$/, '');
 }
 
 function getNextBetaVersion(packageJson) {
   if (!/^\d+\.\d+\.\d+$/.exec(packageJson.version)) {
-    console.error('The package.json version must be of the form x.y.z');
-    process.exit(1);
+    throw new Error('The package.json version must be of the form x.y.z');
   }
   const tag = 'beta';
   const stableVersion = packageJson.version.split('.');
@@ -113,9 +151,34 @@ function getNextBetaVersion(packageJson) {
   return `${nextStableVersion}-${tag}.${latestTagVersion + 1}`;
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [value];
+}
+
 function getPublishedVersions(packageJson, version, tag) {
-  const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
-  const versionsJson = JSON.parse(versionsProcess.stdout);
+  const versionsProcess = cp.spawnSync(
+    os.platform === 'win32' ? 'npm.cmd' : 'npm',
+    ['view', packageJson.name, 'versions', '--json'],
+    { shell: true }
+  );
+  if (versionsProcess.stdout.length === 0 && versionsProcess.stderr) {
+    const err = versionsProcess.stderr.toString();
+    if (err.indexOf('404 Not Found - GET https://registry.npmjs.org/@xterm') > 0) {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + err);
+  }
+  const output = JSON.parse(versionsProcess.stdout);
+  if (typeof output === 'object' && !Array.isArray(output)) {
+    if (output.error?.code === 'E404')  {
+      return [];
+    }
+    throw new Error('Could not get published versions\n' + output);
+  }
+  if (!output || Array.isArray(output) && output.length === 0) {
+    return [];
+  }
+  const versionsJson = asArray(output);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}.[0-9]+`)));
   }
@@ -131,10 +194,29 @@ function getChangedFilesInCommit(commit) {
 }
 
 function updateWebsite() {
-  console.log('Updating website');
+  log('Updating website', 'green');
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'website-'));
   const packageJson = require(path.join(path.resolve(__dirname, '..'), 'package.json'));
   if (!isDryRun) {
     cp.spawnSync('sh', [path.join(__dirname, 'update-website.sh'), packageJson.version], { cwd, stdio: [process.stdin, process.stdout, process.stderr] });
   }
+}
+
+/**
+ * @param {string} message
+ */
+function log(message, color) {
+  let colorSequence = '';
+  switch (color) {
+    case 'green': {
+      colorSequence = '\x1b[32m';
+      break;
+    }
+  }
+  console.info([
+    `[\x1b[2m${new Date().toLocaleTimeString('en-GB')}\x1b[0m] `,
+    colorSequence,
+    message,
+    '\x1b[0m',
+  ].join(''));
 }

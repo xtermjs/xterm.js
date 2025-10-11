@@ -36,7 +36,8 @@ function castf32(v: number): number {
 describe('WidthCache', () => {
   let wc: TestWidthCache;
   beforeEach(() => {
-    wc = new TestWidthCache(new jsdom.JSDOM('').window.document);
+    const dom = new jsdom.JSDOM('');
+    wc = new TestWidthCache(dom.window.document, dom.window.document.createElement('div'));
     wc.setFont('monospace', 15, 'normal', 'bold');
   });
   describe('cache invalidation', () => {

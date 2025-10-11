@@ -1,0 +1,25 @@
+{
+ "name": "@xterm/headless",
+ "description": "A headless terminal component that runs in Node.js",
+ "version": "5.5.0",
+ "main": "lib-headless/xterm-headless.js",
+ "module": "lib/xterm.mjs",
+ "types": "typings/xterm-headless.d.ts",
+ "repository": "https://github.com/xtermjs/xterm.js",
+ "license": "MIT",
+ "keywords": [
+  "cli",
+  "command-line",
+  "console",
+  "pty",
+  "shell",
+  "ssh",
+  "styles",
+  "terminal-emulator",
+  "terminal",
+  "tty",
+  "vt100",
+  "webgl",
+  "xterm"
+ ]
+}

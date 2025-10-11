@@ -5,7 +5,7 @@
 
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IDisposable } from 'common/Types';
 import { Params } from 'common/parser/Params';
 import { OscParser } from 'common/parser/OscParser';
@@ -230,7 +230,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
 export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
   public initialState: number;
   public currentState: number;
-  public precedingCodepoint: number;
+  public precedingJoinState: number; // UnicodeJoinProperties
 
   // buffers over several parse calls
   protected _params: Params;
@@ -271,7 +271,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._params = new Params(); // defaults to 32 storable params/subparams
     this._params.addParam(0);    // ZDM
     this._collect = 0;
-    this.precedingCodepoint = 0;
+    this.precedingJoinState = 0;
 
     // set default fallback handlers and handler lookup containers
     this._printHandlerFb = (data, start, end): void => { };
@@ -283,13 +283,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlers = Object.create(null);
     this._csiHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
-    this.register(toDisposable(() => {
+    this._register(toDisposable(() => {
       this._csiHandlers = Object.create(null);
       this._executeHandlers = Object.create(null);
       this._escHandlers = Object.create(null);
     }));
-    this._oscParser = this.register(new OscParser());
-    this._dcsParser = this.register(new DcsParser());
+    this._oscParser = this._register(new OscParser());
+    this._dcsParser = this._register(new DcsParser());
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)
@@ -448,7 +448,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._params.reset();
     this._params.addParam(0); // ZDM
     this._collect = 0;
-    this.precedingCodepoint = 0;
+    this.precedingJoinState = 0;
     // abort pending continuation from async handler
     // Here the RESET type indicates, that the next parse call will
     // ignore any saved stack, instead continues sync with next codepoint from GROUND
@@ -610,7 +610,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         // cleanup before continuing with the main sync loop
         this._parseStack.state = ParserStackType.NONE;
         start = this._parseStack.chunkPos + 1;
-        this.precedingCodepoint = 0;
+        this.precedingJoinState = 0;
         this.currentState = this._parseStack.transition & TableAccess.TRANSITION_STATE_MASK;
       }
     }
@@ -653,7 +653,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.EXECUTE:
           if (this._executeHandlers[code]) this._executeHandlers[code]();
           else this._executeHandlerFb(code);
-          this.precedingCodepoint = 0;
+          this.precedingJoinState = 0;
           break;
         case ParserAction.IGNORE:
           break;
@@ -688,7 +688,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           if (j < 0) {
             this._csiHandlerFb(this._collect << 8 | code, this._params);
           }
-          this.precedingCodepoint = 0;
+          this.precedingJoinState = 0;
           break;
         case ParserAction.PARAM:
           // inner loop: digits (0x30 - 0x39) and ; (0x3b) and : (0x3a)
@@ -727,7 +727,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           if (jj < 0) {
             this._escHandlerFb(this._collect << 8 | code);
           }
-          this.precedingCodepoint = 0;
+          this.precedingJoinState = 0;
           break;
         case ParserAction.CLEAR:
           this._params.reset();
@@ -758,7 +758,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._params.reset();
           this._params.addParam(0); // ZDM
           this._collect = 0;
-          this.precedingCodepoint = 0;
+          this.precedingJoinState = 0;
           break;
         case ParserAction.OSC_START:
           this._oscParser.start();
@@ -783,7 +783,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._params.reset();
           this._params.addParam(0); // ZDM
           this._collect = 0;
-          this.precedingCodepoint = 0;
+          this.precedingJoinState = 0;
           break;
       }
       this.currentState = transition & TableAccess.TRANSITION_STATE_MASK;

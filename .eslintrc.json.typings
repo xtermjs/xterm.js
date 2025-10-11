@@ -1,16 +1,30 @@
 {
   "env": {
     "browser": true,
-    "es6": true,
+    "es2021": true,
     "node": true
   },
   "parser": "@typescript-eslint/parser",
   "plugins": [
+    "@stylistic/ts",
     "@typescript-eslint",
     "jsdoc"
   ],
   "rules": {
-    "no-extra-semi": "error",
+    "@stylistic/ts/indent": [
+      "warn",
+      2
+    ],
+    "@stylistic/ts/semi": [
+      "warn",
+      "always"
+    ],
+    "@stylistic/ts/quotes": [
+      "warn",
+      "single",
+      { "allowTemplateLiterals": true }
+    ],
+
     "@typescript-eslint/array-type": [
       "warn",
       {
@@ -23,10 +37,6 @@
       {
         "allowExpressions": true
       }
-    ],
-    "@typescript-eslint/indent": [
-      "warn",
-      2
     ],
     "@typescript-eslint/member-delimiter-style": [
       "warn",
@@ -48,15 +58,7 @@
     ],
     "@typescript-eslint/prefer-namespace-keyword": "warn",
     "@typescript-eslint/type-annotation-spacing": "warn",
-    "@typescript-eslint/quotes": [
-      "warn",
-      "single",
-      { "allowTemplateLiterals": true }
-    ],
-    "@typescript-eslint/semi": [
-      "warn",
-      "always"
-    ],
+
     "comma-dangle": [
       "warn",
       {
@@ -86,6 +88,7 @@
         "ignorePattern": "^ *(?<ps_description>\\* Ps=)"
       }
     ],
+    "no-extra-semi": "error",
     "no-irregular-whitespace": "warn",
     "no-trailing-spaces": "warn",
     "object-curly-spacing": [

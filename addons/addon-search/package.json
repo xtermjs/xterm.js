@@ -1,0 +1,27 @@
+{
+  "name": "@xterm/addon-search",
+  "version": "0.15.0",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/addon-search.js",
+  "module": "lib/addon-search.mjs",
+  "types": "typings/addon-search.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search",
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "xterm",
+    "xterm.js"
+  ],
+  "scripts": {
+    "prepackage": "../../node_modules/.bin/tsc -p .",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package",
+    "start": "node ../../demo/start"
+  },
+  "peerDependencies": {
+    "@xterm/xterm": "^5.0.0"
+  }
+}
