@@ -1099,6 +1099,12 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
     return new LogicalBufferLine(cols, fillCellData);
   }
 
+  public isEmpty(): boolean {
+    const dlen = this.dataLength();
+    return dlen == 0 ||
+      (dlen == 1 && BufferLine.wKind(this._data[0]) === DataKind.BG);
+  }
+
   // count can be negative
   addEmptyDataElements(position: number, count: number, insertBeforeEnd?: boolean) {
     const oldDataLength = this._dataLength;

@@ -191,9 +191,6 @@ export class Buffer implements IBuffer {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
-    // count bufferlines with overly big memory to be cleaned afterwards
-    let dirtyMemoryLines = 0;
-
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
@@ -218,77 +215,9 @@ export class Buffer implements IBuffer {
     // initialized/filled.
     if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
-      if (this._cols < newCols) {
-        for (let i = 0; i < this.lines.length; i++) {
-          // +boolean for fast 0 or 1 conversion
-          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
-        }
+      for (let i = 0; i < this.lines.length; i++) {
+        this.lines.get(i)!.length = newCols;
       }
-
-      // Resize rows in both directions as needed
-      let addToY = 0;
-      if (this._rows < newRows) {
-        for (let y = this._rows; y < newRows; y++) {
-          if (this.lines.length < newRows + this.ybase) {
-            if (this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
-              // Just add the new missing rows on Windows as conpty reprints the screen with its
-              // view of the world. Once a line enters scrollback for conpty it remains there
-              this.lines.push(BufferLine.make(newCols, nullCell));
-            } else {
-              if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
-                // There is room above the buffer and there are no empty elements below the line,
-                // scroll up
-                this.ybase--;
-                addToY++;
-                if (this.ydisp > 0) {
-                  // Viewport is at the top of the buffer, must increase downwards
-                  this.ydisp--;
-                }
-              } else {
-                // Add a blank line if there is no buffer left at the top to scroll to, or if there
-                // are blank lines after the cursor
-                this.lines.push(BufferLine.make(newCols, nullCell));
-              }
-            }
-          }
-        }
-      } else { // (this._rows >= newRows)
-        for (let y = this._rows; y > newRows; y--) {
-          if (this.lines.length > newRows + this.ybase) {
-            if (this.lines.length > this.ybase + this.y + 1) {
-              // The line is a blank line below the cursor, remove it
-              this.lines.pop();
-            } else {
-              // The line is the cursor, scroll down
-              this.ybase++;
-              this.ydisp++;
-            }
-          }
-        }
-      }
-
-      // Reduce max length if needed after adjustments, this is done after as it
-      // would otherwise cut data from the bottom of the buffer.
-      if (newMaxLength < this.lines.maxLength) {
-        // Trim from the top of the buffer and adjust ybase and ydisp.
-        const amountToTrim = this.lines.length - newMaxLength;
-        if (amountToTrim > 0) {
-          this.lines.trimStart(amountToTrim);
-          this.ybase = Math.max(this.ybase - amountToTrim, 0);
-          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
-          this.savedY = Math.max(this.savedY - amountToTrim, 0);
-        }
-        this.lines.maxLength = newMaxLength;
-      }
-
-      // Make sure that the cursor stays on screen
-      this.x = Math.min(this.x, newCols);
-      this.y = Math.min(this.y, newRows - 1);
-      if (addToY) {
-        this.y += addToY;
-      }
-      this.savedX = Math.min(this.savedX, newCols - 1);
-
       this.scrollTop = 0;
     }
 
@@ -437,8 +366,8 @@ export class Buffer implements IBuffer {
         }
         deltaSoFar += newWrapCount - oldWrapCount;
       } else {
-        if (row + deltaSoFar === yBaseOld) { this.ybase = yBaseOld + deltaSoFar; }
-        if (row + deltaSoFar === yDispOld) { this.ydisp = yDispOld + deltaSoFar; }
+        if (row === yBaseOld) { this.ybase = yBaseOld + deltaSoFar; }
+        if (row === yDispOld) { this.ydisp = yDispOld + deltaSoFar; }
         if (row === yAbsOld) {
           yAbs += deltaSoFar;
         }
@@ -451,32 +380,36 @@ export class Buffer implements IBuffer {
     if (deltaSoFar !== 0) {
       if (yAbsOld >= endRow) { yAbs += deltaSoFar; }
       if (ySavedOld >= endRow) { ySaved += deltaSoFar; }
-      if (yBaseOld >= endRow) { this.ybase = yBaseOld + deltaSoFar; }
-      if (yDispOld >= endRow) { this.ydisp = yDispOld + deltaSoFar; }
+      if (deltaSoFar > 0) {
+        if (yBaseOld >= endRow) { this.ybase = yBaseOld + deltaSoFar; }
+        if (yDispOld >= endRow) { this.ydisp = yDispOld + deltaSoFar; }
+      }
     }
     this.y = yAbs - this.ybase;
     this.savedY = ySaved;
     const oldLinesCount = this.lines.length;
     let trimNeeded = oldLinesCount + newRows.length - (endRow - startRow)
-            - this.lines.maxLength;
-    if (trimNeeded > 0) {
-      this.ybase -= trimNeeded;
-      this.ydisp -= trimNeeded;
-      if (trimNeeded > startRow) {
-        const trimNew = trimNeeded - startRow;
-        const firstNewRow = newRows[trimNew];
-        if (firstNewRow instanceof WrappedBufferLine) {
-          newRows[trimNew] = firstNewRow.asUnwrapped(/*PREVIOUS*/);
-        }
-        newRows.splice(0, trimNew);
-        trimNeeded -= trimNew;
+      - this.lines.maxLength;
+    let endTrimmed = 0;
+    const belowEnd = this.lines.length - endRow;
+    while (trimNeeded > 0) {
+      const lrow = this.lines.length - 1;
+      const last = this.lines.get(lrow);
+      if (! (last instanceof LogicalBufferLine && last.isEmpty())
+        || yAbsOld === lrow || ySavedOld === lrow) {
+        break;
       }
+      trimNeeded--;
+      endTrimmed++;
+      this.lines.pop();
+    }
+    if (endTrimmed) {
+      const newTrim = Math.max(endTrimmed - belowEnd, 0);
+      newRows.length = newRows.length - newTrim;
+      endRow -= newTrim;
+      this.lines.onDeleteEmitter.fire({ index: this.lines.length, amount: endTrimmed });
     }
     this.lines.spliceNoTrim(startRow, endRow - startRow, newRows, false);
-    if (trimNeeded > 0) {
-      this.setWrapped(trimNeeded,false);
-      this.lines.trimIfNeeded();
-    }
     // Update markers
     const insertCount = insertEvents.length;
     for (let i = 0; i < insertCount; i++) {
@@ -488,13 +421,18 @@ export class Buffer implements IBuffer {
         this.lines.onInsertEmitter.fire(event);
       }
     }
-    this._fixupPosition();
+    if (trimNeeded > 0) {
+      this.ybase -= trimNeeded;
+      this.ydisp -= trimNeeded;
+      this.setWrapped(trimNeeded,false);
+      this.lines.trimIfNeeded();
+    }
   }
 
   private _fixupPosition(): void {
     const cols = this._cols;
     const rows = this._rows;
-
+    const ydispAtHome = this.ydisp === this.ybase;
     let ilast = this.lines.length - 1;
     while (ilast >= rows && this.ybase + this.y <ilast && this.savedY < ilast) {
       this.setWrapped(ilast, false);
@@ -504,7 +442,6 @@ export class Buffer implements IBuffer {
     // FIXME migrate Windows conpty handling
     if (this.y >= rows) {
       const adjust = this.y - rows + 1;
-      this.ydisp += adjust;
       this.ybase += adjust;
       this.y -= adjust;
     }
@@ -512,11 +449,11 @@ export class Buffer implements IBuffer {
       this.lines.push(new LogicalBufferLine(cols));
     }
     const adjust = this.lines.length - this.ybase - rows;
-    if (adjust > 0) {
+    if (adjust < 0) {
       this.ybase += adjust;
       this.y -= adjust;
     }
-    const yy=this.ydisp;
+    if (ydispAtHome) { this.ydisp = this.ybase; }
     this.ydisp = Math.max(0, Math.min(this.ydisp, this.lines.length));
   }
 

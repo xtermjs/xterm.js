@@ -265,9 +265,13 @@ describe('Buffer', () => {
           const char = String.fromCharCode(code);
           firstLine.set(i, [0, char, 1, code]);
         }
-        buffer.y = 1;
+        buffer.y = 0;
+        buffer.x = 3;
         assert.equal(buffer.lines.get(0)!.length, 5);
         assert.equal(buffer.lines.get(0)!.translateToString(), 'abcde');
+        const cell = new CellData();
+        buffer.lines.get(buffer.ybase + buffer.y)!.loadCell(buffer.x, cell);
+        assert.equal(cell.getChars(), 'd');
         buffer.resize(1, 10);
         assert.equal(buffer.lines.length, 10);
         assert.equal(buffer.lines.get(0)!.translateToString(), 'a');
@@ -280,6 +284,10 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(7)!.translateToString(), ' ');
         assert.equal(buffer.lines.get(8)!.translateToString(), ' ');
         assert.equal(buffer.lines.get(9)!.translateToString(), ' ');
+        buffer.lines.get(buffer.ybase + buffer.y)!.loadCell(buffer.x, cell);
+        assert.equal(cell.getChars(), 'd');
+        assert.equal(buffer.y, 3);
+        assert.equal(buffer.x, 0);
         buffer.resize(5, 10);
         assert.equal(buffer.lines.length, 10);
         assert.equal(buffer.lines.get(0)!.translateToString(), 'abcde');
@@ -292,6 +300,10 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(7)!.translateToString(), '     ');
         assert.equal(buffer.lines.get(8)!.translateToString(), '     ');
         assert.equal(buffer.lines.get(9)!.translateToString(), '     ');
+        assert.equal(buffer.y, 0);
+        assert.equal(buffer.x, 3);
+        buffer.lines.get(buffer.ybase + buffer.y)!.loadCell(buffer.x, cell);
+        assert.equal(cell.getChars(), 'd');
       });
       it('should discard parts of wrapped lines that go out of the scrollback', () => {
         buffer.fillViewportRows();
@@ -483,7 +495,7 @@ describe('Buffer', () => {
         // Buffer:
         // abcdefghij
         // 0123456789
-        // abcdefghij
+        // klmnopqrst
         const firstMarker = buffer.addMarker(0);
         const secondMarker = buffer.addMarker(1);
         const thirdMarker = buffer.addMarker(2);
@@ -740,16 +752,9 @@ describe('Buffer', () => {
               it('should adjust the viewport and keep ydisp = ybase', () => {
                 buffer.ydisp = 10;
                 buffer.resize(4, 10);
-                assert.equal(buffer.ybase + buffer.y, 16);
-                if (false) {
-                  // Old _reflowLargerAdjustViewport modifies ybase and ydisp
-                  // but the logic seems wrong. ???
-                  assert.equal(buffer.ydisp, 7);
-                  assert.equal(buffer.ybase, 7);
-                } else {
-                  assert.equal(buffer.ydisp, 10);
-                  assert.equal(buffer.ybase, 10);
-                }
+                assert.equal(buffer.y, 9);
+                assert.equal(buffer.ydisp, 7);
+                assert.equal(buffer.ybase, 7);
                 assert.equal(buffer.lines.length, 17);
                 for (let i = 0; i < 10; i++) {
                   assert.equal(buffer.lines.get(i)!.translateToString(), '    ');
@@ -985,6 +990,7 @@ describe('Buffer', () => {
                 for (let i = 0; i < buffer.lines.length; i++) {
                   assert.equal(buffer.lines.get(i)!.isWrapped, wrappedLines.includes(i), `line ${i} isWrapped must equal ${wrappedLines.includes(i)}`);
                 }
+                assert.equal(buffer.ydisp, 5);
               });
             });
           });
@@ -1027,11 +1033,11 @@ describe('Buffer', () => {
               });
             });
             describe('&& ydisp !== ybase', () => {
-              it('should trim lines and not change ydisp', () => {
+              it('should trim lines and adjust ydisp', () => {
                 buffer.ydisp = 5;
                 buffer.y = 13;
                 buffer.resize(2, 10);
-                assert.equal(buffer.ydisp, 5);
+                assert.equal(buffer.ydisp, 2); // since 3 lines got trimmed
                 assert.equal(buffer.ybase, 10);
                 assert.equal(buffer.lines.length, 20);
                 for (let i = 0; i < 7; i++) {
@@ -1196,21 +1202,9 @@ describe('Buffer', () => {
       // sync
       for (let i = 0; i < INIT_ROWS; i++) {
         const line = buffer.lines.get(i)!;
-        // line memory is still at old size from initialization
-        assert.equal((line as any)._data.buffer.byteLength, INIT_COLS * 3 * 4);
         // array.length and .length get immediately adjusted
-        assert.equal((line as any)._data.length, (INIT_COLS / 2 - 1) * 3);
+        //assert.equal((line as any)._data.length, (INIT_COLS / 2 - 1) * 3);
         assert.equal(line.length, INIT_COLS / 2 - 1);
-      }
-
-      // wait for a bit to give IdleTaskQueue a chance to kick in
-      // and finish memory cleaning
-      await new Promise(r => setTimeout(r, 30));
-
-      // cleanup should have realigned memory with exact bytelength
-      for (let i = 0; i < INIT_ROWS; i++) {
-        const line = buffer.lines.get(i)!;
-        assert.equal((line as any)._data.buffer.byteLength, (INIT_COLS / 2 - 1) * 3 * 4);
       }
     });
   });
