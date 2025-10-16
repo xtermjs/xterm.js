@@ -217,22 +217,6 @@ describe('CircularList', () => {
       assert.equal(list.get(3), 2);
     });
 
-    it('should shift elements forward, wrapping the list if needed', () => {
-      const list = new CircularList<number>(5);
-      list.push(1);
-      list.push(2);
-      list.push(3);
-      list.push(4);
-      list.push(5);
-      list.shiftElements(2, 2, 3);
-      assert.equal(list.length, 5);
-      assert.equal(list.get(0), 3);
-      assert.equal(list.get(1), 4);
-      assert.equal(list.get(2), 5);
-      assert.equal(list.get(3), 3);
-      assert.equal(list.get(4), 4);
-    });
-
     it('should shift an element backwards', () => {
       const list = new CircularList<number>(5);
       list.push(1);

@@ -18,8 +18,9 @@ export interface IDeleteEvent {
 }
 
 /**
- * Represents a circular list; a list with a maximum size that wraps around when push is called,
+ * OLD: Represents a circular list; a list with a maximum size that wraps around when push is called,
  * overriding values at the start of the list.
+ * NEW: This is just a renamed list structure. Should perhaps be inlined in Buffer.ts.
  */
 export class CircularList<T> extends Disposable implements ICircularList<T> {
   protected _array: (T | undefined)[];
@@ -45,22 +46,17 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
   public get maxLength(): number {
     return this._maxLength;
   }
-
   public set maxLength(newMaxLength: number) {
     // There was no change in maxLength, return early.
     if (this._maxLength === newMaxLength) {
       return;
     }
-
-    // Reconstruct array, starting at index 0. Only transfer values from the
-    // indexes 0 to length.
-    const newArray = new Array<T | undefined>(newMaxLength);
-    for (let i = 0; i < Math.min(newMaxLength, this.length); i++) {
-      newArray[i] = this._array[this._getCyclicIndex(i)];
+    if (this._startIndex) {
+      this._array.copyWithin(0, this._startIndex, this._startIndex + this._length);
+      this._startIndex = 0;
     }
-    this._array = newArray;
+    this._array.length = this.length;
     this._maxLength = newMaxLength;
-    this._startIndex = 0;
   }
 
   public get length(): number {
@@ -69,11 +65,16 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
 
   public set length(newLength: number) {
     if (newLength > this._length) {
-      for (let i = this._length; i < newLength; i++) {
-        this._array[i] = undefined;
-      }
+      this._array.length = this._startIndex + newLength;
     }
     this._length = newLength;
+  }
+
+  /**
+   * How big to let _startIndex get befre we compactify.
+   */
+  private _maxStart(): number {
+    return Math.max(100, this._maxLength >> 3);
   }
 
   /**
@@ -85,7 +86,7 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @returns The value corresponding to the index.
    */
   public get(index: number): T | undefined {
-    return this._array[this._getCyclicIndex(index)];
+    return this._array[index + this._startIndex];
   }
 
   /**
@@ -97,7 +98,7 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @param value The value to set.
    */
   public set(index: number, value: T | undefined): void {
-    this._array[this._getCyclicIndex(index)] = value;
+    this._array[index + this._startIndex] = value;
   }
 
   /**
@@ -106,27 +107,8 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @param value The value to push onto the list.
    */
   public push(value: T): void {
-    this._array[this._getCyclicIndex(this._length)] = value;
-    if (this._length === this._maxLength) {
-      this._startIndex = ++this._startIndex % this._maxLength;
-      this.onTrimEmitter.fire(1);
-    } else {
-      this._length++;
-    }
-  }
-
-  /**
-   * Advance ringbuffer index and return current element for recycling.
-   * Note: The buffer must be full for this method to work.
-   * @throws When the buffer is not full.
-   */
-  public recycle(): T {
-    if (this._length !== this._maxLength) {
-      throw new Error('Can only recycle when the buffer is full');
-    }
-    this._startIndex = ++this._startIndex % this._maxLength;
-    this.onTrimEmitter.fire(1);
-    return this._array[this._getCyclicIndex(this._length - 1)]!;
+    this._array[this._startIndex + this._length++] = value;
+    this.trimIfNeeded();
   }
 
   /**
@@ -141,7 +123,7 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @returns The popped value.
    */
   public pop(): T | undefined {
-    return this._array[this._getCyclicIndex(this._length-- - 1)];
+    return this._array[this._length-- - 1 + this._startIndex];
   }
 
   /**
@@ -154,37 +136,24 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @param items The items to insert.
    */
   public spliceNoTrim(start: number, deleteCount: number, items: T[], fireEvents: boolean = true): void {
-    // Delete items
-    if (deleteCount) {
-      for (let i = start; i < this._length - deleteCount; i++) {
-        this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
-      }
-      this._length -= deleteCount;
-      if (fireEvents) {
+    this._array.splice(start + this._startIndex, deleteCount, ...items);
+    if (fireEvents) {
+      if (deleteCount) {
         this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
       }
+      if (items.length) {
+        this.onInsertEmitter.fire({ index: start, amount: items.length });
+      }
     }
-
-    // Add items
-    for (let i = this._length - 1; i >= start; i--) {
-      this._array[this._getCyclicIndex(i + items.length)] = this._array[this._getCyclicIndex(i)];
-    }
-    for (let i = 0; i < items.length; i++) {
-      this._array[this._getCyclicIndex(start + i)] = items[i];
-    }
-    if (items.length && fireEvents) {
-      this.onInsertEmitter.fire({ index: start, amount: items.length });
-    }
-    this._length += items.length;
+    this._length += items.length - deleteCount;
   }
+
   public trimIfNeeded(): void {
     if (this._length > this._maxLength) {
-      const countToTrim = this._length - this._maxLength;
-      this._startIndex += countToTrim;
-      this._length = this._maxLength;
-      this.onTrimEmitter.fire(countToTrim);
+      this.trimStart(this._length - this._maxLength);
     }
   }
+
   public splice(start: number, deleteCount: number, ...items: T[]): void {
     this.spliceNoTrim(start, deleteCount, items);
     // Adjust length as needed
@@ -199,8 +168,19 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
     if (count > this._length) {
       count = this._length;
     }
+    if (count === 0) {
+      return;
+    }
     this._startIndex += count;
     this._length -= count;
+    if (this._startIndex > this._maxStart()) {
+      this._array.copyWithin(0, this._startIndex, this._startIndex + this._length);
+      this._startIndex = 0;
+      this._array.length = this._length;
+    } else {
+      // May help garbage collector.
+      this._array.fill(undefined, this._startIndex - count, this._startIndex);
+    }
     this.onTrimEmitter.fire(count);
   }
 
@@ -214,34 +194,14 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
     if (start + offset < 0) {
       throw new Error('Cannot shift elements in list beyond index 0');
     }
-
+    const startIndex = start + this._startIndex;
+    this._array.copyWithin(startIndex + offset, startIndex, startIndex + count);
     if (offset > 0) {
-      for (let i = count - 1; i >= 0; i--) {
-        this.set(start + i + offset, this.get(start + i));
-      }
       const expandListBy = (start + count + offset) - this._length;
       if (expandListBy > 0) {
         this._length += expandListBy;
-        while (this._length > this._maxLength) {
-          this._length--;
-          this._startIndex++;
-          this.onTrimEmitter.fire(1);
-        }
-      }
-    } else {
-      for (let i = 0; i < count; i++) {
-        this.set(start + i + offset, this.get(start + i));
+        this.trimIfNeeded();
       }
     }
-  }
-
-  /**
-   * Gets the cyclic index for the specified regular index. The cyclic index can then be used on the
-   * backing array to get the element associated with the regular index.
-   * @param index The regular index.
-   * @returns The cyclic index.
-   */
-  private _getCyclicIndex(index: number): number {
-    return (this._startIndex + index) % this._maxLength;
   }
 }

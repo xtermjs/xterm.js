@@ -79,12 +79,7 @@ export class BufferService extends Disposable implements IBufferService {
 
       // Insert the line using the fastest method
       if (bottomRow === buffer.lines.length - 1) {
-        if (! willBufferBeTrimmed) {
-          buffer.lines.push(newLine);
-        } else {
-          buffer.lines.recycle(); // ignore result
-          buffer.lines.set(bottomRow, newLine);
-        }
+        buffer.lines.push(newLine);
       } else {
         buffer.lines.splice(bottomRow + 1, 0, newLine);
       }
