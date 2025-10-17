@@ -76,7 +76,7 @@ export class CoreService extends Disposable implements ICoreService {
 
     // Fire onData API
     this._logService.debug(`sending data "${data}"`);
-    this._logService.trace(`sending data "${data}", and their character codes:`, () => data.split('').map(e => e.charCodeAt(0)));
+    this._logService.trace(`sending data (codes)`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onData.fire(data);
   }
 
