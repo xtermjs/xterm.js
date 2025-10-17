@@ -85,7 +85,7 @@ export class CoreService extends Disposable implements ICoreService {
       return;
     }
     this._logService.debug(`sending binary "${data}"`);
-    this._logService.trace(`sending binary "${data}", and their character codes:`, () => data.split('').map(e => e.charCodeAt(0)));
+    this._logService.trace(`sending binary (codes)`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onBinary.fire(data);
   }
 }
