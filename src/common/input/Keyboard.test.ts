@@ -350,7 +350,7 @@ describe('Keyboard', () => {
     });
 
     it('should return proper sequence for ctrl+@', () => {
-      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 50, key: '@' }).key, '\\x00');
+      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 50, key: '@' }).key, '\x00');
     });
 
   });
@@ -378,17 +378,17 @@ describe('Keyboard', () => {
 
     it('should use legacy encoding when Kitty flags are 0', () => {
       const result = testKittyKeyboardEvent({ keyCode: 27, key: 'Escape' }, 0);
-      assert.equal(result.key, '\\x1b');
+      assert.equal(result.key, '\x1b');
     });
 
     it('should use Kitty protocol for Escape key when disambiguation is enabled', () => {
       const result = testKittyKeyboardEvent({ keyCode: 27, key: 'Escape' }, 1); // KITTY_FLAG_DISAMBIGUATE
-      assert.equal(result.key, '\\x1b[27u');
+      assert.equal(result.key, '\x1b[27u');
     });
 
     it('should use Kitty protocol for regular keys when REPORT_ALL_KEYS is enabled', () => {
       const result = testKittyKeyboardEvent({ keyCode: 65, key: 'a' }, 8); // KITTY_FLAG_REPORT_ALL_KEYS
-      assert.equal(result.key, '\\x1b[97u');
+      assert.equal(result.key, '\x1b[97u');
     });
 
     it('should encode modifiers correctly in Kitty protocol', () => {
@@ -398,7 +398,7 @@ describe('Keyboard', () => {
         ctrlKey: true,
         shiftKey: true
       }, 8); // KITTY_FLAG_REPORT_ALL_KEYS
-      assert.equal(result.key, '\\x1b[97;6u'); // 1 + 1(shift) + 4(ctrl) = 6
+      assert.equal(result.key, '\x1b[97;6u'); // 1 + 1(shift) + 4(ctrl) = 6
     });
 
     it('should handle functional keys correctly', () => {
@@ -407,7 +407,7 @@ describe('Keyboard', () => {
         key: 'F9'
       }, 1);
       // F9 should use legacy encoding unless other flags are set
-      assert.equal(result.key, '\\x1b[20~');
+      assert.equal(result.key, '\x1b[20~');
     });
   });
 });

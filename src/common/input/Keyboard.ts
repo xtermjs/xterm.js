@@ -90,20 +90,27 @@ export function encodeKittyKeyboardEvent(
 ): string {
   // Calculate modifiers (1 + actual modifiers)
   let modifiers = 1;
-  if (ev.shiftKey) modifiers |= 1;
-  if (ev.altKey) modifiers |= 2;
-  if (ev.ctrlKey) modifiers |= 4;
-  if (ev.metaKey) modifiers |= 8;
+  if (ev.shiftKey) modifiers += 1;
+  if (ev.altKey) modifiers += 2;
+  if (ev.ctrlKey) modifiers += 4;
+  if (ev.metaKey) modifiers += 8;
   // Note: Hyper, Meta, CapsLock, NumLock would be added here for full implementation
 
   let keyCode: number;
   let alternateKeys = '';
   let textCodepoints = '';
+  let reportModifiers = modifiers;
 
   // Determine the base key code
   if (ev.key.length === 1) {
     // Single character key - use lowercase Unicode codepoint
     keyCode = ev.key.toLowerCase().charCodeAt(0);
+    
+    // For single character keys, don't report shift modifier alone
+    // but do report it when combined with other modifiers
+    if (ev.shiftKey && !ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+      reportModifiers = 1; // Don't report shift modifier for single chars
+    }
 
     // Add shifted key if shift is pressed and reporting alternate keys
     if ((flags & KITTY_FLAG_REPORT_ALTERNATE) && ev.shiftKey && ev.key !== ev.key.toLowerCase()) {
@@ -127,8 +134,8 @@ export function encodeKittyKeyboardEvent(
   }
 
   // Add modifiers if present or if event type is not press
-  if (modifiers > 1 || eventType !== 1) {
-    sequence += `;${modifiers}`;
+  if (reportModifiers > 1 || eventType !== 1) {
+    sequence += `;${reportModifiers}`;
     if (eventType !== 1) {
       sequence += `:${eventType}`;
     }
