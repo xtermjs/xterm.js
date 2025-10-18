@@ -7,6 +7,43 @@
 import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 
+// Kitty keyboard protocol functional key codes (Unicode Private Use Area)
+const KITTY_FUNCTIONAL_KEYS: { [key: string]: number } = {
+  // F13-F35 keys
+  'F13': 57376, 'F14': 57377, 'F15': 57378, 'F16': 57379,
+  'F17': 57380, 'F18': 57381, 'F19': 57382, 'F20': 57383,
+  'F21': 57384, 'F22': 57385, 'F23': 57386, 'F24': 57387,
+  'F25': 57388, 'F26': 57389, 'F27': 57390, 'F28': 57391,
+  'F29': 57392, 'F30': 57393, 'F31': 57394, 'F32': 57395,
+  'F33': 57396, 'F34': 57397, 'F35': 57398,
+  // Keypad keys
+  'Numpad0': 57399, 'Numpad1': 57400, 'Numpad2': 57401, 'Numpad3': 57402,
+  'Numpad4': 57403, 'Numpad5': 57404, 'Numpad6': 57405, 'Numpad7': 57406,
+  'Numpad8': 57407, 'Numpad9': 57408, 'NumpadDecimal': 57409,
+  'NumpadDivide': 57410, 'NumpadMultiply': 57411, 'NumpadSubtract': 57412,
+  'NumpadAdd': 57413, 'NumpadEnter': 57414, 'NumpadEqual': 57415,
+  'NumpadSeparator': 57416,
+  // Arrow keys on keypad
+  'NumpadArrowLeft': 57417, 'NumpadArrowRight': 57418, 'NumpadArrowUp': 57419,
+  'NumpadArrowDown': 57420, 'NumpadPageUp': 57421, 'NumpadPageDown': 57422,
+  'NumpadHome': 57423, 'NumpadEnd': 57424, 'NumpadInsert': 57425,
+  'NumpadDelete': 57426, 'NumpadBegin': 57427,
+  // Media keys
+  'MediaPlay': 57428, 'MediaPause': 57429, 'MediaPlayPause': 57430,
+  'MediaReverse': 57431, 'MediaStop': 57432, 'MediaFastForward': 57433,
+  'MediaRewind': 57434, 'MediaTrackNext': 57435, 'MediaTrackPrevious': 57436,
+  'MediaRecord': 57437, 'AudioVolumeDown': 57438, 'AudioVolumeUp': 57439,
+  'AudioVolumeMute': 57440,
+  // Modifier keys
+  'ShiftLeft': 57441, 'ControlLeft': 57442, 'AltLeft': 57443,
+  'MetaLeft': 57444, 'HyperLeft': 57445, 'SuperLeft': 57446,
+  'ShiftRight': 57447, 'ControlRight': 57448, 'AltRight': 57449,
+  'MetaRight': 57450, 'HyperRight': 57451, 'SuperRight': 57452,
+  // Lock keys
+  'CapsLock': 57358, 'ScrollLock': 57359, 'NumLock': 57360,
+  'PrintScreen': 57361, 'Pause': 57362, 'ContextMenu': 57363
+};
+
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
   // digits 0-9
@@ -35,11 +72,160 @@ const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
   222: ['\'', '"']
 };
 
+// Kitty keyboard protocol flags
+const KITTY_FLAG_DISAMBIGUATE = 1;        // 0b1
+const KITTY_FLAG_REPORT_EVENTS = 2;       // 0b10
+const KITTY_FLAG_REPORT_ALTERNATE = 4;    // 0b100
+const KITTY_FLAG_REPORT_ALL_KEYS = 8;     // 0b1000
+const KITTY_FLAG_REPORT_TEXT = 16;        // 0b10000
+
+/**
+ * Encodes a key event using the Kitty keyboard protocol format:
+ * CSI unicode-key-code:alternate-key-codes ; modifiers:event-type ; text-as-codepoints u
+ */
+export function encodeKittyKeyboardEvent(
+  ev: IKeyboardEvent,
+  flags: number,
+  eventType: number = 1
+): string {
+  // Calculate modifiers (1 + actual modifiers)
+  let modifiers = 1;
+  if (ev.shiftKey) modifiers |= 1;
+  if (ev.altKey) modifiers |= 2;
+  if (ev.ctrlKey) modifiers |= 4;
+  if (ev.metaKey) modifiers |= 8;
+  // Note: Hyper, Meta, CapsLock, NumLock would be added here for full implementation
+
+  let keyCode: number;
+  let alternateKeys = '';
+  let textCodepoints = '';
+
+  // Determine the base key code
+  if (ev.key.length === 1) {
+    // Single character key - use lowercase Unicode codepoint
+    keyCode = ev.key.toLowerCase().charCodeAt(0);
+
+    // Add shifted key if shift is pressed and reporting alternate keys
+    if ((flags & KITTY_FLAG_REPORT_ALTERNATE) && ev.shiftKey && ev.key !== ev.key.toLowerCase()) {
+      alternateKeys = ':' + ev.key.charCodeAt(0);
+    }
+
+    // Add text codepoints if reporting associated text
+    if ((flags & KITTY_FLAG_REPORT_TEXT) && (flags & KITTY_FLAG_REPORT_ALL_KEYS)) {
+      textCodepoints = ';' + ev.key.charCodeAt(0);
+    }
+  } else {
+    // Functional key - map to Kitty key codes
+    keyCode = getKittyFunctionalKeyCode(ev.key, ev.code);
+  }
+
+  // Build the escape sequence
+  let sequence = `${C0.ESC}[${keyCode}`;
+
+  if (alternateKeys) {
+    sequence += alternateKeys;
+  }
+
+  // Add modifiers if present or if event type is not press
+  if (modifiers > 1 || eventType !== 1) {
+    sequence += `;${modifiers}`;
+    if (eventType !== 1) {
+      sequence += `:${eventType}`;
+    }
+  }
+
+  // Add text codepoints if present
+  if (textCodepoints) {
+    sequence += textCodepoints;
+  }
+
+  sequence += 'u';
+  return sequence;
+}
+
+/**
+ * Determines if a key event should use Kitty keyboard protocol
+ */
+function shouldUseKittyKeyboard(ev: IKeyboardEvent, flags: number): boolean {
+  // Always use Kitty protocol if REPORT_ALL_KEYS is set
+  if (flags & KITTY_FLAG_REPORT_ALL_KEYS) {
+    return true;
+  }
+
+  // Use Kitty protocol for disambiguation if flag is set and key needs disambiguation
+  if (flags & KITTY_FLAG_DISAMBIGUATE) {
+    // Keys that need disambiguation
+    if (ev.key === 'Escape' ||
+        (ev.altKey && ev.key.length === 1) ||
+        (ev.ctrlKey && ev.key.length === 1)) {
+      return true;
+    }
+  }
+
+  // Use for functional keys that have Kitty codes
+  if (ev.key.length > 1) {
+    const keyCode = getKittyFunctionalKeyCode(ev.key, ev.code);
+    if (keyCode >= 57344) { // Private Use Area keys
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Maps DOM key/code values to Kitty functional key codes
+ */
+function getKittyFunctionalKeyCode(key: string, code: string): number {
+  // Check direct mapping first
+  if (KITTY_FUNCTIONAL_KEYS[key]) {
+    return KITTY_FUNCTIONAL_KEYS[key];
+  }
+
+  // Handle special cases
+  switch (key) {
+    case 'Escape': return 27;
+    case 'Enter': return 13;
+    case 'Tab': return 9;
+    case 'Backspace': return 127;
+    case 'Insert': return 2;  // Will use legacy ~ form
+    case 'Delete': return 3;  // Will use legacy ~ form
+    case 'ArrowLeft': return 1;  // Will use legacy D form
+    case 'ArrowRight': return 1; // Will use legacy C form
+    case 'ArrowUp': return 1;    // Will use legacy A form
+    case 'ArrowDown': return 1;  // Will use legacy B form
+    case 'PageUp': return 5;     // Will use legacy ~ form
+    case 'PageDown': return 6;   // Will use legacy ~ form
+    case 'Home': return 1;       // Will use legacy H form
+    case 'End': return 1;        // Will use legacy F form
+    case 'F1': return 1;         // Will use legacy P form
+    case 'F2': return 1;         // Will use legacy Q form
+    case 'F3': return 13;        // Will use legacy ~ form
+    case 'F4': return 1;         // Will use legacy S form
+    case 'F5': return 15;        // Will use legacy ~ form
+    case 'F6': return 17;        // Will use legacy ~ form
+    case 'F7': return 18;        // Will use legacy ~ form
+    case 'F8': return 19;        // Will use legacy ~ form
+    case 'F9': return 20;        // Will use legacy ~ form
+    case 'F10': return 21;       // Will use legacy ~ form
+    case 'F11': return 23;       // Will use legacy ~ form
+    case 'F12': return 24;       // Will use legacy ~ form
+    default:
+      // Try to match by code for keypad keys
+      if (code.startsWith('Numpad')) {
+        const numpadKey = 'Numpad' + code.slice(6);
+        return KITTY_FUNCTIONAL_KEYS[numpadKey] || 0;
+      }
+      return 0; // Unknown key
+  }
+}
+
 export function evaluateKeyboardEvent(
   ev: IKeyboardEvent,
   applicationCursorMode: boolean,
   isMac: boolean,
-  macOptionIsMeta: boolean
+  macOptionIsMeta: boolean,
+  kittyKeyboardFlags: number = 0
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
@@ -49,6 +235,17 @@ export function evaluateKeyboardEvent(
     // The new key even to emit
     key: undefined
   };
+
+  // Handle Kitty keyboard protocol if enabled
+  if (kittyKeyboardFlags > 0) {
+    const shouldUseKittyProtocol = shouldUseKittyKeyboard(ev, kittyKeyboardFlags);
+    if (shouldUseKittyProtocol) {
+      result.key = encodeKittyKeyboardEvent(ev, kittyKeyboardFlags, 1); // 1 = press event
+      result.cancel = true;
+      return result;
+    }
+  }
+
   const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
   switch (ev.keyCode) {
     case 0:

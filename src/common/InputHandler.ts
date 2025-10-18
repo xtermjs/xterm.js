@@ -124,6 +124,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _dirtyRowTracker: IDirtyRowTracker;
   protected _windowTitleStack: string[] = [];
   protected _iconNameStack: string[] = [];
+  protected _kittyKeyboardModeStack: number[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
   public getAttrData(): IAttributeData { return this._curAttrData; }
@@ -261,6 +262,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 's' }, params => this.saveCursor(params));
     this._parser.registerCsiHandler({ final: 't' }, params => this.windowOptions(params));
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
+    // Kitty keyboard protocol handlers
+    this._parser.registerCsiHandler({ prefix: '=', final: 'u' }, params => this.setKittyKeyboardMode(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'u' }, params => this.queryKittyKeyboardMode());
+    this._parser.registerCsiHandler({ prefix: '>', final: 'u' }, params => this.pushKittyKeyboardMode(params));
+    this._parser.registerCsiHandler({ prefix: '<', final: 'u' }, params => this.popKittyKeyboardMode(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
     this._parser.registerCsiHandler({ intermediates: '"', final: 'q' }, params => this.selectProtected(params));
@@ -3424,6 +3430,80 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public markRangeDirty(y1: number, y2: number): void {
     this._dirtyRowTracker.markRangeDirty(y1, y2);
+  }
+
+  /**
+   * Kitty keyboard protocol handlers
+   */
+
+  /**
+   * CSI = flags ; mode u  Set keyboard mode flags
+   */
+  public setKittyKeyboardMode(params: IParams): boolean {
+    const flags = params.length >= 1 ? params.params[0] : 0;
+    const mode = params.length >= 2 ? params.params[1] : 1;
+
+    if (mode === 1) {
+      // Set all flags to specified value (reset unspecified bits)
+      this._coreService.decPrivateModes.kittyKeyboardFlags = flags;
+    } else if (mode === 2) {
+      // Set specified bits, leave unset bits unchanged
+      this._coreService.decPrivateModes.kittyKeyboardFlags |= flags;
+    } else if (mode === 3) {
+      // Reset specified bits, leave unset bits unchanged
+      this._coreService.decPrivateModes.kittyKeyboardFlags &= ~flags;
+    }
+
+    return true;
+  }
+
+  /**
+   * CSI ? u  Query keyboard mode flags
+   */
+  public queryKittyKeyboardMode(): boolean {
+    this._coreService.triggerDataEvent(`${C0.ESC}[?${this._coreService.decPrivateModes.kittyKeyboardFlags}u`);
+    return true;
+  }
+
+  /**
+   * CSI > flags u  Push keyboard mode flags (with optional default)
+   */
+  public pushKittyKeyboardMode(params: IParams): boolean {
+    const defaultFlags = params.length >= 1 ? params.params[0] : 0;
+
+    // Limit stack size to prevent DoS attacks
+    if (this._kittyKeyboardModeStack.length >= 16) {
+      this._kittyKeyboardModeStack.shift();
+    }
+
+    // Push current mode onto stack
+    this._kittyKeyboardModeStack.push(this._coreService.decPrivateModes.kittyKeyboardFlags);
+
+    // Set to default flags if provided
+    if (params.length >= 1) {
+      this._coreService.decPrivateModes.kittyKeyboardFlags = defaultFlags;
+    }
+
+    return true;
+  }
+
+  /**
+   * CSI < number u  Pop keyboard mode flags
+   */
+  public popKittyKeyboardMode(params: IParams): boolean {
+    const count = params.length >= 1 ? params.params[0] : 1;
+
+    for (let i = 0; i < count && this._kittyKeyboardModeStack.length > 0; i++) {
+      const flags = this._kittyKeyboardModeStack.pop()!;
+      this._coreService.decPrivateModes.kittyKeyboardFlags = flags;
+    }
+
+    // If stack is empty, reset all flags
+    if (this._kittyKeyboardModeStack.length === 0) {
+      this._coreService.decPrivateModes.kittyKeyboardFlags = 0;
+    }
+
+    return true;
   }
 }
 

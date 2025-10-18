@@ -48,7 +48,7 @@ import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType,
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
-import { evaluateKeyboardEvent } from 'common/input/Keyboard';
+import { evaluateKeyboardEvent, encodeKittyKeyboardEvent } from 'common/input/Keyboard';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
@@ -118,6 +118,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * no events will be emitted for the final character.
    */
   private _unprocessedDeadKey: boolean = false;
+
+  /**
+   * Tracks currently pressed keys for Kitty keyboard protocol repeat/release events.
+   * Maps key codes to their last press event details.
+   */
+  private _pressedKeys = new Map<string, { key: string, timestamp: number }>();
 
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this._register(new MutableDisposable());
@@ -1040,7 +1046,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._unprocessedDeadKey = true;
     }
 
-    const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
+    const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta, this.coreService.decPrivateModes.kittyKeyboardFlags);
+
+    // Handle Kitty keyboard protocol events (repeat tracking)
+    this._handleKittyKeyPress(event);
 
     this.updateCursorStyle(event);
 
@@ -1102,6 +1111,79 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._keyDownHandled = true;
   }
 
+  /**
+   * Handles Kitty keyboard protocol key press event tracking and repeat detection
+   */
+  private _handleKittyKeyPress(event: KeyboardEvent): boolean {
+    const flags = this.coreService.decPrivateModes.kittyKeyboardFlags;
+    const reportEvents = flags & 2; // KITTY_FLAG_REPORT_EVENTS
+
+    if (!reportEvents) {
+      return false;
+    }
+
+    const keyId = `${event.code}-${event.key}`;
+    const now = Date.now();
+    const lastPress = this._pressedKeys.get(keyId);
+
+    let eventType = 1; // press
+    if (lastPress && (now - lastPress.timestamp) < 100) {
+      eventType = 2; // repeat
+    }
+
+    this._pressedKeys.set(keyId, { key: event.key, timestamp: now });
+
+    // Only send separate event if it's a repeat or if REPORT_ALL_KEYS is set
+    if (eventType === 2 || (flags & 8)) { // KITTY_FLAG_REPORT_ALL_KEYS
+      const kittySequence = this._generateKittyKeySequence(event, eventType);
+      if (kittySequence) {
+        this.coreService.triggerDataEvent(kittySequence, true);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Handles Kitty keyboard protocol key release events
+   */
+  private _handleKittyKeyRelease(event: KeyboardEvent): void {
+    const flags = this.coreService.decPrivateModes.kittyKeyboardFlags;
+    const reportEvents = flags & 2; // KITTY_FLAG_REPORT_EVENTS
+
+    if (!reportEvents) {
+      return;
+    }
+
+    const keyId = `${event.code}-${event.key}`;
+    const wasPressed = this._pressedKeys.has(keyId);
+
+    if (wasPressed) {
+      this._pressedKeys.delete(keyId);
+
+      // Generate release event - avoid Enter, Tab, Backspace unless REPORT_ALL_KEYS is set
+      const reportAllKeys = flags & 8; // KITTY_FLAG_REPORT_ALL_KEYS
+      if (reportAllKeys || (event.key !== 'Enter' && event.key !== 'Tab' && event.key !== 'Backspace')) {
+        const kittySequence = this._generateKittyKeySequence(event, 3); // 3 = release
+        if (kittySequence) {
+          this.coreService.triggerDataEvent(kittySequence, true);
+        }
+      }
+    }
+  }
+
+  /**
+   * Generates Kitty keyboard protocol sequence for an event
+   */
+  private _generateKittyKeySequence(event: KeyboardEvent, eventType: number): string | null {
+    try {
+      return encodeKittyKeyboardEvent(event, this.coreService.decPrivateModes.kittyKeyboardFlags, eventType);
+    } catch (e) {
+      return null;
+    }
+  }
+
   private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
     const thirdLevelKey =
       (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
@@ -1122,6 +1204,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
       return;
     }
+
+    // Handle Kitty keyboard protocol release events
+    this._handleKittyKeyRelease(ev);
 
     if (!wasModifierKeyOnlyEvent(ev)) {
       this.focus();
