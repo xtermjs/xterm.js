@@ -60,7 +60,7 @@ function startServer() {
     const cols = parseInt(req.query.cols);
     const rows = parseInt(req.query.rows);
     const isWindows = process.platform === 'win32';
-    const term = pty.spawn(isWindows ? 'pwsh.exe' : 'bash', [], {
+    const term = pty.spawn(isWindows ? 'powershell.exe' : 'bash', [], {
       name: 'xterm-256color',
       cols: cols ?? 80,
       rows: rows ?? 24,
