@@ -18,12 +18,19 @@ export interface IBufferService {
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
   isUserScrolling: boolean;
-  onResize: Event<{ cols: number, rows: number }>;
+  onResize: Event<IBufferResizeEvent>;
   onScroll: Event<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   resize(cols: number, rows: number): void;
   reset(): void;
+}
+
+export interface IBufferResizeEvent {
+  cols: number;
+  rows: number;
+  colsChanged: boolean;
+  rowsChanged: boolean;
 }
 
 export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
