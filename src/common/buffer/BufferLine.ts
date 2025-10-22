@@ -1264,7 +1264,7 @@ export class LogicalBufferLine extends BufferLine implements IBufferLine {
   }
 
   public setWrapped(previousLine: BufferLine): WrappedBufferLine {
-    const column = this.logicalStartColumn() + previousLine.length;
+    const column = previousLine.logicalStartColumn() + previousLine.length;
     const content = previousLine.moveToLineColumn(column);
     const neededPadding = column - previousLine._cachedColumn();
     const startLine = previousLine.logicalLine();
