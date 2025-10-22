@@ -7,8 +7,7 @@ import { CircularList, IInsertEvent } from 'common/CircularList';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
+import { BufferLine, LogicalBufferLine, WrappedBufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
 import { Marker } from 'common/buffer/Marker';
@@ -29,6 +28,7 @@ export class Buffer implements IBuffer {
   public lines: CircularList<IBufferLine>;
   public ydisp: number = 0;
   public ybase: number = 0;
+  /** Row number, relative to ybase. */
   public y: number = 0;
   public x: number = 0;
   public scrollBottom: number;
@@ -38,6 +38,11 @@ export class Buffer implements IBuffer {
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
+  /** Reflow may be needed for line indexes less than lastReflowNeeded.
+   * I.e. if i >= lastReflowNeeded then lines.get(i).reflowNeeded is false.
+   * Lines later in the buffer are more likly to be visible and hence
+   * have been updated. */
+  public lastReflowNeeded: number = 0;
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
@@ -85,7 +90,7 @@ export class Buffer implements IBuffer {
   }
 
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
+    return BufferLine.make(this._bufferService.cols, this.getNullCell(attr), isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -111,6 +116,41 @@ export class Buffer implements IBuffer {
     const correctBufferLength = rows + this._optionsService.rawOptions.scrollback;
 
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
+  }
+
+  public splitLine(row: number, col: number): void { // FIXME col is unused
+    const bufferService = this._bufferService;
+    const curRow = this.lines.get(this.ybase + row - 1) as BufferLine;
+    const nextRow = this.lines.get(this.ybase + row) as BufferLine;
+    let startColumn = curRow.logicalStartColumn() + bufferService.cols;
+    // FIXME: nextRow.logicalLine().deleteCellsOnly(bufferService.cols - col);
+    let newRow;
+    if (nextRow.isWrapped) {
+      newRow = nextRow as WrappedBufferLine;
+    } else {
+      newRow = new WrappedBufferLine(curRow);
+      // append nextRow contents to end of curRow.logicalLine()
+      this.lines.set(this.ybase + row, newRow);
+    }
+    const content = curRow.moveToLineColumn(startColumn);
+    newRow.setStartFromCache(curRow, startColumn, content);
+  }
+
+  public setWrapped(absrow: number, value: boolean): void {
+    const line = this.lines.get(absrow);
+    if (! line || line.isWrapped === value)
+    {return;}
+    if (value) {
+      const prevRow = this.lines.get(absrow - 1) as BufferLine;
+      const curRow = line as LogicalBufferLine;
+      const newRow = curRow.setWrapped(prevRow);
+      this.lines.set(absrow, newRow);
+    } else {
+      const prevRow = this.lines.get(absrow - 1) as BufferLine;
+      const curRow = line as WrappedBufferLine;
+      const newRow = curRow.asUnwrapped(prevRow);
+      this.lines.set(absrow, newRow);
+    }
   }
 
   /**
@@ -151,9 +191,6 @@ export class Buffer implements IBuffer {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
-    // count bufferlines with overly big memory to be cleaned afterwards
-    let dirtyMemoryLines = 0;
-
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
@@ -161,136 +198,52 @@ export class Buffer implements IBuffer {
       this.lines.maxLength = newMaxLength;
     }
 
-    // if (this._cols > newCols) {
-    //   console.log('increase!');
-    // }
+    if (this._cols !== newCols) {
+      const nlines = this.lines.length;
+      for (let i = 0; i < nlines; i++) {
+        const line = this.lines.get(i);
+        line && (line.length = newCols);
+        if (line instanceof LogicalBufferLine
+          && (line.nextRowSameLine || line.logicalWidth > newCols)) {
+          line.reflowNeeded = true;
+          this.lastReflowNeeded = Math.max(i, this.lastReflowNeeded);
+        }
+      }
+    }
 
     // The following adjustments should only happen if the buffer has been
     // initialized/filled.
     if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
-      if (this._cols < newCols) {
-        for (let i = 0; i < this.lines.length; i++) {
-          // +boolean for fast 0 or 1 conversion
-          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
-        }
+      for (let i = 0; i < this.lines.length; i++) {
+        this.lines.get(i)!.length = newCols;
       }
-
-      // Resize rows in both directions as needed
-      let addToY = 0;
-      if (this._rows < newRows) {
-        for (let y = this._rows; y < newRows; y++) {
-          if (this.lines.length < newRows + this.ybase) {
-            if (this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
-              // Just add the new missing rows on Windows as conpty reprints the screen with it's
-              // view of the world. Once a line enters scrollback for conpty it remains there
-              this.lines.push(new BufferLine(newCols, nullCell));
-            } else {
-              if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
-                // There is room above the buffer and there are no empty elements below the line,
-                // scroll up
-                this.ybase--;
-                addToY++;
-                if (this.ydisp > 0) {
-                  // Viewport is at the top of the buffer, must increase downwards
-                  this.ydisp--;
-                }
-              } else {
-                // Add a blank line if there is no buffer left at the top to scroll to, or if there
-                // are blank lines after the cursor
-                this.lines.push(new BufferLine(newCols, nullCell));
-              }
-            }
-          }
-        }
-      } else { // (this._rows >= newRows)
-        for (let y = this._rows; y > newRows; y--) {
-          if (this.lines.length > newRows + this.ybase) {
-            if (this.lines.length > this.ybase + this.y + 1) {
-              // The line is a blank line below the cursor, remove it
-              this.lines.pop();
-            } else {
-              // The line is the cursor, scroll down
-              this.ybase++;
-              this.ydisp++;
-            }
-          }
-        }
-      }
-
-      // Reduce max length if needed after adjustments, this is done after as it
-      // would otherwise cut data from the bottom of the buffer.
-      if (newMaxLength < this.lines.maxLength) {
-        // Trim from the top of the buffer and adjust ybase and ydisp.
-        const amountToTrim = this.lines.length - newMaxLength;
-        if (amountToTrim > 0) {
-          this.lines.trimStart(amountToTrim);
-          this.ybase = Math.max(this.ybase - amountToTrim, 0);
-          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
-          this.savedY = Math.max(this.savedY - amountToTrim, 0);
-        }
-        this.lines.maxLength = newMaxLength;
-      }
-
-      // Make sure that the cursor stays on screen
-      this.x = Math.min(this.x, newCols - 1);
-      this.y = Math.min(this.y, newRows - 1);
-      if (addToY) {
-        this.y += addToY;
-      }
-      this.savedX = Math.min(this.savedX, newCols - 1);
-
       this.scrollTop = 0;
     }
 
     this.scrollBottom = newRows - 1;
 
-    if (this._isReflowEnabled) {
-      this._reflow(newCols, newRows);
-
-      // Trim the end of the line off if cols shrunk
-      if (this._cols > newCols) {
-        for (let i = 0; i < this.lines.length; i++) {
-          // +boolean for fast 0 or 1 conversion
-          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
-        }
-      }
-    }
-
+    const lazyReflow = false; // FUTURE - change to true?
+    const reflowNow = this._isReflowEnabled && this._cols !== newCols && ! lazyReflow;
     this._cols = newCols;
     this._rows = newRows;
-
-    this._memoryCleanupQueue.clear();
-    // schedule memory cleanup only, if more than 10% of the lines are affected
-    if (dirtyMemoryLines > 0.1 * this.lines.length) {
-      this._memoryCleanupPosition = 0;
-      this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
-    }
-  }
-
-  private _memoryCleanupQueue = new IdleTaskQueue();
-  private _memoryCleanupPosition = 0;
-
-  private _batchedMemoryCleanup(): boolean {
-    let normalRun = true;
-    if (this._memoryCleanupPosition >= this.lines.length) {
-      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted
-      // lines, which should finish rather quick if there are no more cleanups pending
-      this._memoryCleanupPosition = 0;
-      normalRun = false;
-    }
-    let counted = 0;
-    while (this._memoryCleanupPosition < this.lines.length) {
-      counted += this.lines.get(this._memoryCleanupPosition++)!.cleanupMemory();
-      // cleanup max 100 lines per batch
-      if (counted > 100) {
-        return true;
+    this.reflowRegion(reflowNow ? 0 : this.ydisp, this.lines.length,
+      reflowNow? -1 : newRows);
+    // Reduce max length if needed after adjustments, this is done after as it
+    // would otherwise cut data from the bottom of the buffer.
+    if (newMaxLength < this.lines.maxLength) {
+      // Trim from the top of the buffer and adjust ybase and ydisp.
+      const amountToTrim = this.lines.length - newMaxLength;
+      if (amountToTrim > 0) {
+        this.setWrapped(amountToTrim, false);
+        this.lines.trimStart(amountToTrim);
+        this.ybase = Math.max(this.ybase - amountToTrim, 0);
+        this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+        this.savedY = Math.max(this.savedY - amountToTrim, 0);
       }
+      this.lines.maxLength = newMaxLength;
     }
-    // normal runs always need another rescan afterwards
-    // if we made it here with normalRun=false, we are in a final run
-    // and can end the cleanup task for sure
-    return normalRun;
+    this._fixupPosition();
   }
 
   private get _isReflowEnabled(): boolean {
@@ -301,225 +254,207 @@ export class Buffer implements IBuffer {
     return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
   }
 
-  private _reflow(newCols: number, newRows: number): void {
-    if (this._cols === newCols) {
+  public reflowRegion(startRow: number, endRow: number, maxRows: number): void {
+    if (startRow > this.lastReflowNeeded) {
       return;
     }
-
-    // Iterate through rows, ignore the last one as it cannot be wrapped
-    if (newCols > this._cols) {
-      this._reflowLarger(newCols, newRows);
-    } else {
-      this._reflowSmaller(newCols, newRows);
+    if (endRow >= this.lastReflowNeeded) {
+      this.lastReflowNeeded = startRow;
     }
-  }
-
-  private _reflowLarger(newCols: number, newRows: number): void {
-    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA), reflowCursorLine);
-    if (toRemove.length > 0) {
-      const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
-      reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
-      this._reflowLargerAdjustViewport(newCols, newRows, newLayoutResult.countRemoved);
+    const newCols = this._cols;
+    while (startRow > 0 && this.lines.get(startRow)?.isWrapped) {
+      startRow--;
+      if (maxRows >= 0) { maxRows++; }
     }
-  }
+    // POSSIBLE OPTIMIZATION: Don't need to allocate newRows if no lines
+    // require more rows than before. So better to allocate newRows lazily.
+    const newRows: BufferLine[] = [];
+    const yDispOld = this.ydisp;
+    const yBaseOld = this.ybase;
+    const yAbsOld = yBaseOld + this.y;
+    let yAbs = yAbsOld;
+    const ySavedOld = this.savedY;
+    let ySaved = ySavedOld;
+    let deltaSoFar = 0;
+    // Record buffer insert/delete events
+    const insertEvents: IInsertEvent[] = [];
+    let oldRows: (IBufferLine|undefined)[] = [];
+    for (let j = 0; j < this.lines.length; j++) { oldRows.push(this.lines.get(j));}
+    for (let row = startRow; row < endRow;) {
+      if (maxRows >= 0 && newRows.length > maxRows) {
+        endRow = row;
+        break;
+      }
+      const line = this.lines.get(row) as BufferLine;
+      newRows.push(line);
+      if (line instanceof LogicalBufferLine && line.reflowNeeded) {
+        let curRow: BufferLine = line;
 
-  private _reflowLargerAdjustViewport(newCols: number, newRows: number, countRemoved: number): void {
-    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
-    // Adjust viewport based on number of items removed
-    let viewportAdjustments = countRemoved;
-    while (viewportAdjustments-- > 0) {
-      if (this.ybase === 0) {
-        if (this.y > 0) {
-          this.y--;
-        }
-        if (this.lines.length < newRows) {
-          // Add an extra row at the bottom of the viewport
-          this.lines.push(new BufferLine(newCols, nullCell));
-        }
-      } else {
-        if (this.ydisp === this.ybase) {
-          this.ydisp--;
-        }
-        this.ybase--;
-      }
-    }
-    this.savedY = Math.max(this.savedY - countRemoved, 0);
-  }
-
-  private _reflowSmaller(newCols: number, newRows: number): void {
-    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
-    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
-    // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
-    // batched up and only committed once
-    const toInsert = [];
-    let countToInsert = 0;
-    // Go backwards as many lines may be trimmed and this will avoid considering them
-    for (let y = this.lines.length - 1; y >= 0; y--) {
-      // Check whether this line is a problem
-      let nextLine = this.lines.get(y) as BufferLine;
-      if (!nextLine || !nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
-        continue;
-      }
-
-      // Gather wrapped lines and adjust y to be the starting line
-      const wrappedLines: BufferLine[] = [nextLine];
-      while (nextLine.isWrapped && y > 0) {
-        nextLine = this.lines.get(--y) as BufferLine;
-        wrappedLines.unshift(nextLine);
-      }
-
-      if (!reflowCursorLine) {
-        // If these lines contain the cursor don't touch them, the program will handle fixing up
-        // wrapped lines with the cursor
-        const absoluteY = this.ybase + this.y;
-        if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
-          continue;
-        }
-      }
-
-      const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
-      const destLineLengths = reflowSmallerGetNewLineLengths(wrappedLines, this._cols, newCols);
-      const linesToAdd = destLineLengths.length - wrappedLines.length;
-      let trimmedLines: number;
-      if (this.ybase === 0 && this.y !== this.lines.length - 1) {
-        // If the top section of the buffer is not yet filled
-        trimmedLines = Math.max(0, this.y - this.lines.maxLength + linesToAdd);
-      } else {
-        trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
-      }
-
-      // Add the new lines
-      const newLines: BufferLine[] = [];
-      for (let i = 0; i < linesToAdd; i++) {
-        const newLine = this.getBlankLine(DEFAULT_ATTR_DATA, true) as BufferLine;
-        newLines.push(newLine);
-      }
-      if (newLines.length > 0) {
-        toInsert.push({
-          // countToInsert here gets the actual index, taking into account other inserted items.
-          // using this we can iterate through the list forwards
-          start: y + wrappedLines.length + countToInsert,
-          newLines
-        });
-        countToInsert += newLines.length;
-      }
-      wrappedLines.push(...newLines);
-
-      // Copy buffer data to new locations, this needs to happen backwards to do in-place
-      let destLineIndex = destLineLengths.length - 1; // Math.floor(cellsNeeded / newCols);
-      let destCol = destLineLengths[destLineIndex]; // cellsNeeded % newCols;
-      if (destCol === 0) {
-        destLineIndex--;
-        destCol = destLineLengths[destLineIndex];
-      }
-      let srcLineIndex = wrappedLines.length - linesToAdd - 1;
-      let srcCol = lastLineLength;
-      while (srcLineIndex >= 0) {
-        const cellsToCopy = Math.min(srcCol, destCol);
-        if (wrappedLines[destLineIndex] === undefined) {
-          // Sanity check that the line exists, this has been known to fail for an unknown reason
-          // which would stop the reflow from happening if an exception would throw.
-          break;
-        }
-        wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
-        destCol -= cellsToCopy;
-        if (destCol === 0) {
-          destLineIndex--;
-          destCol = destLineLengths[destLineIndex];
-        }
-        srcCol -= cellsToCopy;
-        if (srcCol === 0) {
-          srcLineIndex--;
-          const wrappedLinesIndex = Math.max(srcLineIndex, 0);
-          srcCol = getWrappedLineTrimmedLength(wrappedLines, wrappedLinesIndex, this._cols);
-        }
-      }
-
-      // Null out the end of the line ends if a wide character wrapped to the following line
-      for (let i = 0; i < wrappedLines.length; i++) {
-        if (destLineLengths[i] < newCols) {
-          wrappedLines[i].setCell(destLineLengths[i], nullCell);
-        }
-      }
-
-      // Adjust viewport as needed
-      let viewportAdjustments = linesToAdd - trimmedLines;
-      while (viewportAdjustments-- > 0) {
-        if (this.ybase === 0) {
-          if (this.y < newRows - 1) {
-            this.y++;
-            this.lines.pop();
-          } else {
-            this.ybase++;
-            this.ydisp++;
+        let logicalX, logicalSavedX = this.savedX;
+        let oldWrapCount = 0; // number of following wrapped lines
+        let nextRow = curRow;
+        for (; ; oldWrapCount++) {
+          if (yAbsOld === row + oldWrapCount) {
+            logicalX = nextRow.logicalStartColumn() + this.x;
           }
-        } else {
-          // Ensure ybase does not exceed its maximum value
-          if (this.ybase < Math.min(this.lines.maxLength, this.lines.length + countToInsert) - newRows) {
-            if (this.ybase === this.ydisp) {
-              this.ydisp++;
-            }
-            this.ybase++;
+          if (ySavedOld === row + oldWrapCount) {
+            logicalSavedX = nextRow.logicalStartColumn() + this.savedX;
           }
+          if (! nextRow.nextRowSameLine || row + oldWrapCount + 1 >= endRow) {
+            break;
+          }
+          nextRow = nextRow.nextRowSameLine;
         }
-      }
-      this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
-    }
+        const lineRow = row;
+        row++;
+        const newWrapStart = newRows.length;
+        line.reflowNeeded = false;
+        let startCol = 0;
+        const dataLength = line.dataLength();
 
-    // Rearrange lines in the buffer if there are any insertions, this is done at the end rather
-    // than earlier so that it's a single O(n) pass through the buffer, instead of O(n^2) from many
-    // costly calls to CircularList.splice.
-    if (toInsert.length > 0) {
-      // Record buffer insert events and then play them back backwards so that the indexes are
-      // correct
-      const insertEvents: IInsertEvent[] = [];
-
-      // Record original lines so they don't get overridden when we rearrange the list
-      const originalLines: BufferLine[] = [];
-      for (let i = 0; i < this.lines.length; i++) {
-        originalLines.push(this.lines.get(i) as BufferLine);
-      }
-      const originalLinesLength = this.lines.length;
-
-      let originalLineIndex = originalLinesLength - 1;
-      let nextToInsertIndex = 0;
-      let nextToInsert = toInsert[nextToInsertIndex];
-      this.lines.length = Math.min(this.lines.maxLength, this.lines.length + countToInsert);
-      let countInsertedSoFar = 0;
-      for (let i = Math.min(this.lines.maxLength - 1, originalLinesLength + countToInsert - 1); i >= 0; i--) {
-        if (nextToInsert && nextToInsert.start > originalLineIndex + countInsertedSoFar) {
-          // Insert extra lines here, adjusting i as needed
-          for (let nextI = nextToInsert.newLines.length - 1; nextI >= 0; nextI--) {
-            this.lines.set(i--, nextToInsert.newLines[nextI]);
+        // Loop over new WrappedBufferLines for current LogicalBufferLine,
+        // based on newCols width. Re-use old WrappedBufferLine if available.
+        for (;;) {
+          const endCol = startCol + newCols;
+          const content = line.moveToLineColumn(endCol);
+          const idata = line._cachedDataIndex();
+          if (idata >= dataLength) {
+            curRow.nextRowSameLine = undefined;
+            break;
           }
-          i++;
-
+          const newRow1 = row < endRow && this.lines.get(row);
+          const newRow = newRow1 instanceof WrappedBufferLine
+            ? (row++, newRow1)
+            : new WrappedBufferLine(curRow);
+          newRow.setStartFromCache(line, endCol, content);
+          startCol = newRow.startColumn;
+          newRows.push(newRow);
+          curRow = newRow;
+        }
+        // Skip old WrappedBufferLines that we no longer need.
+        while (row < endRow
+          && this.lines.get(row) instanceof WrappedBufferLine) {
+          row++;
+        }
+        const newWrapCount = newRows.length - newWrapStart;
+        if (yBaseOld >= lineRow && yBaseOld <= lineRow + oldWrapCount) {
+          this.ybase = lineRow + deltaSoFar
+            + Math.min(yBaseOld - lineRow, newWrapCount);
+        }
+        if (yDispOld >= lineRow && yDispOld <= lineRow + oldWrapCount) {
+          this.ydisp = lineRow + deltaSoFar
+            + Math.min(yDispOld - lineRow, newWrapCount);
+        }
+        if (logicalX !== undefined) { // update cursor x and y
+          let i = newWrapStart;
+          while (i < newRows.length && newRows[i].logicalStartColumn() <= logicalX) { i++; }
+          yAbs = startRow + i - 1 + deltaSoFar;
+          this.x = logicalX - newRows[i-1].logicalStartColumn();
+        }
+        if (logicalSavedX !== undefined) { // update cursor savedX and savedY
+          let i = newWrapStart;
+          while (i < newRows.length && newRows[i].logicalStartColumn() <= logicalSavedX) { i++; }
+          ySaved = startRow + i - 1 + deltaSoFar;
+          this.savedX = logicalSavedX - newRows[i-1].logicalStartColumn();
+        }
+        if (newWrapCount != oldWrapCount) {
           // Create insert events for later
           insertEvents.push({
-            index: originalLineIndex + 1,
-            amount: nextToInsert.newLines.length
+            index: lineRow + deltaSoFar + 1,
+            amount: newWrapCount - oldWrapCount
           });
-
-          countInsertedSoFar += nextToInsert.newLines.length;
-          nextToInsert = toInsert[++nextToInsertIndex];
-        } else {
-          this.lines.set(i, originalLines[originalLineIndex--]);
         }
-      }
-
-      // Update markers
-      let insertCountEmitted = 0;
-      for (let i = insertEvents.length - 1; i >= 0; i--) {
-        insertEvents[i].index += insertCountEmitted;
-        this.lines.onInsertEmitter.fire(insertEvents[i]);
-        insertCountEmitted += insertEvents[i].amount;
-      }
-      const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
-      if (amountToTrim > 0) {
-        this.lines.onTrimEmitter.fire(amountToTrim);
+        deltaSoFar += newWrapCount - oldWrapCount;
+      } else {
+        if (row === yBaseOld) { this.ybase = yBaseOld + deltaSoFar; }
+        if (row === yDispOld) { this.ydisp = yDispOld + deltaSoFar; }
+        if (row === yAbsOld) {
+          yAbs += deltaSoFar;
+        }
+        if (row === ySavedOld) {
+          ySaved += deltaSoFar;
+        }
+        row++;
       }
     }
+    if (deltaSoFar !== 0) {
+      if (yAbsOld >= endRow) { yAbs += deltaSoFar; }
+      if (ySavedOld >= endRow) { ySaved += deltaSoFar; }
+      if (deltaSoFar > 0) {
+        if (yBaseOld >= endRow) { this.ybase = yBaseOld + deltaSoFar; }
+        if (yDispOld >= endRow) { this.ydisp = yDispOld + deltaSoFar; }
+      }
+    }
+    this.y = yAbs - this.ybase;
+    this.savedY = ySaved;
+    const oldLinesCount = this.lines.length;
+    let trimNeeded = oldLinesCount + newRows.length - (endRow - startRow)
+      - this.lines.maxLength;
+    let endTrimmed = 0;
+    const belowEnd = this.lines.length - endRow;
+    while (trimNeeded > 0) {
+      const lrow = this.lines.length - 1;
+      const last = this.lines.get(lrow);
+      if (! (last instanceof LogicalBufferLine && last.isEmpty())
+        || yAbsOld === lrow || ySavedOld === lrow) {
+        break;
+      }
+      trimNeeded--;
+      endTrimmed++;
+      this.lines.pop();
+    }
+    if (endTrimmed) {
+      const newTrim = Math.max(endTrimmed - belowEnd, 0);
+      newRows.length = newRows.length - newTrim;
+      endRow -= newTrim;
+      this.lines.onDeleteEmitter.fire({ index: this.lines.length, amount: endTrimmed });
+    }
+    this.lines.spliceNoTrim(startRow, endRow - startRow, newRows, false);
+    // Update markers
+    const insertCount = insertEvents.length;
+    for (let i = 0; i < insertCount; i++) {
+      const event = insertEvents[i];
+      if (event.amount < 0) {
+        event.amount = - event.amount;
+        this.lines.onDeleteEmitter.fire(event);
+      } else {
+        this.lines.onInsertEmitter.fire(event);
+      }
+    }
+    if (trimNeeded > 0) {
+      this.ybase -= trimNeeded;
+      this.ydisp -= trimNeeded;
+      this.setWrapped(trimNeeded,false);
+      this.lines.trimIfNeeded();
+    }
+  }
+
+  private _fixupPosition(): void {
+    const cols = this._cols;
+    const rows = this._rows;
+    const ydispAtHome = this.ydisp === this.ybase;
+    let ilast = this.lines.length - 1;
+    while (ilast >= rows && this.ybase + this.y <ilast && this.savedY < ilast) {
+      this.setWrapped(ilast, false);
+      this.lines.pop();
+      ilast--;
+    }
+    // FIXME migrate Windows conpty handling
+    if (this.y >= rows) {
+      const adjust = this.y - rows + 1;
+      this.ybase += adjust;
+      this.y -= adjust;
+    }
+    while (this.lines.length < rows) {
+      this.lines.push(new LogicalBufferLine(cols));
+    }
+    const adjust = this.lines.length - this.ybase - rows;
+    if (adjust < 0) {
+      this.ybase += adjust;
+      this.y -= adjust;
+    }
+    if (ydispAtHome) { this.ydisp = this.ybase; }
+    this.ydisp = Math.max(0, Math.min(this.ydisp, this.lines.length));
   }
 
   /**
@@ -657,6 +592,42 @@ export class Buffer implements IBuffer {
   private _removeMarker(marker: Marker): void {
     if (!this._isClearing) {
       this.markers.splice(this.markers.indexOf(marker), 1);
+    }
+  }
+
+  // for DEBUGGING
+  public noteError(msg: string): void {
+    console.log('ERROR: ' + msg);
+  }
+
+  // for DEBUGGING
+  public checkLines(report = this.noteError): void {
+    const nlines = this.lines.length;
+    let prevRow: IBufferLine | undefined;
+    let logicalLine;
+    for (let i = 0; i < nlines; i++) {
+      const curRow = this.lines.get(i);
+      if (curRow instanceof LogicalBufferLine) {
+        if (curRow.isWrapped) { report('wrapped should not be set'); }
+        logicalLine = curRow;
+      } else if (curRow instanceof WrappedBufferLine) {
+        if (curRow.logicalLine() !== logicalLine) {
+          report('wrapped line points to wrong logical line')
+        }
+        if (! curRow.isWrapped) { report('wrapped should be set'); }
+        if (prevRow instanceof BufferLine) {
+          if (prevRow.nextRowSameLine !== curRow) {
+            report('bad previous nextRowSameLine');
+          }
+          if (prevRow.logicalStartColumn() > curRow.logicalStartColumn())
+          { report('bad logicalStartColumn'); }
+        } else {
+          report('bad previous line before Wrapped');
+        }
+      } else if (! curRow) {
+        report('undefined line in lines list');
+      }
+      prevRow = curRow;
     }
   }
 }
