@@ -444,11 +444,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // Log debug data, the log level gate is to prevent extra work in this hot path
-    this._logService.debug(`parsing data ${typeof data === 'string' ? ` "${data}"` : ` "${Array.prototype.map.call(data, e => String.fromCharCode(e)).join('')}"`}`);
-    this._logService.trace(`parsing data (codes)`, () => typeof data === 'string'
-      ? data.split('').map(e => e.charCodeAt(0))
-      : Array.from(data)
-    );
+    if (this._logService.logLevel === LogLevelEnum.DEBUG) {
+      this._logService.debug(`parsing data ${typeof data === 'string' ? ` "${data}"` : ` "${Array.prototype.map.call(data, e => String.fromCharCode(e)).join('')}"`}`);
+    }
+    if (this._logService.logLevel === LogLevelEnum.TRACE) {
+      this._logService.trace(`parsing data (codes)`, () => typeof data === 'string'
+        ? data.split('').map(e => e.charCodeAt(0))
+        : data
+      );
+    }
 
     // resize input buffer if needed
     if (this._parseBuffer.length < data.length) {
