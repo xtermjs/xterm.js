@@ -448,7 +448,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._logService.debug(`parsing data ${typeof data === 'string' ? ` "${data}"` : ` "${Array.prototype.map.call(data, e => String.fromCharCode(e)).join('')}"`}`);
     }
     if (this._logService.logLevel === LogLevelEnum.TRACE) {
-      this._logService.trace(`parsing data (codes)`, () => typeof data === 'string'
+      this._logService.trace(`parsing data (codes)`, typeof data === 'string'
         ? data.split('').map(e => e.charCodeAt(0))
         : data
       );
