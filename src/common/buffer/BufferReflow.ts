@@ -17,6 +17,8 @@ import { IBufferLine, ICellData } from 'common/Types';
  *
  * Calling this with a `newCols` value of `1` will lock up.
  *
+ * This function is now only used for testing.
+ *
  * @param wrappedLines The wrapped lines to evaluate.
  * @param oldCols The columns before resize.
  * @param newCols The columns after resize.
@@ -54,7 +56,7 @@ export function reflowSmallerGetNewLineLengths(wrappedLines: BufferLine[], oldCo
   return newLineLengths;
 }
 
-export function getWrappedLineTrimmedLength(lines: BufferLine[], i: number, cols: number): number {
+function getWrappedLineTrimmedLength(lines: BufferLine[], i: number, cols: number): number {
   // If this is the last row in the wrapped line, get the actual trimmed length
   if (i === lines.length - 1) {
     return lines[i].getTrimmedLength();
