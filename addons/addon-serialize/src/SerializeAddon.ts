@@ -450,6 +450,13 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
     const buffer = terminal.buffer.active;
     const handler = new HTMLSerializeHandler(buffer, terminal, options);
     const onlySelection = options.onlySelection ?? false;
+    const range = options.range;
+    if (range) {
+      return handler.serialize({
+        start: { x: range.startCol,             y: typeof range.startLine === 'number' ? range.startLine : range.startLine },
+        end:   { x: terminal.cols, y: typeof range.endLine   === 'number' ? range.endLine   : range.endLine   }
+      });
+    }
     if (!onlySelection) {
       const maxRows = buffer.length;
       const scrollback = options.scrollback;
