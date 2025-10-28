@@ -149,18 +149,18 @@ describe('SerializeAddon', () => {
     });
 
     it('serializes rows within a provided range', async () => {
-      await writeP(terminal, 'prompt>hello\r\nworld');
+      await writeP(terminal, 'bye hello\r\nworld');
       const output = serializeAddon.serializeAsHTML({
         range: {
           startLine: 0,
           endLine: 0,
-          startCol: 7
+          startCol: 4
         }
       });
       const rowMatches = output.match(/<div><span>.*?<\/span><\/div>/g) || [];
       assert.equal(rowMatches.length, 1, output);
       assert.ok(rowMatches[0]?.includes('hello'));
-      assert.ok(!output.includes('prompt>'));
+      assert.ok(!output.includes('bye'));
       assert.ok(!output.includes('world'));
     });
 
