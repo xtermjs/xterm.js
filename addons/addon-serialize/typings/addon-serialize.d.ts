@@ -90,6 +90,11 @@ declare module '@xterm/addon-serialize' {
      * Whether to include the global background of the terminal. False by default.
      */
     includeGlobalBackground: boolean;
+
+     /**
+     * The row range to serialize. This is prioritized over {@link onlySelection}.
+     */
+    range?: ISerializeRange;
   }
 
   export interface ISerializeRange {
