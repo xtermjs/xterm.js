@@ -150,7 +150,6 @@ describe('SerializeAddon', () => {
 
     it('serializes rows within a provided range', async () => {
       await writeP(terminal, 'prompt>hello\r\nworld');
-
       const output = serializeAddon.serializeAsHTML({
         range: {
           startLine: 0,
