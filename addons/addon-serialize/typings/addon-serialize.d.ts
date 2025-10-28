@@ -92,9 +92,15 @@ declare module '@xterm/addon-serialize' {
     includeGlobalBackground: boolean;
 
      /**
-     * The row range to serialize. This is prioritized over {@link onlySelection}.
+     * The range to serialize. This is prioritized over {@link onlySelection}.
      */
-    range?: ISerializeRange;
+    range?: ISerializeBufferRange;
+  }
+
+  export interface ISerializeBufferRange {
+    startLine: number;
+    endLine: number;
+    startCol: number;
   }
 
   export interface ISerializeRange {

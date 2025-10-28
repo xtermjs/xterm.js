@@ -453,8 +453,8 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
     const range = options.range;
     if (range) {
       return handler.serialize({
-        start: { x: 0,             y: typeof range.start === 'number' ? range.start : range.start.line },
-        end:   { x: terminal.cols, y: typeof range.end   === 'number' ? range.end   : range.end.line   }
+        start: { x: range.startCol,             y: typeof range.startLine === 'number' ? range.startLine : range.startLine },
+        end:   { x: terminal.cols, y: typeof range.endLine   === 'number' ? range.endLine   : range.endLine   }
       });
     }
     if (!onlySelection) {
