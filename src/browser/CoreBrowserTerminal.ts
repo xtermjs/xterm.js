@@ -831,7 +831,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           self._coreBrowserService?.dpr
         );
         if (lines === 0) {
-          return false;
+          return this.cancel(ev, true);
         }
 
         // Construct and send sequences
