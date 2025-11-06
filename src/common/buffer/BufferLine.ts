@@ -156,7 +156,6 @@ export abstract class BufferLine implements IBufferLine {
   /** The logical column number corresponding to _cachedDataIndex(). */
   _cachedColumn(): LineColumn { return this.logicalLine()._cache1 & 0xFFFF; }
   protected abstract _cachedColumnInRow(): RowColumn;
-  // private _cachedColOffset(): number { return this._cache3 >> 24; } // UNUSED
   abstract _cachedBg(): number;
   abstract _cachedFg(): number;
   // An index (in data()) of a STYLE_FLAGS entry; -1 if none.
@@ -745,6 +744,28 @@ export abstract class BufferLine implements IBufferLine {
       this._cacheSetColumnDataIndex(cellColumn, idata);
     }
     return curColumn;
+  }
+
+  /**
+   * Handle wrap into the same line.
+   * May be called after insertText if below scroll region and at last line.
+   * Should not happen in normal usage, so performance doesn't matter.
+   */
+  public selfWrap(attrs: IAttributeData, endColumn: number): number {
+   this.moveToColumn(this.length);
+    const startExcessData = this._cachedDataIndex();
+    const startExcessColumn = this._cachedColumn();
+    this.moveToLineColumn(endColumn, 3);
+    const endExcessData = this._cachedDataIndex();
+    const excess = endExcessData - startExcessData;
+    const add = this.preInsert(0, attrs);
+    const insertPoint = this._cachedDataIndex();
+    this.addEmptyDataElements(insertPoint, excess);
+    this.data().copyWithin(insertPoint, startExcessData + excess, endExcessData + excess);
+    this.addEmptyDataElements(endExcessData, - excess);
+    this.moveToColumn(excess, 1);
+    this.logicalLine().deleteCellsOnly(this._cachedDataIndex(), excess);
+    return endColumn - startExcessColumn;
   }
 
   public eraseCells(start: RowColumn, end: RowColumn, attrs: IAttributeData): void {

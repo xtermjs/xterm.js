@@ -530,8 +530,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           buffer.y++;
           if (this._activeBuffer.y >= this._bufferService.rows) {
             buffer.y = this._bufferService.rows - 1;
-            // FIXME overwrite last line - not implemented
-            col = cols;
+            col = oldRow.selfWrap(curAttr, col);
           } else {
             buffer.splitLine(buffer.y, col);
           }
@@ -540,22 +539,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         // usually same as cols, but may be less in case of wide characters.
         const prevCols = (bufferRow as BufferLine).logicalStartColumn() - oldRow.logicalStartColumn();
         col = col - prevCols;
-        // row changed, get it again
-        /*
-        if (oldWidth > 0 && bufferRow instanceof BufferLine) {
-          // Combining character widens 1 column to 2.
-          // Move old character to next line.
-          bufferRow.copyCellsFrom(oldRow as BufferLine,
-            oldCol, 0, oldWidth, false);
-        }
-        // clear left over cells to the right
-        while (oldCol < cols) {
-          oldRow.setCellFromCodepoint(oldCol++, 0, 1, curAttr);
-        }
-        */
-        //  col = ...;
       } else {
-        // FIXME delete excess
+        // deleting excess was handled by insertText
+        col = cols -1;
         break;
       }
     }

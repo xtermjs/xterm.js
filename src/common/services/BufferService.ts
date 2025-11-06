@@ -67,7 +67,11 @@ export class BufferService extends Disposable implements IBufferService {
     let newLine: IBufferLine | undefined;
     if (isWrapped) {
       const oldLine = buffer.lines.get(buffer.ybase + buffer.y) as BufferLine;
-      newLine = new WrappedBufferLine(oldLine);
+      const newRow = new WrappedBufferLine(oldLine);
+      newLine = newRow;
+      let startColumn = oldLine.logicalStartColumn() + this.cols;
+      const content = oldLine.moveToLineColumn(startColumn);
+      newRow.setStartFromCache(oldLine, startColumn, content);
     } else {
       const bottom = buffer.lines.get(bottomRow);
       newLine = LogicalBufferLine.makeAndTrim(this.cols, buffer.getNullCell(eraseAttr), bottom);
