@@ -1100,7 +1100,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Helper method to reset cells in a terminal row. The cell gets replaced with the eraseChar of
    * the terminal and the isWrapped property is set to false.
-   * @param y row index
+   * @param y row index (absolute)
    */
   private _resetBufferLine(row: number, respectProtect: boolean = false): void {
     const buffer = this._activeBuffer;
@@ -1192,7 +1192,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           j = this._bufferService.rows;
           this._dirtyRowTracker.markDirty(j - 1);
           while (j--) {
-            this._resetBufferLine(j, respectProtect);
+            this._resetBufferLine(buffer.ybase + j, respectProtect);
           }
           this._dirtyRowTracker.markDirty(0);
         }
