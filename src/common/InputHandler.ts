@@ -511,8 +511,44 @@ export class InputHandler extends Disposable implements IInputHandler {
   public print(data: Uint32Array, start: number, end: number): void {
     const curAttr = this._curAttrData;
     let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+    const charset = this._charsetService.charset;
+    const screenReaderMode = this._optionsService.rawOptions.screenReaderMode;
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const cols = this._bufferService.cols;
+
+    if (charset) {
+      // More efficient to modify data in-place, but does anybody use this feature?
+      // Cleaner/safer to copy into new array.
+      const d = new Uint32Array(end - start);
+      for (let pos = start; pos < end; pos++){
+        let code = data[pos];
+        // get charset replacement character
+        // charset is only defined for ASCII, therefore we only
+        // search for an replacement char if code < 127
+        if (code < 127) {
+          const ch = charset[String.fromCharCode(code)];
+          if (ch) {
+            code = ch.charCodeAt(0);
+          }
+        }
+        d[pos - start] = code;
+      }
+      data = d;
+      end -= start;
+      start = 0;
+    }
+
+    if (screenReaderMode) {
+      for (let pos = start; pos < end; pos++){
+        let code = data[pos];
+        this._onA11yChar.fire(stringFromCodePoint(code));
+      }
+    }
+    const linkId = this._getCurrentLinkId();
+    if (linkId) {
+      this._oscLinkService.addLineToLink(linkId, this._activeBuffer.ybase + this._activeBuffer.y);
+    }
+
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
     // if (charset) replace character; FIXME ok to do it in-place?
     let col = (bufferRow as BufferLine).insertText(this._activeBuffer.x, data, start, end, curAttr, this, this._coreService);
@@ -536,12 +572,15 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
         }
         bufferRow = this._activeBuffer.lines.get(buffer.ybase + buffer.y)!;
+        if (linkId) {
+          this._oscLinkService.addLineToLink(linkId, this._activeBuffer.ybase + this._activeBuffer.y);
+        }
         // usually same as cols, but may be less in case of wide characters.
         const prevCols = (bufferRow as BufferLine).logicalStartColumn() - oldRow.logicalStartColumn();
         col = col - prevCols;
       } else {
         // deleting excess was handled by insertText
-        col = cols -1;
+        col = cols - 1;
         break;
       }
     }
