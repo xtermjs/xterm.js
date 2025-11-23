@@ -137,7 +137,7 @@ export class WriteBuffer extends Disposable {
    * effectively lowering the redrawing needs, schematically:
    *
    *   macroTask _innerWrite:
-   *     if (Date.now() - (lastTime | 0) < WRITE_TIMEOUT_MS):
+   *     if (performance.now() - (lastTime | 0) < WRITE_TIMEOUT_MS):
    *        schedule microTask _innerWrite(lastTime)
    *     else:
    *        schedule macroTask _innerWrite(0)
@@ -158,7 +158,7 @@ export class WriteBuffer extends Disposable {
    * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
    */
   protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
-    const startTime = lastTime || Date.now();
+    const startTime = lastTime || performance.now();
     while (this._writeBuffer.length > this._bufferOffset) {
       const data = this._writeBuffer[this._bufferOffset];
       const result = this._action(data, promiseResult);
@@ -186,7 +186,7 @@ export class WriteBuffer extends Disposable {
          * responsibility to slice hard work), but we can at least schedule a screen update as we
          * gain control.
          */
-        const continuation: (r: boolean) => void = (r: boolean) => Date.now() - startTime >= WRITE_TIMEOUT_MS
+        const continuation: (r: boolean) => void = (r: boolean) => performance.now() - startTime >= WRITE_TIMEOUT_MS
           ? setTimeout(() => this._innerWrite(0, r))
           : this._innerWrite(startTime, r);
 
@@ -202,7 +202,7 @@ export class WriteBuffer extends Disposable {
          * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
          * current microtask queue (executed before setTimeout).
          */
-        // const continuation: (r: boolean) => void = Date.now() - startTime >= WRITE_TIMEOUT_MS
+        // const continuation: (r: boolean) => void = performance.now() - startTime >= WRITE_TIMEOUT_MS
         //   ? r => setTimeout(() => this._innerWrite(0, r))
         //   : r => this._innerWrite(startTime, r);
 
@@ -222,7 +222,7 @@ export class WriteBuffer extends Disposable {
       this._bufferOffset++;
       this._pendingData -= data.length;
 
-      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
+      if (performance.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
       }
     }
