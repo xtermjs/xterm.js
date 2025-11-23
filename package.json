@@ -8,6 +8,9 @@
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
+  "workspaces": [
+    "addons/*"
+  ],
   "keywords": [
     "cli",
     "command-line",
@@ -25,8 +28,6 @@
   ],
   "scripts": {
     "setup": "npm run build",
-    "presetup": "npm run install-addons",
-    "install-addons": "node ./bin/install-addons.js",
     "start": "node demo/start",
     "build": "npm run tsc",
     "watch": "npm run tsc-watch",
