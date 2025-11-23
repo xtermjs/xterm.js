@@ -85,7 +85,6 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm run install-addons
     - name: Lint code
       env:
         NODE_OPTIONS: --max_old_space_size=4096
@@ -107,7 +106,6 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm run install-addons
     - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
@@ -144,7 +142,6 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm run install-addons
     - name: Wait for build job
       uses: NathanFirmo/wait-for-other-job@v1.1.1
       with:
@@ -183,7 +180,6 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm run install-addons
     - name: Install playwright
       run: npx playwright install --with-deps ${{ matrix.browser }}
     - name: Wait for build job
@@ -246,7 +242,6 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm run install-addons
     - name: Install playwright
       run: npx playwright install
     - uses: actions/download-artifact@v4
