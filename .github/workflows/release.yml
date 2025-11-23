@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js 18.x
+    - name: Use Node.js 22.x
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
-        cache: 'yarn'
+        node-version: 22.x
+        cache: 'npm'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: npm ci
     - name: Build
-      run: yarn setup
+      run: npm run setup
     - name: Package headless
       run: |
-        yarn package-headless
+        npm run package-headless
         node ./bin/package_headless.js
     - name: Publish to npm
       env:

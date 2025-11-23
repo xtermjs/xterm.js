@@ -20,7 +20,7 @@ if (process.argv.length > 2) {
   const args = process.argv.slice(2);
   flagArgs = args.filter(e => e.startsWith('--'));
   // ability to inject particular test files via
-  // yarn test [testFileA testFileB ...]
+  // npm run test [testFileA testFileB ...]
   files = args.filter(e => !e.startsWith('--'));
   if (files.length) {
     testFiles = files;

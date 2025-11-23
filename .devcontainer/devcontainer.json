@@ -9,7 +9,7 @@
   "forwardPorts": [
     3000
   ],
-  "postCreateCommand": "yarn install && yarn setup",
+  "postCreateCommand": "npm install && npm run setup",
   "customizations": {
     "vscode": {
       "extensions": [

@@ -34,9 +34,9 @@ See the full [API](https://github.com/xtermjs/xterm.js/blob/master/addons/addon-
 ```shell
 $ git clone https://github.com/xtermjs/xterm.js.git
 $ cd xterm.js
-$ yarn
+$ npm ci
 $ cd addons/addon-serialize
-$ yarn benchmark && yarn benchmark-baseline
+$ npm run benchmark && npm run benchmark-baseline
 $ # change some code in `@xterm/addon-serialize`
-$ yarn benchmark-eval
+$ npm run benchmark-eval
 ```

@@ -16,13 +16,6 @@ const addonsPath = path.join(PACKAGE_ROOT, 'addons');
 if (fs.existsSync(addonsPath)) {
   console.log('pulling addon dependencies...');
 
-  // whether to use yarn or npm
-  let hasYarn = false;
-  try {
-    cp.execSync('yarn --version').toString();
-    hasYarn = true;
-  } catch(e) {}
-
   // walk all addon folders
   fs.readdir(addonsPath, (err, files) => {
     for (const folder of files) {
@@ -43,11 +36,7 @@ if (fs.existsSync(addonsPath)) {
           )
       {
         console.log('Preparing', folder);
-        if (hasYarn) {
-          cp.execSync('yarn', {cwd: addonPath});
-        } else {
-          cp.execSync('npm install', {cwd: addonPath});
-        }
+        cp.execSync('npm ci', {cwd: addonPath});
       } else {
         console.log('Skipped', folder);
       }

@@ -19,18 +19,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Use Node.js 20.x
+      - name: Use Node.js 22.x
         uses: actions/setup-node@v3
         with:
-          node-version: 20.x
-          cache: 'yarn'
-
+          node-version: 22.x
+          cache: 'npm'
       - name: Install dependencies
-        run: yarn --frozen-lockfile
-
+        run: npm ci
       - name: Setup and run tsc
-        run: yarn setup
-
+        run: npm run setup
       - name: Esbuild
-        run: yarn esbuild
+        run: npm run esbuild

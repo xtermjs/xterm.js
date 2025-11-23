@@ -65,40 +65,40 @@ One area that always needs attention is improving out unit test coverage, you ca
 
 ### Unit tests
 
-Unit tests are run with `yarn test-unit`:
+Unit tests are run with `npm run test-unit`:
 
 ```sh
 # All unit tests
-yarn test-unit
+npm run test-unit
 
 # Absolute file path
-yarn test-unit out-esbuild/browser/Terminal.test.js
+npm run test-unit out-esbuild/browser/Terminal.test.js
 
 # Filter by wildcard
-yarn test-unit out-esbuild/**/Terminal.test.js
+npm run test-unit out-esbuild/**/Terminal.test.js
 
 # Specific addon unit tests tests
-yarn test-unit addons/addon-image/out-esbuild/*.test.js
+npm run test-unit addons/addon-image/out-esbuild/*.test.js
 
 # Multiple files
-yarn test-unit out-esbuild/**/Terminal.test.js out-esbuild/**/InputHandler.test.js
+npm run test-unit out-esbuild/**/Terminal.test.js out-esbuild/**/InputHandler.test.js
 ```
 
 These use mocha to run all `.test.js` files within the esbuild output (`out-esbuild/`).
 
 ### Integration tests
 
-Integration tests are run with `yarn test-integration`:
+Integration tests are run with `npm run test-integration`:
 
 ```sh
 # All integration tests
-yarn test-integration
+npm run test-integration
 
 # Core integration tests
-yarn test-integration --suite=core
+npm run test-integration --suite=core
 
 # Specific addon integration tests
-yarn test-integration --suite=addon-search
+npm run test-integration --suite=addon-search
 ```
 
 These use `@playwright/test` to run all tests within the esbuild test output (`out-esbuild-test/`).
