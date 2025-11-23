@@ -6,7 +6,7 @@ VERSION=$1
 # Clone docs repo and update the documentation
 git clone https://github.com/xtermjs/xtermjs.org
 cd xtermjs.org
-yarn
+npm ci
 ./bin/update-docs
 
 # Add changes to index and only proceed if there are changes to commit

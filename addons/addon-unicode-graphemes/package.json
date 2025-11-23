@@ -24,8 +24,5 @@
     "benchmark": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json out-benchmark/benchmark/*benchmark.js",
     "benchmark-baseline": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --baseline out-benchmark/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json --eval out-benchmark/benchmark/*benchmark.js"
-  },
-  "peerDependencies": {
-    "@xterm/xterm": "^5.0.0"
   }
 }

@@ -23,9 +23,6 @@
     "prepublishOnly": "npm run package",
     "start": "node ../../demo/start"
   },
-  "peerDependencies": {
-    "@xterm/xterm": "^5.2.0"
-  },
   "devDependencies": {
     "sixel": "^0.16.0",
     "xterm-wasm-parts": "^0.1.0"

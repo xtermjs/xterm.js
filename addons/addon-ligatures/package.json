@@ -41,8 +41,5 @@
     "mkdirp": "0.5.5",
     "sinon": "6.3.5",
     "yauzl": "^2.10.0"
-  },
-  "peerDependencies": {
-    "@xterm/xterm": "^5.0.0"
   }
 }

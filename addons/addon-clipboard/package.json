@@ -22,9 +22,6 @@
     "prepublishOnly": "npm run package",
     "start": "node ../../demo/start"
   },
-  "peerDependencies": {
-    "@xterm/xterm": "^5.4.0"
-  },
   "dependencies": {
     "js-base64": "^3.7.5"
   }
