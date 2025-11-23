@@ -202,7 +202,8 @@ export class WriteBuffer extends Disposable {
          * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
          * current microtask queue (executed before setTimeout).
          */
-        // const continuation: (r: boolean) => void = performance.now() - startTime >= WRITE_TIMEOUT_MS
+        // const continuation: (r: boolean) => void = performance.now() - startTime >=
+        //     WRITE_TIMEOUT_MS
         //   ? r => setTimeout(() => this._innerWrite(0, r))
         //   : r => this._innerWrite(startTime, r);
 
