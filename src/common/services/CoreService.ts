@@ -19,6 +19,7 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   bracketedPasteMode: false,
   cursorBlink: undefined,
   cursorStyle: undefined,
+  kittyKeyboardFlags: 0,
   origin: false,
   reverseWraparound: false,
   sendFocus: false,

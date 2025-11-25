@@ -270,6 +270,7 @@ export interface IDecPrivateModes {
   bracketedPasteMode: boolean;
   cursorBlink: boolean | undefined;
   cursorStyle: CursorStyle | undefined;
+  kittyKeyboardFlags: number;
   origin: boolean;
   reverseWraparound: boolean;
   sendFocus: boolean;
