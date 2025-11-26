@@ -41,6 +41,11 @@ export class CompositionHelper {
    */
   private _dataAlreadySent: string;
 
+  /**
+   * The pending textarea change timer, if any.
+   */
+  private _textareaChangeTimer?: number;
+
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
@@ -184,8 +189,12 @@ export class CompositionHelper {
    * IME is active.
    */
   private _handleAnyTextareaChanges(): void {
+    if (this._textareaChangeTimer) {
+      return;
+    }
     const oldValue = this._textarea.value;
-    setTimeout(() => {
+    this._textareaChangeTimer = window.setTimeout(() => {
+      this._textareaChangeTimer = undefined;
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;
