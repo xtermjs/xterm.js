@@ -282,6 +282,15 @@ declare module '@xterm/xterm' {
     smoothScrollDuration?: number;
 
     /**
+     * The timeout in milliseconds for synchronized output mode (DEC mode 2026).
+     * When an application enables synchronized output but fails to disable it
+     * within this timeout, the terminal will automatically flush buffered
+     * output to prevent the display from freezing indefinitely. Set to 0 to
+     * disable the timeout (not recommended). The default is 5000 (5 seconds).
+     */
+    synchronizedOutputTimeout?: number;
+
+    /**
      * The size of tab stops in the terminal.
      */
     tabStopWidth?: number;
@@ -1968,6 +1977,13 @@ declare module '@xterm/xterm' {
      * Send FocusIn/FocusOut events: `CSI ? 1 0 0 4 h`
      */
     readonly sendFocusMode: boolean;
+    /**
+     * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
+     *
+     * When enabled, output is buffered and only rendered when the mode is
+     * disabled, allowing for atomic screen updates without tearing.
+     */
+    readonly synchronizedOutputMode: boolean;
     /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */

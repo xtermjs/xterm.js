@@ -22,6 +22,7 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   origin: false,
   reverseWraparound: false,
   sendFocus: false,
+  synchronizedOutput: false,
   wraparound: true // defaults: xterm - true, vt100 - false
 });
 

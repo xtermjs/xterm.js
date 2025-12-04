@@ -1969,6 +1969,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
           break;
+        case 2026: // synchronized output (https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036)
+          this._coreService.decPrivateModes.synchronizedOutput = true;
+          break;
       }
     }
     return true;
@@ -2196,6 +2199,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;
+          break;
+        case 2026: // synchronized output (https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036)
+          this._coreService.decPrivateModes.synchronizedOutput = false;
+          // Trigger a full refresh now that the synchronized output block has ended
+          this._onRequestRefreshRows.fire(undefined);
           break;
       }
     }

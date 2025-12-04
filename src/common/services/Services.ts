@@ -259,6 +259,7 @@ export interface ITerminalOptions {
   scrollOnUserInput?: boolean;
   scrollSensitivity?: number;
   smoothScrollDuration?: number;
+  synchronizedOutputTimeout?: number;
   tabStopWidth?: number;
   theme?: ITheme;
   windowsMode?: boolean;

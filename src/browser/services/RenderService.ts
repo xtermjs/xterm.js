@@ -9,7 +9,7 @@ import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
-import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
 
 interface ISelectionState {
@@ -17,6 +17,7 @@ interface ISelectionState {
   end: [number, number] | undefined;
   columnSelectMode: boolean;
 }
+
 
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
@@ -32,6 +33,9 @@ export class RenderService extends Disposable implements IRenderService {
   private _needsSelectionRefresh: boolean = false;
   private _canvasWidth: number = 0;
   private _canvasHeight: number = 0;
+  private _synchronizedOutputTimeout: number | undefined;
+  private _synchronizedOutputStart: number = 0;
+  private _synchronizedOutputEnd: number = 0;
   private _selectionState: ISelectionState = {
     start: undefined,
     end: undefined,
@@ -52,23 +56,31 @@ export class RenderService extends Disposable implements IRenderService {
   constructor(
     private _rowCount: number,
     screenElement: HTMLElement,
-    @IOptionsService optionsService: IOptionsService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @ICoreService private readonly _coreService: ICoreService,
     @IDecorationService decorationService: IDecorationService,
     @IBufferService bufferService: IBufferService,
-    @ICoreBrowserService coreBrowserService: ICoreBrowserService,
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IThemeService themeService: IThemeService
   ) {
     super();
 
-    this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), coreBrowserService);
+    this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), this._coreBrowserService);
     this._register(this._renderDebouncer);
 
-    this._register(coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
+    // Clear synchronized output timeout on dispose
+    this._register(toDisposable(() => {
+      if (this._synchronizedOutputTimeout !== undefined) {
+        this._coreBrowserService.window.clearTimeout(this._synchronizedOutputTimeout);
+      }
+    }));
+
+    this._register(this._coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
 
     this._register(bufferService.onResize(() => this._fullRefresh()));
     this._register(bufferService.buffers.onBufferActivate(() => this._renderer.value?.clear()));
-    this._register(optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
     this._register(this._charSizeService.onCharSizeChange(() => this.handleCharSizeChanged()));
 
     // Do a full refresh whenever any decoration is added or removed. This may not actually result
@@ -78,7 +90,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
 
     // Clear the renderer when the a change that could affect glyphs occurs
-    this._register(optionsService.onMultipleOptionChange([
+    this._register(this._optionsService.onMultipleOptionChange([
       'customGlyphs',
       'drawBoldTextInBrightColors',
       'letterSpacing',
@@ -96,15 +108,15 @@ export class RenderService extends Disposable implements IRenderService {
     }));
 
     // Refresh the cursor line when the cursor changes
-    this._register(optionsService.onMultipleOptionChange([
+    this._register(this._optionsService.onMultipleOptionChange([
       'cursorBlink',
       'cursorStyle'
     ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, true)));
 
     this._register(themeService.onChangeColors(() => this._fullRefresh()));
 
-    this._registerIntersectionObserver(coreBrowserService.window, screenElement);
-    this._register(coreBrowserService.onWindowChange((w) => this._registerIntersectionObserver(w, screenElement)));
+    this._registerIntersectionObserver(this._coreBrowserService.window, screenElement);
+    this._register(this._coreBrowserService.onWindowChange((w) => this._registerIntersectionObserver(w, screenElement)));
   }
 
   private _registerIntersectionObserver(w: Window & typeof globalThis, screenElement: HTMLElement): void {
@@ -137,6 +149,46 @@ export class RenderService extends Disposable implements IRenderService {
       this._needsFullRefresh = true;
       return;
     }
+
+    // Handle synchronized output mode (DEC 2026)
+    if (this._coreService.decPrivateModes.synchronizedOutput) {
+      // Track the row range that needs refreshing
+      if (!this._needsFullRefresh) {
+        // First request in this sync cycle
+        this._synchronizedOutputStart = start;
+        this._synchronizedOutputEnd = end;
+        this._needsFullRefresh = true;
+      } else {
+        // Expand the tracked range to include new rows
+        this._synchronizedOutputStart = Math.min(this._synchronizedOutputStart, start);
+        this._synchronizedOutputEnd = Math.max(this._synchronizedOutputEnd, end);
+      }
+      // Start a safety timeout if not already running and timeout is enabled
+      const timeout = this._optionsService.options.synchronizedOutputTimeout;
+      if (this._synchronizedOutputTimeout === undefined && timeout && timeout > 0) {
+        this._synchronizedOutputTimeout = this._coreBrowserService.window.setTimeout(() => {
+          this._synchronizedOutputTimeout = undefined;
+          // Force-disable the mode and trigger a refresh
+          this._coreService.decPrivateModes.synchronizedOutput = false;
+          this._fullRefresh();
+        }, timeout);
+      }
+      return;
+    }
+
+    // Clear the timeout if synchronized output mode was just disabled
+    if (this._synchronizedOutputTimeout !== undefined) {
+      this._coreBrowserService.window.clearTimeout(this._synchronizedOutputTimeout);
+      this._synchronizedOutputTimeout = undefined;
+    }
+
+    // If we were in synchronized output mode, use the tracked row range
+    if (this._needsFullRefresh) {
+      start = this._synchronizedOutputStart;
+      end = this._synchronizedOutputEnd;
+      this._needsFullRefresh = false;
+    }
+
     if (!isRedrawOnly) {
       this._isNextRenderRedrawOnly = false;
     }
@@ -145,6 +197,21 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderRows(start: number, end: number): void {
     if (!this._renderer.value) {
+      return;
+    }
+
+    // Skip rendering if synchronized output mode is enabled. This check must happen here
+    // (in addition to refreshRows) to handle renders that were queued before the mode was enabled.
+    if (this._coreService.decPrivateModes.synchronizedOutput) {
+      // Track the row range that needs refreshing
+      if (!this._needsFullRefresh) {
+        this._synchronizedOutputStart = start;
+        this._synchronizedOutputEnd = end;
+        this._needsFullRefresh = true;
+      } else {
+        this._synchronizedOutputStart = Math.min(this._synchronizedOutputStart, start);
+        this._synchronizedOutputEnd = Math.max(this._synchronizedOutputEnd, end);
+      }
       return;
     }
 
