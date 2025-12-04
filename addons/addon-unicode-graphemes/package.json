@@ -6,7 +6,7 @@
     "url": "https://xtermjs.org/"
   },
   "main": "lib/addon-unicode-graphemes.js",
-  "module": "lib/.addon-unicode-graphemes.mjs",
+  "module": "lib/addon-unicode-graphemes.mjs",
   "types": "typings/addon-unicode-graphemes.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-unicode-graphemes",
   "license": "MIT",
