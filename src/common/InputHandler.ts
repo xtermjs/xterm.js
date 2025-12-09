@@ -2298,6 +2298,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 1048) return f(p, V.SET); // xterm always returns SET here
     if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
     if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
+    if (p === 2026) return f(p, b2v(dm.synchronizedOutput));
     return f(p, V.NOT_RECOGNIZED);
   }
 
