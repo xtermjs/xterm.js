@@ -18,6 +18,66 @@ interface ISelectionState {
   columnSelectMode: boolean;
 }
 
+const SYNCHRONIZED_OUTPUT_TIMEOUT_MS = 1000;
+
+/**
+ * Buffers row refresh requests during synchronized output mode (DEC mode 2026).
+ * When the mode is disabled, the accumulated row range is flushed for rendering.
+ * A safety timeout ensures rendering occurs even if the end sequence is not received.
+ */
+class SynchronizedOutputHandler {
+  private _start: number = 0;
+  private _end: number = 0;
+  private _timeout: number | undefined;
+  private _isBuffering: boolean = false;
+
+  constructor(
+    private readonly _coreBrowserService: ICoreBrowserService,
+    private readonly _coreService: ICoreService,
+    private readonly _onTimeout: () => void
+  ) {}
+
+  public bufferRows(start: number, end: number): void {
+    if (!this._isBuffering) {
+      this._start = start;
+      this._end = end;
+      this._isBuffering = true;
+    } else {
+      this._start = Math.min(this._start, start);
+      this._end = Math.max(this._end, end);
+    }
+
+    if (this._timeout === undefined) {
+      this._timeout = this._coreBrowserService.window.setTimeout(() => {
+        this._timeout = undefined;
+        this._coreService.decPrivateModes.synchronizedOutput = false;
+        this._onTimeout();
+      }, SYNCHRONIZED_OUTPUT_TIMEOUT_MS);
+    }
+  }
+
+  public flush(): { start: number, end: number } | undefined {
+    if (this._timeout !== undefined) {
+      this._coreBrowserService.window.clearTimeout(this._timeout);
+      this._timeout = undefined;
+    }
+
+    if (!this._isBuffering) {
+      return undefined;
+    }
+
+    const result = { start: this._start, end: this._end };
+    this._isBuffering = false;
+    return result;
+  }
+
+  public dispose(): void {
+    if (this._timeout !== undefined) {
+      this._coreBrowserService.window.clearTimeout(this._timeout);
+      this._timeout = undefined;
+    }
+  }
+}
 
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
@@ -33,9 +93,7 @@ export class RenderService extends Disposable implements IRenderService {
   private _needsSelectionRefresh: boolean = false;
   private _canvasWidth: number = 0;
   private _canvasHeight: number = 0;
-  private _synchronizedOutputTimeout: number | undefined;
-  private _synchronizedOutputStart: number = 0;
-  private _synchronizedOutputEnd: number = 0;
+  private _syncOutputHandler: SynchronizedOutputHandler;
   private _selectionState: ISelectionState = {
     start: undefined,
     end: undefined,
@@ -69,12 +127,12 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), this._coreBrowserService);
     this._register(this._renderDebouncer);
 
-    // Clear synchronized output timeout on dispose
-    this._register(toDisposable(() => {
-      if (this._synchronizedOutputTimeout !== undefined) {
-        this._coreBrowserService.window.clearTimeout(this._synchronizedOutputTimeout);
-      }
-    }));
+    this._syncOutputHandler = new SynchronizedOutputHandler(
+      this._coreBrowserService,
+      this._coreService,
+      () => this._fullRefresh()
+    );
+    this._register(toDisposable(() => this._syncOutputHandler.dispose()));
 
     this._register(this._coreBrowserService.onDprChange(() => this.handleDevicePixelRatioChange()));
 
@@ -150,43 +208,15 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
 
-    // Handle synchronized output mode (DEC 2026)
     if (this._coreService.decPrivateModes.synchronizedOutput) {
-      // Track the row range that needs refreshing
-      if (!this._needsFullRefresh) {
-        // First request in this sync cycle
-        this._synchronizedOutputStart = start;
-        this._synchronizedOutputEnd = end;
-        this._needsFullRefresh = true;
-      } else {
-        // Expand the tracked range to include new rows
-        this._synchronizedOutputStart = Math.min(this._synchronizedOutputStart, start);
-        this._synchronizedOutputEnd = Math.max(this._synchronizedOutputEnd, end);
-      }
-      // Start a safety timeout if not already running and timeout is enabled
-      const timeout = this._optionsService.options.synchronizedOutputTimeout;
-      if (this._synchronizedOutputTimeout === undefined && timeout && timeout > 0) {
-        this._synchronizedOutputTimeout = this._coreBrowserService.window.setTimeout(() => {
-          this._synchronizedOutputTimeout = undefined;
-          // Force-disable the mode and trigger a refresh
-          this._coreService.decPrivateModes.synchronizedOutput = false;
-          this._fullRefresh();
-        }, timeout);
-      }
+      this._syncOutputHandler.bufferRows(start, end);
       return;
     }
 
-    // Clear the timeout if synchronized output mode was just disabled
-    if (this._synchronizedOutputTimeout !== undefined) {
-      this._coreBrowserService.window.clearTimeout(this._synchronizedOutputTimeout);
-      this._synchronizedOutputTimeout = undefined;
-    }
-
-    // If we were in synchronized output mode, use the tracked row range
-    if (this._needsFullRefresh) {
-      start = this._synchronizedOutputStart;
-      end = this._synchronizedOutputEnd;
-      this._needsFullRefresh = false;
+    const buffered = this._syncOutputHandler.flush();
+    if (buffered) {
+      start = Math.min(start, buffered.start);
+      end = Math.max(end, buffered.end);
     }
 
     if (!isRedrawOnly) {
@@ -203,15 +233,7 @@ export class RenderService extends Disposable implements IRenderService {
     // Skip rendering if synchronized output mode is enabled. This check must happen here
     // (in addition to refreshRows) to handle renders that were queued before the mode was enabled.
     if (this._coreService.decPrivateModes.synchronizedOutput) {
-      // Track the row range that needs refreshing
-      if (!this._needsFullRefresh) {
-        this._synchronizedOutputStart = start;
-        this._synchronizedOutputEnd = end;
-        this._needsFullRefresh = true;
-      } else {
-        this._synchronizedOutputStart = Math.min(this._synchronizedOutputStart, start);
-        this._synchronizedOutputEnd = Math.max(this._synchronizedOutputEnd, end);
-      }
+      this._syncOutputHandler.bufferRows(start, end);
       return;
     }
 

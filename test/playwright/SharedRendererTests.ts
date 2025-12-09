@@ -1267,6 +1267,45 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
     });
   });
+
+  test.describe('synchronized output', () => {
+    test('defers rendering until ESU', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
+    });
+
+    test('batches multiple writes', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■\x1b[32m■\x1b[34m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [13, 188, 121, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [36, 114, 200, 255]);
+    });
+
+    test('nested BSU is idempotent', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[32m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [13, 188, 121, 255]);
+    });
+
+    test('timeout flushes without ESU', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
+      await ctx.value.page.waitForTimeout(1500);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
+    });
+  });
 }
 
 enum CellColorPosition {

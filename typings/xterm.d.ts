@@ -282,15 +282,6 @@ declare module '@xterm/xterm' {
     smoothScrollDuration?: number;
 
     /**
-     * The timeout in milliseconds for synchronized output mode (DEC mode 2026).
-     * When an application enables synchronized output but fails to disable it
-     * within this timeout, the terminal will automatically flush buffered
-     * output to prevent the display from freezing indefinitely. Set to 0 to
-     * disable the timeout (not recommended). The default is 5000 (5 seconds).
-     */
-    synchronizedOutputTimeout?: number;
-
-    /**
      * The size of tab stops in the terminal.
      */
     tabStopWidth?: number;
