@@ -19,7 +19,7 @@ interface ISelectionState {
 }
 
 const enum Constants {
-  SynchronizedOutputTimeoutMs = 1000
+  SYNCHRONIZED_OUTPUT_TIMEOUT_MS = 1000
 }
 
 export class RenderService extends Disposable implements IRenderService {
@@ -348,7 +348,7 @@ class SynchronizedOutputHandler {
         this._timeout = undefined;
         this._coreService.decPrivateModes.synchronizedOutput = false;
         this._onTimeout();
-      }, Constants.SynchronizedOutputTimeoutMs);
+      }, Constants.SYNCHRONIZED_OUTPUT_TIMEOUT_MS);
     }
   }
 
