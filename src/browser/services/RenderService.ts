@@ -22,65 +22,6 @@ const enum Constants {
   SynchronizedOutputTimeoutMs = 1000
 }
 
-/**
- * Buffers row refresh requests during synchronized output mode (DEC mode 2026).
- * When the mode is disabled, the accumulated row range is flushed for rendering.
- * A safety timeout ensures rendering occurs even if the end sequence is not received.
- */
-class SynchronizedOutputHandler {
-  private _start: number = 0;
-  private _end: number = 0;
-  private _timeout: number | undefined;
-  private _isBuffering: boolean = false;
-
-  constructor(
-    private readonly _coreBrowserService: ICoreBrowserService,
-    private readonly _coreService: ICoreService,
-    private readonly _onTimeout: () => void
-  ) {}
-
-  public bufferRows(start: number, end: number): void {
-    if (!this._isBuffering) {
-      this._start = start;
-      this._end = end;
-      this._isBuffering = true;
-    } else {
-      this._start = Math.min(this._start, start);
-      this._end = Math.max(this._end, end);
-    }
-
-    if (this._timeout === undefined) {
-      this._timeout = this._coreBrowserService.window.setTimeout(() => {
-        this._timeout = undefined;
-        this._coreService.decPrivateModes.synchronizedOutput = false;
-        this._onTimeout();
-      }, Constants.SynchronizedOutputTimeoutMs);
-    }
-  }
-
-  public flush(): { start: number, end: number } | undefined {
-    if (this._timeout !== undefined) {
-      this._coreBrowserService.window.clearTimeout(this._timeout);
-      this._timeout = undefined;
-    }
-
-    if (!this._isBuffering) {
-      return undefined;
-    }
-
-    const result = { start: this._start, end: this._end };
-    this._isBuffering = false;
-    return result;
-  }
-
-  public dispose(): void {
-    if (this._timeout !== undefined) {
-      this._coreBrowserService.window.clearTimeout(this._timeout);
-      this._timeout = undefined;
-    }
-  }
-}
-
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
 
@@ -372,5 +313,64 @@ export class RenderService extends Disposable implements IRenderService {
 
   public clear(): void {
     this._renderer.value?.clear();
+  }
+}
+
+/**
+ * Buffers row refresh requests during synchronized output mode (DEC mode 2026).
+ * When the mode is disabled, the accumulated row range is flushed for rendering.
+ * A safety timeout ensures rendering occurs even if the end sequence is not received.
+ */
+class SynchronizedOutputHandler {
+  private _start: number = 0;
+  private _end: number = 0;
+  private _timeout: number | undefined;
+  private _isBuffering: boolean = false;
+
+  constructor(
+    private readonly _coreBrowserService: ICoreBrowserService,
+    private readonly _coreService: ICoreService,
+    private readonly _onTimeout: () => void
+  ) {}
+
+  public bufferRows(start: number, end: number): void {
+    if (!this._isBuffering) {
+      this._start = start;
+      this._end = end;
+      this._isBuffering = true;
+    } else {
+      this._start = Math.min(this._start, start);
+      this._end = Math.max(this._end, end);
+    }
+
+    if (this._timeout === undefined) {
+      this._timeout = this._coreBrowserService.window.setTimeout(() => {
+        this._timeout = undefined;
+        this._coreService.decPrivateModes.synchronizedOutput = false;
+        this._onTimeout();
+      }, Constants.SynchronizedOutputTimeoutMs);
+    }
+  }
+
+  public flush(): { start: number, end: number } | undefined {
+    if (this._timeout !== undefined) {
+      this._coreBrowserService.window.clearTimeout(this._timeout);
+      this._timeout = undefined;
+    }
+
+    if (!this._isBuffering) {
+      return undefined;
+    }
+
+    const result = { start: this._start, end: this._end };
+    this._isBuffering = false;
+    return result;
+  }
+
+  public dispose(): void {
+    if (this._timeout !== undefined) {
+      this._coreBrowserService.window.clearTimeout(this._timeout);
+      this._timeout = undefined;
+    }
   }
 }
