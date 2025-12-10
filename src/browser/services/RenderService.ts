@@ -18,7 +18,9 @@ interface ISelectionState {
   columnSelectMode: boolean;
 }
 
-const SYNCHRONIZED_OUTPUT_TIMEOUT_MS = 1000;
+const enum Constants {
+  SynchronizedOutputTimeoutMs = 1000
+}
 
 /**
  * Buffers row refresh requests during synchronized output mode (DEC mode 2026).
@@ -52,7 +54,7 @@ class SynchronizedOutputHandler {
         this._timeout = undefined;
         this._coreService.decPrivateModes.synchronizedOutput = false;
         this._onTimeout();
-      }, SYNCHRONIZED_OUTPUT_TIMEOUT_MS);
+      }, Constants.SynchronizedOutputTimeoutMs);
     }
   }
 
