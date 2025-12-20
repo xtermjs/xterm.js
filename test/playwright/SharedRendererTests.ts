@@ -1380,16 +1380,9 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
  * @param row The 1-based row index to get the color for.
  */
 async function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): Promise<[red: number, green: number, blue: number, alpha: number]> {
-  // Clear the cached frame if the request is for the same cell
-  if (lastFrameRequest) {
-    if (lastFrameRequest.col === col && lastFrameRequest.row === row) {
-      frameDetails = undefined;
-    }
-  }
   if (!frameDetails) {
     frameDetails = await getFrameDetails(ctx);
   }
-  lastFrameRequest = { col, row };
   switch (position) {
     case CellColorPosition.CENTER:
       return getCellColorInner(frameDetails, col, row);
@@ -1399,7 +1392,6 @@ async function getCellColor(ctx: ITestContext, col: number, row: number, positio
 }
 
 let frameDetails: { cols: number, rows: number, decoded: IImage32 } | undefined = undefined;
-let lastFrameRequest: { col: number, row: number } | undefined;
 async function getFrameDetails(ctx: ITestContext): Promise<{ cols: number, rows: number, decoded: IImage32 }> {
   const screenshotOptions: LocatorScreenshotOptions | undefined = process.env.DEBUG ? { path: 'out-esbuild-test/playwright/screenshot.png' } : undefined;
   const buffer = await ctx.page.locator('#terminal-container .xterm-screen').screenshot(screenshotOptions);
