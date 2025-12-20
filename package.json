@@ -92,7 +92,6 @@
     "eslint-plugin-jsdoc": "^46.9.1",
     "express": "^4.19.2",
     "express-ws": "^5.0.2",
-    "glob": "^13.0.0",
     "jsdom": "^18.0.1",
     "mocha": "^10.1.0",
     "mustache": "^4.2.0",
