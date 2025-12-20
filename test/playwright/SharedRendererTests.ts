@@ -5,8 +5,8 @@
 
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
-import { ITheme } from '@xterm/xterm';
-import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
+import { ITheme, type ITerminalOptions } from '@xterm/xterm';
+import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate, timeout } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -1276,7 +1276,10 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         green: '#00FF00FF',
         blue: '#0000FFFF'
       };
-      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.page.evaluate(`
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.cursorStyle = 'underline';
+      `);
     });
     test('defers rendering until ESU', async () => {
       await ctx.value.proxy.write('\x1b[?2026h'); // BSU
@@ -1376,10 +1379,17 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
  * @param col The 1-based column index to get the color for.
  * @param row The 1-based row index to get the color for.
  */
-function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): MaybeAsync<[red: number, green: number, blue: number, alpha: number]> {
-  if (!frameDetails) {
-    return getFrameDetails(ctx).then(frameDetails => getCellColorInner(frameDetails, col, row));
+async function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): Promise<[red: number, green: number, blue: number, alpha: number]> {
+  // Clear the cached frame if the request is for the same cell
+  if (lastFrameRequest) {
+    if (lastFrameRequest.col === col && lastFrameRequest.row === row) {
+      frameDetails = undefined;
+    }
   }
+  if (!frameDetails) {
+    frameDetails = await getFrameDetails(ctx);
+  }
+  lastFrameRequest = { col, row };
   switch (position) {
     case CellColorPosition.CENTER:
       return getCellColorInner(frameDetails, col, row);
@@ -1389,6 +1399,7 @@ function getCellColor(ctx: ITestContext, col: number, row: number, position: Cel
 }
 
 let frameDetails: { cols: number, rows: number, decoded: IImage32 } | undefined = undefined;
+let lastFrameRequest: { col: number, row: number } | undefined;
 async function getFrameDetails(ctx: ITestContext): Promise<{ cols: number, rows: number, decoded: IImage32 }> {
   const screenshotOptions: LocatorScreenshotOptions | undefined = process.env.DEBUG ? { path: 'out-esbuild-test/playwright/screenshot.png' } : undefined;
   const buffer = await ctx.page.locator('#terminal-container .xterm-screen').screenshot(screenshotOptions);
