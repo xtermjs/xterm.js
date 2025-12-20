@@ -37,7 +37,7 @@ if (os.platform() === 'darwin') {
 // filter skipFilenames
 const FILES = TESTFILES.filter(value => !SKIP_FILES.includes(path.basename(value)));
 
-describe.only('Escape Sequence Files', function(): void {
+describe('Escape Sequence Files', function(): void {
   this.timeout(1000);
 
   let ptyTerm: any;
