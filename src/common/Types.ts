@@ -273,6 +273,7 @@ export interface IDecPrivateModes {
   origin: boolean;
   reverseWraparound: boolean;
   sendFocus: boolean;
+  synchronizedOutput: boolean;
   wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 

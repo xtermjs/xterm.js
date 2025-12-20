@@ -5,8 +5,9 @@
 
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
-import { ITheme } from '@xterm/xterm';
-import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
+import { ITheme, type ITerminalOptions } from '@xterm/xterm';
+import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate, timeout } from './TestUtils';
+import { notDeepStrictEqual } from 'node:assert';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
@@ -1267,6 +1268,79 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
     });
   });
+
+  test.describe('synchronized output', () => {
+    test.beforeEach(async () => {
+      const theme: ITheme = {
+        background: '#000000FF',
+
+        red: '#FF0000FF',
+        green: '#00FF00FF',
+        blue: '#0000FFFF'
+      };
+      const options: ITerminalOptions = {}
+      await ctx.value.page.evaluate(`
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.cursorStyle = 'underline';
+      `);
+    });
+    test('defers rendering until ESU', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+    });
+
+    test('batches multiple writes', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■\x1b[32m■\x1b[34m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 255, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 255, 255]);
+    });
+
+    test('nested BSU is idempotent', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[32m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 255, 0, 255]);
+    });
+
+    test('timeout flushes without ESU', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.page.waitForTimeout(1000); // Timeout hard coded
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+    });
+  });
 }
 
 enum CellColorPosition {
@@ -1324,9 +1398,9 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
  * @param col The 1-based column index to get the color for.
  * @param row The 1-based row index to get the color for.
  */
-function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): MaybeAsync<[red: number, green: number, blue: number, alpha: number]> {
+async function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): Promise<[red: number, green: number, blue: number, alpha: number]> {
   if (!frameDetails) {
-    return getFrameDetails(ctx).then(frameDetails => getCellColorInner(frameDetails, col, row));
+    frameDetails = await getFrameDetails(ctx);
   }
   switch (position) {
     case CellColorPosition.CENTER:

@@ -400,6 +400,7 @@ describe('Headless API Tests', function (): void {
         originMode: false,
         reverseWraparoundMode: false,
         sendFocusMode: false,
+        synchronizedOutputMode: false,
         wraparoundMode: true
       });
     });

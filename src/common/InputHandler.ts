@@ -1969,6 +1969,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
           break;
+        case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
+          this._coreService.decPrivateModes.synchronizedOutput = true;
+          break;
       }
     }
     return true;
@@ -2197,6 +2200,10 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;
           break;
+        case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
+          this._coreService.decPrivateModes.synchronizedOutput = false;
+          this._onRequestRefreshRows.fire(undefined);
+          break;
       }
     }
     return true;
@@ -2291,6 +2298,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 1048) return f(p, V.SET); // xterm always returns SET here
     if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
     if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
+    if (p === 2026) return f(p, b2v(dm.synchronizedOutput));
     return f(p, V.NOT_RECOGNIZED);
   }
 

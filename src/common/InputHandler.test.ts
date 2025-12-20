@@ -2314,7 +2314,7 @@ describe('InputHandler', () => {
     });
     it('DEC privates with set/reset semantic', async () => {
       // initially reset
-      const reset = [1, 6, 9, 12, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004];
+      const reset = [1, 6, 9, 12, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004, 2026];
       for (const mode of reset) {
         await inputHandler.parseP(`\x1b[?${mode}$p`);
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // initial reset

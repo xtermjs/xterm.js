@@ -1969,6 +1969,13 @@ declare module '@xterm/xterm' {
      */
     readonly sendFocusMode: boolean;
     /**
+     * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
+     *
+     * When enabled, output is buffered and only rendered when the mode is
+     * disabled, allowing for atomic screen updates without tearing.
+     */
+    readonly synchronizedOutputMode: boolean;
+    /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */
     readonly wraparoundMode: boolean;

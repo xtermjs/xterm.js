@@ -609,6 +609,7 @@ test.describe('API Integration Tests', () => {
         originMode: false,
         reverseWraparoundMode: false,
         sendFocusMode: false,
+        synchronizedOutputMode: false,
         wraparoundMode: true
       });
     });
