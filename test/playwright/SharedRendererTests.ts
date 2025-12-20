@@ -1269,12 +1269,21 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 
   test.describe('synchronized output', () => {
+    test.beforeEach(async () => {
+      const theme: ITheme = {
+        red: '#FF0000FF',
+        green: '#00FF00FF',
+        blue: '#0000FFFF'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+    });
     test('defers rendering until ESU', async () => {
       await ctx.value.proxy.write('\x1b[?2026h'); // BSU
       await ctx.value.proxy.write('\x1b[31m■');
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       await ctx.value.proxy.write('\x1b[?2026l'); // ESU
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
 
     test('batches multiple writes', async () => {
@@ -1282,9 +1291,10 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.write('\x1b[31m■\x1b[32m■\x1b[34m■');
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       await ctx.value.proxy.write('\x1b[?2026l'); // ESU
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [13, 188, 121, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [36, 114, 200, 255]);
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 255, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 255, 255]);
     });
 
     test('nested BSU is idempotent', async () => {
@@ -1294,16 +1304,18 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.write('\x1b[32m■');
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       await ctx.value.proxy.write('\x1b[?2026l'); // ESU
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [13, 188, 121, 255]);
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 255, 0, 255]);
     });
 
     test('timeout flushes without ESU', async () => {
       await ctx.value.proxy.write('\x1b[?2026h'); // BSU
       await ctx.value.proxy.write('\x1b[31m■');
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
-      await ctx.value.page.waitForTimeout(1500);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [205, 49, 49, 255]);
+      await ctx.value.page.waitForTimeout(1000); // Timeout hard coded
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
   });
 }
