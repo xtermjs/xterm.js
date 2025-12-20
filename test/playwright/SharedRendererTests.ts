@@ -1271,6 +1271,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   test.describe('synchronized output', () => {
     test.beforeEach(async () => {
       const theme: ITheme = {
+        background: '#000000FF',
         red: '#FF0000FF',
         green: '#00FF00FF',
         blue: '#0000FFFF'
