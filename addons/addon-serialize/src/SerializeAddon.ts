@@ -490,6 +490,7 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
     if (modes.originMode) content += '\x1b[?6h';
     if (modes.reverseWraparoundMode) content += '\x1b[?45h';
     if (modes.sendFocusMode) content += '\x1b[?1004h';
+    // synchronizedOutputMode doesn't need to be serialized as it's a temporary mode
 
     // Default: true
     if (modes.wraparoundMode === false) content += '\x1b[?7l';
