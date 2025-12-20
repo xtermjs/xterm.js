@@ -19,6 +19,7 @@ npm-debug.log
 build/
 .DS_Store
 yarn.lock
+test-results/
 
 # Keep bundled code out of Git
 dist/
