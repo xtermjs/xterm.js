@@ -50,7 +50,7 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-search'),
   path.resolve(__dirname, '../addons/addon-serialize'),
   path.resolve(__dirname, '../addons/addon-unicode11'),
-  // path.resolve(__dirname, '../addons/addon-unicode-graphemes'),
+  path.resolve(__dirname, '../addons/addon-unicode-graphemes'),
   path.resolve(__dirname, '../addons/addon-web-links'),
   path.resolve(__dirname, '../addons/addon-webgl')
 ];
