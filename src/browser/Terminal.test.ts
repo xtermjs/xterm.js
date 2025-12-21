@@ -1079,47 +1079,6 @@ describe('Terminal', () => {
       assert.equal(windowsModeTerminal.buffer.lines.get(2)!.isWrapped, false);
     });
   });
-  describe('Windows Mode', () => {
-    it('should mark lines as wrapped when the line ends in a non-null character after a LF', async () => {
-      const data = [
-        'aaaaaaaaaa\n\r', // cannot wrap as it's the first
-        'aaaaaaaaa\n\r',  // wrapped (windows mode only)
-        'aaaaaaaaa'       // not wrapped
-      ];
-
-      const normalTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: false });
-      await normalTerminal.writeP(data.join(''));
-      assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
-
-      const windowsModeTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: true });
-      await windowsModeTerminal.writeP(data.join(''));
-      assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
-      assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
-      assert.equal(windowsModeTerminal.buffer.lines.get(2)!.isWrapped, false);
-    });
-
-    it('should mark lines as wrapped when the line ends in a non-null character after a CUP', async () => {
-      const data = [
-        'aaaaaaaaaa\x1b[2;1H', // cannot wrap as it's the first
-        'aaaaaaaaa\x1b[3;1H',  // wrapped (windows mode only)
-        'aaaaaaaaa'             // not wrapped
-      ];
-
-      const normalTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: false });
-      await normalTerminal.writeP(data.join(''));
-      assert.equal(normalTerminal.buffer.lines.get(0)!.isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(1)!.isWrapped, false);
-      assert.equal(normalTerminal.buffer.lines.get(2)!.isWrapped, false);
-
-      const windowsModeTerminal = new TestTerminal({ rows: 5, cols: 10, windowsMode: true });
-      await windowsModeTerminal.writeP(data.join(''));
-      assert.equal(windowsModeTerminal.buffer.lines.get(0)!.isWrapped, false);
-      assert.equal(windowsModeTerminal.buffer.lines.get(1)!.isWrapped, true, 'This line should wrap in Windows mode as the previous line ends in a non-null character');
-      assert.equal(windowsModeTerminal.buffer.lines.get(2)!.isWrapped, false);
-    });
-  });
   it('convertEol setting', async () => {
     // not converting
     const termNotConverting = new TestTerminal({ cols: 15, rows: 10 });
