@@ -67,7 +67,8 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // https://www.unicode.org/charts/PDF/U1FB00.pdf
 
-  // Block sextants (1FB00-1FB3B)
+  // Block mosaic terminal graphic characters (1FB00-1FB3B)
+  // The term "sextant" refers to block mosaics divided into six parts.
   '\u{1FB00}': sextant(0b000001), // BLOCK SEXTANT-1
   '\u{1FB01}': sextant(0b000010), // BLOCK SEXTANT-2
   '\u{1FB02}': sextant(0b000011), // BLOCK SEXTANT-12 (upper one third block)
@@ -130,19 +131,11 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB3B}': sextant(0b111110),  // BLOCK SEXTANT-23456
 
   // Smooth mosaic terminal graphic characters (1FB3C-1FB6F)
-  // These are triangular/diagonal shapes. "X BLOCK DIAGONAL A TO B" means the X region is filled,
-  // with a diagonal edge from point A to point B.
-  // Reference points: upper/lower = y (0/1), left/right = x (0/1), centre = x=0.5
-  // Vertical uses sextant grid: upper-middle = y=1/3, lower-middle = y=2/3
-
-  // LOWER LEFT BLOCK variants (1FB3C-1FB40) - filled region in lower-left
   '\u{1FB3C}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.6667 L0,1 L0.5,1 Z' },           // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
   '\u{1FB3D}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.6667 L0,1 L1,1 Z' },             // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
   '\u{1FB3E}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L0,1 L0.5,1 Z' },           // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
   '\u{1FB3F}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L0,1 L1,1 Z' },             // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
   '\u{1FB40}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0,1 L0.5,1 Z' },                // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
-
-  // LOWER RIGHT BLOCK variants (1FB41-1FB4B) - filled region in lower-right
   '\u{1FB41}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L0.5,0 L1,0 L1,1 L0,1 Z' }, // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
   '\u{1FB42}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L1,0 L1,1 L0,1 Z' },        // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
   '\u{1FB43}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.6667 L0.5,0 L1,0 L1,1 L0,1 Z' }, // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
@@ -154,23 +147,17 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB49}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,1 L1,0.3333 L1,1 Z' },           // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
   '\u{1FB4A}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,1 L1,0.3333 L1,1 Z' },             // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
   '\u{1FB4B}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,1 L1,0 L1,1 Z' },                // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
-
-  // LOWER LEFT BLOCK variants continued (1FB4C-1FB51) - large fills with upper-right cut
   '\u{1FB4C}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,0 L0,0 L0,1 L1,1 L1,0.3333 Z' }, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
   '\u{1FB4D}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0,1 L1,1 L1,0.3333 Z' },        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
   '\u{1FB4E}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,0 L0,0 L0,1 L1,1 L1,0.6667 Z' }, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
   '\u{1FB4F}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0,1 L1,1 L1,0.6667 Z' },        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
   '\u{1FB50}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,0 L0,0 L0,1 L1,1 Z' },           // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
   '\u{1FB51}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L0,1 L1,1 L1,0.6667 Z' },   // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
-
-  // UPPER RIGHT BLOCK variants (1FB52-1FB56) - large fills with lower-left cut
   '\u{1FB52}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.6667 L0.5,1 L1,1 L1,0 L0,0 Z' }, // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
   '\u{1FB53}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.6667 L1,1 L1,0 L0,0 Z' },        // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
   '\u{1FB54}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L0.5,1 L1,1 L1,0 L0,0 Z' }, // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
   '\u{1FB55}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L1,1 L1,0 L0,0 Z' },        // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
   '\u{1FB56}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.5,1 L1,1 L1,0 Z' },           // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
-
-  // UPPER LEFT BLOCK variants (1FB57-1FB61) - small to large fills in upper-left
   '\u{1FB57}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L0,0 L0.5,0 Z' },           // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
   '\u{1FB58}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L0,0 L1,0 Z' },             // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
   '\u{1FB59}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.6667 L0,0 L0.5,0 Z' },           // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
@@ -182,25 +169,20 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB5F}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,1 L0,1 L0,0 L1,0 L1,0.3333 Z' }, // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
   '\u{1FB60}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,1 L0,0 L1,0 L1,0.3333 Z' },        // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
   '\u{1FB61}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,1 L0,1 L0,0 L1,0 Z' },           // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
-
-  // UPPER RIGHT BLOCK variants continued (1FB62-1FB67) - small to medium fills in upper-right
   '\u{1FB62}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,0 L1,0 L1,0.3333 Z' },           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
   '\u{1FB63}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,0.3333 Z' },             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
   '\u{1FB64}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,0 L1,0 L1,0.6667 Z' },           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
   '\u{1FB65}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,0.6667 Z' },             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
   '\u{1FB66}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.5,0 L1,0 L1,1 Z' },                // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
   '\u{1FB67}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.3333 L1,0.6667 L1,0 L0,0 Z' },   // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
-
-  // Triangular blocks (1FB68-1FB6F)
-  // Three-quarter blocks: full block minus one triangular quarter pointing to center
-  '\u{1FB68}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,1 L0,1 L0.5,0.5 Z' },  // UPPER AND RIGHT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing left)
-  '\u{1FB69}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.5,0.5 L1,0 L1,1 L0,1 Z' },  // LEFT AND LOWER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing upper)
-  '\u{1FB6A}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L0.5,0.5 L1,1 L0,1 Z' },  // UPPER AND LEFT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing right)
-  '\u{1FB6B}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,1 L0.5,0.5 L0,1 Z' },  // LEFT AND UPPER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing lower)
-  '\u{1FB6C}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.5,0.5 L0,1 Z' },            // LEFT TRIANGULAR ONE QUARTER BLOCK
-  '\u{1FB6D}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L0.5,0.5 Z' },            // UPPER TRIANGULAR ONE QUARTER BLOCK
-  '\u{1FB6E}': { type: CustomGlyphDefinitionType.PATH, data: 'M1,0 L1,1 L0.5,0.5 Z' },            // RIGHT TRIANGULAR ONE QUARTER BLOCK
-  '\u{1FB6F}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,1 L1,1 L0.5,0.5 Z' },            // LOWER TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB68}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,1 L0,1 L0.5,0.5 Z' },    // UPPER AND RIGHT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing left)
+  '\u{1FB69}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.5,0.5 L1,0 L1,1 L0,1 Z' },    // LEFT AND LOWER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing upper)
+  '\u{1FB6A}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L0.5,0.5 L1,1 L0,1 Z' },    // UPPER AND LEFT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing right)
+  '\u{1FB6B}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,1 L0.5,0.5 L0,1 Z' },    // LEFT AND UPPER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing lower)
+  '\u{1FB6C}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.5,0.5 L0,1 Z' },              // LEFT TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6D}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L0.5,0.5 Z' },              // UPPER TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6E}': { type: CustomGlyphDefinitionType.PATH, data: 'M1,0 L1,1 L0.5,0.5 Z' },              // RIGHT TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6F}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,1 L1,1 L0.5,0.5 Z' },              // LOWER TRIANGULAR ONE QUARTER BLOCK
 
   // #endregion
 };
