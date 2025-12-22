@@ -128,7 +128,7 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB38}': sextant(0b111011), // BLOCK SEXTANT-12456
   '\u{1FB39}': sextant(0b111100), // BLOCK SEXTANT-3456 (lower two thirds block)
   '\u{1FB3A}': sextant(0b111101), // BLOCK SEXTANT-13456
-  '\u{1FB3B}': sextant(0b111110),  // BLOCK SEXTANT-23456
+  '\u{1FB3B}': sextant(0b111110), // BLOCK SEXTANT-23456
 
   // Smooth mosaic terminal graphic characters (1FB3C-1FB6F)
   '\u{1FB3C}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0.6667 L0,1 L0.5,1 Z' },           // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
@@ -183,6 +183,53 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB6D}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L0.5,0.5 Z' },              // UPPER TRIANGULAR ONE QUARTER BLOCK
   '\u{1FB6E}': { type: CustomGlyphDefinitionType.PATH, data: 'M1,0 L1,1 L0.5,0.5 Z' },              // RIGHT TRIANGULAR ONE QUARTER BLOCK
   '\u{1FB6F}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,1 L1,1 L0.5,0.5 Z' },              // LOWER TRIANGULAR ONE QUARTER BLOCK
+
+  // TODO: Block elements, window title bar, block elements
+
+  // Rectangular shade characters (1FB8C-1FB94)
+  '\u{1FB8C}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[ // LEFT HALF MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], [0, 0, 0.5, 1]] },
+  '\u{1FB8D}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // RIGHT HALF MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], [0.5, 0, 0.5, 1]] },
+  '\u{1FB8E}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // UPPER HALF MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], [0, 0, 1, 0.5]] },
+  '\u{1FB8F}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // LOWER HALF MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], [0, 0.5, 1, 0.5]] },
+  '\u{1FB90}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // INVERSE MEDIUM SHADE
+    [0, 1],
+    [1, 0]
+  ], [0, 0, 1, 1]] },
+  // TODO: Make sure these are rendered correctly
+  '\u{1FB91}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
+    pattern: [[
+      [1, 0],
+      [0, 1]
+    ], [0, 0, 1, 0.5]],
+    vectors: [{ x: 0, y: 4, w: 8, h: 4 }]
+  } },
+  '\u{1FB92}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
+    pattern: [[
+      [1, 0],
+      [0, 1]
+    ], [0, 0.5, 1, 0.5]],
+    vectors: [{ x: 0, y: 0, w: 8, h: 4 }]
+  } },
+  // 1FB93 is reserved
+  '\u{1FB94}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
+    pattern: [[
+      [1, 0],
+      [0, 1]
+    ], [0.5, 0, 0.5, 1]],
+    vectors: [{ x: 0, y: 0, w: 4, h: 8 }]
+  } },
 
   // #endregion
 };
@@ -292,45 +339,6 @@ function sextant(pattern: number): { type: CustomGlyphDefinitionType.PATH_FUNCTI
     }
   };
 }
-
-/**
- * Rectangular shade characters - these use medium shade pattern (50%) like 0x2592.
- * Each entry is [pattern, region] where region is [x, y, width, height] in 0-1 normalized
- * coordinates. Pattern is the medium shade checkerboard pattern.
- */
-const mediumShadePattern: CustomGlyphPatternDefinition = [
-  [1, 0],
-  [0, 1]
-];
-
-const inverseMediumShadePattern: CustomGlyphPatternDefinition = [
-  [0, 1],
-  [1, 0]
-];
-
-export const rectangularShadeDefinitions: { [index: string]: [CustomGlyphPatternDefinition, [number, number, number, number]] | undefined } = {
-  '\u{1FB8C}': [mediumShadePattern, [0, 0, 0.5, 1]],     // LEFT HALF MEDIUM SHADE
-  '\u{1FB8D}': [mediumShadePattern, [0.5, 0, 0.5, 1]],   // RIGHT HALF MEDIUM SHADE
-  '\u{1FB8E}': [mediumShadePattern, [0, 0, 1, 0.5]],     // UPPER HALF MEDIUM SHADE
-  '\u{1FB8F}': [mediumShadePattern, [0, 0.5, 1, 0.5]],   // LOWER HALF MEDIUM SHADE
-  '\u{1FB90}': [inverseMediumShadePattern, [0, 0, 1, 1]] // INVERSE MEDIUM SHADE
-};
-
-/** Region defined as [x, y, width, height] in 0-1 normalized coordinates. */
-type RegionDefinition = [number, number, number, number];
-
-/** [solidRegion, shadeRegion] where shade region uses inverse medium shade pattern. */
-type BlockShadeComboDefinition = [RegionDefinition, RegionDefinition];
-
-/**
- * Block + inverse shade combo characters.
- */
-export const blockShadeComboDefinitions: { [index: string]: BlockShadeComboDefinition | undefined } = {
-  '\u{1FB91}': [[0, 0, 1, 0.5], [0, 0.5, 1, 0.5]],     // UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
-  '\u{1FB92}': [[0, 0.5, 1, 0.5], [0, 0, 1, 0.5]],     // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
-  // 1FB93 is reserved
-  '\u{1FB94}': [[0.5, 0, 0.5, 1], [0, 0, 0.5, 1]]      // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
-};
 
 const enum Shapes {
   /** │ */ TOP_TO_BOTTOM = 'M.5,0 L.5,1',

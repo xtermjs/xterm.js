@@ -4,8 +4,8 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, powerlineDefinitions, rectangularShadeDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+import { blockElementDefinitions, boxDrawingDefinitions, powerlineDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -30,6 +30,13 @@ export function tryDrawCustomGlyph(
       case CustomGlyphDefinitionType.BLOCK_PATTERN:
         drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
+        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR:
+        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data.pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        drawBlockVectorChar(ctx, unifiedCharDefinition.data.vectors, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
       case CustomGlyphDefinitionType.PATH_FUNCTION:
       case CustomGlyphDefinitionType.PATH:
         drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
@@ -40,18 +47,6 @@ export function tryDrawCustomGlyph(
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
     drawBlockVectorChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const rectangularShadeDefinition = rectangularShadeDefinitions[c];
-  if (rectangularShadeDefinition) {
-    drawRectangularShadeChar(ctx, rectangularShadeDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const blockShadeComboDefinition = blockShadeComboDefinitions[c];
-  if (blockShadeComboDefinition) {
-    drawBlockShadeComboChar(ctx, blockShadeComboDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
@@ -190,9 +185,9 @@ function drawPatternChar(
  * Draws rectangular shade characters - medium shade pattern clipped to a region.
  * Uses a checkerboard pattern that shifts 1px each row (same as medium shade U+2592).
  */
-function drawRectangularShadeChar(
+function drawBlockPatternWithRegion(
   ctx: CanvasRenderingContext2D,
-  definition: [CustomGlyphPatternDefinition, [number, number, number, number]],
+  definition: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition],
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
@@ -224,40 +219,40 @@ function drawRectangularShadeChar(
  * Draws block + inverse shade combo characters.
  * Fills the solid region completely, then draws inverse medium shade in the shade region.
  */
-function drawBlockShadeComboChar(
-  ctx: CanvasRenderingContext2D,
-  regions: [[number, number, number, number], [number, number, number, number]],
-  xOffset: number,
-  yOffset: number,
-  deviceCellWidth: number,
-  deviceCellHeight: number
-): void {
-  const [solidRegion, shadeRegion] = regions;
+// function drawBlockShadeComboChar(
+//   ctx: CanvasRenderingContext2D,
+//   regions: [[number, number, number, number], [number, number, number, number]],
+//   xOffset: number,
+//   yOffset: number,
+//   deviceCellWidth: number,
+//   deviceCellHeight: number
+// ): void {
+//   const [solidRegion, shadeRegion] = regions;
 
-  // Draw solid block region
-  const solidX = Math.round(xOffset + solidRegion[0] * deviceCellWidth);
-  const solidY = Math.round(yOffset + solidRegion[1] * deviceCellHeight);
-  const solidW = Math.round(solidRegion[2] * deviceCellWidth);
-  const solidH = Math.round(solidRegion[3] * deviceCellHeight);
-  ctx.fillRect(solidX, solidY, solidW, solidH);
+//   // Draw solid block region
+//   const solidX = Math.round(xOffset + solidRegion[0] * deviceCellWidth);
+//   const solidY = Math.round(yOffset + solidRegion[1] * deviceCellHeight);
+//   const solidW = Math.round(solidRegion[2] * deviceCellWidth);
+//   const solidH = Math.round(solidRegion[3] * deviceCellHeight);
+//   ctx.fillRect(solidX, solidY, solidW, solidH);
 
-  // Draw inverse medium shade region
-  const shadeX = Math.round(xOffset + shadeRegion[0] * deviceCellWidth);
-  const shadeY = Math.round(yOffset + shadeRegion[1] * deviceCellHeight);
-  const shadeW = Math.round(shadeRegion[2] * deviceCellWidth);
-  const shadeH = Math.round(shadeRegion[3] * deviceCellHeight);
+//   // Draw inverse medium shade region
+//   const shadeX = Math.round(xOffset + shadeRegion[0] * deviceCellWidth);
+//   const shadeY = Math.round(yOffset + shadeRegion[1] * deviceCellHeight);
+//   const shadeW = Math.round(shadeRegion[2] * deviceCellWidth);
+//   const shadeH = Math.round(shadeRegion[3] * deviceCellHeight);
 
-  for (let py = 0; py < shadeH; py++) {
-    const absY = shadeY + py - yOffset;
-    for (let px = 0; px < shadeW; px++) {
-      const absX = shadeX + px - xOffset;
-      // Inverse checkerboard: fill at (x + y) % 2 === 1
-      if (((absX + absY) % 2) === 1) {
-        ctx.fillRect(shadeX + px, shadeY + py, 1, 1);
-      }
-    }
-  }
-}
+//   for (let py = 0; py < shadeH; py++) {
+//     const absY = shadeY + py - yOffset;
+//     for (let px = 0; px < shadeW; px++) {
+//       const absX = shadeX + px - xOffset;
+//       // Inverse checkerboard: fill at (x + y) % 2 === 1
+//       if (((absX + absY) % 2) === 1) {
+//         ctx.fillRect(shadeX + px, shadeY + py, 1, 1);
+//       }
+//     }
+//   }
+// }
 
 /**
  * Draws the following box drawing characters by mapping a subset of SVG d attribute instructions to
