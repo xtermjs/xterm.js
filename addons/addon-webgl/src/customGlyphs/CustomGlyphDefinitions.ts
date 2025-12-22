@@ -63,7 +63,7 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // #endregion
 
-  // #region Powerline symbols (E0A0-E0BF)
+  // #region Powerline Symbols (E0A0-E0BF)
 
   // This contains the definitions of the primarily used box drawing characters as vector shapes.
   // The reason these characters are defined specially is to avoid common problems if a user's font
@@ -89,6 +89,9 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{E0B2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 L0,.5 L1,1', type: CustomGlyphVectorType.FILL, leftPadding: 2 } },
   // Left triangle line
   '\u{E0B3}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M2,-.5 L0,.5 L2,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 } },
+
+  // Powerline Extra Symbols
+
   // Right semi-circle solid
   '\u{E0B4}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: CustomGlyphVectorType.FILL, rightPadding: 1 } },
   // Right semi-circle line

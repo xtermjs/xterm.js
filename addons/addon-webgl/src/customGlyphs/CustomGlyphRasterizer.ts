@@ -4,7 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { blockElementDefinitions, boxDrawingDefinitions, powerlineDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
+import { blockElementDefinitions, boxDrawingDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**

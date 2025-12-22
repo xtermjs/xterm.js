@@ -71,7 +71,8 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
     // If labels exist and don't start at column 0, first output chars before first label
     if (rowLabels.length > 0 && rowLabels[0].col > 0) {
       const rowHex = row.toString(16).toUpperCase();
-      term.write(bold('U+' + rowHex + 'x '));
+      const rowPrefix = `U+${rowHex}x`.padEnd(8, ' ');
+      term.write(bold(rowPrefix));
       for (let col = 0; col < rowLabels[0].col; col++) {
         const codePoint = row * 16 + col;
         term.write(' ');
@@ -93,7 +94,7 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
     if (rowLabels.length > 0) {
       // Render label lines from top to bottom (first label on top, last label closest to row)
       for (let i = 0; i < rowLabels.length; i++) {
-        const prefix = '        '; // Same width as "U+1FB0x  "
+        const prefix = ' '.repeat(8); // Same width as "U+1FB0x  "
         let line = '';
         let visualLen = 0; // Track visual length separately from string length (escape codes don't count)
         for (let col = 0; col < 16; col++) {
@@ -117,7 +118,7 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
 
     // Row prefix (e.g., "U+1FB0x  ")
     const rowHex = row.toString(16).toUpperCase();
-    const rowPrefix = 'U+' + rowHex + 'x ';
+    const rowPrefix = `U+${rowHex}x`.padEnd(8, ' ');
     const isSecondPrint = rowLabels.length > 0 && rowLabels[0].col > 0;
     term.write(isSecondPrint ? ' '.repeat(rowPrefix.length) : bold(rowPrefix));
 

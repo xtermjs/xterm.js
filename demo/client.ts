@@ -849,6 +849,13 @@ function customGlyphRangesHandler(): void {
     ['Block elements', 0x2594, 0x2595],
     ['Terminal graphic characters', 0x2596, 0x259F],
   ]);
+  // Powerline Symbols
+  // Range: E0A0–E0BF
+  // https://github.com/ryanoasis/nerd-fonts
+  writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0BF, [
+    ['Powerline Symbols', 0xE0A0, 0xE0B3],
+    ['Powerline Extra Symbols', 0xE0B4, 0xE0BF],
+  ]);
   // Symbols for Legacy Computing
   // Range: 1FB00–1FBFF
   // https://www.unicode.org/charts/PDF/U1FB00.pdf
