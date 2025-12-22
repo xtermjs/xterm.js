@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -60,6 +60,59 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '▝': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 4 }] },                             // QUADRANT UPPER RIGHT
   '▞': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 4 }, { x: 0, y: 4, w: 4, h: 4 }] }, // QUADRANT UPPER RIGHT AND LOWER LEFT (-> 1F67E checker board, 1FB96 inverse checker board fill)
   '▟': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }] }, // QUADRANT UPPER RIGHT AND LOWER LEFT AND LOWER RIGHT
+
+  // #endregion
+
+  // #region Powerline symbols (E0A0-E0BF)
+
+  // This contains the definitions of the primarily used box drawing characters as vector shapes.
+  // The reason these characters are defined specially is to avoid common problems if a user's font
+  // has not been patched with powerline characters and also to get pixel perfect rendering as
+  // rendering issues can occur around AA/SPAA.
+  //
+  // The line variants draw beyond the cell and get clipped to ensure the end of the line is not
+  // visible.
+  //
+  // Original symbols defined in https://github.com/powerline/fontpatcher
+
+  // Git branch
+  '\u{E0A0}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.3,1 L.03,1 L.03,.88 C.03,.82,.06,.78,.11,.73 C.15,.7,.2,.68,.28,.65 L.43,.6 C.49,.58,.53,.56,.56,.53 C.59,.5,.6,.47,.6,.43 L.6,.27 L.4,.27 L.69,.1 L.98,.27 L.78,.27 L.78,.46 C.78,.52,.76,.56,.72,.61 C.68,.66,.63,.67,.56,.7 L.48,.72 C.42,.74,.38,.76,.35,.78 C.32,.8,.31,.84,.31,.88 L.31,1 M.3,.5 L.03,.59 L.03,.09 L.3,.09 L.3,.655', type: CustomGlyphVectorType.FILL } },
+  // L N
+  '\u{E0A1}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.7,.4 L.7,.47 L.2,.47 L.2,.03 L.355,.03 L.355,.4 L.705,.4 M.7,.5 L.86,.5 L.86,.95 L.69,.95 L.44,.66 L.46,.86 L.46,.95 L.3,.95 L.3,.49 L.46,.49 L.71,.78 L.69,.565 L.69,.5', type: CustomGlyphVectorType.FILL } },
+  // Lock
+  '\u{E0A2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.25,.94 C.16,.94,.11,.92,.11,.87 L.11,.53 C.11,.48,.15,.455,.23,.45 L.23,.3 C.23,.25,.26,.22,.31,.19 C.36,.16,.43,.15,.51,.15 C.59,.15,.66,.16,.71,.19 C.77,.22,.79,.26,.79,.3 L.79,.45 C.87,.45,.91,.48,.91,.53 L.91,.87 C.91,.92,.86,.94,.77,.94 L.24,.94 M.53,.2 C.49,.2,.45,.21,.42,.23 C.39,.25,.38,.27,.38,.3 L.38,.45 L.68,.45 L.68,.3 C.68,.27,.67,.25,.64,.23 C.61,.21,.58,.2,.53,.2 M.58,.82 L.58,.66 C.63,.65,.65,.63,.65,.6 C.65,.58,.64,.57,.61,.56 C.58,.55,.56,.54,.52,.54 C.48,.54,.46,.55,.43,.56 C.4,.57,.39,.59,.39,.6 C.39,.63,.41,.64,.46,.66 L.46,.82 L.57,.82', type: CustomGlyphVectorType.FILL } },
+  // Right triangle solid
+  '\u{E0B0}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,.5 L0,1', type: CustomGlyphVectorType.FILL, rightPadding: 2 } },
+  // Right triangle line
+  '\u{E0B1}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M-1,-.5 L1,.5 L-1,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 } },
+  // Left triangle solid
+  '\u{E0B2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 L0,.5 L1,1', type: CustomGlyphVectorType.FILL, leftPadding: 2 } },
+  // Left triangle line
+  '\u{E0B3}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M2,-.5 L0,.5 L2,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 } },
+  // Right semi-circle solid
+  '\u{E0B4}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: CustomGlyphVectorType.FILL, rightPadding: 1 } },
+  // Right semi-circle line
+  '\u{E0B5}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.2,1 C.422,1,.8,.826,.78,.5 C.8,.174,0.422,0,.2,0', type: CustomGlyphVectorType.STROKE, rightPadding: 1 } },
+  // Left semi-circle solid
+  '\u{E0B6}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: CustomGlyphVectorType.FILL, leftPadding: 1 } },
+  // Left semi-circle line
+  '\u{E0B7}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.8,1 C0.578,1,0.2,.826,.22,.5 C0.2,0.174,0.578,0,0.8,0', type: CustomGlyphVectorType.STROKE, leftPadding: 1 } },
+  // Lower left triangle
+  '\u{E0B8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M-.5,-.5 L1.5,1.5 L-.5,1.5', type: CustomGlyphVectorType.FILL } },
+  // Backslash separator
+  '\u{E0B9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M-.5,-.5 L1.5,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 } },
+  // Lower right triangle
+  '\u{E0BA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1.5,-.5 L-.5,1.5 L1.5,1.5', type: CustomGlyphVectorType.FILL } },
+  // Forward slash separator redundant (identical to E0BD)
+  '\u{E0BB}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1.5,-.5 L-.5,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 } },
+  // Upper left triangle
+  '\u{E0BC}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1.5,-.5 L-.5,1.5 L-.5,-.5', type: CustomGlyphVectorType.FILL } },
+  // Forward slash separator
+  '\u{E0BD}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1.5,-.5 L-.5,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 } },
+  // Upper right triangle
+  '\u{E0BE}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M-.5,-.5 L1.5,1.5 L1.5,-.5', type: CustomGlyphVectorType.FILL } },
+  // Backslash separator redundant (identical to E0B9)
+  '\u{E0BF}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M-.5,-.5 L1.5,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 } },
 
   // #endregion
 
@@ -522,55 +575,3 @@ export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number
   '╯': { [FontWeight.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5` },
   '╰': { [FontWeight.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5` }
 };
-
-/**
- * This contains the definitions of the primarily used box drawing characters as vector shapes. The
- * reason these characters are defined specially is to avoid common problems if a user's font has
- * not been patched with powerline characters and also to get pixel perfect rendering as rendering
- * issues can occur around AA/SPAA.
- *
- * The line variants draw beyond the cell and get clipped to ensure the end of the line is not
- * visible.
- *
- * Original symbols defined in https://github.com/powerline/fontpatcher
- */
-export const powerlineDefinitions: { [index: string]: ICustomGlyphVectorShape } = {
-  // Git branch
-  '\u{E0A0}': { d: 'M.3,1 L.03,1 L.03,.88 C.03,.82,.06,.78,.11,.73 C.15,.7,.2,.68,.28,.65 L.43,.6 C.49,.58,.53,.56,.56,.53 C.59,.5,.6,.47,.6,.43 L.6,.27 L.4,.27 L.69,.1 L.98,.27 L.78,.27 L.78,.46 C.78,.52,.76,.56,.72,.61 C.68,.66,.63,.67,.56,.7 L.48,.72 C.42,.74,.38,.76,.35,.78 C.32,.8,.31,.84,.31,.88 L.31,1 M.3,.5 L.03,.59 L.03,.09 L.3,.09 L.3,.655', type: CustomGlyphVectorType.FILL },
-  // L N
-  '\u{E0A1}': { d: 'M.7,.4 L.7,.47 L.2,.47 L.2,.03 L.355,.03 L.355,.4 L.705,.4 M.7,.5 L.86,.5 L.86,.95 L.69,.95 L.44,.66 L.46,.86 L.46,.95 L.3,.95 L.3,.49 L.46,.49 L.71,.78 L.69,.565 L.69,.5', type: CustomGlyphVectorType.FILL },
-  // Lock
-  '\u{E0A2}': { d: 'M.25,.94 C.16,.94,.11,.92,.11,.87 L.11,.53 C.11,.48,.15,.455,.23,.45 L.23,.3 C.23,.25,.26,.22,.31,.19 C.36,.16,.43,.15,.51,.15 C.59,.15,.66,.16,.71,.19 C.77,.22,.79,.26,.79,.3 L.79,.45 C.87,.45,.91,.48,.91,.53 L.91,.87 C.91,.92,.86,.94,.77,.94 L.24,.94 M.53,.2 C.49,.2,.45,.21,.42,.23 C.39,.25,.38,.27,.38,.3 L.38,.45 L.68,.45 L.68,.3 C.68,.27,.67,.25,.64,.23 C.61,.21,.58,.2,.53,.2 M.58,.82 L.58,.66 C.63,.65,.65,.63,.65,.6 C.65,.58,.64,.57,.61,.56 C.58,.55,.56,.54,.52,.54 C.48,.54,.46,.55,.43,.56 C.4,.57,.39,.59,.39,.6 C.39,.63,.41,.64,.46,.66 L.46,.82 L.57,.82', type: CustomGlyphVectorType.FILL },
-  // Right triangle solid
-  '\u{E0B0}': { d: 'M0,0 L1,.5 L0,1', type: CustomGlyphVectorType.FILL, rightPadding: 2 },
-  // Right triangle line
-  '\u{E0B1}': { d: 'M-1,-.5 L1,.5 L-1,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 },
-  // Left triangle solid
-  '\u{E0B2}': { d: 'M1,0 L0,.5 L1,1', type: CustomGlyphVectorType.FILL, leftPadding: 2 },
-  // Left triangle line
-  '\u{E0B3}': { d: 'M2,-.5 L0,.5 L2,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 },
-  // Right semi-circle solid
-  '\u{E0B4}': { d: 'M0,0 L0,1 C0.552,1,1,0.776,1,.5 C1,0.224,0.552,0,0,0', type: CustomGlyphVectorType.FILL, rightPadding: 1 },
-  // Right semi-circle line
-  '\u{E0B5}': { d: 'M.2,1 C.422,1,.8,.826,.78,.5 C.8,.174,0.422,0,.2,0', type: CustomGlyphVectorType.STROKE, rightPadding: 1 },
-  // Left semi-circle solid
-  '\u{E0B6}': { d: 'M1,0 L1,1 C0.448,1,0,0.776,0,.5 C0,0.224,0.448,0,1,0', type: CustomGlyphVectorType.FILL, leftPadding: 1 },
-  // Left semi-circle line
-  '\u{E0B7}': { d: 'M.8,1 C0.578,1,0.2,.826,.22,.5 C0.2,0.174,0.578,0,0.8,0', type: CustomGlyphVectorType.STROKE, leftPadding: 1 },
-  // Lower left triangle
-  '\u{E0B8}': { d: 'M-.5,-.5 L1.5,1.5 L-.5,1.5', type: CustomGlyphVectorType.FILL },
-  // Backslash separator
-  '\u{E0B9}': { d: 'M-.5,-.5 L1.5,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 },
-  // Lower right triangle
-  '\u{E0BA}': { d: 'M1.5,-.5 L-.5,1.5 L1.5,1.5', type: CustomGlyphVectorType.FILL },
-  // Upper left triangle
-  '\u{E0BC}': { d: 'M1.5,-.5 L-.5,1.5 L-.5,-.5', type: CustomGlyphVectorType.FILL },
-  // Forward slash separator
-  '\u{E0BD}': { d: 'M1.5,-.5 L-.5,1.5', type: CustomGlyphVectorType.STROKE, leftPadding: 1, rightPadding: 1 },
-  // Upper right triangle
-  '\u{E0BE}': { d: 'M-.5,-.5 L1.5,1.5 L1.5,-.5', type: CustomGlyphVectorType.FILL }
-};
-// Forward slash separator redundant
-powerlineDefinitions['\u{E0BB}'] = powerlineDefinitions['\u{E0BD}'];
-// Backslash separator redundant
-powerlineDefinitions['\u{E0BF}'] = powerlineDefinitions['\u{E0B9}'];

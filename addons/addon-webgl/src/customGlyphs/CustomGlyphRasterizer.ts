@@ -41,6 +41,9 @@ export function tryDrawCustomGlyph(
       case CustomGlyphDefinitionType.PATH:
         drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
+      case CustomGlyphDefinitionType.VECTOR_SHAPE:
+        drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
+        return true;
     }
   }
 
@@ -53,12 +56,6 @@ export function tryDrawCustomGlyph(
   const boxDrawingDefinition = boxDrawingDefinitions[c];
   if (boxDrawingDefinition) {
     drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
-    return true;
-  }
-
-  const powerlineDefinition = powerlineDefinitions[c];
-  if (powerlineDefinition) {
-    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
     return true;
   }
 
@@ -294,7 +291,7 @@ function drawBoxDrawingChar(
   }
 }
 
-function drawPowerlineChar(
+function drawVectorShape(
   ctx: CanvasRenderingContext2D,
   charDefinition: ICustomGlyphVectorShape,
   xOffset: number,
