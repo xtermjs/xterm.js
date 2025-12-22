@@ -489,6 +489,70 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
     { x: 0, y: 2, w: 8, h: 2 }, { x: 0, y: 6, w: 8, h: 2 }
   ] },
 
+  // Diagonal fill characters (1FB98-1FB99)
+
+  // TODO: Implement
+
+  // Smooth mosaic terminal graphic characters (1FB9A-1FB9B)
+
+  // TODO: Implement
+
+  // Triangular shade characters (1FB9C-1FB9F)
+
+  // TODO: Implement
+
+  // Character cell diagonals (1FBA0-1FBAE)
+
+  // TODO: Implement
+
+  // Light solid line with stroke (1FBAF-1FBAF)
+
+  // TODO: Implement
+
+  // Terminal graphic characters (1FBB0-1FBB3)
+
+  // TODO: Consider implementing
+
+  // Arrows (1FBB4-1FBB8)
+
+  // TODO: Consider implementing
+
+  // Terminal graphic characters (1FBB9-1FBBC)
+
+  // TODO: Consider implementing
+
+  // Negative terminal graphic characters (1FBBD-1FBBF)
+
+  // TODO: Implement
+
+  // Terminal graphic characters (1FBC0-1FBCA)
+
+  // TODO: Consider implementing
+
+  // Terminal graphic characters (1FBCB-1FBCD)
+
+  // TODO: Consider implementing
+
+  // Block elements (1FBCE-1FBCF)
+
+  // TODO: Implementing
+
+  // Character cell diagonals (1FBD0-1FBDF)
+
+  // TODO: Implement
+
+  // Geometric shapes (1FBE0-1FBEF)
+
+  // TODO: Implement
+
+  // Segmented digits (1FBF0-1FBF9)
+
+  // TODO: Consider implementing
+
+  // Terminal graphic character (1FBFA-1FBFA)
+
+  // TODO: Consider implementing
+
   // #endregion
 };
 
