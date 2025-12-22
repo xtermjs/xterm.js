@@ -3,9 +3,12 @@
  * @license MIT
  */
 
+import { CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape, type CustomGlyphPatternDefinition } from 'customGlyphs/CustomGlyphRasterizer';
+export const unifiedCharDefinitions: { [index: string]: ICustomGlyphVectorShape[] | undefined } = {
+};
 
 export const blockElementDefinitions: { [index: string]: ICustomGlyphSolidOctantBlockVector[] | undefined } = {
   // Block elements (0x2580-0x2590)

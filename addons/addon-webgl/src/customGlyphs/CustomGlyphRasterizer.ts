@@ -5,33 +5,7 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, patternCharacterDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
-
-export interface ICustomGlyphSolidOctantBlockVector {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-/**
- * @param xp The percentage of 15% of the x axis.
- * @param yp The percentage of 15% of the x axis on the y axis.
- */
-export type CustomGlyphDrawFunctionDefinition = (xp: number, yp: number) => string;
-
-export interface ICustomGlyphVectorShape {
-  d: string;
-  type: CustomGlyphVectorType;
-  leftPadding?: number;
-  rightPadding?: number;
-}
-
-export const enum CustomGlyphVectorType {
-  FILL,
-  STROKE
-}
-
-export type CustomGlyphPatternDefinition = number[][];
+import { CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
