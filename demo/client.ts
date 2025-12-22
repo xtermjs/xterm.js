@@ -840,6 +840,21 @@ function customGlyphAlignmentHandler(): void {
 }
 
 function customGlyphRangesHandler(): void {
+  // Box Drawing
+  // 2500-257F
+  // https://www.unicode.org/charts/PDF/U2500.pdf
+  writeUnicodeTable(term, 'Box Drawing', 0x2500, 0x257F, [
+    ['Light and heavy solid lines', 0x2500, 0x2503],
+    ['Light and heavy dashed lines', 0x2504, 0x250B],
+    ['Light and heavy line box components', 0x250C, 0x254B],
+    ['Light and heavy dashed lines', 0x254C, 0x254F],
+    ['Double lines', 0x2550, 0x2551],
+    ['Light and double line box components', 0x2552, 0x256C],
+    ['Character cell arcs', 0x256D, 0x2570],
+    ['Character cell diagonals', 0x2571, 0x2573],
+    ['Light and heavy half lines', 0x2574, 0x257B],
+    ['Mixed light and heavy lines', 0x257C, 0x257F],
+  ]);
   // Box Elements
   // 2580-259F
   // https://www.unicode.org/charts/PDF/U2580.pdf
