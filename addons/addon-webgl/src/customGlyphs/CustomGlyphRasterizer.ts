@@ -6,7 +6,7 @@
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, patternCharacterDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
 
-export interface ISolidOctantBlockVector {
+export interface ICustomGlyphSolidOctantBlockVector {
   x: number;
   y: number;
   w: number;
@@ -17,25 +17,27 @@ export interface ISolidOctantBlockVector {
  * @param xp The percentage of 15% of the x axis.
  * @param yp The percentage of 15% of the x axis on the y axis.
  */
-export type DrawFunctionDefinition = (xp: number, yp: number) => string;
+export type CustomGlyphDrawFunctionDefinition = (xp: number, yp: number) => string;
 
-export interface IVectorShape {
+export interface ICustomGlyphVectorShape {
   d: string;
-  type: VectorType;
+  type: CustomGlyphVectorType;
   leftPadding?: number;
   rightPadding?: number;
 }
 
-export const enum VectorType {
+export const enum CustomGlyphVectorType {
   FILL,
   STROKE
 }
+
+export type CustomGlyphPatternDefinition = number[][];
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
  * successfully drawn.
  */
-export function tryDrawCustomChar(
+export function tryDrawCustomGlyph(
   ctx: CanvasRenderingContext2D,
   c: string,
   xOffset: number,
@@ -92,7 +94,7 @@ export function tryDrawCustomChar(
 
 function drawBlockVectorChar(
   ctx: CanvasRenderingContext2D,
-  charDefinition: ISolidOctantBlockVector[],
+  charDefinition: ICustomGlyphSolidOctantBlockVector[],
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
@@ -113,7 +115,7 @@ function drawBlockVectorChar(
 
 function drawPathDefinitionCharacter(
   ctx: CanvasRenderingContext2D,
-  charDefinition: DrawFunctionDefinition,
+  charDefinition: CustomGlyphDrawFunctionDefinition,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
@@ -145,8 +147,7 @@ function drawPathDefinitionCharacter(
   ctx.fill();
 }
 
-export type PatternDefinition = number[][];
-const cachedPatterns: Map<PatternDefinition, Map</* fillStyle */string, CanvasPattern>> = new Map();
+const cachedPatterns: Map<CustomGlyphPatternDefinition, Map</* fillStyle */string, CanvasPattern>> = new Map();
 
 function drawPatternChar(
   ctx: CanvasRenderingContext2D,
@@ -363,7 +364,7 @@ function drawBoxDrawingChar(
 
 function drawPowerlineChar(
   ctx: CanvasRenderingContext2D,
-  charDefinition: IVectorShape,
+  charDefinition: ICustomGlyphVectorShape,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
@@ -403,7 +404,7 @@ function drawPowerlineChar(
       (charDefinition.rightPadding ?? 0) * (cssLineWidth / 2)
     ));
   }
-  if (charDefinition.type === VectorType.STROKE) {
+  if (charDefinition.type === CustomGlyphVectorType.STROKE) {
     ctx.strokeStyle = ctx.fillStyle;
     ctx.stroke();
   } else {
