@@ -7,7 +7,7 @@ import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphChara
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
-export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
+export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
   // #region Box Drawing (2500-257F)
 
   // https://www.unicode.org/charts/PDF/U2500.pdf

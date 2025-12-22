@@ -4,7 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
+import { customGlyphDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**
@@ -21,7 +21,7 @@ export function tryDrawCustomGlyph(
   fontSize: number,
   devicePixelRatio: number
 ): boolean {
-  const unifiedCharDefinition = unifiedCharDefinitions[c];
+  const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
     switch (unifiedCharDefinition.type) {
       case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
