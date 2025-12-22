@@ -117,6 +117,109 @@ export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefi
   '\u{1FB97}': [{ x: 0, y: 2, w: 8, h: 2 }, { x: 0, y: 6, w: 8, h: 2 }]
 };
 
+/**
+ * Generates a drawing function for sextant characters.
+ * Sextants are a 2x3 grid where each cell can be on or off.
+ * @param pattern A 6-bit pattern where bit 0 = top-left, bit 1 = top-right,
+ *                bit 2 = middle-left, bit 3 = middle-right, bit 4 = bottom-left, bit 5 = bottom-right
+ */
+function sextant(pattern: number): DrawFunctionDefinition {
+  return () => {
+    // Sextant grid: 2 columns, 3 rows
+    // Row heights in 8ths: top=3, middle=2, bottom=3
+    // Column widths: left=4, right=4
+    const rects: string[] = [];
+    const colW = 0.5; // Each column is half width
+    const rowH = [3 / 8, 2 / 8, 3 / 8]; // Row heights as fractions
+    const rowY = [0, 3 / 8, 5 / 8]; // Row Y positions
+
+    for (let row = 0; row < 3; row++) {
+      const leftBit = (pattern >> (row * 2)) & 1;
+      const rightBit = (pattern >> (row * 2 + 1)) & 1;
+
+      if (leftBit && rightBit) {
+        // Full row
+        rects.push(`M0,${rowY[row]} L1,${rowY[row]} L1,${rowY[row] + rowH[row]} L0,${rowY[row] + rowH[row]} Z`);
+      } else if (leftBit) {
+        rects.push(`M0,${rowY[row]} L${colW},${rowY[row]} L${colW},${rowY[row] + rowH[row]} L0,${rowY[row] + rowH[row]} Z`);
+      } else if (rightBit) {
+        rects.push(`M${colW},${rowY[row]} L1,${rowY[row]} L1,${rowY[row] + rowH[row]} L${colW},${rowY[row] + rowH[row]} Z`);
+      }
+    }
+    return rects.join(' ');
+  };
+}
+
+export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFunctionDefinition | undefined } = {
+  // Block sextants (0x1FB00-0x1FB3B)
+  // Each sextant is a 2x3 grid of cells in an 8x8 block
+  // Cell positions: bit 0=top-left, bit 1=top-right, bit 2=middle-left, bit 3=middle-right, bit 4=bottom-left, bit 5=bottom-right
+  // Patterns 0 (empty), 21 (left half), 42 (right half), 63 (full) are excluded as they exist elsewhere
+  '\u{1FB00}': sextant(0b000001), // BLOCK SEXTANT-1
+  '\u{1FB01}': sextant(0b000010), // BLOCK SEXTANT-2
+  '\u{1FB02}': sextant(0b000011), // BLOCK SEXTANT-12 (upper one third block)
+  '\u{1FB03}': sextant(0b000100), // BLOCK SEXTANT-3
+  '\u{1FB04}': sextant(0b000101), // BLOCK SEXTANT-13
+  '\u{1FB05}': sextant(0b000110), // BLOCK SEXTANT-23
+  '\u{1FB06}': sextant(0b000111), // BLOCK SEXTANT-123
+  '\u{1FB07}': sextant(0b001000), // BLOCK SEXTANT-4
+  '\u{1FB08}': sextant(0b001001), // BLOCK SEXTANT-14
+  '\u{1FB09}': sextant(0b001010), // BLOCK SEXTANT-24
+  '\u{1FB0A}': sextant(0b001011), // BLOCK SEXTANT-124
+  '\u{1FB0B}': sextant(0b001100), // BLOCK SEXTANT-34 (middle one third block)
+  '\u{1FB0C}': sextant(0b001101), // BLOCK SEXTANT-134
+  '\u{1FB0D}': sextant(0b001110), // BLOCK SEXTANT-234
+  '\u{1FB0E}': sextant(0b001111), // BLOCK SEXTANT-1234 (upper two thirds block)
+  '\u{1FB0F}': sextant(0b010000), // BLOCK SEXTANT-5
+  '\u{1FB10}': sextant(0b010001), // BLOCK SEXTANT-15
+  '\u{1FB11}': sextant(0b010010), // BLOCK SEXTANT-25
+  '\u{1FB12}': sextant(0b010011), // BLOCK SEXTANT-125
+  '\u{1FB13}': sextant(0b010100), // BLOCK SEXTANT-35
+  // Pattern 21 (0x15 = 0b010101) = left half block, skipped (exists as U+258C)
+  '\u{1FB14}': sextant(0b010110), // BLOCK SEXTANT-235
+  '\u{1FB15}': sextant(0b010111), // BLOCK SEXTANT-1235
+  '\u{1FB16}': sextant(0b011000), // BLOCK SEXTANT-45
+  '\u{1FB17}': sextant(0b011001), // BLOCK SEXTANT-145
+  '\u{1FB18}': sextant(0b011010), // BLOCK SEXTANT-245
+  '\u{1FB19}': sextant(0b011011), // BLOCK SEXTANT-1245
+  '\u{1FB1A}': sextant(0b011100), // BLOCK SEXTANT-345
+  '\u{1FB1B}': sextant(0b011101), // BLOCK SEXTANT-1345
+  '\u{1FB1C}': sextant(0b011110), // BLOCK SEXTANT-2345
+  '\u{1FB1D}': sextant(0b011111), // BLOCK SEXTANT-12345
+  '\u{1FB1E}': sextant(0b100000), // BLOCK SEXTANT-6
+  '\u{1FB1F}': sextant(0b100001), // BLOCK SEXTANT-16
+  '\u{1FB20}': sextant(0b100010), // BLOCK SEXTANT-26
+  '\u{1FB21}': sextant(0b100011), // BLOCK SEXTANT-126
+  '\u{1FB22}': sextant(0b100100), // BLOCK SEXTANT-36
+  '\u{1FB23}': sextant(0b100101), // BLOCK SEXTANT-136
+  '\u{1FB24}': sextant(0b100110), // BLOCK SEXTANT-236
+  '\u{1FB25}': sextant(0b100111), // BLOCK SEXTANT-1236
+  '\u{1FB26}': sextant(0b101000), // BLOCK SEXTANT-46
+  '\u{1FB27}': sextant(0b101001), // BLOCK SEXTANT-146
+  // Pattern 42 (0x2A = 0b101010) = right half block, skipped (exists as U+2590)
+  '\u{1FB28}': sextant(0b101011), // BLOCK SEXTANT-1246
+  '\u{1FB29}': sextant(0b101100), // BLOCK SEXTANT-346
+  '\u{1FB2A}': sextant(0b101101), // BLOCK SEXTANT-1346
+  '\u{1FB2B}': sextant(0b101110), // BLOCK SEXTANT-2346
+  '\u{1FB2C}': sextant(0b101111), // BLOCK SEXTANT-12346
+  '\u{1FB2D}': sextant(0b110000), // BLOCK SEXTANT-56 (lower one third block)
+  '\u{1FB2E}': sextant(0b110001), // BLOCK SEXTANT-156
+  '\u{1FB2F}': sextant(0b110010), // BLOCK SEXTANT-256
+  '\u{1FB30}': sextant(0b110011), // BLOCK SEXTANT-1256 (upper and lower one third block)
+  '\u{1FB31}': sextant(0b110100), // BLOCK SEXTANT-356
+  '\u{1FB32}': sextant(0b110101), // BLOCK SEXTANT-1356
+  '\u{1FB33}': sextant(0b110110), // BLOCK SEXTANT-2356
+  '\u{1FB34}': sextant(0b110111), // BLOCK SEXTANT-12356
+  '\u{1FB35}': sextant(0b111000), // BLOCK SEXTANT-456
+  '\u{1FB36}': sextant(0b111001), // BLOCK SEXTANT-1456
+  '\u{1FB37}': sextant(0b111010), // BLOCK SEXTANT-2456
+  '\u{1FB38}': sextant(0b111011), // BLOCK SEXTANT-12456
+  '\u{1FB39}': sextant(0b111100), // BLOCK SEXTANT-3456 (lower two thirds block)
+  '\u{1FB3A}': sextant(0b111101), // BLOCK SEXTANT-13456
+  '\u{1FB3B}': sextant(0b111110), // BLOCK SEXTANT-23456
+  // Pattern 63 (0x3F = 0b111111) = full block, skipped (exists as U+2588)
+};
+
 type PatternDefinition = number[][];
 
 /**
@@ -411,7 +514,13 @@ export function tryDrawCustomChar(
 ): boolean {
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
-    drawBlockElementChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+    drawBlockVectorChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+    return true;
+  }
+
+  const symbolsForLegacyComputingDefinition = symbolsForLegacyComputingDefinitions[c];
+  if (symbolsForLegacyComputingDefinition) {
+    drawSextantChar(ctx, symbolsForLegacyComputingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
@@ -436,7 +545,7 @@ export function tryDrawCustomChar(
   return false;
 }
 
-function drawBlockElementChar(
+function drawBlockVectorChar(
   ctx: CanvasRenderingContext2D,
   charDefinition: IBlockVector[],
   xOffset: number,
@@ -455,6 +564,40 @@ function drawBlockElementChar(
       box.h * yEighth
     );
   }
+}
+
+function drawSextantChar(
+  ctx: CanvasRenderingContext2D,
+  charDefinition: DrawFunctionDefinition,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number
+): void {
+  const instructions = charDefinition(0, 0);
+  ctx.beginPath();
+  for (const instruction of instructions.split(' ')) {
+    const type = instruction[0];
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      if (type === 'Z') {
+        ctx.closePath();
+      }
+      continue;
+    }
+    const translatedArgs = args.map((e, i) => {
+      const val = parseFloat(e);
+      return i % 2 === 0
+        ? xOffset + val * deviceCellWidth
+        : yOffset + val * deviceCellHeight;
+    });
+    if (type === 'M') {
+      ctx.moveTo(translatedArgs[0], translatedArgs[1]);
+    } else if (type === 'L') {
+      ctx.lineTo(translatedArgs[0], translatedArgs[1]);
+    }
+  }
+  ctx.fill();
 }
 
 const cachedPatterns: Map<PatternDefinition, Map</* fillStyle */string, CanvasPattern>> = new Map();
