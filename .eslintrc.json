@@ -159,14 +159,6 @@
     "@typescript-eslint/prefer-namespace-keyword": "warn",
     "@typescript-eslint/type-annotation-spacing": "warn",
 
-    "comma-dangle": [
-      "warn",
-      {
-        "objects": "never",
-        "arrays": "never",
-        "functions": "never"
-      }
-    ],
     "curly": [
       "warn",
       "multi-line"

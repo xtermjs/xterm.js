@@ -4,8 +4,8 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, patternCharacterDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
-import { CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+import { customGlyphDefinitions } from './CustomGlyphDefinitions';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -21,46 +21,33 @@ export function tryDrawCustomGlyph(
   fontSize: number,
   devicePixelRatio: number
 ): boolean {
-  const blockElementDefinition = blockElementDefinitions[c];
-  if (blockElementDefinition) {
-    drawBlockVectorChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const symbolsForLegacyComputingDefinition = symbolsForLegacyComputingDefinitions[c];
-  if (symbolsForLegacyComputingDefinition) {
-    drawPathDefinitionCharacter(ctx, symbolsForLegacyComputingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const rectangularShadeDefinition = rectangularShadeDefinitions[c];
-  if (rectangularShadeDefinition) {
-    drawRectangularShadeChar(ctx, rectangularShadeDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const blockShadeComboDefinition = blockShadeComboDefinitions[c];
-  if (blockShadeComboDefinition) {
-    drawBlockShadeComboChar(ctx, blockShadeComboDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const patternDefinition = patternCharacterDefinitions[c];
-  if (patternDefinition) {
-    drawPatternChar(ctx, patternDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const boxDrawingDefinition = boxDrawingDefinitions[c];
-  if (boxDrawingDefinition) {
-    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
-    return true;
-  }
-
-  const powerlineDefinition = powerlineDefinitions[c];
-  if (powerlineDefinition) {
-    drawPowerlineChar(ctx, powerlineDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
-    return true;
+  const unifiedCharDefinition = customGlyphDefinitions[c];
+  if (unifiedCharDefinition) {
+    switch (unifiedCharDefinition.type) {
+      case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
+        drawBlockVectorChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN:
+        drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
+        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR:
+        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data.pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        drawBlockVectorChar(ctx, unifiedCharDefinition.data.vectors, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.PATH_FUNCTION:
+      case CustomGlyphDefinitionType.PATH:
+        drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.VECTOR_SHAPE:
+        drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
+        return true;
+      case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
+        drawPathDefinitionCharacterWithWeight(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
+        return true;
+    }
   }
 
   return false;
@@ -89,13 +76,13 @@ function drawBlockVectorChar(
 
 function drawPathDefinitionCharacter(
   ctx: CanvasRenderingContext2D,
-  charDefinition: CustomGlyphDrawFunctionDefinition,
+  charDefinition: CustomGlyphPathDrawFunctionDefinition | string,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number
 ): void {
-  const instructions = charDefinition(0, 0);
+  const instructions = typeof charDefinition === 'string' ? charDefinition : charDefinition(0, 0);
   ctx.beginPath();
   for (const instruction of instructions.split(' ')) {
     const type = instruction[0];
@@ -186,9 +173,9 @@ function drawPatternChar(
  * Draws rectangular shade characters - medium shade pattern clipped to a region.
  * Uses a checkerboard pattern that shifts 1px each row (same as medium shade U+2592).
  */
-function drawRectangularShadeChar(
+function drawBlockPatternWithRegion(
   ctx: CanvasRenderingContext2D,
-  definition: [CustomGlyphPatternDefinition, [number, number, number, number]],
+  definition: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition],
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
@@ -214,45 +201,6 @@ function drawRectangularShadeChar(
 
   // Restore context state
   ctx.restore();
-}
-
-/**
- * Draws block + inverse shade combo characters.
- * Fills the solid region completely, then draws inverse medium shade in the shade region.
- */
-function drawBlockShadeComboChar(
-  ctx: CanvasRenderingContext2D,
-  regions: [[number, number, number, number], [number, number, number, number]],
-  xOffset: number,
-  yOffset: number,
-  deviceCellWidth: number,
-  deviceCellHeight: number
-): void {
-  const [solidRegion, shadeRegion] = regions;
-
-  // Draw solid block region
-  const solidX = Math.round(xOffset + solidRegion[0] * deviceCellWidth);
-  const solidY = Math.round(yOffset + solidRegion[1] * deviceCellHeight);
-  const solidW = Math.round(solidRegion[2] * deviceCellWidth);
-  const solidH = Math.round(solidRegion[3] * deviceCellHeight);
-  ctx.fillRect(solidX, solidY, solidW, solidH);
-
-  // Draw inverse medium shade region
-  const shadeX = Math.round(xOffset + shadeRegion[0] * deviceCellWidth);
-  const shadeY = Math.round(yOffset + shadeRegion[1] * deviceCellHeight);
-  const shadeW = Math.round(shadeRegion[2] * deviceCellWidth);
-  const shadeH = Math.round(shadeRegion[3] * deviceCellHeight);
-
-  for (let py = 0; py < shadeH; py++) {
-    const absY = shadeY + py - yOffset;
-    for (let px = 0; px < shadeW; px++) {
-      const absX = shadeX + px - xOffset;
-      // Inverse checkerboard: fill at (x + y) % 2 === 1
-      if (((absX + absY) % 2) === 1) {
-        ctx.fillRect(shadeX + px, shadeY + py, 1, 1);
-      }
-    }
-  }
 }
 
 /**
@@ -295,7 +243,7 @@ function drawBlockShadeComboChar(
  *
  * Source: https://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html
  */
-function drawBoxDrawingChar(
+function drawPathDefinitionCharacterWithWeight(
   ctx: CanvasRenderingContext2D,
   charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
   xOffset: number,
@@ -334,7 +282,7 @@ function drawBoxDrawingChar(
   }
 }
 
-function drawPowerlineChar(
+function drawVectorShape(
   ctx: CanvasRenderingContext2D,
   charDefinition: ICustomGlyphVectorShape,
   xOffset: number,

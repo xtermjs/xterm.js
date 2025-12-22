@@ -234,8 +234,8 @@ if (document.location.pathname === '/test') {
   document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
-  document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
-  document.getElementById('symbols-for-legacy-computing').addEventListener('click', writeSymbolsForLegacyComputing);
+  document.getElementById('custom-glyph-alignment').addEventListener('click', customGlyphAlignmentHandler);
+  document.getElementById('custom-glyph-ranges').addEventListener('click', customGlyphRangesHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
   document.getElementById('print-cjk').addEventListener('click', addCjk);
@@ -786,7 +786,7 @@ function styleAtlasPage(e: HTMLCanvasElement): void {
   e.style.height = `${e.height / window.devicePixelRatio}px`;
 }
 
-function writeCustomGlyphHandler(): void {
+function customGlyphAlignmentHandler(): void {
   term.write('\n\r');
   term.write('\n\r');
   term.write('Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐\n\r');
@@ -839,10 +839,41 @@ function writeCustomGlyphHandler(): void {
   window.scrollTo(0, 0);
 }
 
-function writeSymbolsForLegacyComputing(): void {
+function customGlyphRangesHandler(): void {
+  // Box Drawing
+  // 2500-257F
+  // https://www.unicode.org/charts/PDF/U2500.pdf
+  writeUnicodeTable(term, 'Box Drawing', 0x2500, 0x257F, [
+    ['Light and heavy solid lines', 0x2500, 0x2503],
+    ['Light and heavy dashed lines', 0x2504, 0x250B],
+    ['Light and heavy line box components', 0x250C, 0x254B],
+    ['Light and heavy dashed lines', 0x254C, 0x254F],
+    ['Double lines', 0x2550, 0x2551],
+    ['Light and double line box components', 0x2552, 0x256C],
+    ['Character cell arcs', 0x256D, 0x2570],
+    ['Character cell diagonals', 0x2571, 0x2573],
+    ['Light and heavy half lines', 0x2574, 0x257B],
+    ['Mixed light and heavy lines', 0x257C, 0x257F],
+  ]);
+  // Box Elements
+  // 2580-259F
+  // https://www.unicode.org/charts/PDF/U2580.pdf
+  writeUnicodeTable(term, 'Box Elements', 0x2580, 0x259F, [
+    ['Block elements', 0x2580, 0x2590],
+    ['Shade characters', 0x2591, 0x2593],
+    ['Block elements', 0x2594, 0x2595],
+    ['Terminal graphic characters', 0x2596, 0x259F],
+  ]);
+  // Powerline Symbols
+  // Range: E0A0–E0BF
+  // https://github.com/ryanoasis/nerd-fonts
+  writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0BF, [
+    ['Powerline Symbols', 0xE0A0, 0xE0B3],
+    ['Powerline Extra Symbols', 0xE0B4, 0xE0BF],
+  ]);
   // Symbols for Legacy Computing
   // Range: 1FB00–1FBFF
-  // Source: The Unicode Standard, Version 17.0 https://www.unicode.org/charts/PDF/U1FB00.pdf
+  // https://www.unicode.org/charts/PDF/U1FB00.pdf
   writeUnicodeTable(term, 'Symbols for Legacy Computing', 0x1FB00, 0x1FBFF, [
     ['Block mosaic terminal graphic characters (Sextants)', 0x1FB00, 0x1FB3B],
     ['Smooth mosaic terminal graphic characters', 0x1FB3C, 0x1FB6F],
