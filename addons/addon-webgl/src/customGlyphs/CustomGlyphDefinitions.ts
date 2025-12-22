@@ -550,8 +550,22 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // TODO: Implementing
 
   // Character cell diagonals (1FBD0-1FBDF)
-
-  // TODO: Implement
+  '\u{1FBD0}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,.5 L0,1' } },       // BOX DRAWINGS LIGHT DIAGONAL MIDDLE RIGHT TO LOWER LEFT
+  '\u{1FBD1}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L0,.5' } },       // BOX DRAWINGS LIGHT DIAGONAL UPPER RIGHT TO MIDDLE LEFT
+  '\u{1FBD2}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L1,.5' } },       // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO MIDDLE RIGHT
+  '\u{1FBD3}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L1,1' } },       // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FBD4}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L.5,1' } },       // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO LOWER CENTRE
+  '\u{1FBD5}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,1' } },       // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO LOWER RIGHT
+  '\u{1FBD6}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L.5,1' } },       // BOX DRAWINGS LIGHT DIAGONAL UPPER RIGHT TO LOWER CENTRE
+  '\u{1FBD7}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,1' } },       // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO LOWER LEFT
+  '\u{1FBD8}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L.5,.5 L1,0' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO MIDDLE CENTRE TO UPPER RIGHT
+  '\u{1FBD9}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L.5,.5 L1,1' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER RIGHT TO MIDDLE CENTRE TO LOWER RIGHT
+  '\u{1FBDA}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,1 L.5,.5 L1,1' } }, // BOX DRAWINGS LIGHT DIAGONAL LOWER LEFT TO MIDDLE CENTRE TO LOWER RIGHT
+  '\u{1FBDB}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L.5,.5 L0,1' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO MIDDLE CENTRE TO LOWER LEFT
+  '\u{1FBDC}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L.5,1 L1,0' } },  // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO LOWER CENTRE TO UPPER RIGHT
+  '\u{1FBDD}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L0,.5 L1,1' } },  // BOX DRAWINGS LIGHT DIAGONAL UPPER RIGHT TO MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FBDE}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,1 L.5,0 L1,1' } },  // BOX DRAWINGS LIGHT DIAGONAL LOWER LEFT TO UPPER CENTRE TO LOWER RIGHT
+  '\u{1FBDF}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L1,.5 L0,1' } },  // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO MIDDLE RIGHT TO LOWER LEFT
 
   // Geometric shapes (1FBE0-1FBEF)
 
