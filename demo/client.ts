@@ -29,6 +29,8 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
+import { writeUnicodeTable, type UnicodeRangeDefinition } from './unicodeTable';
+
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
   Terminal: typeof Terminal;
@@ -233,6 +235,7 @@ if (document.location.pathname === '/test') {
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
   document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
+  document.getElementById('symbols-for-legacy-computing').addEventListener('click', writeSymbolsForLegacyComputing);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
   document.getElementById('print-cjk').addEventListener('click', addCjk);
@@ -828,6 +831,38 @@ function writeCustomGlyphHandler(): void {
   term.write('\x1b[0m');
   window.scrollTo(0, 0);
 }
+
+function writeSymbolsForLegacyComputing(): void {
+  // Symbols for Legacy Computing
+  // Range: 1FB00–1FBFF
+  // Source: The Unicode Standard, Version 17.0 https://www.unicode.org/charts/PDF/U1FB00.pdf
+  writeUnicodeTable(term, 'Symbols for Legacy Computing', 0x1FB00, 0x1FBFF, [
+    ['Block mosaic terminal graphic characters (Sextants)', 0x1FB00, 0x1FB3B],
+    ['Smooth mosaic terminal graphic characters', 0x1FB3C, 0x1FB6F],
+    ['Block elements', 0x1FB70, 0x1FB80],
+    ['Window title bar', 0x1FB81, 0x1FB81],
+    ['Block elements', 0x1FB82, 0x1FB8B],
+    ['Rectangular shade characters', 0x1FB8C, 0x1FB94],
+    ['Fill characters', 0x1FB95, 0x1FB97],
+    ['Diagonal fill characters', 0x1FB98, 0x1FB99],
+    ['Smooth mosaic terminal graphic characters', 0x1FB9A, 0x1FB9B],
+    ['Triangular shade characters', 0x1FB9C, 0x1FB9F],
+    ['Character cell diagonals', 0x1FBA0, 0x1FBAE],
+    ['Light solid line with stroke', 0x1FBAF, 0x1FBAF],
+    ['Terminal graphic characters', 0x1FBB0, 0x1FBB3],
+    ['Arrows', 0x1FBB4, 0x1FBB8],
+    ['Terminal graphic characters', 0x1FBB9, 0x1FBBC],
+    ['Negative terminal graphic characters', 0x1FBBD, 0x1FBBF],
+    ['Terminal graphic characters', 0x1FBC0, 0x1FBCA],
+    ['Terminal graphic characters', 0x1FBCB, 0x1FBCD],
+    ['Block elements', 0x1FBCE, 0x1FBCF],
+    ['Character cell diagonals', 0x1FBD0, 0x1FBDF],
+    ['Geometrics shapes', 0x1FBE0, 0x1FBEF],
+    ['Segmented digits', 0x1FBF0, 0x1FBF9],
+    ['Terminal graphic character', 0x1FBFA, 0x1FBFA],
+  ]);
+}
+
 
 function loadTest(): void {
   const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
