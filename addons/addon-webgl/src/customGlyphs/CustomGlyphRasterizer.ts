@@ -61,7 +61,7 @@ export function tryDrawCustomGlyph(
 
   const rectangularShadeDefinition = rectangularShadeDefinitions[c];
   if (rectangularShadeDefinition) {
-    drawRectangularShadeChar(ctx, rectangularShadeDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, c === '\u{1FB90}');
+    drawRectangularShadeChar(ctx, rectangularShadeDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
@@ -214,34 +214,32 @@ function drawPatternChar(
  */
 function drawRectangularShadeChar(
   ctx: CanvasRenderingContext2D,
-  region: [number, number, number, number],
+  definition: [CustomGlyphPatternDefinition, [number, number, number, number]],
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
-  deviceCellHeight: number,
-  isInverse: boolean
+  deviceCellHeight: number
 ): void {
+  const [pattern, region] = definition;
   const [rx, ry, rw, rh] = region;
   const regionX = Math.round(xOffset + rx * deviceCellWidth);
   const regionY = Math.round(yOffset + ry * deviceCellHeight);
   const regionW = Math.round(rw * deviceCellWidth);
   const regionH = Math.round(rh * deviceCellHeight);
 
-  // For inverse medium shade, we use the opposite pattern (fill where medium shade doesn't)
-  // Medium shade pattern: fills at (x+y) % 2 === 0, so inverse fills at (x+y) % 2 === 1
-  const patternOffset = isInverse ? 1 : 0;
+  // Save context state
+  ctx.save();
 
-  for (let py = 0; py < regionH; py++) {
-    // Calculate the absolute y position for pattern calculation
-    const absY = regionY + py - yOffset;
-    for (let px = 0; px < regionW; px++) {
-      const absX = regionX + px - xOffset;
-      // Checkerboard pattern: fill if (x + y) % 2 matches the offset
-      if (((absX + absY) % 2) === patternOffset) {
-        ctx.fillRect(regionX + px, regionY + py, 1, 1);
-      }
-    }
-  }
+  // Clip to the region
+  ctx.beginPath();
+  ctx.rect(regionX, regionY, regionW, regionH);
+  ctx.clip();
+
+  // Draw the pattern
+  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+
+  // Restore context state
+  ctx.restore();
 }
 
 /**

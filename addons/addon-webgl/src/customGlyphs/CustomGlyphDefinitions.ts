@@ -291,20 +291,31 @@ export const symbolsForLegacyComputingDefinitions: { [index: string]: CustomGlyp
   '\u{1FB6F}': () => 'M0,1 L1,1 L0.5,0.5 Z'               // LOWER TRIANGULAR ONE QUARTER BLOCK
 };
 
+/**
+ * Rectangular shade characters - these use medium shade pattern (50%) like 0x2592.
+ * Each entry is [pattern, region] where region is [x, y, width, height] in 0-1 normalized
+ * coordinates. Pattern is the medium shade checkerboard pattern.
+ */
+const mediumShadePattern: CustomGlyphPatternDefinition = [
+  [1, 0],
+  [0, 1]
+];
+
+const inverseMediumShadePattern: CustomGlyphPatternDefinition = [
+  [0, 1],
+  [1, 0]
+];
+
+export const rectangularShadeDefinitions: { [index: string]: [CustomGlyphPatternDefinition, [number, number, number, number]] | undefined } = {
+  '\u{1FB8C}': [mediumShadePattern, [0, 0, 0.5, 1]],     // LEFT HALF MEDIUM SHADE
+  '\u{1FB8D}': [mediumShadePattern, [0.5, 0, 0.5, 1]],   // RIGHT HALF MEDIUM SHADE
+  '\u{1FB8E}': [mediumShadePattern, [0, 0, 1, 0.5]],     // UPPER HALF MEDIUM SHADE
+  '\u{1FB8F}': [mediumShadePattern, [0, 0.5, 1, 0.5]],   // LOWER HALF MEDIUM SHADE
+  '\u{1FB90}': [inverseMediumShadePattern, [0, 0, 1, 1]] // INVERSE MEDIUM SHADE
+};
+
 /** Region defined as [x, y, width, height] in 0-1 normalized coordinates. */
 type RegionDefinition = [number, number, number, number];
-
-/**
- * Rectangular shade characters - these use medium shade pattern with region bounds.
- * Pattern is a checkerboard that shifts 1px each row (same as medium shade).
- */
-export const rectangularShadeDefinitions: { [index: string]: RegionDefinition | undefined } = {
-  '\u{1FB8C}': [0, 0, 0.5, 1],   // LEFT HALF MEDIUM SHADE
-  '\u{1FB8D}': [0.5, 0, 0.5, 1], // RIGHT HALF MEDIUM SHADE
-  '\u{1FB8E}': [0, 0, 1, 0.5],   // UPPER HALF MEDIUM SHADE
-  '\u{1FB8F}': [0, 0.5, 1, 0.5], // LOWER HALF MEDIUM SHADE
-  '\u{1FB90}': [0, 0, 1, 1]      // INVERSE MEDIUM SHADE
-};
 
 /** [solidRegion, shadeRegion] where shade region uses inverse medium shade pattern. */
 type BlockShadeComboDefinition = [RegionDefinition, RegionDefinition];
@@ -326,22 +337,16 @@ export const blockShadeComboDefinitions: { [index: string]: BlockShadeComboDefin
 export const patternCharacterDefinitions: { [key: string]: CustomGlyphPatternDefinition | undefined } = {
   // Shade characters (0x2591-0x2593)
   '░': [ // LIGHT SHADE (25%)
-    [1, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 0]
+    [1, 0],
+    [0, 0]
   ],
   '▒': [ // MEDIUM SHADE (50%)
     [1, 0],
-    [0, 0],
-    [0, 1],
-    [0, 0]
+    [0, 1]
   ],
   '▓': [ // DARK SHADE (75%)
-    [0, 1],
     [1, 1],
-    [1, 0],
-    [1, 1]
+    [1, 0]
   ]
 };
 
