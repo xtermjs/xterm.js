@@ -4,7 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { blockElementDefinitions, boxDrawingDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
+import { boxDrawingDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**
@@ -45,12 +45,6 @@ export function tryDrawCustomGlyph(
         drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
         return true;
     }
-  }
-
-  const blockElementDefinition = blockElementDefinitions[c];
-  if (blockElementDefinition) {
-    drawBlockVectorChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
   }
 
   const boxDrawingDefinition = boxDrawingDefinitions[c];
