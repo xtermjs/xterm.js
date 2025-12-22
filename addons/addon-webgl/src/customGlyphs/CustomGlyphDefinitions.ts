@@ -12,11 +12,57 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // https://www.unicode.org/charts/PDF/U2500.pdf
 
-  // Uniform normal and bold
+  // Light and heavy solid lines (2500-2503)
   '─': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.LEFT_TO_RIGHT } },
   '━': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.LEFT_TO_RIGHT } },
   '│': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.TOP_TO_BOTTOM } },
   '┃': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.TOP_TO_BOTTOM } },
+
+  // Light and heavy dashed lines (2504-250B)
+  '┄': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.THREE_DASHES_HORIZONTAL } },
+  '┅': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.THREE_DASHES_HORIZONTAL } },
+  '┆': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.THREE_DASHES_VERTICAL  } },
+  '┇': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.THREE_DASHES_VERTICAL } },
+  '┈': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.FOUR_DASHES_HORIZONTAL } },
+  '┉': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.FOUR_DASHES_HORIZONTAL } },
+  '┊': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.FOUR_DASHES_VERTICAL } },
+  '┋': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.FOUR_DASHES_VERTICAL } },
+
+  // Light and heavy line box components (250C-254B)
+  // TODO: ...
+
+  // Light and heavy dashed lines (254C-254F)
+  '╌': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.TWO_DASHES_HORIZONTAL } },
+  '╍': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.TWO_DASHES_HORIZONTAL } },
+  '╎': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.TWO_DASHES_VERTICAL } },
+  '╏': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.TWO_DASHES_VERTICAL } },
+
+  // Double lines (2550-2551)
+  // TODO: ...
+
+  // Light and double line box components (2552-256C)
+  // TODO: ...
+
+  // Character cell arcs (256D-2570)
+  '╭': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5` } },
+  '╮': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5` } },
+  '╯': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5` } },
+  '╰': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5` } },
+
+  // Character cell diagonals (2571-2573)
+  '╱': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L0,1' } },
+  '╲': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L1,1' } },
+  '╳': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L0,1 M0,0 L1,1' } },
+
+  // Light and heavy half lines (2574-257B)
+  // TODO: ...
+
+  // Mixed light and heavy lines (257C-257F)
+  // TODO: ...
+
+  // TODO: Distribute items below into buckets above
+
+
   '┌': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.RIGHT_TO_BOTTOM } },
   '┏': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.RIGHT_TO_BOTTOM } },
   '┐': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.LEFT_TO_BOTTOM } },
@@ -75,11 +121,6 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '╫': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `${Shapes.LEFT_TO_RIGHT} M${.5 - xp},0 L${.5 - xp},1 M${.5 + xp},0 L${.5 + xp},1` } },
   '╬': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M0,${.5 + yp} L${.5 - xp},${.5 + yp} L${.5 - xp},1 M1,${.5 + yp} L${.5 + xp},${.5 + yp} L${.5 + xp},1 M0,${.5 - yp} L${.5 - xp},${.5 - yp} L${.5 - xp},0 M1,${.5 - yp} L${.5 + xp},${.5 - yp} L${.5 + xp},0` } },
 
-  // Diagonal
-  '╱': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L0,1' } },
-  '╲': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L1,1' } },
-  '╳': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,0 L0,1 M0,0 L1,1' } },
-
   // Mixed weight
   '╼': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [FontWeight.BOLD]: Shapes.MIDDLE_TO_RIGHT } },
   '╽': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [FontWeight.BOLD]: Shapes.MIDDLE_TO_BOTTOM } },
@@ -131,26 +172,6 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '╈': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.MIDDLE_TO_TOP,                                 [FontWeight.BOLD]: `${Shapes.LEFT_TO_RIGHT} ${Shapes.MIDDLE_TO_BOTTOM}` } },
   '╉': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.MIDDLE_TO_RIGHT,                               [FontWeight.BOLD]: `${Shapes.TOP_TO_BOTTOM} ${Shapes.MIDDLE_TO_LEFT}` } },
   '╊': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.MIDDLE_TO_LEFT,                                [FontWeight.BOLD]: `${Shapes.TOP_TO_BOTTOM} ${Shapes.MIDDLE_TO_RIGHT}` } },
-
-  // Dashed
-  '╌': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.TWO_DASHES_HORIZONTAL } },
-  '╍': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.TWO_DASHES_HORIZONTAL } },
-  '┄': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.THREE_DASHES_HORIZONTAL } },
-  '┅': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.THREE_DASHES_HORIZONTAL } },
-  '┈': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.FOUR_DASHES_HORIZONTAL } },
-  '┉': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.FOUR_DASHES_HORIZONTAL } },
-  '╎': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.TWO_DASHES_VERTICAL } },
-  '╏': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.TWO_DASHES_VERTICAL } },
-  '┆': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.THREE_DASHES_VERTICAL  } },
-  '┇': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.THREE_DASHES_VERTICAL } },
-  '┊': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: Shapes.FOUR_DASHES_VERTICAL } },
-  '┋': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.BOLD]:   Shapes.FOUR_DASHES_VERTICAL } },
-
-  // Curved
-  '╭': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5` } },
-  '╮': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5` } },
-  '╯': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5` } },
-  '╰': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5` } },
 
   // #endregion
 
