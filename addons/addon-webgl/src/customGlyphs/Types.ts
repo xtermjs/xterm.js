@@ -33,11 +33,13 @@ export type CustomGlyphPatternDefinition = number[][];
 export const enum CustomGlyphDefinitionType {
   SOLID_OCTANT_BLOCK_VECTOR,
   BLOCK_PATTERN,
-  PATH_DRAW_FUNCTION,
+  PATH_FUNCTION,
+  PATH,
 }
 
 export type CustomGlyphCharacterDefinition = (
   { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: ICustomGlyphSolidOctantBlockVector[] } |
   { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: CustomGlyphPatternDefinition } |
-  { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition }
+  { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } |
+  { type: CustomGlyphDefinitionType.PATH, data: string }
 );

@@ -30,7 +30,8 @@ export function tryDrawCustomGlyph(
       case CustomGlyphDefinitionType.BLOCK_PATTERN:
         drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
-      case CustomGlyphDefinitionType.PATH_DRAW_FUNCTION:
+      case CustomGlyphDefinitionType.PATH_FUNCTION:
+      case CustomGlyphDefinitionType.PATH:
         drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
     }
@@ -92,13 +93,13 @@ function drawBlockVectorChar(
 
 function drawPathDefinitionCharacter(
   ctx: CanvasRenderingContext2D,
-  charDefinition: CustomGlyphPathDrawFunctionDefinition,
+  charDefinition: CustomGlyphPathDrawFunctionDefinition | string,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number
 ): void {
-  const instructions = charDefinition(0, 0);
+  const instructions = typeof charDefinition === 'string' ? charDefinition : charDefinition(0, 0);
   ctx.beginPath();
   for (const instruction of instructions.split(' ')) {
     const type = instruction[0];
