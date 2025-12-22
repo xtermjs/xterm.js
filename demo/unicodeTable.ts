@@ -6,7 +6,7 @@ export type UnicodeRangeDefinition = [
   label: string,
   start: number,
   end: number,
-]
+];
 
 /**
  * Write a unicode table to the terminal from start to end code points.
@@ -14,15 +14,15 @@ export type UnicodeRangeDefinition = [
  * Beware: Vibe coding ahead
  */
 export function writeUnicodeTable(term: Terminal, name: string, start: number, end: number, definitions?: UnicodeRangeDefinition[]): void {
-  function bold(text: string) {
+  function bold(text: string): string {
     return '\x1b[1m' + text + '\x1b[22m';
   }
-  function faint(text: string) {
+  function faint(text: string): string {
     return '\x1b[2m' + text + '\x1b[22m';
   }
   // Rotating colors: Red, Green, Yellow, Blue, Magenta, Cyan
   const colors = [31, 32, 33, 34, 35, 36];
-  function color(text: string, colorIndex: number) {
+  function color(text: string, colorIndex: number): string {
     const c = colors[colorIndex % colors.length];
     return '\x1b[' + c + 'm' + text + '\x1b[39m';
   }
@@ -36,7 +36,7 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
   const startRow = Math.floor(start / 16);
 
   // Build a map of codepoint -> label and colorIndex for start positions
-  const labelStartMap = new Map<number, { label: string; colorIndex: number }>();
+  const labelStartMap = new Map<number, { label: string, colorIndex: number }>();
   // Build a map of codepoint -> colorIndex for all codepoints in each range
   const codePointColorMap = new Map<number, number>();
   let lastDefinitionEnd = start; // Track the last definition's end to stop printing there
@@ -59,7 +59,7 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
 
   for (let row = startRow; row <= endRow; row++) {
     // Collect labels for this row with their column positions and color
-    const rowLabels: { col: number; label: string; colorIndex: number }[] = [];
+    const rowLabels: { col: number, label: string, colorIndex: number }[] = [];
     for (let col = 0; col < 16; col++) {
       const codePoint = row * 16 + col;
       const labelInfo = labelStartMap.get(codePoint);
