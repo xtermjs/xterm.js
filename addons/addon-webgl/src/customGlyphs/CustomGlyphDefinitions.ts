@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition } from 'customGlyphs/Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition } from './Types';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
