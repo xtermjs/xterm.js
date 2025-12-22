@@ -266,6 +266,10 @@ function drawPathDefinitionCharacterWithWeight(
     }
     for (const instruction of actualInstructions.split(' ')) {
       const type = instruction[0];
+      if (type === 'Z') {
+        ctx.closePath();
+        continue;
+      }
       const f = svgToCanvasInstructionMap[type];
       if (!f) {
         console.error(`Could not find drawing instructions for "${type}"`);
@@ -303,6 +307,10 @@ function drawVectorShape(
   ctx.lineWidth = devicePixelRatio * cssLineWidth;
   for (const instruction of charDefinition.d.split(' ')) {
     const type = instruction[0];
+    if (type === 'Z') {
+      ctx.closePath();
+      continue;
+    }
     const f = svgToCanvasInstructionMap[type];
     if (!f) {
       console.error(`Could not find drawing instructions for "${type}"`);
