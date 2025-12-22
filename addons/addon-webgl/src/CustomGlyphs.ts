@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IBlockVector {
@@ -219,8 +221,81 @@ export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFuncti
   '\u{1FB38}': sextant(0b111011), // BLOCK SEXTANT-12456
   '\u{1FB39}': sextant(0b111100), // BLOCK SEXTANT-3456 (lower two thirds block)
   '\u{1FB3A}': sextant(0b111101), // BLOCK SEXTANT-13456
-  '\u{1FB3B}': sextant(0b111110)  // BLOCK SEXTANT-23456
+  '\u{1FB3B}': sextant(0b111110),  // BLOCK SEXTANT-23456
   // Pattern 63 (0x3F = 0b111111) = full block, skipped (exists as U+2588)
+
+  // Smooth mosaic terminal graphic characters (0x1FB3C-0x1FB6F)
+  // These are triangular/diagonal shapes. "X BLOCK DIAGONAL A TO B" means the X region is filled,
+  // with a diagonal edge from point A to point B.
+  // Reference points: upper/lower = y (0/1), left/right = x (0/1), centre = x=0.5
+  // Vertical uses sextant grid: upper-middle = y=1/3, lower-middle = y=2/3
+
+  // LOWER LEFT BLOCK variants (1FB3C-1FB40) - filled region in lower-left
+  '\u{1FB3C}': () => `M0,${2/3} L0,1 L0.5,1 Z`,           // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB3D}': () => `M0,${2/3} L0,1 L1,1 Z`,             // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB3E}': () => `M0,${1/3} L0,1 L0.5,1 Z`,           // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB3F}': () => `M0,${1/3} L0,1 L1,1 Z`,             // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB40}': () => 'M0,0 L0,1 L0.5,1 Z',                // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
+
+  // LOWER RIGHT BLOCK variants (1FB41-1FB4B) - filled region in lower-right
+  '\u{1FB41}': () => `M0,${1/3} L0.5,0 L1,0 L1,1 L0,1 Z`, // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB42}': () => `M0,${1/3} L1,0 L1,1 L0,1 Z`,        // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB43}': () => `M0,${2/3} L0.5,0 L1,0 L1,1 L0,1 Z`, // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB44}': () => `M0,${2/3} L1,0 L1,1 L0,1 Z`,        // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB45}': () => 'M0,1 L0.5,0 L1,0 L1,1 Z',           // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
+  '\u{1FB46}': () => `M0,${2/3} L1,${1/3} L1,1 L0,1 Z`,   // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB47}': () => `M0.5,1 L1,${2/3} L1,1 Z`,           // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB48}': () => `M0,1 L1,${2/3} L1,1 Z`,             // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB49}': () => `M0.5,1 L1,${1/3} L1,1 Z`,           // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB4A}': () => `M0,1 L1,${1/3} L1,1 Z`,             // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB4B}': () => 'M0.5,1 L1,0 L1,1 Z',                // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
+
+  // LOWER LEFT BLOCK variants continued (1FB4C-1FB51) - large fills with upper-right cut
+  '\u{1FB4C}': () => `M0.5,0 L0,0 L0,1 L1,1 L1,${1/3} Z`, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB4D}': () => `M0,0 L0,1 L1,1 L1,${1/3} Z`,        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB4E}': () => `M0.5,0 L0,0 L0,1 L1,1 L1,${2/3} Z`, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB4F}': () => `M0,0 L0,1 L1,1 L1,${2/3} Z`,        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB50}': () => 'M0.5,0 L0,0 L0,1 L1,1 Z',           // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
+  '\u{1FB51}': () => `M0,${1/3} L0,1 L1,1 L1,${2/3} Z`,   // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
+
+  // UPPER RIGHT BLOCK variants (1FB52-1FB56) - large fills with lower-left cut
+  '\u{1FB52}': () => `M0,${2/3} L0.5,1 L1,1 L1,0 L0,0 Z`, // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB53}': () => `M0,${2/3} L1,1 L1,0 L0,0 Z`,        // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB54}': () => `M0,${1/3} L0.5,1 L1,1 L1,0 L0,0 Z`, // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB55}': () => `M0,${1/3} L1,1 L1,0 L0,0 Z`,        // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB56}': () => 'M0,0 L0.5,1 L1,1 L1,0 Z',           // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
+
+  // UPPER LEFT BLOCK variants (1FB57-1FB61) - small to large fills in upper-left
+  '\u{1FB57}': () => `M0,${1/3} L0,0 L0.5,0 Z`,           // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB58}': () => `M0,${1/3} L0,0 L1,0 Z`,             // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB59}': () => `M0,${2/3} L0,0 L0.5,0 Z`,           // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB5A}': () => `M0,${2/3} L0,0 L1,0 Z`,             // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB5B}': () => 'M0,1 L0,0 L0.5,0 Z',                // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
+  '\u{1FB5C}': () => `M0,${2/3} L0,0 L1,0 L1,${1/3} Z`,   // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB5D}': () => `M0.5,1 L0,1 L0,0 L1,0 L1,${2/3} Z`, // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB5E}': () => `M0,1 L0,0 L1,0 L1,${2/3} Z`,        // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB5F}': () => `M0.5,1 L0,1 L0,0 L1,0 L1,${1/3} Z`, // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB60}': () => `M0,1 L0,0 L1,0 L1,${1/3} Z`,        // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB61}': () => 'M0.5,1 L0,1 L0,0 L1,0 Z',           // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
+
+  // UPPER RIGHT BLOCK variants continued (1FB62-1FB67) - small to medium fills in upper-right
+  '\u{1FB62}': () => `M0.5,0 L1,0 L1,${1/3} Z`,           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB63}': () => `M0,0 L1,0 L1,${1/3} Z`,             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB64}': () => `M0.5,0 L1,0 L1,${2/3} Z`,           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB65}': () => `M0,0 L1,0 L1,${2/3} Z`,             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB66}': () => 'M0.5,0 L1,0 L1,1 Z',                // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
+  '\u{1FB67}': () => `M0,${1/3} L1,${2/3} L1,0 L0,0 Z`,   // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
+
+  // Triangular blocks (1FB68-1FB6F)
+  // Three-quarter blocks: full block minus one triangular quarter pointing to center
+  '\u{1FB68}': () => 'M0,0 L1,0 L1,1 L0,1 L0.5,0.5 Z',    // UPPER AND RIGHT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing left)
+  '\u{1FB69}': () => 'M0,0 L0.5,0.5 L1,0 L1,1 L0,1 Z',    // LEFT AND LOWER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing upper)
+  '\u{1FB6A}': () => 'M0,0 L1,0 L0.5,0.5 L1,1 L0,1 Z',    // UPPER AND LEFT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing right)
+  '\u{1FB6B}': () => 'M0,0 L1,0 L1,1 L0.5,0.5 L0,1 Z',    // LEFT AND UPPER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing lower)
+  '\u{1FB6C}': () => 'M0,0 L0.5,0.5 L0,1 Z',              // LEFT TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6D}': () => 'M0,0 L1,0 L0.5,0.5 Z',              // UPPER TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6E}': () => 'M1,0 L1,1 L0.5,0.5 Z',              // RIGHT TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6F}': () => 'M0,1 L1,1 L0.5,0.5 Z'               // LOWER TRIANGULAR ONE QUARTER BLOCK
 };
 
 type PatternDefinition = number[][];
@@ -523,7 +598,7 @@ export function tryDrawCustomChar(
 
   const symbolsForLegacyComputingDefinition = symbolsForLegacyComputingDefinitions[c];
   if (symbolsForLegacyComputingDefinition) {
-    drawSextantChar(ctx, symbolsForLegacyComputingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+    drawPathDefinitionCharacter(ctx, symbolsForLegacyComputingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
@@ -569,7 +644,7 @@ function drawBlockVectorChar(
   }
 }
 
-function drawSextantChar(
+function drawPathDefinitionCharacter(
   ctx: CanvasRenderingContext2D,
   charDefinition: DrawFunctionDefinition,
   xOffset: number,
