@@ -298,6 +298,31 @@ export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFuncti
   '\u{1FB6F}': () => 'M0,1 L1,1 L0.5,0.5 Z'               // LOWER TRIANGULAR ONE QUARTER BLOCK
 };
 
+/**
+ * Rectangular shade characters - these use medium shade pattern with region bounds.
+ * Pattern is a checkerboard that shifts 1px each row (same as medium shade).
+ * Region is defined as [x, y, width, height] in 0-1 normalized coordinates.
+ */
+export const rectangularShadeDefinitions: { [index: string]: [number, number, number, number] | undefined } = {
+  '\u{1FB8C}': [0, 0, 0.5, 1],   // LEFT HALF MEDIUM SHADE
+  '\u{1FB8D}': [0.5, 0, 0.5, 1], // RIGHT HALF MEDIUM SHADE
+  '\u{1FB8E}': [0, 0, 1, 0.5],   // UPPER HALF MEDIUM SHADE
+  '\u{1FB8F}': [0, 0.5, 1, 0.5], // LOWER HALF MEDIUM SHADE
+  '\u{1FB90}': [0, 0, 1, 1]      // INVERSE MEDIUM SHADE
+};
+
+/**
+ * Block + inverse shade combo characters.
+ * Each entry: [solidRegion, shadeRegion] where regions are [x, y, w, h] in 0-1 coords.
+ * Shade region uses inverse medium shade pattern.
+ */
+export const blockShadeComboDefinitions: { [index: string]: [[number, number, number, number], [number, number, number, number]] | undefined } = {
+  '\u{1FB91}': [[0, 0, 1, 0.5], [0, 0.5, 1, 0.5]],     // UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
+  '\u{1FB92}': [[0, 0.5, 1, 0.5], [0, 0, 1, 0.5]],     // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
+  // 1FB93 is reserved
+  '\u{1FB94}': [[0.5, 0, 0.5, 1], [0, 0, 0.5, 1]]      // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
+};
+
 type PatternDefinition = number[][];
 
 /**
@@ -602,6 +627,18 @@ export function tryDrawCustomChar(
     return true;
   }
 
+  const rectangularShadeDefinition = rectangularShadeDefinitions[c];
+  if (rectangularShadeDefinition) {
+    drawRectangularShadeChar(ctx, rectangularShadeDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, c === '\u{1FB90}');
+    return true;
+  }
+
+  const blockShadeComboDefinition = blockShadeComboDefinitions[c];
+  if (blockShadeComboDefinition) {
+    drawBlockShadeComboChar(ctx, blockShadeComboDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+    return true;
+  }
+
   const patternDefinition = patternCharacterDefinitions[c];
   if (patternDefinition) {
     drawPatternChar(ctx, patternDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
@@ -737,6 +774,81 @@ function drawPatternChar(
   }
   ctx.fillStyle = pattern;
   ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+}
+
+/**
+ * Draws rectangular shade characters - medium shade pattern clipped to a region.
+ * Uses a checkerboard pattern that shifts 1px each row (same as medium shade U+2592).
+ */
+function drawRectangularShadeChar(
+  ctx: CanvasRenderingContext2D,
+  region: [number, number, number, number],
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
+  isInverse: boolean
+): void {
+  const [rx, ry, rw, rh] = region;
+  const regionX = Math.round(xOffset + rx * deviceCellWidth);
+  const regionY = Math.round(yOffset + ry * deviceCellHeight);
+  const regionW = Math.round(rw * deviceCellWidth);
+  const regionH = Math.round(rh * deviceCellHeight);
+
+  // For inverse medium shade, we use the opposite pattern (fill where medium shade doesn't)
+  // Medium shade pattern: fills at (x+y) % 2 === 0, so inverse fills at (x+y) % 2 === 1
+  const patternOffset = isInverse ? 1 : 0;
+
+  for (let py = 0; py < regionH; py++) {
+    // Calculate the absolute y position for pattern calculation
+    const absY = regionY + py - yOffset;
+    for (let px = 0; px < regionW; px++) {
+      const absX = regionX + px - xOffset;
+      // Checkerboard pattern: fill if (x + y) % 2 matches the offset
+      if (((absX + absY) % 2) === patternOffset) {
+        ctx.fillRect(regionX + px, regionY + py, 1, 1);
+      }
+    }
+  }
+}
+
+/**
+ * Draws block + inverse shade combo characters.
+ * Fills the solid region completely, then draws inverse medium shade in the shade region.
+ */
+function drawBlockShadeComboChar(
+  ctx: CanvasRenderingContext2D,
+  regions: [[number, number, number, number], [number, number, number, number]],
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number
+): void {
+  const [solidRegion, shadeRegion] = regions;
+
+  // Draw solid block region
+  const solidX = Math.round(xOffset + solidRegion[0] * deviceCellWidth);
+  const solidY = Math.round(yOffset + solidRegion[1] * deviceCellHeight);
+  const solidW = Math.round(solidRegion[2] * deviceCellWidth);
+  const solidH = Math.round(solidRegion[3] * deviceCellHeight);
+  ctx.fillRect(solidX, solidY, solidW, solidH);
+
+  // Draw inverse medium shade region
+  const shadeX = Math.round(xOffset + shadeRegion[0] * deviceCellWidth);
+  const shadeY = Math.round(yOffset + shadeRegion[1] * deviceCellHeight);
+  const shadeW = Math.round(shadeRegion[2] * deviceCellWidth);
+  const shadeH = Math.round(shadeRegion[3] * deviceCellHeight);
+
+  for (let py = 0; py < shadeH; py++) {
+    const absY = shadeY + py - yOffset;
+    for (let px = 0; px < shadeW; px++) {
+      const absX = shadeX + px - xOffset;
+      // Inverse checkerboard: fill at (x + y) % 2 === 1
+      if (((absX + absY) % 2) === 1) {
+        ctx.fillRect(shadeX + px, shadeY + py, 1, 1);
+      }
+    }
+  }
 }
 
 /**
