@@ -208,7 +208,7 @@ export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFuncti
   '\u{1FB2E}': sextant(0b110001), // BLOCK SEXTANT-156
   '\u{1FB2F}': sextant(0b110010), // BLOCK SEXTANT-256
   '\u{1FB30}': sextant(0b110011), // BLOCK SEXTANT-1256 (upper and lower one
-                                  // third block)
+  // third block)
   '\u{1FB31}': sextant(0b110100), // BLOCK SEXTANT-356
   '\u{1FB32}': sextant(0b110101), // BLOCK SEXTANT-1356
   '\u{1FB33}': sextant(0b110110), // BLOCK SEXTANT-2356
@@ -219,7 +219,7 @@ export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFuncti
   '\u{1FB38}': sextant(0b111011), // BLOCK SEXTANT-12456
   '\u{1FB39}': sextant(0b111100), // BLOCK SEXTANT-3456 (lower two thirds block)
   '\u{1FB3A}': sextant(0b111101), // BLOCK SEXTANT-13456
-  '\u{1FB3B}': sextant(0b111110), // BLOCK SEXTANT-23456
+  '\u{1FB3B}': sextant(0b111110)  // BLOCK SEXTANT-23456
   // Pattern 63 (0x3F = 0b111111) = full block, skipped (exists as U+2588)
 };
 
