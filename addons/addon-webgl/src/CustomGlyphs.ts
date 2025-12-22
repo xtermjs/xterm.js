@@ -118,10 +118,10 @@ export const blockElementDefinitions: { [index: string]: IBlockVector[] | undefi
 };
 
 /**
- * Generates a drawing function for sextant characters.
- * Sextants are a 2x3 grid where each cell can be on or off.
- * @param pattern A 6-bit pattern where bit 0 = top-left, bit 1 = top-right,
- *                bit 2 = middle-left, bit 3 = middle-right, bit 4 = bottom-left, bit 5 = bottom-right
+ * Generates a drawing function for sextant characters. Sextants are a 2x3 grid where each cell
+ * can be on or off.
+ * @param pattern A 6-bit pattern where bit 0 = top-left, bit 1 = top-right, bit 2 = middle-left,
+ * bit 3 = middle-right, bit 4 = bottom-left, bit 5 = bottom-right
  */
 function sextant(pattern: number): DrawFunctionDefinition {
   return () => {
@@ -153,8 +153,10 @@ function sextant(pattern: number): DrawFunctionDefinition {
 export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFunctionDefinition | undefined } = {
   // Block sextants (0x1FB00-0x1FB3B)
   // Each sextant is a 2x3 grid of cells in an 8x8 block
-  // Cell positions: bit 0=top-left, bit 1=top-right, bit 2=middle-left, bit 3=middle-right, bit 4=bottom-left, bit 5=bottom-right
-  // Patterns 0 (empty), 21 (left half), 42 (right half), 63 (full) are excluded as they exist elsewhere
+  // Cell positions: bit 0=top-left, bit 1=top-right, bit 2=middle-left, bit 3=middle-right,
+  // bit 4=bottom-left, bit 5=bottom-right
+  // Patterns 0 (empty), 21 (left half), 42 (right half), 63 (full) are excluded as they exist
+  // elsewhere
   '\u{1FB00}': sextant(0b000001), // BLOCK SEXTANT-1
   '\u{1FB01}': sextant(0b000010), // BLOCK SEXTANT-2
   '\u{1FB02}': sextant(0b000011), // BLOCK SEXTANT-12 (upper one third block)
@@ -205,7 +207,8 @@ export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFuncti
   '\u{1FB2D}': sextant(0b110000), // BLOCK SEXTANT-56 (lower one third block)
   '\u{1FB2E}': sextant(0b110001), // BLOCK SEXTANT-156
   '\u{1FB2F}': sextant(0b110010), // BLOCK SEXTANT-256
-  '\u{1FB30}': sextant(0b110011), // BLOCK SEXTANT-1256 (upper and lower one third block)
+  '\u{1FB30}': sextant(0b110011), // BLOCK SEXTANT-1256 (upper and lower one
+                                  // third block)
   '\u{1FB31}': sextant(0b110100), // BLOCK SEXTANT-356
   '\u{1FB32}': sextant(0b110101), // BLOCK SEXTANT-1356
   '\u{1FB33}': sextant(0b110110), // BLOCK SEXTANT-2356
