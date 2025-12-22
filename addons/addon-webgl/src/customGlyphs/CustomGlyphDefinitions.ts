@@ -207,28 +207,27 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
     [0, 1],
     [1, 0]
   ], [0, 0, 1, 1]] },
-  // TODO: Make sure these are rendered correctly
   '\u{1FB91}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
     pattern: [[
-      [1, 0],
-      [0, 1]
-    ], [0, 0, 1, 0.5]],
-    vectors: [{ x: 0, y: 4, w: 8, h: 4 }]
-  } },
-  '\u{1FB92}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
-    pattern: [[
-      [1, 0],
-      [0, 1]
+      [0, 1],
+      [1, 0]
     ], [0, 0.5, 1, 0.5]],
     vectors: [{ x: 0, y: 0, w: 8, h: 4 }]
   } },
-  // 1FB93 is reserved
+  '\u{1FB92}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
+    pattern: [[
+      [0, 1],
+      [1, 0]
+    ], [0, 0, 1, 0.5]],
+    vectors: [{ x: 0, y: 4, w: 8, h: 4 }]
+  } },
+  // 1FB93 is <reserved>
   '\u{1FB94}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
     pattern: [[
-      [1, 0],
-      [0, 1]
-    ], [0.5, 0, 0.5, 1]],
-    vectors: [{ x: 0, y: 0, w: 4, h: 8 }]
+      [0, 1],
+      [1, 0]
+    ], [0, 0, 0.5, 1]],
+    vectors: [{ x: 4, y: 0, w: 4, h: 8 }]
   } },
 
   // #endregion

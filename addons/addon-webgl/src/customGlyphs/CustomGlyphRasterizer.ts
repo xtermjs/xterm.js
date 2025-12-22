@@ -216,45 +216,6 @@ function drawBlockPatternWithRegion(
 }
 
 /**
- * Draws block + inverse shade combo characters.
- * Fills the solid region completely, then draws inverse medium shade in the shade region.
- */
-// function drawBlockShadeComboChar(
-//   ctx: CanvasRenderingContext2D,
-//   regions: [[number, number, number, number], [number, number, number, number]],
-//   xOffset: number,
-//   yOffset: number,
-//   deviceCellWidth: number,
-//   deviceCellHeight: number
-// ): void {
-//   const [solidRegion, shadeRegion] = regions;
-
-//   // Draw solid block region
-//   const solidX = Math.round(xOffset + solidRegion[0] * deviceCellWidth);
-//   const solidY = Math.round(yOffset + solidRegion[1] * deviceCellHeight);
-//   const solidW = Math.round(solidRegion[2] * deviceCellWidth);
-//   const solidH = Math.round(solidRegion[3] * deviceCellHeight);
-//   ctx.fillRect(solidX, solidY, solidW, solidH);
-
-//   // Draw inverse medium shade region
-//   const shadeX = Math.round(xOffset + shadeRegion[0] * deviceCellWidth);
-//   const shadeY = Math.round(yOffset + shadeRegion[1] * deviceCellHeight);
-//   const shadeW = Math.round(shadeRegion[2] * deviceCellWidth);
-//   const shadeH = Math.round(shadeRegion[3] * deviceCellHeight);
-
-//   for (let py = 0; py < shadeH; py++) {
-//     const absY = shadeY + py - yOffset;
-//     for (let px = 0; px < shadeW; px++) {
-//       const absX = shadeX + px - xOffset;
-//       // Inverse checkerboard: fill at (x + y) % 2 === 1
-//       if (((absX + absY) % 2) === 1) {
-//         ctx.fillRect(shadeX + px, shadeY + py, 1, 1);
-//       }
-//     }
-//   }
-// }
-
-/**
  * Draws the following box drawing characters by mapping a subset of SVG d attribute instructions to
  * canvas draw calls.
  *
