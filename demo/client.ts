@@ -828,13 +828,31 @@ function customGlyphAlignmentHandler(): void {
   term.write('  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\n\r');
   term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
   term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
-  term.write('Smooth mosaic terminal graphic characters alignment tests:\x1b[33m\n\r');
+  term.write('\x1b[0mSmooth mosaic terminal graphic characters alignment tests:\x1b[33m\n\r');
   term.write('🭇🬼 🭈🬽 🭉🬾 🭊🬿 🭋🭀 🭁🭌 🭂🭍 🭃🭎 🭄🭏 🭅🭐 🭆🭑 🭨🭪 🭩 🭯 🭮🭬\n\r');
   term.write('🭢🭗 🭣🭘 🭤🭙 🭥🭚 🭦🭛 🭒🭝 🭓🭞 🭔🭟 🭕🭠 🭖🭡 🭧🭜    🭫 🭭\n\r');
   term.write(' 🭇🬼              🭉🬾 🭋🭀\n\r');
   term.write('🭊🭁🭌🬿 🭈🭆🭂🭍🭑🬽 🭇🭄🭏🬼 🭃🭎 🭅🭐 🭨🭪\n\r');
   term.write('🭥🭒🭝🭚 🭣🭧🭓🭞🭜🭘 🭢🭕🭠🭗 🭔🭟 🭖🭡 🭪🭨\n\r');
   term.write(' 🭢🭗              🭤🭙 🭦🭛\n\r');
+
+  term.write('\x1b[0mFill tests:\x1b[34m\n\r');
+  const fillChars = ['\u{2591}', '\u{2592}', '\u{2593}', '\u{1FB8C}', '\u{1FB8D}', '\u{1FB8E}', '\u{1FB8F}', '\u{1FB90}', '\u{1FB91}', '\u{1FB92}', '\u{1FB94}', '\u{1FB95}', '\u{1FB96}', '\u{1FB97}', '\u{1FB98}', '\u{1FB99}'];
+  while (fillChars.length > 0) {
+    const batch = fillChars.splice(0, 10);
+    for (const fillChar of batch) {
+      term.write(`${fillChar.codePointAt(0).toString(16).toUpperCase().padEnd(5, ' ')} `);
+    }
+    term.write('\n\r');
+    for (let i = 0; i < 3; i++) {
+      for (const fillChar of batch) {
+        term.write(fillChar.repeat(5));
+        term.write(' ');
+      }
+      term.write('\n\r');
+    }
+  }
+
   term.write('\x1b[0m');
   window.scrollTo(0, 0);
 }

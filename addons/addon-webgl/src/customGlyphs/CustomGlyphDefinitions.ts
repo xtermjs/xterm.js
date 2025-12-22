@@ -490,8 +490,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   ] },
 
   // Diagonal fill characters (1FB98-1FB99)
-
-  // TODO: Implement
+  '\u{1FB98}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0, 0 L1,1 M0,.25 L.75,1 M0,.5 L.5,1 M0,.75 L.25,1 M.25,0 L1,.75 M.5,0 L1,.5 M.75,0 L1,.25' } }, // UPPER LEFT TO LOWER RIGHT FILL
+  '\u{1FB99}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.25 L.25,0 M0,.5 L.5,0 M0,.75 L.75,0 M0,1 L1,0 M.25,1 L1,.25 M.5,1 L1,.5 M.75,1 L1,.75' } }, // UPPER RIGHT TO LOWER LEFT FILL
 
   // Smooth mosaic terminal graphic characters (1FB9A-1FB9B)
 
@@ -506,8 +506,7 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // TODO: Implement
 
   // Light solid line with stroke (1FBAF-1FBAF)
-
-  // TODO: Implement
+  '\u{1FBAF}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: `${Shapes.LEFT_TO_RIGHT} M.5,.35 L.5,.65` } }, // BOX DRAWINGS LIGHT HORIZONTAL WITH VERTICAL STROKE
 
   // Terminal graphic characters (1FBB0-1FBB3)
 
