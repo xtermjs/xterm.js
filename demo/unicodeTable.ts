@@ -29,7 +29,7 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
 
   term.write('\n\r');
   term.write('\n\r');
-  term.write(bold(name) + '\n\r');
+  term.write(`${bold(name)} (${start.toString(16).toUpperCase()}-${end.toString(16).toUpperCase()})\n\r`);
   term.write('\n\r');
   term.write(bold('         0 1 2 3 4 5 6 7 8 9 A B C D E F') + '\n\r');
 
