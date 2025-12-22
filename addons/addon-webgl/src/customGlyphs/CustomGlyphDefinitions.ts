@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
 export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
   // #region Block elements (2580-259F)
+  // https://www.unicode.org/charts/PDF/U2580.pdf
 
   // Block elements (2580-2590)
-  // https://www.unicode.org/charts/PDF/U2580.pdf
   '▀': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 4 }] }, // UPPER HALF BLOCK
   '▁': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 7, w: 8, h: 1 }] }, // LOWER ONE EIGHTH BLOCK
   '▂': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 6, w: 8, h: 2 }] }, // LOWER ONE QUARTER BLOCK
@@ -31,15 +31,15 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '▐': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }] }, // RIGHT HALF BLOCK
 
   // Shade characters (2591-2593)
-  '░': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: [ // LIGHT SHADE (25%)
+  '░': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [ // LIGHT SHADE (25%)
     [1, 0],
     [0, 0]
   ] },
-  '▒': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: [ // MEDIUM SHADE (=speckles fill, dotted fill, 50%, used in mapping to cp949, -> 1FB90 inverse medium shade)
+  '▒': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [ // MEDIUM SHADE (=speckles fill, dotted fill, 50%, used in mapping to cp949, -> 1FB90 inverse medium shade)
     [1, 0],
     [0, 1]
   ] },
-  '▓': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: [ // DARK SHADE (75%)
+  '▓': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [ // DARK SHADE (75%)
     [1, 1],
     [1, 0]
   ] },
@@ -58,7 +58,156 @@ export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '▜': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 4 }, { x: 4, y: 0, w: 4, h: 8 }] }, // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER RIGHT
   '▝': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 4 }] },                             // QUADRANT UPPER RIGHT
   '▞': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 4 }, { x: 0, y: 4, w: 4, h: 4 }] }, // QUADRANT UPPER RIGHT AND LOWER LEFT (-> 1F67E checker board, 1FB96 inverse checker board fill)
-  '▟': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }] }  // QUADRANT UPPER RIGHT AND LOWER LEFT AND LOWER RIGHT
+  '▟': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }] }, // QUADRANT UPPER RIGHT AND LOWER LEFT AND LOWER RIGHT
+
+  // #endregion
+
+  // #region Symbols for Legacy Computing
+  // https://www.unicode.org/charts/PDF/U1FB00.pdf
+
+  // Block sextants (0x1FB00-0x1FB3B)
+  // Each sextant is a 2x3 grid of cells in an 8x8 block
+  // Cell positions: bit 0=top-left, bit 1=top-right, bit 2=middle-left, bit 3=middle-right,
+  // bit 4=bottom-left, bit 5=bottom-right
+  // Patterns 0 (empty), 21 (left half), 42 (right half), 63 (full) are excluded as they exist
+  // elsewhere
+  '\u{1FB00}': sextant(0b000001), // BLOCK SEXTANT-1
+  '\u{1FB01}': sextant(0b000010), // BLOCK SEXTANT-2
+  '\u{1FB02}': sextant(0b000011), // BLOCK SEXTANT-12 (upper one third block)
+  '\u{1FB03}': sextant(0b000100), // BLOCK SEXTANT-3
+  '\u{1FB04}': sextant(0b000101), // BLOCK SEXTANT-13
+  '\u{1FB05}': sextant(0b000110), // BLOCK SEXTANT-23
+  '\u{1FB06}': sextant(0b000111), // BLOCK SEXTANT-123
+  '\u{1FB07}': sextant(0b001000), // BLOCK SEXTANT-4
+  '\u{1FB08}': sextant(0b001001), // BLOCK SEXTANT-14
+  '\u{1FB09}': sextant(0b001010), // BLOCK SEXTANT-24
+  '\u{1FB0A}': sextant(0b001011), // BLOCK SEXTANT-124
+  '\u{1FB0B}': sextant(0b001100), // BLOCK SEXTANT-34 (middle one third block)
+  '\u{1FB0C}': sextant(0b001101), // BLOCK SEXTANT-134
+  '\u{1FB0D}': sextant(0b001110), // BLOCK SEXTANT-234
+  '\u{1FB0E}': sextant(0b001111), // BLOCK SEXTANT-1234 (upper two thirds block)
+  '\u{1FB0F}': sextant(0b010000), // BLOCK SEXTANT-5
+  '\u{1FB10}': sextant(0b010001), // BLOCK SEXTANT-15
+  '\u{1FB11}': sextant(0b010010), // BLOCK SEXTANT-25
+  '\u{1FB12}': sextant(0b010011), // BLOCK SEXTANT-125
+  '\u{1FB13}': sextant(0b010100), // BLOCK SEXTANT-35
+  // Pattern 21 (0x15 = 0b010101) = left half block, skipped (exists as U+258C)
+  '\u{1FB14}': sextant(0b010110), // BLOCK SEXTANT-235
+  '\u{1FB15}': sextant(0b010111), // BLOCK SEXTANT-1235
+  '\u{1FB16}': sextant(0b011000), // BLOCK SEXTANT-45
+  '\u{1FB17}': sextant(0b011001), // BLOCK SEXTANT-145
+  '\u{1FB18}': sextant(0b011010), // BLOCK SEXTANT-245
+  '\u{1FB19}': sextant(0b011011), // BLOCK SEXTANT-1245
+  '\u{1FB1A}': sextant(0b011100), // BLOCK SEXTANT-345
+  '\u{1FB1B}': sextant(0b011101), // BLOCK SEXTANT-1345
+  '\u{1FB1C}': sextant(0b011110), // BLOCK SEXTANT-2345
+  '\u{1FB1D}': sextant(0b011111), // BLOCK SEXTANT-12345
+  '\u{1FB1E}': sextant(0b100000), // BLOCK SEXTANT-6
+  '\u{1FB1F}': sextant(0b100001), // BLOCK SEXTANT-16
+  '\u{1FB20}': sextant(0b100010), // BLOCK SEXTANT-26
+  '\u{1FB21}': sextant(0b100011), // BLOCK SEXTANT-126
+  '\u{1FB22}': sextant(0b100100), // BLOCK SEXTANT-36
+  '\u{1FB23}': sextant(0b100101), // BLOCK SEXTANT-136
+  '\u{1FB24}': sextant(0b100110), // BLOCK SEXTANT-236
+  '\u{1FB25}': sextant(0b100111), // BLOCK SEXTANT-1236
+  '\u{1FB26}': sextant(0b101000), // BLOCK SEXTANT-46
+  '\u{1FB27}': sextant(0b101001), // BLOCK SEXTANT-146
+  // Pattern 42 (0x2A = 0b101010) = right half block, skipped (exists as U+2590)
+  '\u{1FB28}': sextant(0b101011), // BLOCK SEXTANT-1246
+  '\u{1FB29}': sextant(0b101100), // BLOCK SEXTANT-346
+  '\u{1FB2A}': sextant(0b101101), // BLOCK SEXTANT-1346
+  '\u{1FB2B}': sextant(0b101110), // BLOCK SEXTANT-2346
+  '\u{1FB2C}': sextant(0b101111), // BLOCK SEXTANT-12346
+  '\u{1FB2D}': sextant(0b110000), // BLOCK SEXTANT-56 (lower one third block)
+  '\u{1FB2E}': sextant(0b110001), // BLOCK SEXTANT-156
+  '\u{1FB2F}': sextant(0b110010), // BLOCK SEXTANT-256
+  '\u{1FB30}': sextant(0b110011), // BLOCK SEXTANT-1256 (upper and lower one third block)
+  '\u{1FB31}': sextant(0b110100), // BLOCK SEXTANT-356
+  '\u{1FB32}': sextant(0b110101), // BLOCK SEXTANT-1356
+  '\u{1FB33}': sextant(0b110110), // BLOCK SEXTANT-2356
+  '\u{1FB34}': sextant(0b110111), // BLOCK SEXTANT-12356
+  '\u{1FB35}': sextant(0b111000), // BLOCK SEXTANT-456
+  '\u{1FB36}': sextant(0b111001), // BLOCK SEXTANT-1456
+  '\u{1FB37}': sextant(0b111010), // BLOCK SEXTANT-2456
+  '\u{1FB38}': sextant(0b111011), // BLOCK SEXTANT-12456
+  '\u{1FB39}': sextant(0b111100), // BLOCK SEXTANT-3456 (lower two thirds block)
+  '\u{1FB3A}': sextant(0b111101), // BLOCK SEXTANT-13456
+  '\u{1FB3B}': sextant(0b111110),  // BLOCK SEXTANT-23456
+  // Pattern 63 (0x3F = 0b111111) = full block, skipped (exists as U+2588)
+
+  // Smooth mosaic terminal graphic characters (0x1FB3C-0x1FB6F)
+  // These are triangular/diagonal shapes. "X BLOCK DIAGONAL A TO B" means the X region is filled,
+  // with a diagonal edge from point A to point B.
+  // Reference points: upper/lower = y (0/1), left/right = x (0/1), centre = x=0.5
+  // Vertical uses sextant grid: upper-middle = y=1/3, lower-middle = y=2/3
+
+  // TODO: These don't need to be functions, also inline fractions
+  // LOWER LEFT BLOCK variants (1FB3C-1FB40) - filled region in lower-left
+  '\u{1FB3C}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L0,1 L0.5,1 Z` },           // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB3D}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L0,1 L1,1 Z` },             // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB3E}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L0,1 L0.5,1 Z` },           // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB3F}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L0,1 L1,1 Z` },             // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB40}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L0,1 L0.5,1 Z' },                // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
+
+  // LOWER RIGHT BLOCK variants (1FB41-1FB4B) - filled region in lower-right
+  '\u{1FB41}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L0.5,0 L1,0 L1,1 L0,1 Z` }, // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB42}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L1,0 L1,1 L0,1 Z` },        // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB43}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L0.5,0 L1,0 L1,1 L0,1 Z` }, // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB44}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L1,0 L1,1 L0,1 Z` },        // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB45}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,1 L0.5,0 L1,0 L1,1 Z' },           // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
+  '\u{1FB46}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L1,${1/3} L1,1 L0,1 Z` },   // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB47}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,1 L1,${2/3} L1,1 Z` },           // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB48}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,1 L1,${2/3} L1,1 Z` },             // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB49}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,1 L1,${1/3} L1,1 Z` },           // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB4A}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,1 L1,${1/3} L1,1 Z` },             // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB4B}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0.5,1 L1,0 L1,1 Z' },                // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
+
+  // LOWER LEFT BLOCK variants continued (1FB4C-1FB51) - large fills with upper-right cut
+  '\u{1FB4C}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,0 L0,0 L0,1 L1,1 L1,${1/3} Z` }, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB4D}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,0 L0,1 L1,1 L1,${1/3} Z` },        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB4E}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,0 L0,0 L0,1 L1,1 L1,${2/3} Z` }, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB4F}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,0 L0,1 L1,1 L1,${2/3} Z` },        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB50}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0.5,0 L0,0 L0,1 L1,1 Z' },           // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
+  '\u{1FB51}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L0,1 L1,1 L1,${2/3} Z` },   // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
+
+  // UPPER RIGHT BLOCK variants (1FB52-1FB56) - large fills with lower-left cut
+  '\u{1FB52}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L0.5,1 L1,1 L1,0 L0,0 Z` }, // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB53}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L1,1 L1,0 L0,0 Z` },        // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB54}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L0.5,1 L1,1 L1,0 L0,0 Z` }, // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FB55}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L1,1 L1,0 L0,0 Z` },        // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
+  '\u{1FB56}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L0.5,1 L1,1 L1,0 Z' },           // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
+
+  // UPPER LEFT BLOCK variants (1FB57-1FB61) - small to large fills in upper-left
+  '\u{1FB57}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L0,0 L0.5,0 Z` },           // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB58}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L0,0 L1,0 Z` },             // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB59}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L0,0 L0.5,0 Z` },           // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
+  '\u{1FB5A}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L0,0 L1,0 Z` },             // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
+  '\u{1FB5B}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,1 L0,0 L0.5,0 Z' },                // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
+  '\u{1FB5C}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${2/3} L0,0 L1,0 L1,${1/3} Z` },   // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB5D}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,1 L0,1 L0,0 L1,0 L1,${2/3} Z` }, // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB5E}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,1 L0,0 L1,0 L1,${2/3} Z` },        // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB5F}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,1 L0,1 L0,0 L1,0 L1,${1/3} Z` }, // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB60}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,1 L0,0 L1,0 L1,${1/3} Z` },        // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB61}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0.5,1 L0,1 L0,0 L1,0 Z' },           // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
+
+  // UPPER RIGHT BLOCK variants continued (1FB62-1FB67) - small to medium fills in upper-right
+  '\u{1FB62}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,0 L1,0 L1,${1/3} Z` },           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
+  '\u{1FB63}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,0 L1,0 L1,${1/3} Z` },             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
+  '\u{1FB64}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0.5,0 L1,0 L1,${2/3} Z` },           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
+  '\u{1FB65}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,0 L1,0 L1,${2/3} Z` },             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
+  '\u{1FB66}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0.5,0 L1,0 L1,1 Z' },                // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
+  '\u{1FB67}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => `M0,${1/3} L1,${2/3} L1,0 L0,0 Z` },   // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
+
+  // Triangular blocks (1FB68-1FB6F)
+  // Three-quarter blocks: full block minus one triangular quarter pointing to center
+  '\u{1FB68}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L1,0 L1,1 L0,1 L0.5,0.5 Z' },  // UPPER AND RIGHT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing left)
+  '\u{1FB69}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L0.5,0.5 L1,0 L1,1 L0,1 Z' },  // LEFT AND LOWER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing upper)
+  '\u{1FB6A}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L1,0 L0.5,0.5 L1,1 L0,1 Z' },  // UPPER AND LEFT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing right)
+  '\u{1FB6B}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L1,0 L1,1 L0.5,0.5 L0,1 Z' },  // LEFT AND UPPER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing lower)
+  '\u{1FB6C}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L0.5,0.5 L0,1 Z' },            // LEFT TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6D}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,0 L1,0 L0.5,0.5 Z' },            // UPPER TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6E}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M1,0 L1,1 L0.5,0.5 Z' },            // RIGHT TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6F}': { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: () => 'M0,1 L1,1 L0.5,0.5 Z' },            // LOWER TRIANGULAR ONE QUARTER BLOCK
 
   // #endregion
 };
@@ -139,177 +288,35 @@ export const blockElementDefinitions: { [index: string]: ICustomGlyphSolidOctant
  * @param pattern A 6-bit pattern where bit 0 = top-left, bit 1 = top-right, bit 2 = middle-left,
  * bit 3 = middle-right, bit 4 = bottom-left, bit 5 = bottom-right
  */
-function sextant(pattern: number): CustomGlyphDrawFunctionDefinition {
-  return () => {
-    // Sextant grid: 2 columns, 3 rows
-    // Row heights in 8ths: top=3, middle=2, bottom=3
-    // Column widths: left=4, right=4
-    const rects: string[] = [];
-    const colW = 0.5; // Each column is half width
-    const rowH = [3 / 8, 2 / 8, 3 / 8]; // Row heights as fractions
-    const rowY = [0, 3 / 8, 5 / 8]; // Row Y positions
+function sextant(pattern: number): { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } {
+  return {
+    type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION,
+    data: () => {
+      // Sextant grid: 2 columns, 3 rows
+      // Row heights in 8ths: top=3, middle=2, bottom=3
+      // Column widths: left=4, right=4
+      const rects: string[] = [];
+      const colW = 0.5; // Each column is half width
+      const rowH = [3 / 8, 2 / 8, 3 / 8]; // Row heights as fractions
+      const rowY = [0, 3 / 8, 5 / 8]; // Row Y positions
 
-    for (let row = 0; row < 3; row++) {
-      const leftBit = (pattern >> (row * 2)) & 1;
-      const rightBit = (pattern >> (row * 2 + 1)) & 1;
+      for (let row = 0; row < 3; row++) {
+        const leftBit = (pattern >> (row * 2)) & 1;
+        const rightBit = (pattern >> (row * 2 + 1)) & 1;
 
-      if (leftBit && rightBit) {
-        // Full row
-        rects.push(`M0,${rowY[row]} L1,${rowY[row]} L1,${rowY[row] + rowH[row]} L0,${rowY[row] + rowH[row]} Z`);
-      } else if (leftBit) {
-        rects.push(`M0,${rowY[row]} L${colW},${rowY[row]} L${colW},${rowY[row] + rowH[row]} L0,${rowY[row] + rowH[row]} Z`);
-      } else if (rightBit) {
-        rects.push(`M${colW},${rowY[row]} L1,${rowY[row]} L1,${rowY[row] + rowH[row]} L${colW},${rowY[row] + rowH[row]} Z`);
+        if (leftBit && rightBit) {
+          // Full row
+          rects.push(`M0,${rowY[row]} L1,${rowY[row]} L1,${rowY[row] + rowH[row]} L0,${rowY[row] + rowH[row]} Z`);
+        } else if (leftBit) {
+          rects.push(`M0,${rowY[row]} L${colW},${rowY[row]} L${colW},${rowY[row] + rowH[row]} L0,${rowY[row] + rowH[row]} Z`);
+        } else if (rightBit) {
+          rects.push(`M${colW},${rowY[row]} L1,${rowY[row]} L1,${rowY[row] + rowH[row]} L${colW},${rowY[row] + rowH[row]} Z`);
+        }
       }
+      return rects.join(' ');
     }
-    return rects.join(' ');
   };
 }
-
-export const symbolsForLegacyComputingDefinitions: { [index: string]: CustomGlyphDrawFunctionDefinition | undefined } = {
-  // Block sextants (0x1FB00-0x1FB3B)
-  // Each sextant is a 2x3 grid of cells in an 8x8 block
-  // Cell positions: bit 0=top-left, bit 1=top-right, bit 2=middle-left, bit 3=middle-right,
-  // bit 4=bottom-left, bit 5=bottom-right
-  // Patterns 0 (empty), 21 (left half), 42 (right half), 63 (full) are excluded as they exist
-  // elsewhere
-  '\u{1FB00}': sextant(0b000001), // BLOCK SEXTANT-1
-  '\u{1FB01}': sextant(0b000010), // BLOCK SEXTANT-2
-  '\u{1FB02}': sextant(0b000011), // BLOCK SEXTANT-12 (upper one third block)
-  '\u{1FB03}': sextant(0b000100), // BLOCK SEXTANT-3
-  '\u{1FB04}': sextant(0b000101), // BLOCK SEXTANT-13
-  '\u{1FB05}': sextant(0b000110), // BLOCK SEXTANT-23
-  '\u{1FB06}': sextant(0b000111), // BLOCK SEXTANT-123
-  '\u{1FB07}': sextant(0b001000), // BLOCK SEXTANT-4
-  '\u{1FB08}': sextant(0b001001), // BLOCK SEXTANT-14
-  '\u{1FB09}': sextant(0b001010), // BLOCK SEXTANT-24
-  '\u{1FB0A}': sextant(0b001011), // BLOCK SEXTANT-124
-  '\u{1FB0B}': sextant(0b001100), // BLOCK SEXTANT-34 (middle one third block)
-  '\u{1FB0C}': sextant(0b001101), // BLOCK SEXTANT-134
-  '\u{1FB0D}': sextant(0b001110), // BLOCK SEXTANT-234
-  '\u{1FB0E}': sextant(0b001111), // BLOCK SEXTANT-1234 (upper two thirds block)
-  '\u{1FB0F}': sextant(0b010000), // BLOCK SEXTANT-5
-  '\u{1FB10}': sextant(0b010001), // BLOCK SEXTANT-15
-  '\u{1FB11}': sextant(0b010010), // BLOCK SEXTANT-25
-  '\u{1FB12}': sextant(0b010011), // BLOCK SEXTANT-125
-  '\u{1FB13}': sextant(0b010100), // BLOCK SEXTANT-35
-  // Pattern 21 (0x15 = 0b010101) = left half block, skipped (exists as U+258C)
-  '\u{1FB14}': sextant(0b010110), // BLOCK SEXTANT-235
-  '\u{1FB15}': sextant(0b010111), // BLOCK SEXTANT-1235
-  '\u{1FB16}': sextant(0b011000), // BLOCK SEXTANT-45
-  '\u{1FB17}': sextant(0b011001), // BLOCK SEXTANT-145
-  '\u{1FB18}': sextant(0b011010), // BLOCK SEXTANT-245
-  '\u{1FB19}': sextant(0b011011), // BLOCK SEXTANT-1245
-  '\u{1FB1A}': sextant(0b011100), // BLOCK SEXTANT-345
-  '\u{1FB1B}': sextant(0b011101), // BLOCK SEXTANT-1345
-  '\u{1FB1C}': sextant(0b011110), // BLOCK SEXTANT-2345
-  '\u{1FB1D}': sextant(0b011111), // BLOCK SEXTANT-12345
-  '\u{1FB1E}': sextant(0b100000), // BLOCK SEXTANT-6
-  '\u{1FB1F}': sextant(0b100001), // BLOCK SEXTANT-16
-  '\u{1FB20}': sextant(0b100010), // BLOCK SEXTANT-26
-  '\u{1FB21}': sextant(0b100011), // BLOCK SEXTANT-126
-  '\u{1FB22}': sextant(0b100100), // BLOCK SEXTANT-36
-  '\u{1FB23}': sextant(0b100101), // BLOCK SEXTANT-136
-  '\u{1FB24}': sextant(0b100110), // BLOCK SEXTANT-236
-  '\u{1FB25}': sextant(0b100111), // BLOCK SEXTANT-1236
-  '\u{1FB26}': sextant(0b101000), // BLOCK SEXTANT-46
-  '\u{1FB27}': sextant(0b101001), // BLOCK SEXTANT-146
-  // Pattern 42 (0x2A = 0b101010) = right half block, skipped (exists as U+2590)
-  '\u{1FB28}': sextant(0b101011), // BLOCK SEXTANT-1246
-  '\u{1FB29}': sextant(0b101100), // BLOCK SEXTANT-346
-  '\u{1FB2A}': sextant(0b101101), // BLOCK SEXTANT-1346
-  '\u{1FB2B}': sextant(0b101110), // BLOCK SEXTANT-2346
-  '\u{1FB2C}': sextant(0b101111), // BLOCK SEXTANT-12346
-  '\u{1FB2D}': sextant(0b110000), // BLOCK SEXTANT-56 (lower one third block)
-  '\u{1FB2E}': sextant(0b110001), // BLOCK SEXTANT-156
-  '\u{1FB2F}': sextant(0b110010), // BLOCK SEXTANT-256
-  '\u{1FB30}': sextant(0b110011), // BLOCK SEXTANT-1256 (upper and lower one third block)
-  '\u{1FB31}': sextant(0b110100), // BLOCK SEXTANT-356
-  '\u{1FB32}': sextant(0b110101), // BLOCK SEXTANT-1356
-  '\u{1FB33}': sextant(0b110110), // BLOCK SEXTANT-2356
-  '\u{1FB34}': sextant(0b110111), // BLOCK SEXTANT-12356
-  '\u{1FB35}': sextant(0b111000), // BLOCK SEXTANT-456
-  '\u{1FB36}': sextant(0b111001), // BLOCK SEXTANT-1456
-  '\u{1FB37}': sextant(0b111010), // BLOCK SEXTANT-2456
-  '\u{1FB38}': sextant(0b111011), // BLOCK SEXTANT-12456
-  '\u{1FB39}': sextant(0b111100), // BLOCK SEXTANT-3456 (lower two thirds block)
-  '\u{1FB3A}': sextant(0b111101), // BLOCK SEXTANT-13456
-  '\u{1FB3B}': sextant(0b111110),  // BLOCK SEXTANT-23456
-  // Pattern 63 (0x3F = 0b111111) = full block, skipped (exists as U+2588)
-
-  // Smooth mosaic terminal graphic characters (0x1FB3C-0x1FB6F)
-  // These are triangular/diagonal shapes. "X BLOCK DIAGONAL A TO B" means the X region is filled,
-  // with a diagonal edge from point A to point B.
-  // Reference points: upper/lower = y (0/1), left/right = x (0/1), centre = x=0.5
-  // Vertical uses sextant grid: upper-middle = y=1/3, lower-middle = y=2/3
-
-  // LOWER LEFT BLOCK variants (1FB3C-1FB40) - filled region in lower-left
-  '\u{1FB3C}': () => `M0,${2/3} L0,1 L0.5,1 Z`,           // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
-  '\u{1FB3D}': () => `M0,${2/3} L0,1 L1,1 Z`,             // LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
-  '\u{1FB3E}': () => `M0,${1/3} L0,1 L0.5,1 Z`,           // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
-  '\u{1FB3F}': () => `M0,${1/3} L0,1 L1,1 Z`,             // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
-  '\u{1FB40}': () => 'M0,0 L0,1 L0.5,1 Z',                // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
-
-  // LOWER RIGHT BLOCK variants (1FB41-1FB4B) - filled region in lower-right
-  '\u{1FB41}': () => `M0,${1/3} L0.5,0 L1,0 L1,1 L0,1 Z`, // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
-  '\u{1FB42}': () => `M0,${1/3} L1,0 L1,1 L0,1 Z`,        // LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
-  '\u{1FB43}': () => `M0,${2/3} L0.5,0 L1,0 L1,1 L0,1 Z`, // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
-  '\u{1FB44}': () => `M0,${2/3} L1,0 L1,1 L0,1 Z`,        // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
-  '\u{1FB45}': () => 'M0,1 L0.5,0 L1,0 L1,1 Z',           // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
-  '\u{1FB46}': () => `M0,${2/3} L1,${1/3} L1,1 L0,1 Z`,   // LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
-  '\u{1FB47}': () => `M0.5,1 L1,${2/3} L1,1 Z`,           // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
-  '\u{1FB48}': () => `M0,1 L1,${2/3} L1,1 Z`,             // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
-  '\u{1FB49}': () => `M0.5,1 L1,${1/3} L1,1 Z`,           // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
-  '\u{1FB4A}': () => `M0,1 L1,${1/3} L1,1 Z`,             // LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
-  '\u{1FB4B}': () => 'M0.5,1 L1,0 L1,1 Z',                // LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
-
-  // LOWER LEFT BLOCK variants continued (1FB4C-1FB51) - large fills with upper-right cut
-  '\u{1FB4C}': () => `M0.5,0 L0,0 L0,1 L1,1 L1,${1/3} Z`, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
-  '\u{1FB4D}': () => `M0,0 L0,1 L1,1 L1,${1/3} Z`,        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
-  '\u{1FB4E}': () => `M0.5,0 L0,0 L0,1 L1,1 L1,${2/3} Z`, // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
-  '\u{1FB4F}': () => `M0,0 L0,1 L1,1 L1,${2/3} Z`,        // LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
-  '\u{1FB50}': () => 'M0.5,0 L0,0 L0,1 L1,1 Z',           // LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
-  '\u{1FB51}': () => `M0,${1/3} L0,1 L1,1 L1,${2/3} Z`,   // LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
-
-  // UPPER RIGHT BLOCK variants (1FB52-1FB56) - large fills with lower-left cut
-  '\u{1FB52}': () => `M0,${2/3} L0.5,1 L1,1 L1,0 L0,0 Z`, // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
-  '\u{1FB53}': () => `M0,${2/3} L1,1 L1,0 L0,0 Z`,        // UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
-  '\u{1FB54}': () => `M0,${1/3} L0.5,1 L1,1 L1,0 L0,0 Z`, // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
-  '\u{1FB55}': () => `M0,${1/3} L1,1 L1,0 L0,0 Z`,        // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
-  '\u{1FB56}': () => 'M0,0 L0.5,1 L1,1 L1,0 Z',           // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
-
-  // UPPER LEFT BLOCK variants (1FB57-1FB61) - small to large fills in upper-left
-  '\u{1FB57}': () => `M0,${1/3} L0,0 L0.5,0 Z`,           // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
-  '\u{1FB58}': () => `M0,${1/3} L0,0 L1,0 Z`,             // UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
-  '\u{1FB59}': () => `M0,${2/3} L0,0 L0.5,0 Z`,           // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
-  '\u{1FB5A}': () => `M0,${2/3} L0,0 L1,0 Z`,             // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
-  '\u{1FB5B}': () => 'M0,1 L0,0 L0.5,0 Z',                // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
-  '\u{1FB5C}': () => `M0,${2/3} L0,0 L1,0 L1,${1/3} Z`,   // UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
-  '\u{1FB5D}': () => `M0.5,1 L0,1 L0,0 L1,0 L1,${2/3} Z`, // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
-  '\u{1FB5E}': () => `M0,1 L0,0 L1,0 L1,${2/3} Z`,        // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
-  '\u{1FB5F}': () => `M0.5,1 L0,1 L0,0 L1,0 L1,${1/3} Z`, // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
-  '\u{1FB60}': () => `M0,1 L0,0 L1,0 L1,${1/3} Z`,        // UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
-  '\u{1FB61}': () => 'M0.5,1 L0,1 L0,0 L1,0 Z',           // UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
-
-  // UPPER RIGHT BLOCK variants continued (1FB62-1FB67) - small to medium fills in upper-right
-  '\u{1FB62}': () => `M0.5,0 L1,0 L1,${1/3} Z`,           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
-  '\u{1FB63}': () => `M0,0 L1,0 L1,${1/3} Z`,             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
-  '\u{1FB64}': () => `M0.5,0 L1,0 L1,${2/3} Z`,           // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
-  '\u{1FB65}': () => `M0,0 L1,0 L1,${2/3} Z`,             // UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
-  '\u{1FB66}': () => 'M0.5,0 L1,0 L1,1 Z',                // UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
-  '\u{1FB67}': () => `M0,${1/3} L1,${2/3} L1,0 L0,0 Z`,   // UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
-
-  // Triangular blocks (1FB68-1FB6F)
-  // Three-quarter blocks: full block minus one triangular quarter pointing to center
-  '\u{1FB68}': () => 'M0,0 L1,0 L1,1 L0,1 L0.5,0.5 Z',    // UPPER AND RIGHT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing left)
-  '\u{1FB69}': () => 'M0,0 L0.5,0.5 L1,0 L1,1 L0,1 Z',    // LEFT AND LOWER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing upper)
-  '\u{1FB6A}': () => 'M0,0 L1,0 L0.5,0.5 L1,1 L0,1 Z',    // UPPER AND LEFT AND LOWER TRIANGULAR THREE QUARTERS BLOCK (missing right)
-  '\u{1FB6B}': () => 'M0,0 L1,0 L1,1 L0.5,0.5 L0,1 Z',    // LEFT AND UPPER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK (missing lower)
-  '\u{1FB6C}': () => 'M0,0 L0.5,0.5 L0,1 Z',              // LEFT TRIANGULAR ONE QUARTER BLOCK
-  '\u{1FB6D}': () => 'M0,0 L1,0 L0.5,0.5 Z',              // UPPER TRIANGULAR ONE QUARTER BLOCK
-  '\u{1FB6E}': () => 'M1,0 L1,1 L0.5,0.5 Z',              // RIGHT TRIANGULAR ONE QUARTER BLOCK
-  '\u{1FB6F}': () => 'M0,1 L1,1 L0.5,0.5 Z'               // LOWER TRIANGULAR ONE QUARTER BLOCK
-};
 
 /**
  * Rectangular shade characters - these use medium shade pattern (50%) like 0x2592.
@@ -389,7 +396,7 @@ const enum FontWeight {
  * This contains the definitions of all box drawing characters in the format of SVG paths (ie. the
  * svg d attribute).
  */
-export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | CustomGlyphDrawFunctionDefinition } | undefined } = {
+export const boxDrawingDefinitions: { [character: string]: { [fontWeight: number]: string | CustomGlyphPathDrawFunctionDefinition } | undefined } = {
   // U+2500-U+257F
   // https://www.unicode.org/charts/PDF/U2500.pdf
 

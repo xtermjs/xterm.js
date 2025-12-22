@@ -4,8 +4,8 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, powerlineDefinitions, rectangularShadeDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -27,8 +27,11 @@ export function tryDrawCustomGlyph(
       case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
         drawBlockVectorChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION:
+      case CustomGlyphDefinitionType.BLOCK_PATTERN:
         drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.PATH_DRAW_FUNCTION:
+        drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
     }
   }
@@ -36,12 +39,6 @@ export function tryDrawCustomGlyph(
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
     drawBlockVectorChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const symbolsForLegacyComputingDefinition = symbolsForLegacyComputingDefinitions[c];
-  if (symbolsForLegacyComputingDefinition) {
-    drawPathDefinitionCharacter(ctx, symbolsForLegacyComputingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 
@@ -95,7 +92,7 @@ function drawBlockVectorChar(
 
 function drawPathDefinitionCharacter(
   ctx: CanvasRenderingContext2D,
-  charDefinition: CustomGlyphDrawFunctionDefinition,
+  charDefinition: CustomGlyphPathDrawFunctionDefinition,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,

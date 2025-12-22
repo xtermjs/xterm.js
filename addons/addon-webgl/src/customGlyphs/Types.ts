@@ -14,7 +14,7 @@ export interface ICustomGlyphSolidOctantBlockVector {
  * @param xp The percentage of 15% of the x axis.
  * @param yp The percentage of 15% of the x axis on the y axis.
  */
-export type CustomGlyphDrawFunctionDefinition = (xp: number, yp: number) => string;
+export type CustomGlyphPathDrawFunctionDefinition = (xp: number, yp: number) => string;
 
 export interface ICustomGlyphVectorShape {
   d: string;
@@ -32,10 +32,12 @@ export type CustomGlyphPatternDefinition = number[][];
 
 export const enum CustomGlyphDefinitionType {
   SOLID_OCTANT_BLOCK_VECTOR,
-  BLOCK_PATTERN_DEFINITION,
+  BLOCK_PATTERN,
+  PATH_DRAW_FUNCTION,
 }
 
 export type CustomGlyphCharacterDefinition = (
   { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: ICustomGlyphSolidOctantBlockVector[] } |
-  { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: CustomGlyphPatternDefinition }
+  { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: CustomGlyphPatternDefinition } |
+  { type: CustomGlyphDefinitionType.PATH_DRAW_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition }
 );
