@@ -29,3 +29,13 @@ export const enum CustomGlyphVectorType {
 }
 
 export type CustomGlyphPatternDefinition = number[][];
+
+export const enum CustomGlyphDefinitionType {
+  SOLID_OCTANT_BLOCK_VECTOR,
+  BLOCK_PATTERN_DEFINITION,
+}
+
+export type CustomGlyphCharacterDefinition = (
+  { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: ICustomGlyphSolidOctantBlockVector[] } |
+  { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: CustomGlyphPatternDefinition }
+);

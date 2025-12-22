@@ -4,8 +4,8 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, patternCharacterDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
-import { CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -21,6 +21,18 @@ export function tryDrawCustomGlyph(
   fontSize: number,
   devicePixelRatio: number
 ): boolean {
+  const unifiedCharDefinition = unifiedCharDefinitions[c];
+  if (unifiedCharDefinition) {
+    switch (unifiedCharDefinition.type) {
+      case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
+        drawBlockVectorChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION:
+        drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+    }
+  }
+
   const blockElementDefinition = blockElementDefinitions[c];
   if (blockElementDefinition) {
     drawBlockVectorChar(ctx, blockElementDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
@@ -42,12 +54,6 @@ export function tryDrawCustomGlyph(
   const blockShadeComboDefinition = blockShadeComboDefinitions[c];
   if (blockShadeComboDefinition) {
     drawBlockShadeComboChar(ctx, blockShadeComboDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-    return true;
-  }
-
-  const patternDefinition = patternCharacterDefinitions[c];
-  if (patternDefinition) {
-    drawPatternChar(ctx, patternDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
     return true;
   }
 

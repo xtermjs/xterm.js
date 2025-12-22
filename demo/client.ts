@@ -234,8 +234,8 @@ if (document.location.pathname === '/test') {
   document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
-  document.getElementById('custom-glyph').addEventListener('click', writeCustomGlyphHandler);
-  document.getElementById('symbols-for-legacy-computing').addEventListener('click', writeSymbolsForLegacyComputing);
+  document.getElementById('custom-glyph-alignment').addEventListener('click', customGlyphAlignmentHandler);
+  document.getElementById('custom-glyph-ranges').addEventListener('click', customGlyphRangesHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
   document.getElementById('print-cjk').addEventListener('click', addCjk);
@@ -786,7 +786,7 @@ function styleAtlasPage(e: HTMLCanvasElement): void {
   e.style.height = `${e.height / window.devicePixelRatio}px`;
 }
 
-function writeCustomGlyphHandler(): void {
+function customGlyphAlignmentHandler(): void {
   term.write('\n\r');
   term.write('\n\r');
   term.write('Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐\n\r');
@@ -839,10 +839,19 @@ function writeCustomGlyphHandler(): void {
   window.scrollTo(0, 0);
 }
 
-function writeSymbolsForLegacyComputing(): void {
+function customGlyphRangesHandler(): void {
+  // Box Elements
+  // 2580-259F
+  // https://www.unicode.org/charts/PDF/U2580.pdf
+  writeUnicodeTable(term, 'Box Elements', 0x2580, 0x259F, [
+    ['Block elements', 0x2580, 0x2590],
+    ['Shade characters', 0x2591, 0x2593],
+    ['Block elements', 0x2594, 0x2595],
+    ['Terminal graphic characters', 0x2596, 0x259F],
+  ]);
   // Symbols for Legacy Computing
   // Range: 1FB00–1FBFF
-  // Source: The Unicode Standard, Version 17.0 https://www.unicode.org/charts/PDF/U1FB00.pdf
+  // https://www.unicode.org/charts/PDF/U1FB00.pdf
   writeUnicodeTable(term, 'Symbols for Legacy Computing', 0x1FB00, 0x1FBFF, [
     ['Block mosaic terminal graphic characters (Sextants)', 0x1FB00, 0x1FB3B],
     ['Smooth mosaic terminal graphic characters', 0x1FB3C, 0x1FB6F],

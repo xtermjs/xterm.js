@@ -3,49 +3,67 @@
  * @license MIT
  */
 
-import { CustomGlyphVectorType, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
-export const unifiedCharDefinitions: { [index: string]: ICustomGlyphVectorShape[] | undefined } = {
+export const unifiedCharDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
+  // #region Block elements (2580-259F)
+
+  // Block elements (2580-2590)
+  // https://www.unicode.org/charts/PDF/U2580.pdf
+  '▀': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 4 }] }, // UPPER HALF BLOCK
+  '▁': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 7, w: 8, h: 1 }] }, // LOWER ONE EIGHTH BLOCK
+  '▂': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 6, w: 8, h: 2 }] }, // LOWER ONE QUARTER BLOCK
+  '▃': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 5, w: 8, h: 3 }] }, // LOWER THREE EIGHTHS BLOCK
+  '▄': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 4, w: 8, h: 4 }] }, // LOWER HALF BLOCK
+  '▅': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 3, w: 8, h: 5 }] }, // LOWER FIVE EIGHTHS BLOCK
+  '▆': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 2, w: 8, h: 6 }] }, // LOWER THREE QUARTERS BLOCK
+  '▇': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 1, w: 8, h: 7 }] }, // LOWER SEVEN EIGHTHS BLOCK
+  '█': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 8 }] }, // FULL BLOCK (=solid -> 25A0=black square)
+  '▉': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 7, h: 8 }] }, // LEFT SEVEN EIGHTHS BLOCK
+  '▊': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 6, h: 8 }] }, // LEFT THREE QUARTERS BLOCK
+  '▋': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 5, h: 8 }] }, // LEFT FIVE EIGHTHS BLOCK
+  '▌': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 4, h: 8 }] }, // LEFT HALF BLOCK
+  '▍': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 3, h: 8 }] }, // LEFT THREE EIGHTHS BLOCK
+  '▎': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 2, h: 8 }] }, // LEFT ONE QUARTER BLOCK
+  '▏': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 1, h: 8 }] }, // LEFT ONE EIGHTH BLOCK
+  '▐': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }] }, // RIGHT HALF BLOCK
+
+  // Shade characters (2591-2593)
+  '░': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: [ // LIGHT SHADE (25%)
+    [1, 0],
+    [0, 0]
+  ] },
+  '▒': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: [ // MEDIUM SHADE (=speckles fill, dotted fill, 50%, used in mapping to cp949, -> 1FB90 inverse medium shade)
+    [1, 0],
+    [0, 1]
+  ] },
+  '▓': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_DEFINITION, data: [ // DARK SHADE (75%)
+    [1, 1],
+    [1, 0]
+  ] },
+
+  // Block elements (2594-2595)
+  '▔': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 1 }] }, // UPPER ONE EIGHTH BLOCK
+  '▕': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 7, y: 0, w: 1, h: 8 }] }, // RIGHT ONE EIGHTH BLOCK
+
+  // Terminal graphic characters (2596-259F)
+  '▖': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 4, w: 4, h: 4 }] },                             // QUADRANT LOWER LEFT
+  '▗': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 4, w: 4, h: 4 }] },                             // QUADRANT LOWER RIGHT
+  '▘': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 4, h: 4 }] },                             // QUADRANT UPPER LEFT
+  '▙': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }] }, // QUADRANT UPPER LEFT AND LOWER LEFT AND LOWER RIGHT (-> 1F67F reverse checker board, -> 1FB95 checker board fill)
+  '▚': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 4, h: 4 }, { x: 4, y: 4, w: 4, h: 4 }] }, // QUADRANT UPPER LEFT AND LOWER RIGHT
+  '▛': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 4, h: 8 }, { x: 4, y: 0, w: 4, h: 4 }] }, // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER LEFT
+  '▜': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 4 }, { x: 4, y: 0, w: 4, h: 8 }] }, // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER RIGHT
+  '▝': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 4 }] },                             // QUADRANT UPPER RIGHT
+  '▞': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 4 }, { x: 0, y: 4, w: 4, h: 4 }] }, // QUADRANT UPPER RIGHT AND LOWER LEFT (-> 1F67E checker board, 1FB96 inverse checker board fill)
+  '▟': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }] }  // QUADRANT UPPER RIGHT AND LOWER LEFT AND LOWER RIGHT
+
+  // #endregion
 };
 
 export const blockElementDefinitions: { [index: string]: ICustomGlyphSolidOctantBlockVector[] | undefined } = {
-  // Block elements (0x2580-0x2590)
-  '▀': [{ x: 0, y: 0, w: 8, h: 4 }], // UPPER HALF BLOCK
-  '▁': [{ x: 0, y: 7, w: 8, h: 1 }], // LOWER ONE EIGHTH BLOCK
-  '▂': [{ x: 0, y: 6, w: 8, h: 2 }], // LOWER ONE QUARTER BLOCK
-  '▃': [{ x: 0, y: 5, w: 8, h: 3 }], // LOWER THREE EIGHTHS BLOCK
-  '▄': [{ x: 0, y: 4, w: 8, h: 4 }], // LOWER HALF BLOCK
-  '▅': [{ x: 0, y: 3, w: 8, h: 5 }], // LOWER FIVE EIGHTHS BLOCK
-  '▆': [{ x: 0, y: 2, w: 8, h: 6 }], // LOWER THREE QUARTERS BLOCK
-  '▇': [{ x: 0, y: 1, w: 8, h: 7 }], // LOWER SEVEN EIGHTHS BLOCK
-  '█': [{ x: 0, y: 0, w: 8, h: 8 }], // FULL BLOCK
-  '▉': [{ x: 0, y: 0, w: 7, h: 8 }], // LEFT SEVEN EIGHTHS BLOCK
-  '▊': [{ x: 0, y: 0, w: 6, h: 8 }], // LEFT THREE QUARTERS BLOCK
-  '▋': [{ x: 0, y: 0, w: 5, h: 8 }], // LEFT FIVE EIGHTHS BLOCK
-  '▌': [{ x: 0, y: 0, w: 4, h: 8 }], // LEFT HALF BLOCK
-  '▍': [{ x: 0, y: 0, w: 3, h: 8 }], // LEFT THREE EIGHTHS BLOCK
-  '▎': [{ x: 0, y: 0, w: 2, h: 8 }], // LEFT ONE QUARTER BLOCK
-  '▏': [{ x: 0, y: 0, w: 1, h: 8 }], // LEFT ONE EIGHTH BLOCK
-  '▐': [{ x: 4, y: 0, w: 4, h: 8 }], // RIGHT HALF BLOCK
-
-  // Block elements (0x2594-0x2595)
-  '▔': [{ x: 0, y: 0, w: 8, h: 1 }], // UPPER ONE EIGHTH BLOCK
-  '▕': [{ x: 7, y: 0, w: 1, h: 8 }], // RIGHT ONE EIGHTH BLOCK
-
-  // Terminal graphic characters (0x2596-0x259F)
-  '▖': [{ x: 0, y: 4, w: 4, h: 4 }],                             // QUADRANT LOWER LEFT
-  '▗': [{ x: 4, y: 4, w: 4, h: 4 }],                             // QUADRANT LOWER RIGHT
-  '▘': [{ x: 0, y: 0, w: 4, h: 4 }],                             // QUADRANT UPPER LEFT
-  '▙': [{ x: 0, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }], // QUADRANT UPPER LEFT AND LOWER LEFT AND LOWER RIGHT
-  '▚': [{ x: 0, y: 0, w: 4, h: 4 }, { x: 4, y: 4, w: 4, h: 4 }], // QUADRANT UPPER LEFT AND LOWER RIGHT
-  '▛': [{ x: 0, y: 0, w: 4, h: 8 }, { x: 4, y: 0, w: 4, h: 4 }], // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER LEFT
-  '▜': [{ x: 0, y: 0, w: 8, h: 4 }, { x: 4, y: 0, w: 4, h: 8 }], // QUADRANT UPPER LEFT AND UPPER RIGHT AND LOWER RIGHT
-  '▝': [{ x: 4, y: 0, w: 4, h: 4 }],                             // QUADRANT UPPER RIGHT
-  '▞': [{ x: 4, y: 0, w: 4, h: 4 }, { x: 0, y: 4, w: 4, h: 4 }], // QUADRANT UPPER RIGHT AND LOWER LEFT
-  '▟': [{ x: 4, y: 0, w: 4, h: 8 }, { x: 0, y: 4, w: 8, h: 4 }], // QUADRANT UPPER RIGHT AND LOWER LEFT AND LOWER RIGHT
-
   // VERTICAL ONE EIGHTH BLOCK-2 through VERTICAL ONE EIGHTH BLOCK-7
   '\u{1FB70}': [{ x: 1, y: 0, w: 1, h: 8 }],
   '\u{1FB71}': [{ x: 2, y: 0, w: 1, h: 8 }],
@@ -330,26 +348,6 @@ export const blockShadeComboDefinitions: { [index: string]: BlockShadeComboDefin
   '\u{1FB92}': [[0, 0.5, 1, 0.5], [0, 0, 1, 0.5]],     // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
   // 1FB93 is reserved
   '\u{1FB94}': [[0.5, 0, 0.5, 1], [0, 0, 0.5, 1]]      // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
-};
-
-/**
- * Defines the repeating pattern used by special characters, the pattern is made up of a 2d array of
- * pixel values to be filled (1) or not filled (0).
- */
-export const patternCharacterDefinitions: { [key: string]: CustomGlyphPatternDefinition | undefined } = {
-  // Shade characters (0x2591-0x2593)
-  '░': [ // LIGHT SHADE (25%)
-    [1, 0],
-    [0, 0]
-  ],
-  '▒': [ // MEDIUM SHADE (50%)
-    [1, 0],
-    [0, 1]
-  ],
-  '▓': [ // DARK SHADE (75%)
-    [1, 1],
-    [1, 0]
-  ]
 };
 
 const enum Shapes {
