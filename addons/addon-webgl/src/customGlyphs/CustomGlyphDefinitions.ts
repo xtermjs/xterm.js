@@ -647,7 +647,9 @@ function sextant(pattern: number): { type: CustomGlyphDefinitionType.PATH_FUNCTI
 
 /**
  * Generates SVG path data for a 7-segment display digit.
+ *
  * Segment mapping (bit positions):
+ *
  * - bit 6: a (top)
  * - bit 5: b (upper right)
  * - bit 4: c (lower right)
@@ -669,8 +671,9 @@ function sextant(pattern: number): { type: CustomGlyphDefinitionType.PATH_FUNCTI
 function segmentedDigit(pattern: number): string {
   const paths: string[] = [];
 
-  // Dimensions (in normalized 0-1 coordinates)
-  // Terminal cells are typically ~2:1 (height:width), so we use different values
+  // Each segment should have approximately the same stroke width, this is somewhat difficult to be
+  // precise since coordinates are 0-1 of the whole cell (percentage-based). To handle this, the
+  // fact that terminal cells are typically sized at ~2:1 (height:width) is leveraged.
   // for horizontal vs vertical to make segments appear the same thickness
   const segW = 0.15;  // Width of vertical segments (fraction of cell width)
   const segH = 0.075; // Height of horizontal segments (fraction of cell height, ~half of segW for 2:1 cells)
