@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IBlockVector {
@@ -293,7 +295,7 @@ export const symbolsForLegacyComputingDefinitions: { [index: string]: DrawFuncti
   '\u{1FB6C}': () => 'M0,0 L0.5,0.5 L0,1 Z',              // LEFT TRIANGULAR ONE QUARTER BLOCK
   '\u{1FB6D}': () => 'M0,0 L1,0 L0.5,0.5 Z',              // UPPER TRIANGULAR ONE QUARTER BLOCK
   '\u{1FB6E}': () => 'M1,0 L1,1 L0.5,0.5 Z',              // RIGHT TRIANGULAR ONE QUARTER BLOCK
-  '\u{1FB6F}': () => 'M0,1 L1,1 L0.5,0.5 Z',              // LOWER TRIANGULAR ONE QUARTER BLOCK
+  '\u{1FB6F}': () => 'M0,1 L1,1 L0.5,0.5 Z'               // LOWER TRIANGULAR ONE QUARTER BLOCK
 };
 
 type PatternDefinition = number[][];
