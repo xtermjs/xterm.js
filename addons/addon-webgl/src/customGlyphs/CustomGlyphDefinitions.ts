@@ -499,7 +499,22 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // Triangular shade characters (1FB9C-1FB9F)
 
-  // TODO: Implement
+  '\u{1FB9C}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH, data: [[ // UPPER LEFT TRIANGULAR MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], 'M0,0 L1,0 L0,1 Z'] },
+  '\u{1FB9D}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH, data: [[ // UPPER RIGHT TRIANGULAR MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], 'M0,0 L1,0 L1,1 Z'] },
+  '\u{1FB9E}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH, data: [[ // LOWER RIGHT TRIANGULAR MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], 'M1,0 L1,1 L0,1 Z'] },
+  '\u{1FB9F}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH, data: [[ // LOWER LEFT TRIANGULAR MEDIUM SHADE
+    [1, 0],
+    [0, 1]
+  ], 'M0,0 L1,1 L0,1 Z'] },
 
   // Character cell diagonals (1FBA0-1FBAE)
   '\u{1FBA0}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT

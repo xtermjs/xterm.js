@@ -37,6 +37,9 @@ export function tryDrawCustomGlyph(
         drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data.pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         drawBlockVectorChar(ctx, unifiedCharDefinition.data.vectors, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH:
+        drawBlockPatternWithClipPath(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
       case CustomGlyphDefinitionType.PATH_FUNCTION:
       case CustomGlyphDefinitionType.PATH:
         drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
@@ -284,6 +287,49 @@ function drawPathDefinitionCharacterWithWeight(
     ctx.stroke();
     ctx.closePath();
   }
+}
+
+/**
+ * Draws a pattern clipped to an arbitrary path (for triangular shades, etc.)
+ */
+function drawBlockPatternWithClipPath(
+  ctx: CanvasRenderingContext2D,
+  definition: [pattern: CustomGlyphPatternDefinition, clipPath: string],
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number
+): void {
+  const [pattern, clipPath] = definition;
+
+  ctx.save();
+
+  // Build clip path from SVG-like instructions
+  ctx.beginPath();
+  for (const instruction of clipPath.split(' ')) {
+    const type = instruction[0];
+    if (type === 'Z') {
+      ctx.closePath();
+      continue;
+    }
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    const x = xOffset + parseFloat(args[0]) * deviceCellWidth;
+    const y = yOffset + parseFloat(args[1]) * deviceCellHeight;
+    if (type === 'M') {
+      ctx.moveTo(x, y);
+    } else if (type === 'L') {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.clip();
+
+  // Draw the pattern
+  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+
+  ctx.restore();
 }
 
 function drawVectorShape(
