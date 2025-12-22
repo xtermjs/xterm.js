@@ -537,8 +537,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBAF}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: `${Shapes.LEFT_TO_RIGHT} M.5,.35 L.5,.65` } }, // BOX DRAWINGS LIGHT HORIZONTAL WITH VERTICAL STROKE
 
   // Terminal graphic characters (1FBB0-1FBB3)
-
-  // TODO: Consider implementing
+  '\u{1FBB0}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.1,0.2 L0.1,.8 L.4,.6 L.9,0.6 Z' }, // ARROWHEAD-SHAPED POINTER
+  // TODO: Consider implementing rest
 
   // Arrows (1FBB4-1FBB8)
 
