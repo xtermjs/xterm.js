@@ -4,7 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { boxDrawingDefinitions, unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
+import { unifiedCharDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from 'customGlyphs/Types';
 
 /**
@@ -44,13 +44,10 @@ export function tryDrawCustomGlyph(
       case CustomGlyphDefinitionType.VECTOR_SHAPE:
         drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
         return true;
+      case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
+        drawPathDefinitionCharacterWithWeight(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
+        return true;
     }
-  }
-
-  const boxDrawingDefinition = boxDrawingDefinitions[c];
-  if (boxDrawingDefinition) {
-    drawBoxDrawingChar(ctx, boxDrawingDefinition, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
-    return true;
   }
 
   return false;
@@ -246,7 +243,7 @@ function drawBlockPatternWithRegion(
  *
  * Source: https://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html
  */
-function drawBoxDrawingChar(
+function drawPathDefinitionCharacterWithWeight(
   ctx: CanvasRenderingContext2D,
   charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
   xOffset: number,

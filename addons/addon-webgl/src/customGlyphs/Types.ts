@@ -36,6 +36,7 @@ export const enum CustomGlyphDefinitionType {
   BLOCK_PATTERN_WITH_REGION,
   BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR,
   PATH_FUNCTION,
+  PATH_FUNCTION_WITH_WEIGHT,
   PATH,
   VECTOR_SHAPE,
 }
@@ -50,6 +51,7 @@ export type CustomGlyphCharacterDefinition = (
   // casing
   { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { pattern: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition], vectors: ICustomGlyphSolidOctantBlockVector[] } } |
   { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } |
+  { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [fontWeight: number]: string | CustomGlyphPathDrawFunctionDefinition } } |
   { type: CustomGlyphDefinitionType.PATH, data: string } |
   { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape }
 );
