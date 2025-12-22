@@ -546,8 +546,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // TODO: Consider implementing
 
   // Block elements (1FBCE-1FBCF)
-
-  // TODO: Implementing
+  '\u{1FBCE}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.6667,0 L0.6667,1 L0,1 Z' }, // LEFT TWO THIRDS BLOCK
+  '\u{1FBCF}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.3333,0 L0.3333,1 L0,1 Z' }, // LEFT ONE THIRD BLOCK
 
   // Character cell diagonals (1FBD0-1FBDF)
   '\u{1FBD0}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,.5 L0,1' } },       // BOX DRAWINGS LIGHT DIAGONAL MIDDLE RIGHT TO LOWER LEFT
