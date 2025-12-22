@@ -5,7 +5,7 @@
 
 import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
-import { tryDrawCustomChar } from './CustomGlyphs';
+import { tryDrawCustomGlyph } from './customGlyphs/CustomGlyphRasterizer';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
 import { NULL_COLOR, channels, color, rgba } from 'common/Color';
@@ -514,7 +514,7 @@ export class TextureAtlas implements ITextureAtlas {
     // Draw custom characters if applicable
     let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      customGlyph = tryDrawCustomChar(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.fontSize, this._config.devicePixelRatio);
+      customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.fontSize, this._config.devicePixelRatio);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
