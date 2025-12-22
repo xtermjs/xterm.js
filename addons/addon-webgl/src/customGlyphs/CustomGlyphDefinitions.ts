@@ -568,12 +568,39 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBDF}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L1,.5 L0,1' } },  // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO MIDDLE RIGHT TO LOWER LEFT
 
   // Geometric shapes (1FBE0-1FBEF)
-
-  // TODO: Implement
+  // Half circles (white = stroked outline) - each semicircle fits in half the cell
+  '\u{1FBE0}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C0,.276,.224,.5,.5,.5 C.776,.5,1,.276,1,0', type: CustomGlyphVectorType.STROKE } }, // TOP JUSTIFIED LOWER HALF WHITE CIRCLE
+  '\u{1FBE1}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 C.724,0,.5,.224,.5,.5 C.5,.776,.724,1,1,1', type: CustomGlyphVectorType.STROKE } }, // RIGHT JUSTIFIED LEFT HALF WHITE CIRCLE
+  '\u{1FBE2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,1 C0,.724,.224,.5,.5,.5 C.776,.5,1,.724,1,1', type: CustomGlyphVectorType.STROKE } }, // BOTTOM JUSTIFIED UPPER HALF WHITE CIRCLE
+  '\u{1FBE3}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C.276,0,.5,.224,.5,.5 C.5,.776,.276,1,0,1', type: CustomGlyphVectorType.STROKE } }, // LEFT JUSTIFIED RIGHT HALF WHITE CIRCLE
+  // Quarter blocks at edges
+  '\u{1FBE4}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 0, w: 4, h: 4 }] }, // UPPER CENTRE ONE QUARTER BLOCK
+  '\u{1FBE5}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 4, w: 4, h: 4 }] }, // LOWER CENTRE ONE QUARTER BLOCK
+  '\u{1FBE6}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 2, w: 4, h: 4 }] }, // MIDDLE LEFT ONE QUARTER BLOCK
+  '\u{1FBE7}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 2, w: 4, h: 4 }] }, // MIDDLE RIGHT ONE QUARTER BLOCK
+  // Half circles (filled) - each semicircle fits in half the cell
+  '\u{1FBE8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C0,.276,.224,.5,.5,.5 C.776,.5,1,.276,1,0 Z', type: CustomGlyphVectorType.FILL } }, // TOP JUSTIFIED LOWER HALF BLACK CIRCLE
+  '\u{1FBE9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 C.724,0,.5,.224,.5,.5 C.5,.776,.724,1,1,1 Z', type: CustomGlyphVectorType.FILL } }, // RIGHT JUSTIFIED LEFT HALF BLACK CIRCLE
+  '\u{1FBEA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,1 C0,.724,.224,.5,.5,.5 C.776,.5,1,.724,1,1 Z', type: CustomGlyphVectorType.FILL } }, // BOTTOM JUSTIFIED UPPER HALF BLACK CIRCLE
+  '\u{1FBEB}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C.276,0,.5,.224,.5,.5 C.5,.776,.276,1,0,1 Z', type: CustomGlyphVectorType.FILL } }, // LEFT JUSTIFIED RIGHT HALF BLACK CIRCLE
+  // Quarter circles (filled) - radius 0.5 quarter circles in cell quadrants
+  '\u{1FBEC}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 L.5,0 C.5,.276,.724,.5,1,.5 Z', type: CustomGlyphVectorType.FILL } }, // TOP RIGHT JUSTIFIED LOWER LEFT QUARTER BLACK CIRCLE
+  '\u{1FBED}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,1 L.5,1 C.5,.724,.276,.5,0,.5 Z', type: CustomGlyphVectorType.FILL } }, // BOTTOM LEFT JUSTIFIED UPPER RIGHT QUARTER BLACK CIRCLE
+  '\u{1FBEE}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,1 L1,.5 C.724,.5,.5,.724,.5,1 Z', type: CustomGlyphVectorType.FILL } }, // BOTTOM RIGHT JUSTIFIED UPPER LEFT QUARTER BLACK CIRCLE
+  '\u{1FBEF}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L0,.5 C.276,.5,.5,.276,.5,0 Z', type: CustomGlyphVectorType.FILL } }, // TOP LEFT JUSTIFIED LOWER RIGHT QUARTER BLACK CIRCLE
 
   // Segmented digits (1FBF0-1FBF9)
 
-  // TODO: Consider implementing
+  '\u{1FBF0}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1111110), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT ZERO (abcdef)
+  '\u{1FBF1}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b0110000), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT ONE (bc)
+  '\u{1FBF2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1101101), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT TWO (abdeg)
+  '\u{1FBF3}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1111001), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT THREE (abcdg)
+  '\u{1FBF4}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b0110011), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT FOUR (bcfg)
+  '\u{1FBF5}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1011011), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT FIVE (acdfg)
+  '\u{1FBF6}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1011111), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT SIX (acdefg)
+  '\u{1FBF7}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1110010), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT SEVEN (abcf)
+  '\u{1FBF8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1111111), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT EIGHT (abcdefg)
+  '\u{1FBF9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1111011), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT NINE (abcdfg)
 
   // Terminal graphic character (1FBFA-1FBFA)
 
@@ -616,6 +643,114 @@ function sextant(pattern: number): { type: CustomGlyphDefinitionType.PATH_FUNCTI
       return rects.join(' ');
     }
   };
+}
+
+/**
+ * Generates SVG path data for a 7-segment display digit.
+ * Segment mapping (bit positions):
+ * - bit 6: a (top)
+ * - bit 5: b (upper right)
+ * - bit 4: c (lower right)
+ * - bit 3: d (bottom)
+ * - bit 2: e (lower left)
+ * - bit 1: f (upper left)
+ * - bit 0: g (middle)
+ *
+ * ```
+ *   ─a─
+ *  │   │
+ *  f   b
+ *   ─g─
+ *  e   c
+ *  │   │
+ *   ─d─
+ * ```
+ */
+function segmentedDigit(pattern: number): string {
+  const paths: string[] = [];
+
+  // Dimensions (in normalized 0-1 coordinates)
+  // Terminal cells are typically ~2:1 (height:width), so we use different values
+  // for horizontal vs vertical to make segments appear the same thickness
+  const segW = 0.15;  // Width of vertical segments (fraction of cell width)
+  const segH = 0.075; // Height of horizontal segments (fraction of cell height, ~half of segW for 2:1 cells)
+  const padX = 0.05;  // Horizontal padding from edge
+  const padY = 0.175; // Vertical padding from edge (35% total = 65% height)
+  const gap = 0.015;  // Gap between segments
+  const taperX = segW / 2; // Horizontal taper for vertical segments
+  const taperY = segH / 2; // Vertical taper for horizontal segments
+
+  const left = padX;
+  const right = 1 - padX;
+  const top = padY;
+  const bottom = 1 - padY;
+  const midY = 0.5;
+
+  // Segment a (top horizontal) - hexagonal with pointed left/right ends
+  if (pattern & 0b1000000) {
+    const y1 = top;
+    const y2 = top + segH / 2;
+    const y3 = top + segH;
+    const x1 = left + segW + gap;
+    const x2 = right - segW - gap;
+    paths.push(`M${x1},${y2} L${x1 + taperX},${y1} L${x2 - taperX},${y1} L${x2},${y2} L${x2 - taperX},${y3} L${x1 + taperX},${y3} Z`);
+  }
+  // Segment b (upper right vertical) - hexagonal with pointed top/bottom ends
+  if (pattern & 0b0100000) {
+    const x1 = right - segW;
+    const x2 = right - segW / 2;
+    const x3 = right;
+    const y1 = top + segH + gap;
+    const y2 = midY - gap;
+    paths.push(`M${x2},${y1} L${x3},${y1 + taperY} L${x3},${y2 - taperY} L${x2},${y2} L${x1},${y2 - taperY} L${x1},${y1 + taperY} Z`);
+  }
+  // Segment c (lower right vertical) - hexagonal with pointed top/bottom ends
+  if (pattern & 0b0010000) {
+    const x1 = right - segW;
+    const x2 = right - segW / 2;
+    const x3 = right;
+    const y1 = midY + gap;
+    const y2 = bottom - segH - gap;
+    paths.push(`M${x2},${y1} L${x3},${y1 + taperY} L${x3},${y2 - taperY} L${x2},${y2} L${x1},${y2 - taperY} L${x1},${y1 + taperY} Z`);
+  }
+  // Segment d (bottom horizontal) - hexagonal with pointed left/right ends
+  if (pattern & 0b0001000) {
+    const y1 = bottom - segH;
+    const y2 = bottom - segH / 2;
+    const y3 = bottom;
+    const x1 = left + segW + gap;
+    const x2 = right - segW - gap;
+    paths.push(`M${x1},${y2} L${x1 + taperX},${y1} L${x2 - taperX},${y1} L${x2},${y2} L${x2 - taperX},${y3} L${x1 + taperX},${y3} Z`);
+  }
+  // Segment e (lower left vertical) - hexagonal with pointed top/bottom ends
+  if (pattern & 0b0000100) {
+    const x1 = left;
+    const x2 = left + segW / 2;
+    const x3 = left + segW;
+    const y1 = midY + gap;
+    const y2 = bottom - segH - gap;
+    paths.push(`M${x2},${y1} L${x3},${y1 + taperY} L${x3},${y2 - taperY} L${x2},${y2} L${x1},${y2 - taperY} L${x1},${y1 + taperY} Z`);
+  }
+  // Segment f (upper left vertical) - hexagonal with pointed top/bottom ends
+  if (pattern & 0b0000010) {
+    const x1 = left;
+    const x2 = left + segW / 2;
+    const x3 = left + segW;
+    const y1 = top + segH + gap;
+    const y2 = midY - gap;
+    paths.push(`M${x2},${y1} L${x3},${y1 + taperY} L${x3},${y2 - taperY} L${x2},${y2} L${x1},${y2 - taperY} L${x1},${y1 + taperY} Z`);
+  }
+  // Segment g (middle horizontal) - hexagonal with pointed left/right ends
+  if (pattern & 0b0000001) {
+    const y1 = midY - segH / 2;
+    const y2 = midY;
+    const y3 = midY + segH / 2;
+    const x1 = left + segW + gap;
+    const x2 = right - segW - gap;
+    paths.push(`M${x1},${y2} L${x1 + taperX},${y1} L${x2 - taperX},${y1} L${x2},${y2} L${x2 - taperX},${y3} L${x1 + taperX},${y3} Z`);
+  }
+
+  return paths.join(' ');
 }
 
 const enum Shapes {
