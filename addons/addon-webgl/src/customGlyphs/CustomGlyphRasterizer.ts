@@ -4,7 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, patternCharacterDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions } from 'CustomGlyphs';
+import { blockElementDefinitions, blockShadeComboDefinitions, boxDrawingDefinitions, patternCharacterDefinitions, powerlineDefinitions, rectangularShadeDefinitions, symbolsForLegacyComputingDefinitions } from 'customGlyphs/CustomGlyphDefinitions';
 
 export interface ISolidOctantBlockVector {
   x: number;

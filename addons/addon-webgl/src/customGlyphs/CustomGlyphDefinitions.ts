@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { VectorType, type DrawFunctionDefinition, type ISolidOctantBlockVector, type IVectorShape, type PatternDefinition } from 'CustomGlyphRasterizer';
+import { VectorType, type DrawFunctionDefinition, type ISolidOctantBlockVector, type IVectorShape, type PatternDefinition } from 'customGlyphs/CustomGlyphRasterizer';
 
 export const blockElementDefinitions: { [index: string]: ISolidOctantBlockVector[] | undefined } = {
   // Block elements (0x2580-0x2590)
