@@ -538,15 +538,22 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // Terminal graphic characters (1FBB0-1FBB3)
   '\u{1FBB0}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.1,0.2 L0.1,.8 L.4,.6 L.9,0.6 Z' }, // ARROWHEAD-SHAPED POINTER
-  // TODO: Consider implementing rest
+  '\u{1FBB1}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.1,.55 L.35,.85 L.9,.2', type: CustomGlyphVectorType.STROKE } }, // INVERSE CHECK MARK
+  // 1FBB2 LEFT HALF RUNNING MAN
+  // 1FBB3 RIGHT HALF RUNNING MAN
 
   // Arrows (1FBB4-1FBB8)
-
-  // TODO: Consider implementing
+  // 1FBB4 INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
+  // 1FBB5 LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+  // 1FBB6 RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+  // 1FBB7 DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+  // 1FBB8 UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
 
   // Terminal graphic characters (1FBB9-1FBBC)
-
-  // TODO: Consider implementing
+  // 1FBB9 LEFT HALF FOLDER
+  // 1FBBA RIGHT HALF FOLDER
+  // 1FBBB VOIDED GREEK CROSS
+  // 1FBBC RIGHT OPEN SQUARED DOT
 
   // Negative terminal graphic characters (1FBBD-1FBBF)
   '\u{1FBBD}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M0,0 L.5,.5 L1,0 L1,1 L.5,.5 L0,1 Z', type: CustomGlyphVectorType.STROKE } },  // NEGATIVE DIAGONAL CROSS
@@ -554,12 +561,22 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBBF}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.5,0 L1,.5 L.5,1 L0,.5 Z', type: CustomGlyphVectorType.STROKE } },              // NEGATIVE DIAGONAL DIAMOND
 
   // Terminal graphic characters (1FBC0-1FBCA)
-
-  // TODO: Consider implementing
+  // 1FBC0 WHITE HEAVY SALTIRE WITH ROUNDED CORNERS
+  // 1FBC1 LEFT THIRD WHITE RIGHT POINTING INDEX
+  // 1FBC2 MIDDLE THIRD WHITE RIGHT POINTING INDEX
+  // 1FBC3 RIGHT THIRD WHITE RIGHT POINTING INDEX
+  // 1FBC4 NEGATIVE SQUARED QUESTION MARK
+  // 1FBC5 STICK FIGURE
+  // 1FBC6 STICK FIGURE WITH ARMS RAISED
+  // 1FBC7 STICK FIGURE LEANING LEFT
+  // 1FBC8 STICK FIGURE LEANING RIGHT
+  // 1FBC9 STICK FIGURE WITH DRESS
+  // 1FBCA WHITE UP-POINTING CHEVRON
 
   // Terminal graphic characters (1FBCB-1FBCD)
-
-  // TODO: Consider implementing
+  // 1FBCB WHITE CROSS MARK
+  // 1FBCC RAISED SMALL LEFT SQUARE BRACKET
+  // 1FBCD BLACK SMALL UP-POINTING CHEVRON
 
   // Block elements (1FBCE-1FBCF)
   '\u{1FBCE}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.6667,0 L0.6667,1 L0,1 Z' }, // LEFT TWO THIRDS BLOCK
@@ -619,8 +636,7 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBF9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1111011), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT NINE (abcdfg)
 
   // Terminal graphic character (1FBFA-1FBFA)
-
-  // TODO: Consider implementing
+  // 1FBFA ALARM BELL SYMBOL
 
   // #endregion
 };
