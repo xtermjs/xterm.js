@@ -91,6 +91,8 @@ function drawPathDefinitionCharacter(
 ): void {
   const instructions = typeof charDefinition === 'string' ? charDefinition : charDefinition(0, 0);
   ctx.beginPath();
+  let currentX = 0;
+  let currentY = 0;
   for (const instruction of instructions.split(' ')) {
     const type = instruction[0];
     const args: string[] = instruction.substring(1).split(',');
@@ -98,6 +100,20 @@ function drawPathDefinitionCharacter(
       if (type === 'Z') {
         ctx.closePath();
       }
+      continue;
+    }
+    if (type === 'A') {
+      // SVG arc: A rx,ry,xAxisRotation,largeArcFlag,sweepFlag,x,y
+      const rx = parseFloat(args[0]) * deviceCellWidth;
+      const ry = parseFloat(args[1]) * deviceCellHeight;
+      const xAxisRotation = parseFloat(args[2]) * Math.PI / 180;
+      const largeArcFlag = parseInt(args[3]);
+      const sweepFlag = parseInt(args[4]);
+      const x = xOffset + parseFloat(args[5]) * deviceCellWidth;
+      const y = yOffset + parseFloat(args[6]) * deviceCellHeight;
+      drawSvgArc(ctx, currentX, currentY, rx, ry, xAxisRotation, largeArcFlag, sweepFlag, x, y);
+      currentX = x;
+      currentY = y;
       continue;
     }
     const translatedArgs = args.map((e, i) => {
@@ -108,11 +124,92 @@ function drawPathDefinitionCharacter(
     });
     if (type === 'M') {
       ctx.moveTo(translatedArgs[0], translatedArgs[1]);
+      currentX = translatedArgs[0];
+      currentY = translatedArgs[1];
     } else if (type === 'L') {
       ctx.lineTo(translatedArgs[0], translatedArgs[1]);
+      currentX = translatedArgs[0];
+      currentY = translatedArgs[1];
     }
   }
   ctx.fill();
+}
+
+/**
+ * Converts SVG arc parameters to canvas arc/ellipse calls.
+ * Based on the SVG spec's endpoint to center parameterization conversion.
+ */
+function drawSvgArc(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number,
+  rx: number, ry: number,
+  phi: number,
+  largeArcFlag: number,
+  sweepFlag: number,
+  x2: number, y2: number
+): void {
+  // Handle degenerate cases
+  if (rx === 0 || ry === 0) {
+    ctx.lineTo(x2, y2);
+    return;
+  }
+
+  rx = Math.abs(rx);
+  ry = Math.abs(ry);
+
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+
+  // Step 1: Compute (x1', y1')
+  const dx = (x1 - x2) / 2;
+  const dy = (y1 - y2) / 2;
+  const x1p = cosPhi * dx + sinPhi * dy;
+  const y1p = -sinPhi * dx + cosPhi * dy;
+
+  // Step 2: Compute (cx', cy')
+  let rxSq = rx * rx;
+  let rySq = ry * ry;
+  const x1pSq = x1p * x1p;
+  const y1pSq = y1p * y1p;
+
+  // Correct radii if necessary
+  const lambda = x1pSq / rxSq + y1pSq / rySq;
+  if (lambda > 1) {
+    const lambdaSqrt = Math.sqrt(lambda);
+    rx *= lambdaSqrt;
+    ry *= lambdaSqrt;
+    rxSq = rx * rx;
+    rySq = ry * ry;
+  }
+
+  let sq = (rxSq * rySq - rxSq * y1pSq - rySq * x1pSq) / (rxSq * y1pSq + rySq * x1pSq);
+  if (sq < 0) sq = 0;
+  const coef = (largeArcFlag === sweepFlag ? -1 : 1) * Math.sqrt(sq);
+  const cxp = coef * (rx * y1p / ry);
+  const cyp = coef * -(ry * x1p / rx);
+
+  // Step 3: Compute (cx, cy) from (cx', cy')
+  const cx = cosPhi * cxp - sinPhi * cyp + (x1 + x2) / 2;
+  const cy = sinPhi * cxp + cosPhi * cyp + (y1 + y2) / 2;
+
+  // Step 4: Compute angles
+  const ux = (x1p - cxp) / rx;
+  const uy = (y1p - cyp) / ry;
+  const vx = (-x1p - cxp) / rx;
+  const vy = (-y1p - cyp) / ry;
+
+  const startAngle = Math.atan2(uy, ux);
+  let dTheta = Math.atan2(vy, vx) - startAngle;
+
+  if (sweepFlag === 0 && dTheta > 0) {
+    dTheta -= 2 * Math.PI;
+  } else if (sweepFlag === 1 && dTheta < 0) {
+    dTheta += 2 * Math.PI;
+  }
+
+  const endAngle = startAngle + dTheta;
+
+  ctx.ellipse(cx, cy, rx, ry, phi, startAngle, endAngle, sweepFlag === 0);
 }
 
 /**

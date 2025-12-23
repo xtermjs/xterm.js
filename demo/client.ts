@@ -835,8 +835,9 @@ function customGlyphAlignmentHandler(): void {
   term.write('🭊🭁🭌🬿 🭈🭆🭂🭍🭑🬽 🭇🭄🭏🬼 🭃🭎 🭅🭐 🭨🭪\n\r');
   term.write('🭥🭒🭝🭚 🭣🭧🭓🭞🭜🭘 🭢🭕🭠🭗 🭔🭟 🭖🭡 🭪🭨\n\r');
   term.write(' 🭢🭗              🭤🭙 🭦🭛\n\r');
-
-  term.write('\x1b[0mFill tests:\x1b[34m\n\r');
+  term.write('\x1b[0mComposite characters:\x1b[34m\n\r');
+  term.write('\u{1FBB2}\u{1FBB3}\n\r');
+  term.write('\x1b[0mFill tests:\x1b[35m\n\r');
   const fillChars = ['\u{2591}', '\u{2592}', '\u{2593}', '\u{1FB8C}', '\u{1FB8D}', '\u{1FB8E}', '\u{1FB8F}', '\u{1FB90}', '\u{1FB91}', '\u{1FB92}', '\u{1FB94}', '\u{1FB95}', '\u{1FB96}', '\u{1FB97}', '\u{1FB98}', '\u{1FB99}'];
   while (fillChars.length > 0) {
     const batch = fillChars.splice(0, 10);

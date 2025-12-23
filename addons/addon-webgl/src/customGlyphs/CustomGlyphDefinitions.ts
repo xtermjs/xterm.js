@@ -541,8 +541,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // Terminal graphic characters (1FBB0-1FBB3)
   '\u{1FBB0}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.1,0.2 L0.1,.8 L.4,.6 L.9,0.6 Z' },                                           // ARROWHEAD-SHAPED POINTER
   '\u{1FBB1}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.1,.55 L.35,.85 L.9,.2', type: CustomGlyphVectorType.STROKE } }, // INVERSE CHECK MARK
-  // 1FBB2 LEFT HALF RUNNING MAN
-  // 1FBB3 RIGHT HALF RUNNING MAN
+  '\u{1FBB2}': { type: CustomGlyphDefinitionType.PATH, data: 'M.29,.27 L0.13,.56 L.22,.59 L.35,0.35 L.67,.35 L.57,.57 L.71,.76 L.22,.76 L.42,1 L.53,.98 L.43,.86 L.9,.86 L.71,.6 L1,.6 L1,.52 L.83,.52 L.92,.36 L1,.36 L1,.27Z M.99,.13 A.12,.12,0,1,1,.75,.13 A.12,.12,0,1,1,.99,.13' }, // LEFT HALF RUNNING MAN
+  '\u{1FBB3}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,.27 L.3,.27 L.55,.12 L.63,.18 L.33,.36 L0,.36 M0,.52 L.33,.52 L.59,.89 L.73,.89 L.73,.98 L.53,.98 L.28,.6 L0,.6' },                                                                                                      // RIGHT HALF RUNNING MAN
 
   // Arrows (1FBB4-1FBB8)
   '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.6 L.5,.4 L.5,.5 L.75,.5 L.75,.2 L.85,.2 L.85,.7 L.5,.7 L.5,.8 Z', type: CustomGlyphVectorType.FILL } },                                        // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
