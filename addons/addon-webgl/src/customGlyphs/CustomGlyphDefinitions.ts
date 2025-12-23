@@ -543,11 +543,11 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // 1FBB3 RIGHT HALF RUNNING MAN
 
   // Arrows (1FBB4-1FBB8)
-  // 1FBB4 INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
-  // 1FBB5 LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
-  // 1FBB6 RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
-  // 1FBB7 DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
-  // 1FBB8 UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+  '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.6 L.5,.4 L.5,.5 L.75,.5 L.75,.2 L.85,.2 L.85,.7 L.5,.7 L.5,.8 Z', type: CustomGlyphVectorType.FILL } }, // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
+  '\u{1FBB5}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z M.15,.5 L.5,.3 L.5,.4 L.85,.4 L.85,.6 L.5,.6 L.5,.7 Z', type: CustomGlyphVectorType.FILL } }, // LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+  '\u{1FBB6}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z M.85,.5 L.5,.3 L.5,.4 L.15,.4 L.15,.6 L.5,.6 L.5,.7 Z', type: CustomGlyphVectorType.FILL } }, // RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+  '\u{1FBB7}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.85 L.3,.5 L.4,.5 L.4,.15 L.6,.15 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } }, // DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+  '\u{1FBB8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.15 L.3,.5 L.4,.5 L.4,.85 L.6,.85 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } }, // UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
 
   // Terminal graphic characters (1FBB9-1FBBC)
   // 1FBB9 LEFT HALF FOLDER
