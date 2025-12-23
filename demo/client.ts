@@ -1548,7 +1548,7 @@ function progressButtons(): void {
   const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
   const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
 
-  function progressHandler({state, value}: IProgressState) {
+  function progressHandler({ state, value }: IProgressState): void {
     // Simulate windows taskbar hack by windows terminal:
     // Since the taskbar has no means to indicate error/pause state other than by coloring
     // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
