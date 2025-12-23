@@ -552,8 +552,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBB8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.15 L.3,.5 L.4,.5 L.4,.85 L.6,.85 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } },                             // UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
 
   // Terminal graphic characters (1FBB9-1FBBC)
-  // 1FBB9 LEFT HALF FOLDER
-  // 1FBBA RIGHT HALF FOLDER
+  '\u{1FBB9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,.89 L.11,.89 L.11,.37 L.36,.12 L.74,.12 L.96,.34 L1,.34 L1,.45 L.92,.45 L.69,.22 L.41,.22 L.21,.42 L.21,.79 L1,.79 Z', type: CustomGlyphVectorType.FILL } }, // LEFT HALF FOLDER
+  '\u{1FBBA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,.89 L0,.79 L.78,.79 L.78,.53 L.7,.45 L0,.45 L0,.35 L.75,.35 L.88,.48 L.88,.89 Z', type: CustomGlyphVectorType.FILL } }, // 1FBBA RIGHT HALF FOLDER
   // 1FBBB VOIDED GREEK CROSS
   // 1FBBC RIGHT OPEN SQUARED DOT
 
