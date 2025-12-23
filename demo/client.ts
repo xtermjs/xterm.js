@@ -453,8 +453,6 @@ function initOptions(term: Terminal): void {
     'theme',
     'windowOptions',
     'windowsPty',
-    // Deprecated
-    'fastScrollModifier'
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],

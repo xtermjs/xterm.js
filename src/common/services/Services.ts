@@ -234,8 +234,6 @@ export interface ITerminalOptions {
   disableStdin?: boolean;
   documentOverride?: any | null;
   drawBoldTextInBrightColors?: boolean;
-  /** @deprecated No longer supported */
-  fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
   fastScrollSensitivity?: number;
   fontSize?: number;
   fontFamily?: string;
@@ -261,7 +259,6 @@ export interface ITerminalOptions {
   smoothScrollDuration?: number;
   tabStopWidth?: number;
   theme?: ITheme;
-  windowsMode?: boolean;
   windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
