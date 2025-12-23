@@ -500,7 +500,6 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB9B}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L.5,.5 L1,0 L1,1 L.5,.5 L0,1', type: CustomGlyphVectorType.FILL } }, // LEFT AND RIGHT TRIANGULAR HALF BLOCK
 
   // Triangular shade characters (1FB9C-1FB9F)
-
   '\u{1FB9C}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH, data: [[ // UPPER LEFT TRIANGULAR MEDIUM SHADE
     [1, 0],
     [0, 1]
@@ -563,17 +562,17 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBBF}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.5,0 L1,.5 L.5,1 L0,.5 Z', type: CustomGlyphVectorType.STROKE } },           // NEGATIVE DIAGONAL DIAMOND
 
   // Terminal graphic characters (1FBC0-1FBCA)
-  // 1FBC0 WHITE HEAVY SALTIRE WITH ROUNDED CORNERS
+  '\u{1FBC0}': { type: CustomGlyphDefinitionType.PATH, data: 'M.16,.39 A.02,.02,0,0,1,.39,.16 L.5,.25 L.61,.16 A.02,.02,0,0,1,.84,.39 L.75,.5 L.84,.61 A.02,.02,0,0,1,.61,.84 L.5,.75 L.39,.84 A.02,.02,0,0,1,.16,.61 L.25,.5 Z M.24,.32 L.39,.5 L.24,.68 L.32,.76 L.5,.61 L.68,.76 L.76,.68 L.61,.5 L.76,.32 L.68,.24 L.5,.39 L.32,.24 Z' }, // WHITE HEAVY SALTIRE WITH ROUNDED CORNERS
   // 1FBC1 LEFT THIRD WHITE RIGHT POINTING INDEX
   // 1FBC2 MIDDLE THIRD WHITE RIGHT POINTING INDEX
   // 1FBC3 RIGHT THIRD WHITE RIGHT POINTING INDEX
   // 1FBC4 NEGATIVE SQUARED QUESTION MARK
-  // 1FBC5 STICK FIGURE
-  // 1FBC6 STICK FIGURE WITH ARMS RAISED
-  // 1FBC7 STICK FIGURE LEANING LEFT
-  // 1FBC8 STICK FIGURE LEANING RIGHT
-  // 1FBC9 STICK FIGURE WITH DRESS
-  // 1FBCA WHITE UP-POINTING CHEVRON
+  '\u{1FBC5}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.44,.35 L.44,.52 L.44,.62 L.19,.87 L.26,.94 L.5,.71 L.74,.94 L.81,.87 L.56,.62 L.56,.52 L.56,.35 Z M.17,.42 L.17,.52 L.83,.52 L.83,.42 Z M.67,.2 C.67,.106,.594,.03,.5,.03 C.406,.03,.33,.106,.33,.2 C.33,.294,.406,.37,.5,.37 C.594,.37,.67,.294,.67,.2 Z M.56,.2 C.56,.233,.533,.26,.5,.26 C.467,.26,.44,.233,.44,.2 C.44,.167,.467,.14,.5,.14 C.533,.14,.56,.167,.56,.2 Z', type: CustomGlyphVectorType.FILL } }, // STICK FIGURE
+  '\u{1FBC6}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.44,.35 L.44,.42 L.23,.27 L.19,.36 L.44,.52 L.44,.62 L.29,.92 L.38,.97 L.5,.71 L.61,.97 L.7,.92 L.56,.62 L.56,.52 L.81,.36 L.77,.27 L.56,.42 L.56,.35 Z M.67,.2 C.67,.106,.594,.03,.5,.03 C.406,.03,.33,.106,.33,.2 C.33,.294,.406,.37,.5,.37 C.594,.37,.67,.294,.67,.2 Z M.56,.2 C.56,.233,.533,.26,.5,.26 C.467,.26,.44,.233,.44,.2 C.44,.167,.467,.14,.5,.14 C.533,.14,.56,.167,.56,.2 Z', type: CustomGlyphVectorType.FILL } }, // STICK FIGURE WITH ARMS RAISED
+  '\u{1FBC7}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.44,.35 L.44,.62 L.29,.92 L.38,.97 L.5,.71 L.74,.94 L.81,.87 L.56,.62 L.56,.35 Z M.18,.56 L.23,.65 L.81,.36 L.77,.27 Z M.67,.2 C.67,.106,.594,.03,.5,.03 C.406,.03,.33,.106,.33,.2 C.33,.294,.406,.37,.5,.37 C.594,.37,.67,.294,.67,.2 Z M.56,.2 C.56,.233,.533,.26,.5,.26 C.467,.26,.44,.233,.44,.2 C.44,.167,.467,.14,.5,.14 C.533,.14,.56,.167,.56,.2 Z', type: CustomGlyphVectorType.FILL } }, // STICK FIGURE LEANING LEFT
+  '\u{1FBC8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.44,.35 L.44,.62 L.19,.87 L.26,.94 L.5,.71 L.62,.97 L.71,.92 L.56,.62 L.56,.35 Z M.23,.27 L.18,.36 L.77,.65 L.81,.56 Z M.67,.2 C.67,.106,.594,.03,.5,.03 C.406,.03,.33,.106,.33,.2 C.33,.294,.406,.37,.5,.37 C.594,.37,.67,.294,.67,.2 Z M.56,.2 C.56,.233,.533,.26,.5,.26 C.467,.26,.44,.233,.44,.2 C.44,.167,.467,.14,.5,.14 C.533,.14,.56,.167,.56,.2 Z', type: CustomGlyphVectorType.FILL } }, // STICK FIGURE LEANING RIGHT
+  '\u{1FBC9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.44,.35 L.45,.49 L.15,.79 L.34,.79 L.34,.9 L.44,.9 L.44,.79 L.56,.79 L.56,.9 L.66,.9 L.66,.79 L.84,.79 L.54,.49 L.56,.35 Z M.39,.7 L.5,.6 L.60,.7 Z M.17,.42 L.17,.52 L.83,.52 L.83,.42 Z M.67,.2 C.67,.106,.594,.03,.5,.03 C.406,.03,.33,.106,.33,.2 C.33,.294,.406,.37,.5,.37 C.594,.37,.67,.294,.67,.2 Z M.56,.2 C.56,.233,.533,.26,.5,.26 C.467,.26,.44,.233,.44,.2 C.44,.167,.467,.14,.5,.14 C.533,.14,.56,.167,.56,.2 Z', type: CustomGlyphVectorType.FILL } }, // STICK FIGURE WITH DRESS
+  '\u{1FBCA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.26,.25 L.5,.01 L.74,.25 L.74,.83 L.5,.6 L.26,.83 Z M.37,.29 L.37,.58 L.5,.45 L.63,.58 L.63,.29 L.5,.16 Z', type: CustomGlyphVectorType.FILL } }, // WHITE UP-POINTING CHEVRON
 
   // Terminal graphic characters (1FBCB-1FBCD)
   '\u{1FBCB}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.09,.32 L.32,.09 L.5,.25 L.68,.09 L.91,.32 L.75,.5 L.91,.68 L.68,.91 L.5,.75 L.32,.91 L.09,.68 L.25,.5 Z M.24,.32 L.39,.5 L.24,.68 L.32,.76 L.5,.61 L.68,.76 L.76,.68 L.61,.5 L.76,.32 L.68,.24 L.5,.39 L.32,.24 Z', type: CustomGlyphVectorType.FILL } }, // WHITE CROSS MARK
@@ -603,29 +602,24 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBDF}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,0 L1,.5 L0,1' } },  // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO MIDDLE RIGHT TO LOWER LEFT
 
   // Geometric shapes (1FBE0-1FBEF)
-  // Half circles (white = stroked outline) - each semicircle fits in half the cell
   '\u{1FBE0}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C0,.276,.224,.5,.5,.5 C.776,.5,1,.276,1,0', type: CustomGlyphVectorType.STROKE } }, // TOP JUSTIFIED LOWER HALF WHITE CIRCLE
   '\u{1FBE1}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 C.724,0,.5,.224,.5,.5 C.5,.776,.724,1,1,1', type: CustomGlyphVectorType.STROKE } }, // RIGHT JUSTIFIED LEFT HALF WHITE CIRCLE
   '\u{1FBE2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,1 C0,.724,.224,.5,.5,.5 C.776,.5,1,.724,1,1', type: CustomGlyphVectorType.STROKE } }, // BOTTOM JUSTIFIED UPPER HALF WHITE CIRCLE
   '\u{1FBE3}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C.276,0,.5,.224,.5,.5 C.5,.776,.276,1,0,1', type: CustomGlyphVectorType.STROKE } }, // LEFT JUSTIFIED RIGHT HALF WHITE CIRCLE
-  // Quarter blocks at edges
-  '\u{1FBE4}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 0, w: 4, h: 4 }] }, // UPPER CENTRE ONE QUARTER BLOCK
-  '\u{1FBE5}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 4, w: 4, h: 4 }] }, // LOWER CENTRE ONE QUARTER BLOCK
-  '\u{1FBE6}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 2, w: 4, h: 4 }] }, // MIDDLE LEFT ONE QUARTER BLOCK
-  '\u{1FBE7}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 2, w: 4, h: 4 }] }, // MIDDLE RIGHT ONE QUARTER BLOCK
-  // Half circles (filled) - each semicircle fits in half the cell
+  '\u{1FBE4}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 0, w: 4, h: 4 }] },                                                   // UPPER CENTRE ONE QUARTER BLOCK
+  '\u{1FBE5}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 4, w: 4, h: 4 }] },                                                   // LOWER CENTRE ONE QUARTER BLOCK
+  '\u{1FBE6}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 2, w: 4, h: 4 }] },                                                   // MIDDLE LEFT ONE QUARTER BLOCK
+  '\u{1FBE7}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 2, w: 4, h: 4 }] },                                                   // MIDDLE RIGHT ONE QUARTER BLOCK
   '\u{1FBE8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C0,.276,.224,.5,.5,.5 C.776,.5,1,.276,1,0 Z', type: CustomGlyphVectorType.FILL } }, // TOP JUSTIFIED LOWER HALF BLACK CIRCLE
   '\u{1FBE9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 C.724,0,.5,.224,.5,.5 C.5,.776,.724,1,1,1 Z', type: CustomGlyphVectorType.FILL } }, // RIGHT JUSTIFIED LEFT HALF BLACK CIRCLE
   '\u{1FBEA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,1 C0,.724,.224,.5,.5,.5 C.776,.5,1,.724,1,1 Z', type: CustomGlyphVectorType.FILL } }, // BOTTOM JUSTIFIED UPPER HALF BLACK CIRCLE
   '\u{1FBEB}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 C.276,0,.5,.224,.5,.5 C.5,.776,.276,1,0,1 Z', type: CustomGlyphVectorType.FILL } }, // LEFT JUSTIFIED RIGHT HALF BLACK CIRCLE
-  // Quarter circles (filled) - radius 0.5 quarter circles in cell quadrants
-  '\u{1FBEC}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 L.5,0 C.5,.276,.724,.5,1,.5 Z', type: CustomGlyphVectorType.FILL } }, // TOP RIGHT JUSTIFIED LOWER LEFT QUARTER BLACK CIRCLE
-  '\u{1FBED}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,1 L.5,1 C.5,.724,.276,.5,0,.5 Z', type: CustomGlyphVectorType.FILL } }, // BOTTOM LEFT JUSTIFIED UPPER RIGHT QUARTER BLACK CIRCLE
-  '\u{1FBEE}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,1 L1,.5 C.724,.5,.5,.724,.5,1 Z', type: CustomGlyphVectorType.FILL } }, // BOTTOM RIGHT JUSTIFIED UPPER LEFT QUARTER BLACK CIRCLE
-  '\u{1FBEF}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L0,.5 C.276,.5,.5,.276,.5,0 Z', type: CustomGlyphVectorType.FILL } }, // TOP LEFT JUSTIFIED LOWER RIGHT QUARTER BLACK CIRCLE
+  '\u{1FBEC}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,0 L.5,0 C.5,.276,.724,.5,1,.5 Z', type: CustomGlyphVectorType.FILL } },               // TOP RIGHT JUSTIFIED LOWER LEFT QUARTER BLACK CIRCLE
+  '\u{1FBED}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,1 L.5,1 C.5,.724,.276,.5,0,.5 Z', type: CustomGlyphVectorType.FILL } },               // BOTTOM LEFT JUSTIFIED UPPER RIGHT QUARTER BLACK CIRCLE
+  '\u{1FBEE}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,1 L1,.5 C.724,.5,.5,.724,.5,1 Z', type: CustomGlyphVectorType.FILL } },               // BOTTOM RIGHT JUSTIFIED UPPER LEFT QUARTER BLACK CIRCLE
+  '\u{1FBEF}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L0,.5 C.276,.5,.5,.276,.5,0 Z', type: CustomGlyphVectorType.FILL } },               // TOP LEFT JUSTIFIED LOWER RIGHT QUARTER BLACK CIRCLE
 
   // Segmented digits (1FBF0-1FBF9)
-
   '\u{1FBF0}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1111110), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT ZERO (abcdef)
   '\u{1FBF1}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b0110000), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT ONE (bc)
   '\u{1FBF2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1101101), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT TWO (abdeg)
