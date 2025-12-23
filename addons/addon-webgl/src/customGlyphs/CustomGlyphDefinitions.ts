@@ -576,9 +576,9 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // 1FBCA WHITE UP-POINTING CHEVRON
 
   // Terminal graphic characters (1FBCB-1FBCD)
-  // 1FBCB WHITE CROSS MARK
-  // 1FBCC RAISED SMALL LEFT SQUARE BRACKET
-  // 1FBCD BLACK SMALL UP-POINTING CHEVRON
+  '\u{1FBCB}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.09,.32 L.32,.09 L.5,.25 L.68,.09 L.91,.32 L.75,.5 L.91,.68 L.68,.91 L.5,.75 L.32,.91 L.09,.68 L.25,.5 Z M.24,.32 L.39,.5 L.24,.68 L.32,.76 L.5,.61 L.68,.76 L.76,.68 L.61,.5 L.76,.32 L.68,.24 L.5,.39 L.32,.24 Z', type: CustomGlyphVectorType.FILL } }, // WHITE CROSS MARK
+  '\u{1FBCC}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.55,.11 L.88,.11 L.88,.21 L.65,.21 L.65,.44, L.88,.44 L.88,.54 L.55,.54 Z', type: CustomGlyphVectorType.FILL } }, // RAISED SMALL LEFT SQUARE BRACKET
+  '\u{1FBCD}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.38,.28 L.5,.16 L.62,.28 L.62,.56 L.5,.44 L.38,.56 Z', type: CustomGlyphVectorType.FILL } }, // BLACK SMALL UP-POINTING CHEVRON
 
   // Block elements (1FBCE-1FBCF)
   '\u{1FBCE}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L0.6667,0 L0.6667,1 L0,1 Z' }, // LEFT TWO THIRDS BLOCK
