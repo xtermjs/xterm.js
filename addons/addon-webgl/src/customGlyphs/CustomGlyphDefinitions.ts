@@ -553,9 +553,9 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // Terminal graphic characters (1FBB9-1FBBC)
   '\u{1FBB9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,.89 L.11,.89 L.11,.37 L.36,.12 L.74,.12 L.96,.34 L1,.34 L1,.45 L.92,.45 L.69,.22 L.41,.22 L.21,.42 L.21,.79 L1,.79 Z', type: CustomGlyphVectorType.FILL } }, // LEFT HALF FOLDER
-  '\u{1FBBA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,.89 L0,.79 L.78,.79 L.78,.53 L.7,.45 L0,.45 L0,.35 L.75,.35 L.88,.48 L.88,.89 Z', type: CustomGlyphVectorType.FILL } }, // 1FBBA RIGHT HALF FOLDER
-  // 1FBBB VOIDED GREEK CROSS
-  // 1FBBC RIGHT OPEN SQUARED DOT
+  '\u{1FBBA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,.89 L0,.79 L.78,.79 L.78,.53 L.7,.45 L0,.45 L0,.35 L.75,.35 L.88,.48 L.88,.89 Z', type: CustomGlyphVectorType.FILL } }, // RIGHT HALF FOLDER
+  '\u{1FBBB}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.31,.05 L.44,.05 L.44,.44 L.05,.44 L.05,.31 L.31,.31 Z M.56,.05 L.69,.05 L.69,.31 L.95,.31 L.95,.44 L.56,.44 Z M.05,.56 L.44,.56 L.44,.95 L.31,.95 L.31,.69 L.05,.69 Z M.56,.56 L.95,.56 L.95,.69 L.69,.69 L.69,.95 L.56,.95 Z', type: CustomGlyphVectorType.FILL } }, // VOIDED GREEK CROSS
+  '\u{1FBBC}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,1 L0,1 L0,.87 L.87,.87 L.87,.13 L0,.13 Z M.67,.5 A.17,.17,0,1,1,.33,.5 A.17,.17,0,1,1,.67,.5' }, // RIGHT OPEN SQUARED DOT
 
   // Negative terminal graphic characters (1FBBD-1FBBF)
   '\u{1FBBD}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M0,0 L.5,.5 L1,0 L1,1 L.5,.5 L0,1 Z', type: CustomGlyphVectorType.STROKE } }, // NEGATIVE DIAGONAL CROSS
