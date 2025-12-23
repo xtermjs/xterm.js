@@ -6,6 +6,7 @@ export type UnicodeRangeDefinition = [
   label: string,
   start: number,
   end: number,
+  reserved?: number[],
 ];
 
 /**
@@ -39,14 +40,22 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
   const labelStartMap = new Map<number, { label: string, colorIndex: number }>();
   // Build a map of codepoint -> colorIndex for all codepoints in each range
   const codePointColorMap = new Map<number, number>();
+  // Build a set of reserved codepoints
+  const reservedSet = new Set<number>();
   let lastDefinitionEnd = start; // Track the last definition's end to stop printing there
   if (definitions) {
     for (let i = 0; i < definitions.length; i++) {
-      const [label, labelStart, labelEnd] = definitions[i];
+      const [label, labelStart, labelEnd, reserved] = definitions[i];
       labelStartMap.set(labelStart, { label, colorIndex: i });
       // Map all codepoints in the range to this color
       for (let cp = labelStart; cp <= labelEnd; cp++) {
         codePointColorMap.set(cp, i);
+      }
+      // Track reserved codepoints
+      if (reserved) {
+        for (const cp of reserved) {
+          reservedSet.add(cp);
+        }
       }
       if (labelEnd > lastDefinitionEnd) {
         lastDefinitionEnd = labelEnd;
@@ -60,11 +69,17 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
   for (let row = startRow; row <= endRow; row++) {
     // Collect labels for this row with their column positions and color
     const rowLabels: { col: number, label: string, colorIndex: number }[] = [];
+    // Collect reserved codepoints for this row
+    const rowReserved: { col: number, colorIndex: number }[] = [];
     for (let col = 0; col < 16; col++) {
       const codePoint = row * 16 + col;
       const labelInfo = labelStartMap.get(codePoint);
       if (labelInfo) {
         rowLabels.push({ col, label: labelInfo.label, colorIndex: labelInfo.colorIndex });
+      }
+      if (reservedSet.has(codePoint)) {
+        const charColorIndex = codePointColorMap.get(codePoint);
+        rowReserved.push({ col, colorIndex: charColorIndex ?? -1 });
       }
     }
 
@@ -88,6 +103,40 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
         }
       }
       term.write('\n\r');
+
+      // Render reserved labels that appear before the first label (below the first part of row)
+      const earlyReserved = rowReserved.filter(r => r.col < rowLabels[0].col);
+      if (earlyReserved.length > 0) {
+        for (let i = earlyReserved.length - 1; i >= 0; i--) {
+          const prefix = ' '.repeat(8);
+          let line = '';
+          let visualLen = 0;
+          for (let col = 0; col < rowLabels[0].col; col++) {
+            const colPos = col * 2 + 1; // +1 to align with character position
+            const reservedAtCol = earlyReserved.findIndex(r => r.col === col);
+            if (reservedAtCol === i) {
+              const padding = ' '.repeat(colPos - visualLen);
+              const reservedItem = earlyReserved[i];
+              if (reservedItem.colorIndex >= 0) {
+                line += padding + color('└<reserved>', reservedItem.colorIndex);
+              } else {
+                line += padding + '└<reserved>';
+              }
+              break;
+            } else if (reservedAtCol !== -1 && reservedAtCol < i) {
+              const padding = ' '.repeat(colPos - visualLen);
+              const prevReserved = earlyReserved[reservedAtCol];
+              if (prevReserved.colorIndex >= 0) {
+                line += padding + color('│', prevReserved.colorIndex);
+              } else {
+                line += padding + '│';
+              }
+              visualLen = colPos + 1;
+            }
+          }
+          term.write(faint(prefix + line) + '\n\r');
+        }
+      }
     }
 
     // If labels exist, render them above the row

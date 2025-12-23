@@ -898,7 +898,7 @@ function customGlyphRangesHandler(): void {
     ['Block elements', 0x1FB70, 0x1FB80],
     ['Window title bar', 0x1FB81, 0x1FB81],
     ['Block elements', 0x1FB82, 0x1FB8B],
-    ['Rectangular shade characters', 0x1FB8C, 0x1FB94],
+    ['Rectangular shade characters', 0x1FB8C, 0x1FB94, [0x1FB93]],
     ['Fill characters', 0x1FB95, 0x1FB97],
     ['Diagonal fill characters', 0x1FB98, 0x1FB99],
     ['Smooth mosaic terminal graphic characters', 0x1FB9A, 0x1FB9B],
