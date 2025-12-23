@@ -636,7 +636,7 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBF9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: segmentedDigit(0b1111011), type: CustomGlyphVectorType.FILL } }, // SEGMENTED DIGIT NINE (abcdfg)
 
   // Terminal graphic character (1FBFA-1FBFA)
-  // 1FBFA ALARM BELL SYMBOL
+  '\u{1FBFA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.175 C.2,.175,.15,.305,.15,.435 L.05,.63 L.35,.63 C.35,.682,.42,.76,.5,.76 C.58,.76,.65,.682,.65,.63 L.95,.63 L.85,.435 C.85,.305,.8,.175,.5,.175 Z', type: CustomGlyphVectorType.FILL } }, // ALARM BELL SYMBOL
 
   // #endregion
 };
