@@ -93,13 +93,36 @@ function drawPathDefinitionCharacter(
   ctx.beginPath();
   let currentX = 0;
   let currentY = 0;
+  let lastControlX = 0;
+  let lastControlY = 0;
+  let lastCommand = '';
   for (const instruction of instructions.split(' ')) {
     const type = instruction[0];
     const args: string[] = instruction.substring(1).split(',');
+    if (type === 'Z') {
+      ctx.closePath();
+      lastCommand = type;
+      continue;
+    }
+    if (type === 'V') {
+      const y = yOffset + parseFloat(args[0]) * deviceCellHeight;
+      ctx.lineTo(currentX, y);
+      currentY = y;
+      lastControlX = currentX;
+      lastControlY = currentY;
+      lastCommand = type;
+      continue;
+    }
+    if (type === 'H') {
+      const x = xOffset + parseFloat(args[0]) * deviceCellWidth;
+      ctx.lineTo(x, currentY);
+      currentX = x;
+      lastControlX = currentX;
+      lastControlY = currentY;
+      lastCommand = type;
+      continue;
+    }
     if (!args[0] || !args[1]) {
-      if (type === 'Z') {
-        ctx.closePath();
-      }
       continue;
     }
     if (type === 'A') {
@@ -126,11 +149,44 @@ function drawPathDefinitionCharacter(
       ctx.moveTo(translatedArgs[0], translatedArgs[1]);
       currentX = translatedArgs[0];
       currentY = translatedArgs[1];
+      lastControlX = currentX;
+      lastControlY = currentY;
     } else if (type === 'L') {
       ctx.lineTo(translatedArgs[0], translatedArgs[1]);
       currentX = translatedArgs[0];
       currentY = translatedArgs[1];
+      lastControlX = currentX;
+      lastControlY = currentY;
+    } else if (type === 'Q') {
+      ctx.quadraticCurveTo(translatedArgs[0], translatedArgs[1], translatedArgs[2], translatedArgs[3]);
+      lastControlX = translatedArgs[0];
+      lastControlY = translatedArgs[1];
+      currentX = translatedArgs[2];
+      currentY = translatedArgs[3];
+    } else if (type === 'T') {
+      // T uses reflection of last control point if previous command was Q or T
+      let cpX: number;
+      let cpY: number;
+      if (lastCommand === 'Q' || lastCommand === 'T') {
+        cpX = 2 * currentX - lastControlX;
+        cpY = 2 * currentY - lastControlY;
+      } else {
+        cpX = currentX;
+        cpY = currentY;
+      }
+      ctx.quadraticCurveTo(cpX, cpY, translatedArgs[0], translatedArgs[1]);
+      lastControlX = cpX;
+      lastControlY = cpY;
+      currentX = translatedArgs[0];
+      currentY = translatedArgs[1];
+    } else if (type === 'C') {
+      ctx.bezierCurveTo(translatedArgs[0], translatedArgs[1], translatedArgs[2], translatedArgs[3], translatedArgs[4], translatedArgs[5]);
+      lastControlX = translatedArgs[2];
+      lastControlY = translatedArgs[3];
+      currentX = translatedArgs[4];
+      currentY = translatedArgs[5];
     }
+    lastCommand = type;
   }
   ctx.fill();
 }
@@ -564,7 +620,8 @@ function clamp(value: number, max: number, min: number = 0): number {
 const svgToCanvasInstructionMap: { [index: string]: any } = {
   'C': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]),
   'L': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.lineTo(args[0], args[1]),
-  'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
+  'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1]),
+  'Q': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.quadraticCurveTo(args[0], args[1], args[2], args[3])
 };
 
 function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, devicePixelRatio: number, leftPadding: number = 0, rightPadding: number = 0): number[] {
