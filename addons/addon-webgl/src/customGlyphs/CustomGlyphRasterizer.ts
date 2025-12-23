@@ -19,7 +19,8 @@ export function tryDrawCustomGlyph(
   deviceCellWidth: number,
   deviceCellHeight: number,
   fontSize: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  backgroundColor?: string
 ): boolean {
   const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
@@ -37,9 +38,15 @@ export function tryDrawCustomGlyph(
         drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data.pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         drawBlockVectorChar(ctx, unifiedCharDefinition.data.vectors, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
         return true;
+      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH:
+        drawBlockPatternWithClipPath(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
       case CustomGlyphDefinitionType.PATH_FUNCTION:
       case CustomGlyphDefinitionType.PATH:
         drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.PATH_NEGATIVE:
+        drawPathNegativeDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
         return true;
       case CustomGlyphDefinitionType.VECTOR_SHAPE:
         drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
@@ -84,7 +91,222 @@ function drawPathDefinitionCharacter(
 ): void {
   const instructions = typeof charDefinition === 'string' ? charDefinition : charDefinition(0, 0);
   ctx.beginPath();
+  let currentX = 0;
+  let currentY = 0;
+  let lastControlX = 0;
+  let lastControlY = 0;
+  let lastCommand = '';
   for (const instruction of instructions.split(' ')) {
+    const type = instruction[0];
+    const args: string[] = instruction.substring(1).split(',');
+    if (type === 'Z') {
+      ctx.closePath();
+      lastCommand = type;
+      continue;
+    }
+    if (type === 'V') {
+      const y = yOffset + parseFloat(args[0]) * deviceCellHeight;
+      ctx.lineTo(currentX, y);
+      currentY = y;
+      lastControlX = currentX;
+      lastControlY = currentY;
+      lastCommand = type;
+      continue;
+    }
+    if (type === 'H') {
+      const x = xOffset + parseFloat(args[0]) * deviceCellWidth;
+      ctx.lineTo(x, currentY);
+      currentX = x;
+      lastControlX = currentX;
+      lastControlY = currentY;
+      lastCommand = type;
+      continue;
+    }
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    if (type === 'A') {
+      // SVG arc: A rx,ry,xAxisRotation,largeArcFlag,sweepFlag,x,y
+      const rx = parseFloat(args[0]) * deviceCellWidth;
+      const ry = parseFloat(args[1]) * deviceCellHeight;
+      const xAxisRotation = parseFloat(args[2]) * Math.PI / 180;
+      const largeArcFlag = parseInt(args[3]);
+      const sweepFlag = parseInt(args[4]);
+      const x = xOffset + parseFloat(args[5]) * deviceCellWidth;
+      const y = yOffset + parseFloat(args[6]) * deviceCellHeight;
+      drawSvgArc(ctx, currentX, currentY, rx, ry, xAxisRotation, largeArcFlag, sweepFlag, x, y);
+      currentX = x;
+      currentY = y;
+      continue;
+    }
+    const translatedArgs = args.map((e, i) => {
+      const val = parseFloat(e);
+      return i % 2 === 0
+        ? xOffset + val * deviceCellWidth
+        : yOffset + val * deviceCellHeight;
+    });
+    if (type === 'M') {
+      ctx.moveTo(translatedArgs[0], translatedArgs[1]);
+      currentX = translatedArgs[0];
+      currentY = translatedArgs[1];
+      lastControlX = currentX;
+      lastControlY = currentY;
+    } else if (type === 'L') {
+      ctx.lineTo(translatedArgs[0], translatedArgs[1]);
+      currentX = translatedArgs[0];
+      currentY = translatedArgs[1];
+      lastControlX = currentX;
+      lastControlY = currentY;
+    } else if (type === 'Q') {
+      ctx.quadraticCurveTo(translatedArgs[0], translatedArgs[1], translatedArgs[2], translatedArgs[3]);
+      lastControlX = translatedArgs[0];
+      lastControlY = translatedArgs[1];
+      currentX = translatedArgs[2];
+      currentY = translatedArgs[3];
+    } else if (type === 'T') {
+      // T uses reflection of last control point if previous command was Q or T
+      let cpX: number;
+      let cpY: number;
+      if (lastCommand === 'Q' || lastCommand === 'T') {
+        cpX = 2 * currentX - lastControlX;
+        cpY = 2 * currentY - lastControlY;
+      } else {
+        cpX = currentX;
+        cpY = currentY;
+      }
+      ctx.quadraticCurveTo(cpX, cpY, translatedArgs[0], translatedArgs[1]);
+      lastControlX = cpX;
+      lastControlY = cpY;
+      currentX = translatedArgs[0];
+      currentY = translatedArgs[1];
+    } else if (type === 'C') {
+      ctx.bezierCurveTo(translatedArgs[0], translatedArgs[1], translatedArgs[2], translatedArgs[3], translatedArgs[4], translatedArgs[5]);
+      lastControlX = translatedArgs[2];
+      lastControlY = translatedArgs[3];
+      currentX = translatedArgs[4];
+      currentY = translatedArgs[5];
+    }
+    lastCommand = type;
+  }
+  ctx.fill();
+}
+
+/**
+ * Converts SVG arc parameters to canvas arc/ellipse calls.
+ * Based on the SVG spec's endpoint to center parameterization conversion.
+ */
+function drawSvgArc(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number,
+  rx: number, ry: number,
+  phi: number,
+  largeArcFlag: number,
+  sweepFlag: number,
+  x2: number, y2: number
+): void {
+  // Handle degenerate cases
+  if (rx === 0 || ry === 0) {
+    ctx.lineTo(x2, y2);
+    return;
+  }
+
+  rx = Math.abs(rx);
+  ry = Math.abs(ry);
+
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+
+  // Step 1: Compute (x1', y1')
+  const dx = (x1 - x2) / 2;
+  const dy = (y1 - y2) / 2;
+  const x1p = cosPhi * dx + sinPhi * dy;
+  const y1p = -sinPhi * dx + cosPhi * dy;
+
+  // Step 2: Compute (cx', cy')
+  let rxSq = rx * rx;
+  let rySq = ry * ry;
+  const x1pSq = x1p * x1p;
+  const y1pSq = y1p * y1p;
+
+  // Correct radii if necessary
+  const lambda = x1pSq / rxSq + y1pSq / rySq;
+  if (lambda > 1) {
+    const lambdaSqrt = Math.sqrt(lambda);
+    rx *= lambdaSqrt;
+    ry *= lambdaSqrt;
+    rxSq = rx * rx;
+    rySq = ry * ry;
+  }
+
+  let sq = (rxSq * rySq - rxSq * y1pSq - rySq * x1pSq) / (rxSq * y1pSq + rySq * x1pSq);
+  if (sq < 0) sq = 0;
+  const coef = (largeArcFlag === sweepFlag ? -1 : 1) * Math.sqrt(sq);
+  const cxp = coef * (rx * y1p / ry);
+  const cyp = coef * -(ry * x1p / rx);
+
+  // Step 3: Compute (cx, cy) from (cx', cy')
+  const cx = cosPhi * cxp - sinPhi * cyp + (x1 + x2) / 2;
+  const cy = sinPhi * cxp + cosPhi * cyp + (y1 + y2) / 2;
+
+  // Step 4: Compute angles
+  const ux = (x1p - cxp) / rx;
+  const uy = (y1p - cyp) / ry;
+  const vx = (-x1p - cxp) / rx;
+  const vy = (-y1p - cyp) / ry;
+
+  const startAngle = Math.atan2(uy, ux);
+  let dTheta = Math.atan2(vy, vx) - startAngle;
+
+  if (sweepFlag === 0 && dTheta > 0) {
+    dTheta -= 2 * Math.PI;
+  } else if (sweepFlag === 1 && dTheta < 0) {
+    dTheta += 2 * Math.PI;
+  }
+
+  const endAngle = startAngle + dTheta;
+
+  ctx.ellipse(cx, cy, rx, ry, phi, startAngle, endAngle, sweepFlag === 0);
+}
+
+/**
+ * Draws a "negative" path where the background color is used to draw the shape on top of a
+ * foreground-filled cell. This creates the appearance of a cutout without using actual
+ * transparency, which allows SPAA (subpixel anti-aliasing) to work correctly.
+ *
+ * @param ctx The canvas rendering context (fillStyle should be set to foreground color)
+ * @param charDefinition The vector shape definition for the negative shape
+ * @param xOffset The x offset to draw at
+ * @param yOffset The y offset to draw at
+ * @param deviceCellWidth The width of the cell in device pixels
+ * @param deviceCellHeight The height of the cell in device pixels
+ * @param devicePixelRatio The device pixel ratio
+ * @param backgroundColor The background color to use for the "cutout" portion
+ */
+function drawPathNegativeDefinitionCharacter(
+  ctx: CanvasRenderingContext2D,
+  charDefinition: ICustomGlyphVectorShape,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
+  devicePixelRatio: number,
+  backgroundColor?: string
+): void {
+  ctx.save();
+
+  // First, fill the entire cell with foreground color
+  ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+
+  // Then draw the "negative" shape with the background color
+  if (backgroundColor) {
+    ctx.fillStyle = backgroundColor;
+    ctx.strokeStyle = backgroundColor;
+  }
+
+  ctx.lineWidth = devicePixelRatio;
+  ctx.lineCap = 'square';
+  ctx.beginPath();
+  for (const instruction of charDefinition.d.split(' ')) {
     const type = instruction[0];
     const args: string[] = instruction.substring(1).split(',');
     if (!args[0] || !args[1]) {
@@ -105,7 +327,14 @@ function drawPathDefinitionCharacter(
       ctx.lineTo(translatedArgs[0], translatedArgs[1]);
     }
   }
-  ctx.fill();
+
+  if (charDefinition.type === CustomGlyphVectorType.STROKE) {
+    ctx.stroke();
+  } else {
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 const cachedPatterns: Map<CustomGlyphPatternDefinition, Map</* fillStyle */string, CanvasPattern>> = new Map();
@@ -266,6 +495,10 @@ function drawPathDefinitionCharacterWithWeight(
     }
     for (const instruction of actualInstructions.split(' ')) {
       const type = instruction[0];
+      if (type === 'Z') {
+        ctx.closePath();
+        continue;
+      }
       const f = svgToCanvasInstructionMap[type];
       if (!f) {
         console.error(`Could not find drawing instructions for "${type}"`);
@@ -280,6 +513,49 @@ function drawPathDefinitionCharacterWithWeight(
     ctx.stroke();
     ctx.closePath();
   }
+}
+
+/**
+ * Draws a pattern clipped to an arbitrary path (for triangular shades, etc.)
+ */
+function drawBlockPatternWithClipPath(
+  ctx: CanvasRenderingContext2D,
+  definition: [pattern: CustomGlyphPatternDefinition, clipPath: string],
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number
+): void {
+  const [pattern, clipPath] = definition;
+
+  ctx.save();
+
+  // Build clip path from SVG-like instructions
+  ctx.beginPath();
+  for (const instruction of clipPath.split(' ')) {
+    const type = instruction[0];
+    if (type === 'Z') {
+      ctx.closePath();
+      continue;
+    }
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    const x = xOffset + parseFloat(args[0]) * deviceCellWidth;
+    const y = yOffset + parseFloat(args[1]) * deviceCellHeight;
+    if (type === 'M') {
+      ctx.moveTo(x, y);
+    } else if (type === 'L') {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.clip();
+
+  // Draw the pattern
+  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+
+  ctx.restore();
 }
 
 function drawVectorShape(
@@ -303,6 +579,10 @@ function drawVectorShape(
   ctx.lineWidth = devicePixelRatio * cssLineWidth;
   for (const instruction of charDefinition.d.split(' ')) {
     const type = instruction[0];
+    if (type === 'Z') {
+      ctx.closePath();
+      continue;
+    }
     const f = svgToCanvasInstructionMap[type];
     if (!f) {
       console.error(`Could not find drawing instructions for "${type}"`);
@@ -340,7 +620,8 @@ function clamp(value: number, max: number, min: number = 0): number {
 const svgToCanvasInstructionMap: { [index: string]: any } = {
   'C': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]),
   'L': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.lineTo(args[0], args[1]),
-  'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1])
+  'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1]),
+  'Q': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.quadraticCurveTo(args[0], args[1], args[2], args[3])
 };
 
 function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, devicePixelRatio: number, leftPadding: number = 0, rightPadding: number = 0): number[] {

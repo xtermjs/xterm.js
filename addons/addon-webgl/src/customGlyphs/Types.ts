@@ -35,9 +35,11 @@ export const enum CustomGlyphDefinitionType {
   BLOCK_PATTERN,
   BLOCK_PATTERN_WITH_REGION,
   BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR,
+  BLOCK_PATTERN_WITH_CLIP_PATH,
   PATH_FUNCTION,
   PATH_FUNCTION_WITH_WEIGHT,
   PATH,
+  PATH_NEGATIVE,
   VECTOR_SHAPE,
 }
 
@@ -50,8 +52,10 @@ export type CustomGlyphCharacterDefinition = (
   // TODO: Consolidate these, draws should be possible via regions/clipping instead of special
   // casing
   { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { pattern: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition], vectors: ICustomGlyphSolidOctantBlockVector[] } } |
+  { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH, data: [pattern: CustomGlyphPatternDefinition, clipPath: string] } |
   { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } |
   { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [fontWeight: number]: string | CustomGlyphPathDrawFunctionDefinition } } |
   { type: CustomGlyphDefinitionType.PATH, data: string } |
+  { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: ICustomGlyphVectorShape } |
   { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape }
 );

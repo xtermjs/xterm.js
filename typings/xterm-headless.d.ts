@@ -64,13 +64,21 @@ declare module '@xterm/headless' {
     cursorWidth?: number;
 
     /**
-     * Whether to draw custom glyphs for block element and box drawing
-     * characters instead of using the font. This should typically result in
-     * better rendering with continuous lines, even when line height and letter
-     * spacing is used. Note that this doesn't work with the DOM renderer which
-     * renders all characters using the font. The default is true.
+     * Whether to draw custom glyphs instead of using the font for the following
+     * unicode ranges:
+     *
+     * - Box Drawing (U+2500-U+257F)
+     * - Box Elements (U+2580-U+259F)
+     * - Powerline Symbols (U+E0A0–U+E0BF)
+     * - Symbols for Legacy Computing (U+1FB00–U+1FBFF)
+     *
+     * This will typically result in better rendering with continuous lines,
+     * even when line height and letter spacing is used. Note that this doesn't
+     * work with the DOM renderer which renders all characters using the font.
+     * The default is true.
      */
     customGlyphs?: boolean;
+
     /**
      * Whether input should be disabled.
      */

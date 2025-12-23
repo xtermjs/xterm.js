@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-syntax */
 /**
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
@@ -7,6 +6,8 @@
  */
 
 /// <reference path="../typings/xterm.d.ts"/>
+
+/* eslint-disable no-restricted-syntax */
 
 // HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
 import type { ImageAddon as ImageAddonType, IImageAddonOptions } from '@xterm/addon-image';
@@ -29,7 +30,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
-import { writeUnicodeTable, type UnicodeRangeDefinition } from './unicodeTable';
+import { writeUnicodeTable } from './unicodeTable';
 
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
@@ -828,13 +829,44 @@ function customGlyphAlignmentHandler(): void {
   term.write('  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\n\r');
   term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
   term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
-  term.write('Smooth mosaic terminal graphic characters alignment tests:\x1b[33m\n\r');
-  term.write('🭇🬼 🭈🬽 🭉🬾 🭊🬿 🭋🭀 🭁🭌 🭂🭍 🭃🭎 🭄🭏 🭅🭐 🭆🭑 🭨🭪 🭩 🭯 🭮🭬\n\r');
-  term.write('🭢🭗 🭣🭘 🭤🭙 🭥🭚 🭦🭛 🭒🭝 🭓🭞 🭔🭟 🭕🭠 🭖🭡 🭧🭜    🭫 🭭\n\r');
-  term.write(' 🭇🬼              🭉🬾 🭋🭀\n\r');
-  term.write('🭊🭁🭌🬿 🭈🭆🭂🭍🭑🬽 🭇🭄🭏🬼 🭃🭎 🭅🭐 🭨🭪\n\r');
-  term.write('🭥🭒🭝🭚 🭣🭧🭓🭞🭜🭘 🭢🭕🭠🭗 🭔🭟 🭖🭡 🭪🭨\n\r');
-  term.write(' 🭢🭗              🭤🭙 🭦🭛\n\r');
+  term.write('\x1b[0mSmooth mosaic terminal graphic characters alignment tests:\x1b[33m\n\r');
+  term.write('  🭇🬼 🭈🬽 🭉🬾 🭊🬿 🭋🭀 🭁🭌 🭂🭍 🭃🭎 🭄🭏 🭅🭐 🭆🭑 🭨🭪 🭩 🭯 🭮🭬\n\r');
+  term.write('  🭢🭗 🭣🭘 🭤🭙 🭥🭚 🭦🭛 🭒🭝 🭓🭞 🭔🭟 🭕🭠 🭖🭡 🭧🭜    🭫 🭭\n\r');
+  term.write('   🭇🬼              🭉🬾 🭋🭀\n\r');
+  term.write('  🭊🭁🭌🬿 🭈🭆🭂🭍🭑🬽 🭇🭄🭏🬼 🭃🭎 🭅🭐 🭨🭪\n\r');
+  term.write('  🭥🭒🭝🭚 🭣🭧🭓🭞🭜🭘 🭢🭕🭠🭗 🭔🭟 🭖🭡 🭪🭨\n\r');
+  term.write('   🭢🭗              🭤🭙 🭦🭛\n\r');
+  term.write('\x1b[0mCharacter cell diagonals (1FBA0-1FBAE) alignment tests:\x1b[34m\n\r');
+  term.write('   \u{1FBA3}\u{1FBA7}\u{1FBA2}  \u{1FBA3}\u{1FBA8}\u{1FBA0} \u{1FBAD}\u{1FBA2} \u{1FBA3}\u{1FBAC} \u{1FBAE}\n\r');
+  term.write('  \u{1FBA3}\u{1FBA0} \u{1FBA1}\u{1FBA2} \u{1FBA1}\u{1FBA9}\u{1FBA2} \u{1FBA1}\u{1FBAA} \u{1FBAB}\u{1FBA0}\n\r');
+  term.write('  \u{1FBA4}   \u{1FBA5}\n\r');
+  term.write('  \u{1FBA1}\u{1FBA2} \u{1FBA3}\u{1FBA0}\n\r');
+  term.write('   \u{1FBA1}\u{1FBA6}\u{1FBA0}\n\r');
+  term.write('\x1b[0mCharacter cell diagonals (1FBD0-1FBDF) alignment tests:\x1b[34m\n\r');
+  term.write('  \u{1FBD6}\u{1FBD4} \u{1FBD0}\u{1FBD1}\u{1FBD2}\u{1FBD3} \u{1FBDA} \u{1FBD9}\u{1FBDB} \u{1FBDE} \u{1FBDD}\u{1FBDF}\n\r');
+  term.write('  \u{1FBD7}\u{1FBD5} \u{1FBD2}\u{1FBD3}\u{1FBD0}\u{1FBD1} \u{1FBD8}    \u{1FBDC}\n\r');
+  term.write('  \u{1FBD4}\u{1FBD6}\n\r');
+  term.write('  \u{1FBD5}\u{1FBD7}\n\r');
+  term.write('');
+  term.write('\x1b[0mComposite terminal graphics characters:\x1b[35m\n\r');
+  term.write('\u{1FBB2}\u{1FBB3} \u{1FBB9}\u{1FBBA} \u{1FBC1}\u{1FBC2}\u{1FBC3}\n\r');
+  term.write('\x1b[0mFill tests:\x1b[36m\n\r');
+  const fillChars = ['\u{2591}', '\u{2592}', '\u{2593}', '\u{1FB8C}', '\u{1FB8D}', '\u{1FB8E}', '\u{1FB8F}', '\u{1FB90}', '\u{1FB91}', '\u{1FB92}', '\u{1FB94}', '\u{1FB95}', '\u{1FB96}', '\u{1FB97}', '\u{1FB98}', '\u{1FB99}'];
+  while (fillChars.length > 0) {
+    const batch = fillChars.splice(0, 10);
+    for (const fillChar of batch) {
+      term.write(`${fillChar.codePointAt(0).toString(16).toUpperCase().padEnd(5, ' ')} `);
+    }
+    term.write('\n\r');
+    for (let i = 0; i < 3; i++) {
+      for (const fillChar of batch) {
+        term.write(fillChar.repeat(5));
+        term.write(' ');
+      }
+      term.write('\n\r');
+    }
+  }
+
   term.write('\x1b[0m');
   window.scrollTo(0, 0);
 }
@@ -868,7 +900,7 @@ function customGlyphRangesHandler(): void {
   // Range: E0A0–E0BF
   // https://github.com/ryanoasis/nerd-fonts
   writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0BF, [
-    ['Powerline Symbols', 0xE0A0, 0xE0B3],
+    ['Powerline Symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
     ['Powerline Extra Symbols', 0xE0B4, 0xE0BF],
   ]);
   // Symbols for Legacy Computing
@@ -880,7 +912,7 @@ function customGlyphRangesHandler(): void {
     ['Block elements', 0x1FB70, 0x1FB80],
     ['Window title bar', 0x1FB81, 0x1FB81],
     ['Block elements', 0x1FB82, 0x1FB8B],
-    ['Rectangular shade characters', 0x1FB8C, 0x1FB94],
+    ['Rectangular shade characters', 0x1FB8C, 0x1FB94, [0x1FB93]],
     ['Fill characters', 0x1FB95, 0x1FB97],
     ['Diagonal fill characters', 0x1FB98, 0x1FB99],
     ['Smooth mosaic terminal graphic characters', 0x1FB9A, 0x1FB9B],
