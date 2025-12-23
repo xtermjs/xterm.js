@@ -39,6 +39,7 @@ export const enum CustomGlyphDefinitionType {
   PATH_FUNCTION,
   PATH_FUNCTION_WITH_WEIGHT,
   PATH,
+  PATH_NEGATIVE,
   VECTOR_SHAPE,
 }
 
@@ -55,5 +56,6 @@ export type CustomGlyphCharacterDefinition = (
   { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } |
   { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [fontWeight: number]: string | CustomGlyphPathDrawFunctionDefinition } } |
   { type: CustomGlyphDefinitionType.PATH, data: string } |
+  { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: ICustomGlyphVectorShape } |
   { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape }
 );

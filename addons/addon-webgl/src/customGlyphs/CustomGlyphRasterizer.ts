@@ -19,7 +19,8 @@ export function tryDrawCustomGlyph(
   deviceCellWidth: number,
   deviceCellHeight: number,
   fontSize: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  backgroundColor?: string
 ): boolean {
   const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
@@ -43,6 +44,9 @@ export function tryDrawCustomGlyph(
       case CustomGlyphDefinitionType.PATH_FUNCTION:
       case CustomGlyphDefinitionType.PATH:
         drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+        return true;
+      case CustomGlyphDefinitionType.PATH_NEGATIVE:
+        drawPathNegativeDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
         return true;
       case CustomGlyphDefinitionType.VECTOR_SHAPE:
         drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
@@ -109,6 +113,75 @@ function drawPathDefinitionCharacter(
     }
   }
   ctx.fill();
+}
+
+/**
+ * Draws a "negative" path where the background color is used to draw the shape on top of a
+ * foreground-filled cell. This creates the appearance of a cutout without using actual
+ * transparency, which allows SPAA (subpixel anti-aliasing) to work correctly.
+ *
+ * @param ctx The canvas rendering context (fillStyle should be set to foreground color)
+ * @param charDefinition The vector shape definition for the negative shape
+ * @param xOffset The x offset to draw at
+ * @param yOffset The y offset to draw at
+ * @param deviceCellWidth The width of the cell in device pixels
+ * @param deviceCellHeight The height of the cell in device pixels
+ * @param devicePixelRatio The device pixel ratio
+ * @param backgroundColor The background color to use for the "cutout" portion
+ */
+function drawPathNegativeDefinitionCharacter(
+  ctx: CanvasRenderingContext2D,
+  charDefinition: ICustomGlyphVectorShape,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
+  devicePixelRatio: number,
+  backgroundColor?: string
+): void {
+  ctx.save();
+
+  // First, fill the entire cell with foreground color
+  ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+
+  // Then draw the "negative" shape with the background color
+  if (backgroundColor) {
+    ctx.fillStyle = backgroundColor;
+    ctx.strokeStyle = backgroundColor;
+  }
+
+  ctx.lineWidth = devicePixelRatio;
+  ctx.lineCap = 'square';
+  ctx.beginPath();
+  for (const instruction of charDefinition.d.split(' ')) {
+    const type = instruction[0];
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      if (type === 'Z') {
+        ctx.closePath();
+      }
+      continue;
+    }
+    const translatedArgs = args.map((e, i) => {
+      const val = parseFloat(e);
+      return i % 2 === 0
+        ? xOffset + val * deviceCellWidth
+        : yOffset + val * deviceCellHeight;
+    });
+    if (type === 'M') {
+      ctx.moveTo(translatedArgs[0], translatedArgs[1]);
+    } else if (type === 'L') {
+      ctx.lineTo(translatedArgs[0], translatedArgs[1]);
+    }
+  }
+
+  if (charDefinition.type === CustomGlyphVectorType.STROKE) {
+    ctx.stroke();
+  } else {
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 const cachedPatterns: Map<CustomGlyphPatternDefinition, Map</* fillStyle */string, CanvasPattern>> = new Map();

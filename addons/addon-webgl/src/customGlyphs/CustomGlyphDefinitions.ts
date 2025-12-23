@@ -549,9 +549,9 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // TODO: Consider implementing
 
   // Negative terminal graphic characters (1FBBD-1FBBF)
-  '\u{1FBBD}': { type: CustomGlyphDefinitionType.PATH, data: 'M.07,0 L.93,0 L.5,.43 Z M1,.07 L1,.93 L.57,.5 Z M.93,1 L.07,1 L.5,.57 Z M0,.93 L0,.07 L.43,.5 Z' },                         // NEGATIVE DIAGONAL CROSS
-  '\u{1FBBE}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,.43 L.43,1 L0,1 Z M1,.57 L.57,1 L1,1 Z' },                                                                     // NEGATIVE DIAGONAL MIDDLE RIGHT TO LOWER CENTRE
-  '\u{1FBBF}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L.43,0 L0,.43 Z M.57,0 L1,0 L1,.43 Z M1,.57 L1,1 L.57,1 Z M0,.57 L.43,1 L0,1 Z M.5,.07 L.93,.5 L.5,.93 L.07,.5 Z' },   // NEGATIVE DIAGONAL DIAMOND
+  '\u{1FBBD}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M0,0 L.5,.5 L1,0 L1,1 L.5,.5 L0,1 Z', type: CustomGlyphVectorType.STROKE } },  // NEGATIVE DIAGONAL CROSS
+  '\u{1FBBE}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M1,.5 L.5,1', type: CustomGlyphVectorType.STROKE } },                         // NEGATIVE DIAGONAL MIDDLE RIGHT TO LOWER CENTRE
+  '\u{1FBBF}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.5,0 L1,.5 L.5,1 L0,.5 Z', type: CustomGlyphVectorType.STROKE } },              // NEGATIVE DIAGONAL DIAMOND
 
   // Terminal graphic characters (1FBC0-1FBCA)
 
