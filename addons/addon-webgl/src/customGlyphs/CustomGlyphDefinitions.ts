@@ -395,18 +395,18 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB6F}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,1 L1,1 L0.5,0.5 Z' },              // LOWER TRIANGULAR ONE QUARTER BLOCK
 
   // Block elements (1FB70-1FB80)
-  '\u{1FB70}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 1, y: 0, w: 1, h: 8 }] }, // VERTICAL ONE EIGHTH BLOCK-2
-  '\u{1FB71}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 0, w: 1, h: 8 }] }, // VERTICAL ONE EIGHTH BLOCK-3
-  '\u{1FB72}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 3, y: 0, w: 1, h: 8 }] }, // VERTICAL ONE EIGHTH BLOCK-4
-  '\u{1FB73}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 1, h: 8 }] }, // VERTICAL ONE EIGHTH BLOCK-5
-  '\u{1FB74}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 5, y: 0, w: 1, h: 8 }] }, // VERTICAL ONE EIGHTH BLOCK-6
-  '\u{1FB75}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 6, y: 0, w: 1, h: 8 }] }, // VERTICAL ONE EIGHTH BLOCK-7
-  '\u{1FB76}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 1, w: 8, h: 1 }] }, // HORIZONTAL ONE EIGHTH BLOCK-2
-  '\u{1FB77}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 2, w: 8, h: 1 }] }, // HORIZONTAL ONE EIGHTH BLOCK-3
-  '\u{1FB78}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 3, w: 8, h: 1 }] }, // HORIZONTAL ONE EIGHTH BLOCK-4
-  '\u{1FB79}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 4, w: 8, h: 1 }] }, // HORIZONTAL ONE EIGHTH BLOCK-5
-  '\u{1FB7A}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 5, w: 8, h: 1 }] }, // HORIZONTAL ONE EIGHTH BLOCK-6
-  '\u{1FB7B}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 6, w: 8, h: 1 }] }, // HORIZONTAL ONE EIGHTH BLOCK-7
+  '\u{1FB70}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 1, y: 0, w: 1, h: 8 }] },                             // VERTICAL ONE EIGHTH BLOCK-2
+  '\u{1FB71}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 2, y: 0, w: 1, h: 8 }] },                             // VERTICAL ONE EIGHTH BLOCK-3
+  '\u{1FB72}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 3, y: 0, w: 1, h: 8 }] },                             // VERTICAL ONE EIGHTH BLOCK-4
+  '\u{1FB73}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 1, h: 8 }] },                             // VERTICAL ONE EIGHTH BLOCK-5
+  '\u{1FB74}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 5, y: 0, w: 1, h: 8 }] },                             // VERTICAL ONE EIGHTH BLOCK-6
+  '\u{1FB75}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 6, y: 0, w: 1, h: 8 }] },                             // VERTICAL ONE EIGHTH BLOCK-7
+  '\u{1FB76}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 1, w: 8, h: 1 }] },                             // HORIZONTAL ONE EIGHTH BLOCK-2
+  '\u{1FB77}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 2, w: 8, h: 1 }] },                             // HORIZONTAL ONE EIGHTH BLOCK-3
+  '\u{1FB78}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 3, w: 8, h: 1 }] },                             // HORIZONTAL ONE EIGHTH BLOCK-4
+  '\u{1FB79}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 4, w: 8, h: 1 }] },                             // HORIZONTAL ONE EIGHTH BLOCK-5
+  '\u{1FB7A}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 5, w: 8, h: 1 }] },                             // HORIZONTAL ONE EIGHTH BLOCK-6
+  '\u{1FB7B}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 6, w: 8, h: 1 }] },                             // HORIZONTAL ONE EIGHTH BLOCK-7
   '\u{1FB7C}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 1, h: 8 }, { x: 0, y: 7, w: 8, h: 1 }] }, // LEFT AND LOWER ONE EIGHTH BLOCK
   '\u{1FB7D}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 1, h: 8 }, { x: 0, y: 0, w: 8, h: 1 }] }, // LEFT AND UPPER ONE EIGHTH BLOCK
   '\u{1FB7E}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 7, y: 0, w: 1, h: 8 }, { x: 0, y: 0, w: 8, h: 1 }] }, // RIGHT AND UPPER ONE EIGHTH BLOCK
@@ -517,37 +517,37 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   ], 'M0,0 L1,1 L0,1 Z'] },
 
   // Character cell diagonals (1FBA0-1FBAE)
-  '\u{1FBA0}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT
-  '\u{1FBA1}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT
-  '\u{1FBA2}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO LOWER CENTRE
-  '\u{1FBA3}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL MIDDLE RIGHT TO LOWER CENTRE
-  '\u{1FBA4}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT TO LOWER CENTRE
-  '\u{1FBA5}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT TO LOWER CENTRE
-  '\u{1FBA6}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,1 L1,.5' } }, // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO LOWER CENTRE TO MIDDLE RIGHT
-  '\u{1FBA7}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,0 L1,.5' } }, // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO UPPER CENTRE TO MIDDLE RIGHT
-  '\u{1FBA8}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5 M1,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT AND MIDDLE RIGHT TO LOWER CENTRE
-  '\u{1FBA9}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5 M0,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT AND MIDDLE LEFT TO LOWER CENTRE
-  '\u{1FBAA}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5 L.5,1 L0,.5' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT TO LOWER CENTRE TO MIDDLE LEFT
-  '\u{1FBAB}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5 L.5,1 L1,.5' } }, // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT TO LOWER CENTRE TO MIDDLE RIGHT
-  '\u{1FBAC}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,0 L1,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO UPPER CENTRE TO MIDDLE RIGHT TO LOWER CENTRE
-  '\u{1FBAD}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,.5 L.5,0 L0,.5 L.5,1' } }, // BOX DRAWINGS LIGHT DIAGONAL MIDDLE RIGHT TO UPPER CENTRE TO MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FBA0}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5' } },               // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT
+  '\u{1FBA1}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5' } },               // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT
+  '\u{1FBA2}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,1' } },               // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FBA3}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,.5 L.5,1' } },               // BOX DRAWINGS LIGHT DIAGONAL MIDDLE RIGHT TO LOWER CENTRE
+  '\u{1FBA4}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5 L.5,1' } },         // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FBA5}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5 L.5,1' } },         // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT TO LOWER CENTRE
+  '\u{1FBA6}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,1 L1,.5' } },         // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO LOWER CENTRE TO MIDDLE RIGHT
+  '\u{1FBA7}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,0 L1,.5' } },         // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO UPPER CENTRE TO MIDDLE RIGHT
+  '\u{1FBA8}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5 M1,.5 L.5,1' } },   // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT AND MIDDLE RIGHT TO LOWER CENTRE
+  '\u{1FBA9}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5 M0,.5 L.5,1' } },   // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT AND MIDDLE LEFT TO LOWER CENTRE
+  '\u{1FBAA}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5 L.5,1 L0,.5' } },   // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE RIGHT TO LOWER CENTRE TO MIDDLE LEFT
+  '\u{1FBAB}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L0,.5 L.5,1 L1,.5' } },   // BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO MIDDLE LEFT TO LOWER CENTRE TO MIDDLE RIGHT
+  '\u{1FBAC}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M0,.5 L.5,0 L1,.5 L.5,1' } },   // BOX DRAWINGS LIGHT DIAGONAL MIDDLE LEFT TO UPPER CENTRE TO MIDDLE RIGHT TO LOWER CENTRE
+  '\u{1FBAD}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M1,.5 L.5,0 L0,.5 L.5,1' } },   // BOX DRAWINGS LIGHT DIAGONAL MIDDLE RIGHT TO UPPER CENTRE TO MIDDLE LEFT TO LOWER CENTRE
   '\u{1FBAE}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: 'M.5,0 L1,.5 L.5,1 L0,.5 Z' } }, // BOX DRAWINGS LIGHT DIAGONAL DIAMOND
 
   // Light solid line with stroke (1FBAF-1FBAF)
   '\u{1FBAF}': { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [FontWeight.NORMAL]: `${Shapes.LEFT_TO_RIGHT} M.5,.35 L.5,.65` } }, // BOX DRAWINGS LIGHT HORIZONTAL WITH VERTICAL STROKE
 
   // Terminal graphic characters (1FBB0-1FBB3)
-  '\u{1FBB0}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.1,0.2 L0.1,.8 L.4,.6 L.9,0.6 Z' }, // ARROWHEAD-SHAPED POINTER
+  '\u{1FBB0}': { type: CustomGlyphDefinitionType.PATH, data: 'M0.1,0.2 L0.1,.8 L.4,.6 L.9,0.6 Z' },                                           // ARROWHEAD-SHAPED POINTER
   '\u{1FBB1}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.1,.55 L.35,.85 L.9,.2', type: CustomGlyphVectorType.STROKE } }, // INVERSE CHECK MARK
   // 1FBB2 LEFT HALF RUNNING MAN
   // 1FBB3 RIGHT HALF RUNNING MAN
 
   // Arrows (1FBB4-1FBB8)
-  '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.6 L.5,.4 L.5,.5 L.75,.5 L.75,.2 L.85,.2 L.85,.7 L.5,.7 L.5,.8 Z', type: CustomGlyphVectorType.FILL } }, // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
+  '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.6 L.5,.4 L.5,.5 L.75,.5 L.75,.2 L.85,.2 L.85,.7 L.5,.7 L.5,.8 Z', type: CustomGlyphVectorType.FILL } },                                        // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
   '\u{1FBB5}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z M.15,.5 L.5,.3 L.5,.4 L.85,.4 L.85,.6 L.5,.6 L.5,.7 Z', type: CustomGlyphVectorType.FILL } }, // LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
   '\u{1FBB6}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z M.85,.5 L.5,.3 L.5,.4 L.15,.4 L.15,.6 L.5,.6 L.5,.7 Z', type: CustomGlyphVectorType.FILL } }, // RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
-  '\u{1FBB7}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.85 L.3,.5 L.4,.5 L.4,.15 L.6,.15 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } }, // DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
-  '\u{1FBB8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.15 L.3,.5 L.4,.5 L.4,.85 L.6,.85 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } }, // UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+  '\u{1FBB7}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.85 L.3,.5 L.4,.5 L.4,.15 L.6,.15 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } },                             // DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+  '\u{1FBB8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.15 L.3,.5 L.4,.5 L.4,.85 L.6,.85 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } },                             // UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
 
   // Terminal graphic characters (1FBB9-1FBBC)
   // 1FBB9 LEFT HALF FOLDER
@@ -556,9 +556,9 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // 1FBBC RIGHT OPEN SQUARED DOT
 
   // Negative terminal graphic characters (1FBBD-1FBBF)
-  '\u{1FBBD}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M0,0 L.5,.5 L1,0 L1,1 L.5,.5 L0,1 Z', type: CustomGlyphVectorType.STROKE } },  // NEGATIVE DIAGONAL CROSS
+  '\u{1FBBD}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M0,0 L.5,.5 L1,0 L1,1 L.5,.5 L0,1 Z', type: CustomGlyphVectorType.STROKE } }, // NEGATIVE DIAGONAL CROSS
   '\u{1FBBE}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M1,.5 L.5,1', type: CustomGlyphVectorType.STROKE } },                         // NEGATIVE DIAGONAL MIDDLE RIGHT TO LOWER CENTRE
-  '\u{1FBBF}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.5,0 L1,.5 L.5,1 L0,.5 Z', type: CustomGlyphVectorType.STROKE } },              // NEGATIVE DIAGONAL DIAMOND
+  '\u{1FBBF}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.5,0 L1,.5 L.5,1 L0,.5 Z', type: CustomGlyphVectorType.STROKE } },           // NEGATIVE DIAGONAL DIAMOND
 
   // Terminal graphic characters (1FBC0-1FBCA)
   // 1FBC0 WHITE HEAVY SALTIRE WITH ROUNDED CORNERS
