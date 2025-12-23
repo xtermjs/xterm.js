@@ -93,11 +93,15 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
         term.write(' ');
         if (codePoint >= start && codePoint <= end) {
           const charColorIndex = codePointColorMap.get(codePoint);
+          const isReserved = reservedSet.has(codePoint);
+          let char = String.fromCodePoint(codePoint);
           if (charColorIndex !== undefined) {
-            term.write(color(String.fromCodePoint(codePoint), charColorIndex));
-          } else {
-            term.write(String.fromCodePoint(codePoint));
+            char = color(char, charColorIndex);
           }
+          if (isReserved) {
+            char = faint(char);
+          }
+          term.write(char);
         } else {
           term.write(' ');
         }
@@ -197,16 +201,39 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
       if (codePoint >= start && codePoint <= effectiveEnd) {
         // Color the character if it's part of a definition range
         const charColorIndex = codePointColorMap.get(codePoint);
+        const isReserved = reservedSet.has(codePoint);
+        let char = String.fromCodePoint(codePoint);
         if (charColorIndex !== undefined) {
-          term.write(color(String.fromCodePoint(codePoint), charColorIndex));
-        } else {
-          term.write(String.fromCodePoint(codePoint));
+          char = color(char, charColorIndex);
         }
+        if (isReserved) {
+          char = faint(char);
+        }
+        term.write(char);
       } else {
         term.write(' ');
       }
     }
 
     term.write('\n\r');
+
+    // Render reserved labels that appear after the first label (below the row)
+    // Only show one label pointing to the first reserved item when there are multiple
+    const lateReserved = rowLabels.length > 0
+      ? rowReserved.filter(r => r.col >= rowLabels[0].col)
+      : rowReserved;
+    if (lateReserved.length > 0) {
+      const prefix = ' '.repeat(8);
+      const firstReserved = lateReserved[0];
+      const colPos = firstReserved.col * 2 + 1;
+      const padding = ' '.repeat(colPos);
+      let line: string;
+      if (firstReserved.colorIndex >= 0) {
+        line = padding + color('└<reserved>', firstReserved.colorIndex);
+      } else {
+        line = padding + '└<reserved>';
+      }
+      term.write(faint(prefix + line) + '\n\r');
+    }
   }
 }

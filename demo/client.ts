@@ -29,7 +29,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
-import { writeUnicodeTable, type UnicodeRangeDefinition } from './unicodeTable';
+import { writeUnicodeTable } from './unicodeTable';
 
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
@@ -886,7 +886,7 @@ function customGlyphRangesHandler(): void {
   // Range: E0A0–E0BF
   // https://github.com/ryanoasis/nerd-fonts
   writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0BF, [
-    ['Powerline Symbols', 0xE0A0, 0xE0B3],
+    ['Powerline Symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
     ['Powerline Extra Symbols', 0xE0B4, 0xE0BF],
   ]);
   // Symbols for Legacy Computing
