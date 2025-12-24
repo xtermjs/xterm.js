@@ -568,11 +568,24 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBB3}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,.27 L.3,.27 L.55,.12 L.63,.18 L.33,.36 L0,.36 M0,.52 L.33,.52 L.59,.89 L.73,.89 L.73,.98 L.53,.98 L.28,.6 L0,.6' },                                                                                                      // RIGHT HALF RUNNING MAN
 
   // Arrows (1FBB4-1FBB8)
+  // TODO: Improve all arrows, use hybrid approach
   '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.55 L.5,.45 L.5,.475 L.75,.475 L.75,.35 L.85,.35 L.85,.6 L.5,.6 L.5,.65 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR },                                        // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
-  '\u{1FBB5}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z M.15,.5 L.5,.3 L.5,.4 L.85,.4 L.85,.6 L.5,.6 L.5,.7 Z', type: CustomGlyphVectorType.FILL } }, // LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
-  '\u{1FBB6}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z M.85,.5 L.5,.3 L.5,.4 L.15,.4 L.15,.6 L.5,.6 L.5,.7 Z', type: CustomGlyphVectorType.FILL } }, // RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
-  '\u{1FBB7}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.85 L.3,.5 L.4,.5 L.4,.15 L.6,.15 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } },                             // DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
-  '\u{1FBB8}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z M.5,.15 L.3,.5 L.4,.5 L.4,.85 L.6,.85 L.6,.5 L.7,.5 Z', type: CustomGlyphVectorType.FILL } },                             // UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+  '\u{1FBB5}': [ // LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z', type: CustomGlyphVectorType.FILL } },
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.15,.5 L.5,.4 L.5,.45 L.85,.45 L.85,.55 L.5,.55 L.5,.6 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+  ],
+  '\u{1FBB6}': [ // RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z', type: CustomGlyphVectorType.FILL } },
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.85,.5 L.5,.4 L.5,.45 L.15,.45 L.15,.55 L.5,.55 L.5,.6 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+  ],
+  '\u{1FBB7}': [ // DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z', type: CustomGlyphVectorType.FILL } },
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.675 L.35,.5 L.425,.5 L.425,.325 L.575,.325 L.575,.5 L.65,.5 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+  ],
+  '\u{1FBB8}': [ // UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z', type: CustomGlyphVectorType.FILL } },
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.325 L.35,.5 L.425,.5 L.425,.675 L.575,.675 L.575,.5 L.65,.5 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+  ],
 
   // Terminal graphic characters (1FBB9-1FBBC)
   '\u{1FBB9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,.89 L.11,.89 L.11,.37 L.36,.12 L.74,.12 L.96,.34 L1,.34 L1,.45 L.92,.45 L.69,.22 L.41,.22 L.21,.42 L.21,.79 L1,.79 Z', type: CustomGlyphVectorType.FILL } }, // LEFT HALF FOLDER
