@@ -71,6 +71,9 @@ function drawDefinitionPart(
     case CustomGlyphDefinitionType.VECTOR_SHAPE:
       drawVectorShape(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
       break;
+    case CustomGlyphDefinitionType.BRAILLE:
+      drawBrailleCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
   }
 
   if (part.clipPath) {
@@ -96,6 +99,52 @@ function drawBlockVectorChar(
       box.w * xEighth,
       box.h * yEighth
     );
+  }
+}
+
+/**
+ * Braille dot positions in octant coordinates (x, y for center of each dot area)
+ * Columns: left=1-2, right=5-6 (leaving 0 and 7 as margins, 3-4 as gap)
+ * Rows: 0-1, 2-3, 4-5, 6-7 for the 4 rows
+ */
+const brailleDotPositions = new Uint8Array([
+  1, 0, // dot 1 - bit 0
+  1, 2, // dot 2 - bit 1
+  1, 4, // dot 3 - bit 2
+  5, 0, // dot 4 - bit 3
+  5, 2, // dot 5 - bit 4
+  5, 4, // dot 6 - bit 5
+  1, 6, // dot 7 - bit 6
+  5, 6, // dot 8 - bit 7
+]);
+
+/**
+ * Draws a braille pattern
+ */
+function drawBrailleCharacter(
+  ctx: CanvasRenderingContext2D,
+  pattern: number,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number
+): void {
+  const xEighth = deviceCellWidth / 8;
+  const paddingY = deviceCellHeight * 0.1;
+  const usableHeight = deviceCellHeight * 0.8;
+  const yEighth = usableHeight / 8;
+  const radius = Math.min(xEighth, yEighth);
+
+  for (let bit = 0; bit < 8; bit++) {
+    if (pattern & (1 << bit)) {
+      const x = brailleDotPositions[bit * 2];
+      const y = brailleDotPositions[bit * 2 + 1];
+      const cx = xOffset + (x + 1) * xEighth;
+      const cy = yOffset + paddingY + (y + 1) * yEighth;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 
