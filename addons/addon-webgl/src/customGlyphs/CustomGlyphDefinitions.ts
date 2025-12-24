@@ -452,28 +452,28 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
     [0, 1],
     [1, 0]
   ], [0, 0, 1, 1]] },
-  '\u{1FB91}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
-    pattern: [[
+  '\u{1FB91}': [ // UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
+    { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[
       [0, 1],
       [1, 0]
-    ], [0, 0.5, 1, 0.5]],
-    vectors: [{ x: 0, y: 0, w: 8, h: 4 }]
-  } },
-  '\u{1FB92}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
-    pattern: [[
+    ], [0, 0.5, 1, 0.5]] },
+    { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 4 }] }
+  ],
+  '\u{1FB92}': [ // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
+    { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[
       [0, 1],
       [1, 0]
-    ], [0, 0, 1, 0.5]],
-    vectors: [{ x: 0, y: 4, w: 8, h: 4 }]
-  } },
+    ], [0, 0, 1, 0.5]] },
+    { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 4, w: 8, h: 4 }] }
+  ],
   // 1FB93 is <reserved>
-  '\u{1FB94}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
-    pattern: [[
+  '\u{1FB94}': [ // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
+    { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[
       [0, 1],
       [1, 0]
-    ], [0, 0, 0.5, 1]],
-    vectors: [{ x: 4, y: 0, w: 4, h: 8 }]
-  } },
+    ], [0, 0, 0.5, 1]] },
+    { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }] }
+  ],
 
   // Fill characters (1FB95-1FB97)
   '\u{1FB95}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [ // CHECKER BOARD FILL

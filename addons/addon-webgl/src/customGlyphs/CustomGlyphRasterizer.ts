@@ -5,7 +5,7 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -24,40 +24,55 @@ export function tryDrawCustomGlyph(
 ): boolean {
   const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
-    switch (unifiedCharDefinition.type) {
-      case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
-        drawBlockVectorChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN:
-        drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
-        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR:
-        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data.pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        drawBlockVectorChar(ctx, unifiedCharDefinition.data.vectors, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH:
-        drawBlockPatternWithClipPath(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.PATH_FUNCTION:
-      case CustomGlyphDefinitionType.PATH:
-        drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.PATH_NEGATIVE:
-        drawPathNegativeDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
-        return true;
-      case CustomGlyphDefinitionType.VECTOR_SHAPE:
-        drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
-        return true;
-      case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
-        drawPathDefinitionCharacterWithWeight(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
-        return true;
+    // Normalize to array for uniform handling
+    const parts = Array.isArray(unifiedCharDefinition) ? unifiedCharDefinition : [unifiedCharDefinition];
+    for (const part of parts) {
+      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio, backgroundColor);
     }
+    return true;
   }
 
   return false;
+}
+
+function drawDefinitionPart(
+  ctx: CanvasRenderingContext2D,
+  part: CustomGlyphDefinitionPart,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
+  fontSize: number,
+  devicePixelRatio: number,
+  backgroundColor?: string
+): void {
+  switch (part.type) {
+    case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
+      drawBlockVectorChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.BLOCK_PATTERN:
+      drawPatternChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
+      drawBlockPatternWithRegion(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH:
+      drawBlockPatternWithClipPath(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.PATH_FUNCTION:
+    case CustomGlyphDefinitionType.PATH:
+      drawPathDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.PATH_NEGATIVE:
+      drawPathNegativeDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
+      break;
+    case CustomGlyphDefinitionType.VECTOR_SHAPE:
+      drawVectorShape(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
+      break;
+    case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
+      drawPathDefinitionCharacterWithWeight(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
+      break;
+  }
 }
 
 function drawBlockVectorChar(
@@ -432,46 +447,6 @@ function drawBlockPatternWithRegion(
   ctx.restore();
 }
 
-/**
- * Draws the following box drawing characters by mapping a subset of SVG d attribute instructions to
- * canvas draw calls.
- *
- * Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐
- * ┌─┬─┐ ┏━┳━┓ ╔═╦═╗ ┠╂┨┝┿┥╟╫╢╞╪╡ ┡╇┩├╊┫┢╈┪┣╉┤
- * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┖┸┚┕┷┙╙╨╜╘╧╛ └┴┘└┺┛┗┻┛┗┹┘
- * ├─┼─┤ ┣━╋━┫ ╠═╬═╣ ┏┱┐┌┲┓┌┬┐┌┬┐ ┏┳┓┌┮┓┌┬┐┏┭┐
- * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤
- * └─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘
- *
- * Other:
- * ╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈
- * │ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉
- * ╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋
- *
- * All box drawing characters:
- * ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏
- * ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟
- * ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯
- * ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿
- * ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏
- * ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
- * ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯
- * ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
- *
- * ---
- *
- * Box drawing alignment tests:                                          █
- *                                                                       ▉
- *   ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳
- *   ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳
- *   ║│╲ ╱│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╿ │┃  ┍╅╆┓   ╵  ╹ ┗┷┛ └┸┘    ▌ ╱╲╱╲╳╳╳
- *   ╠╡ ╳ ╞╣  ├╢   ╟┤  ├┼─┼─┼┤  ├╫─╂─╫┤  ┣┿╾┼╼┿┫  ┕┛┖┚     ┌┄┄┐ ╎ ┏┅┅┓ ┋ ▍ ╲╱╲╱╳╳╳
- *   ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎
- *   ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏
- *   ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█
- *
- * Source: https://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html
- */
 function drawPathDefinitionCharacterWithWeight(
   ctx: CanvasRenderingContext2D,
   charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
