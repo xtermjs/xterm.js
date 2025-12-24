@@ -44,7 +44,7 @@
     "posttest": "npm run lint",
     "lint": "eslint --max-warnings 0 src/ addons/",
     "lint-fix": "eslint --fix src/ addons/",
-    "lint-api": "eslint --no-eslintrc -c .eslintrc.json.typings --max-warnings 0 --no-ignore --ext .d.ts typings/",
+    "lint-api": "eslint --config eslint.config.typings.mjs --max-warnings 0 typings/",
     "test-unit": "node ./bin/test_unit.js",
     "test-unit-coverage": "node ./bin/test_unit.js --coverage",
     "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
