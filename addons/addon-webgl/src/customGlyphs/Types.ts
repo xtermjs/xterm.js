@@ -50,6 +50,17 @@ export type CustomGlyphDefinitionPartRaw = (
   { type: CustomGlyphDefinitionType.BRAILLE, data: number }
 );
 
+export const enum CustomGlyphScaleType {
+  /**
+   * Scale to the entire cell, including letter spacing and line height.
+   */
+  CELL,
+  /**
+   * Scale to only the character area, excluding letter spacing and line height.
+   */
+  CHAR,
+}
+
 export interface ICustomGlyphDefinitionCommon {
   /**
    * A custom clip path for the draw definition, restricting the area it can draw to.
@@ -59,6 +70,11 @@ export interface ICustomGlyphDefinitionCommon {
    * The stroke width to use when drawing the path. Defaults to 1.
    */
   strokeWidth?: number;
+  /**
+   * Defines how to scale the draw. Defaults to scaling to the full cell including letter spacing
+   * and line height.
+   */
+  scaleType?: CustomGlyphScaleType;
 }
 
 export type CustomGlyphDefinitionPart = CustomGlyphDefinitionPartRaw & ICustomGlyphDefinitionCommon;
