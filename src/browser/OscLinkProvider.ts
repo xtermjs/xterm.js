@@ -75,7 +75,7 @@ export class OscLinkProvider implements ILinkProvider {
               if (!['http:', 'https:'].includes(parsed.protocol)) {
                 ignoreLink = true;
               }
-            } catch (e) {
+            } catch {
               // Ignore invalid URLs to prevent unexpected behaviors
               ignoreLink = true;
             }

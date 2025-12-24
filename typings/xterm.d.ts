@@ -351,17 +351,17 @@ declare module '@xterm/xterm' {
     selectionInactiveBackground?: string;
     /**
      * The scrollbar slider background color. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 20% opacity.
+     * {@link ITheme.foreground} with 20% opacity.
      */
     scrollbarSliderBackground?: string;
     /**
      * The scrollbar slider background color when hovered. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 40% opacity.
+     * {@link ITheme.foreground} with 40% opacity.
      */
     scrollbarSliderHoverBackground?: string;
     /**
      * The scrollbar slider background color when clicked. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 50% opacity.
+     * {@link ITheme.foreground} with 50% opacity.
      */
     scrollbarSliderActiveBackground?: string;
     /**
@@ -1830,7 +1830,7 @@ declare module '@xterm/xterm' {
      * @param id Specifies the function identifier under which the callback gets
      * registered, e.g. {intermediates: '%' final: 'G'} for default charset
      * selection.
-     * @param callback The function to handle the sequence.
+     * @param handler The function to handle the sequence.
      * Return `true` if the sequence was handled, `false` if the parser should
      * try a previous handler. The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
