@@ -36,10 +36,8 @@
     "font-ligatures": "^1.4.1"
   },
   "devDependencies": {
-    "@types/sinon": "^5.0.1",
     "axios": "^1.6.0",
     "mkdirp": "0.5.5",
-    "sinon": "6.3.5",
     "yauzl": "^2.10.0"
   }
 }
