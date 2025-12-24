@@ -5,7 +5,7 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -18,6 +18,8 @@ export function tryDrawCustomGlyph(
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number,
+  deviceCharWidth: number,
+  deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
   backgroundColor?: string
@@ -27,7 +29,7 @@ export function tryDrawCustomGlyph(
     // Normalize to array for uniform handling
     const parts = Array.isArray(unifiedCharDefinition) ? unifiedCharDefinition : [unifiedCharDefinition];
     for (const part of parts) {
-      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio, backgroundColor);
+      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, fontSize, devicePixelRatio, backgroundColor);
     }
     return true;
   }
@@ -42,37 +44,52 @@ function drawDefinitionPart(
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number,
+  deviceCharWidth: number,
+  deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
   backgroundColor?: string
 ): void {
+  // Handle scaleType - adjust dimensions and offset when scaling to character area
+  let drawWidth = deviceCellWidth;
+  let drawHeight = deviceCellHeight;
+  let drawXOffset = xOffset;
+  let drawYOffset = yOffset;
+  if (part.scaleType === CustomGlyphScaleType.CHAR) {
+    drawWidth = deviceCharWidth;
+    drawHeight = deviceCharHeight;
+    // Center the character within the cell
+    drawXOffset = xOffset + (deviceCellWidth - deviceCharWidth) / 2;
+    drawYOffset = yOffset + (deviceCellHeight - deviceCharHeight) / 2;
+  }
+
   // Handle clipPath generically for any definition type
   if (part.clipPath) {
     ctx.save();
-    applyClipPath(ctx, part.clipPath, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+    applyClipPath(ctx, part.clipPath, drawXOffset, drawYOffset, drawWidth, drawHeight);
   }
 
   switch (part.type) {
     case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
-      drawBlockVectorChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      drawBlockVectorChar(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
       break;
     case CustomGlyphDefinitionType.BLOCK_PATTERN:
-      drawPatternChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      drawPatternChar(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
       break;
     case CustomGlyphDefinitionType.PATH_FUNCTION:
-      drawPathFunctionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, part.strokeWidth);
+      drawPathFunctionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
       break;
     case CustomGlyphDefinitionType.PATH:
-      drawPathDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      drawPathDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
       break;
     case CustomGlyphDefinitionType.PATH_NEGATIVE:
-      drawPathNegativeDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
+      drawPathNegativeDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, backgroundColor);
       break;
     case CustomGlyphDefinitionType.VECTOR_SHAPE:
-      drawVectorShape(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
+      drawVectorShape(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, fontSize, devicePixelRatio);
       break;
     case CustomGlyphDefinitionType.BRAILLE:
-      drawBrailleCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      drawBrailleCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
       break;
   }
 
