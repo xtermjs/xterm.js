@@ -132,7 +132,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._register(Event.forward(this.coreService.onBinary, this._onBinary));
     this._register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom(true)));
     this._register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
-    this._register(this.optionsService.onMultipleOptionChange(['windowsMode', 'windowsPty'], () => this._handleWindowsPtyOptionChange()));
+    this._register(this.optionsService.onMultipleOptionChange(['windowsPty'], () => this._handleWindowsPtyOptionChange()));
     this._register(this._bufferService.onScroll(() => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp });
       this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
@@ -255,8 +255,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     const windowsPty = this.optionsService.rawOptions.windowsPty;
     if (windowsPty && windowsPty.buildNumber !== undefined && windowsPty.buildNumber !== undefined) {
       value = !!(windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
-    } else if (this.optionsService.rawOptions.windowsMode) {
-      value = true;
     }
     if (value) {
       this._enableWindowsWrappingHeuristics();

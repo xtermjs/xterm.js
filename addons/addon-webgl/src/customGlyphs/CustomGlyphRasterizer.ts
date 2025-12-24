@@ -5,7 +5,7 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -24,40 +24,61 @@ export function tryDrawCustomGlyph(
 ): boolean {
   const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
-    switch (unifiedCharDefinition.type) {
-      case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
-        drawBlockVectorChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN:
-        drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
-        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR:
-        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data.pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        drawBlockVectorChar(ctx, unifiedCharDefinition.data.vectors, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH:
-        drawBlockPatternWithClipPath(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.PATH_FUNCTION:
-      case CustomGlyphDefinitionType.PATH:
-        drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.PATH_NEGATIVE:
-        drawPathNegativeDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
-        return true;
-      case CustomGlyphDefinitionType.VECTOR_SHAPE:
-        drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
-        return true;
-      case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
-        drawPathDefinitionCharacterWithWeight(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
-        return true;
+    // Normalize to array for uniform handling
+    const parts = Array.isArray(unifiedCharDefinition) ? unifiedCharDefinition : [unifiedCharDefinition];
+    for (const part of parts) {
+      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio, backgroundColor);
     }
+    return true;
   }
 
   return false;
+}
+
+function drawDefinitionPart(
+  ctx: CanvasRenderingContext2D,
+  part: CustomGlyphDefinitionPart,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
+  fontSize: number,
+  devicePixelRatio: number,
+  backgroundColor?: string
+): void {
+  // Handle clipPath generically for any definition type
+  if (part.clipPath) {
+    ctx.save();
+    applyClipPath(ctx, part.clipPath, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+  }
+
+  switch (part.type) {
+    case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
+      drawBlockVectorChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.BLOCK_PATTERN:
+      drawPatternChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.PATH_FUNCTION:
+      drawPathFunctionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, part.strokeWidth);
+      break;
+    case CustomGlyphDefinitionType.PATH:
+      drawPathDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.PATH_NEGATIVE:
+      drawPathNegativeDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
+      break;
+    case CustomGlyphDefinitionType.VECTOR_SHAPE:
+      drawVectorShape(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
+      break;
+    case CustomGlyphDefinitionType.BRAILLE:
+      drawBrailleCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+  }
+
+  if (part.clipPath) {
+    ctx.restore();
+  }
 }
 
 function drawBlockVectorChar(
@@ -78,6 +99,52 @@ function drawBlockVectorChar(
       box.w * xEighth,
       box.h * yEighth
     );
+  }
+}
+
+/**
+ * Braille dot positions in octant coordinates (x, y for center of each dot area)
+ * Columns: left=1-2, right=5-6 (leaving 0 and 7 as margins, 3-4 as gap)
+ * Rows: 0-1, 2-3, 4-5, 6-7 for the 4 rows
+ */
+const brailleDotPositions = new Uint8Array([
+  1, 0, // dot 1 - bit 0
+  1, 2, // dot 2 - bit 1
+  1, 4, // dot 3 - bit 2
+  5, 0, // dot 4 - bit 3
+  5, 2, // dot 5 - bit 4
+  5, 4, // dot 6 - bit 5
+  1, 6, // dot 7 - bit 6
+  5, 6, // dot 8 - bit 7
+]);
+
+/**
+ * Draws a braille pattern
+ */
+function drawBrailleCharacter(
+  ctx: CanvasRenderingContext2D,
+  pattern: number,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number
+): void {
+  const xEighth = deviceCellWidth / 8;
+  const paddingY = deviceCellHeight * 0.1;
+  const usableHeight = deviceCellHeight * 0.8;
+  const yEighth = usableHeight / 8;
+  const radius = Math.min(xEighth, yEighth);
+
+  for (let bit = 0; bit < 8; bit++) {
+    if (pattern & (1 << bit)) {
+      const x = brailleDotPositions[bit * 2];
+      const y = brailleDotPositions[bit * 2 + 1];
+      const cx = xOffset + (x + 1) * xEighth;
+      const cy = yOffset + paddingY + (y + 1) * yEighth;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 
@@ -398,139 +465,66 @@ function drawPatternChar(
   ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
 }
 
-/**
- * Draws rectangular shade characters - medium shade pattern clipped to a region.
- * Uses a checkerboard pattern that shifts 1px each row (same as medium shade U+2592).
- */
-function drawBlockPatternWithRegion(
+function drawPathFunctionCharacter(
   ctx: CanvasRenderingContext2D,
-  definition: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition],
-  xOffset: number,
-  yOffset: number,
-  deviceCellWidth: number,
-  deviceCellHeight: number
-): void {
-  const [pattern, region] = definition;
-  const [rx, ry, rw, rh] = region;
-  const regionX = Math.round(xOffset + rx * deviceCellWidth);
-  const regionY = Math.round(yOffset + ry * deviceCellHeight);
-  const regionW = Math.round(rw * deviceCellWidth);
-  const regionH = Math.round(rh * deviceCellHeight);
-
-  // Save context state
-  ctx.save();
-
-  // Clip to the region
-  ctx.beginPath();
-  ctx.rect(regionX, regionY, regionW, regionH);
-  ctx.clip();
-
-  // Draw the pattern
-  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-
-  // Restore context state
-  ctx.restore();
-}
-
-/**
- * Draws the following box drawing characters by mapping a subset of SVG d attribute instructions to
- * canvas draw calls.
- *
- * Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐
- * ┌─┬─┐ ┏━┳━┓ ╔═╦═╗ ┠╂┨┝┿┥╟╫╢╞╪╡ ┡╇┩├╊┫┢╈┪┣╉┤
- * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┖┸┚┕┷┙╙╨╜╘╧╛ └┴┘└┺┛┗┻┛┗┹┘
- * ├─┼─┤ ┣━╋━┫ ╠═╬═╣ ┏┱┐┌┲┓┌┬┐┌┬┐ ┏┳┓┌┮┓┌┬┐┏┭┐
- * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤
- * └─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘
- *
- * Other:
- * ╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈
- * │ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉
- * ╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋
- *
- * All box drawing characters:
- * ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏
- * ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟
- * ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯
- * ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿
- * ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏
- * ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
- * ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯
- * ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
- *
- * ---
- *
- * Box drawing alignment tests:                                          █
- *                                                                       ▉
- *   ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳
- *   ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳
- *   ║│╲ ╱│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╿ │┃  ┍╅╆┓   ╵  ╹ ┗┷┛ └┸┘    ▌ ╱╲╱╲╳╳╳
- *   ╠╡ ╳ ╞╣  ├╢   ╟┤  ├┼─┼─┼┤  ├╫─╂─╫┤  ┣┿╾┼╼┿┫  ┕┛┖┚     ┌┄┄┐ ╎ ┏┅┅┓ ┋ ▍ ╲╱╲╱╳╳╳
- *   ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎
- *   ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏
- *   ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█
- *
- * Source: https://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html
- */
-function drawPathDefinitionCharacterWithWeight(
-  ctx: CanvasRenderingContext2D,
-  charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
+  charDefinition: string | ((xp: number, yp: number) => string),
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  strokeWidth?: number
 ): void {
-  ctx.strokeStyle = ctx.fillStyle;
-  for (const [fontWeight, instructions] of Object.entries(charDefinition)) {
-    ctx.beginPath();
-    ctx.lineWidth = devicePixelRatio * Number.parseInt(fontWeight);
-    let actualInstructions: string;
-    if (typeof instructions === 'function') {
-      const xp = .15;
-      const yp = .15 / deviceCellHeight * deviceCellWidth;
-      actualInstructions = instructions(xp, yp);
-    } else {
-      actualInstructions = instructions;
-    }
-    for (const instruction of actualInstructions.split(' ')) {
-      const type = instruction[0];
-      if (type === 'Z') {
-        ctx.closePath();
-        continue;
-      }
-      const f = svgToCanvasInstructionMap[type];
-      if (!f) {
-        console.error(`Could not find drawing instructions for "${type}"`);
-        continue;
-      }
-      const args: string[] = instruction.substring(1).split(',');
-      if (!args[0] || !args[1]) {
-        continue;
-      }
-      f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
-    }
-    ctx.stroke();
-    ctx.closePath();
+  ctx.beginPath();
+  let actualInstructions: string;
+  if (typeof charDefinition === 'function') {
+    const xp = .15;
+    const yp = .15 / deviceCellHeight * deviceCellWidth;
+    actualInstructions = charDefinition(xp, yp);
+  } else {
+    actualInstructions = charDefinition;
   }
+  const state: ISvgPathState = { currentX: 0, currentY: 0, lastControlX: 0, lastControlY: 0, lastCommand: '' };
+  for (const instruction of actualInstructions.split(' ')) {
+    const type = instruction[0];
+    if (type === 'Z') {
+      ctx.closePath();
+      state.lastCommand = type;
+      continue;
+    }
+    const f = svgToCanvasInstructionMap[type];
+    if (!f) {
+      console.error(`Could not find drawing instructions for "${type}"`);
+      continue;
+    }
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio), state);
+    state.lastCommand = type;
+  }
+  if (strokeWidth !== undefined) {
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.lineWidth = devicePixelRatio * strokeWidth;
+    ctx.stroke();
+  } else {
+    ctx.fill();
+  }
+  ctx.closePath();
 }
 
 /**
- * Draws a pattern clipped to an arbitrary path (for triangular shades, etc.)
+ * Applies a clip path to the canvas context from SVG-like path instructions.
  */
-function drawBlockPatternWithClipPath(
+function applyClipPath(
   ctx: CanvasRenderingContext2D,
-  definition: [pattern: CustomGlyphPatternDefinition, clipPath: string],
+  clipPath: string,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number
 ): void {
-  const [pattern, clipPath] = definition;
-
-  ctx.save();
-
-  // Build clip path from SVG-like instructions
   ctx.beginPath();
   for (const instruction of clipPath.split(' ')) {
     const type = instruction[0];
@@ -551,11 +545,6 @@ function drawBlockPatternWithClipPath(
     }
   }
   ctx.clip();
-
-  // Draw the pattern
-  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-
-  ctx.restore();
 }
 
 function drawVectorShape(
@@ -577,10 +566,12 @@ function drawVectorShape(
   // Scale the stroke with DPR and font size
   const cssLineWidth = fontSize / 12;
   ctx.lineWidth = devicePixelRatio * cssLineWidth;
+  const state: ISvgPathState = { currentX: 0, currentY: 0, lastControlX: 0, lastControlY: 0, lastCommand: '' };
   for (const instruction of charDefinition.d.split(' ')) {
     const type = instruction[0];
     if (type === 'Z') {
       ctx.closePath();
+      state.lastCommand = type;
       continue;
     }
     const f = svgToCanvasInstructionMap[type];
@@ -602,7 +593,8 @@ function drawVectorShape(
       devicePixelRatio,
       (charDefinition.leftPadding ?? 0) * (cssLineWidth / 2),
       (charDefinition.rightPadding ?? 0) * (cssLineWidth / 2)
-    ));
+    ), state);
+    state.lastCommand = type;
   }
   if (charDefinition.type === CustomGlyphVectorType.STROKE) {
     ctx.strokeStyle = ctx.fillStyle;
@@ -617,11 +609,55 @@ function clamp(value: number, max: number, min: number = 0): number {
   return Math.max(Math.min(value, max), min);
 }
 
-const svgToCanvasInstructionMap: { [index: string]: any } = {
-  'C': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]),
-  'L': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.lineTo(args[0], args[1]),
-  'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1]),
-  'Q': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.quadraticCurveTo(args[0], args[1], args[2], args[3])
+interface ISvgPathState {
+  currentX: number;
+  currentY: number;
+  lastControlX: number;
+  lastControlY: number;
+  lastCommand: string;
+}
+
+const svgToCanvasInstructionMap: { [index: string]: (ctx: CanvasRenderingContext2D, args: number[], state: ISvgPathState) => void } = {
+  'C': (ctx, args, state) => {
+    ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]);
+    state.lastControlX = args[2];
+    state.lastControlY = args[3];
+    state.currentX = args[4];
+    state.currentY = args[5];
+  },
+  'L': (ctx, args, state) => {
+    ctx.lineTo(args[0], args[1]);
+    state.lastControlX = state.currentX = args[0];
+    state.lastControlY = state.currentY = args[1];
+  },
+  'M': (ctx, args, state) => {
+    ctx.moveTo(args[0], args[1]);
+    state.lastControlX = state.currentX = args[0];
+    state.lastControlY = state.currentY = args[1];
+  },
+  'Q': (ctx, args, state) => {
+    ctx.quadraticCurveTo(args[0], args[1], args[2], args[3]);
+    state.lastControlX = args[0];
+    state.lastControlY = args[1];
+    state.currentX = args[2];
+    state.currentY = args[3];
+  },
+  'T': (ctx, args, state) => {
+    let cpX: number;
+    let cpY: number;
+    if (state.lastCommand === 'Q' || state.lastCommand === 'T') {
+      cpX = 2 * state.currentX - state.lastControlX;
+      cpY = 2 * state.currentY - state.lastControlY;
+    } else {
+      cpX = state.currentX;
+      cpY = state.currentY;
+    }
+    ctx.quadraticCurveTo(cpX, cpY, args[0], args[1]);
+    state.lastControlX = cpX;
+    state.lastControlY = cpY;
+    state.currentX = args[0];
+    state.currentY = args[1];
+  }
 };
 
 function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, devicePixelRatio: number, leftPadding: number = 0, rightPadding: number = 0): number[] {

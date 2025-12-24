@@ -453,8 +453,6 @@ function initOptions(term: Terminal): void {
     'theme',
     'windowOptions',
     'windowsPty',
-    // Deprecated
-    'fastScrollModifier'
   ];
   const stringOptions = {
     cursorStyle: ['block', 'underline', 'bar'],
@@ -619,6 +617,20 @@ function initOptions(term: Terminal): void {
 
 function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
+
+  function postInitWebgl(): void {
+    setTimeout(() => {
+      setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+    }, 500);
+  }
+  function preDisposeWebgl(): void {
+    if (addons.webgl.instance.textureAtlas) {
+      addons.webgl.instance.textureAtlas.remove();
+    }
+  }
+
   Object.keys(addons).forEach((name: AddonType) => {
     const addon = addons[name];
     const checkbox = document.createElement('input') as HTMLInputElement;
@@ -649,18 +661,6 @@ function initAddons(term: Terminal): void {
           addon.instance = undefined;
         }
         return;
-      }
-      function postInitWebgl(): void {
-        setTimeout(() => {
-          setTextureAtlas(addons.webgl.instance.textureAtlas);
-          addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-          addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-        }, 500);
-      }
-      function preDisposeWebgl(): void {
-        if (addons.webgl.instance.textureAtlas) {
-          addons.webgl.instance.textureAtlas.remove();
-        }
       }
       if (checkbox.checked) {
         // HACK: Manually remove addons that cannot be changes
@@ -697,7 +697,8 @@ function initAddons(term: Terminal): void {
         if (addons.webgl.instance) {
           preDisposeWebgl();
           addons.webgl.instance.dispose();
-          addons.webgl.instance = new addons.webgl.ctor();
+          const customGlyphsCheckbox = document.getElementById('webgl-custom-glyphs') as HTMLInputElement;
+          addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: customGlyphsCheckbox?.checked ?? true });
           term.loadAddon(addons.webgl.instance);
           postInitWebgl();
         }
@@ -713,6 +714,31 @@ function initAddons(term: Terminal): void {
     const wrapper = document.createElement('div');
     wrapper.classList.add('addon');
     wrapper.appendChild(label);
+
+    // Add customGlyphs sub-checkbox for webgl addon
+    if (name === 'webgl') {
+      const customGlyphsCheckbox = document.createElement('input') as HTMLInputElement;
+      customGlyphsCheckbox.type = 'checkbox';
+      customGlyphsCheckbox.checked = true; // Default to enabled
+      customGlyphsCheckbox.id = 'webgl-custom-glyphs';
+      addDomListener(customGlyphsCheckbox, 'change', () => {
+        if (addons.webgl.instance) {
+          preDisposeWebgl();
+          addons.webgl.instance.dispose();
+          addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: customGlyphsCheckbox.checked });
+          term.loadAddon(addons.webgl.instance);
+          postInitWebgl();
+        }
+      });
+      const customGlyphsLabel = document.createElement('label');
+      customGlyphsLabel.classList.add('addon');
+      customGlyphsLabel.style.display = 'block';
+      customGlyphsLabel.style.marginLeft = '20px';
+      customGlyphsLabel.appendChild(customGlyphsCheckbox);
+      customGlyphsLabel.appendChild(document.createTextNode('customGlyphs'));
+      wrapper.appendChild(customGlyphsLabel);
+    }
+
     fragment.appendChild(wrapper);
   });
   const container = document.getElementById('addons-container');
@@ -797,11 +823,13 @@ function customGlyphAlignmentHandler(): void {
   term.write('│ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤\n\r');
   term.write('└─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘\n\r');
   term.write('\n\r');
+
   term.write('Other:\n\r');
   term.write('╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈\n\r');
   term.write('│ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉\n\r');
   term.write('╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋\n\r');
   term.write('\n\r');
+
   term.write('All box drawing characters:\n\r');
   term.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\n\r');
   term.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\n\r');
@@ -811,6 +839,7 @@ function customGlyphAlignmentHandler(): void {
   term.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\n\r');
   term.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\n\r');
   term.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\n\r');
+
   term.write('Box drawing alignment tests:\x1b[31m                                          █\n\r');
   term.write('                                                                      ▉\n\r');
   term.write('  ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳\n\r');
@@ -829,6 +858,7 @@ function customGlyphAlignmentHandler(): void {
   term.write('  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\n\r');
   term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
   term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
+
   term.write('\x1b[0mSmooth mosaic terminal graphic characters alignment tests:\x1b[33m\n\r');
   term.write('  🭇🬼 🭈🬽 🭉🬾 🭊🬿 🭋🭀 🭁🭌 🭂🭍 🭃🭎 🭄🭏 🭅🭐 🭆🭑 🭨🭪 🭩 🭯 🭮🭬\n\r');
   term.write('  🭢🭗 🭣🭘 🭤🭙 🭥🭚 🭦🭛 🭒🭝 🭓🭞 🭔🭟 🭕🭠 🭖🭡 🭧🭜    🭫 🭭\n\r');
@@ -836,20 +866,24 @@ function customGlyphAlignmentHandler(): void {
   term.write('  🭊🭁🭌🬿 🭈🭆🭂🭍🭑🬽 🭇🭄🭏🬼 🭃🭎 🭅🭐 🭨🭪\n\r');
   term.write('  🭥🭒🭝🭚 🭣🭧🭓🭞🭜🭘 🭢🭕🭠🭗 🭔🭟 🭖🭡 🭪🭨\n\r');
   term.write('   🭢🭗              🭤🭙 🭦🭛\n\r');
+
   term.write('\x1b[0mCharacter cell diagonals (1FBA0-1FBAE) alignment tests:\x1b[34m\n\r');
   term.write('   \u{1FBA3}\u{1FBA7}\u{1FBA2}  \u{1FBA3}\u{1FBA8}\u{1FBA0} \u{1FBAD}\u{1FBA2} \u{1FBA3}\u{1FBAC} \u{1FBAE}\n\r');
   term.write('  \u{1FBA3}\u{1FBA0} \u{1FBA1}\u{1FBA2} \u{1FBA1}\u{1FBA9}\u{1FBA2} \u{1FBA1}\u{1FBAA} \u{1FBAB}\u{1FBA0}\n\r');
   term.write('  \u{1FBA4}   \u{1FBA5}\n\r');
   term.write('  \u{1FBA1}\u{1FBA2} \u{1FBA3}\u{1FBA0}\n\r');
   term.write('   \u{1FBA1}\u{1FBA6}\u{1FBA0}\n\r');
+
   term.write('\x1b[0mCharacter cell diagonals (1FBD0-1FBDF) alignment tests:\x1b[34m\n\r');
   term.write('  \u{1FBD6}\u{1FBD4} \u{1FBD0}\u{1FBD1}\u{1FBD2}\u{1FBD3} \u{1FBDA} \u{1FBD9}\u{1FBDB} \u{1FBDE} \u{1FBDD}\u{1FBDF}\n\r');
   term.write('  \u{1FBD7}\u{1FBD5} \u{1FBD2}\u{1FBD3}\u{1FBD0}\u{1FBD1} \u{1FBD8}    \u{1FBDC}\n\r');
   term.write('  \u{1FBD4}\u{1FBD6}\n\r');
   term.write('  \u{1FBD5}\u{1FBD7}\n\r');
   term.write('');
+
   term.write('\x1b[0mComposite terminal graphics characters:\x1b[35m\n\r');
   term.write('\u{1FBB2}\u{1FBB3} \u{1FBB9}\u{1FBBA} \u{1FBC1}\u{1FBC2}\u{1FBC3}\n\r');
+
   term.write('\x1b[0mFill tests:\x1b[36m\n\r');
   const fillChars = ['\u{2591}', '\u{2592}', '\u{2593}', '\u{1FB8C}', '\u{1FB8D}', '\u{1FB8E}', '\u{1FB8F}', '\u{1FB90}', '\u{1FB91}', '\u{1FB92}', '\u{1FB94}', '\u{1FB95}', '\u{1FB96}', '\u{1FB97}', '\u{1FB98}', '\u{1FB99}'];
   while (fillChars.length > 0) {
@@ -867,7 +901,19 @@ function customGlyphAlignmentHandler(): void {
     }
   }
 
+  term.write('\x1b[0mPowerline alignment tests:\n\r');
+  const powerlineLeftChars = ['\u{E0B2}', '\u{E0B3}', '\u{E0B6}', '\u{E0B7}', '\u{E0BA}', '\u{E0BB}', '\u{E0BE}', '\u{E0BF}', '\u{E0C2}', '\u{E0C3}', '\u{E0C5}', '\u{E0C7}', '\u{E0CA}', '\u{E0D4}'];
+  const powerlineRightChars = ['\u{E0B0}', '\u{E0B1}', '\u{E0B4}', '\u{E0B5}', '\u{E0B8}', '\u{E0B9}', '\u{E0BC}', '\u{E0BD}', '\u{E0C0}', '\u{E0C1}', '\u{E0C4}', '\u{E0C6}', '\u{E0C8}', '\u{E0D2}', '\u{E0CC}', '\u{E0CD}', '\u{E0CE}', '\u{E0CF}', '\u{E0D0}', '\u{E0D1}'];
+  for (const char of powerlineLeftChars) {
+    term.write(`\x1b[31m${char}\x1b[0;41m \x1b[0m `);
+  }
+  term.write('\n\r');
+  for (const char of powerlineRightChars) {
+    term.write(`\x1b[41m \x1b[0;31m${char}\x1b[0m `);
+  }
+
   term.write('\x1b[0m');
+  term.write('\n\r');
   window.scrollTo(0, 0);
 }
 
@@ -896,12 +942,18 @@ function customGlyphRangesHandler(): void {
     ['Block elements', 0x2594, 0x2595],
     ['Terminal graphic characters', 0x2596, 0x259F],
   ]);
+  // Braille Patterns
+  // 2800-28FF
+  // https://www.unicode.org/charts/PDF/U2800.pdf
+  writeUnicodeTable(term, 'Braille patterns', 0x2800, 0x28FF, [
+    ['Braille patterns', 0x2800, 0x28FF],
+  ]);
   // Powerline Symbols
-  // Range: E0A0–E0BF
+  // Range: E0A0–E0D4
   // https://github.com/ryanoasis/nerd-fonts
-  writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0BF, [
+  writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0D4, [
     ['Powerline Symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
-    ['Powerline Extra Symbols', 0xE0B4, 0xE0BF],
+    ['Powerline Extra Symbols', 0xE0B4, 0xE0D4, [0xE0C9, 0xE0CB, 0xE0D3]],
   ]);
   // Symbols for Legacy Computing
   // Range: 1FB00–1FBFF

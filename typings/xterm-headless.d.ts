@@ -64,22 +64,6 @@ declare module '@xterm/headless' {
     cursorWidth?: number;
 
     /**
-     * Whether to draw custom glyphs instead of using the font for the following
-     * unicode ranges:
-     *
-     * - Box Drawing (U+2500-U+257F)
-     * - Box Elements (U+2580-U+259F)
-     * - Powerline Symbols (U+E0A0–U+E0BF)
-     * - Symbols for Legacy Computing (U+1FB00–U+1FBFF)
-     *
-     * This will typically result in better rendering with continuous lines,
-     * even when line height and letter spacing is used. Note that this doesn't
-     * work with the DOM renderer which renders all characters using the font.
-     * The default is true.
-     */
-    customGlyphs?: boolean;
-
-    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -88,13 +72,6 @@ declare module '@xterm/headless' {
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
-
-    /**
-     * The modifier key hold to multiply scroll speed.
-     * @deprecated This option is no longer available and will always use alt.
-     * Setting this will be ignored.
-     */
-    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The spacing in whole pixels between characters.
@@ -221,25 +198,6 @@ declare module '@xterm/headless' {
      * The color theme of the terminal.
      */
     theme?: ITheme;
-
-    /**
-     * Whether "Windows mode" is enabled. Because Windows backends winpty and
-     * conpty operate by doing line wrapping on their side, xterm.js does not
-     * have access to wrapped lines. When Windows mode is enabled the following
-     * changes will be in effect:
-     *
-     * - Reflow is disabled.
-     * - Lines are assumed to be wrapped if the last character of the line is
-     *   not whitespace.
-     *
-     * When using conpty on Windows 11 version >= 21376, it is recommended to
-     * disable this because native text wrapping sequences are output correctly
-     * thanks to https://github.com/microsoft/terminal/issues/405
-     *
-     * @deprecated Use {@link windowsPty}. This value will be ignored if
-     * windowsPty is set.
-     */
-    windowsMode?: boolean;
 
     /**
      * Compatibility information when the pty is known to be hosted on Windows.

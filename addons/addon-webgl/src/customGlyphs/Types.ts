@@ -33,29 +33,37 @@ export type CustomGlyphPatternDefinition = number[][];
 export const enum CustomGlyphDefinitionType {
   SOLID_OCTANT_BLOCK_VECTOR,
   BLOCK_PATTERN,
-  BLOCK_PATTERN_WITH_REGION,
-  BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR,
-  BLOCK_PATTERN_WITH_CLIP_PATH,
   PATH_FUNCTION,
-  PATH_FUNCTION_WITH_WEIGHT,
   PATH,
   PATH_NEGATIVE,
   VECTOR_SHAPE,
+  BRAILLE,
 }
 
-export type CustomGlyphRegionDefinition = [x: number, y: number, w: number, h: number];
-
-export type CustomGlyphCharacterDefinition = (
+export type CustomGlyphDefinitionPartRaw = (
   { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: ICustomGlyphSolidOctantBlockVector[] } |
   { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: CustomGlyphPatternDefinition } |
-  { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition] } |
-  // TODO: Consolidate these, draws should be possible via regions/clipping instead of special
-  // casing
-  { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR, data: { pattern: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition], vectors: ICustomGlyphSolidOctantBlockVector[] } } |
-  { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH, data: [pattern: CustomGlyphPatternDefinition, clipPath: string] } |
-  { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } |
-  { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [fontWeight: number]: string | CustomGlyphPathDrawFunctionDefinition } } |
+  { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition | string } |
   { type: CustomGlyphDefinitionType.PATH, data: string } |
   { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: ICustomGlyphVectorShape } |
-  { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape }
+  { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape} |
+  { type: CustomGlyphDefinitionType.BRAILLE, data: number }
 );
+
+export interface ICustomGlyphDefinitionCommon {
+  /**
+   * A custom clip path for the draw definition, restricting the area it can draw to.
+   */
+  clipPath?: string;
+  /**
+   * The stroke width to use when drawing the path. Defaults to 1.
+   */
+  strokeWidth?: number;
+}
+
+export type CustomGlyphDefinitionPart = CustomGlyphDefinitionPartRaw & ICustomGlyphDefinitionCommon;
+
+/**
+ * A character definition that can be a single part or an array of parts drawn in sequence.
+ */
+export type CustomGlyphCharacterDefinition = CustomGlyphDefinitionPart | CustomGlyphDefinitionPart[];
