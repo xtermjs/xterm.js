@@ -80,7 +80,7 @@ function drawDefinitionPart(
       drawPathFunctionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
       break;
     case CustomGlyphDefinitionType.PATH:
-      drawPathDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
+      drawPathDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
       break;
     case CustomGlyphDefinitionType.PATH_NEGATIVE:
       drawPathNegativeDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, backgroundColor);
@@ -171,7 +171,9 @@ function drawPathDefinitionCharacter(
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
-  deviceCellHeight: number
+  deviceCellHeight: number,
+  devicePixelRatio: number,
+  strokeWidth?: number
 ): void {
   const instructions = typeof charDefinition === 'string' ? charDefinition : charDefinition(0, 0);
   ctx.beginPath();
@@ -272,7 +274,13 @@ function drawPathDefinitionCharacter(
     }
     lastCommand = type;
   }
-  ctx.fill();
+  if (strokeWidth !== undefined) {
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.lineWidth = devicePixelRatio * strokeWidth;
+    ctx.stroke();
+  } else {
+    ctx.fill();
+  }
 }
 
 /**
