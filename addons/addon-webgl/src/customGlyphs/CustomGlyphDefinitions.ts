@@ -3,10 +3,38 @@
  * @license MIT
  */
 
-import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition } from './Types';
 
 /* eslint-disable max-len */
 
+/**
+ * Frozen {@link CustomGlyphDefinitionPart} objects for reuse across glyph definitions.
+ */
+namespace Parts {
+  // Lines
+  export const LINE_H: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 });
+  export const LINE_V: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 });
+
+  // Fading lines
+  export const FADE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.5 L.28,.5 M.32,.5 L.52,.5 M.60,.5 L.72,.5 M.84,.5 L.90,.5', strokeWidth: 1 });
+  export const FADE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.10,.5 L.16,.5 M.28,.5 L.40,.5 M.48,.5 L.68,.5 M.72,.5 L1,.5', strokeWidth: 1 });
+  export const FADE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,0 L.5,.28 M.5,.32 L.5,.52 M.5,.60 L.5,.72 M.5,.84 L.5,.90', strokeWidth: 1 });
+  export const FADE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 });
+
+  // Curved corners
+  export const CURVE_DOWN_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_DOWN_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+  export const CURVE_UP_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+
+  // Node parts
+  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
+  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
+  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
+  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
+}
 
 export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
   // #region Box Drawing (2500-257F)
@@ -307,211 +335,110 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // TODO: These should be composed of common shapes instead of repeating the path data.
 
   // Line without branches
-  '\u{F5D0}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 }, // HORIZONTAL LINE (Same as 2500)
-  '\u{F5D1}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 }, // VERTICAL LINE (Same as 2502)
-  '\u{F5D2}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.5 L.28,.5 M.32,.5 L.52,.5 M.60,.5 L.72,.5 M.84,.5 L.90,.5', strokeWidth: 1 }, // HORIZONTAL LINE FADE TO RIGHT
-  '\u{F5D3}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.10,.5 L.16,.5 M.28,.5 L.40,.5 M.48,.5 L.68,.5 M.72,.5 L1,.5', strokeWidth: 1 }, // HORIZONTAL LINE FADE TO LEFT
-  '\u{F5D4}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,0 L.5,.28 M.5,.32 L.5,.52 M.5,.60 L.5,.72 M.5,.84 L.5,.90', strokeWidth: 1 }, // VERTICAL LINE FADE TO BOTTOM
-  '\u{F5D5}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 }, // VERTICAL LINE FADE TO TOP
-  '\u{F5D6}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 }, // CURVED LINE BOTTOM TO RIGHT (Same as 256D)
-  '\u{F5D7}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 }, // CURVED LINE BOTTOM TO LEFT (Same as 256E)
-  '\u{F5D8}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 }, // CURVED LINE TOP TO RIGHT (Same as 2570)
-  '\u{F5D9}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 }, // CURVED LINE TOP TO LEFT (Same as 256F)
+  '\u{F5D0}': Parts.LINE_H, // HORIZONTAL LINE (Same as 2500)
+  '\u{F5D1}': Parts.LINE_V, // VERTICAL LINE (Same as 2502)
+  '\u{F5D2}': Parts.FADE_RIGHT, // HORIZONTAL LINE FADE TO RIGHT
+  '\u{F5D3}': Parts.FADE_LEFT, // HORIZONTAL LINE FADE TO LEFT
+  '\u{F5D4}': Parts.FADE_DOWN, // VERTICAL LINE FADE TO BOTTOM
+  '\u{F5D5}': Parts.FADE_UP, // VERTICAL LINE FADE TO TOP
+  '\u{F5D6}': Parts.CURVE_DOWN_RIGHT, // CURVED LINE BOTTOM TO RIGHT (Same as 256D)
+  '\u{F5D7}': Parts.CURVE_DOWN_LEFT, // CURVED LINE BOTTOM TO LEFT (Same as 256E)
+  '\u{F5D8}': Parts.CURVE_UP_RIGHT, // CURVED LINE TOP TO RIGHT (Same as 2570)
+  '\u{F5D9}': Parts.CURVE_UP_LEFT, // CURVED LINE TOP TO LEFT (Same as 256F)
 
   // Vertical and branching to the right
-  '\u{F5DA}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5DB}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5DC}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
+  '\u{F5DA}': [Parts.LINE_V, Parts.CURVE_UP_RIGHT],
+  '\u{F5DB}': [Parts.LINE_V, Parts.CURVE_DOWN_RIGHT],
+  '\u{F5DC}': [Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_RIGHT],
 
   // Vertical and branching to the left
-  '\u{F5DD}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5DE}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5DF}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
+  '\u{F5DD}': [Parts.LINE_V, Parts.CURVE_UP_LEFT],
+  '\u{F5DE}': [Parts.LINE_V, Parts.CURVE_DOWN_LEFT],
+  '\u{F5DF}': [Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_LEFT],
 
   // Horizontal and branching down
-  '\u{F5E0}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5E1}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5E2}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
+  '\u{F5E0}': [Parts.LINE_H, Parts.CURVE_DOWN_LEFT],
+  '\u{F5E1}': [Parts.LINE_H, Parts.CURVE_DOWN_RIGHT],
+  '\u{F5E2}': [Parts.CURVE_DOWN_LEFT, Parts.CURVE_DOWN_RIGHT],
 
   // Horizontal and branching up
-  '\u{F5E3}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5E4}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5E5}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
+  '\u{F5E3}': [Parts.LINE_H, Parts.CURVE_UP_LEFT],
+  '\u{F5E4}': [Parts.LINE_H, Parts.CURVE_UP_RIGHT],
+  '\u{F5E5}': [Parts.CURVE_UP_LEFT, Parts.CURVE_UP_RIGHT],
 
   // Branching in all four directions
-  '\u{F5E6}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5E7}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5E8}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5E9}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5EA}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-  { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5EB}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5EC}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-  ],
-  '\u{F5ED}': [
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 },
-  ],
+  '\u{F5E6}': [Parts.LINE_V, Parts.CURVE_UP_LEFT, Parts.CURVE_UP_RIGHT],
+  '\u{F5E7}': [Parts.LINE_V, Parts.CURVE_DOWN_LEFT, Parts.CURVE_DOWN_RIGHT],
+  '\u{F5E8}': [Parts.LINE_H, Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_LEFT],
+  '\u{F5E9}': [Parts.LINE_H, Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_RIGHT],
+  '\u{F5EA}': [Parts.LINE_V, Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_LEFT],
+  '\u{F5EB}': [Parts.LINE_V, Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_RIGHT],
+  '\u{F5EC}': [Parts.LINE_H, Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_LEFT],
+  '\u{F5ED}': [Parts.LINE_H, Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_RIGHT],
 
   // Node (circle filling ~70% of cell, assumes 2:1 height:width aspect ratio)
-  '\u{F5EE}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 }, // Stroke as well to ensure it's the same outline as empty circle
-  ],
-  '\u{F5EF}': { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
+  '\u{F5EE}': [Parts.NODE_FILL, Parts.NODE_STROKE],
+  '\u{F5EF}': Parts.NODE_STROKE,
 
   // Node branching to right
-  '\u{F5F0}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 },
-  ],
-  '\u{F5F1}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 },
-  ],
+  '\u{F5F0}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_RIGHT],
+  '\u{F5F1}': [Parts.NODE_STROKE, Parts.NODE_LINE_RIGHT],
 
   // Node branching to left
-  '\u{F5F2}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 },
-  ],
-  '\u{F5F3}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 },
-  ],
+  '\u{F5F2}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_LEFT],
+  '\u{F5F3}': [Parts.NODE_STROKE, Parts.NODE_LINE_LEFT],
 
   // Node branching horizontally
-  '\u{F5F4}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 },
-  ],
-  '\u{F5F5}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 },
-  ],
+  '\u{F5F4}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT],
+  '\u{F5F5}': [Parts.NODE_STROKE, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT],
 
   // Node branching down
-  '\u{F5F6}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 },
-  ],
-  '\u{F5F7}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 },
-  ],
+  '\u{F5F6}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN],
+  '\u{F5F7}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN],
 
   // Node branching up
-  '\u{F5F8}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 },
-  ],
-  '\u{F5F9}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 },
-  ],
+  '\u{F5F8}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP],
+  '\u{F5F9}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP],
 
   // Node branching vertically
-  '\u{F5FA}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 },
-  ],
-  '\u{F5FB}': [
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 },
-    { type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 },
-  ],
+  '\u{F5FA}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_UP],
+  '\u{F5FB}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_UP],
 
-  // TODO: Implement rest
-  // NODE FILLED BRANCHING DOWN RIGHT
-  // NODE EMPTY BRANCHING DOWN RIGHT
-  // NODE FILLED BRANCHING DOWN LEFT
-  // NODE EMPTY BRANCHING DOWN LEFT
-  // NODE FILLED BRANCHING UP RIGHT
-  // NODE EMPTY BRANCHING UP RIGHT
-  // NODE FILLED BRANCHING UP LEFT
-  // NODE EMPTY BRANCHING UP LEFT
-  // NODE FILLED BRANCHING UP DOWN RIGHT
-  // NODE EMPTY BRANCHING UP DOWN RIGHT
-  // NODE FILLED BRANCHING UP DOWN LEFT
-  // NODE EMPTY BRANCHING UP DOWN LEFT
-  // NODE FILLED BRANCHING DOWN LEFT RIGHT
-  // NODE EMPTY BRANCHING DOWN LEFT RIGHT
-  // NODE FILLED BRANCHING UP LEFT RIGHT
-  // NODE EMPTY BRANCHING UP LEFT RIGHT
-  // NODE FILLED BRANCHING UP DOWN LEFT RIGHT
-  // NODE EMPTY BRANCHING UP DOWN LEFT RIGHT
+  // Node branching down right
+  '\u{F5FC}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING DOWN RIGHT
+  '\u{F5FD}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING DOWN RIGHT
+
+  // Node branching down left
+  '\u{F5FE}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE FILLED BRANCHING DOWN LEFT
+  '\u{F5FF}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE EMPTY BRANCHING DOWN LEFT
+
+  // Node branching up right
+  '\u{F600}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP RIGHT
+  '\u{F601}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP RIGHT
+
+  // Node branching up left
+  '\u{F602}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT], // NODE FILLED BRANCHING UP LEFT
+  '\u{F603}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT], // NODE EMPTY BRANCHING UP LEFT
+
+  // Node branching up down right
+  '\u{F604}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP DOWN RIGHT
+  '\u{F605}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP DOWN RIGHT
+
+  // Node branching up down left
+  '\u{F606}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE FILLED BRANCHING UP DOWN LEFT
+  '\u{F607}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE EMPTY BRANCHING UP DOWN LEFT
+
+  // Node branching down left right
+  '\u{F608}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING DOWN LEFT RIGHT
+  '\u{F609}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING DOWN LEFT RIGHT
+
+  // Node branching up left right
+  '\u{F60A}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP LEFT RIGHT
+  '\u{F60B}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP LEFT RIGHT
+
+  // Node branching up down left right
+  '\u{F60C}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP DOWN LEFT RIGHT
+  '\u{F60D}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP DOWN LEFT RIGHT
 
   // #endregion
 

@@ -960,6 +960,7 @@ function customGlyphRangesHandler(): void {
   // https://github.com/xtermjs/xterm.js/issues/5477
   writeUnicodeTable(term, 'Git Branch Symbols', 0xF5D0, 0xF5FB, [
     ['Git Branch Symbols', 0xF5D0, 0xF5FB],
+    ['Extended Git Branch Symbols', 0xF5FC, 0xF60D],
   ]);
   // Symbols for Legacy Computing
   // Range: 1FB00–1FBFF
