@@ -6,7 +6,7 @@
 import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition } from './Types';
 
 /* eslint-disable max-len */
-/* eslint-disable @typescript-eslint/naming-convention */
+
 
 export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
   // #region Box Drawing (2500-257F)
