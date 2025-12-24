@@ -569,30 +569,30 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // Arrows (1FBB4-1FBB8)
   // TODO: Improve all arrows, use hybrid approach
-  '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.55 L.5,.45 L.5,.475 L.75,.475 L.75,.35 L.85,.35 L.85,.6 L.5,.6 L.5,.65 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR },                                        // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
+  '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.55 L.5,.4 L.5,.45 L.65,.45 L.65,.35 L.85,.35 L.85,.625 L.5,.625 L.5,.7 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR },                                        // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
   '\u{1FBB5}': [ // LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
-    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z', type: CustomGlyphVectorType.FILL } },
-    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.15,.5 L.5,.4 L.5,.45 L.85,.45 L.85,.55 L.5,.55 L.5,.6 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.0625 L0,.0625 Z M0,.9375 L1,.9375 L1,1 L0,1 Z', type: CustomGlyphVectorType.FILL } },
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.15,.5 L.5,.35 L.5,.425 L.85,.425 L.85,.575 L.5,.575 L.5,.65 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
   ],
   '\u{1FBB6}': [ // RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
-    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.125 L0,.125 Z M0,.875 L1,.875 L1,1 L0,1 Z', type: CustomGlyphVectorType.FILL } },
-    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.85,.5 L.5,.4 L.5,.45 L.15,.45 L.15,.55 L.5,.55 L.5,.6 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.0625 L0,.0625 Z M0,.9375 L1,.9375 L1,1 L0,1 Z', type: CustomGlyphVectorType.FILL } },
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.85,.5 L.5,.35 L.5,.425 L.15,.425 L.15,.575 L.5,.575 L.5,.65 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
   ],
   '\u{1FBB7}': [ // DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
     { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z', type: CustomGlyphVectorType.FILL } },
-    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.675 L.35,.5 L.425,.5 L.425,.325 L.575,.325 L.575,.5 L.65,.5 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.675 L.2,.5 L.35,.5 L.35,.325 L.65,.325 L.65,.5 L.8,.5 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
   ],
   '\u{1FBB8}': [ // UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
     { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.875,0 L1,0 L1,1 L.875,1 Z', type: CustomGlyphVectorType.FILL } },
-    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.325 L.35,.5 L.425,.5 L.425,.675 L.575,.675 L.575,.5 L.65,.5 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
+    { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.325 L.2,.5 L.35,.5 L.35,.675 L.65,.675 L.65,.5 L.8,.5 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }
   ],
 
   // Terminal graphic characters (1FBB9-1FBBC)
-  '\u{1FBB9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,.89 L.11,.89 L.11,.37 L.36,.12 L.74,.12 L.96,.34 L1,.34 L1,.45 L.92,.45 L.69,.22 L.41,.22 L.21,.42 L.21,.79 L1,.79 Z', type: CustomGlyphVectorType.FILL } }, // LEFT HALF FOLDER
-  '\u{1FBBA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,.89 L0,.79 L.78,.79 L.78,.53 L.7,.45 L0,.45 L0,.35 L.75,.35 L.88,.48 L.88,.89 Z', type: CustomGlyphVectorType.FILL } }, // RIGHT HALF FOLDER
+  '\u{1FBB9}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M1,.89 L.11,.89 L.11,.37 L.36,.12 L.74,.12 L.96,.34 L1,.34 L1,.405 L.92,.405 L.69,.185 L.41,.185 L.21,.42 L.21,.825 L1,.825 Z', type: CustomGlyphVectorType.FILL } }, // LEFT HALF FOLDER
+  '\u{1FBBA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,.89 L0,.825 L.78,.825 L.78,.53 L.7,.415 L0,.415 L0,.35 L.75,.35 L.88,.48 L.88,.89 Z', type: CustomGlyphVectorType.FILL } }, // RIGHT HALF FOLDER
   '\u{1FBBB}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.31,.275 L.44,.275 L.44,.47 L.05,.47 L.05,.405 L.31,.405 Z M.56,.275 L.69,.275 L.69,.405 L.95,.405 L.95,.47 L.56,.47 Z M.05,.53 L.44,.53 L.44,.725 L.31,.725 L.31,.595 L.05,.595 Z M.56,.53 L.95,.53 L.95,.595 L.69,.595 L.69,.725 L.56,.725 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }, // VOIDED GREEK CROSS
   '\u{1FBBC}': [ // RIGHT OPEN SQUARED DOT
-    { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,1 L0,1 L0,.87 L.77,.87 L.77,.13 L0,.13 Z' },
+    { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,1 L0,1 L0,.935 L.885,.935 L.885,.065 L0,.065 Z' },
     { type: CustomGlyphDefinitionType.PATH, data: 'M.67,.5 A.17,.085,0,1,1,.33,.5 A.17,.085,0,1,1,.67,.5', scaleType: CustomGlyphScaleType.CHAR }
   ],
 
