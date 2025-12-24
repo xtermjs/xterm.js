@@ -16,7 +16,6 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cursorStyle: 'block',
   cursorWidth: 1,
   cursorInactiveStyle: 'outline',
-  customGlyphs: true,
   drawBoldTextInBrightColors: true,
   documentOverride: null,
   fastScrollSensitivity: 5,

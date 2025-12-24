@@ -230,7 +230,6 @@ export interface ITerminalOptions {
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
   cursorInactiveStyle?: CursorInactiveStyle;
-  customGlyphs?: boolean;
   disableStdin?: boolean;
   documentOverride?: any | null;
   drawBoldTextInBrightColors?: boolean;

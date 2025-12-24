@@ -4,7 +4,7 @@
  */
 
 import type { ITerminalAddon, Terminal } from '@xterm/xterm';
-import type { WebglAddon as IWebglApi } from '@xterm/addon-webgl';
+import type { IWebglAddonOptions, WebglAddon as IWebglApi } from '@xterm/addon-webgl';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
@@ -28,9 +28,10 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
   private readonly _onContextLoss = this._register(new Emitter<void>());
   public readonly onContextLoss = this._onContextLoss.event;
 
-  constructor(
-    private _preserveDrawingBuffer?: boolean
-  ) {
+  private readonly _customGlyphs: boolean;
+  private readonly _preserveDrawingBuffer?: boolean;
+
+  constructor(options?: IWebglAddonOptions) {
     if (isSafari && getSafariVersion() < 16) {
       // Perform an extra check to determine if Webgl2 is manually enabled in developer settings
       const contextAttributes = {
@@ -44,6 +45,8 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
       }
     }
     super();
+    this._customGlyphs = options?.customGlyphs ?? true;
+    this._preserveDrawingBuffer = options?.preserveDrawingBuffer;
   }
 
   public activate(terminal: Terminal): void {
@@ -79,6 +82,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
       decorationService,
       optionsService,
       themeService,
+      this._customGlyphs,
       this._preserveDrawingBuffer
     ));
     this._register(Event.forward(this._renderer.onContextLoss, this._onContextLoss));
