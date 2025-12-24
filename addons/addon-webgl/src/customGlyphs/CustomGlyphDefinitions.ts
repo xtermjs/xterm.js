@@ -432,46 +432,46 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FB8B}': { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 1, y: 0, w: 7, h: 8 }] }, // RIGHT SEVEN EIGHTHS B0OCK
 
   // Rectangular shade characters (1FB8C-1FB94)
-  '\u{1FB8C}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[ // LEFT HALF MEDIUM SHADE
+  '\u{1FB8C}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [ // LEFT HALF MEDIUM SHADE
     [1, 0],
     [0, 1]
-  ], [0, 0, 0.5, 1]] },
-  '\u{1FB8D}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // RIGHT HALF MEDIUM SHADE
+  ], clipPath: 'M0,0 L0.5,0 L0.5,1 L0,1 Z' },
+  '\u{1FB8D}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [  // RIGHT HALF MEDIUM SHADE
     [1, 0],
     [0, 1]
-  ], [0.5, 0, 0.5, 1]] },
-  '\u{1FB8E}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // UPPER HALF MEDIUM SHADE
+  ], clipPath: 'M0.5,0 L1,0 L1,1 L0.5,1 Z' },
+  '\u{1FB8E}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [  // UPPER HALF MEDIUM SHADE
     [1, 0],
     [0, 1]
-  ], [0, 0, 1, 0.5]] },
-  '\u{1FB8F}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // LOWER HALF MEDIUM SHADE
+  ], clipPath: 'M0,0 L1,0 L1,0.5 L0,0.5 Z' },
+  '\u{1FB8F}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [  // LOWER HALF MEDIUM SHADE
     [1, 0],
     [0, 1]
-  ], [0, 0.5, 1, 0.5]] },
-  '\u{1FB90}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[  // INVERSE MEDIUM SHADE
+  ], clipPath: 'M0,0.5 L1,0.5 L1,1 L0,1 Z' },
+  '\u{1FB90}': { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [  // INVERSE MEDIUM SHADE
     [0, 1],
     [1, 0]
-  ], [0, 0, 1, 1]] },
+  ] },
   '\u{1FB91}': [ // UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
-    { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[
+    { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [
       [0, 1],
       [1, 0]
-    ], [0, 0.5, 1, 0.5]] },
+    ], clipPath: 'M0,0.5 L1,0.5 L1,1 L0,1 Z' },
     { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 0, w: 8, h: 4 }] }
   ],
   '\u{1FB92}': [ // UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
-    { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[
+    { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [
       [0, 1],
       [1, 0]
-    ], [0, 0, 1, 0.5]] },
+    ], clipPath: 'M0,0 L1,0 L1,0.5 L0,0.5 Z' },
     { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 0, y: 4, w: 8, h: 4 }] }
   ],
   // 1FB93 is <reserved>
   '\u{1FB94}': [ // LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
-    { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [[
+    { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: [
       [0, 1],
       [1, 0]
-    ], [0, 0, 0.5, 1]] },
+    ], clipPath: 'M0,0 L0.5,0 L0.5,1 L0,1 Z' },
     { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: [{ x: 4, y: 0, w: 4, h: 8 }] }
   ],
 

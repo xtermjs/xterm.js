@@ -33,7 +33,6 @@ export type CustomGlyphPatternDefinition = number[][];
 export const enum CustomGlyphDefinitionType {
   SOLID_OCTANT_BLOCK_VECTOR,
   BLOCK_PATTERN,
-  BLOCK_PATTERN_WITH_REGION,
   PATH_FUNCTION,
   PATH_FUNCTION_WITH_WEIGHT,
   PATH,
@@ -41,12 +40,9 @@ export const enum CustomGlyphDefinitionType {
   VECTOR_SHAPE,
 }
 
-export type CustomGlyphRegionDefinition = [x: number, y: number, w: number, h: number];
-
 export type CustomGlyphDefinitionPartRaw = (
   { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: ICustomGlyphSolidOctantBlockVector[] } |
   { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: CustomGlyphPatternDefinition } |
-  { type: CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION, data: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition] } |
   { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } |
   { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [fontWeight: number]: string | CustomGlyphPathDrawFunctionDefinition } } |
   { type: CustomGlyphDefinitionType.PATH, data: string } |

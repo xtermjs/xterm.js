@@ -5,7 +5,7 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -58,9 +58,6 @@ function drawDefinitionPart(
       break;
     case CustomGlyphDefinitionType.BLOCK_PATTERN:
       drawPatternChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-      break;
-    case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
-      drawBlockPatternWithRegion(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
       break;
     case CustomGlyphDefinitionType.PATH_FUNCTION:
     case CustomGlyphDefinitionType.PATH:
@@ -418,40 +415,6 @@ function drawPatternChar(
   }
   ctx.fillStyle = pattern;
   ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-}
-
-/**
- * Draws rectangular shade characters - medium shade pattern clipped to a region.
- * Uses a checkerboard pattern that shifts 1px each row (same as medium shade U+2592).
- */
-function drawBlockPatternWithRegion(
-  ctx: CanvasRenderingContext2D,
-  definition: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition],
-  xOffset: number,
-  yOffset: number,
-  deviceCellWidth: number,
-  deviceCellHeight: number
-): void {
-  const [pattern, region] = definition;
-  const [rx, ry, rw, rh] = region;
-  const regionX = Math.round(xOffset + rx * deviceCellWidth);
-  const regionY = Math.round(yOffset + ry * deviceCellHeight);
-  const regionW = Math.round(rw * deviceCellWidth);
-  const regionH = Math.round(rh * deviceCellHeight);
-
-  // Save context state
-  ctx.save();
-
-  // Clip to the region
-  ctx.beginPath();
-  ctx.rect(regionX, regionY, regionW, regionH);
-  ctx.clip();
-
-  // Draw the pattern
-  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-
-  // Restore context state
-  ctx.restore();
 }
 
 function drawPathDefinitionCharacterWithWeight(
