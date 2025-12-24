@@ -218,22 +218,50 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
     term.write('\n\r');
 
     // Render reserved labels that appear after the first label (below the row)
-    // Only show one label pointing to the first reserved item when there are multiple
+    // Show one label per non-contiguous reserved range
     const lateReserved = rowLabels.length > 0
       ? rowReserved.filter(r => r.col >= rowLabels[0].col)
       : rowReserved;
     if (lateReserved.length > 0) {
-      const prefix = ' '.repeat(8);
-      const firstReserved = lateReserved[0];
-      const colPos = firstReserved.col * 2 + 1;
-      const padding = ' '.repeat(colPos);
-      let line: string;
-      if (firstReserved.colorIndex >= 0) {
-        line = padding + color('└<reserved>', firstReserved.colorIndex);
-      } else {
-        line = padding + '└<reserved>';
+      // Group contiguous reserved ranges
+      const reservedGroups: { startCol: number, colorIndex: number }[] = [];
+      for (let i = 0; i < lateReserved.length; i++) {
+        const curr = lateReserved[i];
+        const prev = lateReserved[i - 1];
+        // Start a new group if not contiguous (gap of more than 1 column)
+        if (i === 0 || curr.col > prev.col + 1) {
+          reservedGroups.push({ startCol: curr.col, colorIndex: curr.colorIndex });
+        }
       }
-      term.write(faint(prefix + line) + '\n\r');
+
+      // Render from bottom to top (last group at bottom with └, earlier groups with │)
+      for (let i = reservedGroups.length - 1; i >= 0; i--) {
+        const prefix = ' '.repeat(8);
+        let line = '';
+        let visualLen = 0;
+        for (let g = 0; g <= i; g++) {
+          const group = reservedGroups[g];
+          const colPos = group.startCol * 2 + 1;
+          const padding = ' '.repeat(colPos - visualLen);
+          if (g === i) {
+            // This is the label for this line
+            if (group.colorIndex >= 0) {
+              line += padding + color('└<reserved>', group.colorIndex);
+            } else {
+              line += padding + '└<reserved>';
+            }
+          } else {
+            // Vertical connector for groups below
+            if (group.colorIndex >= 0) {
+              line += padding + color('│', group.colorIndex);
+            } else {
+              line += padding + '│';
+            }
+            visualLen = colPos + 1;
+          }
+        }
+        term.write(faint(prefix + line) + '\n\r');
+      }
     }
   }
 }

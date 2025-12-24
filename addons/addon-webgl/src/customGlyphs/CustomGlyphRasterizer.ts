@@ -484,10 +484,12 @@ function drawPathFunctionCharacter(
   } else {
     actualInstructions = charDefinition;
   }
+  const state: ISvgPathState = { currentX: 0, currentY: 0, lastControlX: 0, lastControlY: 0, lastCommand: '' };
   for (const instruction of actualInstructions.split(' ')) {
     const type = instruction[0];
     if (type === 'Z') {
       ctx.closePath();
+      state.lastCommand = type;
       continue;
     }
     const f = svgToCanvasInstructionMap[type];
@@ -499,7 +501,8 @@ function drawPathFunctionCharacter(
     if (!args[0] || !args[1]) {
       continue;
     }
-    f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
+    f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio), state);
+    state.lastCommand = type;
   }
   if (strokeWidth !== undefined) {
     ctx.strokeStyle = ctx.fillStyle;
@@ -563,10 +566,12 @@ function drawVectorShape(
   // Scale the stroke with DPR and font size
   const cssLineWidth = fontSize / 12;
   ctx.lineWidth = devicePixelRatio * cssLineWidth;
+  const state: ISvgPathState = { currentX: 0, currentY: 0, lastControlX: 0, lastControlY: 0, lastCommand: '' };
   for (const instruction of charDefinition.d.split(' ')) {
     const type = instruction[0];
     if (type === 'Z') {
       ctx.closePath();
+      state.lastCommand = type;
       continue;
     }
     const f = svgToCanvasInstructionMap[type];
@@ -588,7 +593,8 @@ function drawVectorShape(
       devicePixelRatio,
       (charDefinition.leftPadding ?? 0) * (cssLineWidth / 2),
       (charDefinition.rightPadding ?? 0) * (cssLineWidth / 2)
-    ));
+    ), state);
+    state.lastCommand = type;
   }
   if (charDefinition.type === CustomGlyphVectorType.STROKE) {
     ctx.strokeStyle = ctx.fillStyle;
@@ -603,11 +609,55 @@ function clamp(value: number, max: number, min: number = 0): number {
   return Math.max(Math.min(value, max), min);
 }
 
-const svgToCanvasInstructionMap: { [index: string]: any } = {
-  'C': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]),
-  'L': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.lineTo(args[0], args[1]),
-  'M': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.moveTo(args[0], args[1]),
-  'Q': (ctx: CanvasRenderingContext2D, args: number[]) => ctx.quadraticCurveTo(args[0], args[1], args[2], args[3])
+interface ISvgPathState {
+  currentX: number;
+  currentY: number;
+  lastControlX: number;
+  lastControlY: number;
+  lastCommand: string;
+}
+
+const svgToCanvasInstructionMap: { [index: string]: (ctx: CanvasRenderingContext2D, args: number[], state: ISvgPathState) => void } = {
+  'C': (ctx, args, state) => {
+    ctx.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]);
+    state.lastControlX = args[2];
+    state.lastControlY = args[3];
+    state.currentX = args[4];
+    state.currentY = args[5];
+  },
+  'L': (ctx, args, state) => {
+    ctx.lineTo(args[0], args[1]);
+    state.lastControlX = state.currentX = args[0];
+    state.lastControlY = state.currentY = args[1];
+  },
+  'M': (ctx, args, state) => {
+    ctx.moveTo(args[0], args[1]);
+    state.lastControlX = state.currentX = args[0];
+    state.lastControlY = state.currentY = args[1];
+  },
+  'Q': (ctx, args, state) => {
+    ctx.quadraticCurveTo(args[0], args[1], args[2], args[3]);
+    state.lastControlX = args[0];
+    state.lastControlY = args[1];
+    state.currentX = args[2];
+    state.currentY = args[3];
+  },
+  'T': (ctx, args, state) => {
+    let cpX: number;
+    let cpY: number;
+    if (state.lastCommand === 'Q' || state.lastCommand === 'T') {
+      cpX = 2 * state.currentX - state.lastControlX;
+      cpY = 2 * state.currentY - state.lastControlY;
+    } else {
+      cpX = state.currentX;
+      cpY = state.currentY;
+    }
+    ctx.quadraticCurveTo(cpX, cpY, args[0], args[1]);
+    state.lastControlX = cpX;
+    state.lastControlY = cpY;
+    state.currentX = args[0];
+    state.currentY = args[1];
+  }
 };
 
 function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, devicePixelRatio: number, leftPadding: number = 0, rightPadding: number = 0): number[] {
