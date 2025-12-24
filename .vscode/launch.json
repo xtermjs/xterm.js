@@ -61,7 +61,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start"],
       "stopOnEntry": true,
-      "runtimeVersion": "18",
+      "runtimeVersion": "22",
       "serverReadyAction": {
         "action": "openExternally",
         "pattern": "App listening to (http://.*?:[0-9]+)"
