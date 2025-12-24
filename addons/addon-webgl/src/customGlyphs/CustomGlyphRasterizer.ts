@@ -426,9 +426,7 @@ function drawPathFunctionCharacter(
   devicePixelRatio: number,
   strokeWidth?: number
 ): void {
-  ctx.strokeStyle = ctx.fillStyle;
   ctx.beginPath();
-  ctx.lineWidth = devicePixelRatio * (strokeWidth ?? 1);
   let actualInstructions: string;
   if (typeof charDefinition === 'function') {
     const xp = .15;
@@ -454,7 +452,13 @@ function drawPathFunctionCharacter(
     }
     f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
   }
-  ctx.stroke();
+  if (strokeWidth !== undefined) {
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.lineWidth = devicePixelRatio * strokeWidth;
+    ctx.stroke();
+  } else {
+    ctx.fill();
+  }
   ctx.closePath();
 }
 
