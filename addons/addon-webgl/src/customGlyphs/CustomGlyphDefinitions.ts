@@ -660,6 +660,20 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBFA}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.5,.175 C.2,.175,.15,.305,.15,.435 L.05,.63 L.35,.63 C.35,.682,.42,.76,.5,.76 C.58,.76,.65,.682,.65,.63 L.95,.63 L.85,.435 C.85,.305,.8,.175,.5,.175 Z', type: CustomGlyphVectorType.FILL } }, // ALARM BELL SYMBOL
 
   // #endregion
+
+  // #region Braille Patterns (2800-28FF)
+
+  // https://www.unicode.org/charts/PDF/U2800.pdf
+
+  // Braille patterns (2800-28FF)
+  ...Object.fromEntries(
+    Array.from({ length: 256 }, (_, i) => [
+      String.fromCodePoint(0x2800 + i),
+      { type: CustomGlyphDefinitionType.BRAILLE, data: i }
+    ])
+  ),
+
+  // #endregion
 };
 
 /**
