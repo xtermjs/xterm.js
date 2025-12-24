@@ -7,10 +7,7 @@ import * as path from 'path';
 import { assert } from 'chai';
 
 // Use require to get a mutable module object (ESM imports create read-only bindings)
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fontFinder = require('font-finder');
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ligatureSupport = require('../out-esbuild/index');
 
 const originalList = fontFinder.list;
