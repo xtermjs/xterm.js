@@ -4,7 +4,7 @@
  */
 
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
-import { Attributes, UnderlineStyle } from 'common/buffer/Constants'; // eslint-disable-line no-unused-vars
+import { UnderlineStyle } from 'common/buffer/Constants';
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';

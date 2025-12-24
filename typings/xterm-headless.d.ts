@@ -1231,7 +1231,7 @@ declare module '@xterm/headless' {
      * @param id Specifies the function identifier under which the callback
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
      * default charset selection.
-     * @param callback The function to handle the sequence.
+     * @param handler The function to handle the sequence.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.

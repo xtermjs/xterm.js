@@ -20,21 +20,21 @@ describe('LigaturesAddon', () => {
 
   before(() => {
     sinon.stub(fontFinder, 'list').returns(Promise.resolve({
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       'Fira Code': [{
         path: path.join(__dirname, '../fonts/firaCode.otf'),
         style: fontFinder.Style.Regular,
         type: fontFinder.Type.Monospace,
         weight: 400
       }],
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       'Iosevka': [{
         path: path.join(__dirname, '../fonts/iosevka.ttf'),
         style: fontFinder.Style.Regular,
         type: fontFinder.Type.Monospace,
         weight: 400
       }],
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       'Nonexistant Font': [{
         path: path.join(__dirname, '../fonts/nonexistant.ttf'),
         style: fontFinder.Style.Regular,
