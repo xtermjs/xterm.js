@@ -903,7 +903,7 @@ function customGlyphAlignmentHandler(): void {
   }
   term.write('\n\r');
 
-  term.write('\x1b[0mGit Branch Symbols alignment tests:\n\r');
+  term.write('\x1b[0mGit Branch Symbols alignment tests:\x1b[32m\n\r');
   term.write(' \u{F5F7}\u{F5F7} \u{F5EE}\u{F5EF}  \u{F5F6}\u{F5F7} \u{F5D6}\u{F5D0}\u{F5D7}\n\r');
   term.write(' \u{F5DA}\u{F5DD} \u{F5F0}\u{F5F4}\u{F5F2} \u{F5FA}\u{F5FB} \u{F5D1} \u{F5D1}\n\r');
   term.write(' \u{F5DB}\u{F5DE} \u{F5F1}\u{F5F5}\u{F5F3} \u{F5F8}\u{F5F9} \u{F5D9}\u{F5D0}\u{F5D8}\n\r');

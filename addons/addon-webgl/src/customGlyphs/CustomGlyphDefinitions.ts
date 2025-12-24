@@ -315,8 +315,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{F5D5}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 }, // VERTICAL LINE FADE TO TOP
   '\u{F5D6}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 }, // CURVED LINE BOTTOM TO RIGHT (Same as 256D)
   '\u{F5D7}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 }, // CURVED LINE BOTTOM TO LEFT (Same as 256E)
-  '\u{F5D8}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 }, // CURVED LINE TOP TO LEFT (Same as 256F)
-  '\u{F5D9}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 }, // CURVED LINE TOP TO RIGHT (Same as 2570)
+  '\u{F5D8}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 }, // CURVED LINE TOP TO RIGHT (Same as 2570)
+  '\u{F5D9}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp, yp) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 }, // CURVED LINE TOP TO LEFT (Same as 256F)
 
   // Vertical and branching to the right
   '\u{F5DA}': [
