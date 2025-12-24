@@ -46,6 +46,12 @@ function drawDefinitionPart(
   devicePixelRatio: number,
   backgroundColor?: string
 ): void {
+  // Handle clipPath generically for any definition type
+  if (part.clipPath) {
+    ctx.save();
+    applyClipPath(ctx, part.clipPath, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+  }
+
   switch (part.type) {
     case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
       drawBlockVectorChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
@@ -55,9 +61,6 @@ function drawDefinitionPart(
       break;
     case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
       drawBlockPatternWithRegion(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-      break;
-    case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH:
-      drawBlockPatternWithClipPath(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
       break;
     case CustomGlyphDefinitionType.PATH_FUNCTION:
     case CustomGlyphDefinitionType.PATH:
@@ -72,6 +75,10 @@ function drawDefinitionPart(
     case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
       drawPathDefinitionCharacterWithWeight(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
       break;
+  }
+
+  if (part.clipPath) {
+    ctx.restore();
   }
 }
 
@@ -491,21 +498,16 @@ function drawPathDefinitionCharacterWithWeight(
 }
 
 /**
- * Draws a pattern clipped to an arbitrary path (for triangular shades, etc.)
+ * Applies a clip path to the canvas context from SVG-like path instructions.
  */
-function drawBlockPatternWithClipPath(
+function applyClipPath(
   ctx: CanvasRenderingContext2D,
-  definition: [pattern: CustomGlyphPatternDefinition, clipPath: string],
+  clipPath: string,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number
 ): void {
-  const [pattern, clipPath] = definition;
-
-  ctx.save();
-
-  // Build clip path from SVG-like instructions
   ctx.beginPath();
   for (const instruction of clipPath.split(' ')) {
     const type = instruction[0];
@@ -526,11 +528,6 @@ function drawBlockPatternWithClipPath(
     }
   }
   ctx.clip();
-
-  // Draw the pattern
-  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-
-  ctx.restore();
 }
 
 function drawVectorShape(
