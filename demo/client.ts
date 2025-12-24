@@ -795,11 +795,13 @@ function customGlyphAlignmentHandler(): void {
   term.write('│ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤\n\r');
   term.write('└─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘\n\r');
   term.write('\n\r');
+
   term.write('Other:\n\r');
   term.write('╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈\n\r');
   term.write('│ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉\n\r');
   term.write('╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋\n\r');
   term.write('\n\r');
+
   term.write('All box drawing characters:\n\r');
   term.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\n\r');
   term.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\n\r');
@@ -809,6 +811,7 @@ function customGlyphAlignmentHandler(): void {
   term.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\n\r');
   term.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\n\r');
   term.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\n\r');
+
   term.write('Box drawing alignment tests:\x1b[31m                                          █\n\r');
   term.write('                                                                      ▉\n\r');
   term.write('  ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳\n\r');
@@ -827,6 +830,7 @@ function customGlyphAlignmentHandler(): void {
   term.write('  ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎\n\r');
   term.write('  ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏\n\r');
   term.write('  ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█\n\r');
+
   term.write('\x1b[0mSmooth mosaic terminal graphic characters alignment tests:\x1b[33m\n\r');
   term.write('  🭇🬼 🭈🬽 🭉🬾 🭊🬿 🭋🭀 🭁🭌 🭂🭍 🭃🭎 🭄🭏 🭅🭐 🭆🭑 🭨🭪 🭩 🭯 🭮🭬\n\r');
   term.write('  🭢🭗 🭣🭘 🭤🭙 🭥🭚 🭦🭛 🭒🭝 🭓🭞 🭔🭟 🭕🭠 🭖🭡 🭧🭜    🭫 🭭\n\r');
@@ -834,20 +838,24 @@ function customGlyphAlignmentHandler(): void {
   term.write('  🭊🭁🭌🬿 🭈🭆🭂🭍🭑🬽 🭇🭄🭏🬼 🭃🭎 🭅🭐 🭨🭪\n\r');
   term.write('  🭥🭒🭝🭚 🭣🭧🭓🭞🭜🭘 🭢🭕🭠🭗 🭔🭟 🭖🭡 🭪🭨\n\r');
   term.write('   🭢🭗              🭤🭙 🭦🭛\n\r');
+
   term.write('\x1b[0mCharacter cell diagonals (1FBA0-1FBAE) alignment tests:\x1b[34m\n\r');
   term.write('   \u{1FBA3}\u{1FBA7}\u{1FBA2}  \u{1FBA3}\u{1FBA8}\u{1FBA0} \u{1FBAD}\u{1FBA2} \u{1FBA3}\u{1FBAC} \u{1FBAE}\n\r');
   term.write('  \u{1FBA3}\u{1FBA0} \u{1FBA1}\u{1FBA2} \u{1FBA1}\u{1FBA9}\u{1FBA2} \u{1FBA1}\u{1FBAA} \u{1FBAB}\u{1FBA0}\n\r');
   term.write('  \u{1FBA4}   \u{1FBA5}\n\r');
   term.write('  \u{1FBA1}\u{1FBA2} \u{1FBA3}\u{1FBA0}\n\r');
   term.write('   \u{1FBA1}\u{1FBA6}\u{1FBA0}\n\r');
+
   term.write('\x1b[0mCharacter cell diagonals (1FBD0-1FBDF) alignment tests:\x1b[34m\n\r');
   term.write('  \u{1FBD6}\u{1FBD4} \u{1FBD0}\u{1FBD1}\u{1FBD2}\u{1FBD3} \u{1FBDA} \u{1FBD9}\u{1FBDB} \u{1FBDE} \u{1FBDD}\u{1FBDF}\n\r');
   term.write('  \u{1FBD7}\u{1FBD5} \u{1FBD2}\u{1FBD3}\u{1FBD0}\u{1FBD1} \u{1FBD8}    \u{1FBDC}\n\r');
   term.write('  \u{1FBD4}\u{1FBD6}\n\r');
   term.write('  \u{1FBD5}\u{1FBD7}\n\r');
   term.write('');
+
   term.write('\x1b[0mComposite terminal graphics characters:\x1b[35m\n\r');
   term.write('\u{1FBB2}\u{1FBB3} \u{1FBB9}\u{1FBBA} \u{1FBC1}\u{1FBC2}\u{1FBC3}\n\r');
+
   term.write('\x1b[0mFill tests:\x1b[36m\n\r');
   const fillChars = ['\u{2591}', '\u{2592}', '\u{2593}', '\u{1FB8C}', '\u{1FB8D}', '\u{1FB8E}', '\u{1FB8F}', '\u{1FB90}', '\u{1FB91}', '\u{1FB92}', '\u{1FB94}', '\u{1FB95}', '\u{1FB96}', '\u{1FB97}', '\u{1FB98}', '\u{1FB99}'];
   while (fillChars.length > 0) {
@@ -865,7 +873,19 @@ function customGlyphAlignmentHandler(): void {
     }
   }
 
+  term.write('\x1b[0mPowerline alignment tests:\n\r');
+  const powerlineLeftChars = ['\u{E0B2}', '\u{E0B3}', '\u{E0B6}', '\u{E0B7}', '\u{E0BA}', '\u{E0BB}', '\u{E0BE}', '\u{E0BF}', '\u{E0C2}', '\u{E0C3}', '\u{E0C5}', '\u{E0C7}', '\u{E0CA}', '\u{E0D4}'];
+  const powerlineRightChars = ['\u{E0B0}', '\u{E0B1}', '\u{E0B4}', '\u{E0B5}', '\u{E0B8}', '\u{E0B9}', '\u{E0BC}', '\u{E0BD}', '\u{E0C0}', '\u{E0C1}', '\u{E0C4}', '\u{E0C6}', '\u{E0C8}', '\u{E0D2}', '\u{E0CC}', '\u{E0CD}', '\u{E0CE}', '\u{E0CF}', '\u{E0D0}', '\u{E0D1}'];
+  for (const char of powerlineLeftChars) {
+    term.write(`\x1b[31m${char}\x1b[0;41m \x1b[0m `);
+  }
+  term.write('\n\r');
+  for (const char of powerlineRightChars) {
+    term.write(`\x1b[41m \x1b[0;31m${char}\x1b[0m `);
+  }
+
   term.write('\x1b[0m');
+  term.write('\n\r');
   window.scrollTo(0, 0);
 }
 
