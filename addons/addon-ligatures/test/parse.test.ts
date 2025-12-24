@@ -5,7 +5,8 @@
 
 import { assert } from 'chai';
 
-import parse from './parse';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const parse = require('../out-esbuild/parse').default;
 
 // TODO: integrate tests from http://test.csswg.org/suites/css-fonts-4_dev/nightly-unstable/
 describe('parse', () => {
