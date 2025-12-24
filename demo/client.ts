@@ -617,6 +617,20 @@ function initOptions(term: Terminal): void {
 
 function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
+
+  function postInitWebgl(): void {
+    setTimeout(() => {
+      setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+    }, 500);
+  }
+  function preDisposeWebgl(): void {
+    if (addons.webgl.instance.textureAtlas) {
+      addons.webgl.instance.textureAtlas.remove();
+    }
+  }
+
   Object.keys(addons).forEach((name: AddonType) => {
     const addon = addons[name];
     const checkbox = document.createElement('input') as HTMLInputElement;
@@ -647,18 +661,6 @@ function initAddons(term: Terminal): void {
           addon.instance = undefined;
         }
         return;
-      }
-      function postInitWebgl(): void {
-        setTimeout(() => {
-          setTextureAtlas(addons.webgl.instance.textureAtlas);
-          addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-          addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-        }, 500);
-      }
-      function preDisposeWebgl(): void {
-        if (addons.webgl.instance.textureAtlas) {
-          addons.webgl.instance.textureAtlas.remove();
-        }
       }
       if (checkbox.checked) {
         // HACK: Manually remove addons that cannot be changes
@@ -695,7 +697,8 @@ function initAddons(term: Terminal): void {
         if (addons.webgl.instance) {
           preDisposeWebgl();
           addons.webgl.instance.dispose();
-          addons.webgl.instance = new addons.webgl.ctor();
+          const customGlyphsCheckbox = document.getElementById('webgl-custom-glyphs') as HTMLInputElement;
+          addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: customGlyphsCheckbox?.checked ?? true });
           term.loadAddon(addons.webgl.instance);
           postInitWebgl();
         }
@@ -711,6 +714,31 @@ function initAddons(term: Terminal): void {
     const wrapper = document.createElement('div');
     wrapper.classList.add('addon');
     wrapper.appendChild(label);
+
+    // Add customGlyphs sub-checkbox for webgl addon
+    if (name === 'webgl') {
+      const customGlyphsCheckbox = document.createElement('input') as HTMLInputElement;
+      customGlyphsCheckbox.type = 'checkbox';
+      customGlyphsCheckbox.checked = true; // Default to enabled
+      customGlyphsCheckbox.id = 'webgl-custom-glyphs';
+      addDomListener(customGlyphsCheckbox, 'change', () => {
+        if (addons.webgl.instance) {
+          preDisposeWebgl();
+          addons.webgl.instance.dispose();
+          addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: customGlyphsCheckbox.checked });
+          term.loadAddon(addons.webgl.instance);
+          postInitWebgl();
+        }
+      });
+      const customGlyphsLabel = document.createElement('label');
+      customGlyphsLabel.classList.add('addon');
+      customGlyphsLabel.style.display = 'block';
+      customGlyphsLabel.style.marginLeft = '20px';
+      customGlyphsLabel.appendChild(customGlyphsCheckbox);
+      customGlyphsLabel.appendChild(document.createTextNode('customGlyphs'));
+      wrapper.appendChild(customGlyphsLabel);
+    }
+
     fragment.appendChild(wrapper);
   });
   const container = document.getElementById('addons-container');

@@ -92,7 +92,6 @@ export class RenderService extends Disposable implements IRenderService {
 
     // Clear the renderer when the a change that could affect glyphs occurs
     this._register(this._optionsService.onMultipleOptionChange([
-      'customGlyphs',
       'drawBoldTextInBrightColors',
       'letterSpacing',
       'lineHeight',
