@@ -60,6 +60,8 @@ function drawDefinitionPart(
       drawPatternChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
       break;
     case CustomGlyphDefinitionType.PATH_FUNCTION:
+      drawPathFunctionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, part.strokeWidth);
+      break;
     case CustomGlyphDefinitionType.PATH:
       drawPathDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
       break;
@@ -68,9 +70,6 @@ function drawDefinitionPart(
       break;
     case CustomGlyphDefinitionType.VECTOR_SHAPE:
       drawVectorShape(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
-      break;
-    case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
-      drawPathDefinitionCharacterWithWeight(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
       break;
   }
 
@@ -417,47 +416,46 @@ function drawPatternChar(
   ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
 }
 
-function drawPathDefinitionCharacterWithWeight(
+function drawPathFunctionCharacter(
   ctx: CanvasRenderingContext2D,
-  charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
+  charDefinition: string | ((xp: number, yp: number) => string),
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  strokeWidth?: number
 ): void {
   ctx.strokeStyle = ctx.fillStyle;
-  for (const [fontWeight, instructions] of Object.entries(charDefinition)) {
-    ctx.beginPath();
-    ctx.lineWidth = devicePixelRatio * Number.parseInt(fontWeight);
-    let actualInstructions: string;
-    if (typeof instructions === 'function') {
-      const xp = .15;
-      const yp = .15 / deviceCellHeight * deviceCellWidth;
-      actualInstructions = instructions(xp, yp);
-    } else {
-      actualInstructions = instructions;
-    }
-    for (const instruction of actualInstructions.split(' ')) {
-      const type = instruction[0];
-      if (type === 'Z') {
-        ctx.closePath();
-        continue;
-      }
-      const f = svgToCanvasInstructionMap[type];
-      if (!f) {
-        console.error(`Could not find drawing instructions for "${type}"`);
-        continue;
-      }
-      const args: string[] = instruction.substring(1).split(',');
-      if (!args[0] || !args[1]) {
-        continue;
-      }
-      f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
-    }
-    ctx.stroke();
-    ctx.closePath();
+  ctx.beginPath();
+  ctx.lineWidth = devicePixelRatio * (strokeWidth ?? 1);
+  let actualInstructions: string;
+  if (typeof charDefinition === 'function') {
+    const xp = .15;
+    const yp = .15 / deviceCellHeight * deviceCellWidth;
+    actualInstructions = charDefinition(xp, yp);
+  } else {
+    actualInstructions = charDefinition;
   }
+  for (const instruction of actualInstructions.split(' ')) {
+    const type = instruction[0];
+    if (type === 'Z') {
+      ctx.closePath();
+      continue;
+    }
+    const f = svgToCanvasInstructionMap[type];
+    if (!f) {
+      console.error(`Could not find drawing instructions for "${type}"`);
+      continue;
+    }
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
+  }
+  ctx.stroke();
+  ctx.closePath();
 }
 
 /**

@@ -34,7 +34,6 @@ export const enum CustomGlyphDefinitionType {
   SOLID_OCTANT_BLOCK_VECTOR,
   BLOCK_PATTERN,
   PATH_FUNCTION,
-  PATH_FUNCTION_WITH_WEIGHT,
   PATH,
   PATH_NEGATIVE,
   VECTOR_SHAPE,
@@ -43,8 +42,7 @@ export const enum CustomGlyphDefinitionType {
 export type CustomGlyphDefinitionPartRaw = (
   { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: ICustomGlyphSolidOctantBlockVector[] } |
   { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: CustomGlyphPatternDefinition } |
-  { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition } |
-  { type: CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT, data: { [fontWeight: number]: string | CustomGlyphPathDrawFunctionDefinition } } |
+  { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition | string } |
   { type: CustomGlyphDefinitionType.PATH, data: string } |
   { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: ICustomGlyphVectorShape } |
   { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape}
@@ -55,6 +53,10 @@ export interface ICustomGlyphDefinitionCommon {
    * A custom clip path for the draw definition, restricting the area it can draw to.
    */
   clipPath?: string;
+  /**
+   * The stroke width to use when drawing the path. Defaults to 1.
+   */
+  strokeWidth?: number;
 }
 
 export type CustomGlyphDefinitionPart = CustomGlyphDefinitionPartRaw & ICustomGlyphDefinitionCommon;
