@@ -70,7 +70,7 @@ declare module '@xterm/headless' {
      * - Box Drawing (U+2500-U+257F)
      * - Box Elements (U+2580-U+259F)
      * - Braille Patterns (U+2800-U+28FF)
-     * - Powerline Symbols (U+E0A0–U+E0DF)
+     * - Powerline Symbols (U+E0A0–U+E0D4)
      * - Symbols for Legacy Computing (U+1FB00–U+1FBFF)
      *
      * This will typically result in better rendering with continuous lines,
