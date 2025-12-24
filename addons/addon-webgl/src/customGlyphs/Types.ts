@@ -37,6 +37,7 @@ export const enum CustomGlyphDefinitionType {
   PATH,
   PATH_NEGATIVE,
   VECTOR_SHAPE,
+  BRAILLE,
 }
 
 export type CustomGlyphDefinitionPartRaw = (
@@ -45,7 +46,8 @@ export type CustomGlyphDefinitionPartRaw = (
   { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition | string } |
   { type: CustomGlyphDefinitionType.PATH, data: string } |
   { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: ICustomGlyphVectorShape } |
-  { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape}
+  { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape} |
+  { type: CustomGlyphDefinitionType.BRAILLE, data: number }
 );
 
 export interface ICustomGlyphDefinitionCommon {

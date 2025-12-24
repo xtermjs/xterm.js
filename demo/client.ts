@@ -894,6 +894,12 @@ function customGlyphRangesHandler(): void {
     ['Block elements', 0x2594, 0x2595],
     ['Terminal graphic characters', 0x2596, 0x259F],
   ]);
+  // Braille Patterns
+  // 2800-28FF
+  // https://www.unicode.org/charts/PDF/U2800.pdf
+  writeUnicodeTable(term, 'Braille patterns', 0x2800, 0x28FF, [
+    ['Braille patterns', 0x2800, 0x28FF],
+  ]);
   // Powerline Symbols
   // Range: E0A0–E0BF
   // https://github.com/ryanoasis/nerd-fonts
