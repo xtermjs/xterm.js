@@ -152,9 +152,11 @@ declare module '@xterm/xterm' {
     letterSpacing?: number;
 
     /**
-     * The line height used to render text.
+     * The line height used to render text. This can be specified as:
+     * - A number (e.g., 1.2) which acts as a multiplier of the font size
+     * - A string with 'px' suffix (e.g., '24px') which specifies an absolute pixel height
      */
-    lineHeight?: number;
+    lineHeight?: number | string;
 
     /**
      * The handler for OSC 8 hyperlinks. Links will use the `confirm` browser
