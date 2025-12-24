@@ -830,16 +830,6 @@ function customGlyphAlignmentHandler(): void {
   term.write('╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋\n\r');
   term.write('\n\r');
 
-  term.write('All box drawing characters:\n\r');
-  term.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\n\r');
-  term.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\n\r');
-  term.write('┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯\n\r');
-  term.write('┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿\n\r');
-  term.write('╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏\n\r');
-  term.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\n\r');
-  term.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\n\r');
-  term.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\n\r');
-
   term.write('Box drawing alignment tests:\x1b[31m                                          █\n\r');
   term.write('                                                                      ▉\n\r');
   term.write('  ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳\n\r');
@@ -911,6 +901,16 @@ function customGlyphAlignmentHandler(): void {
   for (const char of powerlineRightChars) {
     term.write(`\x1b[41m \x1b[0;31m${char}\x1b[0m `);
   }
+  term.write('\n\r');
+
+  term.write('\x1b[0mGit Branch Symbols alignment tests:\n\r');
+  term.write(' \u{F5F7}\u{F5F7} \u{F5EE}\u{F5EF}  \u{F5F6}\u{F5F7} \u{F5D6}\u{F5D0}\u{F5D7}\n\r');
+  term.write(' \u{F5DA}\u{F5DD} \u{F5F0}\u{F5F4}\u{F5F2} \u{F5FA}\u{F5FB} \u{F5D1} \u{F5D1}\n\r');
+  term.write(' \u{F5DB}\u{F5DE} \u{F5F1}\u{F5F5}\u{F5F3} \u{F5F8}\u{F5F9} \u{F5D9}\u{F5D0}\u{F5D8}\n\r');
+  term.write(' \u{F5DC}\u{F5DF}       \u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\n\r');
+  term.write('\u{F5F1}\u{F5E6}\u{F5E7}\u{F5F3} \u{F5D3}\u{F5D0}\u{F5E0}\u{F5E1}\u{F5E2}\u{F5E3}\u{F5E4}\u{F5E5}\u{F5E8}\u{F5E9}\u{F5EC}\u{F5ED}\u{F5D2}\n\r');
+  term.write('\u{F5F1}\u{F5EA}\u{F5EB}\u{F5F3}   \u{F5F9}\u{F5F9}\u{F5F9}   \u{F5F9}\u{F5F9}\u{F5F9}\u{F5F9}\n\r');
+  term.write(' \u{F5F9}\u{F5F9} \n\r');
 
   term.write('\x1b[0m');
   term.write('\n\r');
