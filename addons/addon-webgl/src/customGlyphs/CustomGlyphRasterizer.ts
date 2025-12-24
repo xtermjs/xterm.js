@@ -5,7 +5,7 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type CustomGlyphRegionDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -24,40 +24,58 @@ export function tryDrawCustomGlyph(
 ): boolean {
   const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
-    switch (unifiedCharDefinition.type) {
-      case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
-        drawBlockVectorChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN:
-        drawPatternChar(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION:
-        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_REGION_AND_SOLID_OCTANT_BLOCK_VECTOR:
-        drawBlockPatternWithRegion(ctx, unifiedCharDefinition.data.pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        drawBlockVectorChar(ctx, unifiedCharDefinition.data.vectors, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.BLOCK_PATTERN_WITH_CLIP_PATH:
-        drawBlockPatternWithClipPath(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.PATH_FUNCTION:
-      case CustomGlyphDefinitionType.PATH:
-        drawPathDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-        return true;
-      case CustomGlyphDefinitionType.PATH_NEGATIVE:
-        drawPathNegativeDefinitionCharacter(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
-        return true;
-      case CustomGlyphDefinitionType.VECTOR_SHAPE:
-        drawVectorShape(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
-        return true;
-      case CustomGlyphDefinitionType.PATH_FUNCTION_WITH_WEIGHT:
-        drawPathDefinitionCharacterWithWeight(ctx, unifiedCharDefinition.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio);
-        return true;
+    // Normalize to array for uniform handling
+    const parts = Array.isArray(unifiedCharDefinition) ? unifiedCharDefinition : [unifiedCharDefinition];
+    for (const part of parts) {
+      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio, backgroundColor);
     }
+    return true;
   }
 
   return false;
+}
+
+function drawDefinitionPart(
+  ctx: CanvasRenderingContext2D,
+  part: CustomGlyphDefinitionPart,
+  xOffset: number,
+  yOffset: number,
+  deviceCellWidth: number,
+  deviceCellHeight: number,
+  fontSize: number,
+  devicePixelRatio: number,
+  backgroundColor?: string
+): void {
+  // Handle clipPath generically for any definition type
+  if (part.clipPath) {
+    ctx.save();
+    applyClipPath(ctx, part.clipPath, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+  }
+
+  switch (part.type) {
+    case CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR:
+      drawBlockVectorChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.BLOCK_PATTERN:
+      drawPatternChar(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.PATH_FUNCTION:
+      drawPathFunctionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, part.strokeWidth);
+      break;
+    case CustomGlyphDefinitionType.PATH:
+      drawPathDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+      break;
+    case CustomGlyphDefinitionType.PATH_NEGATIVE:
+      drawPathNegativeDefinitionCharacter(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, devicePixelRatio, backgroundColor);
+      break;
+    case CustomGlyphDefinitionType.VECTOR_SHAPE:
+      drawVectorShape(ctx, part.data, xOffset, yOffset, deviceCellWidth, deviceCellHeight, fontSize, devicePixelRatio);
+      break;
+  }
+
+  if (part.clipPath) {
+    ctx.restore();
+  }
 }
 
 function drawBlockVectorChar(
@@ -398,139 +416,59 @@ function drawPatternChar(
   ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
 }
 
-/**
- * Draws rectangular shade characters - medium shade pattern clipped to a region.
- * Uses a checkerboard pattern that shifts 1px each row (same as medium shade U+2592).
- */
-function drawBlockPatternWithRegion(
+function drawPathFunctionCharacter(
   ctx: CanvasRenderingContext2D,
-  definition: [pattern: CustomGlyphPatternDefinition, region: CustomGlyphRegionDefinition],
-  xOffset: number,
-  yOffset: number,
-  deviceCellWidth: number,
-  deviceCellHeight: number
-): void {
-  const [pattern, region] = definition;
-  const [rx, ry, rw, rh] = region;
-  const regionX = Math.round(xOffset + rx * deviceCellWidth);
-  const regionY = Math.round(yOffset + ry * deviceCellHeight);
-  const regionW = Math.round(rw * deviceCellWidth);
-  const regionH = Math.round(rh * deviceCellHeight);
-
-  // Save context state
-  ctx.save();
-
-  // Clip to the region
-  ctx.beginPath();
-  ctx.rect(regionX, regionY, regionW, regionH);
-  ctx.clip();
-
-  // Draw the pattern
-  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-
-  // Restore context state
-  ctx.restore();
-}
-
-/**
- * Draws the following box drawing characters by mapping a subset of SVG d attribute instructions to
- * canvas draw calls.
- *
- * Box styles:       ┎┰┒┍┯┑╓╥╖╒╤╕ ┏┳┓┌┲┓┌┬┐┏┱┐
- * ┌─┬─┐ ┏━┳━┓ ╔═╦═╗ ┠╂┨┝┿┥╟╫╢╞╪╡ ┡╇┩├╊┫┢╈┪┣╉┤
- * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┖┸┚┕┷┙╙╨╜╘╧╛ └┴┘└┺┛┗┻┛┗┹┘
- * ├─┼─┤ ┣━╋━┫ ╠═╬═╣ ┏┱┐┌┲┓┌┬┐┌┬┐ ┏┳┓┌┮┓┌┬┐┏┭┐
- * │ │ │ ┃ ┃ ┃ ║ ║ ║ ┡╃┤├╄┩├╆┪┢╅┤ ┞╀┦├┾┫┟╁┧┣┽┤
- * └─┴─┘ ┗━┻━┛ ╚═╩═╝ └┴┘└┴┘└┺┛┗┹┘ └┴┘└┶┛┗┻┛┗┵┘
- *
- * Other:
- * ╭─╮ ╲ ╱ ╷╻╎╏┆┇┊┋ ╺╾╴ ╌╌╌ ┄┄┄ ┈┈┈
- * │ │  ╳  ╽╿╎╏┆┇┊┋ ╶╼╸ ╍╍╍ ┅┅┅ ┉┉┉
- * ╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋
- *
- * All box drawing characters:
- * ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏
- * ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟
- * ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯
- * ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿
- * ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏
- * ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟
- * ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯
- * ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿
- *
- * ---
- *
- * Box drawing alignment tests:                                          █
- *                                                                       ▉
- *   ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳
- *   ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳
- *   ║│╲ ╱│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╿ │┃  ┍╅╆┓   ╵  ╹ ┗┷┛ └┸┘    ▌ ╱╲╱╲╳╳╳
- *   ╠╡ ╳ ╞╣  ├╢   ╟┤  ├┼─┼─┼┤  ├╫─╂─╫┤  ┣┿╾┼╼┿┫  ┕┛┖┚     ┌┄┄┐ ╎ ┏┅┅┓ ┋ ▍ ╲╱╲╱╳╳╳
- *   ║│╱ ╲│║  │║   ║│  ││ │ ││  │║ ┃ ║│  ┃│ ╽ │┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▎
- *   ║└─╥─┘║  │╚═╤═╝│  │╘═╪═╛│  │╙─╀─╜│  ┃└─╂─┘┃  ░░▒▒▓▓██ ┊  ┆ ╎ ╏  ┇ ┋ ▏
- *   ╚══╩══╝  └──┴──┘  ╰──┴──╯  ╰──┴──╯  ┗━━┻━━┛           └╌╌┘ ╎ ┗╍╍┛ ┋  ▁▂▃▄▅▆▇█
- *
- * Source: https://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html
- */
-function drawPathDefinitionCharacterWithWeight(
-  ctx: CanvasRenderingContext2D,
-  charDefinition: { [fontWeight: number]: string | ((xp: number, yp: number) => string) },
+  charDefinition: string | ((xp: number, yp: number) => string),
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  strokeWidth?: number
 ): void {
   ctx.strokeStyle = ctx.fillStyle;
-  for (const [fontWeight, instructions] of Object.entries(charDefinition)) {
-    ctx.beginPath();
-    ctx.lineWidth = devicePixelRatio * Number.parseInt(fontWeight);
-    let actualInstructions: string;
-    if (typeof instructions === 'function') {
-      const xp = .15;
-      const yp = .15 / deviceCellHeight * deviceCellWidth;
-      actualInstructions = instructions(xp, yp);
-    } else {
-      actualInstructions = instructions;
-    }
-    for (const instruction of actualInstructions.split(' ')) {
-      const type = instruction[0];
-      if (type === 'Z') {
-        ctx.closePath();
-        continue;
-      }
-      const f = svgToCanvasInstructionMap[type];
-      if (!f) {
-        console.error(`Could not find drawing instructions for "${type}"`);
-        continue;
-      }
-      const args: string[] = instruction.substring(1).split(',');
-      if (!args[0] || !args[1]) {
-        continue;
-      }
-      f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
-    }
-    ctx.stroke();
-    ctx.closePath();
+  ctx.beginPath();
+  ctx.lineWidth = devicePixelRatio * (strokeWidth ?? 1);
+  let actualInstructions: string;
+  if (typeof charDefinition === 'function') {
+    const xp = .15;
+    const yp = .15 / deviceCellHeight * deviceCellWidth;
+    actualInstructions = charDefinition(xp, yp);
+  } else {
+    actualInstructions = charDefinition;
   }
+  for (const instruction of actualInstructions.split(' ')) {
+    const type = instruction[0];
+    if (type === 'Z') {
+      ctx.closePath();
+      continue;
+    }
+    const f = svgToCanvasInstructionMap[type];
+    if (!f) {
+      console.error(`Could not find drawing instructions for "${type}"`);
+      continue;
+    }
+    const args: string[] = instruction.substring(1).split(',');
+    if (!args[0] || !args[1]) {
+      continue;
+    }
+    f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio));
+  }
+  ctx.stroke();
+  ctx.closePath();
 }
 
 /**
- * Draws a pattern clipped to an arbitrary path (for triangular shades, etc.)
+ * Applies a clip path to the canvas context from SVG-like path instructions.
  */
-function drawBlockPatternWithClipPath(
+function applyClipPath(
   ctx: CanvasRenderingContext2D,
-  definition: [pattern: CustomGlyphPatternDefinition, clipPath: string],
+  clipPath: string,
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
   deviceCellHeight: number
 ): void {
-  const [pattern, clipPath] = definition;
-
-  ctx.save();
-
-  // Build clip path from SVG-like instructions
   ctx.beginPath();
   for (const instruction of clipPath.split(' ')) {
     const type = instruction[0];
@@ -551,11 +489,6 @@ function drawBlockPatternWithClipPath(
     }
   }
   ctx.clip();
-
-  // Draw the pattern
-  drawPatternChar(ctx, pattern, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
-
-  ctx.restore();
 }
 
 function drawVectorShape(
