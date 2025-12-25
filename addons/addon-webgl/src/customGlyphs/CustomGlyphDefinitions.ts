@@ -7,6 +7,32 @@ import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType,
 
 /* eslint-disable max-len */
 
+namespace GitBranchSymbolsParts {
+  // Lines
+  export const LINE_H: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 });
+  export const LINE_V: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 });
+
+  // Fading lines
+  export const FADE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.5 L.28,.5 M.32,.5 L.52,.5 M.60,.5 L.72,.5 M.84,.5 L.90,.5', strokeWidth: 1 });
+  export const FADE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.10,.5 L.16,.5 M.28,.5 L.40,.5 M.48,.5 L.68,.5 M.72,.5 L1,.5', strokeWidth: 1 });
+  export const FADE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,0 L.5,.28 M.5,.32 L.5,.52 M.5,.60 L.5,.72 M.5,.84 L.5,.90', strokeWidth: 1 });
+  export const FADE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 });
+
+  // Curved corners
+  export const CURVE_DOWN_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_DOWN_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+  export const CURVE_UP_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+
+  // Node parts
+  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
+  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
+  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
+  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
+}
+
 export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
   // #region Box Drawing (2500-257F)
 
@@ -944,30 +970,4 @@ const enum Shapes {
   /** ╎ */ TWO_DASHES_VERTICAL = 'M.5,.1 L.5,.4 M.5,.6 L.5,.9',
   /** ┆ */ THREE_DASHES_VERTICAL = 'M.5,.0667 L.5,.2667 M.5,.4 L.5,.6 M.5,.7333 L.5,.9333',
   /** ┊ */ FOUR_DASHES_VERTICAL = 'M.5,.05 L.5,.2 M.5,.3 L.5,.45 L.5,.55 M.5,.7 L.5,.95',
-}
-
-namespace GitBranchSymbolsParts {
-  // Lines
-  export const LINE_H: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 });
-  export const LINE_V: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 });
-
-  // Fading lines
-  export const FADE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.5 L.28,.5 M.32,.5 L.52,.5 M.60,.5 L.72,.5 M.84,.5 L.90,.5', strokeWidth: 1 });
-  export const FADE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.10,.5 L.16,.5 M.28,.5 L.40,.5 M.48,.5 L.68,.5 M.72,.5 L1,.5', strokeWidth: 1 });
-  export const FADE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,0 L.5,.28 M.5,.32 L.5,.52 M.5,.60 L.5,.72 M.5,.84 L.5,.90', strokeWidth: 1 });
-  export const FADE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 });
-
-  // Curved corners
-  export const CURVE_DOWN_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
-  export const CURVE_DOWN_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
-  export const CURVE_UP_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
-  export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
-
-  // Node parts
-  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
-  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
-  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
-  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
-  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
-  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
 }
