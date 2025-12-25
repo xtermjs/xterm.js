@@ -67,15 +67,13 @@ declare module '@xterm/addon-webgl' {
      * - Symbols for Legacy Computing (U+1FB00–U+1FBFF)
      *
      * This will typically result in better rendering with continuous lines,
-     * even when line height and letter spacing is used. Note that this doesn't
-     * work with the DOM renderer which renders all characters using the font.
-     * The default is true.
+     * even when line height and letter spacing is used. The default is true.
      */
     customGlyphs?: boolean;
 
     /**
      * Whether to enable the preserveDrawingBuffer flag when creating the WebGL
-     * context. This may be useful in tests. This defaults to false.
+     * context. This may be useful in tests. This default is false.
      */
     preserveDrawingBuffer?: boolean
   }

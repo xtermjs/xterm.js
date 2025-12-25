@@ -326,8 +326,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // #region Git Branch Symbols (F5D0-F60D)
 
-  // Initially added in https://github.com/kovidgoyal/kitty/pull/7681 then in
-  // [Wezterm](https://github.com/wezterm/wezterm/issues/6328).
+  // Initially added in Kitty (https://github.com/kovidgoyal/kitty/pull/7681)
+  // then in Wezterm (https://github.com/wezterm/wezterm/issues/6328).
 
   // Straight lines (F5D0-F5D9)
   '\u{F5D0}': GitBranchSymbolsParts.LINE_H, // Same as 2500
@@ -381,7 +381,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{F5FA}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
   '\u{F5FB}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
 
-  // Extended Git Branch Symbols (F5FC-F60D)
+  // Extended Nodes (F5FC-F60D)
+  // These were added a little later https://github.com/kovidgoyal/kitty/pull/7805
   '\u{F5FC}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
   '\u{F5FD}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
   '\u{F5FE}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
