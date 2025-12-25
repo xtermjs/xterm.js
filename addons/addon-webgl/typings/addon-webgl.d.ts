@@ -59,12 +59,12 @@ declare module '@xterm/addon-webgl' {
      * - Box Drawing (U+2500-U+257F)
      * - Box Elements (U+2580-U+259F)
      * - Braille Patterns (U+2800-U+28FF)
-     * - Powerline Symbols (U+E0A0–U+E0D4, Private Use Area with widespread
+     * - Powerline Symbols (U+E0A0-U+E0D4, Private Use Area with widespread
      *   adoption)
      * - Git Branch Symbols (U+F5D0-U+F60D, Private Use Area initially adopted
      *   in [Kitty in 2024](https://github.com/kovidgoyal/kitty/pull/7681) by
      *   author of [vim-flog](https://github.com/rbong/vim-flog))
-     * - Symbols for Legacy Computing (U+1FB00–U+1FBFF)
+     * - Symbols for Legacy Computing (U+1FB00-U+1FBFF)
      *
      * This will typically result in better rendering with continuous lines,
      * even when line height and letter spacing is used. The default is true.
