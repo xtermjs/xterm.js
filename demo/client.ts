@@ -19,6 +19,7 @@ if ('WebAssembly' in window) {
 
 import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
+import { initControlBar } from './components/controlBar';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
@@ -231,6 +232,7 @@ if (document.location.pathname === '/test') {
   window.WebglAddon = WebglAddon;
 } else {
   createTerminal();
+  initControlBar();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
@@ -337,6 +339,7 @@ function createTerminal(): void {
   }
 
   term.focus();
+  updateTerminalContainerBackground();
 
   const resizeObserver = new ResizeObserver(entries => {
     if (autoResize) {
@@ -611,8 +614,16 @@ function initOptions(term: Terminal): void {
         }
       }
       term.options[o] = value;
+      if (o === 'theme') {
+        updateTerminalContainerBackground();
+      }
     });
   });
+}
+
+function updateTerminalContainerBackground(): void {
+  const bg = term.options.theme?.background ?? '#000000';
+  terminalContainer.style.backgroundColor = bg;
 }
 
 function initAddons(term: Terminal): void {

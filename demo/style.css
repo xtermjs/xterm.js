@@ -2,16 +2,50 @@ body {
     font-family: helvetica, sans-serif, arial;
     font-size: 1em;
     color: #111;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 24px 1fr;
 }
 
-h1 {
-    text-align: center;
+/* Top banner */
+#banner {
+    background: #2D2E2C;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    border-bottom: 1px solid #0005;
+}
+.banner-title {
+    color: #5DA5D5;
+    font-weight: bold;
+    font-size: 14px;
+}
+.banner-tabs {
+    display: flex;
+    gap: 2px;
+}
+.banner-tabs button {
+    background: transparent;
+    border: none;
+    color: #ccc;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.banner-tabs button:hover {
+    background: rgba(255,255,255,0.1);
+}
+.banner-tabs button.active {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
 }
 
 #terminal-container {
     height: 60%;
     margin: 0 auto;
-    padding: 2px;
 }
 
 p {
@@ -44,45 +78,79 @@ pre {
 
 #container {
     display: flex;
+    position: relative;
+    min-height: 0;
 }
 .grid {
     flex: 1;
-    /* max-height: 80vh;
-    overflow-y: auto; */
     width: 100%;
     min-width: 100px;
 }
 div:first-of-type.grid {
     flex: 2;
-    height: 60vh;
+    height: 100%;
 }
-.tab {
-    overflow: hidden;
+
+/* Sidebar */
+#sidebar {
+    position: fixed;
+    top: 24px;
+    right: 0;
+    width: 400px;
+    height: 500px;
+    background: #fff;
     border: 1px solid #ccc;
-    background-color: #f1f1f1;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    overflow: auto;
+    flex: none;
+    opacity: 0.5;
+    transition: opacity 0.1s;
+}
+#sidebar:hover {
+    opacity: 1;
+}
+#sidebar.sidebar-hidden {
+    display: none;
 }
 
-/* Style the buttons inside the tab */
-.tab button {
-    background-color: inherit;
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-    font-size: 17px;
+/* Resize handles */
+#sidebar-resize-handle-horizontal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+    background: transparent;
 }
-
-/* Change background color of buttons on hover */
-.tab button:hover {
-    background-color: #ddd;
+#sidebar-resize-handle-horizontal:hover {
+    background: rgba(0, 120, 212, 0.3);
 }
-
-/* Create an active/current tablink class */
-.tab button.active {
-    background-color: #ccc;
-  }
+#sidebar-resize-handle-vertical {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6px;
+    cursor: ns-resize;
+    background: transparent;
+}
+#sidebar-resize-handle-vertical:hover {
+    background: rgba(0, 120, 212, 0.3);
+}
+#sidebar-resize-handle-corner {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 12px;
+    height: 12px;
+    cursor: nesw-resize;
+    background: transparent;
+}
+#sidebar-resize-handle-corner:hover {
+    background: rgba(0, 120, 212, 0.5);
+}
 
 /* Style the tab content */
 .tabContent {
@@ -92,7 +160,7 @@ div:first-of-type.grid {
     border-top: none;
 }
 
-#texture-atlas-zoom:checked + label + #texture-atlas canvas {
+#texture-atlas-zoom:checked ~ #texture-atlas canvas {
     /* Zoom atlas to the width of the container*/
     width: 100% !important;
     height: auto !important;

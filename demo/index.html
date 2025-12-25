@@ -12,19 +12,25 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <h1 style="color: #2D2E2C">xterm.js: A terminal for the <em style="color: #5DA5D5">web</em></h1>
+    <div id="banner">
+      <span class="banner-title">xterm.js</span>
+      <div class="banner-tabs">
+        <button id="optionsbutton" class="tabLinks" onclick="openSection(event, 'options')">Options</button>
+        <button id="addonsbutton" class="tabLinks" onclick="openSection(event, 'addons')">Addons</button>
+        <button id="stylebutton" class="tabLinks" onclick="openSection(event, 'style')">Style</button>
+        <button id="testbutton" class="tabLinks" onclick="openSection(event, 'test')">Test</button>
+        <button id="vtbutton" class="tabLinks" onclick="openSection(event, 'vt')">VT</button>
+        <button id="gpubutton" class="tabLinks" onclick="openSection(event, 'gpu')">GPU</button>
+      </div>
+    </div>
     <div id="container">
       <div class="grid">
         <div id="terminal-container"></div>
       </div>
-      <div class="grid">
-        <div class="tab">
-          <button id="optionsbutton" class="tabLinks" onclick="openSection(event, 'options')">Options</button>
-          <button id="addonsbutton" class="tabLinks" onclick="openSection(event, 'addons')">Addons</button>
-          <button id="stylebutton" class="tabLinks" onclick="openSection(event, 'style')">Style</button>
-          <button id="testbutton" class="tabLinks" onclick="openSection(event, 'test')">Test</button>
-          <button id="vtbutton" class="tabLinks" onclick="openSection(event, 'vt')">VT</button>
-        </div>
+      <div id="sidebar" class="grid">
+        <div id="sidebar-resize-handle-horizontal"></div>
+        <div id="sidebar-resize-handle-vertical"></div>
+        <div id="sidebar-resize-handle-corner"></div>
         <div id="options" class="tabContent">
           <h3>Options</h3>
           <p>These options can be set in the <code>Terminal</code> constructor or by using the <code>Terminal.options</code> property.</p>
@@ -169,12 +175,13 @@
           <h3>VT</h3>
           <div id="vt-container"></div>
         </div>
+        <div id="gpu" class="tabContent">
+          <h3>GPU</h3>
+          <input type="checkbox" id="texture-atlas-zoom"/>
+          <label for="texture-atlas-zoom">Zoom texture atlas</label>
+          <div id="texture-atlas"></div>
+        </div>
       </div>
-    </div>
-    <div id="texture-atlas-container">
-      <input type="checkbox" id="texture-atlas-zoom"/>
-      <label for="texture-atlas-zoom">Zoom texture atlas</label>
-      <div id="texture-atlas"></div>
     </div>
       <script src="dist/client-bundle.js" defer ></script>
       <script>
@@ -194,12 +201,23 @@
           document.getElementById(""+tab+"button").classList.add("active");
         }
         function openSection(event, section) {
+          const sidebar = document.getElementById("sidebar");
           const tabContent = document.getElementsByClassName("tabContent");
+          const tabLinks = document.getElementsByClassName("tabLinks");
           let itr;
+
+          // If clicking active tab, toggle sidebar visibility
+          if (event.currentTarget.classList.contains("active")) {
+            sidebar.classList.toggle("sidebar-hidden");
+            return;
+          }
+
+          // Show sidebar if hidden
+          sidebar.classList.remove("sidebar-hidden");
+
           for (itr = 0; itr < tabContent.length; itr+=1) {
             tabContent[itr].style.display = "none";
           }
-          const tabLinks = document.getElementsByClassName("tabLinks");
           for (itr = 0; itr < tabLinks.length; itr+=1) {
             tabLinks[itr].className = tabLinks[itr].className.replace(" active", "");
           }
