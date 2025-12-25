@@ -830,16 +830,6 @@ function customGlyphAlignmentHandler(): void {
   term.write('╰─╯ ╱ ╲ ╹╵╎╏┆┇┊┋\n\r');
   term.write('\n\r');
 
-  term.write('All box drawing characters:\n\r');
-  term.write('─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏\n\r');
-  term.write('┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟\n\r');
-  term.write('┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯\n\r');
-  term.write('┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿\n\r');
-  term.write('╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏\n\r');
-  term.write('═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟\n\r');
-  term.write('╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯\n\r');
-  term.write('╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿\n\r');
-
   term.write('Box drawing alignment tests:\x1b[31m                                          █\n\r');
   term.write('                                                                      ▉\n\r');
   term.write('  ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳\n\r');
@@ -911,7 +901,16 @@ function customGlyphAlignmentHandler(): void {
   for (const char of powerlineRightChars) {
     term.write(`\x1b[41m \x1b[0;31m${char}\x1b[0m `);
   }
+  term.write('\n\r');
 
+  term.write('\x1b[0mGit Branch Symbols alignment tests:\x1b[32m\n\r');
+  term.write(' \u{F5F7}\u{F5F7} \u{F5EE}\u{F5EF}  \u{F5F6}\u{F5F7} \u{F5D6}\u{F5D0}\u{F5D7} \u{F5FC}\u{F5FC}\u{F5FE} \u{F5FD}\u{F609}\u{F5FF}\n\r');
+  term.write(' \u{F5DA}\u{F5DD} \u{F5F0}\u{F5F4}\u{F5F2} \u{F5FA}\u{F5FB} \u{F5D1} \u{F5D1} \u{F604}\u{F60C}\u{F606} \u{F605}\u{F60D}\u{F607}\n\r');
+  term.write(' \u{F5DB}\u{F5DE} \u{F5F1}\u{F5F5}\u{F5F3} \u{F5F8}\u{F5F9} \u{F5D8}\u{F5D0}\u{F5D9} \u{F600}\u{F60A}\u{F602} \u{F601}\u{F60B}\u{F603}\n\r');
+  term.write(' \u{F5DC}\u{F5DF}       \u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\u{F5F7}\n\r');
+  term.write('\u{F5F1}\u{F5E6}\u{F5E7}\u{F5F3} \u{F5D3}\u{F5D0}\u{F5E0}\u{F5E1}\u{F5E2}\u{F5E3}\u{F5E4}\u{F5E5}\u{F5E8}\u{F5E9}\u{F5EC}\u{F5ED}\u{F5D2}\n\r');
+  term.write('\u{F5F1}\u{F5EA}\u{F5EB}\u{F5F3}   \u{F5F9}\u{F5F9}\u{F5F9}   \u{F5F9}\u{F5F9}\u{F5F9}\u{F5F9}\n\r');
+  term.write(' \u{F5F9}\u{F5F9} \n\r');
   term.write('\x1b[0m');
   term.write('\n\r');
   window.scrollTo(0, 0);
@@ -952,8 +951,18 @@ function customGlyphRangesHandler(): void {
   // Range: E0A0–E0D4
   // https://github.com/ryanoasis/nerd-fonts
   writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0D4, [
-    ['Powerline Symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
-    ['Powerline Extra Symbols', 0xE0B4, 0xE0D4, [0xE0C9, 0xE0CB, 0xE0D3]],
+    ['Powerline symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
+    ['Powerline extra symbols', 0xE0B4, 0xE0D4, [0xE0C9, 0xE0CB, 0xE0D3]],
+  ]);
+  // Git Branch Symbols
+  // F5D0-F60D
+  // https://github.com/xtermjs/xterm.js/issues/5477
+  writeUnicodeTable(term, 'Git Branch Symbols', 0xF5D0, 0xF5FB, [
+    ['Straight lines', 0xF5D0, 0xF5D5],
+    ['Curved lines', 0xF5D6, 0xF5D9],
+    ['Branching lines', 0xF5DA, 0xF5ED],
+    ['Nodes', 0xF5EE, 0xF5FB],
+    ['Extended nodes', 0xF5FC, 0xF60D],
   ]);
   // Symbols for Legacy Computing
   // Range: 1FB00–1FBFF

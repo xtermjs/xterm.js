@@ -3,10 +3,35 @@
  * @license MIT
  */
 
-import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphPathDrawFunctionDefinition } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition } from './Types';
 
 /* eslint-disable max-len */
 
+namespace GitBranchSymbolsParts {
+  // Lines
+  export const LINE_H: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 });
+  export const LINE_V: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 });
+
+  // Fading lines
+  export const FADE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.5 L.28,.5 M.32,.5 L.52,.5 M.60,.5 L.72,.5 M.84,.5 L.90,.5', strokeWidth: 1 });
+  export const FADE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.10,.5 L.16,.5 M.28,.5 L.40,.5 M.48,.5 L.68,.5 M.72,.5 L1,.5', strokeWidth: 1 });
+  export const FADE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,0 L.5,.28 M.5,.32 L.5,.52 M.5,.60 L.5,.72 M.5,.84 L.5,.90', strokeWidth: 1 });
+  export const FADE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 });
+
+  // Curved corners
+  export const CURVE_DOWN_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_DOWN_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+  export const CURVE_UP_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+
+  // Node parts
+  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
+  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
+  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
+  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
+}
 
 export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
   // #region Box Drawing (2500-257F)
@@ -296,6 +321,86 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{E0D2}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.9764,0.0029 L0.3179,0.4552 L0,0.4552 L0,0 Z M1,1 L0,1 L0,0.5448 L0.3091,0.5448 Z', type: CustomGlyphVectorType.FILL } },
   // '\u{E0C3}' is unused
   '\u{E0D4}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.0236,0.0029 L0.6824,0.4552 L1,0.4552 L1,0 Z M0,1 L1,1 L1,0.5448 L0.6912,0.5448 Z', type: CustomGlyphVectorType.FILL } },
+
+  // #endregion
+
+  // #region Git Branch Symbols (F5D0-F60D)
+
+  // Initially added in Kitty (https://github.com/kovidgoyal/kitty/pull/7681)
+  // then in Wezterm (https://github.com/wezterm/wezterm/issues/6328).
+
+  // Straight lines (F5D0-F5D9)
+  '\u{F5D0}': GitBranchSymbolsParts.LINE_H, // Same as 2500
+  '\u{F5D1}': GitBranchSymbolsParts.LINE_V, // Same as 2502
+  '\u{F5D2}': GitBranchSymbolsParts.FADE_RIGHT,
+  '\u{F5D3}': GitBranchSymbolsParts.FADE_LEFT,
+  '\u{F5D4}': GitBranchSymbolsParts.FADE_DOWN,
+  '\u{F5D5}': GitBranchSymbolsParts.FADE_UP,
+
+  // Curved lines (F5D6-F5D9)
+  '\u{F5D6}': GitBranchSymbolsParts.CURVE_DOWN_RIGHT, // Same as 256D)
+  '\u{F5D7}': GitBranchSymbolsParts.CURVE_DOWN_LEFT, // Same as 256E)
+  '\u{F5D8}': GitBranchSymbolsParts.CURVE_UP_RIGHT, // Same as 2570)
+  '\u{F5D9}': GitBranchSymbolsParts.CURVE_UP_LEFT, // Same as 256F)
+
+  // Branching lines (F5DA-F5ED)
+  '\u{F5DA}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5DB}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5DC}': [GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5DD}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5DE}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_LEFT],
+  '\u{F5DF}': [GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5E0}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_LEFT],
+  '\u{F5E1}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5E2}': [GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5E3}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5E4}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5E5}': [GitBranchSymbolsParts.CURVE_UP_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5E6}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_UP_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5E7}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5E8}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5E9}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5EA}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5EB}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5EC}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5ED}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+
+  // Nodes (F5EE-F5FB)
+  '\u{F5EE}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE],
+  '\u{F5EF}': GitBranchSymbolsParts.NODE_STROKE,
+  '\u{F5F0}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F1}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F2}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F5F3}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F5F4}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F5}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F6}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN],
+  '\u{F5F7}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN],
+  '\u{F5F8}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP],
+  '\u{F5F9}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP],
+  '\u{F5FA}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
+  '\u{F5FB}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
+
+  // Extended Nodes (F5FC-F60D)
+  // These were added a little later https://github.com/kovidgoyal/kitty/pull/7805
+  '\u{F5FC}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5FD}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5FE}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F5FF}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F600}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F601}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F602}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F603}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F604}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F605}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F606}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F607}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F608}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F609}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60A}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60B}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60C}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60D}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
 
   // #endregion
 
