@@ -57,7 +57,7 @@ declare module '@xterm/addon-webgl' {
      * unicode ranges:
      *
      * - Box Drawing (U+2500-U+257F)
-     * - Box Elements (U+2580-U+259F)
+     * - Block Elements (U+2580-U+259F)
      * - Braille Patterns (U+2800-U+28FF)
      * - Powerline Symbols (U+E0A0-U+E0D4, Private Use Area with widespread
      *   adoption)
