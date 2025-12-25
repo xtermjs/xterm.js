@@ -21,45 +21,6 @@
         <div id="terminal-container"></div>
       </div>
       <div id="sidebar" class="grid">
-        <div id="addons" class="tabContent">
-          <h3>Addons</h3>
-          <p>Addons can be loaded and unloaded on a particular terminal to extend its functionality.</p>
-          <div id="addons-container"></div>
-          <h3>Addons Control</h3>
-          <h4>SearchAddon</h4>
-          <div style= "display:flex; flex-direction:column;">
-            <label>Find next <input id="find-next"/></label>
-            <label>Find previous <input id="find-previous"/></label>
-            <div>Results: <span id="find-results"></span></div>
-            <label><input type="checkbox" id="regex"/>Use regex</label>
-            <label><input type="checkbox" id="case-sensitive"/>Case sensitive</label>
-            <label><input type="checkbox" id="whole-word"/>Whole word</label>
-            <label><input type="checkbox" id="highlight-all-matches" checked/>Highlight All Matches</label>
-          </div>
-          <h4>SerializeAddon</h4>
-          <div>
-            <button id="serialize">Serialize the content of terminal</button>
-            <label><input type="checkbox" id="write-to-terminal">Write back to terminal</label>
-            <div><pre id="serialize-output"></pre></div>
-
-            <button id="htmlserialize">Serialize the content of terminal in HTML</button>
-            <span id="htmlserialize-output-result"></span>
-            <div><pre id="htmlserialize-output"></pre></div>
-          </div>
-          <h4>Image Addon</h4>
-          <details>
-            <summary>image addon settings</summary>
-            <div>
-              <label>Storage Limit (in MB) <input type="number" id="image-storagelimit"/></label><br/>
-              <label>Show Placeholder <input type="checkbox" id="image-showplaceholder"/></label>
-              <br/><br/>
-              <label>
-                Ctor options (applied on addon relaunch)<br/>
-                <textarea id="image-options" cols="40" rows="12"></textarea>
-              </label>
-            </div>
-          </details>
-        </div>
       </div>
     </div>
       <script src="dist/client-bundle.js" defer ></script>

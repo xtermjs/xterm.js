@@ -19,6 +19,7 @@ if ('WebAssembly' in window) {
 
 import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
+import { AddonsWindow } from './components/window/addonsWindow';
 import { ControlBar } from './components/controlBar';
 import { GpuWindow } from './components/window/gpuWindow';
 import { OptionsWindow } from './components/window/optionsWindow';
@@ -61,6 +62,8 @@ let protocol;
 let socketURL;
 let socket;
 let pid;
+let controlBar: ControlBar;
+let addonsWindow: AddonsWindow;
 let gpuWindow: GpuWindow;
 let optionsWindow: OptionsWindow;
 let styleWindow: StyleWindow;
@@ -120,11 +123,10 @@ const addons: { [T in AddonType]: IDemoAddon<T> } = {
 };
 
 let terminalContainer = document.getElementById('terminal-container');
-const actionElements = {
-  find: document.querySelector('#find') as HTMLInputElement,
-  findNext: document.querySelector('#find-next') as HTMLInputElement,
-  findPrevious: document.querySelector('#find-previous') as HTMLInputElement,
-  findResults: document.querySelector('#find-results')
+let actionElements: {
+  findNext: HTMLInputElement;
+  findPrevious: HTMLInputElement;
+  findResults: HTMLElement;
 };
 let paddingElement: HTMLInputElement;
 
@@ -240,13 +242,18 @@ if (document.location.pathname === '/test') {
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
 } else {
-  const controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), [
-    { id: 'addons', label: 'Addons' }
-  ]);
+  controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
+  addonsWindow = new AddonsWindow();
+  controlBar.registerWindow(addonsWindow);
+  actionElements = {
+    findNext: addonsWindow.findNextInput,
+    findPrevious: addonsWindow.findPreviousInput,
+    findResults: addonsWindow.findResultsSpan
+  };
+  gpuWindow = new GpuWindow();
+  controlBar.registerWindow(gpuWindow, { afterId: 'addons', hidden: true, smallTab: true });
   optionsWindow = new OptionsWindow(updateTerminalSize, updateTerminalContainerBackground);
   controlBar.registerWindow(optionsWindow);
-  gpuWindow = new GpuWindow();
-  controlBar.registerWindow(gpuWindow);
   styleWindow = new StyleWindow();
   controlBar.registerWindow(styleWindow);
   paddingElement = styleWindow.paddingElement;
@@ -254,6 +261,7 @@ if (document.location.pathname === '/test') {
   controlBar.registerWindow(testWindow);
   vtWindow = new VtWindow();
   controlBar.registerWindow(vtWindow);
+  controlBar.activateDefaultTab();
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
@@ -344,6 +352,7 @@ function createTerminal(): void {
     try {
       typedTerm.loadAddon(addons.webgl.instance);
       term.open(terminalContainer);
+      controlBar.setTabVisible('gpu', true);
       gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
       addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
       addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
@@ -472,6 +481,7 @@ function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
 
   function postInitWebgl(): void {
+    controlBar.setTabVisible('gpu', true);
     setTimeout(() => {
       gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
       addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
@@ -479,6 +489,7 @@ function initAddons(term: Terminal): void {
     }, 500);
   }
   function preDisposeWebgl(): void {
+    controlBar.setTabVisible('gpu', false);
     if (addons.webgl.instance.textureAtlas) {
       addons.webgl.instance.textureAtlas.remove();
     }
@@ -594,7 +605,7 @@ function initAddons(term: Terminal): void {
 
     fragment.appendChild(wrapper);
   });
-  const container = document.getElementById('addons-container');
+  const container = addonsWindow.addonsContainer;
   container.innerHTML = '';
   container.appendChild(fragment);
 }

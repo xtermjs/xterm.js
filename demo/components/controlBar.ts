@@ -146,14 +146,35 @@ export class ControlBar {
     }
   }
 
-  public registerWindow(window: IControlWindow): void {
+  public registerWindow(window: IControlWindow, options?: { afterId?: string; hidden?: boolean; smallTab?: boolean }): void {
     // Create button
     const button = document.createElement('button');
     button.id = `${window.id}button`;
     button.className = 'tabLinks';
     button.textContent = window.label;
     button.addEventListener('click', (e) => this._openSection(e, window.id));
-    this._tabContainer.appendChild(button);
+
+    // Apply small tab styling
+    if (options?.smallTab) {
+      button.style.fontSize = '0.85em';
+    }
+
+    // Insert after specified tab or append at end
+    if (options?.afterId) {
+      const afterTab = this._tabs.get(options.afterId);
+      if (afterTab?.button.nextSibling) {
+        this._tabContainer.insertBefore(button, afterTab.button.nextSibling);
+      } else {
+        this._tabContainer.appendChild(button);
+      }
+    } else {
+      this._tabContainer.appendChild(button);
+    }
+
+    // Hide if specified
+    if (options?.hidden) {
+      button.style.display = 'none';
+    }
 
     // Create content container
     const content = document.createElement('div');
@@ -168,7 +189,42 @@ export class ControlBar {
     this._tabs.set(window.id, { button, content });
   }
 
+  public setTabVisible(tabId: string, visible: boolean): void {
+    const tab = this._tabs.get(tabId);
+    if (tab) {
+      tab.button.style.display = visible ? '' : 'none';
+      // If hiding the active tab, switch to first visible tab
+      if (!visible && this._activeTabId === tabId) {
+        for (const [id, t] of this._tabs) {
+          if (t.button.style.display !== 'none') {
+            this._activateTab(id);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   public get activeTabId(): string | null {
     return this._activeTabId;
+  }
+
+  public activateDefaultTab(): void {
+    // Restore saved tab or default to first visible tab
+    const savedTab = localStorage.getItem('tab');
+    if (savedTab && this._tabs.has(savedTab)) {
+      const tab = this._tabs.get(savedTab);
+      if (tab && tab.button.style.display !== 'none') {
+        this._activateTab(savedTab);
+        return;
+      }
+    }
+    // Fall back to first visible tab
+    for (const [id, tab] of this._tabs) {
+      if (tab.button.style.display !== 'none') {
+        this._activateTab(id);
+        return;
+      }
+    }
   }
 }
