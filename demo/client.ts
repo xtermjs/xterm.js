@@ -19,7 +19,12 @@ if ('WebAssembly' in window) {
 
 import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
-import { initControlBar } from './components/controlBar';
+import { ControlBar } from './components/controlBar';
+import { GpuWindow } from './components/window/gpuWindow';
+import { OptionsWindow } from './components/window/optionsWindow';
+import { StyleWindow } from './components/window/styleWindow';
+import { TestWindow } from './components/window/testWindow';
+import { VtWindow } from './components/window/vtWindow';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
@@ -56,7 +61,11 @@ let protocol;
 let socketURL;
 let socket;
 let pid;
-let autoResize: boolean = true;
+let gpuWindow: GpuWindow;
+let optionsWindow: OptionsWindow;
+let styleWindow: StyleWindow;
+let testWindow: TestWindow;
+let vtWindow: VtWindow;
 
 type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
 
@@ -117,7 +126,7 @@ const actionElements = {
   findPrevious: document.querySelector('#find-previous') as HTMLInputElement,
   findResults: document.querySelector('#find-results')
 };
-const paddingElement = document.getElementById('padding') as HTMLInputElement;
+let paddingElement: HTMLInputElement;
 
 const xtermjsTheme = {
   foreground: '#F8F8F8',
@@ -231,8 +240,21 @@ if (document.location.pathname === '/test') {
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
 } else {
+  const controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), [
+    { id: 'addons', label: 'Addons' }
+  ]);
+  optionsWindow = new OptionsWindow(updateTerminalSize, updateTerminalContainerBackground);
+  controlBar.registerWindow(optionsWindow);
+  gpuWindow = new GpuWindow();
+  controlBar.registerWindow(gpuWindow);
+  styleWindow = new StyleWindow();
+  controlBar.registerWindow(styleWindow);
+  paddingElement = styleWindow.paddingElement;
+  testWindow = new TestWindow();
+  controlBar.registerWindow(testWindow);
+  vtWindow = new VtWindow();
+  controlBar.registerWindow(vtWindow);
   createTerminal();
-  initControlBar();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
@@ -255,7 +277,6 @@ if (document.location.pathname === '/test') {
   document.getElementById('ligatures-test').addEventListener('click', ligaturesTest);
   document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   document.getElementById('bce').addEventListener('click', coloredErase);
-  addVtButtons();
   initImageAddonExposed();
   testEvents();
   progressButtons();
@@ -323,10 +344,10 @@ function createTerminal(): void {
     try {
       typedTerm.loadAddon(addons.webgl.instance);
       term.open(terminalContainer);
-      setTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
-      addons.webgl.instance.onRemoveTextureAtlasCanvas(e => removeTextureAtlas(e));
+      gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
+      addons.webgl.instance.onRemoveTextureAtlasCanvas(e => gpuWindow.removeTextureAtlas(e));
     } catch (e) {
       console.warn('error during loading webgl addon:', e);
       addons.webgl.instance.dispose();
@@ -340,9 +361,10 @@ function createTerminal(): void {
 
   term.focus();
   updateTerminalContainerBackground();
+  vtWindow?.initTerminal(term);
 
   const resizeObserver = new ResizeObserver(entries => {
-    if (autoResize) {
+    if (optionsWindow.autoResize) {
       addons.fit.instance.fit();
     }
   });
@@ -377,7 +399,7 @@ function createTerminal(): void {
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(async () => {
-    initOptions(term);
+    optionsWindow.initOptions(term, addDomListener);
     paddingElement.value = '0';
 
     // Set terminal size again to set the specific dimensions on the demo
@@ -441,186 +463,6 @@ function runFakeTerminal(): void {
   });
 }
 
-function initOptions(term: Terminal): void {
-  const blacklistedOptions = [
-    // Internal only options
-    'cancelEvents',
-    'convertEol',
-    'termName',
-    'cols', 'rows', // subsumed by "size" (colsRows) option
-    // Complex option
-    'documentOverride',
-    'linkHandler',
-    'logger',
-    'overviewRuler',
-    'theme',
-    'windowOptions',
-    'windowsPty',
-  ];
-  const stringOptions = {
-    cursorStyle: ['block', 'underline', 'bar'],
-    cursorInactiveStyle: ['outline', 'block', 'bar', 'underline', 'none'],
-    fontFamily: null,
-    fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    logLevel: ['trace', 'debug', 'info', 'warn', 'error', 'off'],
-    theme: ['default', 'xtermjs', 'sapphire', 'light'],
-    wordSeparator: null,
-    colsRows: null
-  };
-  const options = Object.getOwnPropertyNames(term.options);
-  const booleanOptions = [];
-  const numberOptions = [];
-  options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
-    switch (typeof term.options[o]) {
-      case 'boolean':
-        booleanOptions.push(o);
-        break;
-      case 'number':
-        numberOptions.push(o);
-        break;
-      default:
-        if (Object.keys(stringOptions).indexOf(o) === -1 && numberOptions.indexOf(o) === -1 && booleanOptions.indexOf(o) === -1) {
-          console.warn(`Unrecognized option: "${o}"`);
-        }
-    }
-  });
-
-  let html = '';
-  html += '<div class="option-group">';
-  booleanOptions.forEach(o => {
-    html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.options[o] ? 'checked' : ''}/> ${o}</label></div>`;
-  });
-  html += '</div><div class="option-group">';
-  numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
-  });
-  html += '</div><div class="option-group">';
-  Object.keys(stringOptions).forEach(o => {
-    if (o === 'colsRows') {
-      html += `<div class="option"><label>size (<var>cols</var><code>x</code><var>rows</var> or <code>auto</code>) <input id="opt-${o}" type="text" value="auto"/></label></div>`;
-    } else if (stringOptions[o]) {
-      const selectedOption = o === 'theme' ? 'xtermjs' : term.options[o];
-      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${v === selectedOption ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
-    } else {
-      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.options[o]}"/></label></div>`;
-    }
-  });
-  html += '</div>';
-
-  const container = document.getElementById('options-container');
-  container.innerHTML = html;
-
-  // Attach listeners
-  booleanOptions.forEach(o => {
-    const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
-    addDomListener(input, 'change', () => {
-      console.log('change', o, input.checked);
-      term.options[o] = input.checked;
-    });
-  });
-  numberOptions.forEach(o => {
-    const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
-    addDomListener(input, 'change', () => {
-      console.log('change', o, input.value);
-      if (o === 'lineHeight') {
-        term.options.lineHeight = parseFloat(input.value);
-      } else if (o === 'scrollSensitivity') {
-        term.options.scrollSensitivity = parseFloat(input.value);
-      } else if (o === 'scrollback') {
-        term.options.scrollback = parseInt(input.value);
-        setTimeout(() => updateTerminalSize(), 5);
-      } else {
-        term.options[o] = parseInt(input.value);
-      }
-      // Always update terminal size in case the option changes the dimensions
-      updateTerminalSize();
-    });
-  });
-  Object.keys(stringOptions).forEach(o => {
-    const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
-    addDomListener(input, 'change', () => {
-      console.log('change', o, input.value);
-      let value: any = input.value;
-      if (o === 'colsRows') {
-        const m = input.value.match(/^([0-9]+)x([0-9]+)$/);
-        if (m) {
-          autoResize = false;
-          term.resize(parseInt(m[1]), parseInt(m[2]));
-        } else {
-          autoResize = true;
-          input.value = 'auto';
-          updateTerminalSize();
-        }
-      } else if (o === 'theme') {
-        switch (input.value) {
-          case 'default':
-            value = undefined;
-            break;
-          case 'xtermjs':
-            // Custom theme to match style of xterm.js logo
-            value = xtermjsTheme;
-          case 'sapphire':
-            // Color source: https://github.com/Tyriar/vscode-theme-sapphire
-            value = {
-              background: '#1c2431',
-              foreground: '#cccccc',
-              selectionBackground: '#399ef440',
-              black: '#666666',
-              blue: '#399ef4',
-              brightBlack: '#666666',
-              brightBlue: '#399ef4',
-              brightCyan: '#21c5c7',
-              brightGreen: '#4eb071',
-              brightMagenta: '#b168df',
-              brightRed: '#da6771',
-              brightWhite: '#efefef',
-              brightYellow: '#fff099',
-              cyan: '#21c5c7',
-              green: '#4eb071',
-              magenta: '#b168df',
-              red: '#da6771',
-              white: '#efefef',
-              yellow: '#fff099'
-            };
-            break;
-          case 'light':
-            // Color source: https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/light_plus.json
-            value = {
-              background: '#ffffff',
-              foreground: '#333333',
-              cursor: '#333333',
-              cursorAccent: '#ffffff',
-              selectionBackground: '#add6ff',
-              overviewRulerBorder: '#aaaaaa',
-              black: '#000000',
-              blue: '#0451a5',
-              brightBlack: '#666666',
-              brightBlue: '#0451a5',
-              brightCyan: '#0598bc',
-              brightGreen: '#14ce14',
-              brightMagenta: '#bc05bc',
-              brightRed: '#cd3131',
-              brightWhite: '#a5a5a5',
-              brightYellow: '#b5ba00',
-              cyan: '#0598bc',
-              green: '#00bc00',
-              magenta: '#bc05bc',
-              red: '#cd3131',
-              white: '#555555',
-              yellow: '#949800'
-            };
-            break;
-        }
-      }
-      term.options[o] = value;
-      if (o === 'theme') {
-        updateTerminalContainerBackground();
-      }
-    });
-  });
-}
-
 function updateTerminalContainerBackground(): void {
   const bg = term.options.theme?.background ?? '#000000';
   terminalContainer.style.backgroundColor = bg;
@@ -631,9 +473,9 @@ function initAddons(term: Terminal): void {
 
   function postInitWebgl(): void {
     setTimeout(() => {
-      setTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => setTextureAtlas(e));
-      addons.webgl.instance.onAddTextureAtlasCanvas(e => appendTextureAtlas(e));
+      gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
     }, 500);
   }
   function preDisposeWebgl(): void {
@@ -773,9 +615,9 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 }
 
 function updateTerminalSize(): void {
-  const width = autoResize ? '100%'
+  const width = optionsWindow.autoResize ? '100%'
     : (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
-  const height = autoResize ? '100%'
+  const height = optionsWindow.autoResize ? '100%'
     : (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
@@ -808,21 +650,7 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
 }
 
-function setTextureAtlas(e: HTMLCanvasElement): void {
-  styleAtlasPage(e);
-  document.querySelector('#texture-atlas').replaceChildren(e);
-}
-function appendTextureAtlas(e: HTMLCanvasElement): void {
-  styleAtlasPage(e);
-  document.querySelector('#texture-atlas').appendChild(e);
-}
-function removeTextureAtlas(e: HTMLCanvasElement): void {
-  e.remove();
-}
-function styleAtlasPage(e: HTMLCanvasElement): void {
-  e.style.width = `${e.width / window.devicePixelRatio}px`;
-  e.style.height = `${e.height / window.devicePixelRatio}px`;
-}
+
 
 function customGlyphAlignmentHandler(): void {
   term.write('\n\r');
@@ -1455,65 +1283,6 @@ function decorationStressTest(): void {
   );
   console.groupEnd();
 };
-
-function addVtButtons(): void {
-  function csi(e: string): string {
-    return `\x1b[${e}`;
-  }
-
-  function createButton(name: string, description: string, writeCsi: string, paramCount: number = 1): HTMLElement {
-    const inputs: HTMLInputElement[] = [];
-    for (let i = 0; i < paramCount; i++) {
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.title = `Input #${i + 1}`;
-      inputs.push(input);
-    }
-
-    const element = document.createElement('button');
-    element.textContent = name;
-    const writeCsiSplit = writeCsi.split('|');
-    const prefix = writeCsiSplit.length === 2 ? writeCsiSplit[0] : '';
-    const suffix = writeCsiSplit[writeCsiSplit.length - 1];
-    element.addEventListener(`click`, () => term.write(csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
-
-    const desc = document.createElement('span');
-    desc.textContent = description;
-
-    const container = document.createElement('div');
-    container.classList.add('vt-button');
-    container.append(element, ...inputs, desc);
-    return container;
-  }
-  const vtFragment = document.createDocumentFragment();
-  const buttonSpecs: { [key: string]: { label: string, description: string, paramCount?: number }} = {
-    A:         { label: 'CUU ↑',    description: 'Cursor Up Ps Times' },
-    B:         { label: 'CUD ↓',    description: 'Cursor Down Ps Times' },
-    C:         { label: 'CUF →',    description: 'Cursor Forward Ps Times' },
-    D:         { label: 'CUB ←',    description: 'Cursor Backward Ps Times' },
-    E:         { label: 'CNL',      description: 'Cursor Next Line Ps Times' },
-    F:         { label: 'CPL',      description: 'Cursor Preceding Line Ps Times' },
-    G:         { label: 'CHA',      description: 'Cursor Character Absolute' },
-    H:         { label: 'CUP',      description: 'Cursor Position [row;column]', paramCount: 2 },
-    I:         { label: 'CHT',      description: 'Cursor Forward Tabulation Ps tab stops' },
-    J:         { label: 'ED',       description: 'Erase in Display' },
-    '?|J':     { label: 'DECSED',   description: 'Erase in Display' },
-    K:         { label: 'EL',       description: 'Erase in Line' },
-    '?|K':     { label: 'DECSEL',   description: 'Erase in Line' },
-    L:         { label: 'IL',       description: 'Insert Ps Line(s)' },
-    M:         { label: 'DL',       description: 'Delete Ps Line(s)' },
-    P:         { label: 'DCH',      description: 'Delete Ps Character(s)' },
-    ' q':      { label: 'DECSCUSR', description: 'Set Cursor Style' },
-    '?2026h':  { label: 'BSU',      description: 'Begin synchronized update', paramCount: 0 },
-    '?2026l':  { label: 'ESU',      description: 'End synchronized update', paramCount: 0 }
-  };
-  for (const s of Object.keys(buttonSpecs)) {
-    const spec = buttonSpecs[s];
-    vtFragment.appendChild(createButton(spec.label, spec.description, s, spec.paramCount));
-  }
-
-  document.querySelector('#vt-container').appendChild(vtFragment);
-}
 
 function ligaturesTest(): void {
   term.write([
