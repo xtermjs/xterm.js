@@ -61,7 +61,7 @@ declare module '@xterm/addon-webgl' {
      * - Braille Patterns (U+2800-U+28FF)
      * - Powerline Symbols (U+E0A0–U+E0D4, Private Use Area with widespread
      *   adoption)
-     * - Git Branch Symbols (U+F5D0-U+F5FB, Private Use Area initially adopted
+     * - Git Branch Symbols (U+F5D0-U+F60D, Private Use Area initially adopted
      *   in [Kitty in 2024](https://github.com/kovidgoyal/kitty/pull/7681) by
      *   author of [vim-flog](https://github.com/rbong/vim-flog))
      * - Symbols for Legacy Computing (U+1FB00–U+1FBFF)

@@ -7,35 +7,6 @@ import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType,
 
 /* eslint-disable max-len */
 
-/**
- * Frozen {@link CustomGlyphDefinitionPart} objects for reuse across glyph definitions.
- */
-namespace Parts {
-  // Lines
-  export const LINE_H: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 });
-  export const LINE_V: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 });
-
-  // Fading lines
-  export const FADE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.5 L.28,.5 M.32,.5 L.52,.5 M.60,.5 L.72,.5 M.84,.5 L.90,.5', strokeWidth: 1 });
-  export const FADE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.10,.5 L.16,.5 M.28,.5 L.40,.5 M.48,.5 L.68,.5 M.72,.5 L1,.5', strokeWidth: 1 });
-  export const FADE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,0 L.5,.28 M.5,.32 L.5,.52 M.5,.60 L.5,.72 M.5,.84 L.5,.90', strokeWidth: 1 });
-  export const FADE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 });
-
-  // Curved corners
-  export const CURVE_DOWN_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
-  export const CURVE_DOWN_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
-  export const CURVE_UP_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
-  export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
-
-  // Node parts
-  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
-  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
-  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
-  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
-  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
-  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
-}
-
 export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
   // #region Box Drawing (2500-257F)
 
@@ -327,118 +298,82 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // #endregion
 
-  // #region Git Branch Symbols (F5D0-F5FB)
+  // #region Git Branch Symbols (F5D0-F60D)
 
   // Initially added in https://github.com/kovidgoyal/kitty/pull/7681 then in
   // [Wezterm](https://github.com/wezterm/wezterm/issues/6328).
 
-  // TODO: These should be composed of common shapes instead of repeating the path data.
+  // Straight lines (F5D0-F5D9)
+  '\u{F5D0}': GitBranchSymbolsParts.LINE_H, // Same as 2500
+  '\u{F5D1}': GitBranchSymbolsParts.LINE_V, // Same as 2502
+  '\u{F5D2}': GitBranchSymbolsParts.FADE_RIGHT,
+  '\u{F5D3}': GitBranchSymbolsParts.FADE_LEFT,
+  '\u{F5D4}': GitBranchSymbolsParts.FADE_DOWN,
+  '\u{F5D5}': GitBranchSymbolsParts.FADE_UP,
 
-  // Line without branches
-  '\u{F5D0}': Parts.LINE_H, // HORIZONTAL LINE (Same as 2500)
-  '\u{F5D1}': Parts.LINE_V, // VERTICAL LINE (Same as 2502)
-  '\u{F5D2}': Parts.FADE_RIGHT, // HORIZONTAL LINE FADE TO RIGHT
-  '\u{F5D3}': Parts.FADE_LEFT, // HORIZONTAL LINE FADE TO LEFT
-  '\u{F5D4}': Parts.FADE_DOWN, // VERTICAL LINE FADE TO BOTTOM
-  '\u{F5D5}': Parts.FADE_UP, // VERTICAL LINE FADE TO TOP
-  '\u{F5D6}': Parts.CURVE_DOWN_RIGHT, // CURVED LINE BOTTOM TO RIGHT (Same as 256D)
-  '\u{F5D7}': Parts.CURVE_DOWN_LEFT, // CURVED LINE BOTTOM TO LEFT (Same as 256E)
-  '\u{F5D8}': Parts.CURVE_UP_RIGHT, // CURVED LINE TOP TO RIGHT (Same as 2570)
-  '\u{F5D9}': Parts.CURVE_UP_LEFT, // CURVED LINE TOP TO LEFT (Same as 256F)
+  // Curved lines (F5D6-F5D9)
+  '\u{F5D6}': GitBranchSymbolsParts.CURVE_DOWN_RIGHT, // Same as 256D)
+  '\u{F5D7}': GitBranchSymbolsParts.CURVE_DOWN_LEFT, // Same as 256E)
+  '\u{F5D8}': GitBranchSymbolsParts.CURVE_UP_RIGHT, // Same as 2570)
+  '\u{F5D9}': GitBranchSymbolsParts.CURVE_UP_LEFT, // Same as 256F)
 
-  // Vertical and branching to the right
-  '\u{F5DA}': [Parts.LINE_V, Parts.CURVE_UP_RIGHT],
-  '\u{F5DB}': [Parts.LINE_V, Parts.CURVE_DOWN_RIGHT],
-  '\u{F5DC}': [Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_RIGHT],
+  // Branching lines (F5DA-F5ED)
+  '\u{F5DA}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5DB}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5DC}': [GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5DD}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5DE}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_LEFT],
+  '\u{F5DF}': [GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5E0}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_LEFT],
+  '\u{F5E1}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5E2}': [GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5E3}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5E4}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5E5}': [GitBranchSymbolsParts.CURVE_UP_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5E6}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_UP_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5E7}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_DOWN_RIGHT],
+  '\u{F5E8}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5E9}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5EA}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5EB}': [GitBranchSymbolsParts.LINE_V, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
+  '\u{F5EC}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_RIGHT, GitBranchSymbolsParts.CURVE_UP_LEFT],
+  '\u{F5ED}': [GitBranchSymbolsParts.LINE_H, GitBranchSymbolsParts.CURVE_DOWN_LEFT, GitBranchSymbolsParts.CURVE_UP_RIGHT],
 
-  // Vertical and branching to the left
-  '\u{F5DD}': [Parts.LINE_V, Parts.CURVE_UP_LEFT],
-  '\u{F5DE}': [Parts.LINE_V, Parts.CURVE_DOWN_LEFT],
-  '\u{F5DF}': [Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_LEFT],
+  // Nodes (F5EE-F5FB)
+  '\u{F5EE}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE],
+  '\u{F5EF}': GitBranchSymbolsParts.NODE_STROKE,
+  '\u{F5F0}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F1}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F2}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F5F3}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F5F4}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F5}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5F6}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN],
+  '\u{F5F7}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN],
+  '\u{F5F8}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP],
+  '\u{F5F9}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP],
+  '\u{F5FA}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
+  '\u{F5FB}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
 
-  // Horizontal and branching down
-  '\u{F5E0}': [Parts.LINE_H, Parts.CURVE_DOWN_LEFT],
-  '\u{F5E1}': [Parts.LINE_H, Parts.CURVE_DOWN_RIGHT],
-  '\u{F5E2}': [Parts.CURVE_DOWN_LEFT, Parts.CURVE_DOWN_RIGHT],
-
-  // Horizontal and branching up
-  '\u{F5E3}': [Parts.LINE_H, Parts.CURVE_UP_LEFT],
-  '\u{F5E4}': [Parts.LINE_H, Parts.CURVE_UP_RIGHT],
-  '\u{F5E5}': [Parts.CURVE_UP_LEFT, Parts.CURVE_UP_RIGHT],
-
-  // Branching in all four directions
-  '\u{F5E6}': [Parts.LINE_V, Parts.CURVE_UP_LEFT, Parts.CURVE_UP_RIGHT],
-  '\u{F5E7}': [Parts.LINE_V, Parts.CURVE_DOWN_LEFT, Parts.CURVE_DOWN_RIGHT],
-  '\u{F5E8}': [Parts.LINE_H, Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_LEFT],
-  '\u{F5E9}': [Parts.LINE_H, Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_RIGHT],
-  '\u{F5EA}': [Parts.LINE_V, Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_LEFT],
-  '\u{F5EB}': [Parts.LINE_V, Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_RIGHT],
-  '\u{F5EC}': [Parts.LINE_H, Parts.CURVE_DOWN_RIGHT, Parts.CURVE_UP_LEFT],
-  '\u{F5ED}': [Parts.LINE_H, Parts.CURVE_DOWN_LEFT, Parts.CURVE_UP_RIGHT],
-
-  // Node (circle filling ~70% of cell, assumes 2:1 height:width aspect ratio)
-  '\u{F5EE}': [Parts.NODE_FILL, Parts.NODE_STROKE],
-  '\u{F5EF}': Parts.NODE_STROKE,
-
-  // Node branching to right
-  '\u{F5F0}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_RIGHT],
-  '\u{F5F1}': [Parts.NODE_STROKE, Parts.NODE_LINE_RIGHT],
-
-  // Node branching to left
-  '\u{F5F2}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_LEFT],
-  '\u{F5F3}': [Parts.NODE_STROKE, Parts.NODE_LINE_LEFT],
-
-  // Node branching horizontally
-  '\u{F5F4}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT],
-  '\u{F5F5}': [Parts.NODE_STROKE, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT],
-
-  // Node branching down
-  '\u{F5F6}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN],
-  '\u{F5F7}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN],
-
-  // Node branching up
-  '\u{F5F8}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP],
-  '\u{F5F9}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP],
-
-  // Node branching vertically
-  '\u{F5FA}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_UP],
-  '\u{F5FB}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_UP],
-
-  // Node branching down right
-  '\u{F5FC}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING DOWN RIGHT
-  '\u{F5FD}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING DOWN RIGHT
-
-  // Node branching down left
-  '\u{F5FE}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE FILLED BRANCHING DOWN LEFT
-  '\u{F5FF}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE EMPTY BRANCHING DOWN LEFT
-
-  // Node branching up right
-  '\u{F600}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP RIGHT
-  '\u{F601}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP RIGHT
-
-  // Node branching up left
-  '\u{F602}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT], // NODE FILLED BRANCHING UP LEFT
-  '\u{F603}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT], // NODE EMPTY BRANCHING UP LEFT
-
-  // Node branching up down right
-  '\u{F604}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP DOWN RIGHT
-  '\u{F605}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP DOWN RIGHT
-
-  // Node branching up down left
-  '\u{F606}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE FILLED BRANCHING UP DOWN LEFT
-  '\u{F607}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT], // NODE EMPTY BRANCHING UP DOWN LEFT
-
-  // Node branching down left right
-  '\u{F608}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING DOWN LEFT RIGHT
-  '\u{F609}': [Parts.NODE_STROKE, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING DOWN LEFT RIGHT
-
-  // Node branching up left right
-  '\u{F60A}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP LEFT RIGHT
-  '\u{F60B}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP LEFT RIGHT
-
-  // Node branching up down left right
-  '\u{F60C}': [Parts.NODE_FILL, Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE FILLED BRANCHING UP DOWN LEFT RIGHT
-  '\u{F60D}': [Parts.NODE_STROKE, Parts.NODE_LINE_UP, Parts.NODE_LINE_DOWN, Parts.NODE_LINE_LEFT, Parts.NODE_LINE_RIGHT], // NODE EMPTY BRANCHING UP DOWN LEFT RIGHT
+  // Extended Git Branch Symbols (F5FC-F60D)
+  '\u{F5FC}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5FD}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F5FE}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F5FF}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F600}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F601}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F602}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F603}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F604}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F605}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F606}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F607}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
+  '\u{F608}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F609}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60A}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60B}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60C}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
+  '\u{F60D}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_UP, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT, GitBranchSymbolsParts.NODE_LINE_RIGHT],
 
   // #endregion
 
@@ -1009,4 +944,30 @@ const enum Shapes {
   /** ╎ */ TWO_DASHES_VERTICAL = 'M.5,.1 L.5,.4 M.5,.6 L.5,.9',
   /** ┆ */ THREE_DASHES_VERTICAL = 'M.5,.0667 L.5,.2667 M.5,.4 L.5,.6 M.5,.7333 L.5,.9333',
   /** ┊ */ FOUR_DASHES_VERTICAL = 'M.5,.05 L.5,.2 M.5,.3 L.5,.45 L.5,.55 M.5,.7 L.5,.95',
+}
+
+namespace GitBranchSymbolsParts {
+  // Lines
+  export const LINE_H: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 });
+  export const LINE_V: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.TOP_TO_BOTTOM, strokeWidth: 1 });
+
+  // Fading lines
+  export const FADE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.5 L.28,.5 M.32,.5 L.52,.5 M.60,.5 L.72,.5 M.84,.5 L.90,.5', strokeWidth: 1 });
+  export const FADE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.10,.5 L.16,.5 M.28,.5 L.40,.5 M.48,.5 L.68,.5 M.72,.5 L1,.5', strokeWidth: 1 });
+  export const FADE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,0 L.5,.28 M.5,.32 L.5,.52 M.5,.60 L.5,.72 M.5,.84 L.5,.90', strokeWidth: 1 });
+  export const FADE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M.5,.10 L.5,.16 M.5,.28 L.5,.40 M.5,.48 L.5,.68 M.5,.72 L.5,1', strokeWidth: 1 });
+
+  // Curved corners
+  export const CURVE_DOWN_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_DOWN_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + (yp / .15 * .5)} C.5,${.5 + (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+  export const CURVE_UP_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,1,.5`, strokeWidth: 1 });
+  export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
+
+  // Node parts
+  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
+  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
+  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
+  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
+  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
 }

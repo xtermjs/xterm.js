@@ -952,15 +952,18 @@ function customGlyphRangesHandler(): void {
   // Range: E0A0–E0D4
   // https://github.com/ryanoasis/nerd-fonts
   writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0D4, [
-    ['Powerline Symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
-    ['Powerline Extra Symbols', 0xE0B4, 0xE0D4, [0xE0C9, 0xE0CB, 0xE0D3]],
+    ['Powerline symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
+    ['Powerline extra symbols', 0xE0B4, 0xE0D4, [0xE0C9, 0xE0CB, 0xE0D3]],
   ]);
   // Git Branch Symbols
-  // F5D0-F5FB
+  // F5D0-F60D
   // https://github.com/xtermjs/xterm.js/issues/5477
   writeUnicodeTable(term, 'Git Branch Symbols', 0xF5D0, 0xF5FB, [
-    ['Git Branch Symbols', 0xF5D0, 0xF5FB],
-    ['Extended Git Branch Symbols', 0xF5FC, 0xF60D],
+    ['Straight lines', 0xF5D0, 0xF5D5],
+    ['Curved lines', 0xF5D6, 0xF5D9],
+    ['Branching lines', 0xF5DA, 0xF5ED],
+    ['Nodes', 0xF5EE, 0xF5FB],
+    ['Extended nodes', 0xF5FC, 0xF60D],
   ]);
   // Symbols for Legacy Computing
   // Range: 1FB00–1FBFF
