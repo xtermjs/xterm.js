@@ -10,6 +10,7 @@ import type { IControlWindow } from '../controlBar';
 import { BaseWindow } from './baseWindow';
 import type { IDisposable, Terminal } from '@xterm/xterm';
 import type { AddonCollection } from 'types';
+import type { IProgressState } from '@xterm/addon-progress';
 
 export class TestWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'test';
@@ -84,8 +85,8 @@ export class TestWindow extends BaseWindow implements IControlWindow {
 
     // Events Test section
     this._addDt(dl, 'Events Test');
-    this._addDdWithButton(dl, 'event-focus', 'focus', '');
-    this._addDdWithButton(dl, 'event-blur', 'blur', '');
+    this._addDdWithButton(dl, 'event-focus', 'focus', '', () => this._terminal.focus());
+    this._addDdWithButton(dl, 'event-blur', 'blur', '', () => this._terminal.blur());
 
     // Progress Addon section
     this._addDt(dl, 'Progress Addon');
@@ -116,6 +117,8 @@ export class TestWindow extends BaseWindow implements IControlWindow {
     stateDiv.textContent = 'State:';
     stateDd.appendChild(stateDiv);
     dl.appendChild(stateDd);
+    
+    initProgress(this._terminal, this._addons);
 
     wrapper.appendChild(dl);
     container.appendChild(wrapper);
@@ -842,4 +845,44 @@ function decorationStressTest(term: Terminal): void {
       }
     }
   }
+}
+
+function initProgress(term: Terminal, addons: AddonCollection): void {
+  const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
+  const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
+
+  function progressHandler({ state, value }: IProgressState): void {
+    // Simulate windows taskbar hack by windows terminal:
+    // Since the taskbar has no means to indicate error/pause state other than by coloring
+    // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
+    // NOTE: This is most likely not what you want to do for other progress indicators,
+    //       that have a proper visual state for error/paused.
+    value = Math.min(10 + value * 0.9, 100);
+    document.getElementById('progress-percent').style.width = `${value}%`;
+    document.getElementById('progress-percent').style.backgroundColor = COLORS[state];
+    document.getElementById('progress-state').innerText = `State: ${STATES[state]}`;
+
+    document.getElementById('progress-percent').style.display = state === 3 ? 'none' : 'block';
+    document.getElementById('progress-indeterminate').style.display = state === 3 ? 'block' : 'none';
+  }
+
+  const progressAddon = addons.progress.instance;
+  progressAddon.onChange(progressHandler);
+
+  // apply initial state once to make it visible on page load
+  const initialProgress = progressAddon.progress;
+  progressHandler(initialProgress);
+
+  document.getElementById('progress-run').addEventListener('click', async () => {
+    term.write('\x1b]9;4;0\x1b\\');
+    for (let i = 0; i <= 100; i += 5) {
+      term.write(`\x1b]9;4;1;${i}\x1b\\`);
+      await new Promise(res => setTimeout(res, 200));
+    }
+  });
+  document.getElementById('progress-0').addEventListener('click', () => term.write('\x1b]9;4;0\x1b\\'));
+  document.getElementById('progress-1').addEventListener('click', () => term.write('\x1b]9;4;1;20\x1b\\'));
+  document.getElementById('progress-2').addEventListener('click', () => term.write('\x1b]9;4;2\x1b\\'));
+  document.getElementById('progress-3').addEventListener('click', () => term.write('\x1b]9;4;3\x1b\\'));
+  document.getElementById('progress-4').addEventListener('click', () => term.write('\x1b]9;4;4\x1b\\'));
 }
