@@ -66,7 +66,6 @@ let controlBar: ControlBar;
 let addonsWindow: AddonsWindow;
 let gpuWindow: GpuWindow;
 let optionsWindow: OptionsWindow;
-let styleWindow: StyleWindow;
 let vtWindow: VtWindow;
 
 const addons: AddonCollection = {
@@ -220,7 +219,7 @@ if (document.location.pathname === '/test') {
   const styleWindow = controlBar.registerWindow(new StyleWindow());
   paddingElement = styleWindow.paddingElement;
   controlBar.registerWindow(optionsWindow);
-  controlBar.registerWindow(new TestWindow(typedTerm, addons));
+  controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }));
   vtWindow = new VtWindow();
   controlBar.registerWindow(vtWindow);
   vtWindow.initTerminal(term);
@@ -260,17 +259,8 @@ if (document.location.pathname === '/test') {
     addons.search.instance.clearActiveDecoration();
   });
 
-  document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
-  document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
   document.getElementById('htmlserialize').addEventListener('click', htmlSerializeButtonHandler);
-  document.getElementById('load-test').addEventListener('click', loadTest);
-  document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
-  document.getElementById('add-decoration').addEventListener('click', addDecoration);
-  document.getElementById('add-overview-ruler').addEventListener('click', addOverviewRuler);
-  document.getElementById('decoration-stress-test').addEventListener('click', decorationStressTest);
-  document.getElementById('ligatures-test').addEventListener('click', ligaturesTest);
-  document.getElementById('weblinks-test').addEventListener('click', testWeblinks);
   initImageAddonExposed();
   testEvents();
   progressButtons();
@@ -615,126 +605,6 @@ function htmlSerializeButtonHandler(): void {
   document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
 }
 
-function loadTest(): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
-  const testData = [];
-  let byteCount = 0;
-  for (let i = 0; i < 50; i++) {
-    const count = 1 + Math.floor(Math.random() * 79);
-    byteCount += count + 2;
-    const data = new Uint8Array(count + 2);
-    data[0] = 0x0A; // \n
-    for (let i = 1; i < count + 1; i++) {
-      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
-    }
-    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
-    // performance significantly due to the cursor DOM element not needing to change
-    data[data.length - 1] = 0x0D; // \r
-    testData.push(data);
-  }
-  const start = performance.now();
-  for (let i = 0; i < 1024; i++) {
-    for (const d of testData) {
-      term.write(d);
-    }
-  }
-  // Wait for all data to be parsed before evaluating time
-  term.write('', () => {
-    const time = Math.round(performance.now() - start);
-    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
-    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
-    // Send ^C to get a new prompt
-    term._core._onData.fire('\x03');
-  });
-}
-
-function loadTestLongLines(): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
-  const testData = [];
-  let byteCount = 0;
-  for (let i = 0; i < 50; i++) {
-    const count = 1 + Math.floor(Math.random() * 500);
-    byteCount += count + 2;
-    const data = new Uint8Array(count + 2);
-    data[0] = 0x0A; // \n
-    for (let i = 1; i < count + 1; i++) {
-      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
-    }
-    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
-    // performance significantly due to the cursor DOM element not needing to change
-    data[data.length - 1] = 0x0D; // \r
-    testData.push(data);
-  }
-  const start = performance.now();
-  for (let i = 0; i < 1024 * 50; i++) {
-    for (const d of testData) {
-      term.write(d);
-    }
-  }
-  // Wait for all data to be parsed before evaluating time
-  term.write('', () => {
-    const time = Math.round(performance.now() - start);
-    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
-    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
-    // Send ^C to get a new prompt
-    term._core._onData.fire('\x03');
-  });
-}
-
-function addDecoration(): void {
-  term.options['overviewRuler'] = { width: 14 };
-  const marker = term.registerMarker(1);
-  const decoration = term.registerDecoration({
-    marker,
-    backgroundColor: '#00FF00',
-    foregroundColor: '#00FE00',
-    overviewRulerOptions: { color: '#ef292980', position: 'left' }
-  });
-  decoration.onRender((e: HTMLElement) => {
-    e.style.right = '100%';
-    e.style.backgroundColor = '#ef292980';
-  });
-}
-
-function addOverviewRuler(): void {
-  term.options['overviewRuler'] = { width: 14 };
-  term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
-  term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
-  term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
-  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' } });
-  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
-  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' } });
-  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
-  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
-}
-
-let decorationStressTestDecorations: IDisposable[] | undefined;
-function decorationStressTest(): void {
-  if (decorationStressTestDecorations) {
-    for (const d of decorationStressTestDecorations) {
-      d.dispose();
-    }
-    decorationStressTestDecorations = undefined;
-  } else {
-    const t = term as Terminal;
-    const buffer = t.buffer.active;
-    const cursorY = buffer.baseY + buffer.cursorY;
-    decorationStressTestDecorations = [];
-    for (const x of [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]) {
-      for (let y = 0; y < t.buffer.active.length; y++) {
-        const cursorOffsetY = y - cursorY;
-        decorationStressTestDecorations.push(t.registerDecoration({
-          marker: t.registerMarker(cursorOffsetY),
-          x,
-          width: 4,
-          backgroundColor: '#FF0000',
-          overviewRulerOptions: { color: '#FF0000' }
-        }));
-      }
-    }
-  }
-}
-
 (console as any).image = (source: ImageData | HTMLCanvasElement, scale: number = 1) => {
   function getBox(width: number, height: number): any {
     return {
@@ -765,42 +635,6 @@ function decorationStressTest(): void {
   );
   console.groupEnd();
 };
-
-function ligaturesTest(): void {
-  term.write([
-    '',
-    '-<< -< -<- <-- <--- <<- <- -> ->> --> ---> ->- >- >>-',
-    '=<< =< =<= <== <=== <<= <= => =>> ==> ===> =>= >= >>=',
-    '<-> <--> <---> <----> <=> <==> <===> <====> :: ::: __',
-    '<~~ </ </> /> ~~> == != /= ~= <> === !== !=== =/= =!=',
-    '<: := *= *+ <* <*> *> <| <|> |> <. <.> .> +* =* =: :>',
-    '(* *) /* */ [| |] {| |} ++ +++ \/ /\ |- -| <!-- <!---',
-    '==== ===== ====== ======= ======== =========',
-    '---- ----- ------ ------- -------- ---------'
-  ].join('\r\n'));
-}
-
-function testWeblinks(): void {
-  const linkExamples = `
-aaa http://example.com aaa http://example.com aaa
-￥￥￥ http://example.com aaa http://example.com aaa
-aaa http://example.com ￥￥￥ http://example.com aaa
-￥￥￥ http://example.com ￥￥￥ http://example.com aaa
-aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa
-￥￥￥ https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 ￥￥￥
-aaa http://test:password@example.com/some_path aaa
-brackets enclosed:
-aaa [http://example.de] aaa
-aaa (http://example.de) aaa
-aaa <http://example.de> aaa
-aaa {http://example.de} aaa
-ipv6 https://[::1]/with/some?vars=and&a#hash aaa
-stop at final '.': This is a sentence with an url to http://example.com.
-stop at final '?': Is this the right url http://example.com/?
-stop at final '?': Maybe this one http://example.com/with?arguments=false?
-`;
-  term.write(linkExamples.split('\n').join('\r\n'));
-}
 
 function initImageAddonExposed(): void {
   const DEFAULT_OPTIONS: IImageAddonOptions = (addons.image.instance as any)._defaultOpts;

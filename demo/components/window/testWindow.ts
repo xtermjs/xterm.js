@@ -7,7 +7,7 @@
 
 import { writeUnicodeTable } from 'unicodeTable';
 import type { IControlWindow } from '../controlBar';
-import type { Terminal } from '@xterm/xterm';
+import type { IDisposable, Terminal } from '@xterm/xterm';
 import type { AddonCollection } from 'types';
 
 export class TestWindow implements IControlWindow {
@@ -16,7 +16,11 @@ export class TestWindow implements IControlWindow {
 
   constructor(
     private readonly _terminal: Terminal,
-    private readonly _addons: AddonCollection
+    private readonly _addons: AddonCollection,
+    private readonly _handlers: {
+      disposeRecreateButtonHandler: () => void,
+      createNewWindowButtonHandler: () => void,
+    },
   ) {
   }
 
@@ -34,13 +38,13 @@ export class TestWindow implements IControlWindow {
     // Lifecycle section
     this._addDt(dl, 'Lifecycle');
     this._addDdWithCheckbox(dl, 'use-real-terminal', 'Use real terminal', 'This is used to real vs fake terminals', true);
-    this._addDdWithButton(dl, 'dispose', 'Dispose terminal', 'This is used to testing memory leaks');
-    this._addDdWithButton(dl, 'create-new-window', 'Create terminal in new window', 'This is used to test rendering in other windows');
+    this._addDdWithButton(dl, 'dispose', 'Dispose terminal', 'This is used to testing memory leaks', () => this._handlers.disposeRecreateButtonHandler());
+    this._addDdWithButton(dl, 'create-new-window', 'Create terminal in new window', 'This is used to test rendering in other windows', () => this._handlers.createNewWindowButtonHandler());
 
     // Performance section
     this._addDt(dl, 'Performance');
-    this._addDdWithButton(dl, 'load-test', 'Load test', 'Write several MB of data to simulate a lot of data coming from the process');
-    this._addDdWithButton(dl, 'load-test-long-lines', 'Load test (long lines)', 'Write several MB of data with long lines to simulate a lot of data coming from the process');
+    this._addDdWithButton(dl, 'load-test', 'Load test', 'Write several MB of data to simulate a lot of data coming from the process', () => loadTest(this._terminal, this._addons));
+    this._addDdWithButton(dl, 'load-test-long-lines', 'Load test (long lines)', 'Write several MB of data with long lines to simulate a lot of data coming from the process', () => loadTestLongLines(this._terminal, this._addons));
     this._addDdWithButton(dl, 'print-cjk', 'CJK Unified Ideographs', 'Prints the 20977 characters from the CJK Unified Ideographs unicode block', () => addCjk(this._terminal));
     this._addDdWithButton(dl, 'print-cjk-sgr', 'CJK Unified Ideographs (random SGR)', 'Prints the 20977 characters from the CJK Unified Ideographs unicode block with randomized SGR attributes', () => addCjkRandomSgr(this._terminal));
 
@@ -58,17 +62,17 @@ export class TestWindow implements IControlWindow {
 
     // Decorations section
     this._addDt(dl, 'Decorations');
-    this._addDdWithButton(dl, 'add-decoration', 'Decoration', 'Add a decoration to the terminal');
-    this._addDdWithButton(dl, 'add-overview-ruler', 'Add Overview Ruler', 'Add an overview ruler to the terminal');
-    this._addDdWithButton(dl, 'decoration-stress-test', 'Stress Test', 'Toggle between adding and removing a decoration to each line');
+    this._addDdWithButton(dl, 'add-decoration', 'Decoration', 'Add a decoration to the terminal', () => addDecoration(this._terminal));
+    this._addDdWithButton(dl, 'add-overview-ruler', 'Add Overview Ruler', 'Add an overview ruler to the terminal', () => addOverviewRuler(this._terminal));
+    this._addDdWithButton(dl, 'decoration-stress-test', 'Stress Test', 'Toggle between adding and removing a decoration to each line', () => decorationStressTest(this._terminal));
 
     // Ligatures Addon section
     this._addDt(dl, 'Ligatures Addon');
-    this._addDdWithButton(dl, 'ligatures-test', 'Common ligatures', 'Write common ligatures sequences');
+    this._addDdWithButton(dl, 'ligatures-test', 'Common ligatures', 'Write common ligatures sequences', () => ligaturesTest(this._terminal));
 
     // Weblinks Addon section
     this._addDt(dl, 'Weblinks Addon');
-    this._addDdWithButton(dl, 'weblinks-test', 'Test URLs', 'Various url conditions from demo data, hover&click to test');
+    this._addDdWithButton(dl, 'weblinks-test', 'Test URLs', 'Various url conditions from demo data, hover&click to test', () => testWeblinks(this._terminal));
 
     // Image Test section
     this._addDt(dl, 'Image Test');
@@ -681,4 +685,159 @@ Test BG-colored Erase (BCE):
 \x1b[m\x1b[5X\x1b[41m\x1b[5C\x1b[5X\x1b[42m\x1b[5C\x1b[5X\x1b[43m\x1b[5C\x1b[5X\x1b[44m\x1b[5C\x1b[5X\x1b[45m\x1b[5C\x1b[5X\x1b[46m\x1b[5C\x1b[5X\x1b[47m\x1b[5C\x1b[5X\x1b[m
 `;
   term.write(data.split('\n').join('\r\n'));
+}
+
+function ligaturesTest(term: Terminal): void {
+  term.write([
+    '',
+    '-<< -< -<- <-- <--- <<- <- -> ->> --> ---> ->- >- >>-',
+    '=<< =< =<= <== <=== <<= <= => =>> ==> ===> =>= >= >>=',
+    '<-> <--> <---> <----> <=> <==> <===> <====> :: ::: __',
+    '<~~ </ </> /> ~~> == != /= ~= <> === !== !=== =/= =!=',
+    '<: := *= *+ <* <*> *> <| <|> |> <. <.> .> +* =* =: :>',
+    '(* *) /* */ [| |] {| |} ++ +++ \/ /\ |- -| <!-- <!---',
+    '==== ===== ====== ======= ======== =========',
+    '---- ----- ------ ------- -------- ---------'
+  ].join('\r\n'));
+}
+
+function testWeblinks(term: Terminal): void {
+  const linkExamples = `
+aaa http://example.com aaa http://example.com aaa
+￥￥￥ http://example.com aaa http://example.com aaa
+aaa http://example.com ￥￥￥ http://example.com aaa
+￥￥￥ http://example.com ￥￥￥ http://example.com aaa
+aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa
+￥￥￥ https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 ￥￥￥
+aaa http://test:password@example.com/some_path aaa
+brackets enclosed:
+aaa [http://example.de] aaa
+aaa (http://example.de) aaa
+aaa <http://example.de> aaa
+aaa {http://example.de} aaa
+ipv6 https://[::1]/with/some?vars=and&a#hash aaa
+stop at final '.': This is a sentence with an url to http://example.com.
+stop at final '?': Is this the right url http://example.com/?
+stop at final '?': Maybe this one http://example.com/with?arguments=false?
+`;
+  term.write(linkExamples.split('\n').join('\r\n'));
+}
+
+function loadTest(term: Terminal, addons: AddonCollection): void {
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 79);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
+    // Send ^C to get a new prompt
+    (term as any)._core._onData.fire('\x03');
+  });
+}
+
+function loadTestLongLines(term: Terminal, addons: AddonCollection): void {
+  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
+  const testData = [];
+  let byteCount = 0;
+  for (let i = 0; i < 50; i++) {
+    const count = 1 + Math.floor(Math.random() * 500);
+    byteCount += count + 2;
+    const data = new Uint8Array(count + 2);
+    data[0] = 0x0A; // \n
+    for (let i = 1; i < count + 1; i++) {
+      data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
+    }
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
+    data[data.length - 1] = 0x0D; // \r
+    testData.push(data);
+  }
+  const start = performance.now();
+  for (let i = 0; i < 1024 * 50; i++) {
+    for (const d of testData) {
+      term.write(d);
+    }
+  }
+  // Wait for all data to be parsed before evaluating time
+  term.write('', () => {
+    const time = Math.round(performance.now() - start);
+    const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
+    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
+    // Send ^C to get a new prompt
+    (term as any)._core._onData.fire('\x03');
+  });
+}
+
+function addDecoration(term: Terminal): void {
+  term.options['overviewRuler'] = { width: 14 };
+  const marker = term.registerMarker(1);
+  const decoration = term.registerDecoration({
+    marker,
+    backgroundColor: '#00FF00',
+    foregroundColor: '#00FE00',
+    overviewRulerOptions: { color: '#ef292980', position: 'left' }
+  });
+  decoration.onRender((e: HTMLElement) => {
+    e.style.right = '100%';
+    e.style.backgroundColor = '#ef292980';
+  });
+}
+
+function addOverviewRuler(term: Terminal): void {
+  term.options['overviewRuler'] = { width: 14 };
+  term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
+  term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
+  term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' } });
+  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
+}
+
+let decorationStressTestDecorations: IDisposable[] | undefined;
+function decorationStressTest(term: Terminal): void {
+  if (decorationStressTestDecorations) {
+    for (const d of decorationStressTestDecorations) {
+      d.dispose();
+    }
+    decorationStressTestDecorations = undefined;
+  } else {
+    const buffer = term.buffer.active;
+    const cursorY = buffer.baseY + buffer.cursorY;
+    decorationStressTestDecorations = [];
+    for (const x of [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]) {
+      for (let y = 0; y < term.buffer.active.length; y++) {
+        const cursorOffsetY = y - cursorY;
+        decorationStressTestDecorations.push(term.registerDecoration({
+          marker: term.registerMarker(cursorOffsetY),
+          x,
+          width: 4,
+          backgroundColor: '#FF0000',
+          overviewRulerOptions: { color: '#FF0000' }
+        }));
+      }
+    }
+  }
 }
