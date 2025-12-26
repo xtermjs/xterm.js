@@ -22,6 +22,7 @@ import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
 import { Emitter } from 'vs/base/common/event';
+import { XTERM_VERSION } from 'common/Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -256,6 +257,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'n' }, params => this.deviceStatus(params));
     this._parser.registerCsiHandler({ prefix: '?', final: 'n' }, params => this.deviceStatusPrivate(params));
     this._parser.registerCsiHandler({ intermediates: '!', final: 'p' }, params => this.softReset(params));
+    this._parser.registerCsiHandler({ prefix: '>', final: 'q' }, params => this.sendXtVersion(params));
     this._parser.registerCsiHandler({ intermediates: ' ', final: 'q' }, params => this.setCursorStyle(params));
     this._parser.registerCsiHandler({ final: 'r' }, params => this.setScrollRegion(params));
     this._parser.registerCsiHandler({ final: 's' }, params => this.saveCursor(params));
@@ -1718,6 +1720,22 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
     }
+    return true;
+  }
+
+  /**
+   * CSI > Ps q
+   *   Ps = 0  => Report xterm name and version (XTVERSION).
+   *
+   * The response is a DCS sequence identifying the version: DCS > | text ST
+   *
+   * @vt: #Y CSI XTVERSION "Report Xterm Version" "CSI > q" "Report the terminal name and version."
+   */
+  public sendXtVersion(params: IParams): boolean {
+    if (params.params[0] > 0) {
+      return true;
+    }
+    this._coreService.triggerDataEvent(`${C0.ESC}P>|xterm.js(${XTERM_VERSION})${C0.ESC}\\`);
     return true;
   }
 
