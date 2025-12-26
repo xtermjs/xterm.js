@@ -3,11 +3,19 @@
  * @license MIT
  */
 
+/// <reference path="../../../typings/xterm.d.ts"/>
+
 import type { IControlWindow } from '../controlBar';
+import type { Terminal } from '@xterm/xterm';
 
 export class TestWindow implements IControlWindow {
   public readonly id = 'test';
   public readonly label = 'Test';
+
+  private _printCjkButton: HTMLButtonElement;
+
+  constructor(private readonly _terminal: Terminal) {
+  }
 
   public build(container: HTMLElement): void {
     const heading = document.createElement('h3');
@@ -30,7 +38,7 @@ export class TestWindow implements IControlWindow {
     this._addDt(dl, 'Performance');
     this._addDdWithButton(dl, 'load-test', 'Load test', 'Write several MB of data to simulate a lot of data coming from the process');
     this._addDdWithButton(dl, 'load-test-long-lines', 'Load test (long lines)', 'Write several MB of data with long lines to simulate a lot of data coming from the process');
-    this._addDdWithButton(dl, 'print-cjk', 'CJK Unified Ideographs', 'Prints the 20977 characters from the CJK Unified Ideographs unicode block');
+    this._addDdWithButton(dl, 'print-cjk', 'CJK Unified Ideographs', 'Prints the 20977 characters from the CJK Unified Ideographs unicode block', () => addCjk(this._terminal));
     this._addDdWithButton(dl, 'print-cjk-sgr', 'CJK Unified Ideographs (random SGR)', 'Prints the 20977 characters from the CJK Unified Ideographs unicode block with randomized SGR attributes');
 
     // Styles section
@@ -113,7 +121,7 @@ export class TestWindow implements IControlWindow {
     dl.appendChild(dt);
   }
 
-  private _addDdWithButton(dl: HTMLElement, id: string, label: string, title: string): void {
+  private _addDdWithButton(dl: HTMLElement, id: string, label: string, title: string, handler?: () => void): void {
     const dd = document.createElement('dd');
     const button = document.createElement('button');
     button.id = id;
@@ -123,6 +131,7 @@ export class TestWindow implements IControlWindow {
     }
     dd.appendChild(button);
     dl.appendChild(dd);
+    button.addEventListener('click', handler);
   }
 
   private _addDdWithCheckbox(dl: HTMLElement, id: string, label: string, title: string, checked: boolean): void {
@@ -173,5 +182,15 @@ export class TestWindow implements IControlWindow {
       }
     `;
     container.appendChild(style);
+  }
+}
+
+/**
+ * Prints the 20977 characters from the CJK Unified Ideographs unicode block.
+ */
+export function addCjk(term: Terminal): void {
+  term.write('\n\n\r');
+  for (let i = 0x4E00; i < 0x9FCC; i++) {
+    term.write(String.fromCharCode(i));
   }
 }

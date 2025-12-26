@@ -67,7 +67,6 @@ let addonsWindow: AddonsWindow;
 let gpuWindow: GpuWindow;
 let optionsWindow: OptionsWindow;
 let styleWindow: StyleWindow;
-let testWindow: TestWindow;
 let vtWindow: VtWindow;
 
 type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
@@ -242,6 +241,8 @@ if (document.location.pathname === '/test') {
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
 } else {
+  const typedTerm = createTerminal();
+  
   controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
   addonsWindow = new AddonsWindow();
   controlBar.registerWindow(addonsWindow);
@@ -253,16 +254,49 @@ if (document.location.pathname === '/test') {
   gpuWindow = new GpuWindow();
   controlBar.registerWindow(gpuWindow, { afterId: 'addons', hidden: true, smallTab: true });
   optionsWindow = new OptionsWindow(updateTerminalSize, updateTerminalContainerBackground);
-  controlBar.registerWindow(optionsWindow);
-  styleWindow = new StyleWindow();
-  controlBar.registerWindow(styleWindow);
+  const styleWindow = controlBar.registerWindow(new StyleWindow());
   paddingElement = styleWindow.paddingElement;
-  testWindow = new TestWindow();
-  controlBar.registerWindow(testWindow);
+  controlBar.registerWindow(optionsWindow);
+  controlBar.registerWindow(new TestWindow(typedTerm));
   vtWindow = new VtWindow();
   controlBar.registerWindow(vtWindow);
+  vtWindow.initTerminal(term);
   controlBar.activateDefaultTab();
-  createTerminal();
+  
+  // TODO: Most of below should be encapsulated within windows
+  controlBar.setTabVisible('gpu', true);
+  gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
+  addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
+  addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
+  addons.webgl.instance.onRemoveTextureAtlasCanvas(e => gpuWindow.removeTextureAtlas(e));
+  
+  paddingElement.value = '0';
+  addDomListener(paddingElement, 'change', setPadding);
+  addDomListener(actionElements.findNext, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+      e.preventDefault();
+    }
+  });
+  addDomListener(actionElements.findNext, 'input', (e) => {
+    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+  });
+  addDomListener(actionElements.findPrevious, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+      e.preventDefault();
+    }
+  });
+  addDomListener(actionElements.findPrevious, 'input', (e) => {
+    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+  });
+  addDomListener(actionElements.findNext, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
+  });
+  addDomListener(actionElements.findPrevious, 'blur', (e) => {
+    addons.search.instance.clearActiveDecoration();
+  });
+
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
   document.getElementById('create-new-window').addEventListener('click', createNewWindowButtonHandler);
   document.getElementById('serialize').addEventListener('click', serializeButtonHandler);
@@ -271,7 +305,6 @@ if (document.location.pathname === '/test') {
   document.getElementById('custom-glyph-ranges').addEventListener('click', customGlyphRangesHandler);
   document.getElementById('load-test').addEventListener('click', loadTest);
   document.getElementById('load-test-long-lines').addEventListener('click', loadTestLongLines);
-  document.getElementById('print-cjk').addEventListener('click', addCjk);
   document.getElementById('print-cjk-sgr').addEventListener('click', addCjkRandomSgr);
   document.getElementById('powerline-symbol-test').addEventListener('click', powerlineSymbolTest);
   document.getElementById('underline-test').addEventListener('click', underlineTest);
@@ -290,7 +323,7 @@ if (document.location.pathname === '/test') {
   progressButtons();
 }
 
-function createTerminal(): void {
+function createTerminal(): Terminal {
   // Clean terminal
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
@@ -352,11 +385,6 @@ function createTerminal(): void {
     try {
       typedTerm.loadAddon(addons.webgl.instance);
       term.open(terminalContainer);
-      controlBar.setTabVisible('gpu', true);
-      gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
-      addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
-      addons.webgl.instance.onRemoveTextureAtlasCanvas(e => gpuWindow.removeTextureAtlas(e));
     } catch (e) {
       console.warn('error during loading webgl addon:', e);
       addons.webgl.instance.dispose();
@@ -370,7 +398,6 @@ function createTerminal(): void {
 
   term.focus();
   updateTerminalContainerBackground();
-  vtWindow?.initTerminal(term);
 
   const resizeObserver = new ResizeObserver(entries => {
     if (optionsWindow.autoResize) {
@@ -379,37 +406,9 @@ function createTerminal(): void {
   });
   resizeObserver.observe(terminalContainer);
 
-  addDomListener(paddingElement, 'change', setPadding);
-
-  addDomListener(actionElements.findNext, 'keydown', (e) => {
-    if (e.key === 'Enter') {
-      addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
-      e.preventDefault();
-    }
-  });
-  addDomListener(actionElements.findNext, 'input', (e) => {
-    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
-  });
-  addDomListener(actionElements.findPrevious, 'keydown', (e) => {
-    if (e.key === 'Enter') {
-      addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
-      e.preventDefault();
-    }
-  });
-  addDomListener(actionElements.findPrevious, 'input', (e) => {
-    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
-  });
-  addDomListener(actionElements.findNext, 'blur', (e) => {
-    addons.search.instance.clearActiveDecoration();
-  });
-  addDomListener(actionElements.findPrevious, 'blur', (e) => {
-    addons.search.instance.clearActiveDecoration();
-  });
-
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(async () => {
     optionsWindow.initOptions(term, addDomListener);
-    paddingElement.value = '0';
 
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
@@ -428,6 +427,8 @@ function createTerminal(): void {
       socket.onerror = runFakeTerminal;
     }
   }, 0);
+
+  return typedTerm;
 }
 
 function runRealTerminal(): void {
@@ -1161,16 +1162,6 @@ function addAnsiHyperlink(): void {
   term.writeln('║    ║');
   term.writeln('╚════╝');
   term.write('\x1b[3A\x1b[1C\x1b]8;;https://xtermjs.org\x07xter\x1b[B\x1b[4Dm.js\x1b]8;;\x07\x1b[2B\x1b[5D');
-}
-
-/**
- * Prints the 20977 characters from the CJK Unified Ideographs unicode block.
- */
-function addCjk(): void {
-  term.write('\n\n\r');
-  for (let i = 0x4E00; i < 0x9FCC; i++) {
-    term.write(String.fromCharCode(i));
-  }
 }
 
 /**

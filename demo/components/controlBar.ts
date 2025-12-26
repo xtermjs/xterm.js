@@ -146,7 +146,7 @@ export class ControlBar {
     }
   }
 
-  public registerWindow(window: IControlWindow, options?: { afterId?: string; hidden?: boolean; smallTab?: boolean }): void {
+  public registerWindow<T extends IControlWindow>(window: T, options?: { afterId?: string; hidden?: boolean; smallTab?: boolean }): T {
     // Create button
     const button = document.createElement('button');
     button.id = `${window.id}button`;
@@ -187,6 +187,8 @@ export class ControlBar {
     window.build(content);
 
     this._tabs.set(window.id, { button, content });
+
+    return window;
   }
 
   public setTabVisible(tabId: string, visible: boolean): void {
