@@ -126,8 +126,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public readonly onCursorMove = this._onCursorMove.event;
   private readonly _onKey = this._register(new Emitter<{ key: string, domEvent: KeyboardEvent }>());
   public readonly onKey = this._onKey.event;
-  private readonly _onRender = this._register(new Emitter<{ start: number, end: number }>());
-  public readonly onRender = this._onRender.event;
   private readonly _onSelectionChange = this._register(new Emitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
   private readonly _onTitleChange = this._register(new Emitter<string>());

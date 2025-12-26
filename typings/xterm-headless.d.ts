@@ -697,6 +697,17 @@ declare module '@xterm/headless' {
     onLineFeed: IEvent<void>;
 
     /**
+     * Adds an event listener for when rows are _requested_ to be rendered. The
+     * event value contains the start row and end rows of the rendered area
+     * (ranges from `0` to `Terminal.rows - 1`). This differs from the regular
+     * xterm.js in that it doesn't actually do any rendering but requests
+     * rendering from the outside. This is useful for implementing a custom
+     * renderer on top of xterm-headless.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onRender: IEvent<{ start: number, end: number }>;
+
+    /**
      * Adds an event listener for when data has been parsed by the terminal,
      * after {@link write} is called. This event is useful to listen for any
      * changes in the buffer.

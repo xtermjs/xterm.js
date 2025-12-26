@@ -202,6 +202,15 @@ describe('Headless API Tests', function (): void {
       strictEqual(callCount, 2);
     });
 
+    it('onRender', async () => {
+      const calls: { start: number, end: number }[] = [];
+      term.onRender(e => calls.push(e));
+      await writeSync('foo');
+      deepStrictEqual(calls, [{ start: 0, end: 0 }]);
+      await writeSync('\n\nbar');
+      deepStrictEqual(calls, [{ start: 0, end: 0 }, { start: 0, end: 2 }]);
+    });
+
     it('onScroll', async () => {
       term = new Terminal({ rows: 5 });
       const calls: number[] = [];
