@@ -30,7 +30,7 @@ const changedFiles = getChangedFilesInCommit('HEAD');
 // Always publish xterm, technically this isn't needed if
 // `changedFiles.some(e => e.search(/^addons\//)`, but it's here for convenience to get the right
 // peer dependencies for addons.
-const result = checkAndPublishPackage(path.resolve(__dirname, '..'), repoCommit);
+const result = checkAndPublishPackage(path.resolve(__dirname, '..'), repoCommit, undefined, true);
 const isStableRelease = result.isStableRelease;
 const peerDependencies = result.nextVersion.includes('beta') ? {
   '@xterm/xterm': `^${result.nextVersion}`,
@@ -67,7 +67,7 @@ if (isStableRelease) {
   updateWebsite();
 }
 
-function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
+function checkAndPublishPackage(packageDir, repoCommit, peerDependencies, updateVersionTs = false) {
   const packageJson = require(path.join(packageDir, 'package.json'));
 
   // Determine if this is a stable or beta release
@@ -77,6 +77,18 @@ function checkAndPublishPackage(packageDir, repoCommit, peerDependencies) {
   // Get the next version
   let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
   log(`Publishing version: ${nextVersion}`, 'green');
+
+  // Update Version.ts with the new version
+  if (updateVersionTs) {
+    const versionTsPath = path.join(packageDir, 'src/common/Version.ts');
+    const versionTsContent = fs.readFileSync(versionTsPath, 'utf8');
+    const updatedVersionTs = versionTsContent.replace(
+      /export const XTERM_VERSION = '[^']+';/,
+      `export const XTERM_VERSION = '${nextVersion}';`
+    );
+    fs.writeFileSync(versionTsPath, updatedVersionTs);
+    log(`Updated ${versionTsPath} to version ${nextVersion}`);
+  }
 
   // Set the version in package.json
   const packageJsonFile = path.join(packageDir, 'package.json');
