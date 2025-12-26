@@ -37,7 +37,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 
-import { writeUnicodeTable } from './unicodeTable';
+import { AddonCollection, type AddonType, type IDemoAddon } from './types';
 
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
@@ -69,44 +69,7 @@ let optionsWindow: OptionsWindow;
 let styleWindow: StyleWindow;
 let vtWindow: VtWindow;
 
-type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webLinks' | 'webgl' | 'ligatures';
-
-interface IDemoAddon<T extends AddonType> {
-  name: T;
-  canChange: boolean;
-  ctor: (
-    T extends 'attach' ? typeof AttachAddon :
-      T extends 'clipboard' ? typeof ClipboardAddon :
-        T extends 'fit' ? typeof FitAddon :
-          T extends 'image' ? typeof ImageAddonType :
-            T extends 'ligatures' ? typeof LigaturesAddon :
-              T extends 'progress' ? typeof ProgressAddon :
-                T extends 'search' ? typeof SearchAddon :
-                  T extends 'serialize' ? typeof SerializeAddon :
-                    T extends 'webLinks' ? typeof WebLinksAddon :
-                      T extends 'unicode11' ? typeof Unicode11Addon :
-                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                          T extends 'webgl' ? typeof WebglAddon :
-                            never
-  );
-  instance?: (
-    T extends 'attach' ? AttachAddon :
-      T extends 'clipboard' ? ClipboardAddon :
-        T extends 'fit' ? FitAddon :
-          T extends 'image' ? ImageAddonType :
-            T extends 'ligatures' ? LigaturesAddon :
-              T extends 'progress' ? ProgressAddon :
-                T extends 'search' ? SearchAddon :
-                  T extends 'serialize' ? SerializeAddon :
-                    T extends 'webLinks' ? WebLinksAddon :
-                      T extends 'unicode11' ? Unicode11Addon :
-                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
-                          T extends 'webgl' ? WebglAddon :
-                            never
-  );
-}
-
-const addons: { [T in AddonType]: IDemoAddon<T> } = {
+const addons: AddonCollection = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
@@ -257,7 +220,7 @@ if (document.location.pathname === '/test') {
   const styleWindow = controlBar.registerWindow(new StyleWindow());
   paddingElement = styleWindow.paddingElement;
   controlBar.registerWindow(optionsWindow);
-  controlBar.registerWindow(new TestWindow(typedTerm));
+  controlBar.registerWindow(new TestWindow(typedTerm, addons));
   vtWindow = new VtWindow();
   controlBar.registerWindow(vtWindow);
   vtWindow.initTerminal(term);

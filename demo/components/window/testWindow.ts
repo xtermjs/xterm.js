@@ -8,14 +8,16 @@
 import { writeUnicodeTable } from 'unicodeTable';
 import type { IControlWindow } from '../controlBar';
 import type { Terminal } from '@xterm/xterm';
+import type { AddonCollection } from 'types';
 
 export class TestWindow implements IControlWindow {
   public readonly id = 'test';
   public readonly label = 'Test';
 
-  private _printCjkButton: HTMLButtonElement;
-
-  constructor(private readonly _terminal: Terminal) {
+  constructor(
+    private readonly _terminal: Terminal,
+    private readonly _addons: AddonCollection
+  ) {
   }
 
   public build(container: HTMLElement): void {
