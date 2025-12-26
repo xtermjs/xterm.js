@@ -66,7 +66,6 @@ let controlBar: ControlBar;
 let addonsWindow: AddonsWindow;
 let gpuWindow: GpuWindow;
 let optionsWindow: OptionsWindow;
-let vtWindow: VtWindow;
 
 const addons: AddonCollection = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
@@ -206,26 +205,22 @@ if (document.location.pathname === '/test') {
   const typedTerm = createTerminal();
   
   controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
-  addonsWindow = new AddonsWindow(typedTerm, addons);
-  controlBar.registerWindow(addonsWindow);
+  addonsWindow = controlBar.registerWindow(new AddonsWindow(typedTerm, addons));
   actionElements = {
     findNext: addonsWindow.findNextInput,
     findPrevious: addonsWindow.findPreviousInput,
     findResults: addonsWindow.findResultsSpan
   };
-  gpuWindow = new GpuWindow(typedTerm, addons);
-  controlBar.registerWindow(gpuWindow, { afterId: 'addons', hidden: true, smallTab: true });
-  optionsWindow = new OptionsWindow(typedTerm, addons, { updateTerminalSize, updateTerminalContainerBackground });
+  gpuWindow = controlBar.registerWindow(new GpuWindow(typedTerm, addons), { afterId: 'addons', hidden: true, smallTab: true });
   const styleWindow = controlBar.registerWindow(new StyleWindow(typedTerm, addons));
-  paddingElement = styleWindow.paddingElement;
-  controlBar.registerWindow(optionsWindow);
+  optionsWindow = controlBar.registerWindow(new OptionsWindow(typedTerm, addons, { updateTerminalSize, updateTerminalContainerBackground }));
   controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }));
-  vtWindow = new VtWindow(typedTerm, addons);
-  controlBar.registerWindow(vtWindow);
-  vtWindow.initTerminal(term);
+  controlBar.registerWindow(new VtWindow(typedTerm, addons));
   controlBar.activateDefaultTab();
   
   // TODO: Most of below should be encapsulated within windows
+  paddingElement = styleWindow.paddingElement;
+  
   controlBar.setTabVisible('gpu', true);
   gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
   addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));

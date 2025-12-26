@@ -24,16 +24,6 @@ export class VtWindow extends BaseWindow implements IControlWindow {
     const vtContainer = document.createElement('div');
     vtContainer.id = 'vt-container';
     container.appendChild(vtContainer);
-  }
-
-  public initTerminal(term: Terminal): void {
-    this._term = term;
-    this._addVtButtons();
-  }
-
-  private _addVtButtons(): void {
-    const vtContainer = this._container.querySelector('#vt-container');
-    if (!vtContainer) return;
 
     const vtFragment = document.createDocumentFragment();
     const buttonSpecs: { [key: string]: { label: string; description: string; paramCount?: number } } = {
