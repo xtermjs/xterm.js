@@ -1,4 +1,12 @@
 {
+  "chat.tools.terminal.autoApprove": {
+    "npm run build": true,
+    "npm run esbuild": true,
+    "npm run lint": true,
+    "npm run lint-fix": true,
+    "npm run lint-api": true,
+    "npm run test-unit": true,
+  },
   "files.associations": {
     ".eslintrc.json.typings": "jsonc"
   },
