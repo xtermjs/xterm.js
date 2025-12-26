@@ -60,7 +60,6 @@ export class AddonsWindow extends BaseWindow implements IControlWindow {
 
     // ImageAddon section
     this._buildImageSection(container);
-    initImageAddonExposed(this._terminal, this._addons);
   }
 
   private _buildSearchSection(container: HTMLElement): void {
@@ -278,83 +277,4 @@ function htmlSerializeButtonHandler(term: Terminal, addons: AddonCollection): vo
   document.execCommand('copy');
   document.removeEventListener('copy', listener);
   document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
-}
-
-function initImageAddonExposed(term: Terminal, addons: AddonCollection): void {
-  const DEFAULT_OPTIONS: IImageAddonOptions = (addons.image.instance as any)._defaultOpts;
-  const limitStorageElement = document.querySelector<HTMLInputElement>('#image-storagelimit');
-  limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
-  addDomListener(term, limitStorageElement, 'change', () => {
-    try {
-      addons.image.instance.storageLimit = limitStorageElement.valueAsNumber;
-      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
-      console.log('changed storageLimit to', addons.image.instance.storageLimit);
-    } catch (e) {
-      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
-      console.log('storageLimit at', addons.image.instance.storageLimit);
-      throw e;
-    }
-  });
-  const showPlaceholderElement = document.querySelector<HTMLInputElement>('#image-showplaceholder');
-  showPlaceholderElement.checked = addons.image.instance.showPlaceholder;
-  addDomListener(term, showPlaceholderElement, 'change', () => {
-    addons.image.instance.showPlaceholder = showPlaceholderElement.checked;
-  });
-  const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
-  ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
-
-  const sixelDemo = (url: string) => () => fetch(url)
-    .then(resp => resp.arrayBuffer())
-    .then(buffer => {
-      term.write('\r\n');
-      term.write(new Uint8Array(buffer));
-    });
-
-  const iipDemo = (url: string) => () => fetch(url)
-    .then(resp => resp.arrayBuffer())
-    .then(buffer => {
-      const data = new Uint8Array(buffer);
-      let sdata = '';
-      for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
-      term.write('\r\n');
-      term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
-    });
-
-  document.getElementById('image-demo1').addEventListener('click',
-    sixelDemo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
-  document.getElementById('image-demo2').addEventListener('click',
-    sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
-  document.getElementById('image-demo3').addEventListener('click',
-    iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
-
-  // demo for image retrieval API
-  term.element.addEventListener('click', (ev: MouseEvent) => {
-    if (!ev.ctrlKey || !addons.image.instance) return;
-
-    // TODO...
-    // if (ev.altKey) {
-    //   const sel = term.getSelectionPosition();
-    //   if (sel) {
-    //     addons.image.instance
-    //       .extractCanvasAtBufferRange(term.getSelectionPosition())
-    //       ?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
-    //     return;
-    //   }
-    // }
-
-    const pos = (term as any)._core._mouseService!.getCoords(ev, (term as any)._core.screenElement!, term.cols, term.rows);
-    const x = pos[0] - 1;
-    const y = pos[1] - 1;
-    const canvas = ev.shiftKey
-      // ctrl+shift+click: get single tile
-      ? addons.image.instance.extractTileAtBufferCell(x, term.buffer.active.viewportY + y)
-      // ctrl+click: get original image
-      : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
-    canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
-  });
-}
-
-function addDomListener(term: Terminal, element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
-  element.addEventListener(type, handler);
-  (term as any)._core._register({ dispose: () => element.removeEventListener(type, handler) });
 }
