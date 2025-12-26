@@ -206,21 +206,21 @@ if (document.location.pathname === '/test') {
   const typedTerm = createTerminal();
   
   controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
-  addonsWindow = new AddonsWindow();
+  addonsWindow = new AddonsWindow(typedTerm, addons);
   controlBar.registerWindow(addonsWindow);
   actionElements = {
     findNext: addonsWindow.findNextInput,
     findPrevious: addonsWindow.findPreviousInput,
     findResults: addonsWindow.findResultsSpan
   };
-  gpuWindow = new GpuWindow();
+  gpuWindow = new GpuWindow(typedTerm, addons);
   controlBar.registerWindow(gpuWindow, { afterId: 'addons', hidden: true, smallTab: true });
-  optionsWindow = new OptionsWindow(updateTerminalSize, updateTerminalContainerBackground);
-  const styleWindow = controlBar.registerWindow(new StyleWindow());
+  optionsWindow = new OptionsWindow(typedTerm, addons, { updateTerminalSize, updateTerminalContainerBackground });
+  const styleWindow = controlBar.registerWindow(new StyleWindow(typedTerm, addons));
   paddingElement = styleWindow.paddingElement;
   controlBar.registerWindow(optionsWindow);
   controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }));
-  vtWindow = new VtWindow();
+  vtWindow = new VtWindow(typedTerm, addons);
   controlBar.registerWindow(vtWindow);
   vtWindow.initTerminal(term);
   controlBar.activateDefaultTab();
@@ -351,7 +351,7 @@ function createTerminal(): Terminal {
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(async () => {
-    optionsWindow.initOptions(term, addDomListener);
+    optionsWindow.initOptions(addDomListener);
 
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();

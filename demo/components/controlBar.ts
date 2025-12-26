@@ -3,6 +3,11 @@
  * @license MIT
  */
 
+/// <reference path="../../typings/xterm.d.ts"/>
+
+import type { Terminal } from '@xterm/xterm';
+import type { AddonCollection } from 'types';
+
 export interface ITabConfig {
   id: string;
   label: string;
@@ -12,6 +17,7 @@ export interface IControlWindow {
   readonly id: string;
   readonly label: string;
   build(container: HTMLElement): void;
+  setTerminal(terminal: Terminal): void;
 }
 
 export class ControlBar {

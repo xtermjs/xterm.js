@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import type { Terminal } from '@xterm/xterm';
+import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
 
-export class AddonsWindow implements IControlWindow {
+export class AddonsWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addons';
   public readonly label = 'Addons';
 

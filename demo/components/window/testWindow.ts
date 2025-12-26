@@ -7,21 +7,23 @@
 
 import { writeUnicodeTable } from 'unicodeTable';
 import type { IControlWindow } from '../controlBar';
+import { BaseWindow } from './baseWindow';
 import type { IDisposable, Terminal } from '@xterm/xterm';
 import type { AddonCollection } from 'types';
 
-export class TestWindow implements IControlWindow {
+export class TestWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'test';
   public readonly label = 'Test';
 
   constructor(
-    private readonly _terminal: Terminal,
-    private readonly _addons: AddonCollection,
+    terminal: Terminal,
+    addons: AddonCollection,
     private readonly _handlers: {
       disposeRecreateButtonHandler: () => void,
       createNewWindowButtonHandler: () => void,
     },
   ) {
+    super(terminal, addons);
   }
 
   public build(container: HTMLElement): void {
