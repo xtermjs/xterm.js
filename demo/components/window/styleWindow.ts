@@ -3,9 +3,10 @@
  * @license MIT
  */
 
+import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
 
-export class StyleWindow implements IControlWindow {
+export class StyleWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'style';
   public readonly label = 'Style';
 

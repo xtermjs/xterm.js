@@ -3,10 +3,15 @@
  * @license MIT
  */
 
-import type { Terminal } from '@xterm/xterm';
-import type { IControlWindow } from '../controlBar';
+/// <reference path="../../../typings/xterm.d.ts"/>
 
-export class AddonsWindow implements IControlWindow {
+import type { Terminal } from '@xterm/xterm';
+import { BaseWindow } from './baseWindow';
+import type { IControlWindow } from '../controlBar';
+import type { AddonCollection } from 'types';
+import type { IImageAddonOptions } from '@xterm/addon-image';
+
+export class AddonsWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addons';
   public readonly label = 'Addons';
 
@@ -141,6 +146,7 @@ export class AddonsWindow implements IControlWindow {
     const serializeBtn = document.createElement('button');
     serializeBtn.id = 'serialize';
     serializeBtn.textContent = 'Serialize the content of terminal';
+    serializeBtn.addEventListener('click', () => serializeButtonHandler(this._terminal, this._addons));
     wrapper.appendChild(serializeBtn);
 
     // Write to terminal checkbox
@@ -163,6 +169,7 @@ export class AddonsWindow implements IControlWindow {
     const htmlSerializeBtn = document.createElement('button');
     htmlSerializeBtn.id = 'htmlserialize';
     htmlSerializeBtn.textContent = 'Serialize the content of terminal in HTML';
+    htmlSerializeBtn.addEventListener('click', () => htmlSerializeButtonHandler(this._terminal, this._addons));
     wrapper.appendChild(htmlSerializeBtn);
 
     // HTML serialize result
@@ -243,4 +250,31 @@ export class AddonsWindow implements IControlWindow {
   public get findResultsSpan(): HTMLElement {
     return this._findResultsSpan;
   }
+}
+
+
+function serializeButtonHandler(term: Terminal, addons: AddonCollection): void {
+  const output = addons.serialize.instance.serialize();
+  const outputString = JSON.stringify(output);
+
+  document.getElementById('serialize-output').innerText = outputString;
+  if ((document.getElementById('write-to-terminal') as HTMLInputElement).checked) {
+    term.reset();
+    term.write(output);
+  }
+}
+
+function htmlSerializeButtonHandler(term: Terminal, addons: AddonCollection): void {
+  const output = addons.serialize.instance.serializeAsHTML();
+  document.getElementById('htmlserialize-output').innerText = output;
+
+  // Deprecated, but the most supported for now.
+  function listener(e: any): void {
+    e.clipboardData.setData('text/html', output);
+    e.preventDefault();
+  }
+  document.addEventListener('copy', listener);
+  document.execCommand('copy');
+  document.removeEventListener('copy', listener);
+  document.getElementById('htmlserialize-output-result').innerText = 'Copied to clipboard';
 }

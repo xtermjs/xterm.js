@@ -9,9 +9,13 @@ body {
     grid-template-rows: 24px 1fr;
 }
 
-/* Top banner */
+body:not(#test) {
+    height: initial;
+    display: initial;
+}
+
 #banner {
-    background: #2D2E2C;
+    background: #161716;
     display: flex;
     align-items: center;
     justify-content: space-between;

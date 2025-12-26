@@ -3,8 +3,10 @@
  * @license MIT
  */
 
+import { BaseWindow } from './baseWindow';
 import type { Terminal, ITheme } from '@xterm/xterm';
 import type { IControlWindow } from '../controlBar';
+import type { AddonCollection } from 'types';
 
 const xtermjsTheme: ITheme = {
   foreground: '#F8F8F8',
@@ -29,23 +31,23 @@ const xtermjsTheme: ITheme = {
   brightWhite: '#FFFFFF'
 };
 
-export class OptionsWindow implements IControlWindow {
+export class OptionsWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'options';
   public readonly label = 'Options';
 
   private _container: HTMLElement;
   private _optionsContainer: HTMLElement;
-  private _term: Terminal;
   private _autoResize: boolean = true;
-  private _updateTerminalSize: () => void;
-  private _updateTerminalContainerBackground: () => void;
 
   constructor(
-    updateTerminalSize: () => void,
-    updateTerminalContainerBackground: () => void
+    terminal: Terminal,
+    addons: AddonCollection,
+    private readonly _handlers: {
+      updateTerminalSize: () => void,
+      updateTerminalContainerBackground: () => void
+    },
   ) {
-    this._updateTerminalSize = updateTerminalSize;
-    this._updateTerminalContainerBackground = updateTerminalContainerBackground;
+    super(terminal, addons)
   }
 
   public build(container: HTMLElement): void {
@@ -64,9 +66,7 @@ export class OptionsWindow implements IControlWindow {
     container.appendChild(this._optionsContainer);
   }
 
-  public initOptions(term: Terminal, addDomListener: (el: HTMLElement, type: string, handler: (...args: any[]) => any) => void): void {
-    this._term = term;
-
+  public initOptions(addDomListener: (el: HTMLElement, type: string, handler: (...args: any[]) => any) => void): void {
     const blacklistedOptions = [
       'cancelEvents',
       'convertEol',
@@ -91,11 +91,11 @@ export class OptionsWindow implements IControlWindow {
       wordSeparator: null,
       colsRows: null
     };
-    const options = Object.getOwnPropertyNames(term.options);
+    const options = Object.getOwnPropertyNames(this._terminal.options);
     const booleanOptions: string[] = [];
     const numberOptions: string[] = [];
     options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
-      switch (typeof term.options[o]) {
+      switch (typeof this._terminal.options[o]) {
         case 'boolean':
           booleanOptions.push(o);
           break;
@@ -112,21 +112,21 @@ export class OptionsWindow implements IControlWindow {
     let html = '';
     html += '<div class="option-group">';
     booleanOptions.forEach(o => {
-      html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.options[o] ? 'checked' : ''}/> ${o}</label></div>`;
+      html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${this._terminal.options[o] ? 'checked' : ''}/> ${o}</label></div>`;
     });
     html += '</div><div class="option-group">';
     numberOptions.forEach(o => {
-      html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.options[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
+      html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${this._terminal.options[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
     });
     html += '</div><div class="option-group">';
     Object.keys(stringOptions).forEach(o => {
       if (o === 'colsRows') {
         html += `<div class="option"><label>size (<var>cols</var><code>x</code><var>rows</var> or <code>auto</code>) <input id="opt-${o}" type="text" value="auto"/></label></div>`;
       } else if (stringOptions[o]) {
-        const selectedOption = o === 'theme' ? 'xtermjs' : term.options[o];
+        const selectedOption = o === 'theme' ? 'xtermjs' : this._terminal.options[o];
         html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o]!.map(v => `<option ${v === selectedOption ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
       } else {
-        html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.options[o]}"/></label></div>`;
+        html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${this._terminal.options[o]}"/></label></div>`;
       }
     });
     html += '</div>';
@@ -138,7 +138,7 @@ export class OptionsWindow implements IControlWindow {
       const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
       addDomListener(input, 'change', () => {
         console.log('change', o, input.checked);
-        term.options[o] = input.checked;
+        this._terminal.options[o] = input.checked;
       });
     });
     numberOptions.forEach(o => {
@@ -146,16 +146,16 @@ export class OptionsWindow implements IControlWindow {
       addDomListener(input, 'change', () => {
         console.log('change', o, input.value);
         if (o === 'lineHeight') {
-          term.options.lineHeight = parseFloat(input.value);
+          this._terminal.options.lineHeight = parseFloat(input.value);
         } else if (o === 'scrollSensitivity') {
-          term.options.scrollSensitivity = parseFloat(input.value);
+          this._terminal.options.scrollSensitivity = parseFloat(input.value);
         } else if (o === 'scrollback') {
-          term.options.scrollback = parseInt(input.value);
-          setTimeout(() => this._updateTerminalSize(), 5);
+          this._terminal.options.scrollback = parseInt(input.value);
+          setTimeout(() => this._handlers.updateTerminalSize(), 5);
         } else {
-          term.options[o] = parseInt(input.value);
+          this._terminal.options[o] = parseInt(input.value);
         }
-        this._updateTerminalSize();
+        this._handlers.updateTerminalSize();
       });
     });
     Object.keys(stringOptions).forEach(o => {
@@ -167,11 +167,11 @@ export class OptionsWindow implements IControlWindow {
           const m = input.value.match(/^([0-9]+)x([0-9]+)$/);
           if (m) {
             this._autoResize = false;
-            term.resize(parseInt(m[1]), parseInt(m[2]));
+            this._terminal.resize(parseInt(m[1]), parseInt(m[2]));
           } else {
             this._autoResize = true;
             input.value = 'auto';
-            this._updateTerminalSize();
+            this._handlers.updateTerminalSize();
           }
         } else if (o === 'theme') {
           switch (input.value) {
@@ -232,9 +232,9 @@ export class OptionsWindow implements IControlWindow {
               break;
           }
         }
-        term.options[o] = value;
+        this._terminal.options[o] = value;
         if (o === 'theme') {
-          this._updateTerminalContainerBackground();
+          this._handlers.updateTerminalContainerBackground();
         }
       });
     });

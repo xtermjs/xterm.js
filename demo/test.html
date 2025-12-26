@@ -3,9 +3,21 @@
   <head>
     <title>xterm.js integration test fixture</title>
     <link rel="stylesheet" href="/xterm.css" />
-    <link rel="stylesheet" href="/style.css" />
+    <style>
+      body {
+        font-family: helvetica, sans-serif, arial;
+        font-size: 1em;
+        color: #111;
+      }
+
+      #terminal-container {
+        height: 60%;
+        margin: 0 auto;
+        padding: 2px;
+      }
+    </style>
   </head>
-  <body>
+  <body id="test">
     <div id="terminal-container"></div>
     <script src="/dist/client-bundle.js" defer></script>
   </body>

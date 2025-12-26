@@ -3,6 +3,11 @@
  * @license MIT
  */
 
+/// <reference path="../../typings/xterm.d.ts"/>
+
+import type { Terminal } from '@xterm/xterm';
+import type { AddonCollection } from 'types';
+
 export interface ITabConfig {
   id: string;
   label: string;
@@ -12,6 +17,7 @@ export interface IControlWindow {
   readonly id: string;
   readonly label: string;
   build(container: HTMLElement): void;
+  setTerminal(terminal: Terminal): void;
 }
 
 export class ControlBar {
@@ -146,7 +152,7 @@ export class ControlBar {
     }
   }
 
-  public registerWindow(window: IControlWindow, options?: { afterId?: string; hidden?: boolean; smallTab?: boolean }): void {
+  public registerWindow<T extends IControlWindow>(window: T, options?: { afterId?: string; hidden?: boolean; smallTab?: boolean }): T {
     // Create button
     const button = document.createElement('button');
     button.id = `${window.id}button`;
@@ -187,6 +193,8 @@ export class ControlBar {
     window.build(content);
 
     this._tabs.set(window.id, { button, content });
+
+    return window;
   }
 
   public setTabVisible(tabId: string, visible: boolean): void {

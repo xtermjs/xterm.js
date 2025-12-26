@@ -3,9 +3,10 @@
  * @license MIT
  */
 
+import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
 
-export class GpuWindow implements IControlWindow {
+export class GpuWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'gpu';
   public readonly label = 'GPU';
 
