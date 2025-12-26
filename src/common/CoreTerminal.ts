@@ -65,6 +65,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public readonly onData = this._onData.event;
   protected _onLineFeed = this._register(new Emitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
+  protected readonly _onRender = this._register(new Emitter<{ start: number, end: number }>());
+  public readonly onRender = this._onRender.event;
   private readonly _onResize = this._register(new Emitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
   protected readonly _onWriteParsed = this._register(new Emitter<void>());
@@ -124,7 +126,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Register input handler and handle/forward events
     this._inputHandler = this._register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));
     this._register(Event.forward(this._inputHandler.onLineFeed, this._onLineFeed));
-    this._register(this._inputHandler);
 
     // Setup listeners
     this._register(Event.forward(this._bufferService.onResize, this._onResize));
