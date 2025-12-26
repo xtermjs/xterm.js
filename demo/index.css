@@ -9,11 +9,6 @@ body {
     grid-template-rows: 24px 1fr;
 }
 
-body:not(#test) {
-    height: initial;
-    display: initial;
-}
-
 #banner {
     background: #161716;
     display: flex;
