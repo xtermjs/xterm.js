@@ -7,25 +7,6 @@
     "npm run lint-api": true,
     "npm run test-unit": true,
   },
-  "files.associations": {
-    ".eslintrc.json.typings": "jsonc"
-  },
-  "files.exclude": {
-    "**/.nyc_output": true
-  },
   "typescript.preferences.importModuleSpecifier": "non-relative",
-  "typescript.preferences.quoteStyle": "single",
-  "mochaExplorer.envPath": ".mocha.env",
-  "mochaExplorer.files": [
-    "out/**/*.test.js",
-    "addons/**/out/*.test.js",
-    "out-*/**/*.test.js",
-    "addons/**/out-*/*.test.js"
-  ],
-  "mochaExplorer.watch": [
-    "out/**/*.js",
-    "addons/**/out/*.js",
-    "out-*/**/*.js",
-    "addons/**/out-*/*.js"
-  ]
+  "typescript.preferences.quoteStyle": "single"
 }
