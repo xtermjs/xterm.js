@@ -135,6 +135,7 @@ export class DecorationManager extends Disposable {
         marker,
         x: range[1],
         width: range[2],
+        layer: isActiveResult ? 'top' : 'bottom',
         backgroundColor: isActiveResult ? options.activeMatchBackground : options.matchBackground,
         overviewRulerOptions: this._highlightedLines.has(marker.line) ? undefined : {
           color: isActiveResult ? options.activeMatchColorOverviewRuler : options.matchOverviewRuler,
