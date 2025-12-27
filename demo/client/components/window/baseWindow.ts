@@ -3,27 +3,25 @@
  * @license MIT
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import type { AddonCollection } from '../../types';
 import type { IControlWindow } from '../controlBar';
 import type { Terminal } from '@xterm/xterm';
 
 export abstract class BaseWindow implements IControlWindow {
-    protected get _terminal(): Terminal { return this.__terminal; }
+  protected get _terminal(): Terminal { return this._terminalPrivate; }
 
-    constructor(
-        private __terminal: Terminal,
-        protected readonly _addons: AddonCollection,
-    ) {
+  constructor(
+    private _terminalPrivate: Terminal,
+    protected readonly _addons: AddonCollection,
+  ) {
 
-    }
+  }
 
-    setTerminal(terminal: Terminal): void {
-        this.__terminal = terminal;
-    }
+  public setTerminal(terminal: Terminal): void {
+    this._terminalPrivate = terminal;
+  }
 
-    abstract id: string;
-    abstract label: string;
-    abstract build(container: HTMLElement): void;
+  public abstract id: string;
+  public abstract label: string;
+  public abstract build(container: HTMLElement): void;
 }

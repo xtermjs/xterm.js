@@ -5,19 +5,15 @@
  * This file is the entry point for browserify.
  */
 
-/// <reference path="../typings/xterm.d.ts"/>
-
-/* eslint-disable no-restricted-syntax */
-
 // HACK: Playwright/WebKit on Windows does not support WebAssembly https://stackoverflow.com/q/62311688/1156119
-import type { ImageAddon as ImageAddonType, IImageAddonOptions } from '@xterm/addon-image';
+import type { ImageAddon as ImageAddonType } from '@xterm/addon-image';
 let ImageAddon: typeof ImageAddonType | undefined; // eslint-disable-line @typescript-eslint/naming-convention
 if ('WebAssembly' in window) {
   const imageAddon = require('@xterm/addon-image');
   ImageAddon = imageAddon.ImageAddon;
 }
 
-import { Terminal, ITerminalOptions, type IDisposable, type ITheme } from '@xterm/xterm';
+import { Terminal, ITerminalOptions, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { AddonsWindow } from './components/window/addonsWindow';
 import { ControlBar } from './components/controlBar';
@@ -29,31 +25,30 @@ import { VtWindow } from './components/window/vtWindow';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
-import { ProgressAddon, IProgressState } from '@xterm/addon-progress';
+import { ProgressAddon } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
-
 import { AddonCollection, type AddonType, type IDemoAddon } from './types';
 
 export interface IWindowWithTerminal extends Window {
   term: typeof Terminal;
   Terminal: typeof Terminal;
-  AttachAddon?: typeof AttachAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ClipboardAddon?: typeof ClipboardAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  FitAddon?: typeof FitAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ImageAddon?: typeof ImageAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  ProgressAddon?: typeof ProgressAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  SearchAddon?: typeof SearchAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  SerializeAddon?: typeof SerializeAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  WebLinksAddon?: typeof WebLinksAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  WebglAddon?: typeof WebglAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  Unicode11Addon?: typeof Unicode11Addon; // eslint-disable-line @typescript-eslint/naming-convention
-  UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon; // eslint-disable-line @typescript-eslint/naming-convention
-  LigaturesAddon?: typeof LigaturesAddon; // eslint-disable-line @typescript-eslint/naming-convention
+  AttachAddon?: typeof AttachAddon;
+  ClipboardAddon?: typeof ClipboardAddon;
+  FitAddon?: typeof FitAddon;
+  ImageAddon?: typeof ImageAddon;
+  ProgressAddon?: typeof ProgressAddon;
+  SearchAddon?: typeof SearchAddon;
+  SerializeAddon?: typeof SerializeAddon;
+  WebLinksAddon?: typeof WebLinksAddon;
+  WebglAddon?: typeof WebglAddon;
+  Unicode11Addon?: typeof Unicode11Addon;
+  UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon;
+  LigaturesAddon?: typeof LigaturesAddon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -203,7 +198,7 @@ if (document.location.pathname === '/test') {
   window.WebglAddon = WebglAddon;
 } else {
   const typedTerm = createTerminal();
-  
+
   controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
   addonsWindow = controlBar.registerWindow(new AddonsWindow(typedTerm, addons));
   actionElements = {
@@ -217,7 +212,7 @@ if (document.location.pathname === '/test') {
   controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }));
   controlBar.registerWindow(new VtWindow(typedTerm, addons));
   controlBar.activateDefaultTab();
-  
+
   // TODO: Most of below should be encapsulated within windows
   paddingElement = styleWindow.paddingElement;
 
@@ -226,7 +221,7 @@ if (document.location.pathname === '/test') {
   addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
   addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
   addons.webgl.instance.onRemoveTextureAtlasCanvas(e => gpuWindow.removeTextureAtlas(e));
-  
+
   paddingElement.value = '0';
   addDomListener(paddingElement, 'change', setPadding);
   addDomListener(actionElements.findNext, 'keydown', (e) => {
@@ -576,7 +571,7 @@ function updateTerminalSize(): void {
     };
   }
   if (source instanceof HTMLCanvasElement) {
-    source = source.getContext('2d')?.getImageData(0, 0, source.width, source.height)!;
+    source = source.getContext('2d')!.getImageData(0, 0, source.width, source.height)!;
   }
   const canvas = document.createElement('canvas');
   canvas.width = source.width;

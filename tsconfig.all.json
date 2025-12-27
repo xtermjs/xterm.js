@@ -2,6 +2,7 @@
   "files": [],
   "include": [],
   "references": [
+    { "path": "./demo" },
     { "path": "./src/browser" },
     { "path": "./src/headless" },
     { "path": "./test/benchmark" },

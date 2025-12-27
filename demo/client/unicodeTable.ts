@@ -1,4 +1,7 @@
-/// <reference path="../typings/xterm.d.ts"/>
+/**
+ * Copyright (c) 2025 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
 
 import { Terminal } from '@xterm/xterm';
 

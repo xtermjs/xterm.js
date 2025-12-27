@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2021",
+    "outDir": "../out-demo/client",
     "rootDir": ".",
     "sourceMap": true,
     "baseUrl": ".",
@@ -21,7 +22,7 @@
     }
   },
   "include": [
-    "client.ts",
+    "./**/*",
     "../../typings/xterm.d.ts"
   ]
 }

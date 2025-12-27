@@ -3,13 +3,10 @@
  * @license MIT
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import type { Terminal } from '@xterm/xterm';
 import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
-import type { AddonCollection } from 'types';
-import type { IImageAddonOptions } from '@xterm/addon-image';
+import type { AddonCollection } from '../../types';
 
 export class AddonsWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addons';
