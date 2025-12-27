@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { getWindow } from 'vs/base/browser/dom';
 import { ICharSizeService, IRenderService, IMouseService } from './Services';
 import { getCoords, getCoordsRelativeToElement } from 'browser/input/Mouse';
 
@@ -30,7 +31,7 @@ export class MouseService implements IMouseService {
   }
 
   public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
-    const coords = getCoordsRelativeToElement(window, event, element);
+    const coords = getCoordsRelativeToElement(getWindow(element), event, element);
     if (!this._charSizeService.hasValidSize) {
       return undefined;
     }
