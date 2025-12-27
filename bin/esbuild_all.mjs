@@ -4,7 +4,7 @@ import { spawn } from "child_process";
 import { readdir } from "fs/promises";
 import { argv } from "process";
 
-/** @type {{cp: import("child_process").ChildProcessByStdio, name: string}[]} */
+/** @type {{cp: import("child_process").ChildProcessByStdio<any, any, any>, name: string}[]} */
 const jobs = [];
 
 // Core job

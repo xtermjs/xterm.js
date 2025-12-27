@@ -2,56 +2,60 @@
  * WARNING: This demo is a barebones implementation designed for development and evaluation
  * purposes only. It is definitely NOT production ready and does not aim to be so. Exposing the
  * demo to the public as is would introduce security risks for the host.
- **/
+ */
 
-// @ts-check
+import express from 'express';
+import expressWs from 'express-ws';
+import * as os from 'os';
+import * as pty from 'node-pty';
+import * as path from 'path';
+import type { IPty } from 'node-pty';
 
-const express = require('express');
-const expressWs = require('express-ws');
-const os = require('os');
-const pty = require('node-pty');
+interface IDisposable {
+  dispose(): void;
+}
 
 /** Whether to use binary transport. */
-const USE_BINARY = os.platform() !== "win32";
+const USE_BINARY = os.platform() !== 'win32';
 
-function startServer() {
+const demoRoot = path.join(__dirname, '..');
+
+function startServer(): void {
   const app = express();
   const appWs = expressWs(app).app;
 
-  const terminals = {};
-  const unsentOutput = {};
-  const temporaryDisposable = {};
+  const terminals: { [pid: number]: IPty } = {};
+  const unsentOutput: { [pid: number]: string } = {};
+  const temporaryDisposable: { [pid: number]: IDisposable } = {};
 
-  app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
+  app.use('/xterm.css', express.static(demoRoot + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => {
-    res.sendFile(__dirname + '/logo.png');
+    res.sendFile(demoRoot + '/logo.png');
   });
 
   app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(demoRoot + '/index.html');
   });
 
   app.get('/test', (req, res) => {
-    res.sendFile(__dirname + '/test.html');
+    res.sendFile(demoRoot + '/test.html');
   });
 
   app.get('/index.css', (req, res) => {
-    res.sendFile(__dirname + '/index.css');
+    res.sendFile(demoRoot + '/index.css');
   });
 
-  app.use('/dist', express.static(__dirname + '/dist'));
-  app.use('/src', express.static(__dirname + '/src'));
+  app.use('/dist', express.static(demoRoot + '/dist'));
+  app.use('/src', express.static(demoRoot + '/src'));
 
   app.post('/terminals', (req, res) => {
-    /** @type {{ [key: string]: string }} */
-    const env = {};
+    const env: { [key: string]: string } = {};
     for (const k of Object.keys(process.env)) {
       const v = process.env[k];
       if (v) {
         env[k] = v;
       }
     }
-    // const env = Object.assign({}, process.env);
     env['COLORTERM'] = 'truecolor';
     if (typeof req.query.cols !== 'string' || typeof req.query.rows !== 'string') {
       console.error({ req });
@@ -108,10 +112,10 @@ function startServer() {
     let userInput = false;
 
     // string message buffering
-    function buffer(socket, timeout, maxSize) {
+    function buffer(socket: typeof ws, timeout: number, maxSize: number) {
       let s = '';
-      let sender = null;
-      return (data) => {
+      let sender: ReturnType<typeof setTimeout> | null = null;
+      return (data: string) => {
         s += data;
         if (s.length > maxSize || userInput) {
           userInput = false;
@@ -131,11 +135,11 @@ function startServer() {
       };
     }
     // binary message buffering
-    function bufferUtf8(socket, timeout, maxSize) {
-      const chunks = [];
+    function bufferUtf8(socket: typeof ws, timeout: number, maxSize: number) {
+      const chunks: Buffer[] = [];
       let length = 0;
-      let sender = null;
-      return (data) => {
+      let sender: ReturnType<typeof setTimeout> | null = null;
+      return (data: Buffer) => {
         chunks.push(data);
         length += data.length;
         if (length > maxSize || userInput) {
@@ -164,13 +168,13 @@ function startServer() {
     // the problem and how to implement flow control at https://xtermjs.org/docs/guides/flowcontrol/
     term.onData(function(data) {
       try {
-        send(data);
-      } catch (ex) {
+        send(data as string & Buffer);
+      } catch {
         // The WebSocket is not open, ignore
       }
     });
     ws.on('message', function(msg) {
-      term.write(msg);
+      term.write(msg.toString());
       userInput = true;
     });
     ws.on('close', function () {
@@ -196,4 +200,4 @@ process.on('uncaughtException', (error) => {
   }
 });
 
-module.exports = startServer;
+export default startServer;

@@ -2,6 +2,7 @@
   "chat.tools.terminal.autoApprove": {
     "npm run build": true,
     "npm run esbuild": true,
+    "npm run dev": true,
     "npm run lint": true,
     "npm run lint-fix": true,
     "npm run lint-api": true,

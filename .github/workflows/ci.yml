@@ -199,8 +199,10 @@ jobs:
           unzip -o compressed-build.zip
         fi
         ls -R
-    - name: Build demo
-      run: npm run esbuild-demo
+    - name: Build demo client
+      run: npm run esbuild-demo-client
+    - name: Build demo server
+      run: npm run esbuild-demo-server
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-attach)
