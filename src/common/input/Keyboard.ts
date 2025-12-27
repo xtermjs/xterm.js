@@ -315,6 +315,8 @@ export function evaluateKeyboardEvent(
           result.key = String.fromCharCode(ev.keyCode - 51 + 27);
         } else if (ev.keyCode === 56) {
           result.key = C0.DEL;
+        } else if (ev.key === '/') {
+          result.key = C0.US; // https://github.com/xtermjs/xterm.js/issues/5457
         } else if (ev.keyCode === 219) {
           result.key = C0.ESC;
         } else if (ev.keyCode === 220) {
