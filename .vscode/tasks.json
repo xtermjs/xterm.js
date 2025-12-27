@@ -10,12 +10,21 @@
   "tasks": [
     // Compound tasks
     {
-      "label": "Development",
-      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo"],
+      "label": "dev",
+      "detail": "Runs all tasks required to run the demo in a single terminal using concurrently. This does not support problem matching.",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
       "group": {
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "dev (separate terminals)",
+      "detail": "Runs all tasks required to run the demo in separate terminals. This does support problem matching.",
+      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo"],
+      "group": "build"
     },
 
     // Demo
