@@ -26,7 +26,7 @@ const commonOptions = {
   target: 'es2021',
   sourcemap: true,
   treeShaking: true,
-  logLevel: 'debug',
+  logLevel: 'warning',
 };
 
 /** @type {esbuild.BuildOptions} */
