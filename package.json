@@ -29,6 +29,7 @@
   "scripts": {
     "setup": "npm run build",
     "start": "node demo/start",
+    "dev": "concurrently -k -p [{name}] -n tsc,esbuild,esbuild-demo,server -c blue,yellow,cyan,green \"npm:tsc-watch\" \"npm:esbuild-watch\" \"npm:esbuild-demo-watch\" \"npm:start\"",
     "build": "npm run tsc",
     "watch": "npm run tsc-watch",
     "tsc": "tsc -b ./tsconfig.all.json",
@@ -68,6 +69,7 @@
   },
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
+    "concurrently": "^9.1.2",
     "@playwright/test": "^1.37.1",
     "@stylistic/eslint-plugin": "^4.4.1",
     "@types/chai": "^4.2.22",
