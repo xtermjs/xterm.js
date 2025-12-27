@@ -18,10 +18,6 @@ export class AddonSerializeWindow extends BaseWindow implements IControlWindow {
   private _writeToTerminalCheckbox: HTMLInputElement;
 
   public build(container: HTMLElement): void {
-    const h4 = document.createElement('h4');
-    h4.textContent = 'SerializeAddon';
-    container.appendChild(h4);
-
     const wrapper = document.createElement('div');
 
     // Serialize button

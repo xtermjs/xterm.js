@@ -13,11 +13,6 @@ export class AddonsWindow extends BaseWindow implements IControlWindow {
   private _addonsContainer: HTMLElement;
 
   public build(container: HTMLElement): void {
-    // Heading
-    const heading = document.createElement('h3');
-    heading.textContent = 'Addons';
-    container.appendChild(heading);
-
     // Description
     const description = document.createElement('p');
     description.textContent = 'Addons can be loaded and unloaded on a particular terminal to extend its functionality.';
