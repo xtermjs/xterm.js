@@ -533,6 +533,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
+      // Soft hyphen's (U+00AD) behavior is ambiguous and differs across terminals. We opt to treat
+      // it as a zero-width hint to text layout engines and simply ignore it.
+      if (code === 0xAD) {
+        continue;
+      }
+
       // get charset replacement character
       // charset is only defined for ASCII, therefore we only
       // search for an replacement char if code < 127
