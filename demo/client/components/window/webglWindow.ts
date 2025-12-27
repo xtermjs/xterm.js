@@ -13,10 +13,6 @@ export class WebglWindow extends BaseWindow implements IControlWindow {
   private _textureAtlasContainer: HTMLElement;
 
   public build(container: HTMLElement): void {
-    const heading = document.createElement('h3');
-    heading.textContent = 'WebGL';
-    container.appendChild(heading);
-
     const zoomCheckbox = document.createElement('input');
     zoomCheckbox.type = 'checkbox';
     zoomCheckbox.id = 'texture-atlas-zoom';

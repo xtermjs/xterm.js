@@ -13,10 +13,6 @@ export class StyleWindow extends BaseWindow implements IControlWindow {
   private _paddingElement: HTMLInputElement;
 
   public build(container: HTMLElement): void {
-    const heading = document.createElement('h3');
-    heading.textContent = 'Style';
-    container.appendChild(heading);
-
     const wrapper = document.createElement('div');
     wrapper.style.display = 'inline-block';
     wrapper.style.marginRight = '16px';

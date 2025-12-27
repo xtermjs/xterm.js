@@ -15,17 +15,6 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
   private _imageOptionsTextarea: HTMLTextAreaElement;
 
   public build(container: HTMLElement): void {
-    const h4 = document.createElement('h4');
-    h4.textContent = 'Image Addon';
-    container.appendChild(h4);
-
-    const details = document.createElement('details');
-    const summary = document.createElement('summary');
-    summary.textContent = 'image addon settings';
-    details.appendChild(summary);
-
-    const wrapper = document.createElement('div');
-
     // Storage limit
     const storageLimitLabel = document.createElement('label');
     storageLimitLabel.textContent = 'Storage Limit (in MB) ';
@@ -33,8 +22,8 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     this._imageStorageLimitInput.type = 'number';
     this._imageStorageLimitInput.id = 'image-storagelimit';
     storageLimitLabel.appendChild(this._imageStorageLimitInput);
-    wrapper.appendChild(storageLimitLabel);
-    wrapper.appendChild(document.createElement('br'));
+    container.appendChild(storageLimitLabel);
+    container.appendChild(document.createElement('br'));
 
     // Show placeholder
     const placeholderLabel = document.createElement('label');
@@ -43,9 +32,9 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     this._imageShowPlaceholderCheckbox.type = 'checkbox';
     this._imageShowPlaceholderCheckbox.id = 'image-showplaceholder';
     placeholderLabel.appendChild(this._imageShowPlaceholderCheckbox);
-    wrapper.appendChild(placeholderLabel);
-    wrapper.appendChild(document.createElement('br'));
-    wrapper.appendChild(document.createElement('br'));
+    container.appendChild(placeholderLabel);
+    container.appendChild(document.createElement('br'));
+    container.appendChild(document.createElement('br'));
 
     // Ctor options
     const optionsLabel = document.createElement('label');
@@ -56,10 +45,7 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     this._imageOptionsTextarea.cols = 40;
     this._imageOptionsTextarea.rows = 12;
     optionsLabel.appendChild(this._imageOptionsTextarea);
-    wrapper.appendChild(optionsLabel);
-
-    details.appendChild(wrapper);
-    container.appendChild(details);
+    container.appendChild(optionsLabel);
   }
 
   public get imageStorageLimitInput(): HTMLInputElement {

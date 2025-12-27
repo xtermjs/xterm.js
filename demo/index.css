@@ -14,8 +14,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 10px;
-    border-bottom: 1px solid #0005;
+    padding: 0 15px;
 }
 .banner-title {
     color: #5DA5D5;
@@ -50,6 +49,11 @@ body {
 p {
     font-size: 0.9em;
     font-style: italic
+    
+}
+dl:first-child,
+p:first-child {
+    margin-top: 0;
 }
 
 #option-container {
@@ -94,12 +98,15 @@ div:first-of-type.grid {
 #sidebar {
     position: fixed;
     top: 24px;
-    right: 0;
+    right: 15px; /* Room for scrollbar */
     width: 400px;
+    max-width: calc(100vw - 30px); /* Don't exceed screen width minus scrollbar */
     height: 500px;
-    background: #fff;
-    border: 1px solid #ccc;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    background: #161716;
+    color: #fff;
+    border: 1px solid #333;
+    border-top: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
     z-index: 1000;
     overflow: auto;
     flex: none;
@@ -155,7 +162,6 @@ div:first-of-type.grid {
 .tabContent {
     display: none;
     padding: 6px 12px;
-    border: 1px solid #ccc;
     border-top: none;
 }
 

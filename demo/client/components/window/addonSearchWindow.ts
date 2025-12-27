@@ -19,10 +19,6 @@ export class AddonSearchWindow extends BaseWindow implements IControlWindow {
   private _highlightAllMatchesCheckbox: HTMLInputElement;
 
   public build(container: HTMLElement): void {
-    const h4 = document.createElement('h4');
-    h4.textContent = 'SearchAddon';
-    container.appendChild(h4);
-
     const wrapper = document.createElement('div');
     wrapper.style.display = 'flex';
     wrapper.style.flexDirection = 'column';

@@ -17,10 +17,6 @@ export class VtWindow extends BaseWindow implements IControlWindow {
   public build(container: HTMLElement): void {
     this._container = container;
 
-    const heading = document.createElement('h3');
-    heading.textContent = 'VT';
-    container.appendChild(heading);
-
     const vtContainer = document.createElement('div');
     vtContainer.id = 'vt-container';
     container.appendChild(vtContainer);

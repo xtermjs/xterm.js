@@ -53,10 +53,6 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
   public build(container: HTMLElement): void {
     this._container = container;
 
-    const heading = document.createElement('h3');
-    heading.textContent = 'Options';
-    container.appendChild(heading);
-
     const description = document.createElement('p');
     description.innerHTML = 'These options can be set in the <code>Terminal</code> constructor or by using the <code>Terminal.options</code> property.';
     container.appendChild(description);

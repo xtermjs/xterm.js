@@ -29,10 +29,6 @@ export class TestWindow extends BaseWindow implements IControlWindow {
   }
 
   public build(container: HTMLElement): void {
-    const heading = document.createElement('h3');
-    heading.textContent = 'Test';
-    container.appendChild(heading);
-
     const wrapper = document.createElement('div');
     wrapper.style.display = 'inline-block';
     wrapper.style.marginRight = '16px';
