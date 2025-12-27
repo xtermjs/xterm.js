@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "rootDir": ".",
+    "sourceMap": true
+  },
+  "include": [
+    "server.ts"
+  ]
+}

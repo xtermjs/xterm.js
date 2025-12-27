@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
+/// <reference path="../../../../typings/xterm.d.ts"/>
 
-import { writeUnicodeTable } from 'unicodeTable';
+import { writeUnicodeTable } from '../../unicodeTable';
 import type { IControlWindow } from '../controlBar';
 import { BaseWindow } from './baseWindow';
 import type { IDisposable, Terminal } from '@xterm/xterm';
