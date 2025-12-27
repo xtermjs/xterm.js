@@ -35,8 +35,8 @@ function startServer() {
     res.sendFile(__dirname + '/test.html');
   });
 
-  app.get('/style.css', (req, res) => {
-    res.sendFile(__dirname + '/style.css');
+  app.get('/index.css', (req, res) => {
+    res.sendFile(__dirname + '/index.css');
   });
 
   app.use('/dist', express.static(__dirname + '/dist'));
