@@ -123,6 +123,7 @@ export class Terminal extends Disposable implements ITerminalApi {
       originMode: m.origin,
       reverseWraparoundMode: m.reverseWraparound,
       sendFocusMode: m.sendFocus,
+      synchronizedOutputMode: m.synchronizedOutput,
       wraparoundMode: m.wraparound
     };
   }

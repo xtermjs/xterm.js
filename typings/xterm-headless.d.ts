@@ -64,14 +64,6 @@ declare module '@xterm/headless' {
     cursorWidth?: number;
 
     /**
-     * Whether to draw custom glyphs for block element and box drawing
-     * characters instead of using the font. This should typically result in
-     * better rendering with continuous lines, even when line height and letter
-     * spacing is used. Note that this doesn't work with the DOM renderer which
-     * renders all characters using the font. The default is true.
-     */
-    customGlyphs?: boolean;
-    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -80,13 +72,6 @@ declare module '@xterm/headless' {
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
-
-    /**
-     * The modifier key hold to multiply scroll speed.
-     * @deprecated This option is no longer available and will always use alt.
-     * Setting this will be ignored.
-     */
-    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The spacing in whole pixels between characters.
@@ -213,25 +198,6 @@ declare module '@xterm/headless' {
      * The color theme of the terminal.
      */
     theme?: ITheme;
-
-    /**
-     * Whether "Windows mode" is enabled. Because Windows backends winpty and
-     * conpty operate by doing line wrapping on their side, xterm.js does not
-     * have access to wrapped lines. When Windows mode is enabled the following
-     * changes will be in effect:
-     *
-     * - Reflow is disabled.
-     * - Lines are assumed to be wrapped if the last character of the line is
-     *   not whitespace.
-     *
-     * When using conpty on Windows 11 version >= 21376, it is recommended to
-     * disable this because native text wrapping sequences are output correctly
-     * thanks to https://github.com/microsoft/terminal/issues/405
-     *
-     * @deprecated Use {@link windowsPty}. This value will be ignored if
-     * windowsPty is set.
-     */
-    windowsMode?: boolean;
 
     /**
      * Compatibility information when the pty is known to be hosted on Windows.
@@ -729,6 +695,17 @@ declare module '@xterm/headless' {
      * @returns an `IDisposable` to stop listening.
      */
     onLineFeed: IEvent<void>;
+
+    /**
+     * Adds an event listener for when rows are _requested_ to be rendered. The
+     * event value contains the start row and end rows of the rendered area
+     * (ranges from `0` to `Terminal.rows - 1`). This differs from the regular
+     * xterm.js in that it doesn't actually do any rendering but requests
+     * rendering from the outside. This is useful for implementing a custom
+     * renderer on top of xterm-headless.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onRender: IEvent<{ start: number, end: number }>;
 
     /**
      * Adds an event listener for when data has been parsed by the terminal,
@@ -1265,7 +1242,7 @@ declare module '@xterm/headless' {
      * @param id Specifies the function identifier under which the callback
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
      * default charset selection.
-     * @param callback The function to handle the sequence.
+     * @param handler The function to handle the sequence.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.
@@ -1370,6 +1347,13 @@ declare module '@xterm/headless' {
      * Send FocusIn/FocusOut events: `CSI ? 1 0 0 4 h`
      */
     readonly sendFocusMode: boolean;
+    /**
+     * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
+     *
+     * When enabled, output is buffered and only rendered when the mode is
+     * disabled, allowing for atomic screen updates without tearing.
+     */
+    readonly synchronizedOutputMode: boolean;
     /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */

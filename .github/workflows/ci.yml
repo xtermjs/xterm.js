@@ -12,17 +12,17 @@ jobs:
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js 18.x
+    - name: Use Node.js 22.x
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
-        cache: 'yarn'
+        node-version: 22.x
+        cache: 'npm'
     - name: Install dependencies
-      run: yarn --frozen-lockfile
+      run: npm ci
     - name: Setup and run tsc
-      run: yarn setup
+      run: npm run setup
     - name: Esbuild
-      run: yarn esbuild
+      run: npm run esbuild
     - name: Zip artifacts
       run: |
         zip -r compressed-build \
@@ -77,21 +77,20 @@ jobs:
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js 18.x
+    - name: Use Node.js 22.x
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
-        cache: 'yarn'
+        node-version: 22.x
+        cache: 'npm'
     - name: Install dependencies
       run: |
-        yarn --frozen-lockfile
-        yarn install-addons
+        npm ci
     - name: Lint code
       env:
         NODE_OPTIONS: --max_old_space_size=4096
-      run: yarn lint
+      run: npm run lint
     - name: Lint API
-      run: yarn lint-api
+      run: npm run lint-api
 
   test-unit-coverage:
     needs: build
@@ -99,15 +98,14 @@ jobs:
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js 18.x
+    - name: Use Node.js 22.x
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
-        cache: 'yarn'
+        node-version: 22.x
+        cache: 'npm'
     - name: Install dependencies
       run: |
-        yarn --frozen-lockfile
-        yarn install-addons
+        npm ci
     - uses: actions/download-artifact@v4
       with:
         name: build-artifacts
@@ -122,7 +120,7 @@ jobs:
         ls -R
     - name: Unit test coverage
       run: |
-        yarn test-unit-coverage --forbid-only
+        npm run test-unit-coverage --forbid-only
         EXIT_CODE=$?
         ./node_modules/.bin/nyc report --reporter=cobertura
         exit $EXIT_CODE
@@ -131,7 +129,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [22]
         runs-on: [ubuntu, macos, windows]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
@@ -140,11 +138,10 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}.x
-        cache: 'yarn'
+        cache: 'npm'
     - name: Install dependencies
       run: |
-        yarn --frozen-lockfile
-        yarn install-addons
+        npm ci
     - name: Wait for build job
       uses: NathanFirmo/wait-for-other-job@v1.1.1
       with:
@@ -163,13 +160,13 @@ jobs:
         fi
         ls -R
     - name: Unit tests
-      run: yarn test-unit --forbid-only
+      run: npm run test-unit --forbid-only
 
   test-integration:
     timeout-minutes: 20
     strategy:
       matrix:
-        node-version: [18] # just one as integration tests are about testing in browser
+        node-version: [22] # just one as integration tests are about testing in browser
         runs-on: [ubuntu-22.04] # macos is flaky
         browser: [chromium, firefox, webkit]
     runs-on: ${{ matrix.runs-on }}
@@ -179,11 +176,10 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}.x
-        cache: 'yarn'
+        cache: 'npm'
     - name: Install dependencies
       run: |
-        yarn --frozen-lockfile
-        yarn install-addons
+        npm ci
     - name: Install playwright
       run: npx playwright install --with-deps ${{ matrix.browser }}
     - name: Wait for build job
@@ -203,50 +199,51 @@ jobs:
           unzip -o compressed-build.zip
         fi
         ls -R
-    - name: Build demo
-      run: yarn esbuild-demo
+    - name: Build demo client
+      run: npm run esbuild-demo-client
+    - name: Build demo server
+      run: npm run esbuild-demo-server
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-attach)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-attach
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-attach
     - name: Integration tests (addon-clipboard)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-clipboard
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-clipboard
     - name: Integration tests (addon-fit)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
     - name: Integration tests (addon-image)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
     - name: Integration tests (addon-progress)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
     - name: Integration tests (addon-search)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
     - name: Integration tests (addon-serialize)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-serialize
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-serialize
     - name: Integration tests (addon-unicode-graphemes)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
     - name: Integration tests (addon-unicode11)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
     - name: Integration tests (addon-web-links)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
     - name: Integration tests (addon-webgl)
-      run: yarn test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
 
   release-dry-run:
     needs: build
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18]
+        node-version: [22]
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}.x
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}.x
-        cache: 'yarn'
+        cache: 'npm'
     - name: Install dependencies
       run: |
-        yarn --frozen-lockfile
-        yarn install-addons
+        npm ci
     - name: Install playwright
       run: npx playwright install
     - uses: actions/download-artifact@v4
@@ -263,7 +260,7 @@ jobs:
         ls -R
     - name: Package headless
       run: |
-        yarn package-headless
+        npm run package-headless
         node ./bin/package_headless.js
     - name: Publish to npm (dry run)
       run: node ./bin/publish.js --dry

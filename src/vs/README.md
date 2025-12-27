@@ -16,7 +16,7 @@ node ./bin/vs_base_find_unused.js
 
 The last step is to do a once over of the resulting bundled xterm.js file to ensure it isn't too large:
 
-1. Run `yarn esbuild`
+1. Run `npm run esbuild`
 2. Open up `xterm.mjs`
 3. Search for `src/vs/base/`
 

@@ -1582,6 +1582,28 @@ describe('InputHandler', () => {
       assert.equal(bufferService.cols, 132);
     });
   });
+  describe('XTVERSION (CSI > q, CSI > 0 q)', () => {
+    it('should report xterm.js version', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>q');
+      assert.strictEqual(stack.length, 1);
+      assert.ok(stack[0].match(/^\x1bP>\|xterm\.js\(\d+\.\d+\.\d+(-beta\.\d+)?\)\x1b\\/));
+    });
+    it('should report xterm.js version for CSI > 0 q', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>0q');
+      assert.strictEqual(stack.length, 1);
+      assert.ok(stack[0].match(/^\x1bP>\|xterm\.js\(\d+\.\d+\.\d+(-beta\.\d+)?\)\x1b\\/));
+    });
+    it('should not report for CSI > 1 q', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>1q');
+      assert.strictEqual(stack.length, 0);
+    });
+  });
   describe('should correctly reset cells taken by wide chars', () => {
     beforeEach(async () => {
       bufferService.resize(10, 5);
@@ -2314,7 +2336,7 @@ describe('InputHandler', () => {
     });
     it('DEC privates with set/reset semantic', async () => {
       // initially reset
-      const reset = [1, 6, 9, 12, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004];
+      const reset = [1, 6, 9, 12, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004, 2026];
       for (const mode of reset) {
         await inputHandler.parseP(`\x1b[?${mode}$p`);
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // initial reset

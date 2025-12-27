@@ -102,6 +102,7 @@ export class MockCoreService implements ICoreService {
     origin: false,
     reverseWraparound: false,
     sendFocus: false,
+    synchronizedOutput: false,
     wraparound: true
   };
   public onData: Event<string> = new Emitter<string>().event;

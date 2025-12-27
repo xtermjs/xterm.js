@@ -22,6 +22,7 @@ import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
 import { Emitter } from 'vs/base/common/event';
+import { XTERM_VERSION } from 'common/Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -256,6 +257,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'n' }, params => this.deviceStatus(params));
     this._parser.registerCsiHandler({ prefix: '?', final: 'n' }, params => this.deviceStatusPrivate(params));
     this._parser.registerCsiHandler({ intermediates: '!', final: 'p' }, params => this.softReset(params));
+    this._parser.registerCsiHandler({ prefix: '>', final: 'q' }, params => this.sendXtVersion(params));
     this._parser.registerCsiHandler({ intermediates: ' ', final: 'q' }, params => this.setCursorStyle(params));
     this._parser.registerCsiHandler({ final: 'r' }, params => this.setScrollRegion(params));
     this._parser.registerCsiHandler({ final: 's' }, params => this.saveCursor(params));
@@ -1722,6 +1724,22 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * CSI > Ps q
+   *   Ps = 0  => Report xterm name and version (XTVERSION).
+   *
+   * The response is a DCS sequence identifying the version: DCS > | text ST
+   *
+   * @vt: #Y CSI XTVERSION "Report Xterm Version" "CSI > q" "Report the terminal name and version."
+   */
+  public sendXtVersion(params: IParams): boolean {
+    if (params.params[0] > 0) {
+      return true;
+    }
+    this._coreService.triggerDataEvent(`${C0.ESC}P>|xterm.js(${XTERM_VERSION})${C0.ESC}\\`);
+    return true;
+  }
+
+  /**
    * Evaluate if the current terminal is the given argument.
    * @param term The terminal name to evaluate
    */
@@ -1969,6 +1987,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
           break;
+        case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
+          this._coreService.decPrivateModes.synchronizedOutput = true;
+          break;
       }
     }
     return true;
@@ -2197,6 +2218,10 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;
           break;
+        case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
+          this._coreService.decPrivateModes.synchronizedOutput = false;
+          this._onRequestRefreshRows.fire(undefined);
+          break;
       }
     }
     return true;
@@ -2291,6 +2316,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 1048) return f(p, V.SET); // xterm always returns SET here
     if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
     if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
+    if (p === 2026) return f(p, b2v(dm.synchronizedOutput));
     return f(p, V.NOT_RECOGNIZED);
   }
 

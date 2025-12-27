@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ESNext",
+    "lib": [
+      "es2021"
+    ],
+    "rootDir": ".",
+    "outDir": "../out-esbuild-test",
+    "sourceMap": true,
+    "removeComments": true,
+    "baseUrl": ".",
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha",
+      "../../../node_modules/@types/node"
+    ]
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ]
+}

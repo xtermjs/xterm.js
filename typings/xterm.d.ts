@@ -78,15 +78,6 @@ declare module '@xterm/xterm' {
     cursorInactiveStyle?: 'outline' | 'block' | 'bar' | 'underline' | 'none';
 
     /**
-     * Whether to draw custom glyphs for block element and box drawing
-     * characters instead of using the font. This should typically result in
-     * better rendering with continuous lines, even when line height and letter
-     * spacing is used. Note that this doesn't work with the DOM renderer which
-     * renders all characters using the font. The default is true.
-     */
-    customGlyphs?: boolean;
-
-    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -106,13 +97,6 @@ declare module '@xterm/xterm' {
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
-
-    /**
-     * The modifier key hold to multiply scroll speed.
-     * @deprecated This option is no longer available and will always use alt.
-     * Setting this will be ignored.
-     */
-    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The scroll speed multiplier used for fast scrolling when `Alt` is held.
@@ -292,25 +276,6 @@ declare module '@xterm/xterm' {
     theme?: ITheme;
 
     /**
-     * Whether "Windows mode" is enabled. Because Windows backends winpty and
-     * conpty operate by doing line wrapping on their side, xterm.js does not
-     * have access to wrapped lines. When Windows mode is enabled the following
-     * changes will be in effect:
-     *
-     * - Reflow is disabled.
-     * - Lines are assumed to be wrapped if the last character of the line is
-     *   not whitespace.
-     *
-     * When using conpty on Windows 11 version >= 21376, it is recommended to
-     * disable this because native text wrapping sequences are output correctly
-     * thanks to https://github.com/microsoft/terminal/issues/405
-     *
-     * @deprecated Use {@link windowsPty}. This value will be ignored if
-     * windowsPty is set.
-     */
-    windowsMode?: boolean;
-
-    /**
      * Compatibility information when the pty is known to be hosted on Windows.
      * Setting this will turn on certain heuristics/workarounds depending on the
      * values:
@@ -386,17 +351,17 @@ declare module '@xterm/xterm' {
     selectionInactiveBackground?: string;
     /**
      * The scrollbar slider background color. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 20% opacity.
+     * {@link ITheme.foreground} with 20% opacity.
      */
     scrollbarSliderBackground?: string;
     /**
      * The scrollbar slider background color when hovered. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 40% opacity.
+     * {@link ITheme.foreground} with 40% opacity.
      */
     scrollbarSliderHoverBackground?: string;
     /**
      * The scrollbar slider background color when clicked. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 50% opacity.
+     * {@link ITheme.foreground} with 50% opacity.
      */
     scrollbarSliderActiveBackground?: string;
     /**
@@ -1865,7 +1830,7 @@ declare module '@xterm/xterm' {
      * @param id Specifies the function identifier under which the callback gets
      * registered, e.g. {intermediates: '%' final: 'G'} for default charset
      * selection.
-     * @param callback The function to handle the sequence.
+     * @param handler The function to handle the sequence.
      * Return `true` if the sequence was handled, `false` if the parser should
      * try a previous handler. The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
@@ -1968,6 +1933,13 @@ declare module '@xterm/xterm' {
      * Send FocusIn/FocusOut events: `CSI ? 1 0 0 4 h`
      */
     readonly sendFocusMode: boolean;
+    /**
+     * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
+     *
+     * When enabled, output is buffered and only rendered when the mode is
+     * disabled, allowing for atomic screen updates without tearing.
+     */
+    readonly synchronizedOutputMode: boolean;
     /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */

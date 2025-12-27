@@ -12,6 +12,7 @@ const config = {
   isProd: argv.includes('--prod'),
   isWatch: argv.includes('--watch'),
   isDemoClient: argv.includes('--demo-client'),
+  isDemoServer: argv.includes('--demo-server'),
   isHeadless: argv.includes('--headless'),
   addon: argv.find(e => e.startsWith('--addon='))?.replace(/^--addon=/, ''),
 };
@@ -25,7 +26,7 @@ const commonOptions = {
   target: 'es2021',
   sourcemap: true,
   treeShaking: true,
-  logLevel: 'debug',
+  logLevel: 'warning',
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -126,7 +127,7 @@ if (config.addon) {
 } else if (config.isDemoClient) {
   bundleConfig = {
     ...bundleConfig,
-    entryPoints: [`demo/client.ts`],
+    entryPoints: [`demo/client/client.ts`],
     outfile: 'demo/dist/client-bundle.js',
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
     alias: {
@@ -152,6 +153,19 @@ if (config.addon) {
       "@xterm/addon-ligatures": "./addons/addon-ligatures/out-esbuild/LigaturesAddon",
     }
   }
+  skipOut = true;
+  skipOutTest = true;
+} else if (config.isDemoServer) {
+  bundleConfig = {
+    ...bundleConfig,
+    entryPoints: [`demo/server/server.ts`],
+    outfile: 'demo/dist/server-bundle.js',
+    format: 'cjs',
+    platform: 'node',
+    external: ['node-pty'],
+  }
+  skipOut = true;
+  skipOutTest = true;
 } else if (config.isHeadless) {
   bundleConfig = {
     ...bundleConfig,

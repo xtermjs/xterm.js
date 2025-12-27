@@ -4,61 +4,62 @@
  */
 
 import * as path from 'path';
-import * as sinon from 'sinon';
 import { assert } from 'chai';
-import * as fontFinder from 'font-finder';
 
-import * as ligatureSupport from '.';
+// Use require to get a mutable module object (ESM imports create read-only bindings)
+const fontFinder = require('font-finder');
+const ligatureSupport = require('../out-esbuild/index');
+
+const originalList = fontFinder.list;
 
 describe('LigaturesAddon', () => {
-  let onRefresh: sinon.SinonStub;
+  let onRefresh: { called: boolean, callCount: number, (...args: any[]): void };
   let term: MockTerminal;
 
-  // -> forms a ligature in Fira Code and Iosevka, but www only forms a ligature
-  // in Fira Code
   const input = 'a -> b www c';
 
   before(() => {
-    sinon.stub(fontFinder, 'list').returns(Promise.resolve({
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+    fontFinder.list = () => Promise.resolve({
       'Fira Code': [{
         path: path.join(__dirname, '../fonts/firaCode.otf'),
         style: fontFinder.Style.Regular,
         type: fontFinder.Type.Monospace,
         weight: 400
       }],
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       'Iosevka': [{
         path: path.join(__dirname, '../fonts/iosevka.ttf'),
         style: fontFinder.Style.Regular,
         type: fontFinder.Type.Monospace,
         weight: 400
       }],
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       'Nonexistant Font': [{
         path: path.join(__dirname, '../fonts/nonexistant.ttf'),
         style: fontFinder.Style.Regular,
         type: fontFinder.Type.Monospace,
         weight: 400
       }]
-    } as fontFinder.FontList));
+    });
+  });
+
+  after(() => {
+    fontFinder.list = originalList;
   });
 
   beforeEach(() => {
-    onRefresh = sinon.stub();
+    onRefresh = Object.assign((..._args: any[]) => { onRefresh.called = true; onRefresh.callCount++; }, { called: false, callCount: 0 });
     term = new MockTerminal(onRefresh);
     ligatureSupport.enableLigatures(term as any);
   });
 
   it('registers itself correctly', () => {
-    const term = new MockTerminal(sinon.spy());
+    const term = new MockTerminal(() => {});
     assert.isUndefined(term.joiner);
     ligatureSupport.enableLigatures(term as any);
     assert.isFunction(term.joiner);
   });
 
   it('registers itself correctly when called directly', () => {
-    const term = new MockTerminal(sinon.spy());
+    const term = new MockTerminal(() => {});
     assert.isUndefined(term.joiner);
     ligatureSupport.enableLigatures(term as any);
     assert.isFunction(term.joiner);
@@ -72,14 +73,14 @@ describe('LigaturesAddon', () => {
     term.options.fontFamily = 'Nonexistant Font, monospace';
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
-    assert.isTrue(onRefresh.notCalled);
+    assert.strictEqual(onRefresh.callCount, 0);
   });
 
   it('returns nothing if the font is not present on the system', async () => {
     term.options.fontFamily = 'notinstalled';
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
-    assert.isTrue(onRefresh.notCalled);
+    assert.strictEqual(onRefresh.callCount, 0);
     assert.deepEqual(term.joiner!(input), []);
   });
 
@@ -87,7 +88,7 @@ describe('LigaturesAddon', () => {
     term.options.fontFamily = 'monospace';
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
-    assert.isTrue(onRefresh.notCalled);
+    assert.strictEqual(onRefresh.callCount, 0);
     assert.deepEqual(term.joiner!(input), []);
   });
 
@@ -95,7 +96,7 @@ describe('LigaturesAddon', () => {
     term.options.fontFamily = '';
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
-    assert.isTrue(onRefresh.notCalled);
+    assert.strictEqual(onRefresh.callCount, 0);
     assert.deepEqual(term.joiner!(input), []);
   });
 
@@ -103,7 +104,7 @@ describe('LigaturesAddon', () => {
     term.options.fontFamily = {} as any;
     assert.deepEqual(term.joiner!(input), []);
     await delay(500);
-    assert.isTrue(onRefresh.notCalled);
+    assert.strictEqual(onRefresh.callCount, 0);
   });
 });
 

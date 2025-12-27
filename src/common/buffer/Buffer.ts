@@ -181,7 +181,7 @@ export class Buffer implements IBuffer {
       if (this._rows < newRows) {
         for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
-            if (this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
+            if (this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
               this.lines.push(new BufferLine(newCols, nullCell));
@@ -298,7 +298,7 @@ export class Buffer implements IBuffer {
     if (windowsPty && windowsPty.buildNumber) {
       return this._hasScrollback && windowsPty.backend === 'conpty' && windowsPty.buildNumber >= 21376;
     }
-    return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
+    return this._hasScrollback;
   }
 
   private _reflow(newCols: number, newRows: number): void {

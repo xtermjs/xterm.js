@@ -3,6 +3,7 @@ node_modules/
 .lock-wscript
 lib/
 out/
+out-demo/
 out-test/
 out-esbuild/
 out-esbuild-test/
@@ -18,7 +19,8 @@ npm-debug.log
 .env
 build/
 .DS_Store
-package-lock.json
+yarn.lock
+test-results/
 
 # Keep bundled code out of Git
 dist/

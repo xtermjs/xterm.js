@@ -77,6 +77,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onCursorMove(): Event<void> { return this._core.onCursorMove; }
   public get onData(): Event<string> { return this._core.onData; }
   public get onLineFeed(): Event<void> { return this._core.onLineFeed; }
+  public get onRender(): Event<{ start: number, end: number }> { return this._core.onRender; }
   public get onResize(): Event<{ cols: number, rows: number }> { return this._core.onResize; }
   public get onScroll(): Event<number> { return this._core.onScroll; }
   public get onTitleChange(): Event<string> { return this._core.onTitleChange; }
@@ -124,6 +125,7 @@ export class Terminal extends Disposable implements ITerminalApi {
       originMode: m.origin,
       reverseWraparoundMode: m.reverseWraparound,
       sendFocusMode: m.sendFocus,
+      synchronizedOutputMode: m.synchronizedOutput,
       wraparoundMode: m.wraparound
     };
   }
