@@ -1418,7 +1418,7 @@ async function getFrameDetails(ctx: ITestContext): Promise<{ cols: number, rows:
   frameDetails = {
     cols: await ctx.proxy.cols,
     rows: await ctx.proxy.rows,
-    decoded: (await decodePng(buffer, { force32: true })).image
+    decoded: (await decodePng(new Uint8Array(buffer), { force32: true })).image
   };
   return frameDetails;
 }
