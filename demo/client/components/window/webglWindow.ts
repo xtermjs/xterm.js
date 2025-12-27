@@ -6,9 +6,9 @@
 import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
 
-export class GpuWindow extends BaseWindow implements IControlWindow {
-  public readonly id = 'gpu';
-  public readonly label = 'WebGL';
+export class WebglWindow extends BaseWindow implements IControlWindow {
+  public readonly id = 'addon-webgl';
+  public readonly label = 'webgl';
 
   private _textureAtlasContainer: HTMLElement;
 
