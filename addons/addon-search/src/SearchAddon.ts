@@ -5,7 +5,7 @@
 
 import type { Terminal, IDisposable, ITerminalAddon } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi, ISearchOptions, ISearchAddonOptions, ISearchResultChangeEvent } from '@xterm/addon-search';
-import { Event } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { disposableTimeout } from 'vs/base/common/async';
 import { SearchLineCache } from './SearchLineCache';
@@ -41,6 +41,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _engine: SearchEngine | undefined;
   private _decorationManager: DecorationManager | undefined;
   private _resultTracker = this._register(new SearchResultTracker());
+
+  private readonly _onAfterSearch = this._register(new Emitter<void>());
+  public readonly onAfterSearch = this._onAfterSearch.event;
+  private readonly _onBeforeSearch = this._register(new Emitter<void>());
+  public readonly onBeforeSearch = this._onBeforeSearch.event;
 
   public get onDidChangeResults(): Event<ISearchResultChangeEvent> {
     return this._resultTracker.onDidChangeResults;
@@ -98,6 +103,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       throw new Error('Cannot use addon until it has been loaded');
     }
 
+    this._onBeforeSearch.fire();
+
     this._state.lastSearchOptions = searchOptions;
 
     if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
@@ -107,6 +114,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const found = this._findNextAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._state.cachedSearchTerm = term;
+
+    this._onAfterSearch.fire();
 
     return found;
   }
@@ -173,6 +182,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       throw new Error('Cannot use addon until it has been loaded');
     }
 
+    this._onBeforeSearch.fire();
+
     this._state.lastSearchOptions = searchOptions;
 
     if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
@@ -182,6 +193,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const found = this._findPreviousAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._state.cachedSearchTerm = term;
+
+    this._onAfterSearch.fire();
 
     return found;
   }
