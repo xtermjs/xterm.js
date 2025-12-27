@@ -99,7 +99,7 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
     }
 
     const canvas = ImageRenderer.createCanvas(undefined, width, height);
-    canvas.getContext('2d')?.putImageData(new ImageData(this._dec.data8, width, height), 0, 0);
+    canvas.getContext('2d')?.putImageData(new ImageData(this._dec.data8 as Uint8ClampedArray<ArrayBuffer>, width, height), 0, 0);
     if (this._dec.memoryUsage > MEM_PERMA_LIMIT) {
       this._dec.release();
     }
