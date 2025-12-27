@@ -2,10 +2,10 @@
  * WARNING: This demo is a barebones implementation designed for development and evaluation
  * purposes only. It is definitely NOT production ready and does not aim to be so. Exposing the
  * demo to the public as is would introduce security risks for the host.
- **/
+ */
 
-import * as express from 'express';
-import * as expressWs from 'express-ws';
+import express from 'express';
+import expressWs from 'express-ws';
 import * as os from 'os';
 import * as pty from 'node-pty';
 import * as path from 'path';
@@ -16,7 +16,7 @@ interface IDisposable {
 }
 
 /** Whether to use binary transport. */
-const USE_BINARY = os.platform() !== "win32";
+const USE_BINARY = os.platform() !== 'win32';
 
 const demoRoot = path.join(__dirname, '..');
 
@@ -169,7 +169,7 @@ function startServer(): void {
     term.onData(function(data) {
       try {
         send(data as string & Buffer);
-      } catch (ex) {
+      } catch {
         // The WebSocket is not open, ignore
       }
     });

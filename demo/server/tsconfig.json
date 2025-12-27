@@ -3,7 +3,8 @@
     "module": "commonjs",
     "target": "es2021",
     "rootDir": ".",
-    "sourceMap": true
+    "sourceMap": true,
+    "esModuleInterop": true
   },
   "include": [
     "server.ts"

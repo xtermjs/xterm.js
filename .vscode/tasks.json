@@ -23,7 +23,7 @@
     {
       "label": "dev (separate terminals)",
       "detail": "Runs all tasks required to run the demo in separate terminals. This does support problem matching.",
-      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo"],
+      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo-client", "esbuild-demo-server"],
       "group": "build"
     },
 
@@ -64,9 +64,21 @@
       }
     },
     {
-      "label": "esbuild-demo",
+      "label": "esbuild-demo-client",
       "type": "npm",
-      "script": "esbuild-demo-watch",
+      "script": "esbuild-demo-client-watch",
+      "dependsOn": ["esbuild", "tsc"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$esbuild-watch",
+      "presentation": {
+        "group": "xterm-demo"
+      }
+    },
+    {
+      "label": "esbuild-demo-server",
+      "type": "npm",
+      "script": "esbuild-demo-server-watch",
       "dependsOn": ["esbuild", "tsc"],
       "group": "build",
       "isBackground": true,
