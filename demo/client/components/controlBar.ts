@@ -3,10 +3,7 @@
  * @license MIT
  */
 
-/// <reference path="../../typings/xterm.d.ts"/>
-
 import type { Terminal } from '@xterm/xterm';
-import type { AddonCollection } from 'types';
 
 export interface ITabConfig {
   id: string;
@@ -28,7 +25,7 @@ export class ControlBar {
   private _resizeMode: 'none' | 'horizontal' | 'vertical' | 'corner' = 'none';
 
   private readonly _tabContainer: HTMLElement;
-  private readonly _tabs: Map<string, { button: HTMLButtonElement; content: HTMLElement }> = new Map();
+  private readonly _tabs: Map<string, { button: HTMLButtonElement, content: HTMLElement }> = new Map();
   private _activeTabId: string | null = null;
 
   constructor(sidebar: HTMLElement, tabContainer: HTMLElement, tabs: ITabConfig[]) {
@@ -152,7 +149,7 @@ export class ControlBar {
     }
   }
 
-  public registerWindow<T extends IControlWindow>(window: T, options?: { afterId?: string; hidden?: boolean; smallTab?: boolean }): T {
+  public registerWindow<T extends IControlWindow>(window: T, options?: { afterId?: string, hidden?: boolean, smallTab?: boolean }): T {
     // Create button
     const button = document.createElement('button');
     button.id = `${window.id}button`;

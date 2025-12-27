@@ -2,11 +2,12 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2021",
+    "outDir": "../out-demo/server",
     "rootDir": ".",
     "sourceMap": true,
     "esModuleInterop": true
   },
   "include": [
-    "server.ts"
+    "./**/*",
   ]
 }

@@ -3,6 +3,7 @@ node_modules/
 .lock-wscript
 lib/
 out/
+out-demo/
 out-test/
 out-esbuild/
 out-esbuild-test/
