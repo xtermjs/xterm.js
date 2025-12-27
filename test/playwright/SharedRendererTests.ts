@@ -11,7 +11,6 @@ import { notDeepStrictEqual } from 'node:assert';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
-  skipCanvasExceptions?: boolean;
   skipDomExceptions?: boolean;
 }
 
@@ -935,7 +934,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionBackground', async () => {
+  test.describe('selectionBackground', async () => {
     test('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
@@ -956,7 +955,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionInactiveBackground', async () => {
+  test.describe('selectionInactiveBackground', async () => {
     test('should render the the inactive selection when not focused', async () => {
       const theme: ITheme = {
         selectionBackground: '#FF000080',
@@ -982,7 +981,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions || ctx.skipDomExceptions ? test.describe.skip : test.describe)('selection blending', () => {
+  ctx.skipDomExceptions ? test.describe.skip : test.describe('selection blending', () => {
     test('background', async () => {
       const theme: ITheme = {
         red: '#CC0000',
@@ -1037,7 +1036,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionForeground', () => {
+  test.describe('selectionForeground', () => {
     test('transparent background inverse', async () => {
       const theme: ITheme = {
         selectionForeground: '#ff0000'
@@ -1117,7 +1116,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
-    (ctx.skipCanvasExceptions ? test.skip : test)('backgroundColor should ignore inverse (only bg on decoration)', async () => {
+    test('backgroundColor should ignore inverse (only bg on decoration)', async () => {
       const data = `\x1b[7m■ \x1b[0m`;
       await ctx.value.proxy.write( data);
       await ctx.value.page.evaluate(`
@@ -1134,7 +1133,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 
   test.describe('regression tests', () => {
-    (ctx.skipCanvasExceptions ? test.skip : test)('#4736: inactive selection background should replace regular cell background color', async () => {
+    test('#4736: inactive selection background should replace regular cell background color', async () => {
       const theme: ITheme = {
         selectionBackground: '#FF0000',
         selectionInactiveBackground: '#0000FF'
@@ -1184,7 +1183,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
     });
-    (ctx.skipCanvasExceptions ? test.skip : test)('#4759: minimum contrast ratio should be respected on selected inverse text', async () => {
+    test('#4759: minimum contrast ratio should be respected on selected inverse text', async () => {
       const theme: ITheme = {
         foreground: '#777777',
         background: '#555555',
