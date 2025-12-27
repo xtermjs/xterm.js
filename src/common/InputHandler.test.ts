@@ -619,6 +619,11 @@ describe('InputHandler', () => {
       await inputHandler.parseP('￥￥￥');
       assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
     });
+    it('should strip soft hyphens (U+00AD)', async () => {
+      await inputHandler.parseP('Soft\xadhy\xadphen');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'Softhyphen');
+      assert.strictEqual(bufferService.buffer.x, 10);
+    });
   });
 
   describe('alt screen', () => {
