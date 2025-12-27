@@ -149,7 +149,7 @@ export class ControlBar {
     }
   }
 
-  public registerWindow<T extends IControlWindow>(window: T, options?: { afterId?: string, hidden?: boolean, smallTab?: boolean }): T {
+  public registerWindow<T extends IControlWindow>(window: T, options?: { afterId?: string, hidden?: boolean, italics?: boolean }): T {
     // Create button
     const button = document.createElement('button');
     button.id = `${window.id}button`;
@@ -158,8 +158,8 @@ export class ControlBar {
     button.addEventListener('click', (e) => this._openSection(e, window.id));
 
     // Apply small tab styling
-    if (options?.smallTab) {
-      button.style.fontSize = '0.85em';
+    if (options?.italics) {
+      button.style.fontStyle = 'italic';
     }
 
     // Insert after specified tab or append at end

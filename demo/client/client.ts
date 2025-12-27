@@ -15,9 +15,12 @@ if ('WebAssembly' in window) {
 
 import { Terminal, ITerminalOptions, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
+import { AddonImageWindow } from './components/window/addonImageWindow';
+import { AddonSearchWindow } from './components/window/addonSearchWindow';
+import { AddonSerializeWindow } from './components/window/addonSerializeWindow';
 import { AddonsWindow } from './components/window/addonsWindow';
 import { ControlBar } from './components/controlBar';
-import { GpuWindow } from './components/window/gpuWindow';
+import { WebglWindow } from './components/window/webglWindow';
 import { OptionsWindow } from './components/window/optionsWindow';
 import { StyleWindow } from './components/window/styleWindow';
 import { TestWindow } from './components/window/testWindow';
@@ -59,7 +62,8 @@ let socket;
 let pid;
 let controlBar: ControlBar;
 let addonsWindow: AddonsWindow;
-let gpuWindow: GpuWindow;
+let addonSearchWindow: AddonSearchWindow;
+let addonWebglWindow: WebglWindow;
 let optionsWindow: OptionsWindow;
 
 const addons: AddonCollection = {
@@ -200,27 +204,33 @@ if (document.location.pathname === '/test') {
   const typedTerm = createTerminal();
 
   controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
-  addonsWindow = controlBar.registerWindow(new AddonsWindow(typedTerm, addons));
-  actionElements = {
-    findNext: addonsWindow.findNextInput,
-    findPrevious: addonsWindow.findPreviousInput,
-    findResults: addonsWindow.findResultsSpan
-  };
-  gpuWindow = controlBar.registerWindow(new GpuWindow(typedTerm, addons), { afterId: 'addons', hidden: true, smallTab: true });
-  const styleWindow = controlBar.registerWindow(new StyleWindow(typedTerm, addons));
   optionsWindow = controlBar.registerWindow(new OptionsWindow(typedTerm, addons, { updateTerminalSize, updateTerminalContainerBackground }));
-  controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }));
+  const styleWindow = controlBar.registerWindow(new StyleWindow(typedTerm, addons));
   controlBar.registerWindow(new VtWindow(typedTerm, addons));
+  addonsWindow = controlBar.registerWindow(new AddonsWindow(typedTerm, addons));
+  addonSearchWindow = controlBar.registerWindow(new AddonSearchWindow(typedTerm, addons), { afterId: 'addons', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonSerializeWindow(typedTerm, addons), { afterId: 'addon-search', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonImageWindow(typedTerm, addons), { afterId: 'addon-serialize', hidden: true, italics: true });
+  addonWebglWindow = controlBar.registerWindow(new WebglWindow(typedTerm, addons), { afterId: 'addon-image', hidden: true, italics: true });
+  controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }), { afterId: 'options' });
+  actionElements = {
+    findNext: addonSearchWindow.findNextInput,
+    findPrevious: addonSearchWindow.findPreviousInput,
+    findResults: addonSearchWindow.findResultsSpan
+  };
   controlBar.activateDefaultTab();
 
   // TODO: Most of below should be encapsulated within windows
   paddingElement = styleWindow.paddingElement;
 
-  controlBar.setTabVisible('gpu', true);
-  gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
-  addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
-  addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
-  addons.webgl.instance.onRemoveTextureAtlasCanvas(e => gpuWindow.removeTextureAtlas(e));
+  controlBar.setTabVisible('addon-webgl', true);
+  controlBar.setTabVisible('addon-search', true);
+  controlBar.setTabVisible('addon-serialize', true);
+  controlBar.setTabVisible('addon-image', true);
+  addonWebglWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
+  addons.webgl.instance.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
+  addons.webgl.instance.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
+  addons.webgl.instance.onRemoveTextureAtlasCanvas(e => addonWebglWindow.removeTextureAtlas(e));
 
   paddingElement.value = '0';
   addDomListener(paddingElement, 'change', setPadding);
@@ -409,15 +419,15 @@ function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
 
   function postInitWebgl(): void {
-    controlBar.setTabVisible('gpu', true);
+    controlBar.setTabVisible('addon-webgl', true);
     setTimeout(() => {
-      gpuWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => gpuWindow.setTextureAtlas(e));
-      addons.webgl.instance.onAddTextureAtlasCanvas(e => gpuWindow.appendTextureAtlas(e));
+      addonWebglWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
+      addons.webgl.instance.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
+      addons.webgl.instance.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
     }, 500);
   }
   function preDisposeWebgl(): void {
-    controlBar.setTabVisible('gpu', false);
+    controlBar.setTabVisible('addon-webgl', false);
     if (addons.webgl.instance.textureAtlas) {
       addons.webgl.instance.textureAtlas.remove();
     }
@@ -448,7 +458,9 @@ function initAddons(term: Terminal): void {
             ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
             : new addons[name].ctor();
           term.loadAddon(addon.instance);
+          controlBar.setTabVisible('addon-image', true);
         } else {
+          controlBar.setTabVisible('addon-image', false);
           addon.instance!.dispose();
           addon.instance = undefined;
         }
@@ -466,7 +478,10 @@ function initAddons(term: Terminal): void {
           } else if (name === 'unicodeGraphemes') {
             term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
+            controlBar.setTabVisible('addon-search', true);
             addons[name].instance.onDidChangeResults(e => updateFindResults(e));
+          } else if (name === 'serialize') {
+            controlBar.setTabVisible('addon-serialize', true);
           }
         }
         catch {
@@ -479,6 +494,10 @@ function initAddons(term: Terminal): void {
           preDisposeWebgl();
         } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
+        } else if (name === 'search') {
+          controlBar.setTabVisible('addon-search', false);
+        } else if (name === 'serialize') {
+          controlBar.setTabVisible('addon-serialize', false);
         }
         addon.instance!.dispose();
         addon.instance = undefined;
