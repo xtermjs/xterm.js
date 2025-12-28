@@ -2373,7 +2373,7 @@ describe('InputHandler', () => {
       await inputHandler.parseP(`\x1b[?${mode}h`);
       await inputHandler.parseP(`\x1b[?${mode}$p`);
       assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`); // still reset
-      
+
       optionsService.options.quirks.allowSetCursorBlink = true;
       await inputHandler.parseP(`\x1b[?${mode}h`);
       await inputHandler.parseP(`\x1b[?${mode}$p`);
