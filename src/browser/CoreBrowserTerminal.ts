@@ -847,8 +847,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param start The row to start from (between 0 and this.rows - 1).
    * @param end The row to end at (between start and this.rows - 1).
    */
-  public refresh(start: number, end: number): void {
-    this._renderService?.refreshRows(start, end);
+  public refresh(start: number, end: number, sync: boolean = false): void {
+    this._renderService?.refreshRows(start, end, sync);
   }
 
   /**
@@ -1281,7 +1281,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._customKeyEventHandler = customKeyEventHandler;
 
     // do a full screen refresh
-    this.refresh(0, this.rows - 1);
+    this.refresh(0, this.rows - 1, true);
   }
 
   public clearTextureAtlas(): void {
