@@ -10,12 +10,19 @@ import { ICoreBrowserService } from 'browser/services/Services';
  */
 const BLINK_INTERVAL = 600;
 
+/**
+ * The idle time after which cursor blinking stops (2 minutes).
+ */
+const IDLE_TIMEOUT = 5000; //2 * 60 * 1000;
+
 export class CursorBlinkStateManager {
   public isCursorVisible: boolean;
 
   private _animationFrame: number | undefined;
   private _blinkStartTimeout: number | undefined;
   private _blinkInterval: number | undefined;
+  private _idleTimeout: number | undefined;
+  private _isIdlePaused: boolean = false;
 
   /**
    * The time at which the animation frame was restarted, this is used on the
@@ -31,6 +38,7 @@ export class CursorBlinkStateManager {
     this.isCursorVisible = true;
     if (this._coreBrowserService.isFocused) {
       this._restartInterval();
+      this._resetIdleTimer();
     }
   }
 
@@ -49,9 +57,16 @@ export class CursorBlinkStateManager {
       this._coreBrowserService.window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = undefined;
     }
+    if (this._idleTimeout) {
+      this._coreBrowserService.window.clearTimeout(this._idleTimeout);
+      this._idleTimeout = undefined;
+    }
   }
 
   public restartBlinkAnimation(): void {
+    if (this._isIdlePaused) {
+      this._resetIdleTimer();
+    }
     if (this.isPaused) {
       return;
     }
@@ -121,6 +136,7 @@ export class CursorBlinkStateManager {
 
   public pause(): void {
     this.isCursorVisible = true;
+    this._isIdlePaused = false;
     if (this._blinkInterval) {
       this._coreBrowserService.window.clearInterval(this._blinkInterval);
       this._blinkInterval = undefined;
@@ -133,6 +149,10 @@ export class CursorBlinkStateManager {
       this._coreBrowserService.window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = undefined;
     }
+    if (this._idleTimeout) {
+      this._coreBrowserService.window.clearTimeout(this._idleTimeout);
+      this._idleTimeout = undefined;
+    }
   }
 
   public resume(): void {
@@ -141,6 +161,47 @@ export class CursorBlinkStateManager {
 
     this._animationTimeRestarted = undefined;
     this._restartInterval();
+    this._resetIdleTimer();
     this.restartBlinkAnimation();
+  }
+
+  /**
+   * Resets the idle timer. If the terminal is idle for IDLE_TIMEOUT, cursor
+   * blinking will stop.
+   */
+  private _resetIdleTimer(): void {
+    this._isIdlePaused = false;
+    if (this._idleTimeout) {
+      this._coreBrowserService.window.clearTimeout(this._idleTimeout);
+    }
+    this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
+      this._stopBlinkingDueToIdle();
+    }, IDLE_TIMEOUT);
+  }
+
+  /**
+   * Stops cursor blinking due to idle timeout.
+   */
+  private _stopBlinkingDueToIdle(): void {
+    // Make cursor visible and stop blinking
+    this.isCursorVisible = true;
+    this._isIdlePaused = true;
+    if (this._blinkInterval) {
+      this._coreBrowserService.window.clearInterval(this._blinkInterval);
+      this._blinkInterval = undefined;
+    }
+    if (this._blinkStartTimeout) {
+      this._coreBrowserService.window.clearTimeout(this._blinkStartTimeout);
+      this._blinkStartTimeout = undefined;
+    }
+    if (this._animationFrame) {
+      this._coreBrowserService.window.cancelAnimationFrame(this._animationFrame);
+      this._animationFrame = undefined;
+    }
+    // Clear the idle timeout as we've already acted on it
+    this._coreBrowserService.window.clearTimeout(this._idleTimeout);
+    this._idleTimeout = undefined;
+    // Trigger a render to show the cursor in its final visible state
+    this._renderCallback();
   }
 }
