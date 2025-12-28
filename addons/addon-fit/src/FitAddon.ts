@@ -25,12 +25,12 @@ const MINIMUM_ROWS = 1;
 
 function getWindow(e: Node): Window {
   if (e?.ownerDocument?.defaultView) {
-    return e.ownerDocument.defaultView.window;
+    return e.ownerDocument.defaultView;
   }
 
   return window;
 }
-function getComputedStyle(el: HTMLElement): CSSStyleDeclaration {
+function _getComputedStyle(el: HTMLElement): CSSStyleDeclaration {
   return getWindow(el).getComputedStyle(el, null);
 }
 
@@ -80,10 +80,10 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       ? 0
       : (this._terminal.options.overviewRuler?.width || ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
-    const parentElementStyle = getComputedStyle(this._terminal.element.parentElement);
+    const parentElementStyle = _getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
     const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
-    const elementStyle = getComputedStyle(this._terminal.element);
+    const elementStyle = _getComputedStyle(this._terminal.element);
     const elementPadding = {
       top: parseInt(elementStyle.getPropertyValue('padding-top')),
       bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
