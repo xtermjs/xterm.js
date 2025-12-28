@@ -111,7 +111,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._register(this._optionsService.onMultipleOptionChange([
       'cursorBlink',
       'cursorStyle'
-    ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, true)));
+    ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, undefined, true)));
 
     this._register(themeService.onChangeColors(() => this._fullRefresh()));
 
@@ -144,7 +144,7 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public refreshRows(start: number, end: number, isRedrawOnly: boolean = false, sync: boolean = false): void {
+  public refreshRows(start: number, end: number, sync: boolean = false, isRedrawOnly: boolean = false): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
       return;
@@ -239,7 +239,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.value = renderer;
     // If the value was not set, the terminal is being disposed so ignore it
     if (this._renderer.value) {
-      this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, true, e.sync));
+      this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, e.sync, true));
 
       // Force a refresh
       this._needsSelectionRefresh = true;
