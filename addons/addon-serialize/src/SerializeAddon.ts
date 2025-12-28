@@ -9,6 +9,7 @@ import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } fro
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
 import { IAttributeData, IColor } from 'common/Types';
 import { DEFAULT_ANSI_COLORS } from 'browser/Types';
+import { UnderlineStyle } from 'common/buffer/Constants';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -82,10 +83,24 @@ function equalBg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boole
     && cell1.getBgColor() === cell2.getBgColor();
 }
 
+function equalUnderline(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
+  // If neither cell has underline, consider them equal regardless of internal underline color
+  // values
+  if (!cell1.isUnderline() && !cell2.isUnderline()) {
+    return true;
+  }
+  const cell1Data = cell1 as unknown as IAttributeData;
+  const cell2Data = cell2 as unknown as IAttributeData;
+  return cell1Data.getUnderlineStyle() === cell2Data.getUnderlineStyle()
+    && cell1Data.getUnderlineColor() === cell2Data.getUnderlineColor()
+    && cell1Data.getUnderlineColorMode() === cell2Data.getUnderlineColorMode();
+}
+
 function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.isInverse() === cell2.isInverse()
     && cell1.isBold() === cell2.isBold()
     && cell1.isUnderline() === cell2.isUnderline()
+    && equalUnderline(cell1, cell2)
     && cell1.isOverline() === cell2.isOverline()
     && cell1.isBlink() === cell2.isBlink()
     && cell1.isInvisible() === cell2.isInvisible()
@@ -274,7 +289,27 @@ class StringSerializeHandler extends BaseSerializeHandler {
         if (flagsChanged) {
           if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
           if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
-          if (cell.isUnderline() !== oldCell.isUnderline()) { sgrSeq.push(cell.isUnderline() ? 4 : 24); }
+          if (!equalUnderline(cell, oldCell)) {
+            const cellData = cell as unknown as IAttributeData;
+            const style = cellData.getUnderlineStyle();
+            if (style === UnderlineStyle.NONE) {
+              sgrSeq.push(24);
+            } else {
+              // Use SGR 4:X format for underline styles
+              sgrSeq.push('4:' + style as unknown as number);
+              // Handle underline color
+              if (!cellData.isUnderlineColorDefault()) {
+                const color = cellData.getUnderlineColor();
+                if (cellData.isUnderlineColorRGB()) {
+                  sgrSeq.push('58:2::' + ((color >>> 16) & 0xFF) + ':' + ((color >>> 8) & 0xFF) + ':' + (color & 0xFF) as unknown as number);
+                } else {
+                  sgrSeq.push('58:5:' + color as unknown as number);
+                }
+              }
+            }
+          } else if (cell.isUnderline() !== oldCell.isUnderline()) {
+            sgrSeq.push(cell.isUnderline() ? 4 : 24);
+          }
           if (cell.isOverline() !== oldCell.isOverline()) { sgrSeq.push(cell.isOverline() ? 53 : 55); }
           if (cell.isBlink() !== oldCell.isBlink()) { sgrSeq.push(cell.isBlink() ? 5 : 25); }
           if (cell.isInvisible() !== oldCell.isInvisible()) { sgrSeq.push(cell.isInvisible() ? 8 : 28); }
@@ -627,6 +662,42 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     return undefined;
   }
 
+  private _getUnderlineColor(cell: IBufferCell): string | undefined {
+    const cellData = cell as unknown as IAttributeData;
+    if (cellData.isUnderlineColorDefault()) {
+      return undefined;
+    }
+    const color = cellData.getUnderlineColor();
+    if (cellData.isUnderlineColorRGB()) {
+      const rgb = [
+        (color >> 16) & 255,
+        (color >>  8) & 255,
+        (color      ) & 255
+      ];
+      return '#' + rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
+    }
+    // Palette color
+    return this._ansiColors[color].css;
+  }
+
+  private _getUnderlineStyle(cell: IBufferCell): string {
+    const cellData = cell as unknown as IAttributeData;
+    switch (cellData.getUnderlineStyle()) {
+      case UnderlineStyle.SINGLE:
+        return 'underline';
+      case UnderlineStyle.DOUBLE:
+        return 'underline double';
+      case UnderlineStyle.CURLY:
+        return 'underline wavy';
+      case UnderlineStyle.DOTTED:
+        return 'underline dotted';
+      case UnderlineStyle.DASHED:
+        return 'underline dashed';
+      default:
+        return 'underline';
+    }
+  }
+
   private _diffStyle(cell: IBufferCell, oldCell: IBufferCell): string[] | undefined {
     const content: string[] = [];
 
@@ -647,14 +718,36 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
       if (cell.isInverse()) { content.push('color: #000000; background-color: #BFBFBF;'); }
       if (cell.isBold()) { content.push('font-weight: bold;'); }
-      if (cell.isUnderline() && cell.isOverline()) { content.push('text-decoration: overline underline;'); }
-      else if (cell.isUnderline()) { content.push('text-decoration: underline;'); }
-      else if (cell.isOverline()) { content.push('text-decoration: overline;'); }
-      if (cell.isBlink()) { content.push('text-decoration: blink;'); }
+
+      // Handle text-decoration (underline, overline, strikethrough, blink)
+      const decorations: string[] = [];
+      if (cell.isUnderline()) {
+        decorations.push(this._getUnderlineStyle(cell));
+      }
+      if (cell.isOverline()) {
+        decorations.push('overline');
+      }
+      if (cell.isStrikethrough()) {
+        decorations.push('line-through');
+      }
+      if (cell.isBlink()) {
+        decorations.push('blink');
+      }
+      if (decorations.length > 0) {
+        content.push('text-decoration: ' + decorations.join(' ') + ';');
+      }
+
+      // Handle underline color
+      if (cell.isUnderline()) {
+        const underlineColor = this._getUnderlineColor(cell);
+        if (underlineColor) {
+          content.push('text-decoration-color: ' + underlineColor + ';');
+        }
+      }
+
       if (cell.isInvisible()) { content.push('visibility: hidden;'); }
       if (cell.isItalic()) { content.push('font-style: italic;'); }
       if (cell.isDim()) { content.push('opacity: 0.5;'); }
-      if (cell.isStrikethrough()) { content.push('text-decoration: line-through;'); }
 
       return content;
     }
