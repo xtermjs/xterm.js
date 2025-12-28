@@ -112,6 +112,47 @@ describe('SerializeAddon', () => {
         }), 'world');
       });
     });
+
+    describe('underline styles', () => {
+      it('should serialize single underline with style', async () => {
+        await writeP(terminal, sgr('4:1') + 'test' + sgr('24'));
+        assert.equal(serializeAddon.serialize(), '\u001b[4:1mtest\u001b[0m');
+      });
+
+      it('should serialize double underline', async () => {
+        await writeP(terminal, sgr('4:2') + 'test' + sgr('24'));
+        assert.equal(serializeAddon.serialize(), '\u001b[4:2mtest\u001b[0m');
+      });
+
+      it('should serialize curly underline', async () => {
+        await writeP(terminal, sgr('4:3') + 'test' + sgr('24'));
+        assert.equal(serializeAddon.serialize(), '\u001b[4:3mtest\u001b[0m');
+      });
+
+      it('should serialize dotted underline', async () => {
+        await writeP(terminal, sgr('4:4') + 'test' + sgr('24'));
+        assert.equal(serializeAddon.serialize(), '\u001b[4:4mtest\u001b[0m');
+      });
+
+      it('should serialize dashed underline', async () => {
+        await writeP(terminal, sgr('4:5') + 'test' + sgr('24'));
+        assert.equal(serializeAddon.serialize(), '\u001b[4:5mtest\u001b[0m');
+      });
+
+      it('should serialize underline with RGB color', async () => {
+        await writeP(terminal, sgr('4', '58;2;255;128;64') + 'test' + sgr('24'));
+        const result = serializeAddon.serialize();
+        assert.ok(result.includes('4:1'), result);
+        assert.ok(result.includes('58:2::255:128:64'), result);
+      });
+
+      it('should serialize underline with palette color', async () => {
+        await writeP(terminal, sgr('4', '58;5;46') + 'test' + sgr('24'));
+        const result = serializeAddon.serialize();
+        assert.ok(result.includes('4:1'), result);
+        assert.ok(result.includes('58:5:46'), result);
+      });
+    });
   });
 
   describe('html', () => {
@@ -190,6 +231,50 @@ describe('SerializeAddon', () => {
 
       const output = serializeAddon.serializeAsHTML();
       assert.equal((output.match(/<span style='text-decoration: underline;'>terminal<\/span>/g) || []).length, 1, output);
+    });
+
+    it('cells with double underline styling', async () => {
+      await writeP(terminal, ' ' + sgr('4:2') + 'terminal' + sgr('24') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<span style='text-decoration: underline double;'>terminal<\/span>/g) || []).length, 1, output);
+    });
+
+    it('cells with curly underline styling', async () => {
+      await writeP(terminal, ' ' + sgr('4:3') + 'terminal' + sgr('24') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<span style='text-decoration: underline wavy;'>terminal<\/span>/g) || []).length, 1, output);
+    });
+
+    it('cells with dotted underline styling', async () => {
+      await writeP(terminal, ' ' + sgr('4:4') + 'terminal' + sgr('24') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<span style='text-decoration: underline dotted;'>terminal<\/span>/g) || []).length, 1, output);
+    });
+
+    it('cells with dashed underline styling', async () => {
+      await writeP(terminal, ' ' + sgr('4:5') + 'terminal' + sgr('24') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<span style='text-decoration: underline dashed;'>terminal<\/span>/g) || []).length, 1, output);
+    });
+
+    it('cells with underline color (palette)', async () => {
+      await writeP(terminal, ' ' + sgr('4', '58;5;46') + 'terminal' + sgr('24') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.ok(output.includes('text-decoration: underline;'), output);
+      assert.ok(output.includes('text-decoration-color: #00ff00;'), output);
+    });
+
+    it('cells with underline color (RGB)', async () => {
+      await writeP(terminal, ' ' + sgr('4', '58;2;255;128;64') + 'terminal' + sgr('24') + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.ok(output.includes('text-decoration: underline;'), output);
+      assert.ok(output.includes('text-decoration-color: #ff8040;'), output);
     });
 
     it('cells with invisible styling', async () => {
