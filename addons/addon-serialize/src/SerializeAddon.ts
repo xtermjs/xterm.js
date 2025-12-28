@@ -84,7 +84,8 @@ function equalBg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boole
 }
 
 function equalUnderline(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
-  // If neither cell has underline, consider them equal regardless of internal underline color values
+  // If neither cell has underline, consider them equal regardless of internal underline color
+  // values
   if (!cell1.isUnderline() && !cell2.isUnderline()) {
     return true;
   }
