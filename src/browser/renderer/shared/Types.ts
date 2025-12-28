@@ -39,6 +39,11 @@ export interface IRenderDimensions {
 export interface IRequestRedrawEvent {
   start: number;
   end: number;
+  /**
+   * Whether the redraw should happen synchronously. This is used to avoid
+   * flicker when the canvas is resized.
+   */
+  sync?: boolean;
 }
 
 /**

@@ -204,6 +204,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Force a full refresh. Resizing `_glyphRenderer` should clear it already,
     // so there is no need to clear it again here.
     this._clearModel(false);
+
+    // Render synchronously to avoid flicker when the canvas is cleared
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1, sync: true });
   }
 
   public handleCharSizeChanged(): void {
@@ -619,7 +622,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;
-    this._requestRedrawViewport();
+    // Render synchronously to avoid flicker when the canvas is cleared
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1, sync: true });
   }
 
   private _requestRedrawViewport(): void {

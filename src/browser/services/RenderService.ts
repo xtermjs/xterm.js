@@ -144,7 +144,7 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public refreshRows(start: number, end: number, isRedrawOnly: boolean = false): void {
+  public refreshRows(start: number, end: number, isRedrawOnly: boolean = false, sync: boolean = false): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
       return;
@@ -164,7 +164,12 @@ export class RenderService extends Disposable implements IRenderService {
     if (!isRedrawOnly) {
       this._isNextRenderRedrawOnly = false;
     }
-    this._renderDebouncer.refresh(start, end, this._rowCount);
+
+    if (sync) {
+      this._renderRows(start, end);
+    } else {
+      this._renderDebouncer.refresh(start, end, this._rowCount);
+    }
   }
 
   private _renderRows(start: number, end: number): void {
@@ -234,7 +239,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.value = renderer;
     // If the value was not set, the terminal is being disposed so ignore it
     if (this._renderer.value) {
-      this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
+      this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, true, e.sync));
 
       // Force a refresh
       this._needsSelectionRefresh = true;
