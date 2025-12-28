@@ -164,8 +164,8 @@ export class CursorBlinkStateManager {
   }
 
   /**
-   * Resets the idle timer. If the terminal is idle for IDLE_TIMEOUT, cursor
-   * blinking will stop.
+   * Resets the idle timer. If the terminal is idle for the idle timeout period,
+   * the cursor blinking will stop.
    */
   private _resetIdleTimer(): void {
     this._isIdlePaused = false;
