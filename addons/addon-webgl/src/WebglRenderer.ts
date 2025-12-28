@@ -136,6 +136,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
     }));
 
+    this._register(addDisposableListener(this._coreBrowserService.mainDocument, 'mousedown', () => this._cursorBlinkStateManager.value?.restartBlinkAnimation()));
+
     this._core.screenElement!.appendChild(this._canvas);
 
     [this._rectangleRenderer.value, this._glyphRenderer.value] = this._initializeWebGLState();
