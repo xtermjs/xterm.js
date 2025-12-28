@@ -1877,7 +1877,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7     | Auto-wrap Mode (DECAWM).                                | #Y      |
    * | 8     | Auto-repeat Keys (DECARM). Always on.                   | #N      |
    * | 9     | X10 xterm mouse protocol.                               | #Y      |
-   * | 12    | Start Blinking Cursor.                                  | #Y      |
+   * | 12    | Start Blinking Cursor.                                  | #P[Requires the allowSetCursorBlink quirk option enabled.] |
    * | 25    | Show Cursor (DECTCEM).                                  | #Y      |
    * | 45    | Reverse wrap-around.                                    | #Y      |
    * | 47    | Use Alternate Screen Buffer.                            | #Y      |
@@ -1930,7 +1930,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = true;
           break;
         case 12:
-          this._optionsService.options.cursorBlink = true;
+          if (this._optionsService.rawOptions.quirks?.allowSetCursorBlink) {
+            this._optionsService.options.cursorBlink = true;
+          }
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = true;
@@ -2125,7 +2127,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7     | No Wraparound Mode (DECAWM).                            | #Y      |
    * | 8     | No Auto-repeat Keys (DECARM).                           | #N      |
    * | 9     | Don't send Mouse X & Y on button press.                 | #Y      |
-   * | 12    | Stop Blinking Cursor.                                   | #Y      |
+   * | 12    | Stop Blinking Cursor.                                   | #P[Requires the allowSetCursorBlink quirk option enabled.] |
    * | 25    | Hide Cursor (DECTCEM).                                  | #Y      |
    * | 45    | No reverse wrap-around.                                 | #Y      |
    * | 47    | Use Normal Screen Buffer.                               | #Y      |
@@ -2171,7 +2173,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = false;
           break;
         case 12:
-          this._optionsService.options.cursorBlink = false;
+          if (this._optionsService.rawOptions.quirks?.allowSetCursorBlink) {
+            this._optionsService.options.cursorBlink = false;
+          }
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = false;
