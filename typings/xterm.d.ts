@@ -58,7 +58,9 @@ declare module '@xterm/xterm' {
     convertEol?: boolean;
 
     /**
-     * Whether the cursor blinks.
+     * Whether the cursor blinks. The blinking will stop after 5 minutes of idle
+     * time (refreshed by clicking, focusing or the cursor moving). The default
+     * is false.
      */
     cursorBlink?: boolean;
 
