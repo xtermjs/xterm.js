@@ -81,7 +81,6 @@ export default tseslint.config(
       '@typescript-eslint/no-duplicate-enum-values': 'off',
 
       'curly': ['warn', 'multi-line'],
-      'eol-last': 'warn',
       'eqeqeq': ['warn', 'always'],
       'jsdoc/check-alignment': 'warn',
       'jsdoc/check-param-names': 'warn',
