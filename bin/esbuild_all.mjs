@@ -11,7 +11,7 @@ const jobs = [];
 jobs.push(createJob('xterm', []));
 
 // Addon jobs
-const addons = (await readdir('addons')).map(e => e.replace('addon-', ''));
+const addons = (await readdir('addons')).filter(e => e.startsWith('addon-')).map(e => e.replace('addon-', ''));
 for (const addon of addons) {
   jobs.push(createJob(`xterm-addon-${addon}`, [`--addon=${addon}`]));
 }
