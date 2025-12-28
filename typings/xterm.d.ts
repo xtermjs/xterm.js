@@ -200,7 +200,8 @@ declare module '@xterm/xterm' {
     /**
      * Whether to reflow the line containing the cursor when the terminal is
      * resized. Defaults to false, because shells usually handle this
-     * themselves.
+     * themselves. Note that this will not move the cursor position, only the
+     * line contents.
      */
     reflowCursorLine?: boolean;
 
