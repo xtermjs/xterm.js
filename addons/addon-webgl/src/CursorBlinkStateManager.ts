@@ -5,15 +5,17 @@
 
 import { ICoreBrowserService } from 'browser/services/Services';
 
-/**
- * The time between cursor blinks.
- */
-const BLINK_INTERVAL = 600;
+const enum Constants {
+  /**
+   * The time between cursor blinks.
+   */
+  BLINK_INTERVAL = 600,
 
-/**
- * The idle time after which cursor blinking stops (2 minutes).
- */
-const IDLE_TIMEOUT = 5000; //2 * 60 * 1000;
+  /**
+   * The idle time after which cursor blinking stops.
+   */
+  IDLE_TIMEOUT = 5 * 60 * 1000
+}
 
 export class CursorBlinkStateManager {
   public isCursorVisible: boolean;
@@ -82,7 +84,7 @@ export class CursorBlinkStateManager {
     }
   }
 
-  private _restartInterval(timeToStart: number = BLINK_INTERVAL): void {
+  private _restartInterval(timeToStart: number = Constants.BLINK_INTERVAL): void {
     // Clear any existing interval
     if (this._blinkInterval) {
       this._coreBrowserService.window.clearInterval(this._blinkInterval);
@@ -97,7 +99,7 @@ export class CursorBlinkStateManager {
       // Check if another animation restart was requested while this was being
       // started
       if (this._animationTimeRestarted) {
-        const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
+        const time = Constants.BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
         this._animationTimeRestarted = undefined;
         if (time > 0) {
           this._restartInterval(time);
@@ -118,7 +120,7 @@ export class CursorBlinkStateManager {
         if (this._animationTimeRestarted) {
           // calc time diff
           // Make restart interval do a setTimeout initially?
-          const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
+          const time = Constants.BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
           this._animationTimeRestarted = undefined;
           this._restartInterval(time);
           return;
@@ -130,7 +132,7 @@ export class CursorBlinkStateManager {
           this._renderCallback();
           this._animationFrame = undefined;
         });
-      }, BLINK_INTERVAL);
+      }, Constants.BLINK_INTERVAL);
     }, timeToStart);
   }
 
@@ -176,7 +178,7 @@ export class CursorBlinkStateManager {
     }
     this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
       this._stopBlinkingDueToIdle();
-    }, IDLE_TIMEOUT);
+    }, Constants.IDLE_TIMEOUT);
   }
 
   /**

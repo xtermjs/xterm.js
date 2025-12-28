@@ -26,10 +26,12 @@ const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 const CURSOR_BLINK_IDLE_CLASS = 'xterm-cursor-blink-idle';
 
-/**
- * The idle time after which cursor blinking stops (2 minutes).
- */
-const IDLE_TIMEOUT = 5000; // 2 * 60 * 1000;
+const enum Constants {
+  /**
+   * The idle time after which cursor blinking stops.
+   */
+  IDLE_TIMEOUT = 5 * 60 * 1000
+}
 
 let nextTerminalId = 1;
 
@@ -571,7 +573,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
     this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
       this._stopBlinkingDueToIdle();
-    }, IDLE_TIMEOUT);
+    }, Constants.IDLE_TIMEOUT);
   }
 
   /**
