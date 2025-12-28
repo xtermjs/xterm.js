@@ -198,6 +198,12 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
+     * Control various quirks features that are either non-standard or standard
+     * in but generally rejected in modern terminals.
+     */
+    quirks?: ITerminalQuirks;
+
+    /**
      * Whether to reflow the line containing the cursor when the terminal is
      * resized. Defaults to false, because shells usually handle this
      * themselves. Note that this will not move the cursor position, only the
@@ -405,6 +411,21 @@ declare module '@xterm/xterm' {
     brightWhite?: string;
     /** ANSI extended colors (16-255) */
     extendedAnsi?: string[];
+  }
+
+  /**
+   * Control various quirks features that are either non-standard or standard
+   * in but generally rejected in modern terminals.
+   */
+  export interface ITerminalQuirks {
+    /**
+     * Enables support for DECSET 12 and DECRST 12 which controls cursor blink.
+     * Programs such as `vim` may use this to set the cursor blink state but may
+     * not change it back when exiting. Generally the terminal emulator should
+     * be in control of whether the cursor blinks or not and the application in
+     * modern terminals. Note that DECRQM works regardless of this option.
+     */
+    allowSetCursorBlink?: boolean;
   }
 
   /**

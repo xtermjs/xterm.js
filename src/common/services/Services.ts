@@ -262,6 +262,7 @@ export interface ITerminalOptions {
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
   overviewRuler?: IOverviewRulerOptions;
+  quirks?: ITerminalQuirks;
   scrollOnEraseInDisplay?: boolean;
 
   [key: string]: any;
@@ -298,6 +299,10 @@ export interface ITheme {
   brightCyan?: string;
   brightWhite?: string;
   extendedAnsi?: string[];
+}
+
+export interface ITerminalQuirks {
+  allowSetCursorBlink?: boolean;
 }
 
 export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');

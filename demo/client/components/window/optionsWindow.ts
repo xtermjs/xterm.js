@@ -72,6 +72,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       'linkHandler',
       'logger',
       'overviewRuler',
+      'quirks',
       'theme',
       'windowOptions',
       'windowsPty',
