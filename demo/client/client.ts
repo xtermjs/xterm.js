@@ -19,6 +19,7 @@ import { AddonImageWindow } from './components/window/addonImageWindow';
 import { AddonSearchWindow } from './components/window/addonSearchWindow';
 import { AddonSerializeWindow } from './components/window/addonSerializeWindow';
 import { AddonsWindow } from './components/window/addonsWindow';
+import { CellInspectorWindow } from './components/window/cellInspectorWindow';
 import { ControlBar } from './components/controlBar';
 import { WebglWindow } from './components/window/webglWindow';
 import { OptionsWindow } from './components/window/optionsWindow';
@@ -206,6 +207,7 @@ if (document.location.pathname === '/test') {
   controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
   optionsWindow = controlBar.registerWindow(new OptionsWindow(typedTerm, addons, { updateTerminalSize, updateTerminalContainerBackground }));
   const styleWindow = controlBar.registerWindow(new StyleWindow(typedTerm, addons));
+  controlBar.registerWindow(new CellInspectorWindow(typedTerm, addons));
   controlBar.registerWindow(new VtWindow(typedTerm, addons));
   addonsWindow = controlBar.registerWindow(new AddonsWindow(typedTerm, addons));
   addonSearchWindow = controlBar.registerWindow(new AddonSearchWindow(typedTerm, addons), { afterId: 'addons', hidden: true, italics: true });
