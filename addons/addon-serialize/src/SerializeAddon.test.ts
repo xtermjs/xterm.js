@@ -280,5 +280,70 @@ describe('SerializeAddon', () => {
       const output = serializeAddon.serializeAsHTML();
       assert.equal((output.match(/<span style='color: #00ff00;'>terminal<\/span>/g) || []).length, 1, output);
     });
+
+    describe('OSC 8 hyperlinks', () => {
+      it('basic hyperlink', async () => {
+        await writeP(terminal, '\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\');
+        const output = serializeAddon.serializeAsHTML();
+        assert.ok(output.includes('<a href=\'https://example.com\'>'), output);
+        assert.ok(output.includes('link'), output);
+        assert.ok(output.includes('</a>'), output);
+      });
+
+      it('hyperlink with id', async () => {
+        await writeP(terminal, '\x1b]8;id=myid;https://example.com\x1b\\link\x1b]8;;\x1b\\');
+        const output = serializeAddon.serializeAsHTML();
+        assert.ok(output.includes('<a href=\'https://example.com\'>'), output);
+        assert.ok(output.includes('link'), output);
+        assert.ok(output.includes('</a>'), output);
+      });
+
+      it('hyperlink with styling', async () => {
+        await writeP(terminal, '\x1b]8;;https://example.com\x1b\\' + sgr('1') + 'bold link' + sgr('22') + '\x1b]8;;\x1b\\');
+        const output = serializeAddon.serializeAsHTML();
+        assert.ok(output.includes('<a href=\'https://example.com\'>'), output);
+        assert.ok(output.includes('font-weight: bold;'), output);
+      });
+
+      it('hyperlink with special characters in URL', async () => {
+        await writeP(terminal, '\x1b]8;;https://example.com/path?a=1&b=2\x1b\\link\x1b]8;;\x1b\\');
+        const output = serializeAddon.serializeAsHTML();
+        assert.ok(output.includes('href=\'https://example.com/path?a=1&amp;b=2\''), output);
+      });
+
+      it('multiple hyperlinks on same line', async () => {
+        await writeP(terminal, '\x1b]8;;https://a.com\x1b\\ab\x1b]8;;\x1b\\ \x1b]8;;https://b.com\x1b\\cd\x1b]8;;\x1b\\');
+        const output = serializeAddon.serializeAsHTML();
+        assert.ok(output.includes('<a href=\'https://a.com\'>'), output);
+        assert.ok(output.includes('ab'), output);
+        assert.ok(output.includes('<a href=\'https://b.com\'>'), output);
+        assert.ok(output.includes('cd'), output);
+      });
+    });
+  });
+
+  describe('text - OSC 8 hyperlinks', () => {
+    it('basic hyperlink', async () => {
+      await writeP(terminal, '\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\');
+      const output = serializeAddon.serialize();
+      assert.ok(output.includes('\x1b]8;;https://example.com\x1b\\'), output);
+      assert.ok(output.includes('link'), output);
+      assert.ok(output.includes('\x1b]8;;\x1b\\'), output);
+    });
+
+    it('hyperlink with id is preserved', async () => {
+      await writeP(terminal, '\x1b]8;id=myid;https://example.com\x1b\\link\x1b]8;;\x1b\\');
+      const output = serializeAddon.serialize();
+      assert.ok(output.includes('\x1b]8;id=myid;https://example.com\x1b\\'), output);
+    });
+
+    it('multiple hyperlinks', async () => {
+      await writeP(terminal, '\x1b]8;;https://a.com\x1b\\ab\x1b]8;;\x1b\\ \x1b]8;;https://b.com\x1b\\cd\x1b]8;;\x1b\\');
+      const output = serializeAddon.serialize();
+      assert.ok(output.includes('\x1b]8;;https://a.com\x1b\\'), output);
+      assert.ok(output.includes('ab'), output);
+      assert.ok(output.includes('\x1b]8;;https://b.com\x1b\\'), output);
+      assert.ok(output.includes('cd'), output);
+    });
   });
 });

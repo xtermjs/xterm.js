@@ -7,8 +7,9 @@
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
-import { IAttributeData, IColor } from 'common/Types';
+import { IAttributeData, ICellData, IColor, IOscLinkData } from 'common/Types';
 import { DEFAULT_ANSI_COLORS } from 'browser/Types';
+import { IOscLinkService } from 'common/services/Services';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
@@ -94,6 +95,10 @@ function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): bo
     && cell1.isStrikethrough() === cell2.isStrikethrough();
 }
 
+function getUrlId(cell: IBufferCell): number {
+  return (cell as ICellData).bg & 0x10000000 ? (cell as ICellData).extended.urlId : 0;
+}
+
 class StringSerializeHandler extends BaseSerializeHandler {
   private _rowIndex: number = 0;
   private _allRows: string[] = new Array<string>();
@@ -121,11 +126,16 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _lastContentCursorRow: number = 0;
   private _lastContentCursorCol: number = 0;
 
+  // OSC 8 link tracking
+  private _currentLinkId: number = 0;
+  private _oscLinkService: IOscLinkService;
+
   constructor(
     buffer: IBuffer,
     private readonly _terminal: Terminal
   ) {
     super(buffer);
+    this._oscLinkService = (_terminal as any)._core._oscLinkService;
   }
 
   protected _beforeSerialize(rows: number, start: number, end: number): void {
@@ -139,6 +149,12 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _thisRowLastSecondChar: IBufferCell = this._buffer.getNullCell();
   private _nextRowFirstChar: IBufferCell = this._buffer.getNullCell();
   protected _rowEnd(row: number, isLastRow: boolean): void {
+    // Close any open link at end of row
+    if (this._currentLinkId) {
+      this._currentRow += '\u001b]8;;\u001b\\';
+      this._currentLinkId = 0;
+    }
+
     // if there is colorful empty cell at line end, whe must pad it back, or the the color block
     // will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
@@ -298,6 +314,34 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     // this cell don't have content
     const isEmptyCell = cell.getChars() === '';
+
+    // Handle OSC 8 hyperlinks
+    const cellUrlId = getUrlId(cell);
+    if (cellUrlId !== this._currentLinkId) {
+      // Flush null cells before changing link
+      if (this._nullCellCount > 0) {
+        if (equalBg(this._cursorStyle, this._backgroundCell)) {
+          this._currentRow += `\u001b[${this._nullCellCount}C`;
+        } else {
+          this._currentRow += `\u001b[${this._nullCellCount}X`;
+          this._currentRow += `\u001b[${this._nullCellCount}C`;
+        }
+        this._nullCellCount = 0;
+      }
+
+      if (cellUrlId) {
+        const linkData = this._oscLinkService.getLinkData(cellUrlId);
+        if (linkData) {
+          // OSC 8 ; id=ID ; URI ST (or just OSC 8 ; ; URI ST if no id)
+          const idPart = linkData.id ? `id=${linkData.id}` : '';
+          this._currentRow += `\u001b]8;${idPart};${linkData.uri}\u001b\\`;
+        }
+      } else if (this._currentLinkId) {
+        // Close the previous link with empty OSC 8
+        this._currentRow += '\u001b]8;;\u001b\\';
+      }
+      this._currentLinkId = cellUrlId;
+    }
 
     const sgrSeq = this._diffStyle(cell, this._cursorStyle);
 
@@ -553,12 +597,18 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
   private _ansiColors: Readonly<IColor[]>;
 
+  private _oscLinkService: IOscLinkService;
+
+  private _currentLinkId: number = 0;
+
   constructor(
     buffer: IBuffer,
     private readonly _terminal: Terminal,
     private readonly _options: Partial<IHTMLSerializeOptions>
   ) {
     super(buffer);
+
+    this._oscLinkService = (_terminal as any)._core._oscLinkService;
 
     // For xterm headless: fallback to ansi colors
     if ((_terminal as any)._core._themeService) {
@@ -604,11 +654,6 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   protected _afterSerialize(): void {
     this._htmlContent += '</div>';
     this._htmlContent += '</pre><!--EndFragment--></body></html>';
-  }
-
-  protected _rowEnd(row: number, isLastRow: boolean): void {
-    this._htmlContent += '<div><span>' + this._currentRow + '</span></div>';
-    this._currentRow = '';
   }
 
   private _getHexColor(cell: IBufferCell, isFg: boolean): string | undefined {
@@ -672,13 +717,38 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     // this cell don't have content
     const isEmptyCell = cell.getChars() === '';
 
+    // Handle OSC 8 hyperlinks - close/open links together with style changes
+    const cellUrlId = getUrlId(cell);
+    const linkChanged = cellUrlId !== this._currentLinkId;
     const styleDefinitions = this._diffStyle(cell, oldCell);
 
-    // handles style change
-    if (styleDefinitions) {
-      this._currentRow += styleDefinitions.length === 0 ?
-        '</span><span>' :
-        '</span><span style=\'' + styleDefinitions.join(' ') + '\'>';
+    // Handle link and style changes
+    if (linkChanged || styleDefinitions) {
+      // Close current span
+      this._currentRow += '</span>';
+
+      // Close previous link if there was one
+      if (this._currentLinkId && linkChanged) {
+        this._currentRow += '</a>';
+      }
+
+      // Open new link if there is one
+      if (cellUrlId && linkChanged) {
+        const linkData = this._oscLinkService.getLinkData(cellUrlId);
+        if (linkData) {
+          this._currentRow += `<a href='${this._escapeHTMLAttribute(linkData.uri)}'>`;
+        }
+        this._currentLinkId = cellUrlId;
+      } else if (linkChanged) {
+        this._currentLinkId = 0;
+      }
+
+      // Open new span with style
+      if (styleDefinitions && styleDefinitions.length > 0) {
+        this._currentRow += `<span style='${styleDefinitions.join(' ')}'>`;
+      } else {
+        this._currentRow += '<span>';
+      }
     }
 
     // handles actual content
@@ -687,6 +757,20 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     } else {
       this._currentRow += escapeHTMLChar(cell.getChars());
     }
+  }
+
+  protected _rowEnd(row: number, isLastRow: boolean): void {
+    // Close any open link at end of row
+    if (this._currentLinkId) {
+      this._currentRow += '</a>';
+      this._currentLinkId = 0;
+    }
+    this._htmlContent += '<div><span>' + this._currentRow + '</span></div>';
+    this._currentRow = '';
+  }
+
+  private _escapeHTMLAttribute(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   protected _serializeString(): string {
