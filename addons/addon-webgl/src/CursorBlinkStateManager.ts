@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { RendererConstants } from 'browser/renderer/shared/Constants';
 import { ICoreBrowserService } from 'browser/services/Services';
 
 const enum Constants {
@@ -10,11 +11,6 @@ const enum Constants {
    * The time between cursor blinks.
    */
   BLINK_INTERVAL = 600,
-
-  /**
-   * The idle time after which cursor blinking stops.
-   */
-  IDLE_TIMEOUT = 5 * 60 * 1000
 }
 
 export class CursorBlinkStateManager {
@@ -178,7 +174,7 @@ export class CursorBlinkStateManager {
     }
     this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
       this._stopBlinkingDueToIdle();
-    }, Constants.IDLE_TIMEOUT);
+    }, RendererConstants.CURSOR_BLINK_IDLE_TIMEOUT);
   }
 
   /**

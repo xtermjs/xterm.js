@@ -5,7 +5,7 @@
 
 import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererRowFactory';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
+import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
@@ -25,13 +25,6 @@ const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 const CURSOR_BLINK_IDLE_CLASS = 'xterm-cursor-blink-idle';
-
-const enum Constants {
-  /**
-   * The idle time after which cursor blinking stops.
-   */
-  IDLE_TIMEOUT = 5 * 60 * 1000
-}
 
 let nextTerminalId = 1;
 
@@ -602,7 +595,7 @@ class CursorBlinkStateManager {
     this._clearIdleTimer();
     this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
       this._stopBlinkingDueToIdle();
-    }, Constants.IDLE_TIMEOUT);
+    }, RendererConstants.CURSOR_BLINK_IDLE_TIMEOUT);
   }
 
   private _clearIdleTimer(): void {
