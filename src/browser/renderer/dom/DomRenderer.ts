@@ -51,7 +51,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
   private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
-  private _idleTimeout: number | undefined;
+  private _cursorBlinkStateManager: CursorBlinkStateManager;
 
   public dimensions: IRenderDimensions;
 
@@ -99,7 +99,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
     this._register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
 
-    this._register(addDisposableListener(this._document, 'mousedown', () => this._resetIdleTimer()));
+    this._cursorBlinkStateManager = new CursorBlinkStateManager(this._rowContainer, this._coreBrowserService);
+    this._register(addDisposableListener(this._document, 'mousedown', () => this._cursorBlinkStateManager.restartBlinkAnimation()));
+    this._register(toDisposable(() => this._cursorBlinkStateManager.dispose()));
 
     this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
@@ -111,7 +113,6 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._widthCache.dispose();
       this._themeStyleElement.remove();
       this._dimensionsStyleElement.remove();
-      this._clearIdleTimer();
     }));
 
     this._widthCache = new WidthCache(this._document, this._helperContainer);
@@ -345,14 +346,13 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
-    this._clearIdleTimer();
+    this._cursorBlinkStateManager.pause();
     this.renderRows(0, this._bufferService.rows - 1);
   }
 
   public handleFocus(): void {
     this._rowContainer.classList.add(FOCUS_CLASS);
-    this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
-    this._resetIdleTimer();
+    this._cursorBlinkStateManager.resume();
     this.renderRows(this._bufferService.buffer.y, this._bufferService.buffer.y);
   }
 
@@ -427,7 +427,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleCursorMove(): void {
     // Reset idle timer on cursor movement (which happens on input)
-    this._resetIdleTimer();
+    this._cursorBlinkStateManager.restartBlinkAnimation();
   }
 
   private _handleOptionsChanged(): void {
@@ -560,25 +560,51 @@ export class DomRenderer extends Disposable implements IRenderer {
       );
     }
   }
+}
 
-  /**
-   * Resets the idle timer. If the terminal is idle for IDLE_TIMEOUT, cursor
-   * blinking will stop.
-   */
-  private _resetIdleTimer(): void {
-    if (!this._coreBrowserService.isFocused) {
-      return;
+class CursorBlinkStateManager {
+  private _idleTimeout: number | undefined;
+  private _isIdlePaused: boolean = false;
+
+  constructor(
+    private readonly _rowContainer: HTMLElement,
+    private readonly _coreBrowserService: ICoreBrowserService
+  ) {
+    if (this._coreBrowserService.isFocused) {
+      this._resetIdleTimer();
     }
+  }
+
+  public dispose(): void {
     this._clearIdleTimer();
+  }
+
+  public restartBlinkAnimation(): void {
+    if (this._isIdlePaused) {
+      this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+    }
+    this._resetIdleTimer();
+  }
+
+  public pause(): void {
+    this._isIdlePaused = false;
+    this._clearIdleTimer();
+  }
+
+  public resume(): void {
+    this._isIdlePaused = false;
     this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+    this._resetIdleTimer();
+  }
+
+  private _resetIdleTimer(): void {
+    this._isIdlePaused = false;
+    this._clearIdleTimer();
     this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
       this._stopBlinkingDueToIdle();
     }, Constants.IDLE_TIMEOUT);
   }
 
-  /**
-   * Clears the idle timer.
-   */
   private _clearIdleTimer(): void {
     if (this._idleTimeout) {
       this._coreBrowserService.window.clearTimeout(this._idleTimeout);
@@ -586,11 +612,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
   }
 
-  /**
-   * Stops cursor blinking due to idle timeout.
-   */
   private _stopBlinkingDueToIdle(): void {
     this._rowContainer.classList.add(CURSOR_BLINK_IDLE_CLASS);
+    this._isIdlePaused = true;
     this._idleTimeout = undefined;
   }
 }
