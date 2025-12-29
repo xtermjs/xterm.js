@@ -14,6 +14,8 @@ import { Emitter } from 'vs/base/common/event';
 // Work variables to avoid garbage collection
 let $xmin = 0;
 let $xmax = 0;
+let $ymin = 0;
+let $ymax = 0;
 
 export class DecorationService extends Disposable implements IDecorationService {
   public serviceBrand: any;
@@ -70,7 +72,14 @@ export class DecorationService extends Disposable implements IDecorationService 
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;
     let xmax = 0;
-    for (const d of this._decorations.getKeyIterator(line)) {
+    let ymin = 0;
+    let ymax = 0;
+    for (const d of this._decorations.values()) {
+      ymin = d.marker.line;
+      ymax = ymin + (d.options.height ?? 1);
+      if (line < ymin || line >= ymax) {
+        continue;
+      }
       xmin = d.options.x ?? 0;
       xmax = xmin + (d.options.width ?? 1);
       if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
@@ -80,13 +89,18 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
-    this._decorations.forEachByKey(line, d => {
+    for (const d of this._decorations.values()) {
+      $ymin = d.marker.line;
+      $ymax = $ymin + (d.options.height ?? 1);
+      if (line < $ymin || line >= $ymax) {
+        continue;
+      }
       $xmin = d.options.x ?? 0;
       $xmax = $xmin + (d.options.width ?? 1);
       if (x >= $xmin && x < $xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
         callback(d);
       }
-    });
+    }
   }
 }
 

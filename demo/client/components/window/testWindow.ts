@@ -62,7 +62,8 @@ export class TestWindow extends BaseWindow implements IControlWindow {
 
     // Decorations section
     this._addDt(dl, 'Decorations');
-    this._addDdWithButton(dl, 'add-decoration', 'Decoration', 'Add a decoration to the terminal', () => addDecoration(this._terminal));
+    this._addDdWithButton(dl, 'add-decoration', 'Decoration (1x1)', 'Add a 1x1 decoration to the terminal', () => addDecoration(this._terminal));
+    this._addDdWithButton(dl, 'add-decoration', 'Decoration (3x3)', 'Add a 3x3 decoration to the terminal', () => addDecoration(this._terminal, 3));
     this._addDdWithButton(dl, 'add-overview-ruler', 'Add Overview Ruler', 'Add an overview ruler to the terminal', () => addOverviewRuler(this._terminal));
     this._addDdWithButton(dl, 'decoration-stress-test', 'Stress Test', 'Toggle between adding and removing a decoration to each line', () => decorationStressTest(this._terminal));
 
@@ -790,11 +791,13 @@ function loadTestLongLines(term: Terminal, addons: AddonCollection): void {
   });
 }
 
-function addDecoration(term: Terminal): void {
+function addDecoration(term: Terminal, dim: number = 1): void {
   term.options['overviewRuler'] = { width: 14 };
   const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
+    height: dim,
+    width: dim,
     backgroundColor: '#00FF00',
     foregroundColor: '#00FE00',
     overviewRulerOptions: { color: '#ef292980', position: 'left' }
