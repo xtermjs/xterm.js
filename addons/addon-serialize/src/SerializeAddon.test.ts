@@ -153,6 +153,43 @@ describe('SerializeAddon', () => {
         assert.ok(result.includes('58:5:46'), result);
       });
     });
+
+    describe('scroll region', () => {
+      let scrollTerminal: Terminal;
+      let scrollAddon: SerializeAddon;
+
+      beforeEach(() => {
+        scrollTerminal = new Terminal({ cols: 10, rows: 5, allowProposedApi: true });
+        scrollAddon = new SerializeAddon();
+        scrollTerminal.loadAddon(scrollAddon);
+      });
+
+      it('should serialize scroll region when margins are set', async () => {
+        await writeP(scrollTerminal, '\x1b[2;4r');
+        const buffer = (scrollTerminal as any)._core.buffer;
+        assert.equal(buffer.scrollTop, 1, 'scrollTop should be 1');
+        assert.equal(buffer.scrollBottom, 3, 'scrollBottom should be 3');
+        const result = scrollAddon.serialize();
+        assert.ok(result.includes('\x1b[2;4r'), result);
+      });
+
+      it('should not serialize scroll region when excludeModes is true', async () => {
+        await writeP(scrollTerminal, '\x1b[2;4r');
+        const result = scrollAddon.serialize({ excludeModes: true });
+        assert.ok(!result.includes('\x1b[2;4r'), result);
+      });
+
+      it('should restore scroll region correctly when deserialized', async () => {
+        await writeP(scrollTerminal, '\x1b[2;4r');
+        const serialized = scrollAddon.serialize();
+        const terminal2 = new Terminal({ cols: 10, rows: 5, allowProposedApi: true });
+        terminal2.loadAddon(new SerializeAddon());
+        await writeP(terminal2, serialized);
+        const buffer = (terminal2 as any)._core.buffer;
+        assert.equal(buffer.scrollTop, 1);
+        assert.equal(buffer.scrollBottom, 3);
+      });
+    });
   });
 
   describe('html', () => {
