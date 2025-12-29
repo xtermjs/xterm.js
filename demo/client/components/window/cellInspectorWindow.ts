@@ -8,6 +8,25 @@ import type { IControlWindow } from '../controlBar';
 import type { Terminal, IBufferCell } from '@xterm/xterm';
 import type { AddonCollection } from '../../types';
 
+// Underline style values from common/buffer/Constants.ts
+const enum UnderlineStyle {
+  NONE = 0,
+  SINGLE = 1,
+  DOUBLE = 2,
+  CURLY = 3,
+  DOTTED = 4,
+  DASHED = 5
+}
+
+// Internal interface for accessing extended attribute data
+interface IAttributeDataInternal {
+  getUnderlineStyle(): number;
+  getUnderlineColor(): number;
+  isUnderlineColorDefault(): boolean;
+  isUnderlineColorPalette(): boolean;
+  isUnderlineColorRGB(): boolean;
+}
+
 export class CellInspectorWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'cell-inspector';
   public readonly label = 'Cell Inspector';
@@ -157,7 +176,23 @@ export class CellInspectorWindow extends BaseWindow implements IControlWindow {
     if (cell.isBold()) attrs.push('bold (1)');
     if (cell.isDim()) attrs.push('dim (2)');
     if (cell.isItalic()) attrs.push('italic (3)');
-    if (cell.isUnderline()) attrs.push('underline (4)');
+    if (cell.isUnderline()) {
+      const cellData = cell as unknown as IAttributeDataInternal;
+      const style = cellData.getUnderlineStyle();
+      const styleName = this._getUnderlineStyleName(style);
+      attrs.push(`underline ${styleName} (4:${style})`);
+
+      // Show underline color if not default
+      if (!cellData.isUnderlineColorDefault()) {
+        const color = cellData.getUnderlineColor();
+        const colorStr = this._formatUnderlineColor(
+          color,
+          cellData.isUnderlineColorPalette(),
+          cellData.isUnderlineColorRGB()
+        );
+        attrs.push(`underline color: ${colorStr}`);
+      }
+    }
     if (cell.isBlink()) attrs.push('blink (5)');
     if (cell.isInverse()) attrs.push('inverse (7)');
     if (cell.isInvisible()) attrs.push('invisible (8)');
@@ -212,6 +247,31 @@ export class CellInspectorWindow extends BaseWindow implements IControlWindow {
       const g = (color >> 8) & 0xFF;
       const b = color & 0xFF;
       return `#${color.toString(16).toUpperCase().padStart(6, '0')} (48;2;${r};${g};${b})`;
+    }
+    return `unknown(${color})`;
+  }
+
+  private _getUnderlineStyleName(style: UnderlineStyle): string {
+    switch (style) {
+      case UnderlineStyle.NONE: return 'none';
+      case UnderlineStyle.SINGLE: return 'single';
+      case UnderlineStyle.DOUBLE: return 'double';
+      case UnderlineStyle.CURLY: return 'curly';
+      case UnderlineStyle.DOTTED: return 'dotted';
+      case UnderlineStyle.DASHED: return 'dashed';
+      default: return 'unknown';
+    }
+  }
+
+  private _formatUnderlineColor(color: number, isPalette: boolean, isRGB: boolean): string {
+    if (isPalette) {
+      return `palette(${color}) (58;5;${color})`;
+    }
+    if (isRGB) {
+      const r = (color >> 16) & 0xFF;
+      const g = (color >> 8) & 0xFF;
+      const b = color & 0xFF;
+      return `#${color.toString(16).toUpperCase().padStart(6, '0')} (58;2;${r};${g};${b})`;
     }
     return `unknown(${color})`;
   }
