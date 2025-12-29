@@ -53,6 +53,7 @@ export class TestWindow extends BaseWindow implements IControlWindow {
     this._addDdWithButton(dl, 'custom-glyph-alignment', 'Custom glyph alignment test', 'Write custom glyph alignment tests to the terminal', () => customGlyphAlignmentHandler(this._terminal));
     this._addDdWithButton(dl, 'custom-glyph-ranges', 'Custom glyph ranges', 'Write custom glyph unicode range to the terminal', () => customGlyphRangesHandler(this._terminal));
     this._addDdWithButton(dl, 'powerline-symbol-test', 'Powerline symbol test', 'Write powerline symbol characters to the terminal (\\ue0a0+)', () => powerlineSymbolTest(this._terminal));
+    this._addDdWithButton(dl, 'nerd-font-icons', 'Nerd Font icons', 'Write all Nerd Font icon ranges to the terminal', () => nerdFontIconsTest(this._terminal));
     this._addDdWithButton(dl, 'underline-test', 'Underline test', 'Write text with Kitty\'s extended underline sequences', () => underlineTest(this._terminal));
     this._addDdWithButton(dl, 'sgr-test', 'SGR test', 'Write text with SGR attribute', () => sgrTest(this._terminal));
     this._addDdWithButton(dl, 'ansi-colors', 'Ansi colors test', 'Write a wide range of ansi colors', () => ansiColorsTest(this._terminal));
@@ -295,6 +296,52 @@ function powerlineSymbolTest(term: Terminal): void {
   term.writeln('Sample of nerd fonts icons:');
   term.writeln('    nf-linux-apple (\\uF302) \uf302');
   term.writeln('nf-mdi-github_face (\\uFbd9) \ufbd9');
+}
+
+function nerdFontIconsTest(term: Terminal): void {
+  term.write('\n\n\r');
+  term.writeln('\x1b[1mNerd Font Icon Ranges\x1b[0m');
+  term.writeln('https://github.com/ryanoasis/nerd-fonts/wiki/Glyph-Sets-and-Code-Points\n\r');
+  writeUnicodeTable(term, 'Seti-UI + Custom', 0xE5FA, 0xE6B7, [
+    ['Seti-UI + Custom', 0xE5FA, 0xE6B7],
+  ]);
+  writeUnicodeTable(term, 'Devicons', 0xE700, 0xE8EF, [
+    ['Devicons', 0xE700, 0xE8EF],
+  ]);
+  writeUnicodeTable(term, 'Font Awesome', 0xED00, 0xF2FF, [
+    ['Font Awesome', 0xED00, 0xF2FF],
+  ]);
+  writeUnicodeTable(term, 'Font Awesome Extension', 0xE200, 0xE2A9, [
+    ['Font Awesome Extension', 0xE200, 0xE2A9],
+  ]);
+  writeUnicodeTable(term, 'Material Design Icons', 0xF0001, 0xF1AF0, [
+    ['Material Design Icons', 0xF0001, 0xF1AF0],
+  ]);
+  writeUnicodeTable(term, 'Weather', 0xE300, 0xE3E3, [
+    ['Weather', 0xE300, 0xE3E3],
+  ]);
+  writeUnicodeTable(term, 'Octicons', 0xF400, 0xF533, [
+    ['Octicons', 0xF400, 0xF533],
+  ]);
+  writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0A3, [
+    ['Powerline Symbols', 0xE0A0, 0xE0A3],
+  ]);
+  writeUnicodeTable(term, 'Powerline Extra Symbols', 0xE0B0, 0xE0D4, [
+    ['Powerline Extra Symbols', 0xE0B0, 0xE0D4],
+  ]);
+  writeUnicodeTable(term, 'IEC Power Symbols', 0x23FB, 0x23FE, [
+    ['IEC Power Symbols', 0x23FB, 0x23FE],
+  ]);
+  writeUnicodeTable(term, 'Font Logos', 0xF300, 0xF375, [
+    ['Font Logos', 0xF300, 0xF375],
+  ]);
+  writeUnicodeTable(term, 'Pomicons', 0xE000, 0xE00A, [
+    ['Pomicons', 0xE000, 0xE00A],
+  ]);
+  writeUnicodeTable(term, 'Codicons', 0xEA60, 0xEC1E, [
+    ['Codicons', 0xEA60, 0xEC1E],
+  ]);
+  term.writeln('');
 }
 
 function underlineTest(term: Terminal): void {
