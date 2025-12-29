@@ -3348,6 +3348,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC c
    *   DEC mnemonic: RIS (https://vt100.net/docs/vt510-rm/RIS.html)
    *   Reset to initial state.
+   *
+   * @vt: #Y ESC  RIS "Full Reset" "ESC c"  "Reset to initial state."
    */
   public fullReset(): boolean {
     this._parser.reset();
