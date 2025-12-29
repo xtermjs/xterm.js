@@ -620,6 +620,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;
+    // Update the WebGL viewport to match the new canvas dimensions
+    this._gl.viewport(0, 0, width, height);
     // Render synchronously to avoid flicker when the canvas is cleared
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1, sync: true });
   }
