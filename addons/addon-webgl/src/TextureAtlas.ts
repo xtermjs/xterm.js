@@ -551,61 +551,67 @@ export class TextureAtlas implements ITextureAtlas {
         }
         this._tmpCtx.strokeStyle = this._getColorFromAnsiIndex(fg).css;
       }
+      this._tmpCtx.fillStyle = this._tmpCtx.strokeStyle;
 
       // Underline style/stroke
       this._tmpCtx.beginPath();
       const xLeft = padding;
-      const yTop = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
-      const yMid = yTop + lineWidth;
-      const yBot = yTop + lineWidth * 2;
+      const yTopDefault = Math.ceil(padding + this._config.deviceCharHeight) - yOffset - (restrictToCellHeight ? lineWidth * 2 : 0);
+      const yBotDefault = yTopDefault + lineWidth * 2;
       let nextOffset = this._workAttributeData.getUnderlineVariantOffset();
+      let yTop = 0;
+      let yBot = 0;
 
       for (let i = 0; i < chWidth; i++) {
+        let wasFilled = false;
         this._tmpCtx.save();
+        yTop = yTopDefault;
+        yBot = yBotDefault;
         const xChLeft = xLeft + i * this._config.deviceCellWidth;
         const xChRight = xLeft + (i + 1) * this._config.deviceCellWidth;
-        const xChMid = xChLeft + this._config.deviceCellWidth / 2;
         switch (this._workAttributeData.extended.underlineStyle) {
           case UnderlineStyle.DOUBLE:
-            this._tmpCtx.moveTo(xChLeft, yTop);
-            this._tmpCtx.lineTo(xChRight, yTop);
-            this._tmpCtx.moveTo(xChLeft, yBot);
-            this._tmpCtx.lineTo(xChRight, yBot);
+            this._tmpCtx.moveTo(xChLeft, yTopDefault);
+            this._tmpCtx.lineTo(xChRight, yTopDefault);
+            this._tmpCtx.moveTo(xChLeft, yBotDefault);
+            this._tmpCtx.lineTo(xChRight, yBotDefault);
             break;
           case UnderlineStyle.CURLY:
-            // Choose the bezier top and bottom based on the device pixel ratio, the curly line is
-            // made taller when the line width is  as otherwise it's not very clear otherwise.
-            const yCurlyBot = lineWidth <= 1 ? yBot : Math.ceil(padding + this._config.deviceCharHeight - lineWidth / 2) - yOffset;
-            const yCurlyTop = lineWidth <= 1 ? yTop : Math.ceil(padding + this._config.deviceCharHeight + lineWidth / 2) - yOffset;
-            // Clip the left and right edges of the underline such that it can be drawn just outside
-            // the edge of the cell to ensure a continuous stroke when there are multiple underlined
-            // glyphs adjacent to one another.
+            yTop = this._config.deviceCharHeight + 1;
+            yBot = yTop + 3 * this._config.devicePixelRatio;
+
             const clipRegion = new Path2D();
             clipRegion.rect(xChLeft, yTop, this._config.deviceCellWidth, yBot - yTop);
             this._tmpCtx.clip(clipRegion);
-            // Start 1/2 cell before and end 1/2 cells after to ensure a smooth curve with other
-            // cells
-            this._tmpCtx.moveTo(xChLeft - this._config.deviceCellWidth / 2, yMid);
-            this._tmpCtx.bezierCurveTo(
-              xChLeft - this._config.deviceCellWidth / 2, yCurlyTop,
-              xChLeft, yCurlyTop,
-              xChLeft, yMid
-            );
-            this._tmpCtx.bezierCurveTo(
-              xChLeft, yCurlyBot,
-              xChMid, yCurlyBot,
-              xChMid, yMid
-            );
-            this._tmpCtx.bezierCurveTo(
-              xChMid, yCurlyTop,
-              xChRight, yCurlyTop,
-              xChRight, yMid
-            );
-            this._tmpCtx.bezierCurveTo(
-              xChRight, yCurlyBot,
-              xChRight + this._config.deviceCellWidth / 2, yCurlyBot,
-              xChRight + this._config.deviceCellWidth / 2, yMid
-            );
+
+            // Draw a zigzag pattern, this is derived from the SVG used in monaco for the same
+            // style. The viewbox is 6x3 so scale it using that.
+            const cellW = this._config.deviceCellWidth;
+            const curlyH = (yBot - yTop);
+            const scaleX = cellW / 6;
+            const scaleY = curlyH / 3;
+
+            const polygons: number[][] = [
+              [0, 2, 1, 3, 2.4, 3, 0, 0.6],
+              [5.5, 0, 2.5, 3, 1.1, 3, 4.1, 0],
+              [4, 0, 6, 2, 6, 0.6, 5.4, 0],
+            ];
+
+            for (const polygon of polygons) {
+              this._tmpCtx.beginPath();
+              for (let i = 0; i < polygon.length; i += 2) {
+                const x = xChLeft + polygon[i] * scaleX;
+                const y = yBot - polygon[i + 1] * scaleY;
+                if (i === 0) {
+                  this._tmpCtx.moveTo(x, y);
+                } else {
+                  this._tmpCtx.lineTo(x, y);
+                }
+              }
+              this._tmpCtx.closePath();
+              this._tmpCtx.fill();
+            }
+            wasFilled = true;
             break;
           case UnderlineStyle.DOTTED:
             const offsetWidth = nextOffset === 0 ? 0 :
@@ -614,14 +620,14 @@ export class TextureAtlas implements ITextureAtlas {
             const isLineStart = nextOffset >= lineWidth ? false : true;
             if (isLineStart === false || offsetWidth === 0) {
               this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-              this._tmpCtx.moveTo(xChLeft + offsetWidth, yTop);
-              this._tmpCtx.lineTo(xChRight, yTop);
+              this._tmpCtx.moveTo(xChLeft + offsetWidth, yTopDefault);
+              this._tmpCtx.lineTo(xChRight, yTopDefault);
             } else {
               this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
-              this._tmpCtx.moveTo(xChLeft, yTop);
-              this._tmpCtx.lineTo(xChLeft + offsetWidth, yTop);
-              this._tmpCtx.moveTo(xChLeft + offsetWidth + lineWidth, yTop);
-              this._tmpCtx.lineTo(xChRight, yTop);
+              this._tmpCtx.moveTo(xChLeft, yTopDefault);
+              this._tmpCtx.lineTo(xChLeft + offsetWidth, yTopDefault);
+              this._tmpCtx.moveTo(xChLeft + offsetWidth + lineWidth, yTopDefault);
+              this._tmpCtx.lineTo(xChRight, yTopDefault);
             }
             nextOffset = computeNextVariantOffset(xChRight - xChLeft, lineWidth, nextOffset);
             break;
@@ -634,16 +640,18 @@ export class TextureAtlas implements ITextureAtlas {
             const gap = Math.floor(gapRatio * xChWidth);
             const end = xChWidth - line - gap;
             this._tmpCtx.setLineDash([line, gap, end]);
-            this._tmpCtx.moveTo(xChLeft, yTop);
-            this._tmpCtx.lineTo(xChRight, yTop);
+            this._tmpCtx.moveTo(xChLeft, yTopDefault);
+            this._tmpCtx.lineTo(xChRight, yTopDefault);
             break;
           case UnderlineStyle.SINGLE:
           default:
-            this._tmpCtx.moveTo(xChLeft, yTop);
-            this._tmpCtx.lineTo(xChRight, yTop);
+            this._tmpCtx.moveTo(xChLeft, yTopDefault);
+            this._tmpCtx.lineTo(xChRight, yTopDefault);
             break;
         }
-        this._tmpCtx.stroke();
+        if (!wasFilled) {
+          this._tmpCtx.stroke();
+        }
         this._tmpCtx.restore();
       }
       this._tmpCtx.restore();
