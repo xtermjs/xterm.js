@@ -501,6 +501,11 @@ function customGlyphAlignmentHandler(term: Terminal): void {
   term.write(' \u{F5F9}\u{F5F9} \n\r');
   term.write('\x1b[0m');
   term.write('\n\r');
+  
+  term.write('\x1b[0mProgress bar alignment tests:\x1b[33m\n\r');
+  term.write('\u{EE00}\u{EE01}\u{EE02} \u{EE03}\u{EE04}\u{EE05}');
+
+  term.write('\n\r');
   window.scrollTo(0, 0);
 }
 
@@ -542,6 +547,14 @@ function customGlyphRangesHandler(term: Terminal): void {
     ['Powerline symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
     ['Powerline extra symbols', 0xE0B4, 0xE0D4, [0xE0C9, 0xE0CB, 0xE0D3]],
   ]);
+  // Progress Indicators
+  // Range: EE00-EE0B
+  // https://github.com/tonsky/FiraCode
+  writeUnicodeTable(term, 'Progress Indicators', 0xEE00, 0xEE0B, [
+    ['Progress bars', 0xEE00, 0xEE05],
+    ['Progress spinners', 0xEE06, 0xEE0B],
+  ]);
+  // https://github.com/ryanoasis/nerd-fonts/pull/1733
   // Git Branch Symbols
   // F5D0-F60D
   // https://github.com/xtermjs/xterm.js/issues/5477

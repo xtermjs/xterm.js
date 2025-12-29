@@ -434,8 +434,8 @@ function commandsToPath(commands) {
   const bbox = getBoundingBox(absolute);
   console.log(`Path bounding box: x=${bbox.minX}, y=${bbox.minY}, w=${bbox.width}, h=${bbox.height}`);
 
-  // Use path bounding box for normalization
-  const normalized = scaleToNormalized(absolute, bbox.minX, bbox.minY, bbox.width, bbox.height);
+  // Use viewBox for normalization (not path bounding box)
+  const normalized = scaleToNormalized(absolute, minX, minY, width, height);
   const result = commandsToPath(normalized);
 
   console.log(`\nConverted path (${result.length} chars):\n`);
