@@ -513,6 +513,25 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
     return '';
   }
 
+  /**
+   * Serializes the scroll region (DECSTBM) if it's not set to the full terminal size.
+   * Uses internal API access since scroll region is not exposed in the public API.
+   */
+  private _serializeScrollRegion(terminal: Terminal): string {
+    // HACK: Internal API access since scroll region is not exposed in the public API
+    const buffer = (terminal as any)._core.buffer;
+    const scrollTop: number = buffer.scrollTop;
+    const scrollBottom: number = buffer.scrollBottom;
+
+    // Only serialize if scroll region is not the default (full terminal size)
+    if (scrollTop !== 0 || scrollBottom !== terminal.rows - 1) {
+      // DECSTBM uses 1-based indices: CSI Ps ; Ps r
+      return `\x1b[${scrollTop + 1};${scrollBottom + 1}r`;
+    }
+
+    return '';
+  }
+
   private _serializeModes(terminal: Terminal): string {
     let content = '';
     const modes = terminal.modes;
@@ -562,9 +581,10 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
       }
     }
 
-    // Modes
+    // Modes and scroll region
     if (!options?.excludeModes) {
       content += this._serializeModes(this._terminal);
+      content += this._serializeScrollRegion(this._terminal);
     }
 
     return content;
