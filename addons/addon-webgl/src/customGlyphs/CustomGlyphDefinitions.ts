@@ -324,6 +324,29 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // #endregion
 
+  // #region Progress Indicators (EE00-EE0B)
+
+  // initially added in Fira Code and later Nerd Fonts
+  // https://github.com/ryanoasis/nerd-fonts/pull/1733
+
+  // Progress bars (EE00-EE05)
+  '\u{EE00}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,.05 L.1,.05 L.1,.95 L1,.95 L1,1 L0,1 Z' }, // PROGRESS BAR EMPTY START
+  '\u{EE01}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,.05 L0,.05 Z M0,.95 L1,.95 L1,1 L0,1 Z' }, // PROGRESS BAR EMPTY MIDDLE
+  '\u{EE02}': { type: CustomGlyphDefinitionType.PATH, data: 'M1,0 L0,0 L0,.05 L.9,.05 L.9,.95 L0,.95 L0,1 L1,1 Z' }, // PROGRESS BAR EMPTY END
+  '\u{EE03}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,.05 L.1,.05 L.1,.95 L1,.95 L1,1 L0,1 Z M.25,.15 L1,.15 L1,.85 L.25,.85 Z' }, // PROGRESS BAR FILLED START
+  '\u{EE04}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,.05 L0,.05 Z M0,.95 L1,.95 L1,1 L0,1 Z M0,.15 L1,.15 L1,.85 L0,.85 Z' }, // PROGRESS BAR FILLED MIDDLE
+  '\u{EE05}': { type: CustomGlyphDefinitionType.PATH, data: 'M1,0 L0,0 L0,.05 L.9,.05 L.9,.95 L0,.95 L0,1 L1,1 Z M0,.15 L.75,.15 L.75,.85 L0,.85 Z' }, // PROGRESS BAR FILLED END
+
+  // Progress spinners (EE06-EE0B) - 6-frame spinner animation using stroked arcs
+  '\u{EE06}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.6574,0.303 Q0.623,0.291,0.5852,0.285 T0.5082,0.279 T0.4311,0.285 T0.359,0.303 L0.3082,0.248 Q0.3525,0.232,0.4041,0.2235 T0.5082,0.215 T0.6123,0.2235 T0.7082,0.248 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }, // SPINNER FRAME 1 (12 o'clock)
+  '\u{EE07}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.8557,0.582 L0.7656,0.551 Q0.7852,0.53,0.7951,0.507 T0.8049,0.46 Q0.8049,0.424,0.782,0.3905 T0.718,0.332 T0.6221,0.293 T0.5082,0.279 L0.5082,0.215 Q0.5607,0.215,0.6123,0.2235 T0.709,0.248 T0.7918,0.287 T0.8557,0.3375 T0.8959,0.3965 T0.9098,0.46 T0.8959,0.5235 T0.8557,0.582 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }, // SPINNER FRAME 2 (2 o'clock)
+  '\u{EE08}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.5082,0.705 Q0.482,0.705,0.4557,0.703 T0.4049,0.697 L0.4311,0.635 Q0.4508,0.638,0.4697,0.6395 T0.5082,0.641 Q0.5672,0.641,0.6221,0.627 T0.718,0.588 T0.782,0.5295 T0.8049,0.46 Q0.8049,0.436,0.7951,0.413 T0.7656,0.369 L0.8557,0.338 Q0.882,0.365,0.8959,0.3965 T0.9098,0.46 T0.8959,0.5235 T0.8557,0.5825 T0.7918,0.633 T0.709,0.672 T0.6123,0.6965 T0.5082,0.705 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }, // SPINNER FRAME 3 (4 o'clock)
+  '\u{EE09}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.5082,0.705 Q0.4557,0.705,0.4041,0.6965 T0.3074,0.672 T0.2246,0.633 T0.1607,0.5825 T0.1205,0.5235 T0.1066,0.46 L0.2115,0.46 Q0.2115,0.496,0.2344,0.5295 T0.2984,0.588 T0.3943,0.627 T0.5082,0.641 T0.6221,0.627 T0.718,0.588 T0.782,0.5295 T0.8049,0.46 L0.9098,0.46 Q0.9098,0.492,0.8959,0.5235 T0.8557,0.5825 T0.7918,0.633 T0.709,0.672 T0.6123,0.6965 T0.5082,0.705 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }, // SPINNER FRAME 4 (6 o'clock)
+  '\u{EE0A}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.5082,0.705 Q0.4557,0.705,0.4041,0.6965 T0.3074,0.672 T0.2246,0.633 T0.1607,0.5825 T0.1205,0.5235 T0.1066,0.46 T0.1205,0.3965 T0.1607,0.338 L0.2508,0.369 Q0.2311,0.39,0.2213,0.413 T0.2115,0.46 Q0.2115,0.496,0.2344,0.5295 T0.2984,0.588 T0.3943,0.627 T0.5082,0.641 Q0.5279,0.641,0.5467,0.6395 T0.5852,0.635 L0.6115,0.697 Q0.5869,0.701,0.5607,0.703 T0.5082,0.705 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }, // SPINNER FRAME 5 (8 o'clock)
+  '\u{EE0B}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0.1607,0.582 Q0.1344,0.555,0.1205,0.5235 T0.1066,0.46 T0.1205,0.3965 T0.1607,0.3375 T0.2246,0.287 T0.3074,0.248 T0.4041,0.2235 T0.5082,0.215 L0.5082,0.279 Q0.4492,0.279,0.3943,0.293 T0.2984,0.332 T0.2344,0.3905 T0.2115,0.46 Q0.2115,0.484,0.2213,0.507 T0.2508,0.551 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR }, // SPINNER FRAME 6 (10 o'clock)
+
+  // #endregion
+
   // #region Git Branch Symbols (F5D0-F60D)
 
   // Initially added in Kitty (https://github.com/kovidgoyal/kitty/pull/7681)
