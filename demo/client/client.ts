@@ -340,10 +340,16 @@ function createTerminal(): Terminal {
 
   const resizeObserver = new ResizeObserver(entries => {
     if (optionsWindow.autoResize) {
+      // In general this should be debounced to avoid excessive work on the main
+      // thread by firing the expensive resize action repeatedly
       addons.fit.instance.fit();
     }
   });
   resizeObserver.observe(terminalContainer);
+
+  window.addEventListener('resize', () => {
+    terminalContainer.style.width = document.body.clientWidth + 'px';
+  });
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(async () => {

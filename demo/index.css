@@ -7,6 +7,7 @@ body {
     height: 100vh;
     display: grid;
     grid-template-rows: 24px 1fr;
+    overflow: hidden;
 }
 
 #banner {
@@ -39,11 +40,6 @@ body {
 .banner-tabs button.active {
     background: rgba(255,255,255,0.2);
     color: #fff;
-}
-
-#terminal-container {
-    height: 60%;
-    margin: 0 auto;
 }
 
 p {
