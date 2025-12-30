@@ -26,6 +26,7 @@ test.describe('InputHandler Integration Tests', () => {
   });
   test.beforeEach(async () => {
     recordedData.length = 0;
+    await ctx.proxy.resize(80, 24);
   });
 
   test.describe('CSI', () => {
@@ -150,11 +151,41 @@ test.describe('InputHandler Integration Tests', () => {
       await pollFor(ctx.page, () => ctx.proxy.buffer.active.length, 5);
       await pollFor(ctx.page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
-    test.skip('CSI Ps K - EL: Erase in Line, VT100', async () => {
-      // TODO: Implement
+    test('CSI Ps K - EL: Erase in Line, VT100', async () => {
+      const fixture = 'abcde\x1b[1;3H';
+      // Default: Erase to Right
+      await ctx.proxy.write(fixture + '\x1b[K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 0: Erase to Right
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[0K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 1: Erase to Left
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[1K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['   de']);
+      // 2: Erase All
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[2K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['']);
     });
-    test.skip('CSI ? Ps K - DECSEL: Erase in Line, VT220', async () => {
-      // TODO: Implement
+    test('CSI ? Ps K - DECSEL: Erase in Line, VT220', async () => {
+      const fixture = 'abcde\x1b[1;3H';
+      // Default: Erase to Right
+      await ctx.proxy.write(fixture + '\x1b[?K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 0: Erase to Right
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?0K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 1: Erase to Left
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?1K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['   de']);
+      // 2: Erase All
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?2K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['']);
     });
     test('CSI Ps L - IL: Insert Ps Line(s) (default = 1)', async () => {
       // Default
@@ -186,14 +217,28 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI # R - XTREPORTCOLORS: Report the current entry on the palette stack, and the number of palettes stored on the stack, using the same form as XTPOPCOLOR (default = 0), xterm', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps S - SU: Scroll up Ps lines (default = 1), VT420, ECMA-48', async () => {
-      // TODO: Implement
+    test('CSI Ps S - SU: Scroll up Ps lines (default = 1), VT420, ECMA-48', async () => {
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
+      await ctx.proxy.write('\x1b[S');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['2', '3', '4', '5', '']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await ctx.proxy.write('\x1b[2S');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['3', '4', '5', '', '']);
     });
     test.skip('CSI ? Pi ; Pa ; Pv S - XTSMGRAPHICS: Set or request graphics attribute, xterm', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps T - SD: Scroll down Ps lines (default = 1), VT420', async () => {
-      // TODO: Implement
+    test('CSI Ps T - SD: Scroll down Ps lines (default = 1), VT420', async () => {
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
+      await ctx.proxy.write('\x1b[T');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '1', '2', '3', '4']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await ctx.proxy.write('\x1b[2T');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '', '1', '2', '3']);
     });
     test.skip('CSI Ps ; Ps ; Ps ; Ps ; Ps T - XTHIMOUSE: Initiate highlight mouse tracking (XTHIMOUSE), xterm', async () => {
       // TODO: Implement
@@ -201,17 +246,33 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI > Pm T - XTRMTITLE: Reset title mode features to default value, xterm', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps X - ECH: Erase Ps Character(s) (default = 1)', async () => {
-      // TODO: Implement
+    test('CSI Ps X - ECH: Erase Ps Character(s) (default = 1)', async () => {
+      await ctx.proxy.write('abcdef\x1b[1;1H\x1b[X');
+      await pollFor(ctx.page, () => getLinesAsArray(1), [' bcdef']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('abcdef\x1b[1;1H\x1b[3X');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['   def']);
     });
-    test.skip('CSI Ps Z - CBT: Cursor Backward Tabulation Ps tab stops (default = 1)', async () => {
-      // TODO: Implement
+    test('CSI Ps Z - CBT: Cursor Backward Tabulation Ps tab stops (default = 1)', async () => {
+      await ctx.proxy.write('\x1b[17Ga\x1b[17G\x1b[Zb');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['        b       a']);
     });
-    test.skip('CSI Ps ^ - SD: Scroll down Ps lines (default = 1) (SD), ECMA-48', async () => {
-      // TODO: Implement
+    test('CSI Ps ^ - SD: Scroll down Ps lines (default = 1) (SD), ECMA-48', async () => {
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
+      await ctx.proxy.write('\x1b[^');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '1', '2', '3', '4']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await ctx.proxy.write('\x1b[2^');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '', '1', '2', '3']);
     });
-    test.skip('CSI Ps ` - HPA: Character Position Absolute [column] (default = [row,1])', async () => {
-      // TODO: Implement
+    test('CSI Ps ` - HPA: Character Position Absolute [column] (default = [row,1])', async () => {
+      // Default
+      await ctx.proxy.write('foo\x1b[`a');
+      // Explicit
+      await ctx.proxy.write('\x1b[10`b');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['aoo      b']);
     });
     test.skip('CSI Ps a - ', async () => {
       // TODO: Implement
