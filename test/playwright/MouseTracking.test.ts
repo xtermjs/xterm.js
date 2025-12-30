@@ -176,10 +176,8 @@ test.describe('Mouse Tracking Tests', () => {
   });
 
   test.beforeEach(async () => {
-    await ctx.page.evaluate(`
-      window.calls = [];
-      window.term.options.fontSize = ${fontSize};
-    `);
+    await ctx.page.evaluate(`window.calls = [];`);
+    await ctx.proxy.setOption('fontSize', fontSize);
     await ctx.proxy.resize(cols, rows);
   });
 
