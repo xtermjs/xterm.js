@@ -235,6 +235,10 @@ export class MockBuffer implements IBuffer {
   public savedY!: number;
   public savedX!: number;
   public savedCharset: ICharset | undefined;
+  public savedCharsets: (ICharset | undefined)[] = [];
+  public savedGlevel: number = 0;
+  public savedOriginMode: boolean = false;
+  public savedWraparoundMode: boolean = true;
   public savedCurAttrData = new AttributeData();
   public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments as any);

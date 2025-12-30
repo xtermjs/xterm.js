@@ -14,6 +14,10 @@ export class CharsetService implements ICharsetService {
 
   private _charsets: (ICharset | undefined)[] = [];
 
+  public get charsets(): (ICharset | undefined)[] {
+    return this._charsets;
+  }
+
   public reset(): void {
     this.charset = undefined;
     this._charsets = [];

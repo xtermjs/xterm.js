@@ -2929,6 +2929,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.savedCurAttrData.fg = this._curAttrData.fg;
     this._activeBuffer.savedCurAttrData.bg = this._curAttrData.bg;
     this._activeBuffer.savedCharset = this._charsetService.charset;
+    this._activeBuffer.savedCharsets = this._charsetService.charsets.slice();
+    this._activeBuffer.savedGlevel = this._charsetService.glevel;
+    this._activeBuffer.savedOriginMode = this._coreService.decPrivateModes.origin;
+    this._activeBuffer.savedWraparoundMode = this._coreService.decPrivateModes.wraparound;
     return true;
   }
 
@@ -2946,10 +2950,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.y = Math.max(this._activeBuffer.savedY - this._activeBuffer.ybase, 0);
     this._curAttrData.fg = this._activeBuffer.savedCurAttrData.fg;
     this._curAttrData.bg = this._activeBuffer.savedCurAttrData.bg;
-    this._charsetService.charset = (this as any)._savedCharset;
-    if (this._activeBuffer.savedCharset) {
-      this._charsetService.charset = this._activeBuffer.savedCharset;
+    for (let i = 0; i < this._activeBuffer.savedCharsets.length; i++) {
+      this._charsetService.setgCharset(i, this._activeBuffer.savedCharsets[i]);
     }
+    this._charsetService.setgLevel(this._activeBuffer.savedGlevel);
+    this._coreService.decPrivateModes.origin = this._activeBuffer.savedOriginMode;
+    this._coreService.decPrivateModes.wraparound = this._activeBuffer.savedWraparoundMode;
     this._restrictCursor();
     return true;
   }

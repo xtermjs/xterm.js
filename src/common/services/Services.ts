@@ -116,6 +116,7 @@ export interface ICharsetService {
 
   charset: ICharset | undefined;
   readonly glevel: number;
+  readonly charsets: (ICharset | undefined)[];
 
   reset(): void;
 
