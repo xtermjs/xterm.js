@@ -582,9 +582,9 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 
 function updateTerminalSize(): void {
   const width = optionsWindow.autoResize ? '100%'
-    : (term._core._renderService.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
+    : (term.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
   const height = optionsWindow.autoResize ? '100%'
-    : (term._core._renderService.dimensions.css.canvas.height).toString() + 'px';
+    : (term.dimensions.css.canvas.height).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   addons.fit.instance.fit();

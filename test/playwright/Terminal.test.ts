@@ -719,7 +719,7 @@ test.describe('API Integration Tests', () => {
     await ctx.page.evaluate(`window.term = new Terminal()`);
     await ctx.page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
     await ctx.page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
-    await pollFor(ctx.page, `window.term._core._renderService.dimensions.css.cell.width > 0`, true);
+    await pollFor(ctx.page, `window.term.dimensions.css.cell.width > 0`, true);
   });
 
   test.describe('registerDecoration', () => {
@@ -1035,7 +1035,7 @@ async function getDimensions(): Promise<IDimensions> {
       return {
         top: rect.top,
         left: rect.left,
-        renderDimensions: window.term._core._renderService.dimensions
+        renderDimensions: window.term.dimensions
       };
     })();
   `);

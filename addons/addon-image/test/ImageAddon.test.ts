@@ -300,7 +300,7 @@ test.describe('ImageAddon', () => {
  * terminal access helpers.
  */
 async function getDimensions(): Promise<IDimensions> {
-  const dimensions: any = await ctx.page.evaluate(`term._core._renderService.dimensions`);
+  const dimensions: any = await ctx.page.evaluate(`term.dimensions`);
   return {
     cellWidth: Math.round(dimensions.css.cell.width),
     cellHeight: Math.round(dimensions.css.cell.height),
