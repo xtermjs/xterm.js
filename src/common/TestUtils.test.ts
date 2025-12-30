@@ -80,9 +80,18 @@ export class MockCharsetService implements ICharsetService {
   public serviceBrand: any;
   public charset: ICharset | undefined;
   public glevel: number = 0;
+  public charsets: (ICharset | undefined)[] = [];
   public reset(): void { }
-  public setgLevel(g: number): void { }
-  public setgCharset(g: number, charset: ICharset): void { }
+  public setgLevel(g: number): void {
+    this.glevel = g;
+    this.charset = this.charsets[g];
+  }
+  public setgCharset(g: number, charset: ICharset | undefined): void {
+    this.charsets[g] = charset;
+    if (this.glevel === g) {
+      this.charset = charset;
+    }
+  }
 }
 
 export class MockCoreService implements ICoreService {

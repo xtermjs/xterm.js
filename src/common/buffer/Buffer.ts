@@ -38,6 +38,10 @@ export class Buffer implements IBuffer {
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
+  public savedCharsets: (ICharset | undefined)[] = [];
+  public savedGlevel: number = 0;
+  public savedOriginMode: boolean = false;
+  public savedWraparoundMode: boolean = true;
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);

@@ -199,6 +199,28 @@ describe('InputHandler', () => {
     assert.equal(bufferService.buffer.y, 2);
     assert.equal(inputHandler.curAttrData.fg, 3);
   });
+  describe('DECSC/DECRC - save and restore cursor', () => {
+    it('should save and restore origin mode', async () => {
+      assert.equal(coreService.decPrivateModes.origin, false);
+      await inputHandler.parseP('\x1b[?6h');
+      assert.equal(coreService.decPrivateModes.origin, true);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x1b[?6l');
+      assert.equal(coreService.decPrivateModes.origin, false);
+      await inputHandler.parseP('\x1b8');
+      assert.equal(coreService.decPrivateModes.origin, true);
+    });
+    it('should save and restore wraparound mode', async () => {
+      assert.equal(coreService.decPrivateModes.wraparound, true);
+      await inputHandler.parseP('\x1b[?7l');
+      assert.equal(coreService.decPrivateModes.wraparound, false);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x1b[?7h');
+      assert.equal(coreService.decPrivateModes.wraparound, true);
+      await inputHandler.parseP('\x1b8');
+      assert.equal(coreService.decPrivateModes.wraparound, false);
+    });
+  });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
