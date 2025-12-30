@@ -24,6 +24,7 @@ npm run build && npm run esbuild # Build all TypeScript and bundle
 - Unit tests filtering to file: `npm run test-unit -- **/fileName.ts
 - Per-addon unit tests: `npm run test-unit addons/addon-image/out-esbuild/*.test.js`
 - Integration tests: `npm run test-integration` (Playwright across Chrome/Firefox/WebKit)
+- Integration tests by file: `npm run test-integration -- test/playwright/InputHandler.test.ts`
 - Per-addon integration tests: `npm run test-integration --suite=addon-search`
 
 ## Addon Development Pattern
