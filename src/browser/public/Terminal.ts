@@ -12,7 +12,7 @@ import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
-import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from '@xterm/xterm';
+import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, IRenderDimensions, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from '@xterm/xterm';
 import type { Event } from 'vs/base/common/event';
 
 /**
@@ -80,6 +80,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onSelectionChange(): Event<void> { return this._core.onSelectionChange; }
   public get onTitleChange(): Event<string> { return this._core.onTitleChange; }
   public get onWriteParsed(): Event<void> { return this._core.onWriteParsed; }
+  public get onDimensionsChange(): Event<IRenderDimensions> { return this._core.onDimensionsChange; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
@@ -126,6 +127,9 @@ export class Terminal extends Disposable implements ITerminalApi {
       synchronizedOutputMode: m.synchronizedOutput,
       wraparoundMode: m.wraparound
     };
+  }
+  public get dimensions(): IRenderDimensions | undefined {
+    return this._core.dimensions;
   }
   public get options(): Required<ITerminalOptions> {
     return this._publicOptions;

@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from '@xterm/xterm';
+import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker, IRenderDimensions as IRenderDimensionsApi } from '@xterm/xterm';
 import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
@@ -143,6 +143,26 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public get onA11yTab(): Event<number> { return this._onA11yTabEmitter.event; }
   private _onWillOpen = this._register(new Emitter<HTMLElement>());
   public get onWillOpen(): Event<HTMLElement> { return this._onWillOpen.event; }
+  private readonly _onDimensionsChange = this._register(new Emitter<IRenderDimensionsApi>());
+  public readonly onDimensionsChange = this._onDimensionsChange.event;
+
+  public get dimensions(): IRenderDimensionsApi | undefined {
+    if (!this._renderService) {
+      return undefined;
+    }
+    const dimensions = this._renderService.dimensions;
+    return {
+      css: {
+        canvas: { ...dimensions.css.canvas },
+        cell: { ...dimensions.css.cell }
+      },
+      device: {
+        canvas: { ...dimensions.device.canvas },
+        cell: { ...dimensions.device.cell },
+        char: { ...dimensions.device.char }
+      }
+    };
+  }
 
   constructor(
     options: Partial<ITerminalOptions> = {}
@@ -476,6 +496,17 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._renderService = this._register(this._instantiationService.createInstance(RenderService, this.rows, this.screenElement));
     this._instantiationService.setService(IRenderService, this._renderService);
     this._register(this._renderService.onRenderedViewportChange(e => this._onRender.fire(e)));
+    this._register(this._renderService.onDimensionsChange(e => this._onDimensionsChange.fire({
+      css: {
+        canvas: { ...e.css.canvas },
+        cell: { ...e.css.cell }
+      },
+      device: {
+        canvas: { ...e.device.canvas },
+        cell: { ...e.device.cell },
+        char: { ...e.device.char }
+      }
+    })));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
     this._compositionView = this._document.createElement('div');

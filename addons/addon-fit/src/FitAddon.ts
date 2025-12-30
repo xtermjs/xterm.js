@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import type { Terminal, ITerminalAddon } from '@xterm/xterm';
+import type { Terminal, ITerminalAddon, IRenderDimensions } from '@xterm/xterm';
 import type { FitAddon as IFitApi } from '@xterm/addon-fit';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ViewportConstants } from 'browser/shared/Constants';
 
 interface ITerminalDimensions {
@@ -49,12 +48,8 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       return;
     }
 
-    // TODO: Remove reliance on private API
-    const core = (this._terminal as any)._core;
-
     // Force a full render
     if (this._terminal.rows !== dims.rows || this._terminal.cols !== dims.cols) {
-      core._renderService.clear();
       this._terminal.resize(dims.cols, dims.rows);
     }
   }
@@ -68,11 +63,9 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       return undefined;
     }
 
-    // TODO: Remove reliance on private API
-    const core = (this._terminal as any)._core;
-    const dims: IRenderDimensions = core._renderService.dimensions;
+    const dims: IRenderDimensions | undefined = this._terminal.dimensions;
 
-    if (dims.css.cell.width === 0 || dims.css.cell.height === 0) {
+    if (!dims || dims.css.cell.width === 0 || dims.css.cell.height === 0) {
       return undefined;
     }
 
