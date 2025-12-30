@@ -73,8 +73,7 @@
   },
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
-    "concurrently": "^9.1.2",
-    "@playwright/test": "^1.37.1",
+    "@playwright/test": "^1.57.0",
     "@stylistic/eslint-plugin": "^4.4.1",
     "@types/chai": "^4.2.22",
     "@types/debug": "^4.1.7",
@@ -91,6 +90,7 @@
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
     "chai": "^4.3.4",
+    "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "deep-equal": "^2.0.5",
     "esbuild": "~0.25.2",
