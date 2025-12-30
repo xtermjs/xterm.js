@@ -1405,7 +1405,7 @@ async function getCursor(): Promise<{ col: number, row: number }> {
 }
 
 async function getDimensions(): Promise<any> {
-  const dim: IRenderDimensions = await ctx.page.evaluate(`term._core._renderService.dimensions`);
+  const dim: IRenderDimensions = await ctx.page.evaluate(`term.dimensions`);
   return {
     cellWidth: dim.css.cell.width.toFixed(0),
     cellHeight: dim.css.cell.height.toFixed(0),

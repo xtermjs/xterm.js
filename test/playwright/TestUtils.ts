@@ -5,12 +5,12 @@
 
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
-import type { IRenderDimensions } from 'browser/renderer/shared/Types';
+import type { IRenderDimensions as IRenderDimensionsInternal } from 'browser/renderer/shared/Types';
 import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IDisposable, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, IRenderDimensions, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
 
 export interface ITestContext {
   browser: Browser;
@@ -114,7 +114,7 @@ interface ITerminalProxyCustomMethods {
 
 type TerminalProxyAsyncPropOverrides = 'cols' | 'rows' | 'modes';
 type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getSelectionPosition' | 'registerMarker' | 'registerDecoration';
-type TerminalProxyCustomOverrides = 'buffer' | (
+type TerminalProxyCustomOverrides = 'buffer' | 'dimensions' | (
   // The below are not implemented yet
   'element' |
   'textarea' |
@@ -150,6 +150,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this._page.exposeFunction('onSelectionChange', () => this._onSelectionChange.fire());
     await this._page.exposeFunction('onTitleChange', (e: string) => this._onTitleChange.fire(e));
     await this._page.exposeFunction('onWriteParsed', () => this._onWriteParsed.fire());
+    await this._page.exposeFunction('onDimensionsChange', (e: IRenderDimensions) => this._onDimensionsChange.fire(e));
   }
 
   /**
@@ -168,6 +169,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     this._onSelectionChange.dispose();
     this._onTitleChange.dispose();
     this._onWriteParsed.dispose();
+    this._onDimensionsChange.dispose();
 
     this._onBell = new EventEmitter();
     this._onBinary = new EventEmitter();
@@ -181,6 +183,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     this._onSelectionChange = new EventEmitter();
     this._onTitleChange = new EventEmitter();
     this._onWriteParsed = new EventEmitter();
+    this._onDimensionsChange = new EventEmitter();
 
     await this.evaluate(([term]) => term.onBell((window as any).onBell));
     await this.evaluate(([term]) => term.onBinary((window as any).onBinary));
@@ -194,6 +197,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this.evaluate(([term]) => term.onSelectionChange((window as any).onSelectionChange));
     await this.evaluate(([term]) => term.onTitleChange((window as any).onTitleChange));
     await this.evaluate(([term]) => term.onWriteParsed((window as any).onWriteParsed));
+    await this.evaluate(([term]) => term.onDimensionsChange((window as any).onDimensionsChange));
   }
 
   // #region Events
@@ -215,6 +219,8 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
+  public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
   private _onSelectionChange = new EventEmitter<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
@@ -227,6 +233,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
   public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
   public get modes(): Promise<IModes> { return this.evaluate(([term]) => term.modes); }
+  public get dimensions(): Promise<IRenderDimensions | undefined> { return this.evaluate(([term]) => term.dimensions); }
   // #endregion
 
   // #region Complex properties
@@ -396,7 +403,7 @@ class TerminalCoreProxy {
   }
 
   public get isDisposed(): Promise<boolean> { return this.evaluate(([core]) => (core as any)._isDisposed); }
-  public get renderDimensions(): Promise<IRenderDimensions> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
+  public get renderDimensions(): Promise<IRenderDimensionsInternal> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
 
   public async triggerBinaryEvent(data: string): Promise<void> {
     return this._page.evaluate(([core, data]) => core.coreService.triggerBinaryEvent(data), [await this._getCoreHandle(), data] as const);
