@@ -143,12 +143,19 @@ export class WidthCache implements IDisposable {
 }
 
 class WidthCacheFontVariantCanvas implements IWidthCacheFontVariantCanvas {
-  private _canvas: OffscreenCanvas;
-  private _ctx: OffscreenCanvasRenderingContext2D;
+  private _canvas: OffscreenCanvas | HTMLCanvasElement;
+  private _ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
 
   constructor() {
-    this._canvas = new OffscreenCanvas(1, 1);
-    this._ctx = throwIfFalsy(this._canvas.getContext('2d'));
+    if (typeof OffscreenCanvas !== 'undefined') {
+      this._canvas = new OffscreenCanvas(1, 1);
+      this._ctx = throwIfFalsy(this._canvas.getContext('2d'));
+    } else {
+      this._canvas = document.createElement('canvas');
+      this._canvas.width = 1;
+      this._canvas.height = 1;
+      this._ctx = throwIfFalsy(this._canvas.getContext('2d'));
+    }
   }
 
   public setFont(fontFamily: string, fontSize: number, fontWeight: FontWeight, italic: boolean): void {
