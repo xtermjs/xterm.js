@@ -240,6 +240,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'T' }, params => this.scrollDown(params));
     this._parser.registerCsiHandler({ final: 'X' }, params => this.eraseChars(params));
     this._parser.registerCsiHandler({ final: 'Z' }, params => this.cursorBackwardTab(params));
+    this._parser.registerCsiHandler({ final: '^' }, params => this.scrollDown(params));
     this._parser.registerCsiHandler({ final: '`' }, params => this.charPosAbsolute(params));
     this._parser.registerCsiHandler({ final: 'a' }, params => this.hPositionRelative(params));
     this._parser.registerCsiHandler({ final: 'b' }, params => this.repeatPrecedingCharacter(params));

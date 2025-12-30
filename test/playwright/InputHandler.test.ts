@@ -26,6 +26,7 @@ test.describe('InputHandler Integration Tests', () => {
   });
   test.beforeEach(async () => {
     recordedData.length = 0;
+    await ctx.proxy.resize(80, 24);
   });
 
   test.describe('CSI', () => {
@@ -245,22 +246,18 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI > Pm T - XTRMTITLE: Reset title mode features to default value, xterm', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps X - ECH: Erase Ps Character(s) (default = 1)', async () => {
-      // TODO: Test needs investigation - erase character behavior differs from expectation
+    test('CSI Ps X - ECH: Erase Ps Character(s) (default = 1)', async () => {
       await ctx.proxy.write('abcdef\x1b[1;1H\x1b[X');
       await pollFor(ctx.page, () => getLinesAsArray(1), [' bcdef']);
       await ctx.proxy.reset();
       await ctx.proxy.write('abcdef\x1b[1;1H\x1b[3X');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['   def']);
     });
-    // TODO: CSI Z (CBT) appears to move cursor to column 0 instead of previous tab stop
-    test.skip('CSI Ps Z - CBT: Cursor Backward Tabulation Ps tab stops (default = 1)', async () => {
-      // Write 'a' at col 17, go back 1 tab stop to col 9, write 'b'
+    test('CSI Ps Z - CBT: Cursor Backward Tabulation Ps tab stops (default = 1)', async () => {
       await ctx.proxy.write('\x1b[17Ga\x1b[17G\x1b[Zb');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['        b       a']);
     });
-    test.skip('CSI Ps ^ - SD: Scroll down Ps lines (default = 1) (SD), ECMA-48', async () => {
-      // CSI ^ for scroll down is not implemented - xterm.js treats ^ (0x5e) as PM string start
+    test('CSI Ps ^ - SD: Scroll down Ps lines (default = 1) (SD), ECMA-48', async () => {
       await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
       await ctx.proxy.write('\x1b[^');
@@ -271,8 +268,6 @@ test.describe('InputHandler Integration Tests', () => {
       await pollFor(ctx.page, () => getLinesAsArray(5), ['', '', '1', '2', '3']);
     });
     test('CSI Ps ` - HPA: Character Position Absolute [column] (default = [row,1])', async () => {
-      // Ensure terminal is wide enough (other tests may resize)
-      await ctx.proxy.resize(80, 24);
       // Default
       await ctx.proxy.write('foo\x1b[`a');
       // Explicit
