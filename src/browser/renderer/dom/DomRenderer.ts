@@ -108,7 +108,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._dimensionsStyleElement.remove();
     }));
 
-    this._widthCache = new WidthCache(this._document, this._helperContainer);
+    this._widthCache = new WidthCache();
     this._widthCache.setFont(
       this._optionsService.rawOptions.fontFamily,
       this._optionsService.rawOptions.fontSize,
