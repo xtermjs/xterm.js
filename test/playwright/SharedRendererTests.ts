@@ -14,9 +14,6 @@ export interface ISharedRendererTestContext {
 }
 
 export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void {
-  // HACK: Skip on WebKit, not clear why it's failing
-  test.skip(({ browserName }) => browserName === 'webkit', 'Skipped on WebKit');
-
   test.beforeEach(async () => {
     await ctx.value.proxy.reset();
     ctx.value.page.evaluate(`
@@ -1355,9 +1352,6 @@ enum CellColorPosition {
  * treatment.
  */
 export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext, setupCb: () => Promise<void> | void): void {
-  // Skip on WebKit because Playwright's WebKit doesn't render identically
-  test.skip(({ browserName }) => browserName === 'webkit', 'Skipped on WebKit');
-
   const setupTests = ({ shadowDom }: { shadowDom: boolean }): void => {
     test.beforeEach(async () => {
       // Recreate terminal
