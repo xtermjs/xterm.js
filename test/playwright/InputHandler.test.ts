@@ -29,8 +29,14 @@ test.describe('InputHandler Integration Tests', () => {
       `);
       await pollFor(ctx.page, () => getLinesAsArray(2), [' foo', '    bar']);
     });
-    test.skip('CSI Ps SP @ - SL: Shift left Ps columns(s) (default = 1), ECMA-48', async () => {
-      // TODO: Implement
+    test('CSI Ps SP @ - SL: Shift left Ps columns(s) (default = 1), ECMA-48', async () => {
+      // Default
+      await ctx.proxy.write('abcdefg\x1b[ @');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['bcdefg']);
+      // Explicit
+      await ctx.proxy.reset();
+      await ctx.proxy.write('abcdefg\x1b[3 @');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['defg']);
     });
     test('CSI Ps A - CUU: Cursor Up Ps Times (default = 1)', async () => {
       await ctx.page.evaluate(`
