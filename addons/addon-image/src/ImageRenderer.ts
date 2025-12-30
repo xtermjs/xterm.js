@@ -124,7 +124,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Forwarded from internal render service.
    */
   public get dimensions(): IRenderDimensions | undefined {
-    return this._renderService?.dimensions;
+    return this._terminal.dimensions;
   }
 
   /**
