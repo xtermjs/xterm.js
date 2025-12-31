@@ -277,7 +277,7 @@ function createTerminal(): Terminal {
       buildNumber: 22621
     } : undefined,
     fontFamily: '"Fira Code", monospace, "Powerline Extra Symbols"',
-    theme: xtermjsTheme
+    theme: { ...xtermjsTheme }
   } as ITerminalOptions);
 
   // Load addons
@@ -419,8 +419,11 @@ function runFakeTerminal(): void {
 }
 
 function updateTerminalContainerBackground(): void {
-  const bg = term.options.theme?.background ?? '#000000';
-  terminalContainer.style.backgroundColor = bg;
+  if (term.options.allowTransparency) {
+    terminalContainer.style.background = 'repeating-conic-gradient(#000000 0% 25%, #101010 0% 50%) 50% / 20px 20px';
+  } else {
+    terminalContainer.style.background = term.options.theme?.background ?? '#000000';
+  }
 }
 
 function initAddons(term: Terminal): void {

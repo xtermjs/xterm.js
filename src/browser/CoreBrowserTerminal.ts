@@ -436,6 +436,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.element.dir = 'ltr';   // xterm.css assumes LTR
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
+    this.element.classList.toggle('allow-transparency', this.options.allowTransparency);
+    this._register(this.optionsService.onSpecificOptionChange('allowTransparency', value => this.element!.classList.toggle('allow-transparency', value)));
     parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal

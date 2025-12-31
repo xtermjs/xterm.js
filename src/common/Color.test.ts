@@ -303,6 +303,9 @@ describe('Color', () => {
         assert.deepEqual(css.toColor('rgba(0, 0, 80, 0.5)'), { css: '#00005080', rgba: 0x00005080 });
         assert.deepEqual(css.toColor('rgba(255, 255, 255, 1)'), { css: '#ffffffff', rgba: 0xffffffff });
       });
+      it('should convert "transparent" to an IColor', () => {
+        assert.deepEqual(css.toColor('transparent'), { css: 'transparent', rgba: 0x00000000 });
+      });
     });
   });
 
