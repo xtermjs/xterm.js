@@ -8,11 +8,12 @@ import { ViewportConstants } from 'browser/shared/Constants';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
-import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
+import { addDisposableListener, scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
+import { Gesture, EventType as GestureEventType, type GestureEvent } from 'vs/base/browser/touch';
 
 export class Viewport extends Disposable {
 
@@ -104,6 +105,10 @@ export class Viewport extends Disposable {
     this._register(this._bufferService.onScroll(() => this._sync()));
 
     this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
+
+    // Touch/gesture scrolling support
+    this._register(Gesture.addTarget(screenElement));
+    this._register(addDisposableListener(screenElement, GestureEventType.Change, (e: GestureEvent) => this._handleGestureChange(e)));
   }
 
   public scrollLines(disp: number): void {
@@ -189,5 +194,14 @@ export class Viewport extends Disposable {
       this._onRequestScrollLines.fire(diff);
     }
     this._isHandlingScroll = false;
+  }
+
+  private _handleGestureChange(e: GestureEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    const pos = this._scrollableElement.getScrollPosition();
+    this._scrollableElement.setScrollPosition({
+      scrollTop: pos.scrollTop - e.translationY
+    });
   }
 }
