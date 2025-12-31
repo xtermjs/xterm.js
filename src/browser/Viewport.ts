@@ -71,6 +71,7 @@ export class Viewport extends Disposable {
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
     this._register(Event.runAndSubscribe(themeService.onChangeColors, () => {
+      element.style.backgroundColor = themeService.colors.background.css;
       this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
     }));
     element.appendChild(this._scrollableElement.getDomNode());

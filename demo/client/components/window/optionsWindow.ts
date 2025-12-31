@@ -8,7 +8,7 @@ import type { Terminal, ITheme } from '@xterm/xterm';
 import type { IControlWindow } from '../controlBar';
 import type { AddonCollection } from 'types';
 
-const xtermjsTheme: ITheme = {
+const xtermjsTheme: ITheme = Object.freeze({
   foreground: '#F8F8F8',
   background: '#2D2E2C',
   selectionBackground: '#5DA5D533',
@@ -29,7 +29,52 @@ const xtermjsTheme: ITheme = {
   brightCyan: '#72F0FF',
   white: '#F8F8F8',
   brightWhite: '#FFFFFF'
-};
+});
+const sapphireTheme: ITheme = Object.freeze({
+  background: '#1c2431',
+  foreground: '#cccccc',
+  selectionBackground: '#399ef440',
+  black: '#666666',
+  blue: '#399ef4',
+  brightBlack: '#666666',
+  brightBlue: '#399ef4',
+  brightCyan: '#21c5c7',
+  brightGreen: '#4eb071',
+  brightMagenta: '#b168df',
+  brightRed: '#da6771',
+  brightWhite: '#efefef',
+  brightYellow: '#fff099',
+  cyan: '#21c5c7',
+  green: '#4eb071',
+  magenta: '#b168df',
+  red: '#da6771',
+  white: '#efefef',
+  yellow: '#fff099'
+});
+const lightTheme: ITheme = Object.freeze({
+  background: '#ffffff',
+  foreground: '#333333',
+  cursor: '#333333',
+  cursorAccent: '#ffffff',
+  selectionBackground: '#add6ff',
+  overviewRulerBorder: '#aaaaaa',
+  black: '#000000',
+  blue: '#0451a5',
+  brightBlack: '#666666',
+  brightBlue: '#0451a5',
+  brightCyan: '#0598bc',
+  brightGreen: '#14ce14',
+  brightMagenta: '#bc05bc',
+  brightRed: '#cd3131',
+  brightWhite: '#a5a5a5',
+  brightYellow: '#b5ba00',
+  cyan: '#0598bc',
+  green: '#00bc00',
+  magenta: '#bc05bc',
+  red: '#cd3131',
+  white: '#555555',
+  yellow: '#949800'
+});
 
 export class OptionsWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'options';
@@ -136,6 +181,10 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       addDomListener(input, 'change', () => {
         console.log('change', o, input.checked);
         this._terminal.options[o] = input.checked;
+        if (o ==='allowTransparency') {
+          this._terminal.options.theme = this._getTheme();
+          this._handlers.updateTerminalContainerBackground();
+        }
       });
     });
     numberOptions.forEach(o => {
@@ -171,63 +220,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
             this._handlers.updateTerminalSize();
           }
         } else if (o === 'theme') {
-          switch (input.value) {
-            case 'default':
-              value = undefined;
-              break;
-            case 'xtermjs':
-              value = xtermjsTheme;
-              break;
-            case 'sapphire':
-              value = {
-                background: '#1c2431',
-                foreground: '#cccccc',
-                selectionBackground: '#399ef440',
-                black: '#666666',
-                blue: '#399ef4',
-                brightBlack: '#666666',
-                brightBlue: '#399ef4',
-                brightCyan: '#21c5c7',
-                brightGreen: '#4eb071',
-                brightMagenta: '#b168df',
-                brightRed: '#da6771',
-                brightWhite: '#efefef',
-                brightYellow: '#fff099',
-                cyan: '#21c5c7',
-                green: '#4eb071',
-                magenta: '#b168df',
-                red: '#da6771',
-                white: '#efefef',
-                yellow: '#fff099'
-              };
-              break;
-            case 'light':
-              value = {
-                background: '#ffffff',
-                foreground: '#333333',
-                cursor: '#333333',
-                cursorAccent: '#ffffff',
-                selectionBackground: '#add6ff',
-                overviewRulerBorder: '#aaaaaa',
-                black: '#000000',
-                blue: '#0451a5',
-                brightBlack: '#666666',
-                brightBlue: '#0451a5',
-                brightCyan: '#0598bc',
-                brightGreen: '#14ce14',
-                brightMagenta: '#bc05bc',
-                brightRed: '#cd3131',
-                brightWhite: '#a5a5a5',
-                brightYellow: '#b5ba00',
-                cyan: '#0598bc',
-                green: '#00bc00',
-                magenta: '#bc05bc',
-                red: '#cd3131',
-                white: '#555555',
-                yellow: '#949800'
-              };
-              break;
-          }
+          value = this._getTheme();
         }
         this._terminal.options[o] = value;
         if (o === 'theme') {
@@ -243,5 +236,28 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
 
   public set autoResize(value: boolean) {
     this._autoResize = value;
+  }
+
+  private _getTheme() {
+    const input = document.querySelector<HTMLInputElement>('#opt-theme');
+    let theme: ITheme;
+    switch (input.value) {
+      case 'default':
+        theme = undefined;
+        break;
+      case 'xtermjs':
+        theme = { ...xtermjsTheme };
+        break;
+      case 'sapphire':
+        theme = { ...sapphireTheme };
+        break;
+      case 'light':
+        theme = { ...lightTheme };
+        break;
+    }
+    if (this._terminal.options.allowTransparency) {
+      theme.background = 'transparent';
+    }
+    return theme;
   }
 }
