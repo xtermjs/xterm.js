@@ -387,8 +387,33 @@ class TerminalBufferCell {
   ) {
   }
 
-  public getWidth(): Promise<number> { return this.evaluate(([line]) => line.getWidth()); }
-  public getChars(): Promise<string> { return this.evaluate(([line]) => line.getChars()); }
+  public getWidth(): Promise<number> { return this.evaluate(([cell]) => cell.getWidth()); }
+  public getChars(): Promise<string> { return this.evaluate(([cell]) => cell.getChars()); }
+  public getCode(): Promise<number> { return this.evaluate(([cell]) => cell.getCode()); }
+
+  public getFgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColorMode()); }
+  public getBgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColorMode()); }
+  public getFgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColor()); }
+  public getBgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColor()); }
+
+  public isBold(): Promise<number> { return this.evaluate(([cell]) => cell.isBold()); }
+  public isItalic(): Promise<number> { return this.evaluate(([cell]) => cell.isItalic()); }
+  public isDim(): Promise<number> { return this.evaluate(([cell]) => cell.isDim()); }
+  public isUnderline(): Promise<number> { return this.evaluate(([cell]) => cell.isUnderline()); }
+  public isBlink(): Promise<number> { return this.evaluate(([cell]) => cell.isBlink()); }
+  public isInverse(): Promise<number> { return this.evaluate(([cell]) => cell.isInverse()); }
+  public isInvisible(): Promise<number> { return this.evaluate(([cell]) => cell.isInvisible()); }
+  public isStrikethrough(): Promise<number> { return this.evaluate(([cell]) => cell.isStrikethrough()); }
+  public isOverline(): Promise<number> { return this.evaluate(([cell]) => cell.isOverline()); }
+
+  public isFgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgRGB()); }
+  public isBgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgRGB()); }
+  public isFgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgPalette()); }
+  public isBgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgPalette()); }
+  public isFgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgDefault()); }
+  public isBgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgDefault()); }
+
+  public isAttributeDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isAttributeDefault()); }
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferCell>[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
@@ -520,7 +545,7 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
     equalityCheck = true;
     try {
       deepStrictEqual(result, val);
-    } catch (e) {
+    } catch {
       equalityCheck = false;
     }
   }
