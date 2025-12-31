@@ -1970,6 +1970,10 @@ declare module '@xterm/xterm' {
      */
     readonly sendFocusMode: boolean;
     /**
+     * Show Cursor (DECTCEM): `CSI ? 2 5 h`
+     */
+    readonly showCursor: boolean;
+    /**
      * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
      *
      * When enabled, output is buffered and only rendered when the mode is

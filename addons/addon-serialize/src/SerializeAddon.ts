@@ -559,6 +559,12 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
       }
     }
 
+    // Cursor visibility (DECTCEM)
+    // Default: visible
+    if (!modes.showCursor) {
+      content += '\x1b[?25l';
+    }
+
     return content;
   }
 

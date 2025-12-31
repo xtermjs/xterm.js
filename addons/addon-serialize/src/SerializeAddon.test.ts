@@ -190,6 +190,38 @@ describe('SerializeAddon', () => {
         assert.equal(buffer.scrollBottom, 3);
       });
     });
+
+    describe('cursor visibility', () => {
+      it('should serialize hidden cursor', async () => {
+        await writeP(terminal, 'hello\x1b[?25l');
+        assert.equal(terminal.modes.showCursor, false);
+        const result = serializeAddon.serialize();
+        assert.ok(result.includes('\x1b[?25l'), result);
+      });
+
+      it('should not serialize visible cursor (default state)', async () => {
+        await writeP(terminal, 'hello');
+        assert.equal(terminal.modes.showCursor, true);
+        const result = serializeAddon.serialize();
+        assert.ok(!result.includes('\x1b[?25l'), result);
+        assert.ok(!result.includes('\x1b[?25h'), result);
+      });
+
+      it('should not serialize cursor visibility when excludeModes is true', async () => {
+        await writeP(terminal, 'hello\x1b[?25l');
+        const result = serializeAddon.serialize({ excludeModes: true });
+        assert.ok(!result.includes('\x1b[?25l'), result);
+      });
+
+      it('should restore hidden cursor correctly when deserialized', async () => {
+        await writeP(terminal, 'hello\x1b[?25l');
+        const serialized = serializeAddon.serialize();
+        const terminal2 = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
+        terminal2.loadAddon(new SerializeAddon());
+        await writeP(terminal2, serialized);
+        assert.equal(terminal2.modes.showCursor, false);
+      });
+    });
   });
 
   describe('html', () => {
