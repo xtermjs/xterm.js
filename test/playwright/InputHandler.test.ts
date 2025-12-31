@@ -324,17 +324,37 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI > Ps c - ', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps d - ', async () => {
-      // TODO: Implement
+    test('CSI Ps d - VPA: Line Position Absolute [row] (default = [1,column])', async () => {
+      // Default
+      await ctx.proxy.write('\n\n\n   \x1b[da');
+      // Explicit
+      await ctx.proxy.write('\x1b[2d    b');
+      await pollFor(ctx.page, () => getLinesAsArray(4), ['   a', '        b', '', '   ']);
     });
-    test.skip('CSI Ps e - ', async () => {
-      // TODO: Implement
+    test('CSI Ps e - VPR: Line Position Relative (default = 1)', async () => {
+      // Default
+      await ctx.proxy.write('\x1b[ea');
+      // Explicit
+      await ctx.proxy.write('\x1b[2eb');
+      await pollFor(ctx.page, () => getLinesAsArray(4), ['', 'a', '', ' b']);
     });
-    test.skip('CSI Ps ; Ps f - ', async () => {
-      // TODO: Implement
+    test('CSI Ps ; Ps f - HVP: Horizontal and Vertical Position [row;column] (default = [1,1])', async () => {
+      // Default
+      await ctx.proxy.write('foo\x1b[fa');
+      // Explicit
+      await ctx.proxy.write('\x1b[3;3fb');
+      await pollFor(ctx.page, () => getLinesAsArray(3), ['aoo', '', '  b']);
     });
-    test.skip('CSI Ps g - ', async () => {
-      // TODO: Implement
+    test('CSI Ps g - TBC: Tab Clear (default = 0)', async () => {
+      // Default: Clear tab stop at cursor position
+      // Move to column 9 (first tab stop), clear it, go back to column 1, tab should skip to column 17
+      await ctx.proxy.write('\x1b[9G\x1b[g\x1b[1G\ta');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['                a']);
+      // Ps=3: Clear all tab stops
+      await ctx.proxy.reset();
+      await ctx.proxy.write('\x1b[3g\ta');
+      // With all tabs cleared, tab moves to end of line
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['                                                                               a']);
     });
     test.skip('CSI Ps h - ', async () => {
       // TODO: Implement
@@ -825,176 +845,358 @@ test.describe('InputHandler Integration Tests', () => {
       });
     });
     test.describe('CSI Pm m - SGR: Character Attributes', () => {
-      test.skip('Ps = 0 -  Normal (default), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 0 - Normal (default), VT100', async () => {
+        await ctx.proxy.write('\x1b[1;3;4;5;7;8;9m#\x1b[0m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isBold());
+        ok(await cell0!.isItalic());
+        ok(await cell0!.isUnderline());
+        ok(await cell0!.isBlink());
+        ok(await cell0!.isInverse());
+        ok(await cell0!.isInvisible());
+        ok(await cell0!.isStrikethrough());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isAttributeDefault(), true);
       });
-      test.skip('Ps = 1 -  Bold, VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 1 - Bold, VT100', async () => {
+        await ctx.proxy.write('\x1b[1m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isBold());
       });
-      test.skip('Ps = 2 -  Faint, decreased intensity, ECMA-48 2nd.', async () => {
-        // TODO: Implement
+      test('Ps = 2 - Faint, decreased intensity, ECMA-48 2nd', async () => {
+        await ctx.proxy.write('\x1b[2m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isDim());
       });
-      test.skip('Ps = 3 -  Italicized, ECMA-48 2nd.', async () => {
-        // TODO: Implement
+      test('Ps = 3 - Italicized, ECMA-48 2nd', async () => {
+        await ctx.proxy.write('\x1b[3m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isItalic());
       });
-      test.skip('Ps = 4 -  Underlined, VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 4 - Underlined, VT100', async () => {
+        await ctx.proxy.write('\x1b[4m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isUnderline());
       });
-      test.skip('Ps = 5 -  Blink, VT100. This appears as Bold in X11R6 xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 5 - Blink, VT100', async () => {
+        await ctx.proxy.write('\x1b[5m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isBlink());
       });
-      test.skip('Ps = 7 -  Inverse, VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 7 - Inverse, VT100', async () => {
+        await ctx.proxy.write('\x1b[7m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isInverse());
       });
-      test.skip('Ps = 8 -  Invisible, i.e., hidden, ECMA-48 2nd, VT300.', async () => {
-        // TODO: Implement
+      test('Ps = 8 - Invisible, ECMA-48 2nd, VT300', async () => {
+        await ctx.proxy.write('\x1b[8m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isInvisible());
       });
-      test.skip('Ps = 9 -  Crossed-out characters, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 9 - Crossed-out characters, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[9m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isStrikethrough());
       });
-      test.skip('Ps = 2 1 -  Doubly-underlined, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 21 - Doubly-underlined, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[21m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isUnderline());
       });
-      test.skip('Ps = 2 2 -  Normal (neither bold nor faint), ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 22 - Normal (neither bold nor faint), ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[1;2m#\x1b[22m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isBold());
+        ok(await cell0!.isDim());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isBold(), 0);
+        deepStrictEqual(await cell1!.isDim(), 0);
       });
-      test.skip('Ps = 2 3 -  Not italicized, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 23 - Not italicized, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[3m#\x1b[23m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isItalic());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isItalic(), 0);
       });
-      test.skip('Ps = 2 4 -  Not underlined, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 24 - Not underlined, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[4m#\x1b[24m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isUnderline());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isUnderline(), 0);
       });
-      test.skip('Ps = 2 5 -  Steady (not blinking), ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 25 - Steady (not blinking), ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[5m#\x1b[25m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isBlink());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isBlink(), 0);
       });
-      test.skip('Ps = 2 7 -  Positive (not inverse), ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 27 - Positive (not inverse), ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[7m#\x1b[27m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isInverse());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isInverse(), 0);
       });
-      test.skip('Ps = 2 8 -  Visible, i.e., not hidden, ECMA-48 3rd, VT300.', async () => {
-        // TODO: Implement
+      test('Ps = 28 - Visible, ECMA-48 3rd, VT300', async () => {
+        await ctx.proxy.write('\x1b[8m#\x1b[28m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isInvisible());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isInvisible(), 0);
       });
-      test.skip('Ps = 2 9 -  Not crossed-out, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 29 - Not crossed-out, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[9m#\x1b[29m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isStrikethrough());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isStrikethrough(), 0);
       });
-      test.skip('Ps = 3 0 -  Set foreground color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 30 - Set foreground color to Black', async () => {
+        await ctx.proxy.write('\x1b[30m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 0);
       });
-      test.skip('Ps = 3 1 -  Set foreground color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 31 - Set foreground color to Red', async () => {
+        await ctx.proxy.write('\x1b[31m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 1);
       });
-      test.skip('Ps = 3 2 -  Set foreground color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 32 - Set foreground color to Green', async () => {
+        await ctx.proxy.write('\x1b[32m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 2);
       });
-      test.skip('Ps = 3 3 -  Set foreground color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 33 - Set foreground color to Yellow', async () => {
+        await ctx.proxy.write('\x1b[33m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 3);
       });
-      test.skip('Ps = 3 4 -  Set foreground color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 34 - Set foreground color to Blue', async () => {
+        await ctx.proxy.write('\x1b[34m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 4);
       });
-      test.skip('Ps = 3 5 -  Set foreground color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 35 - Set foreground color to Magenta', async () => {
+        await ctx.proxy.write('\x1b[35m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 5);
       });
-      test.skip('Ps = 3 6 -  Set foreground color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 36 - Set foreground color to Cyan', async () => {
+        await ctx.proxy.write('\x1b[36m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 6);
       });
-      test.skip('Ps = 3 7 -  Set foreground color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 37 - Set foreground color to White', async () => {
+        await ctx.proxy.write('\x1b[37m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 7);
       });
-      test.skip('Ps = 3 9 -  Set foreground color to default, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 39 - Set foreground color to default, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[31m#\x1b[39m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell0!.isFgPalette(), true);
+        deepStrictEqual(await cell0!.getFgColor(), 1);
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isFgDefault(), true);
       });
-      test.skip('Ps = 4 0 -  Set background color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 40 - Set background color to Black', async () => {
+        await ctx.proxy.write('\x1b[40m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 0);
       });
-      test.skip('Ps = 4 1 -  Set background color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 41 - Set background color to Red', async () => {
+        await ctx.proxy.write('\x1b[41m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 1);
       });
-      test.skip('Ps = 4 2 -  Set background color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 42 - Set background color to Green', async () => {
+        await ctx.proxy.write('\x1b[42m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 2);
       });
-      test.skip('Ps = 4 3 -  Set background color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 43 - Set background color to Yellow', async () => {
+        await ctx.proxy.write('\x1b[43m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 3);
       });
-      test.skip('Ps = 4 4 -  Set background color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 44 - Set background color to Blue', async () => {
+        await ctx.proxy.write('\x1b[44m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 4);
       });
-      test.skip('Ps = 4 5 -  Set background color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 45 - Set background color to Magenta', async () => {
+        await ctx.proxy.write('\x1b[45m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 5);
       });
-      test.skip('Ps = 4 6 -  Set background color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 46 - Set background color to Cyan', async () => {
+        await ctx.proxy.write('\x1b[46m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 6);
       });
-      test.skip('Ps = 4 7 -  Set background color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 47 - Set background color to White', async () => {
+        await ctx.proxy.write('\x1b[47m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 7);
       });
-      test.skip('Ps = 4 9 -  Set background color to default, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 49 - Set background color to default, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[41m#\x1b[49m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell0!.isBgPalette(), true);
+        deepStrictEqual(await cell0!.getBgColor(), 1);
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isBgDefault(), true);
       });
-      test.skip('Ps = 9 0 -  Set foreground color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 90 - Set foreground color to bright Black', async () => {
+        await ctx.proxy.write('\x1b[90m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 8);
       });
-      test.skip('Ps = 9 1 -  Set foreground color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 91 - Set foreground color to bright Red', async () => {
+        await ctx.proxy.write('\x1b[91m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 9);
       });
-      test.skip('Ps = 9 2 -  Set foreground color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 92 - Set foreground color to bright Green', async () => {
+        await ctx.proxy.write('\x1b[92m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 10);
       });
-      test.skip('Ps = 9 3 -  Set foreground color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 93 - Set foreground color to bright Yellow', async () => {
+        await ctx.proxy.write('\x1b[93m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 11);
       });
-      test.skip('Ps = 9 4 -  Set foreground color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 94 - Set foreground color to bright Blue', async () => {
+        await ctx.proxy.write('\x1b[94m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 12);
       });
-      test.skip('Ps = 9 5 -  Set foreground color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 95 - Set foreground color to bright Magenta', async () => {
+        await ctx.proxy.write('\x1b[95m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 13);
       });
-      test.skip('Ps = 9 6 -  Set foreground color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 96 - Set foreground color to bright Cyan', async () => {
+        await ctx.proxy.write('\x1b[96m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 14);
       });
-      test.skip('Ps = 9 7 -  Set foreground color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 97 - Set foreground color to bright White', async () => {
+        await ctx.proxy.write('\x1b[97m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 15);
       });
-      test.skip('Ps = 1 0 0 -  Set background color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 100 - Set background color to bright Black', async () => {
+        await ctx.proxy.write('\x1b[100m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 8);
       });
-      test.skip('Ps = 1 0 1 -  Set background color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 101 - Set background color to bright Red', async () => {
+        await ctx.proxy.write('\x1b[101m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 9);
       });
-      test.skip('Ps = 1 0 2 -  Set background color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 102 - Set background color to bright Green', async () => {
+        await ctx.proxy.write('\x1b[102m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 10);
       });
-      test.skip('Ps = 1 0 3 -  Set background color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 103 - Set background color to bright Yellow', async () => {
+        await ctx.proxy.write('\x1b[103m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 11);
       });
-      test.skip('Ps = 1 0 4 -  Set background color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 104 - Set background color to bright Blue', async () => {
+        await ctx.proxy.write('\x1b[104m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 12);
       });
-      test.skip('Ps = 1 0 5 -  Set background color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 105 - Set background color to bright Magenta', async () => {
+        await ctx.proxy.write('\x1b[105m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 13);
       });
-      test.skip('Ps = 1 0 6 -  Set background color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 106 - Set background color to bright Cyan', async () => {
+        await ctx.proxy.write('\x1b[106m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 14);
       });
-      test.skip('Ps = 1 0 7 -  Set background color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 107 - Set background color to bright White', async () => {
+        await ctx.proxy.write('\x1b[107m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 15);
       });
-      test.skip('Ps = 3 8 : 2 : Pi : Pr : Pg : Pb-  Set foreground color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 38:2:Pi:Pr:Pg:Pb - Set foreground color using RGB values (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[38:2::171:205:239m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgRGB(), true);
+        deepStrictEqual(await cell!.getFgColor(), 0xabcdef);
       });
-      test.skip('Ps = 3 8 : 5 : Ps-  Set foreground color to Ps, using indexed color', async () => {
-        // TODO: Implement
+      test('Ps = 38:5:Ps - Set foreground color to Ps using indexed color (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[38:5:123m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 123);
       });
-      test.skip('Ps = 4 8 : 2 : Pi : Pr : Pg : Pb-  Set background color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 48:2:Pi:Pr:Pg:Pb - Set background color using RGB values (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[48:2::18:52:86m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgRGB(), true);
+        deepStrictEqual(await cell!.getBgColor(), 0x123456);
       });
-      test.skip('Ps = 4 8 : 5 : Ps-  Set background color to Ps, using indexed color', async () => {
-        // TODO: Implement
+      test('Ps = 48:5:Ps - Set background color to Ps using indexed color (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[48:5:200m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 200);
       });
-      test.skip('Ps = 3 8 ; 2 ; Pr ; Pg ; Pb-  Set foreground color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 38;2;Pr;Pg;Pb - Set foreground color using RGB values (semicolon separator)', async () => {
+        await ctx.proxy.write('\x1b[38;2;171;205;239m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgRGB(), true);
+        deepStrictEqual(await cell!.getFgColor(), 0xabcdef);
       });
-      test.skip('Ps = 4 8 ; 2 ; Pr ; Pg ; Pb-  Set background color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 48;2;Pr;Pg;Pb - Set background color using RGB values (semicolon separator)', async () => {
+        await ctx.proxy.write('\x1b[48;2;18;52;86m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgRGB(), true);
+        deepStrictEqual(await cell!.getBgColor(), 0x123456);
       });
     });
     test.skip('CSI > Pp [; Pv] m - XTMODKEYS: Set/reset key modifier options, xterm', () => {
