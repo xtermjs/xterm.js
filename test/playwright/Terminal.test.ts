@@ -605,6 +605,7 @@ test.describe('API Integration Tests', () => {
         originMode: false,
         reverseWraparoundMode: false,
         sendFocusMode: false,
+        showCursor: true,
         synchronizedOutputMode: false,
         wraparoundMode: true
       });
