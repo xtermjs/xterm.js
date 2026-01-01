@@ -360,12 +360,11 @@ export function evaluateKeyboardEvent(
         // Include only keys that that result in a _single_ character; don't include num lock,
         // volume up, etc.
         result.key = ev.key;
-      } else if (ev.key && ev.ctrlKey) {
-        if (ev.key === '_') { // ^_
-          result.key = C0.US;
-        }
-        if (ev.key === '@') { // ^ + shift + 2 = ^ + @
-          result.key = C0.NUL;
+      } else if (ev.key && ev.ctrlKey && ev.shiftKey) {
+        switch (ev.code) {
+          case 'Minus':  result.key = C0.US;  break; // ^_ (Ctrl+Shift+-_
+          case 'Digit2': result.key = C0.NUL; break; // ^@ (Ctrl+Shift+2)
+          case 'Digit6': result.key = C0.RS;  break; // ^^ (Ctrl+Shift+6)
         }
       }
       break;
