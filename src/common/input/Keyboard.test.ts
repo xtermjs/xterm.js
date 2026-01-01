@@ -353,5 +353,9 @@ describe('Keyboard', () => {
       assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 50, key: '@' }).key, '\x00');
     });
 
+    it('should return proper sequence for ctrl+^', () => {
+      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 54, key: '^' }).key, '\x1e');
+    });
+
   });
 });
