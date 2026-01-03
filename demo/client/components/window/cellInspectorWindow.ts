@@ -5,8 +5,7 @@
 
 import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
-import type { Terminal, IBufferCell } from '@xterm/xterm';
-import type { AddonCollection } from '../../types';
+import type { IBufferCell } from '@xterm/xterm';
 
 // Underline style values from common/buffer/Constants.ts
 const enum UnderlineStyle {
@@ -39,13 +38,6 @@ export class CellInspectorWindow extends BaseWindow implements IControlWindow {
   private _fgEl: HTMLElement;
   private _bgEl: HTMLElement;
   private _attrsEl: HTMLElement;
-
-  constructor(
-    terminal: Terminal,
-    addons: AddonCollection,
-  ) {
-    super(terminal, addons);
-  }
 
   public build(container: HTMLElement): void {
     this._container = container;
