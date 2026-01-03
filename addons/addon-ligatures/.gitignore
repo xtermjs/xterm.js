@@ -3,7 +3,6 @@ node_modules/
 coverage/
 
 lib/
-fonts/
 
 .env
 .vscode/

@@ -6,9 +6,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { assert } from 'chai';
-
-const fontLigatures = require('../out-esbuild/fontLigatures/index');
-const loadBuffer: (buffer: ArrayBuffer, options?: { cacheSize?: number }) => Font = fontLigatures.loadBuffer;
+import { loadBuffer } from './index';
 
 interface Font {
   findLigatures(text: string): { outputGlyphs: number[]; contextRanges: [number, number][] };
@@ -263,10 +261,10 @@ const ubuntuCases: TestCase[] = [
 ];
 
 const fontPaths: Record<string, string> = {
-  'Fira Code': path.join(__dirname, '../fonts/FiraCode-Regular.otf'),
-  'Iosevka': path.join(__dirname, '../fonts/iosevka-regular.ttf'),
-  'Monoid': path.join(__dirname, '../fonts/Monoid-Regular.ttf'),
-  'Ubuntu Mono': path.join(__dirname, '../fonts/UbuntuMono-Regular.ttf')
+  'Fira Code': path.join(__dirname, '../../fonts/FiraCode-Regular.otf'),
+  'Iosevka': path.join(__dirname, '../../fonts/iosevka-regular.ttf'),
+  'Monoid': path.join(__dirname, '../../fonts/Monoid-Regular.ttf'),
+  'Ubuntu Mono': path.join(__dirname, '../../fonts/UbuntuMono-Regular.ttf')
 };
 
 const fontCache: Map<string, Font> = new Map();

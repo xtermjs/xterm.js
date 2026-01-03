@@ -4,8 +4,7 @@
  */
 
 import { assert } from 'chai';
-
-const mergeTrees = require('../out-esbuild/fontLigatures/merge').default;
+import mergeTrees from './merge';
 
 interface LookupResult {
   contextRange: [number, number];

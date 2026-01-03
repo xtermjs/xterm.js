@@ -4,8 +4,7 @@
  */
 
 import { assert } from 'chai';
-
-const mergeRange = require('../out-esbuild/fontLigatures/mergeRange').default;
+import mergeRange from './mergeRange';
 
 describe('addon-ligatures - mergeRange', () => {
   it('inserts a new range before the existing ones', () => {
