@@ -3,10 +3,8 @@
  * @license MIT
  */
 
-import type { Terminal } from '@xterm/xterm';
 import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
-import type { AddonCollection } from '../../types';
 
 export class AddonSerializeWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addon-serialize';

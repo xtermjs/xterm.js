@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-/// <reference path="../../../../typings/xterm.d.ts"/>
-
 import { writeUnicodeTable } from '../../unicodeTable';
 import type { IControlWindow } from '../controlBar';
 import { BaseWindow } from './baseWindow';
@@ -21,8 +19,8 @@ export class TestWindow extends BaseWindow implements IControlWindow {
     terminal: Terminal,
     addons: AddonCollection,
     private readonly _handlers: {
-      disposeRecreateButtonHandler: () => void,
-      createNewWindowButtonHandler: () => void,
+      disposeRecreateButtonHandler: () => void;
+      createNewWindowButtonHandler: () => void;
     },
   ) {
     super(terminal, addons);
@@ -501,7 +499,7 @@ function customGlyphAlignmentHandler(term: Terminal): void {
   term.write(' \u{F5F9}\u{F5F9} \n\r');
   term.write('\x1b[0m');
   term.write('\n\r');
-  
+
   term.write('\x1b[0mProgress bar alignment tests:\x1b[33m\n\r');
   term.write('\u{EE00}\u{EE01}\u{EE02} \u{EE03}\u{EE04}\u{EE05}');
 

@@ -88,11 +88,11 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
     terminal: Terminal,
     addons: AddonCollection,
     private readonly _handlers: {
-      updateTerminalSize: () => void,
-      updateTerminalContainerBackground: () => void
+      updateTerminalSize: () => void;
+      updateTerminalContainerBackground: () => void;
     },
   ) {
-    super(terminal, addons)
+    super(terminal, addons);
   }
 
   public build(container: HTMLElement): void {
@@ -238,7 +238,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
     this._autoResize = value;
   }
 
-  private _getTheme() {
+  private _getTheme(): ITheme {
     const input = document.querySelector<HTMLInputElement>('#opt-theme');
     let theme: ITheme;
     switch (input.value) {
