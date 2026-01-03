@@ -1,4 +1,4 @@
-import { LookupTree, LookupTreeEntry } from './types';
+import { ILookupTree, ILookupTreeEntry } from './types';
 
 /**
  * Merges the provided trees into a single lookup tree. When conflicting lookups
@@ -8,8 +8,8 @@ import { LookupTree, LookupTreeEntry } from './types';
  * @param trees Array of trees to merge. Entries in earlier trees are favored
  *              over those in later trees when there is a choice.
  */
-export default function mergeTrees(trees: LookupTree[]): LookupTree {
-  const result: LookupTree = {
+export default function mergeTrees(trees: ILookupTree[]): ILookupTree {
+  const result: ILookupTree = {
     individual: {},
     range: []
   };
@@ -27,7 +27,7 @@ export default function mergeTrees(trees: LookupTree[]): LookupTree {
  * @param mainTree The tree where the values should be merged
  * @param mergeTree The tree to be merged into the mainTree
  */
-function mergeSubtree(mainTree: LookupTree, mergeTree: LookupTree): void {
+function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree): void {
   // Need to fix this recursively (and handle lookups)
   for (const [glyphId, value] of Object.entries(mergeTree.individual)) {
     // The main tree is guaranteed to have no overlaps between the
@@ -91,7 +91,7 @@ function mergeSubtree(mainTree: LookupTree, mergeTree: LookupTree): void {
           mainTree.range.splice(index, 1);
           index--;
 
-          const entryToMerge: LookupTreeEntry = cloneEntry(resultEntry);
+          const entryToMerge: ILookupTreeEntry = cloneEntry(resultEntry);
           if (Array.isArray(overlap.both)) {
             mainTree.range.push({
               range: overlap.both,
@@ -192,7 +192,7 @@ function mergeSubtree(mainTree: LookupTree, mergeTree: LookupTree): void {
  * @param mainTree The entry where the values should be merged
  * @param mergeTree The entry to merge into the mainTree
  */
-function mergeTreeEntry(mainTree: LookupTreeEntry, mergeTree: LookupTreeEntry): void {
+function mergeTreeEntry(mainTree: ILookupTreeEntry, mergeTree: ILookupTreeEntry): void {
   if (
     mergeTree.lookup && (
       !mainTree.lookup ||
@@ -220,7 +220,7 @@ function mergeTreeEntry(mainTree: LookupTreeEntry, mergeTree: LookupTreeEntry): 
   }
 }
 
-interface Overlap {
+interface IOverlap {
   first: (number | [number, number])[];
   second: (number | [number, number])[];
   both: number | [number, number] | null;
@@ -233,8 +233,8 @@ interface Overlap {
  * @param first First range
  * @param second Second range
  */
-function getRangeOverlap(first: [number, number], second: [number, number]): Overlap {
-  const result: Overlap = {
+function getRangeOverlap(first: [number, number], second: [number, number]): IOverlap {
+  const result: IOverlap = {
     first: [],
     second: [],
     both: null
@@ -280,7 +280,7 @@ function getRangeOverlap(first: [number, number], second: [number, number]): Ove
  * @param first Individual glyph
  * @param second Range
  */
-function getIndividualOverlap(first: number, second: [number, number]): Overlap {
+function getIndividualOverlap(first: number, second: [number, number]): IOverlap {
   // Disjoint
   if (first < second[0] || first > second[1]) {
     return {
@@ -290,7 +290,7 @@ function getIndividualOverlap(first: number, second: [number, number]): Overlap 
     };
   }
 
-  const result: Overlap = {
+  const result: IOverlap = {
     first: [],
     second: [],
     both: first
@@ -317,9 +317,9 @@ function getIndividualOverlap(first: number, second: [number, number]): Overlap 
 function rangeOrIndividual(start: number, end: number): number | [number, number] {
   if (end - start === 1) {
     return start;
-  } else {
-    return [start, end];
   }
+  return [start, end];
+
 }
 
 /**
@@ -327,8 +327,8 @@ function rangeOrIndividual(start: number, end: number): number | [number, number
  *
  * @param entry Lookup tree entry to clone
  */
-function cloneEntry(entry: LookupTreeEntry): LookupTreeEntry {
-  const result: LookupTreeEntry = {};
+function cloneEntry(entry: ILookupTreeEntry): ILookupTreeEntry {
+  const result: ILookupTreeEntry = {};
 
   if (entry.forward) {
     result.forward = cloneTree(entry.forward);
@@ -356,8 +356,8 @@ function cloneEntry(entry: LookupTreeEntry): LookupTreeEntry {
  *
  * @param tree Lookup tree to clone
  */
-function cloneTree(tree: LookupTree): LookupTree {
-  const individual: { [glyphId: string]: LookupTreeEntry; } = {};
+function cloneTree(tree: ILookupTree): ILookupTree {
+  const individual: { [glyphId: string]: ILookupTreeEntry } = {};
   for (const [glyphId, entry] of Object.entries(tree.individual)) {
     individual[glyphId] = cloneEntry(entry);
   }

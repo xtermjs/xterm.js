@@ -13,21 +13,20 @@ export default function getGlyphClass(table: ClassDefTable, glyphId: number | [n
     case 2:
       if (Array.isArray(glyphId)) {
         return getRangeGlyphClass(table, glyphId);
-      } else {
-        return new Map([[
-          glyphId,
-          getIndividualGlyphClass(table, glyphId)
-        ]]);
       }
+      return new Map([[
+        glyphId,
+        getIndividualGlyphClass(table, glyphId)
+      ]]);
     // https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#class-definition-table-format-1
     default:
       return new Map([[glyphId, null]]);
   }
 }
 
-function getRangeGlyphClass(table: ClassDefTable.Format2, glyphId: [number, number]): Map<number | [number, number], number | null> {
-  let classStart: number = glyphId[0];
-  let currentClass: number | null = getIndividualGlyphClass(table, classStart);
+function getRangeGlyphClass(table: ClassDefTable.IFormat2, glyphId: [number, number]): Map<number | [number, number], number | null> {
+  const classStart: number = glyphId[0];
+  const currentClass: number | null = getIndividualGlyphClass(table, classStart);
   let search: number = glyphId[0] + 1;
 
   const result = new Map<[number, number] | number, number | null>();
@@ -53,7 +52,7 @@ function getRangeGlyphClass(table: ClassDefTable.Format2, glyphId: [number, numb
   return result;
 }
 
-function getIndividualGlyphClass(table: ClassDefTable.Format2, glyphId: number): number | null {
+function getIndividualGlyphClass(table: ClassDefTable.IFormat2, glyphId: number): number | null {
   for (const range of table.ranges) {
     if (range.start <= glyphId && range.end >= glyphId) {
       return range.classId;

@@ -1,7 +1,7 @@
-import { LookupTree, FlattenedLookupTree, LookupTreeEntry, FlattenedLookupTreeEntry } from './types';
+import { ILookupTree, IFlattenedLookupTree, ILookupTreeEntry, IFlattenedLookupTreeEntry } from './types';
 
-export default function flatten(tree: LookupTree): FlattenedLookupTree {
-  const result: FlattenedLookupTree = {};
+export default function flatten(tree: ILookupTree): IFlattenedLookupTree {
+  const result: IFlattenedLookupTree = {};
   for (const [glyphId, entry] of Object.entries(tree.individual)) {
     result[glyphId] = flattenEntry(entry);
   }
@@ -16,8 +16,8 @@ export default function flatten(tree: LookupTree): FlattenedLookupTree {
   return result;
 }
 
-function flattenEntry(entry: LookupTreeEntry): FlattenedLookupTreeEntry {
-  const result: FlattenedLookupTreeEntry = {};
+function flattenEntry(entry: ILookupTreeEntry): IFlattenedLookupTreeEntry {
+  const result: IFlattenedLookupTreeEntry = {};
 
   if (entry.forward) {
     result.forward = flatten(entry.forward);

@@ -1,21 +1,21 @@
-import { LookupTreeEntry, LookupTree } from '../types';
-import { SubstitutionLookupRecord, Lookup } from '../tables';
+import { ILookupTreeEntry, ILookupTree } from '../types';
+import { ISubstitutionLookupRecord, Lookup } from '../tables';
 
 import { getIndividualSubstitutionGlyph, getRangeSubstitutionGlyphs } from './substitution';
 
-export interface EntryMeta {
-  entry: LookupTreeEntry;
+export interface IEntryMeta {
+  entry: ILookupTreeEntry;
   substitutions: (number | null)[];
 }
 
 export function processInputPosition(
   glyphs: (number | [number, number])[],
   position: number,
-  currentEntries: EntryMeta[],
-  lookupRecords: SubstitutionLookupRecord[],
+  currentEntries: IEntryMeta[],
+  lookupRecords: ISubstitutionLookupRecord[],
   lookups: Lookup[]
-): EntryMeta[] {
-  const nextEntries: EntryMeta[] = [];
+): IEntryMeta[] {
+  const nextEntries: IEntryMeta[] = [];
   for (const currentEntry of currentEntries) {
     currentEntry.entry.forward = {
       individual: {},
@@ -40,12 +40,12 @@ export function processInputPosition(
 
 export function processLookaheadPosition(
   glyphs: (number | [number, number])[],
-  currentEntries: EntryMeta[]
-): EntryMeta[] {
-  const nextEntries: EntryMeta[] = [];
+  currentEntries: IEntryMeta[]
+): IEntryMeta[] {
+  const nextEntries: IEntryMeta[] = [];
   for (const currentEntry of currentEntries) {
     for (const glyph of glyphs) {
-      const entry: LookupTreeEntry = {};
+      const entry: ILookupTreeEntry = {};
       if (!currentEntry.entry.forward) {
         currentEntry.entry.forward = {
           individual: {},
@@ -73,12 +73,12 @@ export function processLookaheadPosition(
 
 export function processBacktrackPosition(
   glyphs: (number | [number, number])[],
-  currentEntries: EntryMeta[]
-): EntryMeta[] {
-  const nextEntries: EntryMeta[] = [];
+  currentEntries: IEntryMeta[]
+): IEntryMeta[] {
+  const nextEntries: IEntryMeta[] = [];
   for (const currentEntry of currentEntries) {
     for (const glyph of glyphs) {
-      const entry: LookupTreeEntry = {};
+      const entry: ILookupTreeEntry = {};
       if (!currentEntry.entry.reverse) {
         currentEntry.entry.reverse = {
           individual: {},
@@ -104,8 +104,8 @@ export function processBacktrackPosition(
   return nextEntries;
 }
 
-export function getInputTree(tree: LookupTree, substitutions: SubstitutionLookupRecord[], lookups: Lookup[], inputIndex: number, glyphId: number | [number, number]): { entry: LookupTreeEntry; substitution: number | null; }[] {
-  const result: { entry: LookupTreeEntry; substitution: number | null; }[] = [];
+export function getInputTree(tree: ILookupTree, substitutions: ISubstitutionLookupRecord[], lookups: Lookup[], inputIndex: number, glyphId: number | [number, number]): { entry: ILookupTreeEntry, substitution: number | null }[] {
+  const result: { entry: ILookupTreeEntry, substitution: number | null }[] = [];
   if (!Array.isArray(glyphId)) {
     tree.individual[glyphId] = {};
     result.push({
@@ -115,7 +115,7 @@ export function getInputTree(tree: LookupTree, substitutions: SubstitutionLookup
   } else {
     const subs = getSubstitutionAtPositionRange(substitutions, lookups, inputIndex, glyphId);
     for (const [range, substitution] of subs) {
-      const entry: LookupTreeEntry = {};
+      const entry: ILookupTreeEntry = {};
       if (Array.isArray(range)) {
         tree.range.push({ range, entry });
       } else {
@@ -128,9 +128,9 @@ export function getInputTree(tree: LookupTree, substitutions: SubstitutionLookup
   return result;
 }
 
-function getSubstitutionAtPositionRange(substitutions: SubstitutionLookupRecord[], lookups: Lookup[], index: number, range: [number, number]): Map<number | [number, number], number | null> {
+function getSubstitutionAtPositionRange(substitutions: ISubstitutionLookupRecord[], lookups: Lookup[], index: number, range: [number, number]): Map<number | [number, number], number | null> {
   for (const substitution of substitutions.filter(s => s.sequenceIndex === index)) {
-    for (const substitutionTable of (lookups[substitution.lookupListIndex] as Lookup.Type1).subtables) {
+    for (const substitutionTable of (lookups[substitution.lookupListIndex] as Lookup.IType1).subtables) {
       const sub = getRangeSubstitutionGlyphs(
         substitutionTable,
         range
@@ -145,9 +145,9 @@ function getSubstitutionAtPositionRange(substitutions: SubstitutionLookupRecord[
   return new Map([[range, null]]);
 }
 
-function getSubstitutionAtPosition(substitutions: SubstitutionLookupRecord[], lookups: Lookup[], index: number, glyphId: number): number | null {
+function getSubstitutionAtPosition(substitutions: ISubstitutionLookupRecord[], lookups: Lookup[], index: number, glyphId: number): number | null {
   for (const substitution of substitutions.filter(s => s.sequenceIndex === index)) {
-    for (const substitutionTable of (lookups[substitution.lookupListIndex] as Lookup.Type1).subtables) {
+    for (const substitutionTable of (lookups[substitution.lookupListIndex] as Lookup.IType1).subtables) {
       const sub = getIndividualSubstitutionGlyph(
         substitutionTable,
         glyphId

@@ -1,26 +1,26 @@
-export type SubstitutionTable = SubstitutionTable.Format1 | SubstitutionTable.Format2;
+export type SubstitutionTable = SubstitutionTable.IFormat1 | SubstitutionTable.IFormat2;
 export namespace SubstitutionTable {
-  export interface Format1 {
+  export interface IFormat1 {
     substFormat: 1;
     coverage: CoverageTable;
     deltaGlyphId: number;
   }
 
-  export interface Format2 {
+  export interface IFormat2 {
     substFormat: 2;
     coverage: CoverageTable;
     substitute: number[];
   }
 }
 
-export type CoverageTable = CoverageTable.Format1 | CoverageTable.Format2;
+export type CoverageTable = CoverageTable.IFormat1 | CoverageTable.IFormat2;
 export namespace CoverageTable {
-  export interface Format1 {
+  export interface IFormat1 {
     format: 1;
     glyphs: number[];
   }
 
-  export interface Format2 {
+  export interface IFormat2 {
     format: 2;
     ranges: {
       start: number;
@@ -30,34 +30,34 @@ export namespace CoverageTable {
   }
 }
 
-export type ChainingContextualSubstitutionTable = ChainingContextualSubstitutionTable.Format1 |
-  ChainingContextualSubstitutionTable.Format2 | ChainingContextualSubstitutionTable.Format3;
+export type ChainingContextualSubstitutionTable = ChainingContextualSubstitutionTable.IFormat1 |
+  ChainingContextualSubstitutionTable.IFormat2 | ChainingContextualSubstitutionTable.IFormat3;
 export namespace ChainingContextualSubstitutionTable {
-  export interface Format1 {
+  export interface IFormat1 {
     substFormat: 1;
     coverage: CoverageTable;
     chainRuleSets: ChainSubRuleTable[][];
   }
 
-  export interface Format2 {
+  export interface IFormat2 {
     substFormat: 2;
     coverage: CoverageTable;
     backtrackClassDef: ClassDefTable;
     inputClassDef: ClassDefTable;
     lookaheadClassDef: ClassDefTable;
-    chainClassSet: (null | ChainSubClassRuleTable[])[];
+    chainClassSet: (null | IChainSubClassRuleTable[])[];
   }
 
-  export interface Format3 {
+  export interface IFormat3 {
     substFormat: 3;
     backtrackCoverage: CoverageTable[];
     inputCoverage: CoverageTable[];
     lookaheadCoverage: CoverageTable[];
-    lookupRecords: SubstitutionLookupRecord[];
+    lookupRecords: ISubstitutionLookupRecord[];
   }
 }
 
-export interface ReverseChainingContextualSingleSubstitutionTable {
+export interface IReverseChainingContextualSingleSubstitutionTable {
   substFormat: 1;
   coverage: CoverageTable;
   backtrackCoverage: CoverageTable[];
@@ -65,9 +65,9 @@ export interface ReverseChainingContextualSingleSubstitutionTable {
   substitutes: number[];
 }
 
-export type ClassDefTable = ClassDefTable.Format2;
+export type ClassDefTable = ClassDefTable.IFormat2;
 export namespace ClassDefTable {
-  export interface Format2 {
+  export interface IFormat2 {
     format: 2;
     ranges: {
       start: number;
@@ -77,36 +77,36 @@ export namespace ClassDefTable {
   }
 }
 
-export interface SubstitutionLookupRecord {
+export interface ISubstitutionLookupRecord {
   sequenceIndex: number;
   lookupListIndex: number;
 }
 
-export type ChainSubRuleTable = ChainSubClassRuleTable;
-export interface ChainSubClassRuleTable {
+export type ChainSubRuleTable = IChainSubClassRuleTable;
+export interface IChainSubClassRuleTable {
   backtrack: number[];
   input: number[];
   lookahead: number[];
-  lookupRecords: SubstitutionLookupRecord[];
+  lookupRecords: ISubstitutionLookupRecord[];
 }
 
-export type Lookup = Lookup.Type1 | Lookup.Type6 | Lookup.Type8;
+export type Lookup = Lookup.IType1 | Lookup.IType6 | Lookup.IType8;
 export namespace Lookup {
-  export interface Type1 {
+  export interface IType1 {
     lookupType: 1;
     lookupFlag: number;
     subtables: SubstitutionTable[];
   }
 
-  export interface Type6 {
+  export interface IType6 {
     lookupType: 6;
     lookupFlag: number;
     subtables: ChainingContextualSubstitutionTable[];
   }
 
-  export interface Type8 {
+  export interface IType8 {
     lookupType: 8;
     lookupFlag: number;
-    subtables: ReverseChainingContextualSingleSubstitutionTable[];
+    subtables: IReverseChainingContextualSingleSubstitutionTable[];
   }
 }

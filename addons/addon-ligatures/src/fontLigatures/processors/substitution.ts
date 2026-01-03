@@ -10,8 +10,8 @@ import getCoverageGlyphIndex from './coverage';
  * @param glyphId The index of the glpyh to find substitutions for
  */
 export function getRangeSubstitutionGlyphs(table: SubstitutionTable, glyphId: [number, number]): Map<[number, number] | number, number | null> {
-  let replacementStart: number = glyphId[0];
-  let currentReplacement: number | null = getIndividualSubstitutionGlyph(table, replacementStart);
+  const replacementStart: number = glyphId[0];
+  const currentReplacement: number | null = getIndividualSubstitutionGlyph(table, replacementStart);
   let search: number = glyphId[0] + 1;
 
   const result = new Map<[number, number] | number, number | null>();
@@ -54,7 +54,7 @@ export function getIndividualSubstitutionGlyph(table: SubstitutionTable, glyphId
       return (glyphId + table.deltaGlyphId) % (2 ** 16);
     // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#12-single-substitution-format-2
     case 2:
-      // tslint:disable-next-line
+      // eslint-disable-next-line eqeqeq
       return table.substitute[coverageIndex] != null
         ? table.substitute[coverageIndex]
         : null;

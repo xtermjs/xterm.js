@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import mergeTrees from './merge';
 
-interface LookupResult {
+interface ILookupResult {
   contextRange: [number, number];
   index: number;
   subIndex: number;
@@ -14,7 +14,7 @@ interface LookupResult {
   substitutions: number[];
 }
 
-function lookup(substitutionGlyph: number, index?: number, subIndex?: number): LookupResult {
+function lookup(substitutionGlyph: number, index?: number, subIndex?: number): ILookupResult {
   return {
     contextRange: [0, 1],
     index: index || 0,

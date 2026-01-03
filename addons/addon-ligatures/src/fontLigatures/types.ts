@@ -1,4 +1,4 @@
-export interface SubstitutionResult {
+export interface ISubstitutionResult {
   index: number;
   contextRange: [number, number];
 }
@@ -6,7 +6,7 @@ export interface SubstitutionResult {
 /**
  * Information about ligatures found in a sequence of text
  */
-export interface LigatureData {
+export interface ILigatureData {
   /**
    * The list of font glyphs in the input text.
    */
@@ -25,14 +25,14 @@ export interface LigatureData {
   contextRanges: [number, number][];
 }
 
-export interface Font {
+export interface IFont {
   /**
    * Scans the provided text for font ligatures, returning an object with
    * metadata about the text and any ligatures found.
    *
    * @param text String to search for ligatures
    */
-  findLigatures(text: string): LigatureData;
+  findLigatures(text: string): ILigatureData;
 
   /**
    * Scans the provided text for font ligatures, returning an array of ranges
@@ -43,7 +43,7 @@ export interface Font {
   findLigatureRanges(text: string): [number, number][];
 }
 
-export interface Options {
+export interface IOptions {
   /**
    * Optional size of previous results to store, measured in total number of
    * characters from input strings. Defaults to no cache (0)
@@ -51,23 +51,23 @@ export interface Options {
   cacheSize?: number;
 }
 
-export interface LookupTree {
+export interface ILookupTree {
   individual: {
-    [glyphId: string]: LookupTreeEntry;
+    [glyphId: string]: ILookupTreeEntry;
   };
   range: {
     range: [number, number];
-    entry: LookupTreeEntry;
+    entry: ILookupTreeEntry;
   }[];
 }
 
-export interface LookupTreeEntry {
-  lookup?: LookupResult;
-  forward?: LookupTree;
-  reverse?: LookupTree;
+export interface ILookupTreeEntry {
+  lookup?: ILookupResult;
+  forward?: ILookupTree;
+  reverse?: ILookupTree;
 }
 
-export interface LookupResult {
+export interface ILookupResult {
   substitutions: (number | null)[];
   length: number;
   index: number;
@@ -75,12 +75,12 @@ export interface LookupResult {
   contextRange: [number, number];
 }
 
-export interface FlattenedLookupTree {
-  [glyphId: string]: FlattenedLookupTreeEntry;
+export interface IFlattenedLookupTree {
+  [glyphId: string]: IFlattenedLookupTreeEntry;
 }
 
-export interface FlattenedLookupTreeEntry {
-  lookup?: LookupResult;
-  forward?: FlattenedLookupTree;
-  reverse?: FlattenedLookupTree;
+export interface IFlattenedLookupTreeEntry {
+  lookup?: ILookupResult;
+  forward?: IFlattenedLookupTree;
+  reverse?: IFlattenedLookupTree;
 }

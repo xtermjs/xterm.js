@@ -1,8 +1,8 @@
-import { ReverseChainingContextualSingleSubstitutionTable } from '../tables';
-import { LookupTree, LookupTreeEntry } from '../types';
+import { IReverseChainingContextualSingleSubstitutionTable } from '../tables';
+import { ILookupTree, ILookupTreeEntry } from '../types';
 
 import { listGlyphsByIndex } from './coverage';
-import { processLookaheadPosition, processBacktrackPosition, EntryMeta } from './helper';
+import { processLookaheadPosition, processBacktrackPosition, IEntryMeta } from './helper';
 
 /**
  * Build lookup tree for GSUB lookup table 8, format 1.
@@ -11,8 +11,8 @@ import { processLookaheadPosition, processBacktrackPosition, EntryMeta } from '.
  * @param table JSON representation of the table
  * @param tableIndex Index of this table in the overall lookup
  */
-export default function buildTree(table: ReverseChainingContextualSingleSubstitutionTable, tableIndex: number): LookupTree {
-  const result: LookupTree = {
+export default function buildTree(table: IReverseChainingContextualSingleSubstitutionTable, tableIndex: number): ILookupTree {
+  const result: ILookupTree = {
     individual: {},
     range: []
   };
@@ -20,7 +20,7 @@ export default function buildTree(table: ReverseChainingContextualSingleSubstitu
   const glyphs = listGlyphsByIndex(table.coverage);
 
   for (const { glyphId, index } of glyphs) {
-    const initialEntry: LookupTreeEntry = {};
+    const initialEntry: ILookupTreeEntry = {};
     if (Array.isArray(glyphId)) {
       result.range.push({
         entry: initialEntry,
@@ -30,7 +30,7 @@ export default function buildTree(table: ReverseChainingContextualSingleSubstitu
       result.individual[glyphId] = initialEntry;
     }
 
-    let currentEntries: EntryMeta[] = [{
+    let currentEntries: IEntryMeta[] = [{
       entry: initialEntry,
       substitutions: [table.substitutes[index]]
     }];

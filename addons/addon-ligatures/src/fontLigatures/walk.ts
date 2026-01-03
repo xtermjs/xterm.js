@@ -1,8 +1,8 @@
-import { FlattenedLookupTree, LookupResult } from './types';
+import { IFlattenedLookupTree, ILookupResult } from './types';
 
-export default function walkTree(tree: FlattenedLookupTree, sequence: number[], startIndex: number, index: number): LookupResult | undefined {
+export default function walkTree(tree: IFlattenedLookupTree, sequence: number[], startIndex: number, index: number): ILookupResult | undefined {
   const glyphId = sequence[index];
-  let subtree = tree[glyphId];
+  const subtree = tree[glyphId];
   if (!subtree) {
     return undefined;
   }
@@ -45,9 +45,9 @@ export default function walkTree(tree: FlattenedLookupTree, sequence: number[], 
   return lookup;
 }
 
-function walkReverse(tree: FlattenedLookupTree, sequence: number[], index: number): LookupResult | undefined {
+function walkReverse(tree: IFlattenedLookupTree, sequence: number[], index: number): ILookupResult | undefined {
   let subtree = tree[sequence[--index]];
-  let lookup: LookupResult | undefined = subtree && subtree.lookup;
+  let lookup: ILookupResult | undefined = subtree && subtree.lookup;
   while (subtree) {
     if (
       (!lookup && subtree.lookup) ||

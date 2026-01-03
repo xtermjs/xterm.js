@@ -1,8 +1,8 @@
 import { ChainingContextualSubstitutionTable, Lookup } from '../tables';
-import { LookupTree } from '../types';
+import { ILookupTree } from '../types';
 
 import { listGlyphsByIndex } from './coverage';
-import { processInputPosition, processLookaheadPosition, processBacktrackPosition, getInputTree, EntryMeta } from './helper';
+import { processInputPosition, processLookaheadPosition, processBacktrackPosition, getInputTree, IEntryMeta } from './helper';
 
 /**
  * Build lookup tree for GSUB lookup table 6, format 1.
@@ -12,8 +12,8 @@ import { processInputPosition, processLookaheadPosition, processBacktrackPositio
  * @param lookups List of lookup tables
  * @param tableIndex Index of this table in the overall lookup
  */
-export default function buildTree(table: ChainingContextualSubstitutionTable.Format1, lookups: Lookup[], tableIndex: number): LookupTree {
-  const result: LookupTree = {
+export default function buildTree(table: ChainingContextualSubstitutionTable.IFormat1, lookups: Lookup[], tableIndex: number): ILookupTree {
+  const result: ILookupTree = {
     individual: {},
     range: []
   };
@@ -29,7 +29,7 @@ export default function buildTree(table: ChainingContextualSubstitutionTable.For
     }
 
     for (const [subIndex, subTable] of chainRuleSet.entries()) {
-      let currentEntries: EntryMeta[] = getInputTree(
+      let currentEntries: IEntryMeta[] = getInputTree(
         result,
         subTable.lookupRecords,
         lookups,

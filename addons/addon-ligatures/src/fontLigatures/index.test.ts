@@ -8,31 +8,31 @@ import * as fs from 'fs';
 import { assert } from 'chai';
 import { loadBuffer } from './index';
 
-interface Font {
-  findLigatures(text: string): { outputGlyphs: number[]; contextRanges: [number, number][] };
+interface IFont {
+  findLigatures(text: string): { outputGlyphs: number[], contextRanges: [number, number][] };
   findLigatureRanges(text: string): [number, number][];
 }
 
-interface TestCase {
+interface ITestCase {
   font: string;
   input: string;
   glyphs: number[];
   ranges: [number, number][];
 }
 
-const fira = (input: string, glyphs: number[], ranges: [number, number][]): TestCase =>
+const fira = (input: string, glyphs: number[], ranges: [number, number][]): ITestCase =>
   ({ font: 'Fira Code', input, glyphs, ranges });
 
-const iosevka = (input: string, glyphs: number[], ranges: [number, number][]): TestCase =>
+const iosevka = (input: string, glyphs: number[], ranges: [number, number][]): ITestCase =>
   ({ font: 'Iosevka', input, glyphs, ranges });
 
-const monoid = (input: string, glyphs: number[], ranges: [number, number][]): TestCase =>
+const monoid = (input: string, glyphs: number[], ranges: [number, number][]): ITestCase =>
   ({ font: 'Monoid', input, glyphs, ranges });
 
-const ubuntu = (input: string, glyphs: number[], ranges: [number, number][]): TestCase =>
+const ubuntu = (input: string, glyphs: number[], ranges: [number, number][]): ITestCase =>
   ({ font: 'Ubuntu Mono', input, glyphs, ranges });
 
-const firaCases: TestCase[] = [
+const firaCases: ITestCase[] = [
   fira('abc', [133, 145, 146], []),
   fira('.=', [1614, 1081], [[0, 2]]),
   fira('..=', [1614, 1614, 1083], [[0, 3]]),
@@ -168,7 +168,7 @@ const firaCases: TestCase[] = [
   fira('===>', [1614, 1614, 1486, 1148], [[0, 4]])
 ];
 
-const iosevkaCases: TestCase[] = [
+const iosevkaCases: ITestCase[] = [
   iosevka('<-', [31, 3127], [[0, 2]]),
   iosevka('<--', [31, 3129, 3139], [[0, 3]]),
   iosevka('<---', [31, 3129, 3150, 3139], [[0, 4]]),
@@ -218,7 +218,7 @@ const iosevkaCases: TestCase[] = [
   iosevka('!===', [3100, 3085, 3085, 3084], [[0, 4]])
 ];
 
-const monoidCases: TestCase[] = [
+const monoidCases: ITestCase[] = [
   monoid('<!--', [775, 775, 775, 643], [[0, 4]]),
   monoid('-->', [779, 779, 628], [[0, 3]]),
   monoid('<--', [776, 776, 627], [[0, 3]]),
@@ -256,7 +256,7 @@ const monoidCases: TestCase[] = [
   monoid('__', [763, 764], [[0, 2]])
 ];
 
-const ubuntuCases: TestCase[] = [
+const ubuntuCases: ITestCase[] = [
   ubuntu('==>', [32, 32, 33], [])
 ];
 
@@ -267,9 +267,9 @@ const fontPaths: Record<string, string> = {
   'Ubuntu Mono': path.join(__dirname, '../../fonts/UbuntuMono-Regular.ttf')
 };
 
-const fontCache: Map<string, Font> = new Map();
+const fontCache: Map<string, IFont> = new Map();
 
-function loadFont(fontName: string): Font {
+function loadFont(fontName: string): IFont {
   let font = fontCache.get(fontName);
   if (!font) {
     const fontPath = fontPaths[fontName];
