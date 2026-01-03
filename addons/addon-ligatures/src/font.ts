@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Font, loadBuffer } from 'font-ligatures';
+import { Font, loadBuffer } from './fontLigatures/index';
 
 import parse from './parse';
 
