@@ -33,12 +33,12 @@ export interface IDemoAddon<T extends AddonType> {
               T extends 'progress' ? typeof ProgressAddon :
                 T extends 'search' ? typeof SearchAddon :
                   T extends 'serialize' ? typeof SerializeAddon :
-                  T extends 'webFonts' ? typeof WebFontsAddon :
-                    T extends 'webLinks' ? typeof WebLinksAddon :
-                      T extends 'unicode11' ? typeof Unicode11Addon :
-                        T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                          T extends 'webgl' ? typeof WebglAddon :
-                            never
+                    T extends 'webFonts' ? typeof WebFontsAddon :
+                      T extends 'webLinks' ? typeof WebLinksAddon :
+                        T extends 'unicode11' ? typeof Unicode11Addon :
+                          T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                            T extends 'webgl' ? typeof WebglAddon :
+                              never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -49,12 +49,12 @@ export interface IDemoAddon<T extends AddonType> {
               T extends 'progress' ? ProgressAddon :
                 T extends 'search' ? SearchAddon :
                   T extends 'serialize' ? SerializeAddon :
-                  T extends 'webFonts' ? WebFontsAddon :
-                    T extends 'webLinks' ? WebLinksAddon :
-                      T extends 'unicode11' ? Unicode11Addon :
-                        T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
-                          T extends 'webgl' ? WebglAddon :
-                            never
+                    T extends 'webFonts' ? WebFontsAddon :
+                      T extends 'webLinks' ? WebLinksAddon :
+                        T extends 'unicode11' ? Unicode11Addon :
+                          T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                            T extends 'webgl' ? WebglAddon :
+                              never
   );
 }
 
