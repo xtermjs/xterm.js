@@ -226,6 +226,9 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
         if (o === 'theme') {
           this._handlers.updateTerminalContainerBackground();
         }
+        if (o === 'fontFamily') {
+          this._handlers.updateTerminalSize();
+        }
       });
     });
   }
