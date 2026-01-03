@@ -14,7 +14,9 @@ interface INavigator {
 declare const navigator: INavigator;
 declare const process: unknown;
 
-export const isNode = (typeof process !== 'undefined' && 'title' in (process as any)) ? true : false;
+// navigator is also checked here because bundling with the process module can cause issues
+// otherwise
+export const isNode = (typeof process !== 'undefined' && 'title' in (process as any) && typeof navigator === 'undefined') ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
