@@ -15,82 +15,82 @@ import { processInputPosition, processLookaheadPosition, processBacktrackPositio
  * @param tableIndex Index of this table in the overall lookup
  */
 export default function buildTree(table: ChainingContextualSubstitutionTable.Format2, lookups: Lookup[], tableIndex: number): LookupTree {
-    const results: LookupTree[] = [];
+  const results: LookupTree[] = [];
 
-    const firstGlyphs = listGlyphsByIndex(table.coverage);
+  const firstGlyphs = listGlyphsByIndex(table.coverage);
 
-    for (const { glyphId } of firstGlyphs) {
-        const firstInputClass = getGlyphClass(table.inputClassDef, glyphId);
-        for (const [glyphId, inputClass] of firstInputClass.entries()) {
-            // istanbul ignore next - invalid font
-            if (inputClass === null) {
-                continue;
-            }
+  for (const { glyphId } of firstGlyphs) {
+    const firstInputClass = getGlyphClass(table.inputClassDef, glyphId);
+    for (const [glyphId, inputClass] of firstInputClass.entries()) {
+      // istanbul ignore next - invalid font
+      if (inputClass === null) {
+        continue;
+      }
 
-            const classSet = table.chainClassSet[inputClass];
+      const classSet = table.chainClassSet[inputClass];
 
-            // If the class set is null there's nothing to do with this table.
-            if (!classSet) {
-                continue;
-            }
+      // If the class set is null there's nothing to do with this table.
+      if (!classSet) {
+        continue;
+      }
 
-            for (const [subIndex, subTable] of classSet.entries()) {
-                const result: LookupTree = {
-                    individual: {},
-                    range: []
-                };
+      for (const [subIndex, subTable] of classSet.entries()) {
+        const result: LookupTree = {
+          individual: {},
+          range: []
+        };
 
-                let currentEntries: EntryMeta[] = getInputTree(
-                    result,
-                    subTable.lookupRecords,
-                    lookups,
-                    0,
-                    glyphId
-                ).map(({ entry, substitution }) => ({ entry, substitutions: [substitution] }));
+        let currentEntries: EntryMeta[] = getInputTree(
+          result,
+          subTable.lookupRecords,
+          lookups,
+          0,
+          glyphId
+        ).map(({ entry, substitution }) => ({ entry, substitutions: [substitution] }));
 
-                for (const [index, classNum] of subTable.input.entries()) {
-                    currentEntries = processInputPosition(
-                        listClassGlyphs(table.inputClassDef, classNum),
-                        index + 1,
-                        currentEntries,
-                        subTable.lookupRecords,
-                        lookups
-                    );
-                }
-
-                for (const classNum of subTable.lookahead) {
-                    currentEntries = processLookaheadPosition(
-                        listClassGlyphs(table.lookaheadClassDef, classNum),
-                        currentEntries
-                    );
-                }
-
-                for (const classNum of subTable.backtrack) {
-                    currentEntries = processBacktrackPosition(
-                        listClassGlyphs(table.backtrackClassDef, classNum),
-                        currentEntries
-                    );
-                }
-
-                // When we get to the end, all of the entries we've accumulated
-                // should have a lookup defined
-                for (const { entry, substitutions } of currentEntries) {
-                    entry.lookup = {
-                        substitutions,
-                        index: tableIndex,
-                        subIndex,
-                        length: subTable.input.length + 1,
-                        contextRange: [
-                            -1 * subTable.backtrack.length,
-                            1 + subTable.input.length + subTable.lookahead.length
-                        ]
-                    };
-                }
-
-                results.push(result);
-            }
+        for (const [index, classNum] of subTable.input.entries()) {
+          currentEntries = processInputPosition(
+            listClassGlyphs(table.inputClassDef, classNum),
+            index + 1,
+            currentEntries,
+            subTable.lookupRecords,
+            lookups
+          );
         }
-    }
 
-    return mergeTrees(results);
+        for (const classNum of subTable.lookahead) {
+          currentEntries = processLookaheadPosition(
+            listClassGlyphs(table.lookaheadClassDef, classNum),
+            currentEntries
+          );
+        }
+
+        for (const classNum of subTable.backtrack) {
+          currentEntries = processBacktrackPosition(
+            listClassGlyphs(table.backtrackClassDef, classNum),
+            currentEntries
+          );
+        }
+
+        // When we get to the end, all of the entries we've accumulated
+        // should have a lookup defined
+        for (const { entry, substitutions } of currentEntries) {
+          entry.lookup = {
+            substitutions,
+            index: tableIndex,
+            subIndex,
+            length: subTable.input.length + 1,
+            contextRange: [
+              -1 * subTable.backtrack.length,
+              1 + subTable.input.length + subTable.lookahead.length
+            ]
+          };
+        }
+
+        results.push(result);
+      }
+    }
+  }
+
+  return mergeTrees(results);
 }

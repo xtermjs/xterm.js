@@ -12,58 +12,58 @@ import { processLookaheadPosition, processBacktrackPosition, EntryMeta } from '.
  * @param tableIndex Index of this table in the overall lookup
  */
 export default function buildTree(table: ReverseChainingContextualSingleSubstitutionTable, tableIndex: number): LookupTree {
-    const result: LookupTree = {
-        individual: {},
-        range: []
-    };
+  const result: LookupTree = {
+    individual: {},
+    range: []
+  };
 
-    const glyphs = listGlyphsByIndex(table.coverage);
+  const glyphs = listGlyphsByIndex(table.coverage);
 
-    for (const { glyphId, index } of glyphs) {
-        const initialEntry: LookupTreeEntry = {};
-        if (Array.isArray(glyphId)) {
-            result.range.push({
-                entry: initialEntry,
-                range: glyphId
-            });
-        } else {
-            result.individual[glyphId] = initialEntry;
-        }
-
-        let currentEntries: EntryMeta[] = [{
-            entry: initialEntry,
-            substitutions: [table.substitutes[index]]
-        }];
-
-        // We walk forward, then backward
-        for (const coverage of table.lookaheadCoverage) {
-            currentEntries = processLookaheadPosition(
-                listGlyphsByIndex(coverage).map(glyph => glyph.glyphId),
-                currentEntries
-            );
-        }
-
-        for (const coverage of table.backtrackCoverage) {
-            currentEntries = processBacktrackPosition(
-                listGlyphsByIndex(coverage).map(glyph => glyph.glyphId),
-                currentEntries
-            );
-        }
-
-        // When we get to the end, insert the lookup information
-        for (const { entry, substitutions } of currentEntries) {
-            entry.lookup = {
-                substitutions,
-                index: tableIndex,
-                subIndex: 0,
-                length: 1,
-                contextRange: [
-                    -1 * table.backtrackCoverage.length,
-                    1 + table.lookaheadCoverage.length
-                ]
-            };
-        }
+  for (const { glyphId, index } of glyphs) {
+    const initialEntry: LookupTreeEntry = {};
+    if (Array.isArray(glyphId)) {
+      result.range.push({
+        entry: initialEntry,
+        range: glyphId
+      });
+    } else {
+      result.individual[glyphId] = initialEntry;
     }
 
-    return result;
+    let currentEntries: EntryMeta[] = [{
+      entry: initialEntry,
+      substitutions: [table.substitutes[index]]
+    }];
+
+    // We walk forward, then backward
+    for (const coverage of table.lookaheadCoverage) {
+      currentEntries = processLookaheadPosition(
+        listGlyphsByIndex(coverage).map(glyph => glyph.glyphId),
+        currentEntries
+      );
+    }
+
+    for (const coverage of table.backtrackCoverage) {
+      currentEntries = processBacktrackPosition(
+        listGlyphsByIndex(coverage).map(glyph => glyph.glyphId),
+        currentEntries
+      );
+    }
+
+    // When we get to the end, insert the lookup information
+    for (const { entry, substitutions } of currentEntries) {
+      entry.lookup = {
+        substitutions,
+        index: tableIndex,
+        subIndex: 0,
+        length: 1,
+        contextRange: [
+          -1 * table.backtrackCoverage.length,
+          1 + table.lookaheadCoverage.length
+        ]
+      };
+    }
+  }
+
+  return result;
 }
