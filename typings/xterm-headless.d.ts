@@ -49,7 +49,9 @@ declare module '@xterm/headless' {
     convertEol?: boolean;
 
     /**
-     * Whether the cursor blinks.
+     * Whether the cursor blinks. The blinking will stop after 5 minutes of idle
+     * time (refreshed by clicking, focusing or the cursor moving). The default
+     * is false.
      */
     cursorBlink?: boolean;
 
@@ -64,14 +66,6 @@ declare module '@xterm/headless' {
     cursorWidth?: number;
 
     /**
-     * Whether to draw custom glyphs for block element and box drawing
-     * characters instead of using the font. This should typically result in
-     * better rendering with continuous lines, even when line height and letter
-     * spacing is used. Note that this doesn't work with the DOM renderer which
-     * renders all characters using the font. The default is true.
-     */
-    customGlyphs?: boolean;
-    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -80,13 +74,6 @@ declare module '@xterm/headless' {
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
-
-    /**
-     * The modifier key hold to multiply scroll speed.
-     * @deprecated This option is no longer available and will always use alt.
-     * Setting this will be ignored.
-     */
-    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The spacing in whole pixels between characters.
@@ -143,6 +130,14 @@ declare module '@xterm/headless' {
     minimumContrastRatio?: number;
 
     /**
+     * Whether to reflow the line containing the cursor when the terminal is
+     * resized. Defaults to false, because shells usually handle this
+     * themselves. Note that this will not move the cursor position, only the
+     * line contents.
+     */
+    reflowCursorLine?: boolean;
+
+    /**
      * Whether to rescale glyphs horizontally that are a single cell wide but
      * have glyphs that would overlap following cell(s). This typically happens
      * for ambiguous width characters (eg. the roman numeral characters U+2160+)
@@ -180,6 +175,13 @@ declare module '@xterm/headless' {
     scrollback?: number;
 
     /**
+     * If enabled the Erase in Display All (ED2) escape sequence will push
+     * erased text to scrollback, instead of clearing only the viewport portion.
+     * This emulates PuTTY's default clear screen behavior.
+     */
+    scrollOnEraseInDisplay?: boolean;
+
+    /**
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
      */
     scrollSensitivity?: number;
@@ -199,25 +201,6 @@ declare module '@xterm/headless' {
      * The color theme of the terminal.
      */
     theme?: ITheme;
-
-    /**
-     * Whether "Windows mode" is enabled. Because Windows backends winpty and
-     * conpty operate by doing line wrapping on their side, xterm.js does not
-     * have access to wrapped lines. When Windows mode is enabled the following
-     * changes will be in effect:
-     *
-     * - Reflow is disabled.
-     * - Lines are assumed to be wrapped if the last character of the line is
-     *   not whitespace.
-     *
-     * When using conpty on Windows 11 version >= 21376, it is recommended to
-     * disable this because native text wrapping sequences are output correctly
-     * thanks to https://github.com/microsoft/terminal/issues/405
-     *
-     * @deprecated Use {@link windowsPty}. This value will be ignored if
-     * windowsPty is set.
-     */
-    windowsMode?: boolean;
 
     /**
      * Compatibility information when the pty is known to be hosted on Windows.
@@ -601,21 +584,18 @@ declare module '@xterm/headless' {
     readonly cols: number;
 
     /**
-     * (EXPERIMENTAL) The terminal's current buffer, this might be either the
-     * normal buffer or the alt buffer depending on what's running in the
-     * terminal.
+     * Access to the terminal's normal and alt buffer.
      */
     readonly buffer: IBufferNamespace;
 
     /**
-     * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
-     * buffer is active this will always return [].
+     * Get all markers registered against the buffer. If the alt buffer is
+     * active this will always return [].
      */
     readonly markers: ReadonlyArray<IMarker>;
 
     /**
-     * (EXPERIMENTAL) Get the parser interface to register
-     * custom escape sequence handlers.
+     * Get the parser interface to register custom escape sequence handlers.
      */
     readonly parser: IParser;
 
@@ -715,6 +695,17 @@ declare module '@xterm/headless' {
      * @returns an `IDisposable` to stop listening.
      */
     onLineFeed: IEvent<void>;
+
+    /**
+     * Adds an event listener for when rows are _requested_ to be rendered. The
+     * event value contains the start row and end rows of the rendered area
+     * (ranges from `0` to `Terminal.rows - 1`). This differs from the regular
+     * xterm.js in that it doesn't actually do any rendering but requests
+     * rendering from the outside. This is useful for implementing a custom
+     * renderer on top of xterm-headless.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onRender: IEvent<{ start: number, end: number }>;
 
     /**
      * Adds an event listener for when data has been parsed by the terminal,
@@ -819,21 +810,31 @@ declare module '@xterm/headless' {
 
     /**
      * Write data to the terminal.
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     write(data: string | Uint8Array, callback?: () => void): void;
 
     /**
      * Writes data to the terminal, followed by a break line character (\n).
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
@@ -1241,7 +1242,7 @@ declare module '@xterm/headless' {
      * @param id Specifies the function identifier under which the callback
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
      * default charset selection.
-     * @param callback The function to handle the sequence.
+     * @param handler The function to handle the sequence.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.
@@ -1346,6 +1347,17 @@ declare module '@xterm/headless' {
      * Send FocusIn/FocusOut events: `CSI ? 1 0 0 4 h`
      */
     readonly sendFocusMode: boolean;
+    /**
+     * Show Cursor (DECTCEM): `CSI ? 2 5 h`
+     */
+    readonly showCursor: boolean;
+    /**
+     * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
+     *
+     * When enabled, output is buffered and only rendered when the mode is
+     * disabled, allowing for atomic screen updates without tearing.
+     */
+    readonly synchronizedOutputMode: boolean;
     /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */

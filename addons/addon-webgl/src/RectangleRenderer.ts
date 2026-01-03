@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
@@ -14,6 +13,7 @@ import { Terminal } from '@xterm/xterm';
 import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 const enum VertexAttribLocations {
   POSITION = 0,

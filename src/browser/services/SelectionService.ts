@@ -152,6 +152,14 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._register(toDisposable(() => {
       this._removeMouseDownListeners();
     }));
+
+    // Clear selection when resizing vertically. This experience could be improved, this is the
+    // simple option to fix the buggy behavior. https://github.com/xtermjs/xterm.js/issues/5300
+    this._register(this._bufferService.onResize(e => {
+      if (e.rowsChanged) {
+        this.clearSelection();
+      }
+    }));
   }
 
   public reset(): void {

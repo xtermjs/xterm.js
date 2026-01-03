@@ -41,6 +41,11 @@ export class CompositionHelper {
    */
   private _dataAlreadySent: string;
 
+  /**
+   * The pending textarea change timer, if any.
+   */
+  private _textareaChangeTimer?: number;
+
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
@@ -93,7 +98,8 @@ export class CompositionHelper {
    */
   public keydown(ev: KeyboardEvent): boolean {
     if (this._isComposing || this._isSendingComposition) {
-      if (ev.keyCode === 229) {
+      if (ev.keyCode === 20 || ev.keyCode === 229) {
+        // 20 is CapsLock, 229 is Enter
         // Continue composing if the keyCode is the "composition character"
         return false;
       }
@@ -183,8 +189,12 @@ export class CompositionHelper {
    * IME is active.
    */
   private _handleAnyTextareaChanges(): void {
+    if (this._textareaChangeTimer) {
+      return;
+    }
     const oldValue = this._textarea.value;
-    setTimeout(() => {
+    this._textareaChangeTimer = window.setTimeout(() => {
+      this._textareaChangeTimer = undefined;
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;

@@ -18,12 +18,19 @@ export interface IBufferService {
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
   isUserScrolling: boolean;
-  onResize: Event<{ cols: number, rows: number }>;
+  onResize: Event<IBufferResizeEvent>;
   onScroll: Event<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   resize(cols: number, rows: number): void;
   reset(): void;
+}
+
+export interface IBufferResizeEvent {
+  cols: number;
+  rows: number;
+  colsChanged: boolean;
+  rowsChanged: boolean;
 }
 
 export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
@@ -58,6 +65,11 @@ export interface ICoreMouseService {
    * Human readable version of mouse events.
    */
   explainEvents(events: CoreMouseEventType): { [event: string]: boolean };
+
+  /**
+   * Process wheel event taking partial scroll into account.
+   */
+  consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number;
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');
@@ -104,6 +116,7 @@ export interface ICharsetService {
 
   charset: ICharset | undefined;
   readonly glevel: number;
+  readonly charsets: (ICharset | undefined)[];
 
   reset(): void;
 
@@ -124,6 +137,7 @@ export interface ICharsetService {
 export interface IServiceIdentifier<T> {
   (...args: any[]): void;
   type: T;
+  _id: string;
 }
 
 export interface IBrandedService {
@@ -217,12 +231,9 @@ export interface ITerminalOptions {
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
   cursorInactiveStyle?: CursorInactiveStyle;
-  customGlyphs?: boolean;
   disableStdin?: boolean;
   documentOverride?: any | null;
   drawBoldTextInBrightColors?: boolean;
-  /** @deprecated No longer supported */
-  fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
   fastScrollSensitivity?: number;
   fontSize?: number;
   fontFamily?: string;
@@ -237,6 +248,7 @@ export interface ITerminalOptions {
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
+  reflowCursorLine?: boolean;
   rescaleOverlappingGlyphs?: boolean;
   rightClickSelectsWord?: boolean;
   rows?: number;
@@ -247,11 +259,12 @@ export interface ITerminalOptions {
   smoothScrollDuration?: number;
   tabStopWidth?: number;
   theme?: ITheme;
-  windowsMode?: boolean;
   windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
   overviewRuler?: IOverviewRulerOptions;
+  quirks?: ITerminalQuirks;
+  scrollOnEraseInDisplay?: boolean;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -287,6 +300,10 @@ export interface ITheme {
   brightCyan?: string;
   brightWhite?: string;
   extendedAnsi?: string[];
+}
+
+export interface ITerminalQuirks {
+  allowSetCursorBlink?: boolean;
 }
 
 export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');

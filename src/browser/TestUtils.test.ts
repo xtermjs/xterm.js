@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from '@xterm/xterm';
+import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, IRenderDimensions as IRenderDimensionsApi } from '@xterm/xterm';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
@@ -47,6 +47,8 @@ export class MockTerminal implements ITerminal {
   public onKey!: Event<{ key: string, domEvent: KeyboardEvent }>;
   public onRender!: Event<{ start: number, end: number }>;
   public onResize!: Event<{ cols: number, rows: number }>;
+  public onDimensionsChange!: Event<IRenderDimensionsApi>;
+  public dimensions: IRenderDimensionsApi | undefined;
   public markers!: IMarker[];
   public linkifier: ILinkifier2 | undefined;
   public coreMouseService!: ICoreMouseService;
@@ -233,6 +235,10 @@ export class MockBuffer implements IBuffer {
   public savedY!: number;
   public savedX!: number;
   public savedCharset: ICharset | undefined;
+  public savedCharsets: (ICharset | undefined)[] = [];
+  public savedGlevel: number = 0;
+  public savedOriginMode: boolean = false;
+  public savedWraparoundMode: boolean = true;
   public savedCurAttrData = new AttributeData();
   public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments as any);

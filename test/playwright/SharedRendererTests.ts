@@ -6,11 +6,10 @@
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import { LocatorScreenshotOptions, test } from '@playwright/test';
 import { ITheme } from '@xterm/xterm';
-import { ITestContext, MaybeAsync, openTerminal, pollFor, pollForApproximate } from './TestUtils';
+import { ITestContext, openTerminal, pollFor, pollForApproximate } from './TestUtils';
 
 export interface ISharedRendererTestContext {
   value: ITestContext;
-  skipCanvasExceptions?: boolean;
   skipDomExceptions?: boolean;
 }
 
@@ -934,7 +933,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionBackground', async () => {
+  test.describe('selectionBackground', async () => {
     test('should resolve the inverse foreground color based on the original background color, not the selection', async () => {
       const theme: ITheme = {
         foreground: '#FF0000',
@@ -955,7 +954,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionInactiveBackground', async () => {
+  test.describe('selectionInactiveBackground', async () => {
     test('should render the the inactive selection when not focused', async () => {
       const theme: ITheme = {
         selectionBackground: '#FF000080',
@@ -981,7 +980,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions || ctx.skipDomExceptions ? test.describe.skip : test.describe)('selection blending', () => {
+  ctx.skipDomExceptions ? test.describe.skip : test.describe('selection blending', () => {
     test('background', async () => {
       const theme: ITheme = {
         red: '#CC0000',
@@ -1036,7 +1035,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     });
   });
 
-  (ctx.skipCanvasExceptions ? test.describe.skip : test.describe)('selectionForeground', () => {
+  test.describe('selectionForeground', () => {
     test('transparent background inverse', async () => {
       const theme: ITheme = {
         selectionForeground: '#ff0000'
@@ -1116,7 +1115,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.write( data);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 255, 255]);
     });
-    (ctx.skipCanvasExceptions ? test.skip : test)('backgroundColor should ignore inverse (only bg on decoration)', async () => {
+    test('backgroundColor should ignore inverse (only bg on decoration)', async () => {
       const data = `\x1b[7m■ \x1b[0m`;
       await ctx.value.proxy.write( data);
       await ctx.value.page.evaluate(`
@@ -1133,7 +1132,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 
   test.describe('regression tests', () => {
-    (ctx.skipCanvasExceptions ? test.skip : test)('#4736: inactive selection background should replace regular cell background color', async () => {
+    test('#4736: inactive selection background should replace regular cell background color', async () => {
       const theme: ITheme = {
         selectionBackground: '#FF0000',
         selectionInactiveBackground: '#0000FF'
@@ -1183,7 +1182,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
     });
-    (ctx.skipCanvasExceptions ? test.skip : test)('#4759: minimum contrast ratio should be respected on selected inverse text', async () => {
+    test('#4759: minimum contrast ratio should be respected on selected inverse text', async () => {
       const theme: ITheme = {
         foreground: '#777777',
         background: '#555555',
@@ -1248,6 +1247,97 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.scrollLines(-2);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
     });
+    test('#5241 cursor with alpha should blend color with background color', async () => {
+      const theme: ITheme = {
+        cursor: '#FF000080'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
+    });
+    test('#5241 cursorAccent with alpha should blend color with background color', async () => {
+      const theme: ITheme = {
+        cursorAccent: '#FF000080'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.write('■');
+      await ctx.value.proxy.write('\x1b[1D');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
+    });
+  });
+
+  // TODO: These tests are a little too flaky atm
+  test.describe.skip('synchronized output', () => {
+    test.beforeEach(async () => {
+      const theme: ITheme = {
+        background: '#000000FF',
+
+        red: '#FF0000FF',
+        green: '#00FF00FF',
+        blue: '#0000FFFF'
+      };
+      await ctx.value.page.evaluate(`
+        window.term.options.theme = ${JSON.stringify(theme)};
+        window.term.options.cursorStyle = 'underline';
+      `);
+    });
+    test('defers rendering until ESU', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+    });
+
+    test('batches multiple writes', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■\x1b[32m■\x1b[34m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 255, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 255, 255]);
+    });
+
+    test('nested BSU is idempotent', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[32m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.proxy.write('\x1b[?2026l'); // ESU
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 255, 0, 255]);
+    });
+
+    test('timeout flushes without ESU', async () => {
+      await ctx.value.proxy.write('\x1b[?2026h'); // BSU
+      await ctx.value.proxy.write('\x1b[31m■');
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255], undefined, {
+        equalityFn: (a, b) => {
+          return !(a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+        }
+      });
+      await ctx.value.page.waitForTimeout(1000); // Timeout hard coded
+      frameDetails = undefined;
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
+    });
   });
 }
 
@@ -1262,10 +1352,10 @@ enum CellColorPosition {
  * treatment.
  */
 export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestContext, setupCb: () => Promise<void> | void): void {
-  test.describe('standalone tests', () => {
+  const setupTests = ({ shadowDom }: { shadowDom: boolean }): void => {
     test.beforeEach(async () => {
       // Recreate terminal
-      await openTerminal(ctx.value);
+      await openTerminal(ctx.value, {}, { useShadowDom: shadowDom });
       await ctx.value.page.evaluate(`
         window.term.options.minimumContrastRatio = 1;
         window.term.options.allowTransparency = false;
@@ -1290,6 +1380,13 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
         await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [0, 0, 0, 255]);
       });
     });
+  };
+
+  test.describe('standalone tests', () => {
+    setupTests({ shadowDom: false });
+  });
+  test.describe('standalone tests (Shadow dom)', () => {
+    setupTests({ shadowDom: true });
   });
 }
 
@@ -1299,9 +1396,9 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
  * @param col The 1-based column index to get the color for.
  * @param row The 1-based row index to get the color for.
  */
-function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): MaybeAsync<[red: number, green: number, blue: number, alpha: number]> {
+async function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): Promise<[red: number, green: number, blue: number, alpha: number]> {
   if (!frameDetails) {
-    return getFrameDetails(ctx).then(frameDetails => getCellColorInner(frameDetails, col, row));
+    frameDetails = await getFrameDetails(ctx);
   }
   switch (position) {
     case CellColorPosition.CENTER:
@@ -1318,7 +1415,7 @@ async function getFrameDetails(ctx: ITestContext): Promise<{ cols: number, rows:
   frameDetails = {
     cols: await ctx.proxy.cols,
     rows: await ctx.proxy.rows,
-    decoded: (await decodePng(buffer, { force32: true })).image
+    decoded: (await decodePng(new Uint8Array(buffer), { force32: true })).image
   };
   return frameDetails;
 }

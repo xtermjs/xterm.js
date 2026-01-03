@@ -35,10 +35,10 @@ test.describe('WebLinksAddon', () => {
   test.beforeEach(async () => {
     await ctx.page.evaluate(`
       window.term.reset();
-    `);
-    await timeout(50);
-    await ctx.page.evaluate(`
       window._linkaddon?.dispose();
+    `);
+    await timeout(10);
+    await ctx.page.evaluate(`
       window._linkaddon = new WebLinksAddon();
       window.term.loadAddon(window._linkaddon);
     `);
@@ -180,7 +180,7 @@ async function cellPos(col: number, row: number): Promise<[number, number]> {
   const coords: any = await ctx.page.evaluate(`
     (function() {
       const rect = window.term.element.getBoundingClientRect();
-      const dim = term._core._renderService.dimensions;
+      const dim = window.term.dimensions;
       return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right, width: dim.css.cell.width, height: dim.css.cell.height};
     })();
   `);

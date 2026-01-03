@@ -4,7 +4,6 @@
  */
 import { test } from '@playwright/test';
 import { deepStrictEqual, ok } from 'assert';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ITestContext, createTestContext, openTerminal, pollFor } from './TestUtils';
 
 let ctx: ITestContext;
@@ -16,190 +15,197 @@ test.afterAll(async () => await ctx.page.close());
 
 
 test.describe('InputHandler Integration Tests', () => {
+  let recordedData: string[];
+  let recordDataDisposable: { dispose: () => void };
+  test.beforeAll(async () => {
+    recordedData = [];
+    recordDataDisposable = ctx.proxy.onData(d => recordedData.push(d));
+  });
+  test.afterAll(async () => {
+    recordDataDisposable.dispose();
+  });
+  test.beforeEach(async () => {
+    recordedData.length = 0;
+    await ctx.proxy.resize(80, 24);
+  });
 
   test.describe('CSI', () => {
     test.beforeEach(async () => await ctx.proxy.reset());
 
     test('CSI Ps @ - ICH: Insert Ps (Blank) Character(s) (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('foo\\x1b[3D\\x1b[@\\n\\r')
-        // Explicit
-        window.term.write('bar\\x1b[3D\\x1b[4@')
-      `);
+      // Default
+      await ctx.proxy.write('foo\x1b[3D\x1b[@\n\r');
+      // Explicit
+      await ctx.proxy.write('bar\x1b[3D\x1b[4@');
       await pollFor(ctx.page, () => getLinesAsArray(2), [' foo', '    bar']);
     });
-    test.skip('CSI Ps SP @ - SL: Shift left Ps columns(s) (default = 1), ECMA-48', async () => {
-      // TODO: Implement
+    test('CSI Ps SP @ - SL: Shift left Ps columns(s) (default = 1), ECMA-48', async () => {
+      // Default
+      await ctx.proxy.write('abcdefg\x1b[ @');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['bcdefg']);
+      // Explicit
+      await ctx.proxy.reset();
+      await ctx.proxy.write('abcdefg\x1b[3 @');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['defg']);
     });
     test('CSI Ps A - CUU: Cursor Up Ps Times (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('\\n\\n\\n\\n\x1b[Aa')
-        // Explicit
-        window.term.write('\x1b[2Ab')
-      `);
+      // Default
+      await ctx.proxy.write('\n\n\n\n\x1b[Aa');
+      // Explicit
+      await ctx.proxy.write('\x1b[2Ab');
       await pollFor(ctx.page, () => getLinesAsArray(4), ['', ' b', '', 'a']);
     });
     test('CSI Ps B - CUD: Cursor Down Ps Times (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('\x1b[Ba')
-        // Explicit
-        window.term.write('\x1b[2Bb')
-      `);
+      // Default
+      await ctx.proxy.write('\x1b[Ba');
+      // Explicit
+      await ctx.proxy.write('\x1b[2Bb');
       await pollFor(ctx.page, () => getLinesAsArray(4), ['', 'a', '', ' b']);
     });
     test('CSI Ps C - CUF: Cursor Forward Ps Times (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('\x1b[Ca')
-        // Explicit
-        window.term.write('\x1b[2Cb')
-      `);
+      // Default
+      await ctx.proxy.write('\x1b[Ca');
+      // Explicit
+      await ctx.proxy.write('\x1b[2Cb');
       await pollFor(ctx.page, () => getLinesAsArray(1), [' a  b']);
     });
     test('CSI Ps D - CUB: Cursor Backward Ps Times (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('foo\x1b[Da')
-        // Explicit
-        window.term.write('\x1b[2Db')
-      `);
+      // Default
+      await ctx.proxy.write('foo\x1b[Da');
+      // Explicit
+      await ctx.proxy.write('\x1b[2Db');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['fba']);
     });
     test('CSI Ps E - CNL: Cursor Next Line Ps Times (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('\x1b[Ea')
-        // Explicit
-        window.term.write('\x1b[2Eb')
-      `);
+      // Default
+      await ctx.proxy.write('\x1b[Ea');
+      // Explicit
+      await ctx.proxy.write('\x1b[2Eb');
       await pollFor(ctx.page, () => getLinesAsArray(4), ['', 'a', '', 'b']);
     });
     test('CSI Ps F - CPL: Cursor Preceding Line Ps Times (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('\\n\\n\\n\\n\x1b[Fa')
-        // Explicit
-        window.term.write('\x1b[2Fb')
-      `);
+      // Default
+      await ctx.proxy.write('\n\n\n\n\x1b[Fa');
+      // Explicit
+      await ctx.proxy.write('\x1b[2Fb');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['', 'b', '', 'a', '']);
     });
     test('CSI Ps G - CHA: Cursor Character Absolute [column] (default = [row,1])', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('foo\x1b[Ga')
-        // Explicit
-        window.term.write('\x1b[10Gb')
-      `);
+      // Default
+      await ctx.proxy.write('foo\x1b[Ga');
+      // Explicit
+      await ctx.proxy.write('\x1b[10Gb');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['aoo      b']);
     });
     test('CSI Ps ; Ps H - CUP: Cursor Position [row;column] (default = [1,1])', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('foo\x1b[Ha')
-        // Explicit
-        window.term.write('\x1b[3;3Hb')
-      `);
+      // Default
+      await ctx.proxy.write('foo\x1b[Ha');
+      // Explicit
+      await ctx.proxy.write('\x1b[3;3Hb');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['aoo', '', '  b']);
     });
     test('CSI Ps I - CHT: Cursor Forward Tabulation Ps tab stops (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('\x1b[Ia')
-        // Explicit
-        window.term.write('\\n\\r\x1b[2Ib')
-      `);
+      // Default
+      await ctx.proxy.write('\x1b[Ia');
+      // Explicit
+      await ctx.proxy.write('\n\r\x1b[2Ib');
       await pollFor(ctx.page, () => getLinesAsArray(2), ['        a', '                b']);
     });
     test('CSI Ps J - ED: Erase in Display, VT100', async () => {
-      const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
-      await ctx.page.evaluate(`
-        // Default: Erase Below
-        window.term.resize(5, 5);
-        window.term.write('${fixture}\x1b[J')
-      `);
+      const fixture = 'abc\n\rdef\n\rghi\x1b[2;2H';
+      // Default: Erase Below
+      await ctx.proxy.resize(5, 5);
+      await ctx.proxy.write(fixture + '\x1b[J');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['abc', 'd', '']);
-      await ctx.page.evaluate(`
-        // 0: Erase Below
-        window.term.reset()
-        window.term.write('${fixture}\x1b[0J')
-      `);
+      // 0: Erase Below
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[0J');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['abc', 'd', '']);
-      await ctx.page.evaluate(`
-        // 1: Erase Above
-        window.term.reset()
-        window.term.write('${fixture}\x1b[1J')
-      `);
+      // 1: Erase Above
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[1J');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['', '  f', 'ghi']);
-      await ctx.page.evaluate(`
-        // 2: Erase Saved Lines (scrollback)
-        window.term.reset()
-        window.term.write('1\\n2\\n3\\n4\\n5${fixture}\x1b[3J')
-      `);
-      await pollFor(ctx.page, () => ctx.page.evaluate(`window.term.buffer.active.length`), 5);
+      // 2: Erase Saved Lines (scrollback)
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\n2\n3\n4\n5' + fixture + '\x1b[3J');
+      await pollFor(ctx.page, () => ctx.proxy.buffer.active.length, 5);
       await pollFor(ctx.page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
     test('CSI ? Ps J - DECSED: Erase in Display, VT220', async () => {
-      const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
-      await ctx.page.evaluate(`
-        // Default: Erase Below
-        window.term.resize(5, 5);
-        window.term.write('${fixture}\x1b[?J')
-      `);
+      const fixture = 'abc\n\rdef\n\rghi\x1b[2;2H';
+      // Default: Erase Below
+      await ctx.proxy.resize(5, 5);
+      await ctx.proxy.write(fixture + '\x1b[?J');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['abc', 'd', '']);
-      await ctx.page.evaluate(`
-        // 0: Erase Below
-        window.term.reset()
-        window.term.write('${fixture}\x1b[?0J')
-      `);
+      // 0: Erase Below
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?0J');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['abc', 'd', '']);
-      await ctx.page.evaluate(`
-        // 1: Erase Above
-        window.term.reset()
-        window.term.write('${fixture}\x1b[?1J')
-      `);
+      // 1: Erase Above
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?1J');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['', '  f', 'ghi']);
-      await ctx.page.evaluate(`
-        // 2: Erase Saved Lines (scrollback)
-        window.term.reset()
-        window.term.write('1\\n2\\n3\\n4\\n5${fixture}\x1b[?3J')
-      `);
-      await pollFor(ctx.page, () => ctx.page.evaluate(`window.term.buffer.active.length`), 5);
+      // 2: Erase Saved Lines (scrollback)
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\n2\n3\n4\n5' + fixture + '\x1b[?3J');
+      await pollFor(ctx.page, () => ctx.proxy.buffer.active.length, 5);
       await pollFor(ctx.page, () => getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
     });
-    test.skip('CSI Ps K - EL: Erase in Line, VT100', async () => {
-      // TODO: Implement
+    test('CSI Ps K - EL: Erase in Line, VT100', async () => {
+      const fixture = 'abcde\x1b[1;3H';
+      // Default: Erase to Right
+      await ctx.proxy.write(fixture + '\x1b[K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 0: Erase to Right
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[0K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 1: Erase to Left
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[1K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['   de']);
+      // 2: Erase All
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[2K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['']);
     });
-    test.skip('CSI ? Ps K - DECSEL: Erase in Line, VT220', async () => {
-      // TODO: Implement
+    test('CSI ? Ps K - DECSEL: Erase in Line, VT220', async () => {
+      const fixture = 'abcde\x1b[1;3H';
+      // Default: Erase to Right
+      await ctx.proxy.write(fixture + '\x1b[?K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 0: Erase to Right
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?0K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['ab']);
+      // 1: Erase to Left
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?1K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['   de']);
+      // 2: Erase All
+      await ctx.proxy.reset();
+      await ctx.proxy.write(fixture + '\x1b[?2K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['']);
     });
     test('CSI Ps L - IL: Insert Ps Line(s) (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('foo\x1b[La')
-        // Explicit
-        window.term.write('\x1b[2Lb')
-      `);
+      // Default
+      await ctx.proxy.write('foo\x1b[La');
+      // Explicit
+      await ctx.proxy.write('\x1b[2Lb');
       await pollFor(ctx.page, () => getLinesAsArray(4), ['b', '', 'a', 'foo']);
     });
     test('CSI Ps M - DL: Delete Ps Line(s) (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('a\\nb\x1b[1F\x1b[M')
-        // Explicit
-        window.term.write('\x1b[1Ed\\ne\\nf\x1b[2F\x1b[2M')
-      `);
+      // Default
+      await ctx.proxy.write('a\nb\x1b[1F\x1b[M');
+      // Explicit
+      await ctx.proxy.write('\x1b[1Ed\ne\nf\x1b[2F\x1b[2M');
       await pollFor(ctx.page, () => getLinesAsArray(5), [' b', '  f', '', '', '']);
     });
     test('CSI Ps P - DCH: Delete Ps Character(s) (default = 1)', async () => {
-      await ctx.page.evaluate(`
-        // Default
-        window.term.write('abc\x1b[1;1H\x1b[P')
-        // Explicit
-        window.term.write('\\n\\rdef\x1b[2;1H\x1b[2P')
-      `);
+      // Default
+      await ctx.proxy.write('abc\x1b[1;1H\x1b[P');
+      // Explicit
+      await ctx.proxy.write('\n\rdef\x1b[2;1H\x1b[2P');
       await pollFor(ctx.page, () => getLinesAsArray(2), ['bc', 'f']);
     });
     test.skip('CSI Pm # P - XTPUSHCOLORS: Push current dynamic- and ANSI-palette colors onto stack, xterm', async () => {
@@ -211,14 +217,28 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI # R - XTREPORTCOLORS: Report the current entry on the palette stack, and the number of palettes stored on the stack, using the same form as XTPOPCOLOR (default = 0), xterm', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps S - SU: Scroll up Ps lines (default = 1), VT420, ECMA-48', async () => {
-      // TODO: Implement
+    test('CSI Ps S - SU: Scroll up Ps lines (default = 1), VT420, ECMA-48', async () => {
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
+      await ctx.proxy.write('\x1b[S');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['2', '3', '4', '5', '']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await ctx.proxy.write('\x1b[2S');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['3', '4', '5', '', '']);
     });
     test.skip('CSI ? Pi ; Pa ; Pv S - XTSMGRAPHICS: Set or request graphics attribute, xterm', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps T - SD: Scroll down Ps lines (default = 1), VT420', async () => {
-      // TODO: Implement
+    test('CSI Ps T - SD: Scroll down Ps lines (default = 1), VT420', async () => {
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
+      await ctx.proxy.write('\x1b[T');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '1', '2', '3', '4']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await ctx.proxy.write('\x1b[2T');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '', '1', '2', '3']);
     });
     test.skip('CSI Ps ; Ps ; Ps ; Ps ; Ps T - XTHIMOUSE: Initiate highlight mouse tracking (XTHIMOUSE), xterm', async () => {
       // TODO: Implement
@@ -226,68 +246,73 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI > Pm T - XTRMTITLE: Reset title mode features to default value, xterm', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps X - ECH: Erase Ps Character(s) (default = 1)', async () => {
-      // TODO: Implement
+    test('CSI Ps X - ECH: Erase Ps Character(s) (default = 1)', async () => {
+      await ctx.proxy.write('abcdef\x1b[1;1H\x1b[X');
+      await pollFor(ctx.page, () => getLinesAsArray(1), [' bcdef']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('abcdef\x1b[1;1H\x1b[3X');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['   def']);
     });
-    test.skip('CSI Ps Z - CBT: Cursor Backward Tabulation Ps tab stops (default = 1)', async () => {
-      // TODO: Implement
+    test('CSI Ps Z - CBT: Cursor Backward Tabulation Ps tab stops (default = 1)', async () => {
+      await ctx.proxy.write('\x1b[17Ga\x1b[17G\x1b[Zb');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['        b       a']);
     });
-    test.skip('CSI Ps ^ - SD: Scroll down Ps lines (default = 1) (SD), ECMA-48', async () => {
-      // TODO: Implement
+    test('CSI Ps ^ - SD: Scroll down Ps lines (default = 1) (SD), ECMA-48', async () => {
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
+      await ctx.proxy.write('\x1b[^');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '1', '2', '3', '4']);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
+      await ctx.proxy.write('\x1b[2^');
+      await pollFor(ctx.page, () => getLinesAsArray(5), ['', '', '1', '2', '3']);
     });
-    test.skip('CSI Ps ` - HPA: Character Position Absolute [column] (default = [row,1])', async () => {
-      // TODO: Implement
+    test('CSI Ps ` - HPA: Character Position Absolute [column] (default = [row,1])', async () => {
+      // Default
+      await ctx.proxy.write('foo\x1b[`a');
+      // Explicit
+      await ctx.proxy.write('\x1b[10`b');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['aoo      b']);
     });
     test.skip('CSI Ps a - ', async () => {
       // TODO: Implement
     });
     test('CSI Ps b - REP: Repeat preceding character, ECMA48', async () => {
       // default to 1
-      await ctx.page.evaluate(`
-          window.term.resize(10, 10);
-          window.term.write('#\x1b[b');
-          window.term.writeln('');
-          window.term.write('#\x1b[0b');
-          window.term.writeln('');
-          window.term.write('#\x1b[1b');
-          window.term.writeln('');
-          window.term.write('#\x1b[5b');
-          `);
+      await ctx.proxy.resize(10, 10);
+      await ctx.proxy.write('#\x1b[b');
+      await ctx.proxy.writeln('');
+      await ctx.proxy.write('#\x1b[0b');
+      await ctx.proxy.writeln('');
+      await ctx.proxy.write('#\x1b[1b');
+      await ctx.proxy.writeln('');
+      await ctx.proxy.write('#\x1b[5b');
       await pollFor(ctx.page, () => getLinesAsArray(4), ['##', '##', '##', '######']);
       await pollFor(ctx.page, () => getCursor(), { col: 6, row: 3 });
       // repeat on fullwidth chars
-      await ctx.page.evaluate(`
-          window.term.reset();
-          window.term.write('￥\x1b[8b');
-          `);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('￥\x1b[8b');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['￥￥￥￥￥']);
       // change from xterm: repeat grapheme cluster
-      await ctx.page.evaluate(`
-          window.term.reset();
-          window.term.write('e\u0301\x1b[2b');
-          `);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('e\u0301\x1b[2b');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['e\u0301e\u0301e\u0301']);
       // should wrap correctly
-      await ctx.page.evaluate(`
-          window.term.reset();
-          window.term.write('#\x1b[15b');
-          `);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('#\x1b[15b');
       await pollFor(ctx.page, () => getLinesAsArray(2), ['##########', '######']);
-      await ctx.page.evaluate(`
-          window.term.reset();
-          window.term.write('\x1b[?7l');  // disable wrap around
-          window.term.write('#\x1b[15b');
-          `);
+      // disable wrap around
+      await ctx.proxy.reset();
+      await ctx.proxy.write('\x1b[?7l');
+      await ctx.proxy.write('#\x1b[15b');
       await pollFor(ctx.page, () => getLinesAsArray(2), ['##########', '']);
       // any successful sequence should reset REP
-      await ctx.page.evaluate(`
-          window.term.reset();
-          window.term.write('\x1b[?7h');  // re-enable wrap around
-          window.term.write('#\\n\x1b[3b');
-          window.term.write('#\\r\x1b[3b');
-          window.term.writeln('');
-          window.term.write('abcdefg\x1b[3D\x1b[10b#\x1b[3b');
-          `);
+      await ctx.proxy.reset();
+      await ctx.proxy.write('\x1b[?7h');  // re-enable wrap around
+      await ctx.proxy.write('#\n\x1b[3b');
+      await ctx.proxy.write('#\r\x1b[3b');
+      await ctx.proxy.writeln('');
+      await ctx.proxy.write('abcdefg\x1b[3D\x1b[10b#\x1b[3b');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['#', ' #', 'abcd####']);
     });
     test.skip('CSI Ps c - ', async () => {
@@ -299,17 +324,37 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI > Ps c - ', async () => {
       // TODO: Implement
     });
-    test.skip('CSI Ps d - ', async () => {
-      // TODO: Implement
+    test('CSI Ps d - VPA: Line Position Absolute [row] (default = [1,column])', async () => {
+      // Default
+      await ctx.proxy.write('\n\n\n   \x1b[da');
+      // Explicit
+      await ctx.proxy.write('\x1b[2d    b');
+      await pollFor(ctx.page, () => getLinesAsArray(4), ['   a', '        b', '', '   ']);
     });
-    test.skip('CSI Ps e - ', async () => {
-      // TODO: Implement
+    test('CSI Ps e - VPR: Line Position Relative (default = 1)', async () => {
+      // Default
+      await ctx.proxy.write('\x1b[ea');
+      // Explicit
+      await ctx.proxy.write('\x1b[2eb');
+      await pollFor(ctx.page, () => getLinesAsArray(4), ['', 'a', '', ' b']);
     });
-    test.skip('CSI Ps ; Ps f - ', async () => {
-      // TODO: Implement
+    test('CSI Ps ; Ps f - HVP: Horizontal and Vertical Position [row;column] (default = [1,1])', async () => {
+      // Default
+      await ctx.proxy.write('foo\x1b[fa');
+      // Explicit
+      await ctx.proxy.write('\x1b[3;3fb');
+      await pollFor(ctx.page, () => getLinesAsArray(3), ['aoo', '', '  b']);
     });
-    test.skip('CSI Ps g - ', async () => {
-      // TODO: Implement
+    test('CSI Ps g - TBC: Tab Clear (default = 0)', async () => {
+      // Default: Clear tab stop at cursor position
+      // Move to column 9 (first tab stop), clear it, go back to column 1, tab should skip to column 17
+      await ctx.proxy.write('\x1b[9G\x1b[g\x1b[1G\ta');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['                a']);
+      // Ps=3: Clear all tab stops
+      await ctx.proxy.reset();
+      await ctx.proxy.write('\x1b[3g\ta');
+      // With all tabs cleared, tab moves to end of line
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['                                                                               a']);
     });
     test.skip('CSI Ps h - ', async () => {
       // TODO: Implement
@@ -443,19 +488,19 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
         await ctx.page.mouse.down();
         await ctx.page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
-        ok(await ctx.page.evaluate(`window.term.getSelection().length`) as number > 0, 'mouse events are off so there should be a selection');
+        ok((await ctx.proxy.getSelection()).length > 0, 'mouse events are off so there should be a selection');
         await ctx.page.mouse.up();
         // Clear selection
         await ctx.page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
-        await pollFor(ctx.page, () => ctx.page.evaluate(`window.term.getSelection().length`), 0);
+        await pollFor(ctx.page, async () => (await ctx.proxy.getSelection()).length, 0);
         // Enable mouse events
-        await ctx.page.evaluate(`window.term.write('\x1b[?1003h')`);
+        await ctx.proxy.write('\x1b[?1003h');
         // Click and drag and ensure there is no selection
         await ctx.page.mouse.click((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 2);
         await ctx.page.mouse.down();
         await ctx.page.mouse.move((coords.left + coords.right) / 2, (coords.top + coords.bottom) / 4);
         // mouse events are on so there should be no selection
-        await pollFor(ctx.page, () => ctx.page.evaluate(`window.term.getSelection().length`), 0);
+        await pollFor(ctx.page, async () => (await ctx.proxy.getSelection()).length, 0);
         await ctx.page.mouse.up();
       });
       test.skip('Ps = 1 0 0 4 - Send FocusIn/FocusOut events, xterm', async () => {
@@ -560,9 +605,9 @@ test.describe('InputHandler Integration Tests', () => {
           return;
         }
         await pollFor(ctx.page, () => simulatePaste('foo'), 'foo');
-        await ctx.page.evaluate(`window.term.write('\x1b[?2004h')`);
+        await ctx.proxy.write('\x1b[?2004h');
         await pollFor(ctx.page, () => simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
-        await ctx.page.evaluate(`window.term.write('\x1b[?2004l')`);
+        await ctx.proxy.write('\x1b[?2004l');
         await pollFor(ctx.page, () => simulatePaste('baz'), 'baz');
       });
       test.skip('Ps = 2 0 0 5 - Enable readline character-quoting, xterm', async () => {
@@ -800,176 +845,358 @@ test.describe('InputHandler Integration Tests', () => {
       });
     });
     test.describe('CSI Pm m - SGR: Character Attributes', () => {
-      test.skip('Ps = 0 -  Normal (default), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 0 - Normal (default), VT100', async () => {
+        await ctx.proxy.write('\x1b[1;3;4;5;7;8;9m#\x1b[0m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isBold());
+        ok(await cell0!.isItalic());
+        ok(await cell0!.isUnderline());
+        ok(await cell0!.isBlink());
+        ok(await cell0!.isInverse());
+        ok(await cell0!.isInvisible());
+        ok(await cell0!.isStrikethrough());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isAttributeDefault(), true);
       });
-      test.skip('Ps = 1 -  Bold, VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 1 - Bold, VT100', async () => {
+        await ctx.proxy.write('\x1b[1m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isBold());
       });
-      test.skip('Ps = 2 -  Faint, decreased intensity, ECMA-48 2nd.', async () => {
-        // TODO: Implement
+      test('Ps = 2 - Faint, decreased intensity, ECMA-48 2nd', async () => {
+        await ctx.proxy.write('\x1b[2m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isDim());
       });
-      test.skip('Ps = 3 -  Italicized, ECMA-48 2nd.', async () => {
-        // TODO: Implement
+      test('Ps = 3 - Italicized, ECMA-48 2nd', async () => {
+        await ctx.proxy.write('\x1b[3m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isItalic());
       });
-      test.skip('Ps = 4 -  Underlined, VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 4 - Underlined, VT100', async () => {
+        await ctx.proxy.write('\x1b[4m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isUnderline());
       });
-      test.skip('Ps = 5 -  Blink, VT100. This appears as Bold in X11R6 xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 5 - Blink, VT100', async () => {
+        await ctx.proxy.write('\x1b[5m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isBlink());
       });
-      test.skip('Ps = 7 -  Inverse, VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 7 - Inverse, VT100', async () => {
+        await ctx.proxy.write('\x1b[7m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isInverse());
       });
-      test.skip('Ps = 8 -  Invisible, i.e., hidden, ECMA-48 2nd, VT300.', async () => {
-        // TODO: Implement
+      test('Ps = 8 - Invisible, ECMA-48 2nd, VT300', async () => {
+        await ctx.proxy.write('\x1b[8m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isInvisible());
       });
-      test.skip('Ps = 9 -  Crossed-out characters, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 9 - Crossed-out characters, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[9m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isStrikethrough());
       });
-      test.skip('Ps = 2 1 -  Doubly-underlined, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 21 - Doubly-underlined, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[21m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell!.isUnderline());
       });
-      test.skip('Ps = 2 2 -  Normal (neither bold nor faint), ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 22 - Normal (neither bold nor faint), ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[1;2m#\x1b[22m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isBold());
+        ok(await cell0!.isDim());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isBold(), 0);
+        deepStrictEqual(await cell1!.isDim(), 0);
       });
-      test.skip('Ps = 2 3 -  Not italicized, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 23 - Not italicized, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[3m#\x1b[23m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isItalic());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isItalic(), 0);
       });
-      test.skip('Ps = 2 4 -  Not underlined, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 24 - Not underlined, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[4m#\x1b[24m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isUnderline());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isUnderline(), 0);
       });
-      test.skip('Ps = 2 5 -  Steady (not blinking), ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 25 - Steady (not blinking), ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[5m#\x1b[25m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isBlink());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isBlink(), 0);
       });
-      test.skip('Ps = 2 7 -  Positive (not inverse), ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 27 - Positive (not inverse), ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[7m#\x1b[27m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isInverse());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isInverse(), 0);
       });
-      test.skip('Ps = 2 8 -  Visible, i.e., not hidden, ECMA-48 3rd, VT300.', async () => {
-        // TODO: Implement
+      test('Ps = 28 - Visible, ECMA-48 3rd, VT300', async () => {
+        await ctx.proxy.write('\x1b[8m#\x1b[28m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isInvisible());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isInvisible(), 0);
       });
-      test.skip('Ps = 2 9 -  Not crossed-out, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 29 - Not crossed-out, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[9m#\x1b[29m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        ok(await cell0!.isStrikethrough());
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isStrikethrough(), 0);
       });
-      test.skip('Ps = 3 0 -  Set foreground color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 30 - Set foreground color to Black', async () => {
+        await ctx.proxy.write('\x1b[30m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 0);
       });
-      test.skip('Ps = 3 1 -  Set foreground color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 31 - Set foreground color to Red', async () => {
+        await ctx.proxy.write('\x1b[31m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 1);
       });
-      test.skip('Ps = 3 2 -  Set foreground color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 32 - Set foreground color to Green', async () => {
+        await ctx.proxy.write('\x1b[32m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 2);
       });
-      test.skip('Ps = 3 3 -  Set foreground color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 33 - Set foreground color to Yellow', async () => {
+        await ctx.proxy.write('\x1b[33m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 3);
       });
-      test.skip('Ps = 3 4 -  Set foreground color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 34 - Set foreground color to Blue', async () => {
+        await ctx.proxy.write('\x1b[34m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 4);
       });
-      test.skip('Ps = 3 5 -  Set foreground color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 35 - Set foreground color to Magenta', async () => {
+        await ctx.proxy.write('\x1b[35m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 5);
       });
-      test.skip('Ps = 3 6 -  Set foreground color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 36 - Set foreground color to Cyan', async () => {
+        await ctx.proxy.write('\x1b[36m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 6);
       });
-      test.skip('Ps = 3 7 -  Set foreground color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 37 - Set foreground color to White', async () => {
+        await ctx.proxy.write('\x1b[37m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 7);
       });
-      test.skip('Ps = 3 9 -  Set foreground color to default, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 39 - Set foreground color to default, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[31m#\x1b[39m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell0!.isFgPalette(), true);
+        deepStrictEqual(await cell0!.getFgColor(), 1);
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isFgDefault(), true);
       });
-      test.skip('Ps = 4 0 -  Set background color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 40 - Set background color to Black', async () => {
+        await ctx.proxy.write('\x1b[40m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 0);
       });
-      test.skip('Ps = 4 1 -  Set background color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 41 - Set background color to Red', async () => {
+        await ctx.proxy.write('\x1b[41m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 1);
       });
-      test.skip('Ps = 4 2 -  Set background color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 42 - Set background color to Green', async () => {
+        await ctx.proxy.write('\x1b[42m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 2);
       });
-      test.skip('Ps = 4 3 -  Set background color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 43 - Set background color to Yellow', async () => {
+        await ctx.proxy.write('\x1b[43m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 3);
       });
-      test.skip('Ps = 4 4 -  Set background color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 44 - Set background color to Blue', async () => {
+        await ctx.proxy.write('\x1b[44m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 4);
       });
-      test.skip('Ps = 4 5 -  Set background color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 45 - Set background color to Magenta', async () => {
+        await ctx.proxy.write('\x1b[45m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 5);
       });
-      test.skip('Ps = 4 6 -  Set background color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 46 - Set background color to Cyan', async () => {
+        await ctx.proxy.write('\x1b[46m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 6);
       });
-      test.skip('Ps = 4 7 -  Set background color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 47 - Set background color to White', async () => {
+        await ctx.proxy.write('\x1b[47m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 7);
       });
-      test.skip('Ps = 4 9 -  Set background color to default, ECMA-48 3rd.', async () => {
-        // TODO: Implement
+      test('Ps = 49 - Set background color to default, ECMA-48 3rd', async () => {
+        await ctx.proxy.write('\x1b[41m#\x1b[49m@');
+        const cell0 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell0!.isBgPalette(), true);
+        deepStrictEqual(await cell0!.getBgColor(), 1);
+        const cell1 = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1);
+        deepStrictEqual(await cell1!.isBgDefault(), true);
       });
-      test.skip('Ps = 9 0 -  Set foreground color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 90 - Set foreground color to bright Black', async () => {
+        await ctx.proxy.write('\x1b[90m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 8);
       });
-      test.skip('Ps = 9 1 -  Set foreground color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 91 - Set foreground color to bright Red', async () => {
+        await ctx.proxy.write('\x1b[91m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 9);
       });
-      test.skip('Ps = 9 2 -  Set foreground color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 92 - Set foreground color to bright Green', async () => {
+        await ctx.proxy.write('\x1b[92m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 10);
       });
-      test.skip('Ps = 9 3 -  Set foreground color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 93 - Set foreground color to bright Yellow', async () => {
+        await ctx.proxy.write('\x1b[93m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 11);
       });
-      test.skip('Ps = 9 4 -  Set foreground color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 94 - Set foreground color to bright Blue', async () => {
+        await ctx.proxy.write('\x1b[94m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 12);
       });
-      test.skip('Ps = 9 5 -  Set foreground color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 95 - Set foreground color to bright Magenta', async () => {
+        await ctx.proxy.write('\x1b[95m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 13);
       });
-      test.skip('Ps = 9 6 -  Set foreground color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 96 - Set foreground color to bright Cyan', async () => {
+        await ctx.proxy.write('\x1b[96m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 14);
       });
-      test.skip('Ps = 9 7 -  Set foreground color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 97 - Set foreground color to bright White', async () => {
+        await ctx.proxy.write('\x1b[97m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 15);
       });
-      test.skip('Ps = 1 0 0 -  Set background color to Black.', async () => {
-        // TODO: Implement
+      test('Ps = 100 - Set background color to bright Black', async () => {
+        await ctx.proxy.write('\x1b[100m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 8);
       });
-      test.skip('Ps = 1 0 1 -  Set background color to Red.', async () => {
-        // TODO: Implement
+      test('Ps = 101 - Set background color to bright Red', async () => {
+        await ctx.proxy.write('\x1b[101m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 9);
       });
-      test.skip('Ps = 1 0 2 -  Set background color to Green.', async () => {
-        // TODO: Implement
+      test('Ps = 102 - Set background color to bright Green', async () => {
+        await ctx.proxy.write('\x1b[102m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 10);
       });
-      test.skip('Ps = 1 0 3 -  Set background color to Yellow.', async () => {
-        // TODO: Implement
+      test('Ps = 103 - Set background color to bright Yellow', async () => {
+        await ctx.proxy.write('\x1b[103m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 11);
       });
-      test.skip('Ps = 1 0 4 -  Set background color to Blue.', async () => {
-        // TODO: Implement
+      test('Ps = 104 - Set background color to bright Blue', async () => {
+        await ctx.proxy.write('\x1b[104m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 12);
       });
-      test.skip('Ps = 1 0 5 -  Set background color to Magenta.', async () => {
-        // TODO: Implement
+      test('Ps = 105 - Set background color to bright Magenta', async () => {
+        await ctx.proxy.write('\x1b[105m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 13);
       });
-      test.skip('Ps = 1 0 6 -  Set background color to Cyan.', async () => {
-        // TODO: Implement
+      test('Ps = 106 - Set background color to bright Cyan', async () => {
+        await ctx.proxy.write('\x1b[106m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 14);
       });
-      test.skip('Ps = 1 0 7 -  Set background color to White.', async () => {
-        // TODO: Implement
+      test('Ps = 107 - Set background color to bright White', async () => {
+        await ctx.proxy.write('\x1b[107m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 15);
       });
-      test.skip('Ps = 3 8 : 2 : Pi : Pr : Pg : Pb-  Set foreground color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 38:2:Pi:Pr:Pg:Pb - Set foreground color using RGB values (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[38:2::171:205:239m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgRGB(), true);
+        deepStrictEqual(await cell!.getFgColor(), 0xabcdef);
       });
-      test.skip('Ps = 3 8 : 5 : Ps-  Set foreground color to Ps, using indexed color', async () => {
-        // TODO: Implement
+      test('Ps = 38:5:Ps - Set foreground color to Ps using indexed color (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[38:5:123m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgPalette(), true);
+        deepStrictEqual(await cell!.getFgColor(), 123);
       });
-      test.skip('Ps = 4 8 : 2 : Pi : Pr : Pg : Pb-  Set background color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 48:2:Pi:Pr:Pg:Pb - Set background color using RGB values (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[48:2::18:52:86m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgRGB(), true);
+        deepStrictEqual(await cell!.getBgColor(), 0x123456);
       });
-      test.skip('Ps = 4 8 : 5 : Ps-  Set background color to Ps, using indexed color', async () => {
-        // TODO: Implement
+      test('Ps = 48:5:Ps - Set background color to Ps using indexed color (colon separator)', async () => {
+        await ctx.proxy.write('\x1b[48:5:200m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgPalette(), true);
+        deepStrictEqual(await cell!.getBgColor(), 200);
       });
-      test.skip('Ps = 3 8 ; 2 ; Pr ; Pg ; Pb-  Set foreground color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 38;2;Pr;Pg;Pb - Set foreground color using RGB values (semicolon separator)', async () => {
+        await ctx.proxy.write('\x1b[38;2;171;205;239m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isFgRGB(), true);
+        deepStrictEqual(await cell!.getFgColor(), 0xabcdef);
       });
-      test.skip('Ps = 4 8 ; 2 ; Pr ; Pg ; Pb-  Set background color using RGB values', async () => {
-        // TODO: Implement
+      test('Ps = 48;2;Pr;Pg;Pb - Set background color using RGB values (semicolon separator)', async () => {
+        await ctx.proxy.write('\x1b[48;2;18;52;86m#');
+        const cell = await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0);
+        deepStrictEqual(await cell!.isBgRGB(), true);
+        deepStrictEqual(await cell!.getBgColor(), 0x123456);
       });
     });
     test.skip('CSI > Pp [; Pv] m - XTMODKEYS: Set/reset key modifier options, xterm', () => {
@@ -980,35 +1207,28 @@ test.describe('InputHandler Integration Tests', () => {
     });
     test.describe('CSI Ps n - DSR: Device Status Report', () => {
       test('Status Report - CSI 5 n', async () => {
-        await ctx.page.evaluate(`
-          window.term.onData(e => window.result = e);
-          window.term.write('\\x1b[5n');
-        `);
-        await pollFor(ctx.page, () => ctx.page.evaluate(`window.result`), '\x1b[0n');
+        await ctx.proxy.write('\x1b[5n');
+        deepStrictEqual(recordedData, ['\x1b[0n']);
       });
 
       test('Report Cursor Position (CPR) - CSI 6 n', async () => {
-        await ctx.page.evaluate(`window.term.write('\\n\\nfoo')`);
-        await pollFor(ctx.page, () => ctx.page.evaluate(`
-          [window.term.buffer.active.cursorY, window.term.buffer.active.cursorX]
-        `), [2, 3]);
-        await ctx.page.evaluate(`
-          window.term.onData(e => window.result = e);
-          window.term.write('\\x1b[6n');
-        `);
-        await pollFor(ctx.page, () => ctx.page.evaluate(`window.result`), '\x1b[3;4R');
+        await ctx.proxy.write('\n\nfoo');
+        await pollFor(ctx.page, async () => [
+          await ctx.proxy.buffer.active.cursorY,
+          await ctx.proxy.buffer.active.cursorX
+        ], [2, 3]);
+        await ctx.proxy.write('\x1b[6n');
+        deepStrictEqual(recordedData, ['\x1b[3;4R']);
       });
 
       test('Report Cursor Position (DECXCPR) - CSI ? 6 n', async () => {
-        await ctx.page.evaluate(`window.term.write('\\n\\nfoo')`);
-        await pollFor(ctx.page, () => ctx.page.evaluate(`
-          [window.term.buffer.active.cursorY, window.term.buffer.active.cursorX]
-        `), [2, 3]);
-        await ctx.page.evaluate(`
-          window.term.onData(e => window.result = e);
-          window.term.write('\\x1b[?6n');
-        `);
-        await pollFor(ctx.page, () => ctx.page.evaluate(`window.result`), '\x1b[?3;4R');
+        await ctx.proxy.write('\n\nfoo');
+        await pollFor(ctx.page, async () => [
+          await ctx.proxy.buffer.active.cursorY,
+          await ctx.proxy.buffer.active.cursorX
+        ], [2, 3]);
+        await ctx.proxy.write('\x1b[?6n');
+        deepStrictEqual(recordedData, ['\x1b[?3;4R']);
       });
     });
     test.skip('CSI > Ps n - Disable key modifier options, xterm', () => {
@@ -1154,204 +1374,162 @@ test.describe('InputHandler Integration Tests', () => {
     });
     test.describe('CSI Ps ; Ps ; Ps t - Window Options', () => {
       test('should be disabled by default', async () => {
-        await ctx.page.evaluate(`(() => {
-            window._stack = [];
-            const _h = window.term.onData(data => window._stack.push(data));
-            window.term.write('\x1b[14t');
-            window.term.write('\x1b[16t');
-            window.term.write('\x1b[18t');
-            window.term.write('\x1b[20t');
-            window.term.write('\x1b[21t');
-            return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
-          })()`);
-        await pollFor(ctx.page, async () => await ctx.page.evaluate(`(() => _stack)()`), []);
+        await ctx.proxy.write('\x1b[14t');
+        await ctx.proxy.write('\x1b[16t');
+        await ctx.proxy.write('\x1b[18t');
+        await ctx.proxy.write('\x1b[20t');
+        await ctx.proxy.write('\x1b[21t');
+        deepStrictEqual(recordedData, []);
       });
       test('14 - GetWinSizePixels', async () => {
-        await ctx.page.evaluate(`window.term.options.windowOptions = { getWinSizePixels: true }; `);
-        await ctx.page.evaluate(`(() => {
-            window._stack = [];
-            const _h = window.term.onData(data => window._stack.push(data));
-            window.term.write('\x1b[14t');
-            return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
-          })()`);
+        await ctx.proxy.setOption('windowOptions', { getWinSizePixels: true });
+        await ctx.proxy.write('\x1b[14t');
         const d = await getDimensions();
-        await pollFor(ctx.page, async () => await ctx.page.evaluate(`(() => _stack)()`), [`\x1b[4;${d.height};${d.width}t`]);
+        deepStrictEqual(recordedData, [`\x1b[4;${d.height};${d.width}t`]);
       });
       test('16 - GetCellSizePixels', async () => {
-        await ctx.page.evaluate(`window.term.options.windowOptions = { getCellSizePixels: true }; `);
-        await ctx.page.evaluate(`(() => {
-            window._stack = [];
-            const _h = window.term.onData(data => window._stack.push(data));
-            window.term.write('\x1b[16t');
-            return new Promise((r) => window.term.write('', () => { _h.dispose(); r(); }));
-          })()`);
+        await ctx.proxy.setOption('windowOptions', { getCellSizePixels: true });
+        await ctx.proxy.write('\x1b[16t');
         const d = await getDimensions();
-        await pollFor(ctx.page, async () => await ctx.page.evaluate(`(() => _stack)()`), [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
+        deepStrictEqual(recordedData, [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
       });
     });
   });
 
   test.describe('OSC', () => {
     test.describe('OSC 4', () => {
-      test.beforeAll(async () => {
-        await ctx.page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
-      });
-      test.afterAll(async () => {
-        await ctx.page.evaluate('window._h.dispose()');
-      });
-      test.beforeEach(async () => {
-        await ctx.page.evaluate('window._recordedData.length = 0;');
-      });
       test('query single color', async () => {
         await ctx.proxy.write('\x1b]4;0;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\']);
         await ctx.proxy.write('\x1b]4;77;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x1b\\']);
       });
       test('query multiple colors', async () => {
         await ctx.proxy.write('\x1b]4;0;?;77;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:2e2e/3434/3636\x1b\\', '\x1b]4;77;rgb:5f5f/d7d7/5f5f\x1b\\']);
       });
       test('set & query single color', async () => {
         await ctx.proxy.write('\x1b]4;0;?\x07');
-        const restore: string[] = await ctx.page.evaluate('window._recordedData');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), restore);
+        const restore = [...recordedData];
+        deepStrictEqual(recordedData, restore);
         // set new color & query
         await ctx.proxy.write('\x1b]4;0;rgb:01/02/03\x07\x1b]4;0;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x1b\\']);
+        deepStrictEqual(recordedData, [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x1b\\']);
         // restore should set old color
         await ctx.proxy.write(restore[0] + '\x1b]4;0;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x1b\\', restore[0]]);
+        deepStrictEqual(recordedData, [restore[0], '\x1b]4;0;rgb:0101/0202/0303\x1b\\', restore[0]]);
       });
       test('query & set colors mixed', async () => {
         await ctx.proxy.write('\x1b]4;0;?;77;?\x07');
-        const restore: string[] = await ctx.page.evaluate('window._recordedData');
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        const restore = [...recordedData];
+        recordedData.length = 0;
         // mixed call - change 0, query 43, change 77
         await ctx.proxy.write('\x1b]4;0;rgb:01/02/03;43;?;77;#aabbcc\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]4;43;rgb:0000/d7d7/afaf\x1b\\']);
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        deepStrictEqual(recordedData, ['\x1b]4;43;rgb:0000/d7d7/afaf\x1b\\']);
+        recordedData.length = 0;
         // query new values for 0 + 77
         await ctx.proxy.write('\x1b]4;0;?;77;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]4;0;rgb:0101/0202/0303\x1b\\', '\x1b]4;77;rgb:aaaa/bbbb/cccc\x1b\\']);
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        deepStrictEqual(recordedData, ['\x1b]4;0;rgb:0101/0202/0303\x1b\\', '\x1b]4;77;rgb:aaaa/bbbb/cccc\x1b\\']);
+        recordedData.length = 0;
         // restore old values for 0 + 77
         await ctx.proxy.write(restore[0] + restore[1] + '\x1b]4;0;?;77;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), restore);
+        deepStrictEqual(recordedData, restore);
       });
     });
     test.describe('OSC 4 & 104', () => {
-      test.beforeAll(async () => {
-        await ctx.page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
-      });
-      test.afterAll(async () => {
-        await ctx.page.evaluate('window._h.dispose()');
-      });
-      test.beforeEach(async () => {
-        await ctx.page.evaluate('window._recordedData.length = 0;');
-      });
       test('change & restore single color', async () => {
         // test for some random color slots
         for (const i of [0, 43, 77, 255]) {
           await ctx.proxy.write(`\x1b]4;${i};?\x07`);
-          const restore: string[] = await ctx.page.evaluate('window._recordedData');
+          const restore = [...recordedData];
           await ctx.proxy.write(`\x1b]4;${i};rgb:01/02/03\x07\x1b]4;${i};?\x07`);
-          deepStrictEqual(await ctx.page.evaluate('window._recordedData'), [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x1b\\`]);
+          deepStrictEqual(recordedData, [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x1b\\`]);
           // restore slot color
           await ctx.proxy.write(`\x1b]104;${i}\x07\x1b]4;${i};?\x07`);
-          deepStrictEqual(await ctx.page.evaluate('window._recordedData'), [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x1b\\`, restore[0]]);
-          await ctx.page.evaluate('window._recordedData.length = 0;');
+          deepStrictEqual(recordedData, [restore[0], `\x1b]4;${i};rgb:0101/0202/0303\x1b\\`, restore[0]]);
+          recordedData.length = 0;
         }
       });
       test('restore multiple at once', async () => {
         // change 3 random slots
         await ctx.proxy.write(`\x1b]4;0;?;43;?;77;?\x07`);
-        const restore: string[] = await ctx.page.evaluate('window._recordedData');
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        const restore = [...recordedData];
+        recordedData.length = 0;
         await ctx.proxy.write(`\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
         // restore specific slots
         await ctx.proxy.write(`\x1b]104;0;43;77\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), restore);
+        deepStrictEqual(recordedData, restore);
       });
       test('restore full table', async () => {
         // change 3 random slots
         await ctx.proxy.write(`\x1b]4;0;?;43;?;77;?\x07`);
-        const restore: string[] = await ctx.page.evaluate('window._recordedData');
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        const restore = [...recordedData];
+        recordedData.length = 0;
         await ctx.proxy.write(`\x1b]4;0;rgb:01/02/03;43;#aabbcc;77;#123456\x07`);
         // restore all
         await ctx.proxy.write(`\x1b]104\x07` + `\x1b]4;0;?;43;?;77;?\x07`);
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), restore);
+        deepStrictEqual(recordedData, restore);
       });
     });
     test.describe('OSC 10 & 11 + 110 | 111 | 112', () => {
-      test.beforeAll(async () => {
-        await ctx.page.evaluate('(() => {window._recordedData = []; window._h = term.onData(d => window._recordedData.push(d));})()');
-      });
-      test.afterAll(async () => {
-        await ctx.page.evaluate('window._h.dispose()');
-      });
-      test.beforeEach(async () => {
-        await ctx.page.evaluate('window._recordedData.length = 0;');
-      });
       test('query FG color', async () => {
         await ctx.proxy.write('\x1b]10;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
       });
       test('query BG color', async () => {
         await ctx.proxy.write('\x1b]11;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
       });
       test('query FG & BG color in one call', async () => {
         await ctx.proxy.write('\x1b]10;?;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
       });
       test('set & query FG', async () => {
         await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
         await ctx.proxy.write('\x1b]10;#ffffff\x07\x1b]10;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x1b\\', '\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\', '\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
       });
       test('set & query BG', async () => {
         await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
         await ctx.proxy.write('\x1b]11;#000000\x07\x1b]11;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\']);
       });
       test('set & query cursor color', async () => {
         await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
         await ctx.proxy.write('\x1b]12;#ffffff\x07\x1b]12;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x1b\\', '\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\', '\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
       });
       test('set & query FG & BG color in one call', async () => {
         await ctx.proxy.write('\x1b]10;#123456;rgb:aa/bb/cc\x07\x1b]10;?;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]10;rgb:1212/3434/5656\x1b\\', '\x1b]11;rgb:aaaa/bbbb/cccc\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1212/3434/5656\x1b\\', '\x1b]11;rgb:aaaa/bbbb/cccc\x1b\\']);
         await ctx.proxy.write('\x1b]10;#ffffff;#000000\x07');
       });
       test('OSC 110: restore FG color', async () => {
         await ctx.proxy.write('\x1b]10;rgb:1/2/3\x07\x1b]10;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:1111/2222/3333\x1b\\']);
+        recordedData.length = 0;
         // restore
         await ctx.proxy.write('\x1b]110\x07\x1b]10;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);
       });
       test('OSC 111: restore BG color', async () => {
         await ctx.proxy.write('\x1b]11;rgb:1/2/3\x07\x1b]11;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:1111/2222/3333\x1b\\']);
+        recordedData.length = 0;
         // restore
         await ctx.proxy.write('\x1b]111\x07\x1b]11;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]11;rgb:0000/0000/0000\x1b\\']);
       });
       test('OSC 112: restore cursor color', async () => {
         await ctx.proxy.write('\x1b]12;rgb:1/2/3\x07\x1b]12;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
-        await ctx.page.evaluate('window._recordedData.length = 0;');
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:1111/2222/3333\x1b\\']);
+        recordedData.length = 0;
         // restore
         await ctx.proxy.write('\x1b]112\x07\x1b]12;?\x07');
-        deepStrictEqual(await ctx.page.evaluate('window._recordedData'), ['\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
+        deepStrictEqual(recordedData, ['\x1b]12;rgb:ffff/ffff/ffff\x1b\\']);
       });
     });
   });
@@ -1359,15 +1537,11 @@ test.describe('InputHandler Integration Tests', () => {
   test.describe('ESC', () => {
     test.describe('DECRC: Save cursor, ESC 7', () => {
       test('should save the absolute cursor position so resizing restores to the correct position', async () => {
-        await ctx.page.evaluate(`
-          window.term.resize(10, 2);
-          window.term.write('1\\n\\r2\\n\\r3\\n\\r4\\n\\r5');
-          window.term.write('\\x1b7\\x1b[?47h');
-          `);
-        await ctx.page.evaluate(`
-          window.term.resize(10, 4);
-          window.term.write('\\x1b[?47l\\x1b8');
-          `);
+        await ctx.proxy.resize(10, 2);
+        await ctx.proxy.write('1\n\r2\n\r3\n\r4\n\r5');
+        await ctx.proxy.write('\x1b7\x1b[?47h');
+        await ctx.proxy.resize(10, 4);
+        await ctx.proxy.write('\x1b[?47l\x1b8');
         await pollFor(ctx.page, () => getCursor(), { col: 1, row: 3 });
       });
     });
@@ -1386,30 +1560,31 @@ async function getLinesAsArray(count: number, start: number = 0): Promise<string
 async function simulatePaste(text: string): Promise<string> {
   const id = Math.floor(Math.random() * 1000000);
   await ctx.page.evaluate(`
-            (function() {
-              window.term.onData(e => window.result_${id} = e);
-              const clipboardData = new DataTransfer();
-              clipboardData.setData('text/plain', '${text}');
-              window.term.textarea.dispatchEvent(new ClipboardEvent('paste', { clipboardData }));
-            })();
-          `);
-  return await ctx.page.evaluate(`window.result_${id} `);
+    (function() {
+      window.disposable_${id} = window.term.onData(e => window.result_${id} = e);
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', '${text}');
+      window.term.textarea.dispatchEvent(new ClipboardEvent('paste', { clipboardData }));
+    })();
+  `);
+  const result = await ctx.page.evaluate<string>(`window.result_${id}`);
+  await ctx.page.evaluate(`window.disposable_${id}.dispose()`);
+  return result;
 }
 
 async function getCursor(): Promise<{ col: number, row: number }> {
-  return ctx.page.evaluate(`
-  (function() {
-    return {col: term.buffer.active.cursorX, row: term.buffer.active.cursorY};
-  })();
-  `);
+  return {
+    col: await ctx.proxy.buffer.active.cursorX,
+    row: await ctx.proxy.buffer.active.cursorY
+  };
 }
 
 async function getDimensions(): Promise<any> {
-  const dim: IRenderDimensions = await ctx.page.evaluate(`term._core._renderService.dimensions`);
+  const dim = await ctx.proxy.dimensions;
   return {
-    cellWidth: dim.css.cell.width.toFixed(0),
-    cellHeight: dim.css.cell.height.toFixed(0),
-    width: dim.css.canvas.width.toFixed(0),
-    height: dim.css.canvas.height.toFixed(0)
+    cellWidth: dim!.css.cell.width.toFixed(0),
+    cellHeight: dim!.css.cell.height.toFixed(0),
+    width: dim!.css.canvas.width.toFixed(0),
+    height: dim!.css.canvas.height.toFixed(0)
   };
 }

@@ -16,12 +16,10 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cursorStyle: 'block',
   cursorWidth: 1,
   cursorInactiveStyle: 'outline',
-  customGlyphs: true,
   drawBoldTextInBrightColors: true,
   documentOverride: null,
-  fastScrollModifier: 'alt',
   fastScrollSensitivity: 5,
-  fontFamily: 'courier-new, courier, monospace',
+  fontFamily: 'monospace',
   fontSize: 15,
   fontWeight: 'normal',
   fontWeightBold: 'bold',
@@ -32,6 +30,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   logLevel: 'info',
   logger: null,
   scrollback: 1000,
+  scrollOnEraseInDisplay: false,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
   screenReaderMode: false,
@@ -44,17 +43,18 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: {},
+  reflowCursorLine: false,
   rescaleOverlappingGlyphs: false,
   rightClickSelectsWord: isMac,
   windowOptions: {},
-  windowsMode: false,
   windowsPty: {},
   wordSeparator: ' ()[]{}\',"`',
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
   cancelEvents: false,
-  overviewRuler: {}
+  overviewRuler: {},
+  quirks: {}
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];

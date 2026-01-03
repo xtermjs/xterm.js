@@ -5,6 +5,6 @@
 
 // @ts-check
 
-const startServer = require('./server.js');
+const startServer = require('./dist/server-bundle.js').default;
 
 startServer();

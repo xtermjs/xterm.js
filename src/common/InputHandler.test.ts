@@ -199,41 +199,63 @@ describe('InputHandler', () => {
     assert.equal(bufferService.buffer.y, 2);
     assert.equal(inputHandler.curAttrData.fg, 3);
   });
+  describe('DECSC/DECRC - save and restore cursor', () => {
+    it('should save and restore origin mode', async () => {
+      assert.equal(coreService.decPrivateModes.origin, false);
+      await inputHandler.parseP('\x1b[?6h');
+      assert.equal(coreService.decPrivateModes.origin, true);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x1b[?6l');
+      assert.equal(coreService.decPrivateModes.origin, false);
+      await inputHandler.parseP('\x1b8');
+      assert.equal(coreService.decPrivateModes.origin, true);
+    });
+    it('should save and restore wraparound mode', async () => {
+      assert.equal(coreService.decPrivateModes.wraparound, true);
+      await inputHandler.parseP('\x1b[?7l');
+      assert.equal(coreService.decPrivateModes.wraparound, false);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x1b[?7h');
+      assert.equal(coreService.decPrivateModes.wraparound, true);
+      await inputHandler.parseP('\x1b8');
+      assert.equal(coreService.decPrivateModes.wraparound, false);
+    });
+  });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, undefined);
+      assert.equal(coreService.decPrivateModes.cursorBlink, undefined);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([1]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([2]));
-      assert.equal(optionsService.options['cursorStyle'], 'block');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([3]));
-      assert.equal(optionsService.options['cursorStyle'], 'underline');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([4]));
-      assert.equal(optionsService.options['cursorStyle'], 'underline');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([5]));
-      assert.equal(optionsService.options['cursorStyle'], 'bar');
-      assert.equal(optionsService.options['cursorBlink'], true);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
+      assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
       optionsService.options = clone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([6]));
-      assert.equal(optionsService.options['cursorStyle'], 'bar');
-      assert.equal(optionsService.options['cursorBlink'], false);
+      assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
+      assert.equal(coreService.decPrivateModes.cursorBlink, false);
     });
   });
   describe('setMode', () => {
@@ -438,6 +460,37 @@ describe('InputHandler', () => {
       inputHandler.eraseInLine(Params.fromArray([2]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
     });
+    it('ED2 with scrollOnEraseInDisplay turned on', async () => {
+      const inputHandler = new TestInputHandler(
+        bufferService,
+        new MockCharsetService(),
+        new MockCoreService(),
+        new MockLogService(),
+        new MockOptionsService({ scrollOnEraseInDisplay: true }),
+        new MockOscLinkService(),
+        new MockCoreMouseService(),
+        new MockUnicodeService()
+      );
+      const aLine = Array(bufferService.cols + 1).join('a');
+      // add 2 full lines of text.
+      await inputHandler.parseP(aLine);
+      await inputHandler.parseP(aLine);
+
+      inputHandler.eraseInDisplay(Params.fromArray([2]));
+      // those 2 lines should have been pushed to scrollback.
+      assert.equal(bufferService.rows + 2, bufferService.buffer.lines.length);
+      assert.equal(bufferService.buffer.ybase, 2);
+      assert.equal(bufferService.buffer.lines.get(0)?.translateToString(), aLine);
+      assert.equal(bufferService.buffer.lines.get(1)?.translateToString(), aLine);
+
+      // Move to last line and add more text.
+      bufferService.buffer.y = bufferService.rows - 1;
+      bufferService.buffer.x = 0;
+      await inputHandler.parseP(aLine);
+      inputHandler.eraseInDisplay(Params.fromArray([2]));
+      // Screen should have been scrolled by a full screen size.
+      assert.equal(bufferService.rows * 2 + 2, bufferService.buffer.lines.length);
+    });
     it('eraseInDisplay', async () => {
       const bufferService = new MockBufferService(80, 7);
       const inputHandler = new TestInputHandler(
@@ -587,6 +640,11 @@ describe('InputHandler', () => {
       bufferService.buffer.x = 0;
       await inputHandler.parseP('￥￥￥');
       assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
+    });
+    it('should strip soft hyphens (U+00AD)', async () => {
+      await inputHandler.parseP('Soft\xadhy\xadphen');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'Softhyphen');
+      assert.strictEqual(bufferService.buffer.x, 10);
     });
   });
 
@@ -1551,6 +1609,28 @@ describe('InputHandler', () => {
       assert.equal(bufferService.cols, 132);
     });
   });
+  describe('XTVERSION (CSI > q, CSI > 0 q)', () => {
+    it('should report xterm.js version', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>q');
+      assert.strictEqual(stack.length, 1);
+      assert.ok(stack[0].match(/^\x1bP>\|xterm\.js\(\d+\.\d+\.\d+(-beta\.\d+)?\)\x1b\\/));
+    });
+    it('should report xterm.js version for CSI > 0 q', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>0q');
+      assert.strictEqual(stack.length, 1);
+      assert.ok(stack[0].match(/^\x1bP>\|xterm\.js\(\d+\.\d+\.\d+(-beta\.\d+)?\)\x1b\\/));
+    });
+    it('should not report for CSI > 1 q', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>1q');
+      assert.strictEqual(stack.length, 0);
+    });
+  });
   describe('should correctly reset cells taken by wide chars', () => {
     beforeEach(async () => {
       bufferService.resize(10, 5);
@@ -2283,7 +2363,7 @@ describe('InputHandler', () => {
     });
     it('DEC privates with set/reset semantic', async () => {
       // initially reset
-      const reset = [1, 6, 9, 12, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004];
+      const reset = [1, 6, 9, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004, 2026];
       for (const mode of reset) {
         await inputHandler.parseP(`\x1b[?${mode}$p`);
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // initial reset
@@ -2306,6 +2386,23 @@ describe('InputHandler', () => {
         await inputHandler.parseP(`\x1b[?${mode}$p`);
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};1$y`);   // again set
       }
+    });
+    it('DEC privates quirks', async () => {
+      // Cursor blink
+      const mode = 12;
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`); // initial reset
+      await inputHandler.parseP(`\x1b[?${mode}h`);
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`); // still reset
+
+      optionsService.options.quirks.allowSetCursorBlink = true;
+      await inputHandler.parseP(`\x1b[?${mode}h`);
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};1$y`); // now active
+      await inputHandler.parseP(`\x1b[?${mode}l`);
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // now inactive
     });
     it('DEC privates perma modes', async () => {
       // [mode number, state value]

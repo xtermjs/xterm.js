@@ -3,11 +3,9 @@ node_modules/
 coverage/
 
 lib/
-fonts/
 
 .env
 .vscode/
 *.swp
 *.tgz
 npm-debug.log*
-yarn-error.log*

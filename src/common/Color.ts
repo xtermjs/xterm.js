@@ -184,6 +184,14 @@ export namespace css {
       return channels.toColor($r, $g, $b, $a);
     }
 
+    // Handle the "transparent" keyword
+    if (css === 'transparent') {
+      return {
+        css: 'transparent',
+        rgba: 0x00000000
+      };
+    }
+
     // Validate the context is available for canvas-based color parsing
     if (!$ctx || !$litmusColor) {
       throw new Error('css.toColor: Unsupported css format');

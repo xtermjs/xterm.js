@@ -22,6 +22,7 @@ import { DcsHandler } from 'common/parser/DcsParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
 import { Emitter } from 'vs/base/common/event';
+import { XTERM_VERSION } from 'common/Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -239,6 +240,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'T' }, params => this.scrollDown(params));
     this._parser.registerCsiHandler({ final: 'X' }, params => this.eraseChars(params));
     this._parser.registerCsiHandler({ final: 'Z' }, params => this.cursorBackwardTab(params));
+    this._parser.registerCsiHandler({ final: '^' }, params => this.scrollDown(params));
     this._parser.registerCsiHandler({ final: '`' }, params => this.charPosAbsolute(params));
     this._parser.registerCsiHandler({ final: 'a' }, params => this.hPositionRelative(params));
     this._parser.registerCsiHandler({ final: 'b' }, params => this.repeatPrecedingCharacter(params));
@@ -256,6 +258,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 'n' }, params => this.deviceStatus(params));
     this._parser.registerCsiHandler({ prefix: '?', final: 'n' }, params => this.deviceStatusPrivate(params));
     this._parser.registerCsiHandler({ intermediates: '!', final: 'p' }, params => this.softReset(params));
+    this._parser.registerCsiHandler({ prefix: '>', final: 'q' }, params => this.sendXtVersion(params));
     this._parser.registerCsiHandler({ intermediates: ' ', final: 'q' }, params => this.setCursorStyle(params));
     this._parser.registerCsiHandler({ final: 'r' }, params => this.setScrollRegion(params));
     this._parser.registerCsiHandler({ final: 's' }, params => this.saveCursor(params));
@@ -445,7 +448,10 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // Log debug data, the log level gate is to prevent extra work in this hot path
     if (this._logService.logLevel <= LogLevelEnum.DEBUG) {
-      this._logService.debug(`parsing data${typeof data === 'string' ? ` "${data}"` : ` "${Array.prototype.map.call(data, e => String.fromCharCode(e)).join('')}"`}`, typeof data === 'string'
+      this._logService.debug(`parsing data ${typeof data === 'string' ? ` "${data}"` : ` "${Array.prototype.map.call(data, e => String.fromCharCode(e)).join('')}"`}`);
+    }
+    if (this._logService.logLevel === LogLevelEnum.TRACE) {
+      this._logService.trace(`parsing data (codes)`, typeof data === 'string'
         ? data.split('').map(e => e.charCodeAt(0))
         : data
       );
@@ -528,6 +534,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
+      // Soft hyphen's (U+00AD) behavior is ambiguous and differs across terminals. We opt to treat
+      // it as a zero-width hint to text layout engines and simply ignore it.
+      if (code === 0xAD) {
+        continue;
+      }
+
       // get charset replacement character
       // charset is only defined for ASCII, therefore we only
       // search for an replacement char if code < 127
@@ -606,7 +618,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         // since an empty cell is only set by fullwidth chars
         bufferRow.addCodepointToCell(this._activeBuffer.x - offset,
           code, chWidth);
-        for (let delta = chWidth - oldWidth; --delta >= 0; ) {
+        for (let delta = chWidth - oldWidth; --delta >= 0;) {
           bufferRow.setCellFromCodepoint(this._activeBuffer.x++, 0, 0, curAttr);
         }
         continue;
@@ -1220,12 +1232,27 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._dirtyRowTracker.markDirty(0);
         break;
       case 2:
-        j = this._bufferService.rows;
-        this._dirtyRowTracker.markDirty(j - 1);
-        while (j--) {
-          this._resetBufferLine(j, respectProtect);
+        if (this._optionsService.rawOptions.scrollOnEraseInDisplay) {
+          j = this._bufferService.rows;
+          this._dirtyRowTracker.markRangeDirty(0, j - 1);
+          while (j--) {
+            const currentLine = this._activeBuffer.lines.get(this._activeBuffer.ybase + j);
+            if (currentLine?.getTrimmedLength()) {
+              break;
+            }
+          }
+          for (; j >= 0; j--) {
+            this._bufferService.scroll(this._eraseAttrData());
+          }
         }
-        this._dirtyRowTracker.markDirty(0);
+        else {
+          j = this._bufferService.rows;
+          this._dirtyRowTracker.markDirty(j - 1);
+          while (j--) {
+            this._resetBufferLine(j, respectProtect);
+          }
+          this._dirtyRowTracker.markDirty(0);
+        }
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
@@ -1607,7 +1634,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const text = bufferRow.getString(x);
     const data = new Uint32Array(text.length * length);
     let idata = 0;
-    for (let itext = 0; itext < text.length; ) {
+    for (let itext = 0; itext < text.length;) {
       const ch = text.codePointAt(itext) || 0;
       data[idata++] = ch;
       itext += ch > 0xffff ? 2 : 1;
@@ -1700,6 +1727,22 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
     }
+    return true;
+  }
+
+  /**
+   * CSI > Ps q
+   *   Ps = 0  => Report xterm name and version (XTVERSION).
+   *
+   * The response is a DCS sequence identifying the version: DCS > | text ST
+   *
+   * @vt: #Y CSI XTVERSION "Report Xterm Version" "CSI > q" "Report the terminal name and version."
+   */
+  public sendXtVersion(params: IParams): boolean {
+    if (params.params[0] > 0) {
+      return true;
+    }
+    this._coreService.triggerDataEvent(`${C0.ESC}P>|xterm.js(${XTERM_VERSION})${C0.ESC}\\`);
     return true;
   }
 
@@ -1835,7 +1878,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7     | Auto-wrap Mode (DECAWM).                                | #Y      |
    * | 8     | Auto-repeat Keys (DECARM). Always on.                   | #N      |
    * | 9     | X10 xterm mouse protocol.                               | #Y      |
-   * | 12    | Start Blinking Cursor.                                  | #Y      |
+   * | 12    | Start Blinking Cursor.                                  | #P[Requires the allowSetCursorBlink quirk option enabled.] |
    * | 25    | Show Cursor (DECTCEM).                                  | #Y      |
    * | 45    | Reverse wrap-around.                                    | #Y      |
    * | 47    | Use Alternate Screen Buffer.                            | #Y      |
@@ -1888,7 +1931,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = true;
           break;
         case 12:
-          this._optionsService.options.cursorBlink = true;
+          if (this._optionsService.rawOptions.quirks?.allowSetCursorBlink) {
+            this._optionsService.options.cursorBlink = true;
+          }
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = true;
@@ -1950,6 +1995,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
+          break;
+        case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
+          this._coreService.decPrivateModes.synchronizedOutput = true;
           break;
       }
     }
@@ -2080,7 +2128,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 7     | No Wraparound Mode (DECAWM).                            | #Y      |
    * | 8     | No Auto-repeat Keys (DECARM).                           | #N      |
    * | 9     | Don't send Mouse X & Y on button press.                 | #Y      |
-   * | 12    | Stop Blinking Cursor.                                   | #Y      |
+   * | 12    | Stop Blinking Cursor.                                   | #P[Requires the allowSetCursorBlink quirk option enabled.] |
    * | 25    | Hide Cursor (DECTCEM).                                  | #Y      |
    * | 45    | No reverse wrap-around.                                 | #Y      |
    * | 47    | Use Normal Screen Buffer.                               | #Y      |
@@ -2126,7 +2174,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.wraparound = false;
           break;
         case 12:
-          this._optionsService.options.cursorBlink = false;
+          if (this._optionsService.rawOptions.quirks?.allowSetCursorBlink) {
+            this._optionsService.options.cursorBlink = false;
+          }
           break;
         case 45:
           this._coreService.decPrivateModes.reverseWraparound = false;
@@ -2178,6 +2228,10 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = false;
+          break;
+        case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
+          this._coreService.decPrivateModes.synchronizedOutput = false;
+          this._onRequestRefreshRows.fire(undefined);
           break;
       }
     }
@@ -2273,6 +2327,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 1048) return f(p, V.SET); // xterm always returns SET here
     if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
     if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
+    if (p === 2026) return f(p, b2v(dm.synchronizedOutput));
     return f(p, V.NOT_RECOGNIZED);
   }
 
@@ -2714,7 +2769,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Ps SP q  Set cursor style (DECSCUSR, VT520).
-   *   Ps = 0  -> blinking block.
+   *   Ps = 0  -> reset to option.
    *   Ps = 1  -> blinking block (default).
    *   Ps = 2  -> steady block.
    *   Ps = 3  -> blinking underline.
@@ -2724,31 +2779,37 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * @vt: #Y CSI DECSCUSR  "Set Cursor Style"  "CSI Ps SP q"   "Set cursor style."
    * Supported cursor styles:
-   *  - empty, 0 or 1: steady block
-   *  - 2: blink block
-   *  - 3: steady underline
-   *  - 4: blink underline
-   *  - 5: steady bar
-   *  - 6: blink bar
+   *  - 0: reset to option
+   *  - empty, 1: blinking block
+   *  - 2: steady block
+   *  - 3: blinking underline
+   *  - 4: steady underline
+   *  - 5: blinking bar
+   *  - 6: steady bar
    */
   public setCursorStyle(params: IParams): boolean {
-    const param = params.params[0] || 1;
-    switch (param) {
-      case 1:
-      case 2:
-        this._optionsService.options.cursorStyle = 'block';
-        break;
-      case 3:
-      case 4:
-        this._optionsService.options.cursorStyle = 'underline';
-        break;
-      case 5:
-      case 6:
-        this._optionsService.options.cursorStyle = 'bar';
-        break;
+    const param = params.length === 0 ? 1 : params.params[0];
+    if (param === 0) {
+      this._coreService.decPrivateModes.cursorStyle = undefined;
+      this._coreService.decPrivateModes.cursorBlink = undefined;
+    } else {
+      switch (param) {
+        case 1:
+        case 2:
+          this._coreService.decPrivateModes.cursorStyle = 'block';
+          break;
+        case 3:
+        case 4:
+          this._coreService.decPrivateModes.cursorStyle = 'underline';
+          break;
+        case 5:
+        case 6:
+          this._coreService.decPrivateModes.cursorStyle = 'bar';
+          break;
+      }
+      const isBlinking = param % 2 === 1;
+      this._coreService.decPrivateModes.cursorBlink = isBlinking;
     }
-    const isBlinking = param % 2 === 1;
-    this._optionsService.options.cursorBlink = isBlinking;
     return true;
   }
 
@@ -2869,6 +2930,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.savedCurAttrData.fg = this._curAttrData.fg;
     this._activeBuffer.savedCurAttrData.bg = this._curAttrData.bg;
     this._activeBuffer.savedCharset = this._charsetService.charset;
+    this._activeBuffer.savedCharsets = this._charsetService.charsets.slice();
+    this._activeBuffer.savedGlevel = this._charsetService.glevel;
+    this._activeBuffer.savedOriginMode = this._coreService.decPrivateModes.origin;
+    this._activeBuffer.savedWraparoundMode = this._coreService.decPrivateModes.wraparound;
     return true;
   }
 
@@ -2886,10 +2951,12 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.y = Math.max(this._activeBuffer.savedY - this._activeBuffer.ybase, 0);
     this._curAttrData.fg = this._activeBuffer.savedCurAttrData.fg;
     this._curAttrData.bg = this._activeBuffer.savedCurAttrData.bg;
-    this._charsetService.charset = (this as any)._savedCharset;
-    if (this._activeBuffer.savedCharset) {
-      this._charsetService.charset = this._activeBuffer.savedCharset;
+    for (let i = 0; i < this._activeBuffer.savedCharsets.length; i++) {
+      this._charsetService.setgCharset(i, this._activeBuffer.savedCharsets[i]);
     }
+    this._charsetService.setgLevel(this._activeBuffer.savedGlevel);
+    this._coreService.decPrivateModes.origin = this._activeBuffer.savedOriginMode;
+    this._coreService.decPrivateModes.wraparound = this._activeBuffer.savedWraparoundMode;
     this._restrictCursor();
     return true;
   }
@@ -3288,6 +3355,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC c
    *   DEC mnemonic: RIS (https://vt100.net/docs/vt510-rm/RIS.html)
    *   Reset to initial state.
+   *
+   * @vt: #Y ESC  RIS "Full Reset" "ESC c"  "Reset to initial state."
    */
   public fullReset(): boolean {
     this._parser.reset();

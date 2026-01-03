@@ -58,7 +58,9 @@ declare module '@xterm/xterm' {
     convertEol?: boolean;
 
     /**
-     * Whether the cursor blinks.
+     * Whether the cursor blinks. The blinking will stop after 5 minutes of idle
+     * time (refreshed by clicking, focusing or the cursor moving). The default
+     * is false.
      */
     cursorBlink?: boolean;
 
@@ -76,15 +78,6 @@ declare module '@xterm/xterm' {
      * The style of the cursor when the terminal is not focused.
      */
     cursorInactiveStyle?: 'outline' | 'block' | 'bar' | 'underline' | 'none';
-
-    /**
-     * Whether to draw custom glyphs for block element and box drawing
-     * characters instead of using the font. This should typically result in
-     * better rendering with continuous lines, even when line height and letter
-     * spacing is used. Note that this doesn't work with the DOM renderer which
-     * renders all characters using the font. The default is true.
-     */
-    customGlyphs?: boolean;
 
     /**
      * Whether input should be disabled.
@@ -106,13 +99,6 @@ declare module '@xterm/xterm' {
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
-
-    /**
-     * The modifier key hold to multiply scroll speed.
-     * @deprecated This option is no longer available and will always use alt.
-     * Setting this will be ignored.
-     */
-    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The scroll speed multiplier used for fast scrolling when `Alt` is held.
@@ -214,6 +200,20 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
+     * Control various quirks features that are either non-standard or standard
+     * in but generally rejected in modern terminals.
+     */
+    quirks?: ITerminalQuirks;
+
+    /**
+     * Whether to reflow the line containing the cursor when the terminal is
+     * resized. Defaults to false, because shells usually handle this
+     * themselves. Note that this will not move the cursor position, only the
+     * line contents.
+     */
+    reflowCursorLine?: boolean;
+
+    /**
      * Whether to rescale glyphs horizontally that are a single cell wide but
      * have glyphs that would overlap following cell(s). This typically happens
      * for ambiguous width characters (eg. the roman numeral characters U+2160+)
@@ -251,6 +251,13 @@ declare module '@xterm/xterm' {
     scrollback?: number;
 
     /**
+     * If enabled the Erase in Display All (ED2) escape sequence will push
+     * erased text to scrollback, instead of clearing only the viewport portion.
+     * This emulates PuTTY's default clear screen behavior.
+     */
+    scrollOnEraseInDisplay?: boolean;
+
+    /**
      * Whether to scroll to the bottom whenever there is some user input. The
      * default is true.
      */
@@ -276,25 +283,6 @@ declare module '@xterm/xterm' {
      * The color theme of the terminal.
      */
     theme?: ITheme;
-
-    /**
-     * Whether "Windows mode" is enabled. Because Windows backends winpty and
-     * conpty operate by doing line wrapping on their side, xterm.js does not
-     * have access to wrapped lines. When Windows mode is enabled the following
-     * changes will be in effect:
-     *
-     * - Reflow is disabled.
-     * - Lines are assumed to be wrapped if the last character of the line is
-     *   not whitespace.
-     *
-     * When using conpty on Windows 11 version >= 21376, it is recommended to
-     * disable this because native text wrapping sequences are output correctly
-     * thanks to https://github.com/microsoft/terminal/issues/405
-     *
-     * @deprecated Use {@link windowsPty}. This value will be ignored if
-     * windowsPty is set.
-     */
-    windowsMode?: boolean;
 
     /**
      * Compatibility information when the pty is known to be hosted on Windows.
@@ -372,17 +360,17 @@ declare module '@xterm/xterm' {
     selectionInactiveBackground?: string;
     /**
      * The scrollbar slider background color. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 20% opacity.
+     * {@link ITheme.foreground} with 20% opacity.
      */
     scrollbarSliderBackground?: string;
     /**
      * The scrollbar slider background color when hovered. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 40% opacity.
+     * {@link ITheme.foreground} with 40% opacity.
      */
     scrollbarSliderHoverBackground?: string;
     /**
      * The scrollbar slider background color when clicked. Defaults to
-     * {@link ITerminalOptions.foreground foreground} with 50% opacity.
+     * {@link ITheme.foreground} with 50% opacity.
      */
     scrollbarSliderActiveBackground?: string;
     /**
@@ -425,6 +413,21 @@ declare module '@xterm/xterm' {
     brightWhite?: string;
     /** ANSI extended colors (16-255) */
     extendedAnsi?: string[];
+  }
+
+  /**
+   * Control various quirks features that are either non-standard or standard
+   * in but generally rejected in modern terminals.
+   */
+  export interface ITerminalQuirks {
+    /**
+     * Enables support for DECSET 12 and DECRST 12 which controls cursor blink.
+     * Programs such as `vim` may use this to set the cursor blink state but may
+     * not change it back when exiting. Generally the terminal emulator should
+     * be in control of whether the cursor blinks or not and the application in
+     * modern terminals. Note that DECRQM works regardless of this option.
+     */
+    allowSetCursorBlink?: boolean;
   }
 
   /**
@@ -853,8 +856,8 @@ declare module '@xterm/xterm' {
     readonly buffer: IBufferNamespace;
 
     /**
-     * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
-     * buffer is active this will always return [].
+     * Get all markers registered against the buffer. If the alt buffer is
+     * active this will always return [].
      */
     readonly markers: ReadonlyArray<IMarker>;
 
@@ -864,8 +867,8 @@ declare module '@xterm/xterm' {
     readonly parser: IParser;
 
     /**
-     * (EXPERIMENTAL) Get the Unicode handling interface
-     * to register and switch Unicode version.
+     * (EXPERIMENTAL) Get the Unicode handling interface to register and switch
+     * Unicode version.
      */
     readonly unicode: IUnicodeHandling;
 
@@ -873,6 +876,12 @@ declare module '@xterm/xterm' {
      * Gets the terminal modes as set by SM/DECSET.
      */
     readonly modes: IModes;
+
+    /**
+     * The dimensions of the terminal. This will be undefined before
+     * {@link open} is called.
+     */
+    readonly dimensions: IRenderDimensions | undefined;
 
     /**
      * Gets or sets the terminal options. This supports setting multiple
@@ -1015,6 +1024,12 @@ declare module '@xterm/xterm' {
     onTitleChange: IEvent<string>;
 
     /**
+     * Adds an event listener for when the terminal's dimensions change.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onDimensionsChange: IEvent<IRenderDimensions>;
+
+    /**
      * Unfocus the terminal.
      */
     blur(): void;
@@ -1114,9 +1129,9 @@ declare module '@xterm/xterm' {
     registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
 
     /**
-     * (EXPERIMENTAL) Registers a character joiner, allowing custom sequences of
-     * characters to be rendered as a single unit. This is useful in particular
-     * for rendering ligatures and graphemes, among other things.
+     * Registers a character joiner, allowing custom sequences of characters to
+     * be rendered as a single unit. This is useful in particular for rendering
+     * ligatures and graphemes, among other things.
      *
      * Each registered character joiner is called with a string of text
      * representing a portion of a line in the terminal that can be rendered as
@@ -1145,8 +1160,8 @@ declare module '@xterm/xterm' {
     registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
 
     /**
-     * (EXPERIMENTAL) Deregisters the character joiner if one was registered.
-     * NOTE: character joiners are only used by the webgl renderer.
+     * Deregisters the character joiner if one was registered. Note that
+     * character joiners are only used by the webgl renderer.
      * @param joinerId The character joiner's ID (returned after register)
      */
     deregisterCharacterJoiner(joinerId: number): void;
@@ -1159,7 +1174,7 @@ declare module '@xterm/xterm' {
     registerMarker(cursorYOffset?: number): IMarker;
 
     /**
-     * (EXPERIMENTAL) Adds a decoration to the terminal using
+     * Registers a decoration to the terminal.
      * @param decorationOptions, which takes a marker and an optional anchor,
      * width, height, and x offset from the anchor. Returns the decoration or
      * undefined if the alt buffer is active or the marker has already been
@@ -1251,21 +1266,31 @@ declare module '@xterm/xterm' {
 
     /**
      * Write data to the terminal.
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     write(data: string | Uint8Array, callback?: () => void): void;
 
     /**
      * Writes data to the terminal, followed by a break line character (\n).
+     *
+     * Note that the change will not be reflected in the {@link buffer}
+     * immediately as the data is processed asynchronously. Provide a
+     * {@link callback} to know when the data was processed.
      * @param data The data to write to the terminal. This can either be raw
      * bytes given as Uint8Array from the pty or a string. Raw bytes will always
      * be treated as UTF-8 encoded, string data as UTF-16.
      * @param callback Optional callback that fires when the data was processed
-     * by the parser.
+     * by the parser. This callback must be provided and awaited in order for
+     * {@link buffer} to reflect the change in the write.
      */
     writeln(data: string | Uint8Array, callback?: () => void): void;
 
@@ -1841,7 +1866,7 @@ declare module '@xterm/xterm' {
      * @param id Specifies the function identifier under which the callback gets
      * registered, e.g. {intermediates: '%' final: 'G'} for default charset
      * selection.
-     * @param callback The function to handle the sequence.
+     * @param handler The function to handle the sequence.
      * Return `true` if the sequence was handled, `false` if the parser should
      * try a previous handler. The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
@@ -1945,8 +1970,128 @@ declare module '@xterm/xterm' {
      */
     readonly sendFocusMode: boolean;
     /**
+     * Show Cursor (DECTCEM): `CSI ? 2 5 h`
+     */
+    readonly showCursor: boolean;
+    /**
+     * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
+     *
+     * When enabled, output is buffered and only rendered when the mode is
+     * disabled, allowing for atomic screen updates without tearing.
+     */
+    readonly synchronizedOutputMode: boolean;
+    /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */
     readonly wraparoundMode: boolean;
+  }
+
+  /**
+   * An object containing a width and height in pixels.
+   */
+  export interface IDimensions {
+    width: number;
+    height: number;
+  }
+
+  /**
+   * An object containing a top and left offset.
+   */
+  export interface IOffset {
+    top: number;
+    left: number;
+  }
+
+  /**
+   * The dimensions of the terminal.
+   */
+  export interface IRenderDimensions {
+    /**
+     * Dimensions measured in CSS pixels (ie. device pixels / device pixel
+     * ratio).
+     */
+    css: {
+      /**
+       * The dimensions of the canvas.
+       */
+      canvas: IDimensions;
+      /**
+       * The dimensions of a single cell.
+       */
+      cell: IDimensions;
+    };
+    /**
+     * Dimensions measured in actual pixels as rendered to the device.
+     */
+    device: {
+      /**
+       * The dimensions of the canvas.
+       */
+      canvas: IDimensions;
+      /**
+       * The dimensions of a single cell.
+       */
+      cell: IDimensions;
+      /**
+       * The dimensions of a single character within a cell, including its
+       * offset within the cell.
+       */
+      char: IDimensions & IOffset;
+    };
+  }
+
+  /**
+   * An object containing a width and height in pixels.
+   */
+  export interface IDimensions {
+    width: number;
+    height: number;
+  }
+
+  /**
+   * An object containing a top and left offset.
+   */
+  export interface IOffset {
+    top: number;
+    left: number;
+  }
+
+  /**
+   * The dimensions of the terminal, this is constructed and available after
+   * {@link Terminal.open} is called.
+   */
+  export interface IRenderDimensions {
+    /**
+     * Dimensions measured in CSS pixels (ie. device pixels / device pixel
+     * ratio).
+     */
+    css: {
+      /**
+       * The dimensions of the canvas which is the full terminal size.
+       */
+      canvas: IDimensions;
+      /**
+       * The dimensions of a single cell.
+       */
+      cell: IDimensions;
+    };
+    /**
+     * Dimensions measured in actual pixels as rendered to the device.
+     */
+    device: {
+      /**
+       * The dimensions of the canvas which is the full terminal size.
+       */
+      canvas: IDimensions;
+      /**
+       * The dimensions of a single cell.
+       */
+      cell: IDimensions;
+      /**
+       * The dimensions of a single character within a cell, including its
+       * offset within the cell.
+       */
+      char: IDimensions & IOffset;
+    };
   }
 }

@@ -12,6 +12,7 @@ const config = {
   isProd: argv.includes('--prod'),
   isWatch: argv.includes('--watch'),
   isDemoClient: argv.includes('--demo-client'),
+  isDemoServer: argv.includes('--demo-server'),
   isHeadless: argv.includes('--headless'),
   addon: argv.find(e => e.startsWith('--addon='))?.replace(/^--addon=/, ''),
 };
@@ -25,7 +26,7 @@ const commonOptions = {
   target: 'es2021',
   sourcemap: true,
   treeShaking: true,
-  logLevel: 'debug',
+  logLevel: 'warning',
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -126,7 +127,7 @@ if (config.addon) {
 } else if (config.isDemoClient) {
   bundleConfig = {
     ...bundleConfig,
-    entryPoints: [`demo/client.ts`],
+    entryPoints: [`demo/client/client.ts`],
     outfile: 'demo/dist/client-bundle.js',
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
     alias: {
@@ -136,6 +137,7 @@ if (config.addon) {
       "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/addon-clipboard.mjs",
       "@xterm/addon-fit": "./addons/addon-fit/lib/addon-fit.mjs",
       "@xterm/addon-image": "./addons/addon-image/lib/addon-image.mjs",
+      "@xterm/addon-progress": "./addons/addon-progress/lib/addon-progress.mjs",
       "@xterm/addon-search": "./addons/addon-search/lib/addon-search.mjs",
       "@xterm/addon-serialize": "./addons/addon-serialize/lib/addon-serialize.mjs",
       "@xterm/addon-web-fonts": "./addons/addon-web-fonts/lib/addon-web-fonts.mjs",
@@ -152,6 +154,19 @@ if (config.addon) {
       "@xterm/addon-ligatures": "./addons/addon-ligatures/out-esbuild/LigaturesAddon",
     }
   }
+  skipOut = true;
+  skipOutTest = true;
+} else if (config.isDemoServer) {
+  bundleConfig = {
+    ...bundleConfig,
+    entryPoints: [`demo/server/server.ts`],
+    outfile: 'demo/dist/server-bundle.js',
+    format: 'cjs',
+    platform: 'node',
+    external: ['node-pty'],
+  }
+  skipOut = true;
+  skipOutTest = true;
 } else if (config.isHeadless) {
   bundleConfig = {
     ...bundleConfig,

@@ -9,7 +9,9 @@
     "noUnusedLocals": true,
     "preserveWatchOutput": true,
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../../node_modules/@types/mocha",
+      // HACK: src shouldn't use node types but it's needed for index.test.ts
+      "../../../node_modules/@types/node"
     ],
     "paths": {
       "@xterm/addon-ligatures" : [

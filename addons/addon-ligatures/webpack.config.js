@@ -31,10 +31,10 @@ module.exports = {
   },
   mode: 'production',
   externals: {
-    'fs': 'fs',
-    'path': 'path',
-    'stream': 'stream',
-    'util': 'util'
+    'fs': 'commonjs fs',
+    'path': 'commonjs path',
+    'stream': 'commonjs stream',
+    'util': 'commonjs util'
   },
   resolve: {
     // The ligature modules contains fallbacks for node environments, we never want to browserify them

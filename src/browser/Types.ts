@@ -5,7 +5,7 @@
 
 import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IDisposable, Terminal as ITerminalApi } from '@xterm/xterm';
+import { IDisposable, IRenderDimensions as IRenderDimensionsApi, Terminal as ITerminalApi } from '@xterm/xterm';
 import { channels, css } from 'common/Color';
 import type { Event } from 'vs/base/common/event';
 
@@ -21,8 +21,11 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   linkifier: ILinkifier2 | undefined;
   options: Required<ITerminalOptions>;
 
+  readonly dimensions: IRenderDimensionsApi | undefined;
+
   onBlur: Event<void>;
   onFocus: Event<void>;
+  onDimensionsChange: Event<IRenderDimensionsApi>;
   onA11yChar: Event<string>;
   onA11yTab: Event<number>;
   onWillOpen: Event<HTMLElement>;

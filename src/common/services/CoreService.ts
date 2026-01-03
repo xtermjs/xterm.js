@@ -17,9 +17,12 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   applicationCursorKeys: false,
   applicationKeypad: false,
   bracketedPasteMode: false,
+  cursorBlink: undefined,
+  cursorStyle: undefined,
   origin: false,
   reverseWraparound: false,
   sendFocus: false,
+  synchronizedOutput: false,
   wraparound: true // defaults: xterm - true, vt100 - false
 });
 
@@ -73,7 +76,8 @@ export class CoreService extends Disposable implements ICoreService {
     }
 
     // Fire onData API
-    this._logService.debug(`sending data "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
+    this._logService.debug(`sending data "${data}"`);
+    this._logService.trace(`sending data (codes)`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onData.fire(data);
   }
 
@@ -81,7 +85,8 @@ export class CoreService extends Disposable implements ICoreService {
     if (this._optionsService.rawOptions.disableStdin) {
       return;
     }
-    this._logService.debug(`sending binary "${data}"`, () => data.split('').map(e => e.charCodeAt(0)));
+    this._logService.debug(`sending binary "${data}"`);
+    this._logService.trace(`sending binary (codes)`, () => data.split('').map(e => e.charCodeAt(0)));
     this._onBinary.fire(data);
   }
 }

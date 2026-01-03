@@ -22,7 +22,7 @@ describe('Headless API Tests', function (): void {
 
   it('Proposed API check', async () => {
     term = new Terminal({ allowProposedApi: false });
-    throws(() => term.markers, (error: any) => error.message === 'You must set the allowProposedApi option to true to use proposed API');
+    throws(() => term.unicode, (error: any) => error.message === 'You must set the allowProposedApi option to true to use proposed API');
   });
 
   it('write', async () => {
@@ -200,6 +200,15 @@ describe('Headless API Tests', function (): void {
       strictEqual(callCount, 1);
       await writelnSync('bar');
       strictEqual(callCount, 2);
+    });
+
+    it('onRender', async () => {
+      const calls: { start: number, end: number }[] = [];
+      term.onRender(e => calls.push(e));
+      await writeSync('foo');
+      deepStrictEqual(calls, [{ start: 0, end: 0 }]);
+      await writeSync('\n\nbar');
+      deepStrictEqual(calls, [{ start: 0, end: 0 }, { start: 0, end: 2 }]);
     });
 
     it('onScroll', async () => {
@@ -400,6 +409,8 @@ describe('Headless API Tests', function (): void {
         originMode: false,
         reverseWraparoundMode: false,
         sendFocusMode: false,
+        showCursor: true,
+        synchronizedOutputMode: false,
         wraparoundMode: true
       });
     });

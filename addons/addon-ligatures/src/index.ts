@@ -4,7 +4,7 @@
  */
 
 import type { Terminal } from '@xterm/xterm';
-import { Font } from 'font-ligatures';
+import { Font } from './fontLigatures/index';
 
 import load from './font';
 

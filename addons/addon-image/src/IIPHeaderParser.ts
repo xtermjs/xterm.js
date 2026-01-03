@@ -176,7 +176,7 @@ export class HeaderParser {
       try {
         const v = this._buffer.slice(0, pos);
         this.fields[this._key] = DECODERS[this._key] ? DECODERS[this._key](v) : v;
-      } catch (e) {
+      } catch {
         return false;
       }
       return true;

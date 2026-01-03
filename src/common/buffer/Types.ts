@@ -22,6 +22,10 @@ export interface IBuffer {
   savedY: number;
   savedX: number;
   savedCharset: ICharset | undefined;
+  savedCharsets: (ICharset | undefined)[];
+  savedGlevel: number;
+  savedOriginMode: boolean;
+  savedWraparoundMode: boolean;
   savedCurAttrData: IAttributeData;
   isCursorInViewport: boolean;
   markers: IMarker[];

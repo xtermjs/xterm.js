@@ -5,7 +5,7 @@
 
 import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererRowFactory';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
+import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
@@ -13,8 +13,9 @@ import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/se
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
-import { IBufferService, IInstantiationService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
+import { addDisposableListener } from 'vs/base/browser/dom';
 
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -23,6 +24,7 @@ const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
+const CURSOR_BLINK_IDLE_CLASS = 'xterm-cursor-blink-idle';
 
 let nextTerminalId = 1;
 
@@ -42,6 +44,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
   private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
+  private _cursorBlinkStateManager: CursorBlinkStateManager;
 
   public dimensions: IRenderDimensions;
 
@@ -59,6 +62,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreService private readonly _coreService: ICoreService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
     @IThemeService private readonly _themeService: IThemeService
   ) {
@@ -88,6 +92,10 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
     this._register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
 
+    this._cursorBlinkStateManager = new CursorBlinkStateManager(this._rowContainer, this._coreBrowserService);
+    this._register(addDisposableListener(this._document, 'mousedown', () => this._cursorBlinkStateManager.restartBlinkAnimation()));
+    this._register(toDisposable(() => this._cursorBlinkStateManager.dispose()));
+
     this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
 
@@ -100,7 +108,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._dimensionsStyleElement.remove();
     }));
 
-    this._widthCache = new WidthCache(this._document, this._helperContainer);
+    this._widthCache = new WidthCache();
     this._widthCache.setFont(
       this._optionsService.rawOptions.fontFamily,
       this._optionsService.rawOptions.fontSize,
@@ -161,6 +169,10 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Base CSS
     let styles =
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
+      // Disabling pointer events circumvents a browser behavior that prevents `click` events from
+      // being delivered if the target element is replaced during the click. This happened due to
+      // refresh() being called during the mousedown handler to start a selection.
+      ` pointer-events: none;` +
       ` color: ${colors.foreground.css};` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
@@ -219,6 +231,10 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` animation: ${blinkAnimationBlockId} 1s step-end infinite;` +
+      `}` +
+      // Disable cursor blinking when idle
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${CURSOR_BLINK_IDLE_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS} {` +
+      ` animation: none !important;` +
       `}` +
       // !important helps fix an issue where the cursor will not render on top of the selection,
       // however it's very hard to fix this issue and retain the blink animation without the use of
@@ -323,11 +339,13 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
+    this._cursorBlinkStateManager.pause();
     this.renderRows(0, this._bufferService.rows - 1);
   }
 
   public handleFocus(): void {
     this._rowContainer.classList.add(FOCUS_CLASS);
+    this._cursorBlinkStateManager.resume();
     this.renderRows(this._bufferService.buffer.y, this._bufferService.buffer.y);
   }
 
@@ -401,7 +419,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public handleCursorMove(): void {
-    // No-op, the cursor is drawn when rows are drawn
+    // Reset idle timer on cursor movement (which happens on input)
+    this._cursorBlinkStateManager.restartBlinkAnimation();
   }
 
   private _handleOptionsChanged(): void {
@@ -437,8 +456,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     const buffer = this._bufferService.buffer;
     const cursorAbsoluteY = buffer.ybase + buffer.y;
     const cursorX = Math.min(buffer.x, this._bufferService.cols - 1);
-    const cursorBlink = this._optionsService.rawOptions.cursorBlink;
-    const cursorStyle = this._optionsService.rawOptions.cursorStyle;
+    const cursorBlink = this._coreService.decPrivateModes.cursorBlink ?? this._optionsService.rawOptions.cursorBlink;
+    const cursorStyle = this._coreService.decPrivateModes.cursorStyle ?? this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
 
     for (let y = start; y <= end; y++) {
@@ -533,5 +552,62 @@ export class DomRenderer extends Disposable implements IRenderer {
         )
       );
     }
+  }
+}
+
+class CursorBlinkStateManager {
+  private _idleTimeout: number | undefined;
+  private _isIdlePaused: boolean = false;
+
+  constructor(
+    private readonly _rowContainer: HTMLElement,
+    private readonly _coreBrowserService: ICoreBrowserService
+  ) {
+    if (this._coreBrowserService.isFocused) {
+      this._resetIdleTimer();
+    }
+  }
+
+  public dispose(): void {
+    this._clearIdleTimer();
+  }
+
+  public restartBlinkAnimation(): void {
+    if (this._isIdlePaused) {
+      this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+    }
+    this._resetIdleTimer();
+  }
+
+  public pause(): void {
+    this._isIdlePaused = false;
+    this._clearIdleTimer();
+  }
+
+  public resume(): void {
+    this._isIdlePaused = false;
+    this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+    this._resetIdleTimer();
+  }
+
+  private _resetIdleTimer(): void {
+    this._isIdlePaused = false;
+    this._clearIdleTimer();
+    this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
+      this._stopBlinkingDueToIdle();
+    }, RendererConstants.CURSOR_BLINK_IDLE_TIMEOUT);
+  }
+
+  private _clearIdleTimer(): void {
+    if (this._idleTimeout) {
+      this._coreBrowserService.window.clearTimeout(this._idleTimeout);
+      this._idleTimeout = undefined;
+    }
+  }
+
+  private _stopBlinkingDueToIdle(): void {
+    this._rowContainer.classList.add(CURSOR_BLINK_IDLE_CLASS);
+    this._isIdlePaused = true;
+    this._idleTimeout = undefined;
   }
 }

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -18,8 +18,9 @@ export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
-  public onResize: Event<{ cols: number, rows: number }> = new Emitter<{ cols: number, rows: number }>().event;
+  public onResize: Event<IBufferResizeEvent> = new Emitter<IBufferResizeEvent>().event;
   public onScroll: Event<number> = new Emitter<number>().event;
+  private readonly _onScroll = new Emitter<number>();
   public isUserScrolling: boolean = false;
   constructor(
     public cols: number,
@@ -27,6 +28,10 @@ export class MockBufferService implements IBufferService {
     optionsService: IOptionsService = new MockOptionsService()
   ) {
     this.buffers = new BufferSet(optionsService, this);
+    // Listen to buffer activation events and automatically fire scroll events
+    this.buffers.onBufferActivate(e => {
+      this._onScroll.fire(e.activeBuffer.ydisp);
+    });
   }
   public scrollPages(pageCount: number): void {
     throw new Error('Method not implemented.');
@@ -66,15 +71,27 @@ export class MockCoreMouseService implements ICoreMouseService {
   public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
     throw new Error('Method not implemented.');
   }
+  public consumeWheelEvent(ev: WheelEvent, cellHeight: number, dpr: number): number {
+    return 1;
+  }
 }
 
 export class MockCharsetService implements ICharsetService {
   public serviceBrand: any;
   public charset: ICharset | undefined;
   public glevel: number = 0;
+  public charsets: (ICharset | undefined)[] = [];
   public reset(): void { }
-  public setgLevel(g: number): void { }
-  public setgCharset(g: number, charset: ICharset): void { }
+  public setgLevel(g: number): void {
+    this.glevel = g;
+    this.charset = this.charsets[g];
+  }
+  public setgCharset(g: number, charset: ICharset | undefined): void {
+    this.charsets[g] = charset;
+    if (this.glevel === g) {
+      this.charset = charset;
+    }
+  }
 }
 
 export class MockCoreService implements ICoreService {
@@ -89,9 +106,12 @@ export class MockCoreService implements ICoreService {
     applicationCursorKeys: false,
     applicationKeypad: false,
     bracketedPasteMode: false,
+    cursorBlink: undefined,
+    cursorStyle: undefined,
     origin: false,
     reverseWraparound: false,
     sendFocus: false,
+    synchronizedOutput: false,
     wraparound: true
   };
   public onData: Event<string> = new Emitter<string>().event;

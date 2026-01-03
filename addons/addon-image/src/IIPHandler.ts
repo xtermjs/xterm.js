@@ -105,7 +105,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       return true;
     }
 
-    const blob = new Blob([this._dec.data8], { type: this._metrics.mime });
+    const blob = new Blob([new Uint8Array(this._dec.data8)], { type: this._metrics.mime });
     this._dec.release();
 
     if (!window.createImageBitmap) {

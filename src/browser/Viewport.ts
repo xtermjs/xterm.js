@@ -8,11 +8,12 @@ import { ViewportConstants } from 'browser/shared/Constants';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
-import { scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
+import { addDisposableListener, scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
+import { Gesture, EventType as GestureEventType, type GestureEvent } from 'vs/base/browser/touch';
 
 export class Viewport extends Disposable {
 
@@ -71,6 +72,7 @@ export class Viewport extends Disposable {
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
     this._register(Event.runAndSubscribe(themeService.onChangeColors, () => {
+      element.style.backgroundColor = themeService.colors.background.css;
       this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
     }));
     element.appendChild(this._scrollableElement.getDomNode());
@@ -93,11 +95,20 @@ export class Viewport extends Disposable {
       ].join('\n');
     }));
 
-    this._register(this._bufferService.onResize(() => this._queueSync()));
-    this._register(this._bufferService.buffers.onBufferActivate(() => this._queueSync()));
+    this._register(this._bufferService.onResize(() => this.queueSync()));
+    this._register(this._bufferService.buffers.onBufferActivate(() => {
+      // Reset _latestYDisp when switching buffers to prevent stale scroll position
+      // from alt buffer contaminating normal buffer scroll position
+      this._latestYDisp = undefined;
+      this.queueSync();
+    }));
     this._register(this._bufferService.onScroll(() => this._sync()));
 
     this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
+
+    // Touch/gesture scrolling support
+    this._register(Gesture.addTarget(screenElement));
+    this._register(addDisposableListener(screenElement, GestureEventType.Change, (e: GestureEvent) => this._handleGestureChange(e)));
   }
 
   public scrollLines(disp: number): void {
@@ -126,7 +137,7 @@ export class Viewport extends Disposable {
     };
   }
 
-  private _queueSync(ydisp?: number): void {
+  public queueSync(ydisp?: number): void {
     // Update state
     if (ydisp !== undefined) {
       this._latestYDisp = ydisp;
@@ -157,7 +168,7 @@ export class Viewport extends Disposable {
     });
     this._suppressOnScrollHandler = false;
 
-    // If ydisp has been changed by some other copmonent (input/buffer), then stop animating smooth
+    // If ydisp has been changed by some other component (input/buffer), then stop animating smooth
     // scroll and scroll there immediately.
     if (ydisp !== this._latestYDisp) {
       this._scrollableElement.setScrollPosition({
@@ -183,5 +194,14 @@ export class Viewport extends Disposable {
       this._onRequestScrollLines.fire(diff);
     }
     this._isHandlingScroll = false;
+  }
+
+  private _handleGestureChange(e: GestureEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    const pos = this._scrollableElement.getScrollPosition();
+    this._scrollableElement.setScrollPosition({
+      scrollTop: pos.scrollTop - e.translationY
+    });
   }
 }

@@ -5,12 +5,12 @@
 
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
-import type { IRenderDimensions } from 'browser/renderer/shared/Types';
+import type { IRenderDimensions as IRenderDimensionsInternal } from 'browser/renderer/shared/Types';
 import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IDisposable, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
 import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, IRenderDimensions, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
 
 export interface ITestContext {
   browser: Browser;
@@ -114,7 +114,7 @@ interface ITerminalProxyCustomMethods {
 
 type TerminalProxyAsyncPropOverrides = 'cols' | 'rows' | 'modes';
 type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getSelectionPosition' | 'registerMarker' | 'registerDecoration';
-type TerminalProxyCustomOverrides = 'buffer' | (
+type TerminalProxyCustomOverrides = 'buffer' | 'dimensions' | (
   // The below are not implemented yet
   'element' |
   'textarea' |
@@ -150,6 +150,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this._page.exposeFunction('onSelectionChange', () => this._onSelectionChange.fire());
     await this._page.exposeFunction('onTitleChange', (e: string) => this._onTitleChange.fire(e));
     await this._page.exposeFunction('onWriteParsed', () => this._onWriteParsed.fire());
+    await this._page.exposeFunction('onDimensionsChange', (e: IRenderDimensions) => this._onDimensionsChange.fire(e));
   }
 
   /**
@@ -168,6 +169,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     this._onSelectionChange.dispose();
     this._onTitleChange.dispose();
     this._onWriteParsed.dispose();
+    this._onDimensionsChange.dispose();
 
     this._onBell = new EventEmitter();
     this._onBinary = new EventEmitter();
@@ -181,6 +183,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     this._onSelectionChange = new EventEmitter();
     this._onTitleChange = new EventEmitter();
     this._onWriteParsed = new EventEmitter();
+    this._onDimensionsChange = new EventEmitter();
 
     await this.evaluate(([term]) => term.onBell((window as any).onBell));
     await this.evaluate(([term]) => term.onBinary((window as any).onBinary));
@@ -194,6 +197,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this.evaluate(([term]) => term.onSelectionChange((window as any).onSelectionChange));
     await this.evaluate(([term]) => term.onTitleChange((window as any).onTitleChange));
     await this.evaluate(([term]) => term.onWriteParsed((window as any).onWriteParsed));
+    await this.evaluate(([term]) => term.onDimensionsChange((window as any).onDimensionsChange));
   }
 
   // #region Events
@@ -215,6 +219,8 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
+  public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
   private _onSelectionChange = new EventEmitter<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
@@ -227,6 +233,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
   public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
   public get modes(): Promise<IModes> { return this.evaluate(([term]) => term.modes); }
+  public get dimensions(): Promise<IRenderDimensions | undefined> { return this.evaluate(([term]) => term.dimensions); }
   // #endregion
 
   // #region Complex properties
@@ -380,8 +387,33 @@ class TerminalBufferCell {
   ) {
   }
 
-  public getWidth(): Promise<number> { return this.evaluate(([line]) => line.getWidth()); }
-  public getChars(): Promise<string> { return this.evaluate(([line]) => line.getChars()); }
+  public getWidth(): Promise<number> { return this.evaluate(([cell]) => cell.getWidth()); }
+  public getChars(): Promise<string> { return this.evaluate(([cell]) => cell.getChars()); }
+  public getCode(): Promise<number> { return this.evaluate(([cell]) => cell.getCode()); }
+
+  public getFgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColorMode()); }
+  public getBgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColorMode()); }
+  public getFgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColor()); }
+  public getBgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColor()); }
+
+  public isBold(): Promise<number> { return this.evaluate(([cell]) => cell.isBold()); }
+  public isItalic(): Promise<number> { return this.evaluate(([cell]) => cell.isItalic()); }
+  public isDim(): Promise<number> { return this.evaluate(([cell]) => cell.isDim()); }
+  public isUnderline(): Promise<number> { return this.evaluate(([cell]) => cell.isUnderline()); }
+  public isBlink(): Promise<number> { return this.evaluate(([cell]) => cell.isBlink()); }
+  public isInverse(): Promise<number> { return this.evaluate(([cell]) => cell.isInverse()); }
+  public isInvisible(): Promise<number> { return this.evaluate(([cell]) => cell.isInvisible()); }
+  public isStrikethrough(): Promise<number> { return this.evaluate(([cell]) => cell.isStrikethrough()); }
+  public isOverline(): Promise<number> { return this.evaluate(([cell]) => cell.isOverline()); }
+
+  public isFgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgRGB()); }
+  public isBgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgRGB()); }
+  public isFgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgPalette()); }
+  public isBgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgPalette()); }
+  public isFgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgDefault()); }
+  public isBgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgDefault()); }
+
+  public isAttributeDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isAttributeDefault()); }
 
   public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferCell>[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
@@ -396,7 +428,7 @@ class TerminalCoreProxy {
   }
 
   public get isDisposed(): Promise<boolean> { return this.evaluate(([core]) => (core as any)._isDisposed); }
-  public get renderDimensions(): Promise<IRenderDimensions> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
+  public get renderDimensions(): Promise<IRenderDimensionsInternal> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
 
   public async triggerBinaryEvent(data: string): Promise<void> {
     return this._page.evaluate(([core, data]) => core.coreService.triggerBinaryEvent(data), [await this._getCoreHandle(), data] as const);
@@ -412,7 +444,14 @@ class TerminalCoreProxy {
   }
 }
 
-export async function openTerminal(ctx: ITestContext, options: ITerminalOptions | ITerminalInitOnlyOptions = {}, testOptions: { loadUnicodeGraphemesAddon: boolean } = { loadUnicodeGraphemesAddon: true }): Promise<void> {
+export async function openTerminal(
+  ctx: ITestContext,
+  options: ITerminalOptions | ITerminalInitOnlyOptions = {},
+  testOptions: { useShadowDom?: boolean, loadUnicodeGraphemesAddon?: boolean } = {}
+): Promise<void> {
+  testOptions.useShadowDom ??= false;
+  testOptions.loadUnicodeGraphemesAddon ??= true;
+
   await ctx.page.evaluate(`
   if ('term' in window) {
     try {
@@ -423,10 +462,45 @@ export async function openTerminal(ctx: ITestContext, options: ITerminalOptions 
   // HACK: Tests may have side effects that could cause the terminal not to be removed. This
   //       assertion catches this case early.
   strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
-  await ctx.page.evaluate(`
+
+  let script = `
     window.term = new window.Terminal(${JSON.stringify({ allowProposedApi: true, ...options })});
-    window.term.open(document.querySelector('#terminal-container'));
-  `);
+    let element = document.querySelector('#terminal-container');
+
+    // Remove shadow root if it exists
+    const newElement = element.cloneNode(false);
+    element.replaceWith(newElement);
+    element = newElement
+`;
+
+
+  if (testOptions.useShadowDom) {
+    script += `
+    const shadowRoot = element.attachShadow({ mode: "open" });
+
+    // Copy parent styles to shadow DOM
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    styles.forEach((styleEl) => {
+      const clone = document.createElement('link');
+      clone.rel = 'stylesheet';
+      clone.href = styleEl.href;
+      shadowRoot.appendChild(clone);
+    });
+
+    // Create new element inside the shadow DOM
+    element = document.createElement('div');
+    element.style.width = '100%';
+    element.style.height = '100%';
+    shadowRoot.appendChild(element);
+    `;
+  }
+
+  script += `
+    window.term.open(element);
+  `;
+
+  await ctx.page.evaluate(script);
+
   // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
   // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
   if (testOptions.loadUnicodeGraphemesAddon) {
@@ -471,7 +545,7 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
     equalityCheck = true;
     try {
       deepStrictEqual(result, val);
-    } catch (e) {
+    } catch {
       equalityCheck = false;
     }
   }

@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import type { Terminal, ITerminalAddon } from '@xterm/xterm';
+import type { Terminal, ITerminalAddon, IRenderDimensions } from '@xterm/xterm';
 import type { FitAddon as IFitApi } from '@xterm/addon-fit';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ViewportConstants } from 'browser/shared/Constants';
 
 interface ITerminalDimensions {
@@ -23,6 +22,17 @@ interface ITerminalDimensions {
 const MINIMUM_COLS = 2;
 const MINIMUM_ROWS = 1;
 
+function getWindow(e: Node): Window {
+  if (e?.ownerDocument?.defaultView) {
+    return e.ownerDocument.defaultView;
+  }
+
+  return window;
+}
+function _getComputedStyle(el: HTMLElement): CSSStyleDeclaration {
+  return getWindow(el).getComputedStyle(el, null);
+}
+
 export class FitAddon implements ITerminalAddon , IFitApi {
   private _terminal: Terminal | undefined;
 
@@ -38,12 +48,8 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       return;
     }
 
-    // TODO: Remove reliance on private API
-    const core = (this._terminal as any)._core;
-
     // Force a full render
     if (this._terminal.rows !== dims.rows || this._terminal.cols !== dims.cols) {
-      core._renderService.clear();
       this._terminal.resize(dims.cols, dims.rows);
     }
   }
@@ -57,11 +63,9 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       return undefined;
     }
 
-    // TODO: Remove reliance on private API
-    const core = (this._terminal as any)._core;
-    const dims: IRenderDimensions = core._renderService.dimensions;
+    const dims: IRenderDimensions | undefined = this._terminal.dimensions;
 
-    if (dims.css.cell.width === 0 || dims.css.cell.height === 0) {
+    if (!dims || dims.css.cell.width === 0 || dims.css.cell.height === 0) {
       return undefined;
     }
 
@@ -69,10 +73,10 @@ export class FitAddon implements ITerminalAddon , IFitApi {
       ? 0
       : (this._terminal.options.overviewRuler?.width || ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
-    const parentElementStyle = window.getComputedStyle(this._terminal.element.parentElement);
+    const parentElementStyle = _getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
     const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
-    const elementStyle = window.getComputedStyle(this._terminal.element);
+    const elementStyle = _getComputedStyle(this._terminal.element);
     const elementPadding = {
       top: parseInt(elementStyle.getPropertyValue('padding-top')),
       bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),

@@ -38,6 +38,10 @@ export class Buffer implements IBuffer {
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
+  public savedCharsets: (ICharset | undefined)[] = [];
+  public savedGlevel: number = 0;
+  public savedOriginMode: boolean = false;
+  public savedWraparoundMode: boolean = true;
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
@@ -181,7 +185,7 @@ export class Buffer implements IBuffer {
       if (this._rows < newRows) {
         for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
-            if (this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
+            if (this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
               this.lines.push(new BufferLine(newCols, nullCell));
@@ -298,7 +302,7 @@ export class Buffer implements IBuffer {
     if (windowsPty && windowsPty.buildNumber) {
       return this._hasScrollback && windowsPty.backend === 'conpty' && windowsPty.buildNumber >= 21376;
     }
-    return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
+    return this._hasScrollback;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -315,7 +319,8 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLarger(newCols: number, newRows: number): void {
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA));
+    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
+    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA), reflowCursorLine);
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
@@ -347,6 +352,7 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowSmaller(newCols: number, newRows: number): void {
+    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
     // batched up and only committed once
@@ -367,11 +373,13 @@ export class Buffer implements IBuffer {
         wrappedLines.unshift(nextLine);
       }
 
-      // If these lines contain the cursor don't touch them, the program will handle fixing up
-      // wrapped lines with the cursor
-      const absoluteY = this.ybase + this.y;
-      if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
-        continue;
+      if (!reflowCursorLine) {
+        // If these lines contain the cursor don't touch them, the program will handle fixing up
+        // wrapped lines with the cursor
+        const absoluteY = this.ybase + this.y;
+        if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
+          continue;
+        }
       }
 
       const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();

@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IDisposable } from 'common/Types';
 import { FontWeight } from 'common/services/Services';
 
@@ -24,6 +25,10 @@ const enum FontVariant {
   BOLD_ITALIC = 3
 }
 
+export interface IWidthCacheFontVariantCanvas {
+  setFont(fontFamily: string, fontSize: number, fontWeight: FontWeight, italic: boolean): void;
+  measure(c: string): number;
+}
 
 export class WidthCache implements IDisposable {
   // flat cache for regular variant up to CacheSettings.FLAT_SIZE
@@ -42,50 +47,24 @@ export class WidthCache implements IDisposable {
   private _fontSize = 0;
   private _weight: FontWeight = 'normal';
   private _weightBold: FontWeight = 'bold';
-  private _container: HTMLDivElement;
-  private _measureElements: HTMLSpanElement[] = [];
+  private _canvasElements: IWidthCacheFontVariantCanvas[] = [];
 
-  constructor(_document: Document, _helperContainer: HTMLElement) {
-    this._container = _document.createElement('div');
-    this._container.classList.add('xterm-width-cache-measure-container');
-    this._container.setAttribute('aria-hidden', 'true');
-    // SP should stack in spans
-    this._container.style.whiteSpace = 'pre';
-    // avoid undercuts in non-monospace fonts from kerning
-    this._container.style.fontKerning = 'none';
-
-    const regular = _document.createElement('span');
-    regular.classList.add('xterm-char-measure-element');
-
-    const bold = _document.createElement('span');
-    bold.classList.add('xterm-char-measure-element');
-    bold.style.fontWeight = 'bold';
-
-    const italic = _document.createElement('span');
-    italic.classList.add('xterm-char-measure-element');
-    italic.style.fontStyle = 'italic';
-
-    const boldItalic = _document.createElement('span');
-    boldItalic.classList.add('xterm-char-measure-element');
-    boldItalic.style.fontWeight = 'bold';
-    boldItalic.style.fontStyle = 'italic';
-
-    // NOTE: must be in order of FontVariant
-    this._measureElements = [regular, bold, italic, boldItalic];
-    this._container.appendChild(regular);
-    this._container.appendChild(bold);
-    this._container.appendChild(italic);
-    this._container.appendChild(boldItalic);
-
-    _helperContainer.appendChild(this._container);
+  constructor(
+    canvasFactory: () => IWidthCacheFontVariantCanvas = () => new WidthCacheFontVariantCanvas()
+  ) {
+    this._canvasElements = [
+      canvasFactory(),
+      canvasFactory(),
+      canvasFactory(),
+      canvasFactory()
+    ];
 
     this.clear();
   }
 
   public dispose(): void {
-    this._container.remove();           // remove elements from DOM
-    this._measureElements.length = 0;   // release element refs
-    this._holey = undefined;            // free cache memory via GC
+    this._canvasElements.length = 0;
+    this._holey = undefined; // free cache memory via GC
   }
 
   /**
@@ -104,10 +83,11 @@ export class WidthCache implements IDisposable {
    */
   public setFont(font: string, fontSize: number, weight: FontWeight, weightBold: FontWeight): void {
     // skip if nothing changed
-    if (font === this._font
-      && fontSize === this._fontSize
-      && weight === this._weight
-      && weightBold === this._weightBold
+    if (
+      font === this._font &&
+      fontSize === this._fontSize &&
+      weight === this._weight &&
+      weightBold === this._weightBold
     ) {
       return;
     }
@@ -117,12 +97,10 @@ export class WidthCache implements IDisposable {
     this._weight = weight;
     this._weightBold = weightBold;
 
-    this._container.style.fontFamily = this._font;
-    this._container.style.fontSize = `${this._fontSize}px`;
-    this._measureElements[FontVariant.REGULAR].style.fontWeight = `${weight}`;
-    this._measureElements[FontVariant.BOLD].style.fontWeight = `${weightBold}`;
-    this._measureElements[FontVariant.ITALIC].style.fontWeight = `${weight}`;
-    this._measureElements[FontVariant.BOLD_ITALIC].style.fontWeight = `${weightBold}`;
+    this._canvasElements[FontVariant.REGULAR].setFont(font, fontSize, weight, false);
+    this._canvasElements[FontVariant.BOLD].setFont(font, fontSize, weightBold, false);
+    this._canvasElements[FontVariant.ITALIC].setFont(font, fontSize, weight, true);
+    this._canvasElements[FontVariant.BOLD_ITALIC].setFont(font, fontSize, weightBold, true);
 
     this.clear();
   }
@@ -160,8 +138,32 @@ export class WidthCache implements IDisposable {
   }
 
   protected _measure(c: string, variant: FontVariant): number {
-    const el = this._measureElements[variant];
-    el.textContent = c.repeat(WidthCacheSettings.REPEAT);
-    return el.offsetWidth / WidthCacheSettings.REPEAT;
+    return this._canvasElements[variant].measure(c);
+  }
+}
+
+class WidthCacheFontVariantCanvas implements IWidthCacheFontVariantCanvas {
+  private _canvas: OffscreenCanvas | HTMLCanvasElement;
+  private _ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
+
+  constructor() {
+    if (typeof OffscreenCanvas !== 'undefined') {
+      this._canvas = new OffscreenCanvas(1, 1);
+      this._ctx = throwIfFalsy(this._canvas.getContext('2d'));
+    } else {
+      this._canvas = document.createElement('canvas');
+      this._canvas.width = 1;
+      this._canvas.height = 1;
+      this._ctx = throwIfFalsy(this._canvas.getContext('2d'));
+    }
+  }
+
+  public setFont(fontFamily: string, fontSize: number, fontWeight: FontWeight, italic: boolean): void {
+    const fontStyle = italic ? 'italic' : '';
+    this._ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`.trim();
+  }
+
+  public measure(c: string): number {
+    return this._ctx.measureText(c).width;
   }
 }

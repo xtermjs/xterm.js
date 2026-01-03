@@ -19,8 +19,8 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('Search Tests', () => {
 
   test.beforeEach(async () => {
+    await ctx.proxy.reset();
     await ctx.page.evaluate(`
-      window.term.reset()
       window.search?.dispose();
       window.search = new SearchAddon();
       window.term.loadAddon(window.search);
@@ -385,6 +385,34 @@ test.describe('Search Tests', () => {
     });
   });
 
+  test.describe('onBeforeSearch and onAfterSearch', () => {
+    test.beforeEach(async () => {
+      await ctx.page.evaluate(`
+        window.events = [];
+        window.search.onBeforeSearch(() => window.events.push('before'));
+        window.search.onAfterSearch(() => window.events.push('after'));
+      `);
+    });
+    test('should fire before and after findNext', async () => {
+      await ctx.proxy.write('abc');
+      await ctx.page.evaluate(`window.search.findNext('a')`);
+      deepStrictEqual(await ctx.page.evaluate('window.events'), ['before', 'after']);
+    });
+
+    test('should fire before and after findPrevious', async () => {
+      await ctx.proxy.write('abc');
+      await ctx.page.evaluate(`window.search.findPrevious('a')`);
+      deepStrictEqual(await ctx.page.evaluate('window.events'), ['before', 'after']);
+    });
+
+    test('should fire for each search call', async () => {
+      await ctx.proxy.write('abc abc');
+      await ctx.page.evaluate(`window.search.findNext('abc')`);
+      await ctx.page.evaluate(`window.search.findNext('abc')`);
+      deepStrictEqual(await ctx.page.evaluate('window.events'), ['before', 'after', 'before', 'after']);
+    });
+  });
+
   test.describe('Regression tests', () => {
     test.describe('#2444 wrapped line content not being found', () => {
       let fixture: string;
@@ -477,6 +505,57 @@ test.describe('Search Tests', () => {
       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
         { resultCount: 2, resultIndex: 1 }
+      ]);
+    });
+  });
+
+  test.describe('Wrapped line search functionality', () => {
+    test('should correctly count matches across multiple wrapped lines', async () => {
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+
+      const content = 'a'.repeat(300);
+      await ctx.proxy.write(content);
+      strictEqual(await ctx.page.evaluate(`window.search.findNext('${content}', { decorations: { activeMatchColorOverviewRuler: '#ff0000', matchOverviewRuler: '#ffff00' } })`), true);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 }
+      ]);
+    });
+
+    test('should handle reverse search across wrapped lines', async () => {
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+
+      const content = 'x'.repeat(300);
+      await ctx.proxy.write(content);
+      strictEqual(await ctx.page.evaluate(`window.search.findPrevious('${content}', { decorations: { activeMatchColorOverviewRuler: '#ff0000', matchOverviewRuler: '#ffff00' } })`), true);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 }
+      ]);
+    });
+
+    test('should update counts when content changes across wrapped lines', async () => {
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+
+      const content = 'z'.repeat(300);
+      await ctx.proxy.write(content);
+      strictEqual(await ctx.page.evaluate(`window.search.findNext('${content}', { decorations: { activeMatchColorOverviewRuler: '#ff0000', matchOverviewRuler: '#ffff00' } })`), true);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 }
+      ]);
+
+      await ctx.proxy.write('\\n\\r' + content);
+      await timeout(300);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 1, resultIndex: 0 },
+        { resultCount: 2, resultIndex: 0 }
       ]);
     });
   });

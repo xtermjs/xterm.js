@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker } from '@xterm/xterm';
+import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker, IRenderDimensions as IRenderDimensionsApi } from '@xterm/xterm';
 import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
 import * as Strings from 'browser/LocalizableStrings';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
@@ -126,8 +126,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public readonly onCursorMove = this._onCursorMove.event;
   private readonly _onKey = this._register(new Emitter<{ key: string, domEvent: KeyboardEvent }>());
   public readonly onKey = this._onKey.event;
-  private readonly _onRender = this._register(new Emitter<{ start: number, end: number }>());
-  public readonly onRender = this._onRender.event;
   private readonly _onSelectionChange = this._register(new Emitter<void>());
   public readonly onSelectionChange = this._onSelectionChange.event;
   private readonly _onTitleChange = this._register(new Emitter<string>());
@@ -145,6 +143,26 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public get onA11yTab(): Event<number> { return this._onA11yTabEmitter.event; }
   private _onWillOpen = this._register(new Emitter<HTMLElement>());
   public get onWillOpen(): Event<HTMLElement> { return this._onWillOpen.event; }
+  private readonly _onDimensionsChange = this._register(new Emitter<IRenderDimensionsApi>());
+  public readonly onDimensionsChange = this._onDimensionsChange.event;
+
+  public get dimensions(): IRenderDimensionsApi | undefined {
+    if (!this._renderService) {
+      return undefined;
+    }
+    const dimensions = this._renderService.dimensions;
+    return {
+      css: {
+        canvas: { ...dimensions.css.canvas },
+        cell: { ...dimensions.css.cell }
+      },
+      device: {
+        canvas: { ...dimensions.device.canvas },
+        cell: { ...dimensions.device.cell },
+        char: { ...dimensions.device.char }
+      }
+    };
+  }
 
   constructor(
     options: Partial<ITerminalOptions> = {}
@@ -418,6 +436,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.element.dir = 'ltr';   // xterm.css assumes LTR
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
+    this.element.classList.toggle('allow-transparency', this.options.allowTransparency);
+    this._register(this.optionsService.onSpecificOptionChange('allowTransparency', value => this.element!.classList.toggle('allow-transparency', value)));
     parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
@@ -437,7 +457,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.screenElement.appendChild(this._helperContainer);
     fragment.appendChild(this.screenElement);
 
-    this.textarea = this._document.createElement('textarea');
+    const textarea = this.textarea = this._document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel.get());
     if (!Browser.isChromeOS) {
@@ -449,6 +469,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
+    this._register(this.optionsService.onSpecificOptionChange('disableStdin', () => textarea.readOnly = this.optionsService.rawOptions.disableStdin));
+    this.textarea.readOnly = this.optionsService.rawOptions.disableStdin;
 
     // Register the core browser service before the generic textarea handlers are registered so it
     // handles them first. Otherwise the renderers may use the wrong focus state.
@@ -476,6 +498,17 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._renderService = this._register(this._instantiationService.createInstance(RenderService, this.rows, this.screenElement));
     this._instantiationService.setService(IRenderService, this._renderService);
     this._register(this._renderService.onRenderedViewportChange(e => this._onRender.fire(e)));
+    this._register(this._renderService.onDimensionsChange(e => this._onDimensionsChange.fire({
+      css: {
+        canvas: { ...e.css.canvas },
+        cell: { ...e.css.cell }
+      },
+      device: {
+        canvas: { ...e.device.canvas },
+        cell: { ...e.device.cell },
+        char: { ...e.device.char }
+      }
+    })));
     this.onResize(e => this._renderService!.resize(e.cols, e.rows));
 
     this._compositionView = this._document.createElement('div');
@@ -530,7 +563,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea!.focus();
       this.textarea!.select();
     }));
-    this._register(this._onScroll.event(() => this._selectionService!.refresh()));
+    this._register(Event.any(
+      this._onScroll.event,
+      this._inputHandler.onScroll
+    )(() => {
+      this._selectionService!.refresh();
+      this._viewport?.queueSync();
+    }));
 
     this._register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
     this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
@@ -636,6 +675,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           }
           const deltaY = (ev as WheelEvent).deltaY;
           if (deltaY === 0) {
+            return false;
+          }
+          const lines = self.coreMouseService.consumeWheelEvent(
+            ev as WheelEvent,
+            self._renderService?.dimensions?.device?.cell?.height,
+            self._coreBrowserService?.dpr
+          );
+          if (lines === 0) {
             return false;
           }
           action = deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
@@ -809,6 +856,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           return false;
         }
 
+        const lines = self.coreMouseService.consumeWheelEvent(
+          ev as WheelEvent,
+          self._renderService?.dimensions?.device?.cell?.height,
+          self._coreBrowserService?.dpr
+        );
+        if (lines === 0) {
+          return this.cancel(ev, true);
+        }
+
         // Construct and send sequences
         const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
         this.coreService.triggerDataEvent(sequence, true);
@@ -824,8 +880,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param start The row to start from (between 0 and this.rows - 1).
    * @param end The row to end at (between start and this.rows - 1).
    */
-  public refresh(start: number, end: number): void {
-    this._renderService?.refreshRows(start, end);
+  public refresh(start: number, end: number, sync: boolean = false): void {
+    this._renderService?.refreshRows(start, end, sync);
   }
 
   /**
@@ -1258,7 +1314,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._customKeyEventHandler = customKeyEventHandler;
 
     // do a full screen refresh
-    this.refresh(0, this.rows - 1);
+    this.refresh(0, this.rows - 1, true);
   }
 
   public clearTextureAtlas(): void {

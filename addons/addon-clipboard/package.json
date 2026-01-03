@@ -1,6 +1,6 @@
 {
   "name": "@xterm/addon-clipboard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
@@ -21,9 +21,6 @@
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
     "start": "node ../../demo/start"
-  },
-  "peerDependencies": {
-    "@xterm/xterm": "^5.4.0"
   },
   "dependencies": {
     "js-base64": "^3.7.5"
