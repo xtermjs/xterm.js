@@ -25,7 +25,7 @@ test.describe('API Integration Tests', () => {
     await openTerminal(ctx, { allowProposedApi: false }, { loadUnicodeGraphemesAddon: false });
     await ctx.page.evaluate(`
       try {
-        window.term.markers;
+        window.term.unicode;
       } catch (e) {
         window.throwMessage = e.message;
       }
