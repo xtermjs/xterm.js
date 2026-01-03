@@ -45,8 +45,7 @@ function startServer(): void {
     res.sendFile(demoRoot + '/index.css');
   });
 
-  app.get('/kongtext.regular.ttf', (req, res) => res.sendFile(demoRoot + '/kongtext.regular.ttf'));
-  app.get('/bpdots.regular.otf', (req, res) => res.sendFile(demoRoot + '/bpdots.regular.otf'));
+  app.use('/fonts', express.static(demoRoot + '/fonts'));
 
   app.use('/dist', express.static(demoRoot + '/dist'));
   app.use('/src', express.static(demoRoot + '/src'));

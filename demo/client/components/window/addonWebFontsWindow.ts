@@ -24,7 +24,7 @@ export class AddonWebFontsWindow extends BaseWindow implements IControlWindow {
     btnKongtext.textContent = 'Load Kongtext';
     btnKongtext.title = 'Load Kongtext font and apply C64 style';
     btnKongtext.addEventListener('click', async () => {
-      const ff = new FontFace('Kongtext', 'url(/kongtext.regular.ttf) format(\'truetype\')');
+      const ff = new FontFace('Kongtext', 'url(/fonts/kongtext.regular.ttf) format(\'truetype\')');
       await loadFonts([ff]);
       this._terminal.options.fontFamily = 'Kongtext';
       this._terminal.options.lineHeight = 1.3;
@@ -45,7 +45,7 @@ export class AddonWebFontsWindow extends BaseWindow implements IControlWindow {
     btnBpdots.textContent = 'Load BPdots';
     btnBpdots.title = 'Load BPdots font';
     btnBpdots.addEventListener('click', async () => {
-      document.styleSheets[0].insertRule('@font-face { font-family: "BPdots"; src: url(/bpdots.regular.otf) format("opentype"); weight: 400 }', 0);
+      document.styleSheets[0].insertRule('@font-face { font-family: "BPdots"; src: url(/fonts/bpdots.regular.otf) format("opentype"); weight: 400 }', 0);
       await loadFonts(['BPdots']);
       this._terminal.options.fontFamily = 'BPdots';
       this._terminal.options.lineHeight = 1.3;
