@@ -15,7 +15,8 @@ declare const navigator: INavigator;
 declare const process: unknown;
 
 // navigator.userAgent is also checked here because bundling with the process module can cause
-// issues otherwise. Note that navigator exists in Node.js 21+ but the userAgent is "Node.js/<version>".
+// issues otherwise. Note that navigator exists in Node.js 21+ but the userAgent is
+// "Node.js/<version>".
 export const isNode = (typeof process !== 'undefined' && 'title' in (process as any) && (typeof navigator === 'undefined' || navigator.userAgent.startsWith('Node.js/'))) ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
