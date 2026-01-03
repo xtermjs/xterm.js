@@ -856,8 +856,8 @@ declare module '@xterm/xterm' {
     readonly buffer: IBufferNamespace;
 
     /**
-     * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
-     * buffer is active this will always return [].
+     * Get all markers registered against the buffer. If the alt buffer is
+     * active this will always return [].
      */
     readonly markers: ReadonlyArray<IMarker>;
 
@@ -867,8 +867,8 @@ declare module '@xterm/xterm' {
     readonly parser: IParser;
 
     /**
-     * (EXPERIMENTAL) Get the Unicode handling interface
-     * to register and switch Unicode version.
+     * (EXPERIMENTAL) Get the Unicode handling interface to register and switch
+     * Unicode version.
      */
     readonly unicode: IUnicodeHandling;
 
@@ -1129,9 +1129,9 @@ declare module '@xterm/xterm' {
     registerLinkProvider(linkProvider: ILinkProvider): IDisposable;
 
     /**
-     * (EXPERIMENTAL) Registers a character joiner, allowing custom sequences of
-     * characters to be rendered as a single unit. This is useful in particular
-     * for rendering ligatures and graphemes, among other things.
+     * Registers a character joiner, allowing custom sequences of characters to
+     * be rendered as a single unit. This is useful in particular for rendering
+     * ligatures and graphemes, among other things.
      *
      * Each registered character joiner is called with a string of text
      * representing a portion of a line in the terminal that can be rendered as
@@ -1160,8 +1160,8 @@ declare module '@xterm/xterm' {
     registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
 
     /**
-     * (EXPERIMENTAL) Deregisters the character joiner if one was registered.
-     * NOTE: character joiners are only used by the webgl renderer.
+     * Deregisters the character joiner if one was registered. Note that
+     * character joiners are only used by the webgl renderer.
      * @param joinerId The character joiner's ID (returned after register)
      */
     deregisterCharacterJoiner(joinerId: number): void;
@@ -1174,7 +1174,7 @@ declare module '@xterm/xterm' {
     registerMarker(cursorYOffset?: number): IMarker;
 
     /**
-     * (EXPERIMENTAL) Adds a decoration to the terminal using
+     * Registers a decoration to the terminal.
      * @param decorationOptions, which takes a marker and an optional anchor,
      * width, height, and x offset from the anchor. Returns the decoration or
      * undefined if the alt buffer is active or the marker has already been
