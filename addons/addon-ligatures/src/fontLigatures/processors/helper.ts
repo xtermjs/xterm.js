@@ -43,29 +43,41 @@ export function processLookaheadPosition(
   currentEntries: IEntryMeta[]
 ): IEntryMeta[] {
   const nextEntries: IEntryMeta[] = [];
-  for (const currentEntry of currentEntries) {
-    for (const glyph of glyphs) {
-      const entry: ILookupTreeEntry = {};
-      if (!currentEntry.entry.forward) {
-        currentEntry.entry.forward = {
-          individual: {},
-          range: []
-        };
-      }
-      nextEntries.push({
-        entry,
-        substitutions: currentEntry.substitutions
-      });
+  const processedEntries = new Set<ILookupTreeEntry>();
 
+  for (const currentEntry of currentEntries) {
+    // Skip if we've already processed this entry object
+    if (processedEntries.has(currentEntry.entry)) {
+      continue;
+    }
+    processedEntries.add(currentEntry.entry);
+
+    if (!currentEntry.entry.forward) {
+      currentEntry.entry.forward = {
+        individual: {},
+        range: []
+      };
+    }
+
+    // All glyphs at this position share ONE entry - lookahead just needs to match,
+    // all paths lead to the same result
+    const sharedEntry: ILookupTreeEntry = {};
+
+    for (const glyph of glyphs) {
       if (Array.isArray(glyph)) {
         currentEntry.entry.forward.range.push({
-          entry,
+          entry: sharedEntry,
           range: glyph
         });
       } else {
-        currentEntry.entry.forward.individual[glyph] = entry;
+        currentEntry.entry.forward.individual[glyph] = sharedEntry;
       }
     }
+
+    nextEntries.push({
+      entry: sharedEntry,
+      substitutions: currentEntry.substitutions
+    });
   }
 
   return nextEntries;
@@ -76,29 +88,41 @@ export function processBacktrackPosition(
   currentEntries: IEntryMeta[]
 ): IEntryMeta[] {
   const nextEntries: IEntryMeta[] = [];
-  for (const currentEntry of currentEntries) {
-    for (const glyph of glyphs) {
-      const entry: ILookupTreeEntry = {};
-      if (!currentEntry.entry.reverse) {
-        currentEntry.entry.reverse = {
-          individual: {},
-          range: []
-        };
-      }
-      nextEntries.push({
-        entry,
-        substitutions: currentEntry.substitutions
-      });
+  const processedEntries = new Set<ILookupTreeEntry>();
 
+  for (const currentEntry of currentEntries) {
+    // Skip if we've already processed this entry object
+    if (processedEntries.has(currentEntry.entry)) {
+      continue;
+    }
+    processedEntries.add(currentEntry.entry);
+
+    if (!currentEntry.entry.reverse) {
+      currentEntry.entry.reverse = {
+        individual: {},
+        range: []
+      };
+    }
+
+    // All glyphs at this position share ONE entry - backtrack just needs to match,
+    // all paths lead to the same result
+    const sharedEntry: ILookupTreeEntry = {};
+
+    for (const glyph of glyphs) {
       if (Array.isArray(glyph)) {
         currentEntry.entry.reverse.range.push({
-          entry,
+          entry: sharedEntry,
           range: glyph
         });
       } else {
-        currentEntry.entry.reverse.individual[glyph] = entry;
+        currentEntry.entry.reverse.individual[glyph] = sharedEntry;
       }
     }
+
+    nextEntries.push({
+      entry: sharedEntry,
+      substitutions: currentEntry.substitutions
+    });
   }
 
   return nextEntries;
