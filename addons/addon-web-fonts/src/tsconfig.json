@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "dom",
+      "es2015",
+      "dom.iterable"
+    ],
+    "rootDir": ".",
+    "outDir": "../out",
+    "sourceMap": true,
+    "removeComments": true,
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ],
+    "paths": {
+      "@xterm/addon-web-fonts": [
+        "../typings/addon-web-fonts.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ]
+}

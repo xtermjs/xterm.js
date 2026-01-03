@@ -30,6 +30,7 @@ const addons = [
   'serialize',
   'unicode-graphemes',
   'unicode11',
+  'web-fonts',
   'web-links',
   'webgl',
 ];

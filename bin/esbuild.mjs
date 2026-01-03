@@ -140,6 +140,7 @@ if (config.addon) {
       "@xterm/addon-progress": "./addons/addon-progress/lib/addon-progress.mjs",
       "@xterm/addon-search": "./addons/addon-search/lib/addon-search.mjs",
       "@xterm/addon-serialize": "./addons/addon-serialize/lib/addon-serialize.mjs",
+      "@xterm/addon-web-fonts": "./addons/addon-web-fonts/lib/addon-web-fonts.mjs",
       "@xterm/addon-web-links": "./addons/addon-web-links/lib/addon-web-links.mjs",
       "@xterm/addon-webgl": "./addons/addon-webgl/lib/addon-webgl.mjs",
       "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/addon-unicode11.mjs",

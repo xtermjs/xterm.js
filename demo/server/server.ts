@@ -45,6 +45,8 @@ function startServer(): void {
     res.sendFile(demoRoot + '/index.css');
   });
 
+  app.use('/fonts', express.static(demoRoot + '/fonts'));
+
   app.use('/dist', express.static(demoRoot + '/dist'));
   app.use('/src', express.static(demoRoot + '/src'));
 
