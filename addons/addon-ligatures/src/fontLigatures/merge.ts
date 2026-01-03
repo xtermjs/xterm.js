@@ -14,8 +14,9 @@ export default function mergeTrees(trees: ILookupTree[]): ILookupTree {
     range: []
   };
 
+  const mergedEntries = new WeakMap<ILookupTreeEntry, Set<ILookupTreeEntry>>();
   for (const tree of trees) {
-    mergeSubtree(result, tree);
+    mergeSubtree(result, tree, mergedEntries);
   }
 
   return result;
@@ -26,15 +27,16 @@ export default function mergeTrees(trees: ILookupTree[]): ILookupTree {
  *
  * @param mainTree The tree where the values should be merged
  * @param mergeTree The tree to be merged into the mainTree
+ * @param mergedEntries WeakMap to track already merged entry pairs
  */
-function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree): void {
+function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree, mergedEntries: WeakMap<ILookupTreeEntry, Set<ILookupTreeEntry>>): void {
   // Need to fix this recursively (and handle lookups)
   for (const [glyphId, value] of Object.entries(mergeTree.individual)) {
     // The main tree is guaranteed to have no overlaps between the
     // individual and range values, so if we match an invididual, there
     // must not be a range
     if (mainTree.individual[glyphId]) {
-      mergeTreeEntry(mainTree.individual[glyphId], value);
+      mergeTreeEntry(mainTree.individual[glyphId], value, mergedEntries);
     } else {
       let matched = false;
       for (const [index, { range, entry }] of mainTree.range.entries()) {
@@ -50,7 +52,7 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree): void {
         // If they overlap, we have to split the range and then
         // merge the overlap
         mainTree.individual[glyphId] = value;
-        mergeTreeEntry(mainTree.individual[glyphId], cloneEntry(entry));
+        mergeTreeEntry(mainTree.individual[glyphId], cloneEntry(entry), mergedEntries);
 
         // When there's an overlap, we also have to fix up the range
         // that we had already processed
@@ -101,7 +103,7 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree): void {
             mainTree.individual[overlap.both] = entryToMerge;
           }
 
-          mergeTreeEntry(entryToMerge, cloneEntry(entry));
+          mergeTreeEntry(entryToMerge, cloneEntry(entry), mergedEntries);
 
           for (const second of overlap.second) {
             if (Array.isArray(second)) {
@@ -124,7 +126,7 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree): void {
           // If they overlap, we have to split the range and then
           // merge the overlap
           mainTree.individual[remainingRange] = cloneEntry(entry);
-          mergeTreeEntry(mainTree.individual[remainingRange], cloneEntry(resultEntry));
+          mergeTreeEntry(mainTree.individual[remainingRange], cloneEntry(resultEntry), mergedEntries);
 
           // When there's an overlap, we also have to fix up the range
           // that we had already processed
@@ -158,14 +160,14 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree): void {
           }
 
           // If they overlap, we have to merge the overlap
-          mergeTreeEntry(mainTree.individual[glyphId], cloneEntry(entry));
+          mergeTreeEntry(mainTree.individual[glyphId], cloneEntry(entry), mergedEntries);
 
           // Update the remaining ranges
           remainingRanges.splice(remainingIndex, 1, ...overlap.second);
           break;
         } else {
           if (Number(glyphId) === remainingRange) {
-            mergeTreeEntry(mainTree.individual[glyphId], cloneEntry(entry));
+            mergeTreeEntry(mainTree.individual[glyphId], cloneEntry(entry), mergedEntries);
             break;
           }
         }
@@ -191,8 +193,20 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree): void {
  *
  * @param mainTree The entry where the values should be merged
  * @param mergeTree The entry to merge into the mainTree
+ * @param mergedEntries WeakMap to track already merged entry pairs
  */
-function mergeTreeEntry(mainTree: ILookupTreeEntry, mergeTree: ILookupTreeEntry): void {
+function mergeTreeEntry(mainTree: ILookupTreeEntry, mergeTree: ILookupTreeEntry, mergedEntries: WeakMap<ILookupTreeEntry, Set<ILookupTreeEntry>>): void {
+  // Check if we've already merged this pair
+  let mergedSet = mergedEntries.get(mainTree);
+  if (mergedSet?.has(mergeTree)) {
+    return;
+  }
+  if (!mergedSet) {
+    mergedSet = new Set();
+    mergedEntries.set(mainTree, mergedSet);
+  }
+  mergedSet.add(mergeTree);
+
   if (
     mergeTree.lookup && (
       !mainTree.lookup ||
@@ -207,7 +221,7 @@ function mergeTreeEntry(mainTree: ILookupTreeEntry, mergeTree: ILookupTreeEntry)
     if (!mainTree.forward) {
       mainTree.forward = mergeTree.forward;
     } else {
-      mergeSubtree(mainTree.forward, mergeTree.forward);
+      mergeSubtree(mainTree.forward, mergeTree.forward, mergedEntries);
     }
   }
 
@@ -215,7 +229,7 @@ function mergeTreeEntry(mainTree: ILookupTreeEntry, mergeTree: ILookupTreeEntry)
     if (!mainTree.reverse) {
       mainTree.reverse = mergeTree.reverse;
     } else {
-      mergeSubtree(mainTree.reverse, mergeTree.reverse);
+      mergeSubtree(mainTree.reverse, mergeTree.reverse, mergedEntries);
     }
   }
 }
@@ -326,16 +340,22 @@ function rangeOrIndividual(start: number, end: number): number | [number, number
  * Clones an individual lookup tree entry.
  *
  * @param entry Lookup tree entry to clone
+ * @param visited Map to track already cloned entries (prevents infinite loops)
  */
-function cloneEntry(entry: ILookupTreeEntry): ILookupTreeEntry {
+function cloneEntry(entry: ILookupTreeEntry, visited: Map<ILookupTreeEntry, ILookupTreeEntry> = new Map()): ILookupTreeEntry {
+  if (visited.has(entry)) {
+    return visited.get(entry)!;
+  }
+
   const result: ILookupTreeEntry = {};
+  visited.set(entry, result);
 
   if (entry.forward) {
-    result.forward = cloneTree(entry.forward);
+    result.forward = cloneTree(entry.forward, visited);
   }
 
   if (entry.reverse) {
-    result.reverse = cloneTree(entry.reverse);
+    result.reverse = cloneTree(entry.reverse, visited);
   }
 
   if (entry.lookup) {
@@ -355,18 +375,19 @@ function cloneEntry(entry: ILookupTreeEntry): ILookupTreeEntry {
  * Clones a lookup tree.
  *
  * @param tree Lookup tree to clone
+ * @param visited Map to track already cloned entries (prevents infinite loops)
  */
-function cloneTree(tree: ILookupTree): ILookupTree {
+function cloneTree(tree: ILookupTree, visited: Map<ILookupTreeEntry, ILookupTreeEntry> = new Map()): ILookupTree {
   const individual: { [glyphId: string]: ILookupTreeEntry } = {};
   for (const [glyphId, entry] of Object.entries(tree.individual)) {
-    individual[glyphId] = cloneEntry(entry);
+    individual[glyphId] = cloneEntry(entry, visited);
   }
 
   return {
     individual,
     range: tree.range.map(({ range, entry }) => ({
       range: range.slice() as [number, number],
-      entry: cloneEntry(entry)
+      entry: cloneEntry(entry, visited)
     }))
   };
 }
