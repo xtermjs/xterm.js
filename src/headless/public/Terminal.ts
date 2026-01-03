@@ -84,7 +84,6 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onWriteParsed(): Event<void> { return this._core.onWriteParsed; }
 
   public get parser(): IParser {
-    this._checkProposedApi();
     if (!this._parser) {
       this._parser = new ParserApi(this._core);
     }
@@ -97,14 +96,12 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
-    this._checkProposedApi();
     if (!this._buffer) {
       this._buffer = this._register(new BufferNamespaceApi(this._core));
     }
     return this._buffer;
   }
   public get markers(): ReadonlyArray<IMarker> {
-    this._checkProposedApi();
     return this._core.markers;
   }
   public get modes(): IModes {
@@ -146,7 +143,6 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._core.resize(columns, rows);
   }
   public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
-    this._checkProposedApi();
     this._verifyIntegers(cursorYOffset);
     return this._core.addMarker(cursorYOffset);
   }

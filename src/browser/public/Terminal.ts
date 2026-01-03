@@ -103,7 +103,6 @@ export class Terminal extends Disposable implements ITerminalApi {
     return this._buffer;
   }
   public get markers(): ReadonlyArray<IMarker> {
-    this._checkProposedApi();
     return this._core.markers;
   }
   public get modes(): IModes {
@@ -166,11 +165,9 @@ export class Terminal extends Disposable implements ITerminalApi {
     return this._core.registerLinkProvider(linkProvider);
   }
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
-    this._checkProposedApi();
     return this._core.registerCharacterJoiner(handler);
   }
   public deregisterCharacterJoiner(joinerId: number): void {
-    this._checkProposedApi();
     this._core.deregisterCharacterJoiner(joinerId);
   }
   public registerMarker(cursorYOffset: number = 0): IMarker {
@@ -178,7 +175,6 @@ export class Terminal extends Disposable implements ITerminalApi {
     return this._core.registerMarker(cursorYOffset);
   }
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
-    this._checkProposedApi();
     this._verifyPositiveIntegers(decorationOptions.x ?? 0, decorationOptions.width ?? 0, decorationOptions.height ?? 0);
     return this._core.registerDecoration(decorationOptions);
   }
