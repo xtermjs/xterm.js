@@ -1,27 +1,29 @@
-# [![xterm.js logo](images/logo-full.png)](https://xtermjs.org)
+<div>
+  <a href="https://xtermjs.org/"><img src="/images/logo-full.png" srcset="/images/logo-full.png 1x, /images/logo-full-x2.png 2x"></a>
+</div>
 
-Xterm.js is a front-end component written in TypeScript that lets applications bring fully-featured terminals to their users in the browser. It's used by popular projects such as VS Code, Hyper and Theia.
+Xterm.js is a frontend component that enables applications to bring fully-featured terminals to their users in the browser. It's used by popular projects such as [VS Code](https://code.visualstudio.com/) (and its forks), [Tabby](https://tabby.sh/) and [Hyper](https://hyper.is/).
 
 ## Features
 
 - **Terminal apps just work**: Xterm.js works with most terminal apps such as `bash`, `vim`, and `tmux`, including support for curses-based apps and mouse events.
-- **Performant**: Xterm.js is *really* fast, it even includes a GPU-accelerated renderer.
+- **Performant**: Xterm.js is *really* fast and includes an optional GPU-accelerated renderer.
 - **Rich Unicode support**: Supports CJK, emojis, and IMEs.
-- **Self-contained**: Requires zero dependencies to work.
-- **Accessible**: Screen reader and minimum contrast ratio support can be turned on.
-- **And much more**: Links, theming, addons, well documented API, etc.
+- **Self-contained**: The core library has zero dependencies.
+- **Accessible**: Screen reader mode and minimum contrast ratio support can be turned on.
+- **And much more**: Links, theming, custom glyphs, addons, well documented API, etc.
 
 ## What xterm.js is not
 
 - Xterm.js is not a terminal application that you can download and use on your computer.
-- Xterm.js is not `bash`. Xterm.js can be connected to processes like `bash` and let you interact with them (provide input, receive output).
+- Xterm.js is not `bash`. Xterm.js can be connected to processes like `bash` and let you interact with them (provide input, receive output) through a library like [node-pty](https://github.com/microsoft/node-pty).
 
 ## Getting Started
 
-First, you need to install the module, we ship exclusively through [npm](https://www.npmjs.com/), so you need that installed and then add xterm.js as a dependency by running:
+First, you need to install the module. We ship exclusively through [npm](https://www.npmjs.com), so you need that installed and then add [@xterm/xterm](https://www.npmjs.com/package/@xterm/xterm) as a dependency by running:
 
 ```bash
-npm install @xterm/xterm
+npm install --save @xterm/xterm
 ```
 
 To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your HTML page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself. Finally, instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
@@ -54,12 +56,10 @@ import { Terminal } from '@xterm/xterm';
 
 ### Addons
 
-⚠️ *This section describes the new addon format introduced in v3.14.0, see [here](https://github.com/xtermjs/xterm.js/blob/3.14.2/README.md#addons) for the instructions on the old format*
-
 Addons are separate modules that extend the `Terminal` by building on the [xterm.js API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts). To use an addon, you first need to install it in your project:
 
 ```bash
-npm i -S @xterm/addon-web-links
+npm install --save @xterm/addon-web-links
 ```
 
 Then import the addon, instantiate it and call `Terminal.loadAddon`:
@@ -80,33 +80,35 @@ The xterm.js team maintains the following addons, but anyone can build them:
 - [`@xterm/addon-clipboard`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-clipboard): Access the browser's clipboard
 - [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
 - [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
+- [`@xterm/addon-ligatures`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-ligatures): Enables rendering of ligatures
+- [`@xterm/addon-progress`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-progress): Adds support for the progress API (`OSC 9;4`)
 - [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality
-- [`@xterm/addon-serialize`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize): Serializes the terminal's buffer to a VT sequences or HTML
+- [`@xterm/addon-serialize`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize): Serializes the terminal's buffer to VT sequences or HTML
+- [`@xterm/addon-unicode-graphemes`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-unicode-graphemes): Enhanced unicode support including grapheme clustering (experimental)
 - [`@xterm/addon-unicode11`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-unicode11): Updates character widths to their unicode11 values
+- [`@xterm/addon-web-fonts`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-fonts): Easily integrate web fonts
 - [`@xterm/addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-links): Adds web link detection and interaction
 - [`@xterm/addon-webgl`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-webgl): Renders xterm.js using a `canvas` element's webgl2 context
 
 ## Browser Support
 
-Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Specifically the latest versions of *Chrome*, *Edge*, *Firefox*, and *Safari*.
-
-Xterm.js works seamlessly in [Electron](https://electronjs.org/) apps and may even work on earlier versions of the browsers. These are the versions we strive to keep working.
+Since xterm.js is typically implemented as a developer tool, generally only modern evergreen browsers are supported officially. Specifically the latest versions of *Chrome*, *Edge*, *Firefox*, and *Safari*. Xterm.js also works seamlessly in [Electron](https://electronjs.org/) apps and may even work on earlier versions of the browsers. These are the versions we strive to keep working.
 
 ### Node.js Support
 
-We also publish [`xterm-headless`](https://www.npmjs.com/package/xterm-headless) which is a stripped down version of xterm.js that runs in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the serialize addon so it can get all state restored upon reconnection.
+We also publish [`xterm-headless`](https://www.npmjs.com/package/xterm-headless) which is a stripped down version of xterm.js that runs headless in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the [serialize addon](https://www.npmjs.com/package/@xterm/addon-serialize) so it can get all state restored upon reconnection.
 
 ## API
 
 The full API for xterm.js is contained within the [TypeScript declaration file](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), use the branch/tag picker in GitHub (`w`) to navigate to the correct version of the API.
 
-Note that some APIs are marked *experimental*, these are added to enable experimentation with new ideas without committing to support it like a normal [semver](https://semver.org/) API. Note that these APIs can change radically between versions, so be sure to read release notes if you plan on using experimental APIs.
+Some APIs may be marked with *experimental*, these are added to enable experimentation with new ideas without committing to support it like a normal [semver](https://semver.org/) API. Note that these APIs can change radically between versions, so be sure to read release notes if you plan on using experimental APIs.
 
 ## Releases
 
-Xterm.js follows a monthly release cycle roughly.
+Stable releases are done on an as needed basis, beta releases are continuously published off the `master` branch and this is what the principal implementation VS Code uses. Generally the beta builds are quite stable but can potentially contain breaking changes.
 
-All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), you can view the [high-level roadmap on the wiki](https://github.com/xtermjs/xterm.js/wiki/Roadmap) and see what we're working on now by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
+All current and past releases are available on this repo's [releases page](https://github.com/sourcelair/xterm.js/releases), you can see what's planned for upcoming releases looking through the repository [milestones](https://github.com/sourcelair/xterm.js/milestones).
 
 ### Beta builds
 
@@ -238,6 +240,6 @@ Do you use xterm.js in your application as well? Please [open a Pull Request](ht
 
 If you contribute code to this project, you implicitly allow your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
-Copyright (c) 2017-2022, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
+Copyright (c) 2017-2026, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
 Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)<br>
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
