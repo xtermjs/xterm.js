@@ -62,6 +62,9 @@ jobs:
           ./addons/addon-web-links/lib/* \
           ./addons/addon-web-links/out/* \
           ./addons/addon-web-links/out-*/* \
+          ./addons/addon-web-fonts/lib/* \
+          ./addons/addon-web-fonts/out/* \
+          ./addons/addon-web-fonts/out-*/* \
           ./addons/addon-webgl/lib/* \
           ./addons/addon-webgl/out/* \
           ./addons/addon-webgl/out-*st/*
@@ -223,6 +226,8 @@ jobs:
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
     - name: Integration tests (addon-unicode11)
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
+    - name: Integration tests (addon-web-fonts)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-fonts
     - name: Integration tests (addon-web-links)
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
     - name: Integration tests (addon-webgl)

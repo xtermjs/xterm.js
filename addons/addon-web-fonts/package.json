@@ -1,0 +1,26 @@
+{
+  "name": "@xterm/addon-web-fonts",
+  "version": "0.1.0",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/addon-web-fonts.js",
+  "module": "lib/addon-web-fonts.mjs",
+  "types": "typings/addon-web-fonts.d.ts",
+  "repository": "https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-fonts",
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "xterm",
+    "xterm.js"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc -p .",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package",
+    "start": "node ../../demo/start"
+  },
+  "dependencies": {}
+}

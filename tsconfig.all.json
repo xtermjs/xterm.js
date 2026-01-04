@@ -17,6 +17,7 @@
     { "path": "./addons/addon-serialize" },
     { "path": "./addons/addon-unicode11" },
     { "path": "./addons/addon-unicode-graphemes" },
+    { "path": "./addons/addon-web-fonts" },
     { "path": "./addons/addon-web-links" },
     { "path": "./addons/addon-webgl" }
   ]
