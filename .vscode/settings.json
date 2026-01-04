@@ -1,17 +1,4 @@
 {
-  "chat.tools.terminal.autoApprove": {
-    "npm run build": true,
-    "npm run esbuild": true,
-    "npm run dev": true,
-    "npm run test-integration": true,
-    "npm run test-integration-chromium": true,
-    "npm run test-integration-firefox": true,
-    "npm run test-integration-webkit": true,
-    "npm run lint": true,
-    "npm run lint-fix": true,
-    "npm run lint-api": true,
-    "npm run test-unit": true,
-  },
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.quoteStyle": "single"
 }
