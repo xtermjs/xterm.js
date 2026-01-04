@@ -1149,8 +1149,6 @@ declare module '@xterm/xterm' {
      * render together, since they aren't drawn as optimally as individual
      * characters.
      *
-     * NOTE: character joiners are only used by the webgl renderer.
-     *
      * @param handler The function that determines character joins. It is called
      * with a string of text that is eligible for joining and returns an array
      * where each entry is an array containing the start (inclusive) and end
