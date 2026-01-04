@@ -1,6 +1,4 @@
-<div>
-  <a href="https://xtermjs.org/"><img src="/images/logo-full.png" srcset="/images/logo-full.png 1x, /images/logo-full-x2.png 2x"></a>
-</div>
+# [![xterm.js](images/logo-full.png)](https://xtermjs.org)
 
 Xterm.js is a frontend component that enables applications to bring fully-featured terminals to their users in the browser. It's used by popular projects such as [VS Code](https://code.visualstudio.com/) (and its forks), [Tabby](https://tabby.sh/) and [Hyper](https://hyper.is/).
 
@@ -106,26 +104,25 @@ Some APIs may be marked with *experimental*, these are added to enable experimen
 
 ## Releases
 
-Stable releases are done on an as needed basis, beta releases are continuously published off the `master` branch and this is what the principal implementation VS Code uses. Generally the beta builds are quite stable but can potentially contain breaking changes.
-
-All current and past releases are available on this repo's [releases page](https://github.com/sourcelair/xterm.js/releases), you can see what's planned for upcoming releases looking through the repository [milestones](https://github.com/sourcelair/xterm.js/milestones).
+Stable releases are done on an as needed basis. All current and past releases are available on this repo's [releases page](https://github.com/sourcelair/xterm.js/releases), you can see what's planned for upcoming releases looking through the repository [milestones](https://github.com/sourcelair/xterm.js/milestones).
 
 ### Beta builds
 
-Our CI releases beta builds to npm for every change that goes into master. Install the latest beta build with:
+Beta releases are continuously published off the `master` branch. Install the latest beta build with:
 
 ```bash
-npm install -S @xterm/xterm@beta
+npm install --save @xterm/xterm@beta
 ```
 
-These should generally be stable, but some bugs may slip in. We recommend using the beta build primarily to test out new features and to verify bug fixes.
+The principal implementation (VS Code) typically uses the latest or near the latest beta build. Generally they are quite stable but can potentially contain bugs or breaking changes. If stability is very important we recommend using the beta build primarily to test out new features and to verify bug fixes, unless you're tracking what's landing and are comfortable taking that risk.
 
 ## Contributing
 
-You can read the [guide on the wiki](https://github.com/xtermjs/xterm.js/wiki/Contributing) to learn how to contribute and set up xterm.js for development.
+Read [CONTRIBUTING.md](https://github.com/xtermjs/xterm.js/blob/master/CONTRIBUTING.md) to learn how to contribute to the project.
 
 ## Real-world uses
-Xterm.js is used in several world-class applications to provide great terminal experiences.
+
+Xterm.js is used in many world-class applications to provide great terminal experiences.
 
 - [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js.
 - [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile, and powerful open source code editor that provides an integrated terminal based on xterm.js.
@@ -234,7 +231,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**EmuDevz**](https://afska.github.io/emudevz): A free coding game where players learn how to build an emulator from scratch.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
-Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Note: Please add any new contributions to the end of the list only.
+Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Please add any new contributions to the end of the list.
 
 ## License Agreement
 
