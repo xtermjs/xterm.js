@@ -636,8 +636,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // send event to CoreMouseService
     function sendEvent(ev: MouseEvent | WheelEvent): boolean {
-      // get mouse coordinates
-      const pos = self._mouseService!.getMouseReportCoords(ev, self.screenElement!);
+      // Get mouse coordinates
+      const pos = self._mouseService?.getMouseReportCoords(ev, self.screenElement!);
       if (!pos) {
         return false;
       }
@@ -803,6 +803,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }));
     // force initial onProtocolChange so we dont miss early mouse requests
     this.coreMouseService.activeProtocol = this.coreMouseService.activeProtocol;
+
+    // Ensure document-level listeners are removed on dispose
+    this._register(toDisposable(() => {
+      if (requestedEvents.mouseup) {
+        this._document!.removeEventListener('mouseup', requestedEvents.mouseup);
+      }
+      if (requestedEvents.mousedrag) {
+        this._document!.removeEventListener('mousemove', requestedEvents.mousedrag);
+      }
+    }));
 
     /**
      * "Always on" event listeners.
