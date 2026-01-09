@@ -2538,6 +2538,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 53        | Overlined.                                               | #Y      |
    * | 55        | Not Overlined.                                           | #Y      |
    * | 58        | Underline color: Extended color.                         | #P[Support for RGB and indexed colors, see below.] |
+   * | 221       | Not bold (kitty extension).                              | #Y      |
+   * | 222       | Not faint (kitty extension).                             | #Y      |
    * | 90 - 97   | Bright foreground color (analogous to 30 - 37).          | #Y      |
    * | 100 - 107 | Bright background color (analogous to 40 - 47).          | #Y      |
    *
@@ -2670,6 +2672,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 55) {
         // not overline
         attr.bg &= ~BgFlags.OVERLINE;
+      } else if (p === 221) {
+        // not bold (kitty extension)
+        attr.fg &= ~FgFlags.BOLD;
+      } else if (p === 222) {
+        // not faint (kitty extension)
+        attr.bg &= ~BgFlags.DIM;
       } else if (p === 59) {
         attr.extended = attr.extended.clone();
         attr.extended.underlineColor = -1;

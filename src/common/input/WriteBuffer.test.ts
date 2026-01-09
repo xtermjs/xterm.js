@@ -106,5 +106,24 @@ describe('WriteBuffer', () => {
       wb.writeSync('1', 10);
       assert.equal(last, '11'); // 1 + 10 sub calls = 11
     });
+    it('flushSync processes all pending writes', done => {
+      wb.write('a', () => { cbStack.push('a'); });
+      wb.write('b', () => { cbStack.push('b'); });
+      wb.write('c', () => { cbStack.push('c'); });
+      wb.flushSync();
+      assert.deepEqual(stack, ['a', 'b', 'c']);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+      wb.write('x', () => { cbStack.push('x'); });
+      wb.write('', () => {
+        assert.deepEqual(stack, ['a', 'b', 'c', 'x', '']);
+        assert.deepEqual(cbStack, ['a', 'b', 'c', 'x']);
+        done();
+      });
+    });
+    it('flushSync with no pending writes is a no-op', () => {
+      wb.flushSync();
+      assert.deepEqual(stack, []);
+      assert.deepEqual(cbStack, []);
+    });
   });
 });
