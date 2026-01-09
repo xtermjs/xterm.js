@@ -282,8 +282,12 @@ export interface IDecPrivateModes {
  * Maintains per-screen stacks of enhancement flags.
  */
 export interface IKittyKeyboardState {
-  /** Current active enhancement flags */
+  /** Current active enhancement flags (for current screen) */
   flags: number;
+  /** Saved flags for main screen when alt is active */
+  mainFlags: number;
+  /** Saved flags for alternate screen when main is active */
+  altFlags: number;
   /** Stack of flags for main screen */
   mainStack: number[];
   /** Stack of flags for alternate screen */

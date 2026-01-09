@@ -2009,6 +2009,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
+          // Swap kitty keyboard flags: save main, restore alt
+          if (this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+            const state = this._coreService.kittyKeyboard;
+            state.mainFlags = state.flags;
+            state.flags = state.altFlags;
+          }
           this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
           this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(undefined);
@@ -2238,6 +2244,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
+          // Swap kitty keyboard flags: save alt, restore main
+          if (this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+            const state = this._coreService.kittyKeyboard;
+            state.altFlags = state.flags;
+            state.flags = state.mainFlags;
+          }
           // Ensure the selection manager has the correct buffer
           this._bufferService.buffers.activateNormalBuffer();
           if (params.params[i] === 1049) {
@@ -3042,6 +3054,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     const state = this._coreService.kittyKeyboard;
     const isAlt = this._bufferService.buffer === this._bufferService.buffers.alt;
     const stack = isAlt ? state.altStack : state.mainStack;
+
+    // Evict oldest entry if stack is full (DoS protection, limit of 16)
+    if (stack.length >= 16) {
+      stack.shift();
+    }
 
     // Push current flags onto stack and set new flags
     stack.push(state.flags);

@@ -116,6 +116,8 @@ export class MockCoreService implements ICoreService {
   };
   public kittyKeyboard = {
     flags: 0,
+    mainFlags: 0,
+    altFlags: 0,
     mainStack: [] as number[],
     altStack: [] as number[]
   };

@@ -28,6 +28,8 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
 
 const DEFAULT_KITTY_KEYBOARD_STATE = (): IKittyKeyboardState => ({
   flags: 0,
+  mainFlags: 0,
+  altFlags: 0,
   mainStack: [],
   altStack: []
 });

@@ -2413,62 +2413,111 @@ describe('InputHandler', () => {
       }
     });
   });
-});
 
+  describe('InputHandler - kitty keyboard', () => {
+    let bufferService: IBufferService;
+    let coreService: ICoreService;
+    let optionsService: MockOptionsService;
+    let inputHandler: TestInputHandler;
 
-describe('InputHandler - async handlers', () => {
-  let bufferService: IBufferService;
-  let coreService: ICoreService;
-  let optionsService: MockOptionsService;
-  let inputHandler: TestInputHandler;
+    beforeEach(() => {
+      optionsService = new MockOptionsService({ vtExtensions: { kittyKeyboard: true } });
+      bufferService = new BufferService(optionsService);
+      bufferService.resize(80, 30);
+      coreService = new CoreService(bufferService, new MockLogService(), optionsService);
+      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+    });
 
-  beforeEach(() => {
-    optionsService = new MockOptionsService();
-    bufferService = new BufferService(optionsService);
-    bufferService.resize(80, 30);
-    coreService = new CoreService(bufferService, new MockLogService(), optionsService);
-    coreService.onData(data => { console.log(data); });
+    describe('stack limit', () => {
+      it('should evict oldest entry when stack exceeds 16 entries', async () => {
+        for (let i = 1; i <= 20; i++) {
+          await inputHandler.parseP(`\x1b[>${i}u`);
+        }
+        assert.strictEqual(coreService.kittyKeyboard.mainStack.length, 16);
+        assert.strictEqual(coreService.kittyKeyboard.mainStack[0], 4);
+      });
+    });
 
-    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+    describe('buffer switch', () => {
+      it('should maintain separate flags for main and alt screens', async () => {
+        await inputHandler.parseP('\x1b[>5u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 5);
+        await inputHandler.parseP('\x1b[?1049h');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 0);
+        assert.strictEqual(coreService.kittyKeyboard.mainFlags, 5);
+        await inputHandler.parseP('\x1b[>7u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 7);
+        await inputHandler.parseP('\x1b[?1049l');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 5);
+        assert.strictEqual(coreService.kittyKeyboard.altFlags, 7);
+      });
+    });
+
+    describe('pop reset', () => {
+      it('should reset flags to 0 when stack is emptied', async () => {
+        await inputHandler.parseP('\x1b[>5u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 5);
+        await inputHandler.parseP('\x1b[<10u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 0);
+      });
+    });
   });
 
-  it('async CUP with CPR check', async () => {
-    const cup: number[][] = [];
-    const cpr: number[][] = [];
-    inputHandler.registerCsiHandler({ final: 'H' }, async params => {
-      cup.push(params.toArray() as number[]);
-      await new Promise(res => setTimeout(res, 50));
-      // late call of real repositioning
-      return inputHandler.cursorPosition(params);
+
+  describe('InputHandler - async handlers', () => {
+    let bufferService: IBufferService;
+    let coreService: ICoreService;
+    let optionsService: MockOptionsService;
+    let inputHandler: TestInputHandler;
+
+    beforeEach(() => {
+      optionsService = new MockOptionsService();
+      bufferService = new BufferService(optionsService);
+      bufferService.resize(80, 30);
+      coreService = new CoreService(bufferService, new MockLogService(), optionsService);
+      coreService.onData(data => { console.log(data); });
+
+      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
     });
-    coreService.onData(data => {
-      const m = data.match(/\x1b\[(.*?);(.*?)R/);
-      if (m) {
-        cpr.push([parseInt(m[1]), parseInt(m[2])]);
-      }
+
+    it('async CUP with CPR check', async () => {
+      const cup: number[][] = [];
+      const cpr: number[][] = [];
+      inputHandler.registerCsiHandler({ final: 'H' }, async params => {
+        cup.push(params.toArray() as number[]);
+        await new Promise(res => setTimeout(res, 50));
+        // late call of real repositioning
+        return inputHandler.cursorPosition(params);
+      });
+      coreService.onData(data => {
+        const m = data.match(/\x1b\[(.*?);(.*?)R/);
+        if (m) {
+          cpr.push([parseInt(m[1]), parseInt(m[2])]);
+        }
+      });
+      await inputHandler.parseP('aaa\x1b[3;4H\x1b[6nbbb\x1b[6;8H\x1b[6n');
+      assert.deepEqual(cup, cpr);
     });
-    await inputHandler.parseP('aaa\x1b[3;4H\x1b[6nbbb\x1b[6;8H\x1b[6n');
-    assert.deepEqual(cup, cpr);
-  });
-  it('async OSC between', async () => {
-    inputHandler.registerOscHandler(1000, async data => {
-      await new Promise(res => setTimeout(res, 50));
-      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
-      assert.equal(data, 'some data');
-      return true;
+    it('async OSC between', async () => {
+      inputHandler.registerOscHandler(1000, async data => {
+        await new Promise(res => setTimeout(res, 50));
+        assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+        assert.equal(data, 'some data');
+        return true;
+      });
+      await inputHandler.parseP('hello world!\r\n\x1b]1000;some data\x07second line');
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
     });
-    await inputHandler.parseP('hello world!\r\n\x1b]1000;some data\x07second line');
-    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
-  });
-  it('async DCS between', async () => {
-    inputHandler.registerDcsHandler({ final: 'a' }, async (data, params) => {
-      await new Promise(res => setTimeout(res, 50));
-      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
-      assert.equal(data, 'some data');
-      assert.deepEqual(params.toArray(), [1, 2]);
-      return true;
+    it('async DCS between', async () => {
+      inputHandler.registerDcsHandler({ final: 'a' }, async (data, params) => {
+        await new Promise(res => setTimeout(res, 50));
+        assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+        assert.equal(data, 'some data');
+        assert.deepEqual(params.toArray(), [1, 2]);
+        return true;
+      });
+      await inputHandler.parseP('hello world!\r\n\x1bP1;2asome data\x1b\\second line');
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
     });
-    await inputHandler.parseP('hello world!\r\n\x1bP1;2asome data\x1b\\second line');
-    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
   });
 });
