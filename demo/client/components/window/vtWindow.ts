@@ -22,7 +22,7 @@ export class VtWindow extends BaseWindow implements IControlWindow {
     container.appendChild(vtContainer);
 
     const vtFragment = document.createDocumentFragment();
-    const buttonSpecs: { [key: string]: { label: string; description: string; paramCount?: number } } = {
+    const buttonSpecs: { [key: string]: { label: string, description: string, paramCount?: number } } = {
       'A': { label: 'CUU ↑', description: 'Cursor Up Ps Times' },
       'B': { label: 'CUD ↓', description: 'Cursor Down Ps Times' },
       'C': { label: 'CUF →', description: 'Cursor Forward Ps Times' },

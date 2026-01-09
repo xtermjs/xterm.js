@@ -1154,7 +1154,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param respectProtect Whether to respect the protection attribute (DECSCA).
    */
   private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false, respectProtect: boolean = false): void {
-    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+    const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
+    if (!line) {
+      return;
+    }
     line.replaceCells(
       start,
       end,
@@ -1224,7 +1227,10 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
-          this._activeBuffer.lines.get(j + 1)!.isWrapped = false;
+          const nextLine = this._activeBuffer.lines.get(j + 1);
+          if (nextLine) {
+            nextLine.isWrapped = false;
+          }
         }
         while (j--) {
           this._resetBufferLine(j, respectProtect);

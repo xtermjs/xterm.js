@@ -584,21 +584,18 @@ declare module '@xterm/headless' {
     readonly cols: number;
 
     /**
-     * (EXPERIMENTAL) The terminal's current buffer, this might be either the
-     * normal buffer or the alt buffer depending on what's running in the
-     * terminal.
+     * Access to the terminal's normal and alt buffer.
      */
     readonly buffer: IBufferNamespace;
 
     /**
-     * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
-     * buffer is active this will always return [].
+     * Get all markers registered against the buffer. If the alt buffer is
+     * active this will always return [].
      */
     readonly markers: ReadonlyArray<IMarker>;
 
     /**
-     * (EXPERIMENTAL) Get the parser interface to register
-     * custom escape sequence handlers.
+     * Get the parser interface to register custom escape sequence handlers.
      */
     readonly parser: IParser;
 

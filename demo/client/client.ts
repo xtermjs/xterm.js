@@ -18,6 +18,7 @@ import { AttachAddon } from '@xterm/addon-attach';
 import { AddonImageWindow } from './components/window/addonImageWindow';
 import { AddonSearchWindow } from './components/window/addonSearchWindow';
 import { AddonSerializeWindow } from './components/window/addonSerializeWindow';
+import { AddonWebFontsWindow } from './components/window/addonWebFontsWindow';
 import { AddonsWindow } from './components/window/addonsWindow';
 import { CellInspectorWindow } from './components/window/cellInspectorWindow';
 import { ControlBar } from './components/controlBar';
@@ -32,6 +33,7 @@ import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { ProgressAddon } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
+import { WebFontsAddon } from '@xterm/addon-web-fonts';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -75,6 +77,7 @@ const addons: AddonCollection = {
   progress: { name: 'progress', ctor: ProgressAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
+  webFonts: { name: 'webFonts', ctor: WebFontsAddon, canChange: true },
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
@@ -213,7 +216,8 @@ if (document.location.pathname === '/test') {
   addonSearchWindow = controlBar.registerWindow(new AddonSearchWindow(typedTerm, addons), { afterId: 'addons', hidden: true, italics: true });
   controlBar.registerWindow(new AddonSerializeWindow(typedTerm, addons), { afterId: 'addon-search', hidden: true, italics: true });
   controlBar.registerWindow(new AddonImageWindow(typedTerm, addons), { afterId: 'addon-serialize', hidden: true, italics: true });
-  addonWebglWindow = controlBar.registerWindow(new WebglWindow(typedTerm, addons), { afterId: 'addon-image', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonWebFontsWindow(typedTerm, addons), { afterId: 'addon-image', hidden: true, italics: true });
+  addonWebglWindow = controlBar.registerWindow(new WebglWindow(typedTerm, addons), { afterId: 'addon-web-fonts', hidden: true, italics: true });
   controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }), { afterId: 'options' });
   actionElements = {
     findNext: addonSearchWindow.findNextInput,
@@ -229,6 +233,7 @@ if (document.location.pathname === '/test') {
   controlBar.setTabVisible('addon-search', true);
   controlBar.setTabVisible('addon-serialize', true);
   controlBar.setTabVisible('addon-image', true);
+  controlBar.setTabVisible('addon-web-fonts', true);
   addonWebglWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
   addons.webgl.instance.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
   addons.webgl.instance.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
@@ -295,6 +300,7 @@ function createTerminal(): Terminal {
     console.warn(e);
   }
   addons.webLinks.instance = new WebLinksAddon();
+  addons.webFonts.instance = new WebFontsAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
   typedTerm.loadAddon(addons.progress.instance);
@@ -302,6 +308,7 @@ function createTerminal(): Terminal {
   typedTerm.loadAddon(addons.serialize.instance);
   typedTerm.loadAddon(addons.unicodeGraphemes.instance);
   typedTerm.loadAddon(addons.webLinks.instance);
+  typedTerm.loadAddon(addons.webFonts.instance);
   typedTerm.loadAddon(addons.clipboard.instance);
 
   window.term = term;  // Expose `term` to window for debugging purposes

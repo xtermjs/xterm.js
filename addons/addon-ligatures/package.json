@@ -32,11 +32,14 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "font-finder": "^1.1.0",
-    "font-ligatures": "^1.4.1"
+    "lru-cache": "^6.0.0",
+    "opentype.js": "^0.8.0"
   },
   "devDependencies": {
+    "@types/lru-cache": "^5.1.0",
+    "@types/opentype.js": "^0.7.0",
     "axios": "^1.6.0",
+    "font-finder": "^1.1.0",
     "mkdirp": "0.5.5",
     "yauzl": "^2.10.0"
   }
