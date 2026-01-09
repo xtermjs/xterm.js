@@ -440,9 +440,10 @@ declare module '@xterm/xterm' {
    */
   export interface IVtExtensions {
     /**
-     * Whether the [kitty keyboard protocol][0] (`CSI =|?|>|< u`) is enabled. When
-     * enabled, the terminal will respond to keyboard protocol queries and allow
-     * programs to enable enhanced keyboard reporting. The default is false.
+     * Whether the [kitty keyboard protocol][0] (`CSI =|?|>|< u`) is enabled.
+     * When enabled, the terminal will respond to keyboard protocol queries and
+     * allow programs to enable enhanced keyboard reporting. The default is
+     * false.
      *
      * [0]: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
      */
