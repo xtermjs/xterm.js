@@ -264,16 +264,17 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerCsiHandler({ final: 's' }, params => this.saveCursor(params));
     this._parser.registerCsiHandler({ final: 't' }, params => this.windowOptions(params));
     this._parser.registerCsiHandler({ final: 'u' }, params => this.restoreCursor(params));
-    // Kitty keyboard protocol handlers
-    this._parser.registerCsiHandler({ prefix: '=', final: 'u' }, params => this.kittyKeyboardSet(params));
-    this._parser.registerCsiHandler({ prefix: '?', final: 'u' }, params => this.kittyKeyboardQuery(params));
-    this._parser.registerCsiHandler({ prefix: '>', final: 'u' }, params => this.kittyKeyboardPush(params));
-    this._parser.registerCsiHandler({ prefix: '<', final: 'u' }, params => this.kittyKeyboardPop(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '}' }, params => this.insertColumns(params));
     this._parser.registerCsiHandler({ intermediates: '\'', final: '~' }, params => this.deleteColumns(params));
     this._parser.registerCsiHandler({ intermediates: '"', final: 'q' }, params => this.selectProtected(params));
     this._parser.registerCsiHandler({ intermediates: '$', final: 'p' }, params => this.requestMode(params, true));
     this._parser.registerCsiHandler({ prefix: '?', intermediates: '$', final: 'p' }, params => this.requestMode(params, false));
+
+    // Kitty keyboard protocol handlers
+    this._parser.registerCsiHandler({ prefix: '=', final: 'u' }, params => this.kittyKeyboardSet(params));
+    this._parser.registerCsiHandler({ prefix: '?', final: 'u' }, params => this.kittyKeyboardQuery(params));
+    this._parser.registerCsiHandler({ prefix: '>', final: 'u' }, params => this.kittyKeyboardPush(params));
+    this._parser.registerCsiHandler({ prefix: '<', final: 'u' }, params => this.kittyKeyboardPop(params));
 
     /**
      * execute handler
