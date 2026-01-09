@@ -547,115 +547,42 @@ describe('KittyKeyboard', () => {
       });
     });
 
-    describe('legacy ctrl mapping', () => {
-      it('ctrl+a → 0x01', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x01');
+    describe('REPORT_ALTERNATE_KEYS flag', () => {
+      const flags = KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES | KittyKeyboardFlags.REPORT_ALTERNATE_KEYS;
+
+      it('Shift+a includes shifted key → CSI 97:65 ; 2 u', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'A', shiftKey: true, code: 'KeyA' }), flags);
+        assert.strictEqual(result.key, '\x1b[97:65;2u');
       });
 
-      it('ctrl+b → 0x02', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'b', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x02');
+      it('unshifted key has no alternate', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a', code: 'KeyA' }), flags);
+        assert.strictEqual(result.key, '\x1b[97u');
       });
 
-      it('ctrl+c → 0x03', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'c', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x03');
+      it('Shift+5 includes shifted key → CSI 53:37 ; 2 u', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: '%', shiftKey: true, code: 'Digit5' }), flags);
+        assert.strictEqual(result.key, '\x1b[53:37;2u');
       });
 
-      it('ctrl+z → 0x1A', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'z', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1a');
+      it('functional keys have no shifted alternate', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'Escape', shiftKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[27;2u');
+      });
+    });
+
+    describe('REPORT_ALTERNATE_KEYS with REPORT_ASSOCIATED_TEXT', () => {
+      const flags = KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES | KittyKeyboardFlags.REPORT_ALTERNATE_KEYS | KittyKeyboardFlags.REPORT_ASSOCIATED_TEXT;
+
+      it('Shift+a → CSI 97:65 ; 2 ; 65 u', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'A', shiftKey: true, code: 'KeyA' }), flags);
+        assert.strictEqual(result.key, '\x1b[97:65;2;65u');
       });
 
-      it('ctrl+space → 0x00', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: ' ', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x00');
-      });
-
-      it('ctrl+[ → 0x1B (ESC)', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '[', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1b');
-      });
-
-      it('ctrl+\\ → 0x1C', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '\\', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1c');
-      });
-
-      it('ctrl+] → 0x1D', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: ']', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1d');
-      });
-
-      it('ctrl+^ → 0x1E', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '^', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1e');
-      });
-
-      it('ctrl+_ → 0x1F', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '_', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1f');
-      });
-
-      it('ctrl+2 → 0x00', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '2', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x00');
-      });
-
-      it('ctrl+3 → 0x1B', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '3', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1b');
-      });
-
-      it('ctrl+4 → 0x1C', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '4', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1c');
-      });
-
-      it('ctrl+5 → 0x1D', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '5', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1d');
-      });
-
-      it('ctrl+6 → 0x1E', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '6', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1e');
-      });
-
-      it('ctrl+7 → 0x1F', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '7', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1f');
-      });
-
-      it('ctrl+8 → 0x7F', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '8', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x7f');
-      });
-
-      it('ctrl+/ → 0x1F', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '/', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x1f');
-      });
-
-      it('ctrl+? → 0x7F', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: '?', ctrlKey: true }), 0);
-        assert.strictEqual(result.key, '\x7f');
-      });
-
-      it('alt+a → ESC a', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a', altKey: true }), 0);
-        assert.strictEqual(result.key, '\x1ba');
-      });
-
-      it('alt+A → ESC A', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'A', altKey: true, shiftKey: true }), 0);
-        assert.strictEqual(result.key, '\x1bA');
-      });
-
-      it('ctrl+alt+a → ESC ctrl+a', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a', ctrlKey: true, altKey: true }), 0);
-        assert.strictEqual(result.key, '\x1b\x01');
+      it('Shift+a release → CSI 97:65 ; 2:3 u (no text)', () => {
+        const flagsWithEvents = flags | KittyKeyboardFlags.REPORT_EVENT_TYPES;
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'A', shiftKey: true, code: 'KeyA' }), flagsWithEvents, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[97:65;2:3u');
       });
     });
 

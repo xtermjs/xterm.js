@@ -1118,8 +1118,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
 
     // HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
-    // letters cannot be input while caps lock is on.
-    if (event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
+    // letters cannot be input while caps lock is on. Skip this hack when using kitty protocol
+    // as it needs to send proper CSI u sequences for all key events.
+    if (!useKitty && event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
       if (event.key.charCodeAt(0) >= 65 && event.key.charCodeAt(0) <= 90) {
         return true;
       }

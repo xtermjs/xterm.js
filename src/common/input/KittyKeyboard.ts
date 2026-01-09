@@ -59,35 +59,13 @@ const FUNCTIONAL_KEY_CODES: { [key: string]: number } = {
   'Enter': 13,
   'Tab': 9,
   'Backspace': 127,
-  'Insert': 2,
-  'Delete': 3,
-  'ArrowLeft': 57419,
-  'ArrowRight': 57421,
-  'ArrowUp': 57417,
-  'ArrowDown': 57420,
-  'PageUp': 57423,
-  'PageDown': 57424,
-  'Home': 57416,
-  'End': 57418,
   'CapsLock': 57358,
   'ScrollLock': 57359,
   'NumLock': 57360,
   'PrintScreen': 57361,
   'Pause': 57362,
   'ContextMenu': 57363,
-  // F1-F35
-  'F1': 57364,
-  'F2': 57365,
-  'F3': 57366,
-  'F4': 57367,
-  'F5': 57368,
-  'F6': 57369,
-  'F7': 57370,
-  'F8': 57371,
-  'F9': 57372,
-  'F10': 57373,
-  'F11': 57374,
-  'F12': 57375,
+  // F13-F35 (F1-F12 use legacy encoding)
   'F13': 57376,
   'F14': 57377,
   'F15': 57378,
@@ -136,6 +114,46 @@ const FUNCTIONAL_KEY_CODES: { [key: string]: number } = {
   'AudioVolumeDown': 57438,
   'AudioVolumeUp': 57439,
   'AudioVolumeMute': 57440
+};
+
+/**
+ * Keys that use CSI ~ encoding with a number parameter.
+ */
+const CSI_TILDE_KEYS: { [key: string]: number } = {
+  'Insert': 2,
+  'Delete': 3,
+  'PageUp': 5,
+  'PageDown': 6,
+  'F5': 15,
+  'F6': 17,
+  'F7': 18,
+  'F8': 19,
+  'F9': 20,
+  'F10': 21,
+  'F11': 23,
+  'F12': 24
+};
+
+/**
+ * Keys that use CSI letter encoding (arrows, Home, End).
+ */
+const CSI_LETTER_KEYS: { [key: string]: string } = {
+  'ArrowUp': 'A',
+  'ArrowDown': 'B',
+  'ArrowRight': 'C',
+  'ArrowLeft': 'D',
+  'Home': 'H',
+  'End': 'F'
+};
+
+/**
+ * Function keys F1-F4 use SS3 encoding without modifiers.
+ */
+const SS3_FUNCTION_KEYS: { [key: string]: string } = {
+  'F1': 'P',
+  'F2': 'Q',
+  'F3': 'R',
+  'F4': 'S'
 };
 
 /**
@@ -194,6 +212,8 @@ function encodeModifiers(ev: IKeyboardEvent): number {
 
 /**
  * Get the unicode key code for a keyboard event.
+ * Returns the lowercase codepoint for letters.
+ * For shifted keys, uses the code property to get the base key.
  */
 function getKeyCode(ev: IKeyboardEvent): number | undefined {
   // Check for numpad first
@@ -214,9 +234,31 @@ function getKeyCode(ev: IKeyboardEvent): number | undefined {
     return funcCode;
   }
 
+  // For shifted keys, use code property to get base key
+  if (ev.shiftKey && ev.code) {
+    // Handle Digit0-Digit9
+    if (ev.code.startsWith('Digit') && ev.code.length === 6) {
+      const digit = ev.code.charAt(5);
+      if (digit >= '0' && digit <= '9') {
+        return digit.charCodeAt(0);
+      }
+    }
+    // Handle KeyA-KeyZ
+    if (ev.code.startsWith('Key') && ev.code.length === 4) {
+      const letter = ev.code.charAt(3).toLowerCase();
+      return letter.charCodeAt(0);
+    }
+  }
+
   // For regular keys, use the key character's codepoint
+  // Always use lowercase for letters (per spec)
   if (ev.key.length === 1) {
-    return ev.key.codePointAt(0);
+    const code = ev.key.codePointAt(0)!;
+    // Convert uppercase A-Z to lowercase a-z
+    if (code >= 65 && code <= 90) {
+      return code + 32;
+    }
+    return code;
   }
 
   return undefined;
@@ -248,36 +290,64 @@ export function evaluateKeyboardEventKitty(
     key: undefined
   };
 
-  // Get the key code
+  const modifiers = encodeModifiers(ev);
+  const isMod = isModifierKey(ev);
+  const reportEventTypes = !!(flags & KittyKeyboardFlags.REPORT_EVENT_TYPES);
+
+  // Don't report release events unless flag is set
+  if (!reportEventTypes && eventType === KittyKeyboardEventType.RELEASE) {
+    return result;
+  }
+
+  // Modifier-only keys require REPORT_ALL_KEYS_AS_ESCAPE_CODES or REPORT_EVENT_TYPES
+  if (isMod && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES) && !reportEventTypes) {
+    return result;
+  }
+
+  // Check for CSI letter keys (arrows, Home, End)
+  const csiLetter = CSI_LETTER_KEYS[ev.key];
+  if (csiLetter) {
+    result.key = buildCsiLetterSequence(csiLetter, modifiers, eventType, reportEventTypes);
+    result.cancel = true;
+    return result;
+  }
+
+  // Check for SS3/CSI function keys (F1-F4)
+  const ss3Letter = SS3_FUNCTION_KEYS[ev.key];
+  if (ss3Letter) {
+    result.key = buildSs3Sequence(ss3Letter, modifiers, eventType, reportEventTypes);
+    result.cancel = true;
+    return result;
+  }
+
+  // Check for CSI ~ keys (Insert, Delete, PageUp/Down, F5-F12)
+  const tildeCode = CSI_TILDE_KEYS[ev.key];
+  if (tildeCode !== undefined) {
+    result.key = buildCsiTildeSequence(tildeCode, modifiers, eventType, reportEventTypes);
+    result.cancel = true;
+    return result;
+  }
+
+  // Get the key code for CSI u encoding
   const keyCode = getKeyCode(ev);
   if (keyCode === undefined) {
     return result;
   }
 
-  const modifiers = encodeModifiers(ev);
   const isFunc = FUNCTIONAL_KEY_CODES[ev.key] !== undefined || getNumpadKeyCode(ev) !== undefined;
-  const isMod = isModifierKey(ev);
 
-  // Determine if we should use CSI u encoding or can use legacy
+  // Determine if we should use CSI u encoding
   let useCsiU = false;
 
   if (flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES) {
-    // All keys use CSI u
     useCsiU = true;
-  } else if (flags & KittyKeyboardFlags.REPORT_EVENT_TYPES) {
-    // When reporting event types, use CSI u for all keys
+  } else if (reportEventTypes) {
     useCsiU = true;
   } else if (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES) {
-    // Modifier-only keys are never reported without REPORT_EVENT_TYPES
-    if (isMod) {
-      return result;
-    }
+    // Modifier-only keys already handled above
     // Use CSI u for keys that would be ambiguous in legacy encoding
-    if (keyCode === 27 || keyCode === 127 || keyCode === 13) {
-      // Escape, Backspace, Enter
-      useCsiU = true;
-    } else if (keyCode === 9 && ev.shiftKey) {
-      // Shift+Tab
+    if (keyCode === 27 || keyCode === 127 || keyCode === 13 || keyCode === 9 || keyCode === 32) {
+      // Escape, Backspace, Enter, Tab, Space
       useCsiU = true;
     } else if (isFunc) {
       useCsiU = true;
@@ -287,56 +357,152 @@ export function evaluateKeyboardEventKitty(
     }
   }
 
-  // Determine if we should report this event type
-  const reportEventTypes = !!(flags & KittyKeyboardFlags.REPORT_EVENT_TYPES);
-  if (!reportEventTypes && eventType === KittyKeyboardEventType.RELEASE) {
-    // Don't report release events unless flag is set
-    return result;
-  }
-
   if (useCsiU) {
-    // Build CSI u sequence: CSI keycode ; modifiers:event-type u
-    // Format: CSI <keycode>[:<shifted>][:<base>] ; <modifiers>[:<event>] u
-    let seq = C0.ESC + '[' + keyCode;
-
-    // Check if we need associated text (press and repeat events, not release)
-    const reportAssociatedText = !!(flags & KittyKeyboardFlags.REPORT_ASSOCIATED_TEXT) &&
-      eventType !== KittyKeyboardEventType.RELEASE && ev.key.length === 1 && !isFunc && !isMod;
-    const textCode = reportAssociatedText ? ev.key.codePointAt(0) : undefined;
-
-    // When text is present, don't include event type marker (even for repeat)
-    // Release events always need event type marker
-    const needsEventType = reportEventTypes && eventType !== KittyKeyboardEventType.PRESS && textCode === undefined;
-    if (modifiers > 0 || needsEventType || textCode !== undefined) {
-      seq += ';';
-      // Use 1 as base when event type needed but no modifiers (kitty format: 1 + modifier_bits)
-      if (modifiers > 0) {
-        seq += modifiers;
-      } else if (needsEventType) {
-        seq += '1';
-      }
-      if (needsEventType) {
-        seq += ':' + eventType;
-      }
-    }
-
-    // Add associated text if requested
-    if (textCode !== undefined) {
-      seq += ';' + textCode;
-    }
-
-    seq += 'u';
-    result.key = seq;
+    result.key = buildCsiUSequence(ev, keyCode, modifiers, eventType, flags, isFunc, isMod);
     result.cancel = true;
   } else {
     // Legacy-compatible encoding for text keys without modifiers
     if (ev.key.length === 1 && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
       result.key = ev.key;
     }
-    // Otherwise no key sequence (will fall through to legacy handling)
   }
 
   return result;
+}
+
+/**
+ * Build CSI letter sequence for arrow keys, Home, End.
+ * Format: CSI [1;mod] letter
+ */
+function buildCsiLetterSequence(
+  letter: string,
+  modifiers: number,
+  eventType: KittyKeyboardEventType,
+  reportEventTypes: boolean
+): string {
+  const needsEventType = reportEventTypes && eventType !== KittyKeyboardEventType.PRESS;
+
+  if (modifiers > 0 || needsEventType) {
+    let seq = C0.ESC + '[1;' + (modifiers > 0 ? modifiers : '1');
+    if (needsEventType) {
+      seq += ':' + eventType;
+    }
+    seq += letter;
+    return seq;
+  }
+  return C0.ESC + '[' + letter;
+}
+
+/**
+ * Build SS3 sequence for F1-F4.
+ * Without modifiers: SS3 letter
+ * With modifiers: CSI 1;mod letter
+ */
+function buildSs3Sequence(
+  letter: string,
+  modifiers: number,
+  eventType: KittyKeyboardEventType,
+  reportEventTypes: boolean
+): string {
+  const needsEventType = reportEventTypes && eventType !== KittyKeyboardEventType.PRESS;
+
+  if (modifiers > 0 || needsEventType) {
+    let seq = C0.ESC + '[1;' + (modifiers > 0 ? modifiers : '1');
+    if (needsEventType) {
+      seq += ':' + eventType;
+    }
+    seq += letter;
+    return seq;
+  }
+  return C0.ESC + 'O' + letter;
+}
+
+/**
+ * Build CSI ~ sequence for Insert, Delete, PageUp/Down, F5-F12.
+ * Format: CSI number [;mod[:event]] ~
+ */
+function buildCsiTildeSequence(
+  number: number,
+  modifiers: number,
+  eventType: KittyKeyboardEventType,
+  reportEventTypes: boolean
+): string {
+  const needsEventType = reportEventTypes && eventType !== KittyKeyboardEventType.PRESS;
+
+  let seq = C0.ESC + '[' + number;
+  if (modifiers > 0 || needsEventType) {
+    seq += ';' + (modifiers > 0 ? modifiers : '1');
+    if (needsEventType) {
+      seq += ':' + eventType;
+    }
+  }
+  seq += '~';
+  return seq;
+}
+
+/**
+ * Build CSI u sequence.
+ * Format: CSI keycode[:shifted[:base]] [;mod[:event][;text]] u
+ */
+function buildCsiUSequence(
+  ev: IKeyboardEvent,
+  keyCode: number,
+  modifiers: number,
+  eventType: KittyKeyboardEventType,
+  flags: number,
+  isFunc: boolean,
+  isMod: boolean
+): string {
+  const reportEventTypes = !!(flags & KittyKeyboardFlags.REPORT_EVENT_TYPES);
+  const reportAlternateKeys = !!(flags & KittyKeyboardFlags.REPORT_ALTERNATE_KEYS);
+
+  let seq = C0.ESC + '[' + keyCode;
+
+  // Add shifted key alternate if REPORT_ALTERNATE_KEYS is set and shift is pressed
+  // Only for text-producing keys (not functional or modifier keys)
+  let shiftedKey: number | undefined;
+  if (reportAlternateKeys && ev.shiftKey && ev.key.length === 1 && !isFunc && !isMod) {
+    shiftedKey = ev.key.codePointAt(0);
+    seq += ':' + shiftedKey;
+  }
+
+  // Check if we need associated text (press and repeat events, not release)
+  // Only for text-producing keys (not functional or modifier keys)
+  // Also don't include text when ctrl is pressed (produces control code)
+  const reportAssociatedText = !!(flags & KittyKeyboardFlags.REPORT_ASSOCIATED_TEXT) &&
+    eventType !== KittyKeyboardEventType.RELEASE &&
+    ev.key.length === 1 &&
+    !isFunc &&
+    !isMod &&
+    !ev.ctrlKey;
+  const textCode = reportAssociatedText ? ev.key.codePointAt(0) : undefined;
+
+  // Determine if we need event type suffix
+  // For repeat: only include :2 when there's no text (text implies it's still useful input)
+  // For release: always include :3
+  const needsEventType = reportEventTypes &&
+    eventType !== KittyKeyboardEventType.PRESS &&
+    (eventType === KittyKeyboardEventType.RELEASE || textCode === undefined);
+
+  if (modifiers > 0 || needsEventType || textCode !== undefined) {
+    seq += ';';
+    if (modifiers > 0) {
+      seq += modifiers;
+    } else if (needsEventType) {
+      seq += '1';
+    }
+    if (needsEventType) {
+      seq += ':' + eventType;
+    }
+  }
+
+  // Add associated text if requested
+  if (textCode !== undefined) {
+    seq += ';' + textCode;
+  }
+
+  seq += 'u';
+  return seq;
 }
 
 /**
