@@ -38,6 +38,9 @@ export class SearchLineCache extends Disposable {
   private _linesCache: LineCacheEntry[] | undefined;
   private _linesCacheTimeout = this._register(new MutableDisposable());
   private _linesCacheDisposables = this._register(new MutableDisposable());
+  // Track access to avoid recreating a timeout on every init call which occurs once per search
+  // result (findNext/findPrevious -> _highlightAllMatches -> find loop).
+  private _lastAccessTimestamp = 0;
 
   constructor(private readonly _terminal: Terminal) {
     super();
@@ -57,13 +60,32 @@ export class SearchLineCache extends Disposable {
       );
     }
 
-    this._linesCacheTimeout.value = disposableTimeout(() => this._destroyLinesCache(), Constants.LINES_CACHE_TIME_TO_LIVE);
+    this._lastAccessTimestamp = Date.now();
+    if (!this._linesCacheTimeout.value) {
+      this._scheduleLinesCacheTimeout(Constants.LINES_CACHE_TIME_TO_LIVE);
+    }
   }
 
   private _destroyLinesCache(): void {
     this._linesCache = undefined;
+    this._lastAccessTimestamp = 0;
     this._linesCacheDisposables.clear();
     this._linesCacheTimeout.clear();
+  }
+
+  private _scheduleLinesCacheTimeout(delay: number): void {
+    this._linesCacheTimeout.value = disposableTimeout(() => {
+      if (!this._linesCache) {
+        return;
+      }
+      const now = Date.now();
+      const elapsed = now - this._lastAccessTimestamp;
+      if (elapsed >= Constants.LINES_CACHE_TIME_TO_LIVE) {
+        this._destroyLinesCache();
+        return;
+      }
+      this._scheduleLinesCacheTimeout(Constants.LINES_CACHE_TIME_TO_LIVE - elapsed);
+    }, delay);
   }
 
   public getLineFromCache(row: number): LineCacheEntry | undefined {
