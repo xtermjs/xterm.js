@@ -98,12 +98,12 @@ describe('KittyKeyboard', () => {
 
       it('should include event type for repeat events', () => {
         const result = evaluateKeyboardEventKitty(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.REPEAT);
-        assert.strictEqual(result.key, '\x1b[97;:2u');
+        assert.strictEqual(result.key, '\x1b[97;1:2u');
       });
 
       it('should include event type for release events', () => {
         const result = evaluateKeyboardEventKitty(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.RELEASE);
-        assert.strictEqual(result.key, '\x1b[97;:3u');
+        assert.strictEqual(result.key, '\x1b[97;1:3u');
       });
 
       it('should include modifiers and event type', () => {
@@ -157,6 +157,12 @@ describe('KittyKeyboard', () => {
         const result = evaluateKeyboardEventKitty(createEvent({ key: 'Control', code: 'ControlRight', ctrlKey: true }), flags);
         assert.strictEqual(result.key, '\x1b[57448;5u');
       });
+
+      it('should not report modifier-only keys without REPORT_EVENT_TYPES', () => {
+        const flagsNoEventTypes = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES;
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: true }), flagsNoEventTypes);
+        assert.strictEqual(result.key, undefined);
+      });
     });
 
     describe('release events without REPORT_EVENT_TYPES', () => {
@@ -165,6 +171,47 @@ describe('KittyKeyboard', () => {
       it('should not generate key sequence for release events', () => {
         const result = evaluateKeyboardEventKitty(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, undefined);
+      });
+    });
+
+    describe('with REPORT_ASSOCIATED_TEXT flag', () => {
+      const flags = KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES | KittyKeyboardFlags.REPORT_ASSOCIATED_TEXT;
+
+      it('should include text codepoint for regular keys', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a' }), flags);
+        assert.strictEqual(result.key, '\x1b[97;;97u');
+      });
+
+      it('should include text codepoint even when same as keycode', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'b' }), flags);
+        assert.strictEqual(result.key, '\x1b[98;;98u');
+      });
+
+      it('should include modifier and text codepoint together', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a', shiftKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[97;2;97u');
+      });
+
+      it('should include text on repeat events', () => {
+        const flagsWithEvents = flags | KittyKeyboardFlags.REPORT_EVENT_TYPES;
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a' }), flagsWithEvents, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[97;;97u');
+      });
+
+      it('should not include text on release events', () => {
+        const flagsWithEvents = flags | KittyKeyboardFlags.REPORT_EVENT_TYPES;
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a' }), flagsWithEvents, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[97;1:3u');
+      });
+
+      it('should not include text for functional keys', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'Escape' }), flags);
+        assert.strictEqual(result.key, '\x1b[27u');
+      });
+
+      it('should not include text for modifier keys', () => {
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[57441;2u');
       });
     });
   });

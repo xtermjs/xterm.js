@@ -268,16 +268,12 @@ export function evaluateKeyboardEventKitty(
     // When reporting event types, use CSI u for all keys
     useCsiU = true;
   } else if (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES) {
-    // Use CSI u for:
-    // - Modifier-only keys when reporting event types
-    // - Keys that would be ambiguous in legacy encoding
-    // - Escape key
-    // - Backspace
-    // - Tab (when shifted)
-    // - Enter
-    if (isMod && (flags & KittyKeyboardFlags.REPORT_EVENT_TYPES)) {
-      useCsiU = true;
-    } else if (keyCode === 27 || keyCode === 127 || keyCode === 13) {
+    // Modifier-only keys are never reported without REPORT_EVENT_TYPES
+    if (isMod) {
+      return result;
+    }
+    // Use CSI u for keys that would be ambiguous in legacy encoding
+    if (keyCode === 27 || keyCode === 127 || keyCode === 13) {
       // Escape, Backspace, Enter
       useCsiU = true;
     } else if (keyCode === 9 && ev.shiftKey) {
@@ -303,27 +299,30 @@ export function evaluateKeyboardEventKitty(
     // Format: CSI <keycode>[:<shifted>][:<base>] ; <modifiers>[:<event>] u
     let seq = C0.ESC + '[' + keyCode;
 
-    // Add modifiers and event type
-    if (modifiers > 0 || (reportEventTypes && eventType !== KittyKeyboardEventType.PRESS)) {
+    // Check if we need associated text (press and repeat events, not release)
+    const reportAssociatedText = !!(flags & KittyKeyboardFlags.REPORT_ASSOCIATED_TEXT) &&
+      eventType !== KittyKeyboardEventType.RELEASE && ev.key.length === 1 && !isFunc && !isMod;
+    const textCode = reportAssociatedText ? ev.key.codePointAt(0) : undefined;
+
+    // When text is present, don't include event type marker (even for repeat)
+    // Release events always need event type marker
+    const needsEventType = reportEventTypes && eventType !== KittyKeyboardEventType.PRESS && textCode === undefined;
+    if (modifiers > 0 || needsEventType || textCode !== undefined) {
       seq += ';';
+      // Use 1 as base when event type needed but no modifiers (kitty format: 1 + modifier_bits)
       if (modifiers > 0) {
         seq += modifiers;
+      } else if (needsEventType) {
+        seq += '1';
       }
-      if (reportEventTypes && eventType !== KittyKeyboardEventType.PRESS) {
+      if (needsEventType) {
         seq += ':' + eventType;
       }
     }
 
-    // Add associated text if requested and available
-    if ((flags & KittyKeyboardFlags.REPORT_ASSOCIATED_TEXT) && ev.key.length === 1 && !isFunc && !isMod) {
-      const textCode = ev.key.codePointAt(0);
-      if (textCode !== undefined && textCode !== keyCode) {
-        // Append text as ; text u
-        if (!seq.includes(';')) {
-          seq += ';';
-        }
-        seq += ';' + textCode;
-      }
+    // Add associated text if requested
+    if (textCode !== undefined) {
+      seq += ';' + textCode;
     }
 
     seq += 'u';

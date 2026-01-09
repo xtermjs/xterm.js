@@ -610,6 +610,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
+
+    // Emit kitty keyboard protocol support notification (31 = all flags supported)
+    this.coreService.triggerDataEvent(`${C0.ESC}[>31u`);
   }
 
   private _createRenderer(): IRenderer {

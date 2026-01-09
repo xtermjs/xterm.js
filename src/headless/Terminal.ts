@@ -24,6 +24,7 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/CoreTerminal';
+import { C0 } from 'common/data/EscapeSequences';
 import { IMarker, ITerminalOptions } from 'common/Types';
 import { Emitter, Event } from 'vs/base/common/event';
 
@@ -54,6 +55,9 @@ export class Terminal extends CoreTerminal {
     this._register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
     this._register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
     this._register(Event.forward(Event.map(this._inputHandler.onRequestRefreshRows, e => ({ start: e?.start ?? 0, end: e?.end ?? this.rows - 1 })), this._onRender));
+
+    // Emit kitty keyboard protocol support notification (31 = all flags supported)
+    this.coreService.triggerDataEvent(`${C0.ESC}[>31u`);
   }
 
   /**
