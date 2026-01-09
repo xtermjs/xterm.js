@@ -119,8 +119,12 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       'overviewRuler',
       'quirks',
       'theme',
+      'vtExtensions',
       'windowOptions',
       'windowsPty',
+    ];
+    const nestedBooleanOptions: { label: string, parent: string, prop: string }[] = [
+      { label: 'vtExtensions.kittyKeyboard', parent: 'vtExtensions', prop: 'kittyKeyboard' }
     ];
     const stringOptions: { [key: string]: string[] | null } = {
       cursorStyle: ['block', 'underline', 'bar'],
@@ -156,6 +160,10 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
     booleanOptions.forEach(o => {
       html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${this._terminal.options[o] ? 'checked' : ''}/> ${o}</label></div>`;
     });
+    nestedBooleanOptions.forEach(({ label, parent, prop }) => {
+      const checked = this._terminal.options[parent]?.[prop] ?? false;
+      html += `<div class="option"><label><input id="opt-${label.replace('.', '-')}" type="checkbox" ${checked ? 'checked' : ''}/> ${label}</label></div>`;
+    });
     html += '</div><div class="option-group">';
     numberOptions.forEach(o => {
       html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${this._terminal.options[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
@@ -185,6 +193,13 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
           this._terminal.options.theme = this._getTheme();
           this._handlers.updateTerminalContainerBackground();
         }
+      });
+    });
+    nestedBooleanOptions.forEach(({ label, parent, prop }) => {
+      const input = document.getElementById(`opt-${label.replace('.', '-')}`) as HTMLInputElement;
+      addDomListener(input, 'change', () => {
+        console.log('change', label, input.checked);
+        this._terminal.options[parent] = { ...this._terminal.options[parent], [prop]: input.checked };
       });
     });
     numberOptions.forEach(o => {
