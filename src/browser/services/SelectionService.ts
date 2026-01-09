@@ -532,6 +532,9 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   private _handleSingleClick(event: MouseEvent): void {
+    // Track if there was a selection before clearing
+    const hadSelection = this.hasSelection;
+
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
     this._activeSelectionMode = this.shouldColumnSelect(event) ? SelectionMode.COLUMN : SelectionMode.NORMAL;
@@ -542,6 +545,11 @@ export class SelectionService extends Disposable implements ISelectionService {
       return;
     }
     this._model.selectionEnd = undefined;
+
+    // Fire selection change event if a selection was cleared
+    if (hadSelection) {
+      this._fireOnSelectionChange(this._model.finalSelectionStart, this._model.finalSelectionEnd, false);
+    }
 
     // Ensure the line exists
     const line = this._bufferService.buffer.lines.get(this._model.selectionStart[1]);
