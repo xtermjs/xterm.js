@@ -200,6 +200,12 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
+     * Controls the visibility and style of the overview ruler which visualizes
+     * decorations underneath the scroll bar.
+     */
+    overviewRuler?: IOverviewRulerOptions;
+
+    /**
      * Control various quirks features that are either non-standard or standard
      * in but generally rejected in modern terminals.
      */
@@ -285,6 +291,11 @@ declare module '@xterm/xterm' {
     theme?: ITheme;
 
     /**
+     * Enable various VT extensions. All extensions are disabled by default.
+     */
+    vtExtensions?: IVtExtensions;
+
+    /**
      * Compatibility information when the pty is known to be hosted on Windows.
      * Setting this will turn on certain heuristics/workarounds depending on the
      * values:
@@ -313,12 +324,6 @@ declare module '@xterm/xterm' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
-
-    /**
-     * Controls the visibility and style of the overview ruler which visualizes
-     * decorations underneath the scroll bar.
-     */
-    overviewRuler?: IOverviewRulerOptions;
   }
 
   /**
@@ -428,6 +433,20 @@ declare module '@xterm/xterm' {
      * modern terminals. Note that DECRQM works regardless of this option.
      */
     allowSetCursorBlink?: boolean;
+  }
+
+  /**
+   * Enable certain optional VT extensions.
+   */
+  export interface IVtExtensions {
+    /**
+     * Whether the [kitty keyboard protocol][0] (`CSI u`) is enabled. When
+     * enabled, the terminal will respond to keyboard protocol queries and allow
+     * programs to enable enhanced keyboard reporting. The default is false.
+     * 
+     * [0]: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+     */
+    kittyKeyboard?: boolean;
   }
 
   /**

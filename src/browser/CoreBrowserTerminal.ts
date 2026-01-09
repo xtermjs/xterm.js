@@ -1087,7 +1087,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Use Kitty keyboard protocol if enabled, otherwise use legacy encoding
     const kittyFlags = this.coreService.kittyKeyboard.flags;
-    const result = shouldUseKittyProtocol(kittyFlags)
+    const useKitty = this.options.vtExtensions?.kittyKeyboard && shouldUseKittyProtocol(kittyFlags);
+    const result = useKitty
       ? evaluateKeyboardEventKitty(event, kittyFlags, event.repeat ? KittyKeyboardEventType.REPEAT : KittyKeyboardEventType.PRESS)
       : evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
@@ -1178,7 +1179,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Handle key release for Kitty keyboard protocol
     const kittyFlags = this.coreService.kittyKeyboard.flags;
-    if (shouldUseKittyProtocol(kittyFlags) && (kittyFlags & 0b10)) { // REPORT_EVENT_TYPES flag
+    const useKitty = this.options.vtExtensions?.kittyKeyboard && shouldUseKittyProtocol(kittyFlags);
+    if (useKitty && (kittyFlags & 0b10)) { // REPORT_EVENT_TYPES flag
       const result = evaluateKeyboardEventKitty(ev, kittyFlags, KittyKeyboardEventType.RELEASE);
       if (result.key) {
         this.coreService.triggerDataEvent(result.key, true);

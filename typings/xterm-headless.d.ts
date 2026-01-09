@@ -231,6 +231,11 @@ declare module '@xterm/headless' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+
+    /**
+     * Enable various VT extensions. All extensions are disabled by default.
+     */
+    vtExtensions?: IVtExtensions;
   }
 
   /**
@@ -311,6 +316,18 @@ declare module '@xterm/headless' {
      * The Windows build version (eg. 19045)
      */
     buildNumber?: number;
+  }
+
+  /**
+   * Enable VT extensions that are not part of the core VT specification.
+   */
+  export interface IVtExtensions {
+    /**
+     * Whether the kitty keyboard protocol is enabled. When enabled, the
+     * terminal will respond to keyboard protocol queries and allow programs to
+     * enable enhanced keyboard reporting. The default is false.
+     */
+    kittyKeyboard?: boolean;
   }
 
   /**

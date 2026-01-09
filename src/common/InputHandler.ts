@@ -2992,6 +2992,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI KKBDSET "Kitty Keyboard Set" "CSI = Ps ; Pm u" "Set Kitty keyboard protocol flags."
    */
   public kittyKeyboardSet(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
     const flags = params.params[0] || 0;
     const mode = params.params[1] || 1;
     const state = this._coreService.kittyKeyboard;
@@ -3018,6 +3021,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI KKBDQUERY "Kitty Keyboard Query" "CSI ? u" "Query Kitty keyboard protocol flags."
    */
   public kittyKeyboardQuery(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
     const flags = this._coreService.kittyKeyboard.flags;
     this._coreService.triggerDataEvent(`${C0.ESC}[?${flags}u`);
     return true;
@@ -3030,6 +3036,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI KKBDPUSH "Kitty Keyboard Push" "CSI > Ps u" "Push keyboard flags to stack and set new flags."
    */
   public kittyKeyboardPush(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
     const flags = params.params[0] || 0;
     const state = this._coreService.kittyKeyboard;
     const isAlt = this._bufferService.buffer === this._bufferService.buffers.alt;
@@ -3048,6 +3057,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI KKBDPOP "Kitty Keyboard Pop" "CSI < Ps u" "Pop keyboard flags from stack."
    */
   public kittyKeyboardPop(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
     const count = Math.max(1, params.params[0] || 1);
     const state = this._coreService.kittyKeyboard;
     const isAlt = this._bufferService.buffer === this._bufferService.buffers.alt;

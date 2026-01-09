@@ -266,6 +266,7 @@ export interface ITerminalOptions {
   overviewRuler?: IOverviewRulerOptions;
   quirks?: ITerminalQuirks;
   scrollOnEraseInDisplay?: boolean;
+  vtExtensions?: IVtExtensions;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -305,6 +306,10 @@ export interface ITheme {
 
 export interface ITerminalQuirks {
   allowSetCursorBlink?: boolean;
+}
+
+export interface IVtExtensions {
+  kittyKeyboard?: boolean;
 }
 
 export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');
