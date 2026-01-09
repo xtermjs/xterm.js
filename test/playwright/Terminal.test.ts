@@ -389,7 +389,7 @@ test.describe('API Integration Tests', () => {
         const y = termRect.top + dims.css.cell.height * 0.5;
         await ctx.page.mouse.click(x, y);
 
-        strictEqual(callCount, 2);
+        await pollFor(ctx.page, () => callCount, 2);
       });
 
       test('should not fire on mousedown when no prior selection', async () => {
@@ -401,6 +401,7 @@ test.describe('API Integration Tests', () => {
         const x = termRect.left + dims.css.cell.width * 5;
         const y = termRect.top + dims.css.cell.height * 0.5;
         await ctx.page.mouse.click(x, y);
+        await timeout(20);
 
         strictEqual(callCount, 0);
       });
