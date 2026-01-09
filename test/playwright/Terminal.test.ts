@@ -361,64 +361,71 @@ test.describe('API Integration Tests', () => {
       await pollFor(ctx.page, `window.calls`, [1, 2]);
     });
 
-    test('onSelectionChange', async () => {
-      await openTerminal(ctx);
-      await ctx.page.evaluate(`
-        window.callCount = 0;
-        window.term.onSelectionChange(() => window.callCount++);
-      `);
-      await pollFor(ctx.page, `window.callCount`, 0);
-      await ctx.page.evaluate(`window.term.selectAll()`);
-      await pollFor(ctx.page, `window.callCount`, 1);
-      await ctx.page.evaluate(`window.term.clearSelection()`);
-      await pollFor(ctx.page, `window.callCount`, 2);
-    });
+    test.describe('onSelectionChange', () => {
+      let callCount: number;
 
-    test('onSelectionChange should fire on mousedown when clearing selection', async () => {
-      await openTerminal(ctx);
-      await ctx.proxy.write('foo bar baz');
-      await ctx.page.evaluate(`
-        window.callCount = 0;
-        window.term.onSelectionChange(() => window.callCount++);
-      `);
-      await ctx.page.evaluate(`window.term.selectAll()`);
-      await pollFor(ctx.page, `window.callCount`, 1);
+      test.beforeEach(async () => {
+        await openTerminal(ctx);
+        callCount = 0;
+        ctx.proxy.onSelectionChange(() => callCount++);
+      });
 
-      const termCoords: any = await ctx.page.evaluate(`
-        (function() {
-          const rect = window.term.element.getBoundingClientRect();
-          const dim = window.term.dimensions;
-          return { left: rect.left, top: rect.top, cellWidth: dim.css.cell.width, cellHeight: dim.css.cell.height };
-        })();
-      `);
-      const x = termCoords.left + termCoords.cellWidth * 5;
-      const y = termCoords.top + termCoords.cellHeight * 0.5;
-      await ctx.page.mouse.click(x, y);
+      test('should fire for programmatic selection changes', async () => {
+        strictEqual(callCount, 0);
+        await ctx.proxy.selectAll();
+        strictEqual(callCount, 1);
+        await ctx.proxy.clearSelection();
+        strictEqual(callCount, 2);
+      });
 
-      await pollFor(ctx.page, `window.callCount`, 2);
-    });
+      test('should fire on mousedown when clearing selection', async () => {
+        await ctx.proxy.write('foo bar baz');
+        await ctx.proxy.selectAll();
+        strictEqual(callCount, 1);
 
-    test('onSelectionChange should not fire on mousedown when no prior selection', async () => {
-      await openTerminal(ctx);
-      await ctx.proxy.write('foo bar baz');
-      await ctx.page.evaluate(`
-        window.callCount = 0;
-        window.term.onSelectionChange(() => window.callCount++);
-      `);
-      await pollFor(ctx.page, `window.callCount`, 0);
+        const dims = (await ctx.proxy.dimensions)!;
+        const termRect: any = await ctx.page.evaluate(`window.term.element.getBoundingClientRect()`);
+        const x = termRect.left + dims.css.cell.width * 5;
+        const y = termRect.top + dims.css.cell.height * 0.5;
+        await ctx.page.mouse.click(x, y);
 
-      const termCoords: any = await ctx.page.evaluate(`
-        (function() {
-          const rect = window.term.element.getBoundingClientRect();
-          const dim = window.term.dimensions;
-          return { left: rect.left, top: rect.top, cellWidth: dim.css.cell.width, cellHeight: dim.css.cell.height };
-        })();
-      `);
-      const x = termCoords.left + termCoords.cellWidth * 5;
-      const y = termCoords.top + termCoords.cellHeight * 0.5;
-      await ctx.page.mouse.click(x, y);
+        strictEqual(callCount, 2);
+      });
 
-      await pollFor(ctx.page, `window.callCount`, 0);
+      test('should not fire on mousedown when no prior selection', async () => {
+        await ctx.proxy.write('foo bar baz');
+        strictEqual(callCount, 0);
+
+        const dims = (await ctx.proxy.dimensions)!;
+        const termRect: any = await ctx.page.evaluate(`window.term.element.getBoundingClientRect()`);
+        const x = termRect.left + dims.css.cell.width * 5;
+        const y = termRect.top + dims.css.cell.height * 0.5;
+        await ctx.page.mouse.click(x, y);
+
+        strictEqual(callCount, 0);
+      });
+
+      test('should fire once on mousedown to clear, and again on mouseup after drag', async () => {
+        await ctx.proxy.write('foo bar baz');
+        await ctx.proxy.selectAll();
+        strictEqual(callCount, 1);
+
+        const dims = (await ctx.proxy.dimensions)!;
+        const termRect: any = await ctx.page.evaluate(`window.term.element.getBoundingClientRect()`);
+        const startX = termRect.left + dims.css.cell.width * 0.5;
+        const endX = termRect.left + dims.css.cell.width * 5;
+        const y = termRect.top + dims.css.cell.height * 0.5;
+
+        await ctx.page.mouse.move(startX, y);
+        await ctx.page.mouse.down();
+        strictEqual(callCount, 2);
+
+        await ctx.page.mouse.move(endX, y);
+        strictEqual(callCount, 2);
+
+        await ctx.page.mouse.up();
+        strictEqual(callCount, 3);
+      });
     });
 
     test('onRender', async () => {
