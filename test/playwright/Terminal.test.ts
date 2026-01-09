@@ -374,6 +374,53 @@ test.describe('API Integration Tests', () => {
       await pollFor(ctx.page, `window.callCount`, 2);
     });
 
+    test('onSelectionChange should fire on mousedown when clearing selection', async () => {
+      await openTerminal(ctx);
+      await ctx.proxy.write('foo bar baz');
+      await ctx.page.evaluate(`
+        window.callCount = 0;
+        window.term.onSelectionChange(() => window.callCount++);
+      `);
+      await ctx.page.evaluate(`window.term.selectAll()`);
+      await pollFor(ctx.page, `window.callCount`, 1);
+
+      const termCoords: any = await ctx.page.evaluate(`
+        (function() {
+          const rect = window.term.element.getBoundingClientRect();
+          const dim = window.term.dimensions;
+          return { left: rect.left, top: rect.top, cellWidth: dim.css.cell.width, cellHeight: dim.css.cell.height };
+        })();
+      `);
+      const x = termCoords.left + termCoords.cellWidth * 5;
+      const y = termCoords.top + termCoords.cellHeight * 0.5;
+      await ctx.page.mouse.click(x, y);
+
+      await pollFor(ctx.page, `window.callCount`, 2);
+    });
+
+    test('onSelectionChange should not fire on mousedown when no prior selection', async () => {
+      await openTerminal(ctx);
+      await ctx.proxy.write('foo bar baz');
+      await ctx.page.evaluate(`
+        window.callCount = 0;
+        window.term.onSelectionChange(() => window.callCount++);
+      `);
+      await pollFor(ctx.page, `window.callCount`, 0);
+
+      const termCoords: any = await ctx.page.evaluate(`
+        (function() {
+          const rect = window.term.element.getBoundingClientRect();
+          const dim = window.term.dimensions;
+          return { left: rect.left, top: rect.top, cellWidth: dim.css.cell.width, cellHeight: dim.css.cell.height };
+        })();
+      `);
+      const x = termCoords.left + termCoords.cellWidth * 5;
+      const y = termCoords.top + termCoords.cellHeight * 0.5;
+      await ctx.page.mouse.click(x, y);
+
+      await pollFor(ctx.page, `window.callCount`, 0);
+    });
+
     test('onRender', async () => {
       await openTerminal(ctx);
       await timeout(20); // Ensure all init events are fired
