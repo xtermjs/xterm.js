@@ -418,13 +418,13 @@ test.describe('API Integration Tests', () => {
 
         await ctx.page.mouse.move(startX, y);
         await ctx.page.mouse.down();
-        strictEqual(callCount, 2);
+        await pollFor(ctx.page, () => callCount, 2);
 
         await ctx.page.mouse.move(endX, y);
         strictEqual(callCount, 2);
 
         await ctx.page.mouse.up();
-        strictEqual(callCount, 3);
+        await pollFor(ctx.page, () => callCount, 3);
       });
     });
 
