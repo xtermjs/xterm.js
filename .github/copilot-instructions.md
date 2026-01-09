@@ -26,6 +26,7 @@ npm run build && npm run esbuild # Build all TypeScript and bundle
 - Integration tests: `npm run test-integration` (Playwright across Chrome/Firefox/WebKit)
 - Integration tests by file: `npm run test-integration -- test/playwright/InputHandler.test.ts`. Never use grep to filter tests, it doesn't work
 - Integration tests by addon: `npm run test-integration --suite=addon-search`. Suites always follow the format `addon-<something>`
+- Lint changes: `npm run lint-changes` to lint only changed files, `npm run lint-changes-fix` to fix them
 
 ## Addon Development Pattern
 
