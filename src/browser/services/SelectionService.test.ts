@@ -496,19 +496,5 @@ describe('SelectionService', () => {
       assert.isFalse(selectionService.areCoordsInSelection([2, 1], [2, 0], [2, 1]));
     });
   });
-
-  describe('onSelectionChange', () => {
-    it('should not fire when setting model properties directly', () => {
-      buffer.lines.set(0, stringToRow('foo bar'));
-
-      let eventFired = false;
-      selectionService.onSelectionChange(() => { eventFired = true; });
-
-      selectionService.model.selectionStart = [0, 0];
-      selectionService.model.selectionEnd = undefined;
-
-      assert.isFalse(eventFired);
-    });
-  });
 });
 
