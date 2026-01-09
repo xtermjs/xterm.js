@@ -521,7 +521,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     const wraparoundMode = this._coreService.decPrivateModes.wraparound;
     const insertMode = this._coreService.modes.insertMode;
     const curAttr = this._curAttrData;
-    let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+    let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
+
+    // Defensive check: bufferRow can be undefined if a resize occurred mid-write due to async
+    // scheduling gaps in WriteBuffer. See https://github.com/xtermjs/xterm.js/issues/5597
+    if (!bufferRow) {
+      return;
+    }
 
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
 
@@ -586,7 +592,10 @@ export class InputHandler extends Disposable implements IInputHandler {
             this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = true;
           }
           // row changed, get it again
-          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
+          bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
+          if (!bufferRow) {
+            return;
+          }
           if (oldWidth > 0 && bufferRow instanceof BufferLine) {
             // Combining character widens 1 column to 2.
             // Move old character to next line.

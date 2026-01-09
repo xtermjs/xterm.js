@@ -402,6 +402,16 @@ test.describe('API Integration Tests', () => {
       await pollFor(ctx.page, `window.calls`, [[10, 5], [20, 15]]);
     });
 
+    test('resize during write should not throw', async () => {
+      await openTerminal(ctx, { rows: 50, cols: 80 });
+      const largeData = 'x'.repeat(10000);
+      await ctx.proxy.write(largeData);
+      await ctx.proxy.resize(80, 10);
+      await ctx.proxy.write(largeData);
+      await ctx.proxy.resize(80, 5);
+      await ctx.proxy.write(largeData);
+    });
+
     test('onTitleChange', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`

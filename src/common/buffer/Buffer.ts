@@ -264,6 +264,13 @@ export class Buffer implements IBuffer {
     this._cols = newCols;
     this._rows = newRows;
 
+    // Ensure the cursor position invariant: ybase + y must be within buffer bounds
+    // This can be violated during reflow or when shrinking rows
+    if (this.lines.length > 0) {
+      const maxY = Math.max(0, this.lines.length - this.ybase - 1);
+      this.y = Math.min(this.y, maxY);
+    }
+
     this._memoryCleanupQueue.clear();
     // schedule memory cleanup only, if more than 10% of the lines are affected
     if (dirtyMemoryLines > 0.1 * this.lines.length) {
