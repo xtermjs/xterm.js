@@ -671,7 +671,9 @@ function sgrTest(term: Terminal): void {
     { ps: 47, name: 'Background White' },
     { ps: 49, name: 'Background default' },
     { ps: 53, name: 'Overlined' },
-    { ps: 55, name: 'Not overlined' }
+    { ps: 55, name: 'Not overlined' },
+    { ps: 221, name: 'Not bold (kitty)' },
+    { ps: 222, name: 'Not faint (kitty)' }
   ];
   const maxNameLength = entries.reduce<number>((p, c) => Math.max(c.name.length, p), 0);
   for (const e of entries) {
@@ -684,7 +686,9 @@ function sgrTest(term: Terminal): void {
   const comboEntries: { ps: number[] }[] = [
     { ps: [1, 2, 3, 4, 5, 6, 7, 9] },
     { ps: [2, 41] },
-    { ps: [4, 53] }
+    { ps: [4, 53] },
+    { ps: [1, 2, 221] },
+    { ps: [1, 2, 222] }
   ];
   term.write('\n\n\r');
   term.writeln(`Combinations`);
