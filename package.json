@@ -48,6 +48,8 @@
     "test": "npm run test-unit",
     "posttest": "npm run lint",
     "lint": "eslint --max-warnings 0 src/ addons/ demo/",
+    "lint-changes": "node ./bin/lint_changes.js",
+    "lint-changes-fix": "node ./bin/lint_changes.js --fix",
     "lint-fix": "eslint --fix src/ addons/ demo/",
     "lint-api": "eslint --config eslint.config.typings.mjs --max-warnings 0 typings/",
     "test-unit": "node ./bin/test_unit.js",
