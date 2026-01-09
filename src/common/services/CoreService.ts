@@ -5,7 +5,7 @@
 
 import { clone } from 'common/Clone';
 import { Disposable } from 'vs/base/common/lifecycle';
-import { IDecPrivateModes, IModes } from 'common/Types';
+import { IDecPrivateModes, IKittyKeyboardState, IModes } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'vs/base/common/event';
 
@@ -26,6 +26,12 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   wraparound: true // defaults: xterm - true, vt100 - false
 });
 
+const DEFAULT_KITTY_KEYBOARD_STATE = (): IKittyKeyboardState => ({
+  flags: 0,
+  mainStack: [],
+  altStack: []
+});
+
 export class CoreService extends Disposable implements ICoreService {
   public serviceBrand: any;
 
@@ -33,6 +39,7 @@ export class CoreService extends Disposable implements ICoreService {
   public isCursorHidden: boolean = false;
   public modes: IModes;
   public decPrivateModes: IDecPrivateModes;
+  public kittyKeyboard: IKittyKeyboardState;
 
   private readonly _onData = this._register(new Emitter<string>());
   public readonly onData = this._onData.event;
@@ -51,11 +58,13 @@ export class CoreService extends Disposable implements ICoreService {
     super();
     this.modes = clone(DEFAULT_MODES);
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
+    this.kittyKeyboard = DEFAULT_KITTY_KEYBOARD_STATE();
   }
 
   public reset(): void {
     this.modes = clone(DEFAULT_MODES);
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
+    this.kittyKeyboard = DEFAULT_KITTY_KEYBOARD_STATE();
   }
 
   public triggerDataEvent(data: string, wasUserInput: boolean = false): void {

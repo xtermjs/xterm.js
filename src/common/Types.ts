@@ -277,6 +277,19 @@ export interface IDecPrivateModes {
   wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 
+/**
+ * Kitty keyboard protocol state.
+ * Maintains per-screen stacks of enhancement flags.
+ */
+export interface IKittyKeyboardState {
+  /** Current active enhancement flags */
+  flags: number;
+  /** Stack of flags for main screen */
+  mainStack: number[];
+  /** Stack of flags for alternate screen */
+  altStack: number[];
+}
+
 export interface IRowRange {
   start: number;
   end: number;

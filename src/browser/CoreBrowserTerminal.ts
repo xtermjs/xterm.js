@@ -49,6 +49,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
+import { evaluateKeyboardEventKitty, KittyKeyboardEventType, shouldUseKittyProtocol } from 'common/input/KittyKeyboard';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
@@ -1081,7 +1082,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._unprocessedDeadKey = true;
     }
 
-    const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
+    // Use Kitty keyboard protocol if enabled, otherwise use legacy encoding
+    const kittyFlags = this.coreService.kittyKeyboard.flags;
+    const result = shouldUseKittyProtocol(kittyFlags)
+      ? evaluateKeyboardEventKitty(event, kittyFlags, event.repeat ? KittyKeyboardEventType.REPEAT : KittyKeyboardEventType.PRESS)
+      : evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
 
     this.updateCursorStyle(event);
 
@@ -1166,6 +1171,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     if (!wasModifierKeyOnlyEvent(ev)) {
       this.focus();
+    }
+
+    // Handle key release for Kitty keyboard protocol
+    const kittyFlags = this.coreService.kittyKeyboard.flags;
+    if (shouldUseKittyProtocol(kittyFlags) && (kittyFlags & 0b10)) { // REPORT_EVENT_TYPES flag
+      const result = evaluateKeyboardEventKitty(ev, kittyFlags, KittyKeyboardEventType.RELEASE);
+      if (result.key) {
+        this.coreService.triggerDataEvent(result.key, true);
+      }
     }
 
     this.updateCursorStyle(ev);
