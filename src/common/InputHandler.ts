@@ -2012,8 +2012,6 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(undefined);
           this._onRequestSyncScrollBar.fire();
-          // Emit kitty keyboard protocol support notification
-          this._coreService.triggerDataEvent(`${C0.ESC}[>31u`);
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
           this._coreService.decPrivateModes.bracketedPasteMode = true;
