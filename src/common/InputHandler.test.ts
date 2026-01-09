@@ -716,6 +716,22 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[22m');
       assert.equal(!!inputHandler.curAttrData.isDim(), false);
     });
+    it('SGR 221 resets bold only (kitty)', async () => {
+      await inputHandler.parseP('\x1b[1;2m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), true);
+      assert.equal(!!inputHandler.curAttrData.isDim(), true);
+      await inputHandler.parseP('\x1b[221m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), false);
+      assert.equal(!!inputHandler.curAttrData.isDim(), true);
+    });
+    it('SGR 222 resets faint only (kitty)', async () => {
+      await inputHandler.parseP('\x1b[1;2m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), true);
+      assert.equal(!!inputHandler.curAttrData.isDim(), true);
+      await inputHandler.parseP('\x1b[222m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), true);
+      assert.equal(!!inputHandler.curAttrData.isDim(), false);
+    });
     it('italic', async () => {
       await inputHandler.parseP('\x1b[3m');
       assert.equal(!!inputHandler.curAttrData.isItalic(), true);
