@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2026 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
 
 import { assert } from 'chai';
 import { evaluateKeyboardEventWin32, Win32ControlKeyState } from 'common/input/Win32InputMode';
