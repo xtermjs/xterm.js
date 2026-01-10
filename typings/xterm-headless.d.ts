@@ -336,7 +336,7 @@ declare module '@xterm/headless' {
      * Whether [SGR 221 (not bold) and SGR 222 (not faint) are enabled][0].
      * These are kitty extensions that allow resetting bold and faint
      * independently. The default is true.
-     * 
+     *
      * [0]: https://sw.kovidgoyal.net/kitty/misc-protocol/
      */
     kittySgrBoldFaintControl?: boolean;
