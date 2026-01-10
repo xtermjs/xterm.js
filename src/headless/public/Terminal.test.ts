@@ -411,6 +411,7 @@ describe('Headless API Tests', function (): void {
         sendFocusMode: false,
         showCursor: true,
         synchronizedOutputMode: false,
+        win32InputMode: false,
         wraparoundMode: true
       });
     });
