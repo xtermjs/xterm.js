@@ -80,9 +80,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _customWheelEventHandler: CustomWheelEventHandler | undefined;
 
   // Browser services
-  private _decorationService: DecorationService;
-  private _keyboardService: IKeyboardService;
-  private _linkProviderService: ILinkProviderService;
+  private readonly _decorationService: DecorationService;
+  private readonly _keyboardService: IKeyboardService;
+  private readonly _linkProviderService: ILinkProviderService;
 
   // Optional browser services
   private _charSizeService: ICharSizeService | undefined;
