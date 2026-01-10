@@ -3002,105 +3002,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     return true;
   }
 
-
-  /**
-   * CSI = flags ; mode u
-   * Set Kitty keyboard protocol flags.
-   * mode: 1=set, 2=set-only-specified, 3=reset-only-specified
-   *
-   * @vt: #Y CSI KKBDSET "Kitty Keyboard Set" "CSI = Ps ; Pm u" "Set Kitty keyboard protocol flags."
-   */
-  public kittyKeyboardSet(params: IParams): boolean {
-    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
-      return true;
-    }
-    const flags = params.params[0] || 0;
-    const mode = params.params[1] || 1;
-    const state = this._coreService.kittyKeyboard;
-
-    switch (mode) {
-      case 1: // Set all flags
-        state.flags = flags;
-        break;
-      case 2: // Set only specified flags (OR)
-        state.flags |= flags;
-        break;
-      case 3: // Reset only specified flags (AND NOT)
-        state.flags &= ~flags;
-        break;
-    }
-    return true;
-  }
-
-  /**
-   * CSI ? u
-   * Query Kitty keyboard protocol flags.
-   * Terminal responds with CSI ? flags u
-   *
-   * @vt: #Y CSI KKBDQUERY "Kitty Keyboard Query" "CSI ? u" "Query Kitty keyboard protocol flags."
-   */
-  public kittyKeyboardQuery(params: IParams): boolean {
-    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
-      return true;
-    }
-    const flags = this._coreService.kittyKeyboard.flags;
-    this._coreService.triggerDataEvent(`${C0.ESC}[?${flags}u`);
-    return true;
-  }
-
-  /**
-   * CSI > flags u
-   * Push Kitty keyboard flags onto stack and set new flags.
-   *
-   * @vt: #Y CSI KKBDPUSH "Kitty Keyboard Push" "CSI > Ps u" "Push keyboard flags to stack and set new flags."
-   */
-  public kittyKeyboardPush(params: IParams): boolean {
-    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
-      return true;
-    }
-    const flags = params.params[0] || 0;
-    const state = this._coreService.kittyKeyboard;
-    const isAlt = this._bufferService.buffer === this._bufferService.buffers.alt;
-    const stack = isAlt ? state.altStack : state.mainStack;
-
-    // Evict oldest entry if stack is full (DoS protection, limit of 16)
-    if (stack.length >= 16) {
-      stack.shift();
-    }
-
-    // Push current flags onto stack and set new flags
-    stack.push(state.flags);
-    state.flags = flags;
-    return true;
-  }
-
-  /**
-   * CSI < count u
-   * Pop Kitty keyboard flags from stack.
-   *
-   * @vt: #Y CSI KKBDPOP "Kitty Keyboard Pop" "CSI < Ps u" "Pop keyboard flags from stack."
-   */
-  public kittyKeyboardPop(params: IParams): boolean {
-    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
-      return true;
-    }
-    const count = Math.max(1, params.params[0] || 1);
-    const state = this._coreService.kittyKeyboard;
-    const isAlt = this._bufferService.buffer === this._bufferService.buffers.alt;
-    const stack = isAlt ? state.altStack : state.mainStack;
-
-    // Pop specified number of entries from stack
-    for (let i = 0; i < count && stack.length > 0; i++) {
-      state.flags = stack.pop()!;
-    }
-    // If stack is empty after popping, reset to 0
-    if (stack.length === 0 && count > 0) {
-      state.flags = 0;
-    }
-    return true;
-  }
-
-
   /**
    * OSC 2; <data> ST (set window title)
    *   Proxy to set window title.
@@ -3612,6 +3513,107 @@ export class InputHandler extends Disposable implements IInputHandler {
   public markRangeDirty(y1: number, y2: number): void {
     this._dirtyRowTracker.markRangeDirty(y1, y2);
   }
+
+  // #region Kitty keyboard
+
+  /**
+   * CSI = flags ; mode u
+   * Set Kitty keyboard protocol flags.
+   * mode: 1=set, 2=set-only-specified, 3=reset-only-specified
+   *
+   * @vt: #Y CSI KKBDSET "Kitty Keyboard Set" "CSI = Ps ; Pm u" "Set Kitty keyboard protocol flags."
+   */
+  public kittyKeyboardSet(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
+    const flags = params.params[0] || 0;
+    const mode = params.params[1] || 1;
+    const state = this._coreService.kittyKeyboard;
+
+    switch (mode) {
+      case 1: // Set all flags
+        state.flags = flags;
+        break;
+      case 2: // Set only specified flags (OR)
+        state.flags |= flags;
+        break;
+      case 3: // Reset only specified flags (AND NOT)
+        state.flags &= ~flags;
+        break;
+    }
+    return true;
+  }
+
+  /**
+   * CSI ? u
+   * Query Kitty keyboard protocol flags.
+   * Terminal responds with CSI ? flags u
+   *
+   * @vt: #Y CSI KKBDQUERY "Kitty Keyboard Query" "CSI ? u" "Query Kitty keyboard protocol flags."
+   */
+  public kittyKeyboardQuery(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
+    const flags = this._coreService.kittyKeyboard.flags;
+    this._coreService.triggerDataEvent(`${C0.ESC}[?${flags}u`);
+    return true;
+  }
+
+  /**
+   * CSI > flags u
+   * Push Kitty keyboard flags onto stack and set new flags.
+   *
+   * @vt: #Y CSI KKBDPUSH "Kitty Keyboard Push" "CSI > Ps u" "Push keyboard flags to stack and set new flags."
+   */
+  public kittyKeyboardPush(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
+    const flags = params.params[0] || 0;
+    const state = this._coreService.kittyKeyboard;
+    const isAlt = this._bufferService.buffer === this._bufferService.buffers.alt;
+    const stack = isAlt ? state.altStack : state.mainStack;
+
+    // Evict oldest entry if stack is full (DoS protection, limit of 16)
+    if (stack.length >= 16) {
+      stack.shift();
+    }
+
+    // Push current flags onto stack and set new flags
+    stack.push(state.flags);
+    state.flags = flags;
+    return true;
+  }
+
+  /**
+   * CSI < count u
+   * Pop Kitty keyboard flags from stack.
+   *
+   * @vt: #Y CSI KKBDPOP "Kitty Keyboard Pop" "CSI < Ps u" "Pop keyboard flags from stack."
+   */
+  public kittyKeyboardPop(params: IParams): boolean {
+    if (!this._optionsService.rawOptions.vtExtensions?.kittyKeyboard) {
+      return true;
+    }
+    const count = Math.max(1, params.params[0] || 1);
+    const state = this._coreService.kittyKeyboard;
+    const isAlt = this._bufferService.buffer === this._bufferService.buffers.alt;
+    const stack = isAlt ? state.altStack : state.mainStack;
+
+    // Pop specified number of entries from stack
+    for (let i = 0; i < count && stack.length > 0; i++) {
+      state.flags = stack.pop()!;
+    }
+    // If stack is empty after popping, reset to 0
+    if (stack.length === 0 && count > 0) {
+      state.flags = 0;
+    }
+    return true;
+  }
+
+  // #endregion
 }
 
 export interface IDirtyRowTracker {

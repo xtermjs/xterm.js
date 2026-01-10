@@ -5,7 +5,7 @@
 
 import { IKeyboardService } from 'browser/services/Services';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
-import { evaluateKeyboardEventKitty, KittyKeyboardEventType, shouldUseKittyProtocol } from 'common/input/KittyKeyboard';
+import { evaluateKeyboardEventKitty, KittyKeyboardEventType, KittyKeyboardFlags, shouldUseKittyProtocol } from 'common/input/KittyKeyboard';
 import { isMac } from 'common/Platform';
 import { ICoreService, IOptionsService } from 'common/services/Services';
 import { IKeyboardResult } from 'common/Types';
@@ -28,7 +28,7 @@ export class KeyboardService implements IKeyboardService {
 
   public evaluateKeyUp(event: KeyboardEvent): IKeyboardResult | undefined {
     const kittyFlags = this._coreService.kittyKeyboard.flags;
-    if (this.useKitty && (kittyFlags & 0b10)) { // REPORT_EVENT_TYPES flag
+    if (this.useKitty && (kittyFlags & KittyKeyboardFlags.REPORT_EVENT_TYPES)) {
       return evaluateKeyboardEventKitty(event, kittyFlags, KittyKeyboardEventType.RELEASE);
     }
     return undefined;

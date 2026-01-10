@@ -206,7 +206,6 @@ function encodeModifiers(ev: IKeyboardEvent): number {
   if (ev.altKey) mods |= KittyKeyboardModifiers.ALT;
   if (ev.ctrlKey) mods |= KittyKeyboardModifiers.CTRL;
   if (ev.metaKey) mods |= KittyKeyboardModifiers.SUPER;
-  // Note: getModifierState would be needed for CAPS_LOCK/NUM_LOCK but not in IKeyboardEvent
   return mods > 0 ? mods + 1 : 0;
 }
 
