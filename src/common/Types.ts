@@ -274,6 +274,7 @@ export interface IDecPrivateModes {
   reverseWraparound: boolean;
   sendFocus: boolean;
   synchronizedOutput: boolean;
+  win32InputMode: boolean;
   wraparound: boolean; // defaults: xterm - true, vt100 - false
 }
 

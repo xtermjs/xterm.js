@@ -125,7 +125,8 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
     ];
     const nestedBooleanOptions: { label: string, parent: string, prop: string }[] = [
       { label: 'vtExtensions.kittyKeyboard', parent: 'vtExtensions', prop: 'kittyKeyboard' },
-      { label: 'vtExtensions.kittySgrBoldFaintControl', parent: 'vtExtensions', prop: 'kittySgrBoldFaintControl' }
+      { label: 'vtExtensions.kittySgrBoldFaintControl', parent: 'vtExtensions', prop: 'kittySgrBoldFaintControl' },
+      { label: 'vtExtensions.win32InputMode', parent: 'vtExtensions', prop: 'win32InputMode' }
     ];
     const stringOptions: { [key: string]: string[] | null } = {
       cursorStyle: ['block', 'underline', 'bar'],

@@ -112,6 +112,7 @@ export class MockCoreService implements ICoreService {
     reverseWraparound: false,
     sendFocus: false,
     synchronizedOutput: false,
+    win32InputMode: false,
     wraparound: true
   };
   public kittyKeyboard = {

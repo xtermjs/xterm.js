@@ -340,6 +340,15 @@ declare module '@xterm/headless' {
      * [0]: https://sw.kovidgoyal.net/kitty/misc-protocol/
      */
     kittySgrBoldFaintControl?: boolean;
+
+    /**
+     * Whether [win32-input-mode][0] (`DECSET 9001`) is enabled. When enabled,
+     * the terminal will allow programs to enable win32 INPUT_RECORD  keyboard
+     * reporting via `CSI ? 9001 h`. The default is false.
+     *
+     * [0]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md
+     */
+    win32InputMode?: boolean;
   }
 
   /**
@@ -1387,6 +1396,13 @@ declare module '@xterm/headless' {
      * disabled, allowing for atomic screen updates without tearing.
      */
     readonly synchronizedOutputMode: boolean;
+    /**
+     * Win32 Input Mode: `CSI ? 9 0 0 1 h`
+     *
+     * When enabled, keyboard input is sent as Win32 INPUT_RECORD format:
+     * `CSI Vk ; Sc ; Uc ; Kd ; Cs ; Rc _`
+     */
+    readonly win32InputMode: boolean;
     /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */

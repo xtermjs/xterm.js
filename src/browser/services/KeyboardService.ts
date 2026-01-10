@@ -6,6 +6,7 @@
 import { IKeyboardService } from 'browser/services/Services';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { evaluateKeyboardEventKitty, KittyKeyboardEventType, KittyKeyboardFlags, shouldUseKittyProtocol } from 'common/input/KittyKeyboard';
+import { evaluateKeyboardEventWin32 } from 'common/input/Win32InputMode';
 import { isMac } from 'common/Platform';
 import { ICoreService, IOptionsService } from 'common/services/Services';
 import { IKeyboardResult } from 'common/Types';
@@ -20,6 +21,10 @@ export class KeyboardService implements IKeyboardService {
   }
 
   public evaluateKeyDown(event: KeyboardEvent): IKeyboardResult {
+    // Win32 input mode takes priority (most raw)
+    if (this.useWin32) {
+      return evaluateKeyboardEventWin32(event, true);
+    }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
     return this.useKitty
       ? evaluateKeyboardEventKitty(event, kittyFlags, event.repeat ? KittyKeyboardEventType.REPEAT : KittyKeyboardEventType.PRESS)
@@ -27,6 +32,10 @@ export class KeyboardService implements IKeyboardService {
   }
 
   public evaluateKeyUp(event: KeyboardEvent): IKeyboardResult | undefined {
+    // Win32 input mode sends key up events
+    if (this.useWin32) {
+      return evaluateKeyboardEventWin32(event, false);
+    }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
     if (this.useKitty && (kittyFlags & KittyKeyboardFlags.REPORT_EVENT_TYPES)) {
       return evaluateKeyboardEventKitty(event, kittyFlags, KittyKeyboardEventType.RELEASE);
@@ -37,5 +46,9 @@ export class KeyboardService implements IKeyboardService {
   public get useKitty(): boolean {
     const kittyFlags = this._coreService.kittyKeyboard.flags;
     return !!(this._optionsService.rawOptions.vtExtensions?.kittyKeyboard && shouldUseKittyProtocol(kittyFlags));
+  }
+
+  public get useWin32(): boolean {
+    return !!(this._optionsService.rawOptions.vtExtensions?.win32InputMode && this._coreService.decPrivateModes.win32InputMode);
   }
 }
