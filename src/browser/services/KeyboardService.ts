@@ -22,7 +22,7 @@ export class KeyboardService implements IKeyboardService {
 
   public evaluateKeyDown(event: KeyboardEvent): IKeyboardResult {
     // Win32 input mode takes priority (most raw)
-    if (this.useWin32) {
+    if (this.useWin32InputMode) {
       return evaluateKeyboardEventWin32(event, true);
     }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
@@ -33,7 +33,7 @@ export class KeyboardService implements IKeyboardService {
 
   public evaluateKeyUp(event: KeyboardEvent): IKeyboardResult | undefined {
     // Win32 input mode sends key up events
-    if (this.useWin32) {
+    if (this.useWin32InputMode) {
       return evaluateKeyboardEventWin32(event, false);
     }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
@@ -48,7 +48,7 @@ export class KeyboardService implements IKeyboardService {
     return !!(this._optionsService.rawOptions.vtExtensions?.kittyKeyboard && shouldUseKittyProtocol(kittyFlags));
   }
 
-  public get useWin32(): boolean {
+  public get useWin32InputMode(): boolean {
     return !!(this._optionsService.rawOptions.vtExtensions?.win32InputMode && this._coreService.decPrivateModes.win32InputMode);
   }
 }
