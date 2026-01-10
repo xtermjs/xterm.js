@@ -286,5 +286,331 @@ describe('Win32InputMode', () => {
         assert.strictEqual(parts.length, 6);
       });
     });
+
+    describe('standalone modifier keys', () => {
+      it('should encode ShiftLeft alone', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'ShiftLeft',
+          key: 'Shift',
+          keyCode: 16,
+          shiftKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x10);
+        assert.ok(parsed.cs & Win32ControlKeyState.SHIFT_PRESSED);
+      });
+
+      it('should encode ShiftRight alone', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'ShiftRight',
+          key: 'Shift',
+          keyCode: 16,
+          shiftKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x10);
+        assert.ok(parsed.cs & Win32ControlKeyState.SHIFT_PRESSED);
+      });
+
+      it('should encode ControlLeft alone', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'ControlLeft',
+          key: 'Control',
+          keyCode: 17,
+          ctrlKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x11);
+        assert.ok(parsed.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
+      });
+
+      it('should encode ControlRight alone', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'ControlRight',
+          key: 'Control',
+          keyCode: 17,
+          ctrlKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x11);
+        assert.ok(parsed.cs & Win32ControlKeyState.RIGHT_CTRL_PRESSED);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode AltLeft alone', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'AltLeft',
+          key: 'Alt',
+          keyCode: 18,
+          altKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x12);
+        assert.ok(parsed.cs & Win32ControlKeyState.LEFT_ALT_PRESSED);
+      });
+
+      it('should encode AltRight alone', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'AltRight',
+          key: 'Alt',
+          keyCode: 18,
+          altKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x12);
+        assert.ok(parsed.cs & Win32ControlKeyState.RIGHT_ALT_PRESSED);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode modifier key release', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'ShiftLeft',
+          key: 'Shift',
+          keyCode: 16,
+          shiftKey: false
+        }), false);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.kd, 0);
+      });
+    });
+
+    describe('problem keys from spec', () => {
+      it('should encode Ctrl+Space', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'Space',
+          key: ' ',
+          keyCode: 32,
+          ctrlKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x20);
+        assert.ok(parsed.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
+      });
+
+      it('should encode Shift+Enter', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'Enter',
+          key: 'Enter',
+          keyCode: 13,
+          shiftKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x0D);
+        assert.ok(parsed.cs & Win32ControlKeyState.SHIFT_PRESSED);
+      });
+
+      it('should encode Ctrl+Break', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'Pause',
+          key: 'Pause',
+          keyCode: 19,
+          ctrlKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x13);
+        assert.ok(parsed.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
+      });
+
+      it('should encode Ctrl+Alt+/', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'Slash',
+          key: '/',
+          keyCode: 191,
+          ctrlKey: true,
+          altKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.ok(parsed.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
+        assert.ok(parsed.cs & Win32ControlKeyState.LEFT_ALT_PRESSED);
+      });
+    });
+
+    describe('additional navigation keys', () => {
+      it('should encode Tab', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'Tab', key: 'Tab', keyCode: 9 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x09);
+      });
+
+      it('should encode Backspace', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'Backspace', key: 'Backspace', keyCode: 8 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x08);
+      });
+
+      it('should encode PageUp with ENHANCED_KEY flag', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'PageUp', key: 'PageUp', keyCode: 33 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x21);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode PageDown with ENHANCED_KEY flag', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'PageDown', key: 'PageDown', keyCode: 34 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x22);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode End with ENHANCED_KEY flag', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'End', key: 'End', keyCode: 35 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x23);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode ArrowDown with ENHANCED_KEY flag', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'ArrowDown', key: 'ArrowDown', keyCode: 40 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x28);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode ArrowLeft with ENHANCED_KEY flag', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'ArrowLeft', key: 'ArrowLeft', keyCode: 37 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x25);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode ArrowRight with ENHANCED_KEY flag', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'ArrowRight', key: 'ArrowRight', keyCode: 39 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x27);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+    });
+
+    describe('additional numpad keys', () => {
+      it('should encode NumpadAdd', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'NumpadAdd', key: '+', keyCode: 107 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x6B);
+      });
+
+      it('should encode NumpadSubtract', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'NumpadSubtract', key: '-', keyCode: 109 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x6D);
+      });
+
+      it('should encode NumpadMultiply', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'NumpadMultiply', key: '*', keyCode: 106 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x6A);
+      });
+
+      it('should encode NumpadDivide with ENHANCED_KEY', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'NumpadDivide', key: '/', keyCode: 111 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x6F);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode NumpadDecimal', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'NumpadDecimal', key: '.', keyCode: 110 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x6E);
+      });
+    });
+
+    describe('meta key', () => {
+      it('should encode MetaLeft', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'MetaLeft',
+          key: 'Meta',
+          keyCode: 91,
+          metaKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x5B);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+
+      it('should encode MetaRight', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'MetaRight',
+          key: 'Meta',
+          keyCode: 92,
+          metaKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x5C);
+        assert.ok(parsed.cs & Win32ControlKeyState.ENHANCED_KEY);
+      });
+    });
+
+    describe('unicode characters', () => {
+      it('should encode extended ASCII character', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'KeyE',
+          key: 'é',
+          keyCode: 69
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.uc, 233);
+      });
+
+      it('should encode symbol character', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'Digit4',
+          key: '$',
+          keyCode: 52,
+          shiftKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.uc, 36);
+      });
+    });
+
+    describe('function key range', () => {
+      it('should encode F5', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({ code: 'F5', key: 'F5', keyCode: 116 }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x74);
+      });
+
+      it('should encode Ctrl+F1', () => {
+        const result = evaluateKeyboardEventWin32(createEvent({
+          code: 'F1',
+          key: 'F1',
+          keyCode: 112,
+          ctrlKey: true
+        }), true);
+        const parsed = parseWin32Sequence(result.key!);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.vk, 0x70);
+        assert.ok(parsed.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
+      });
+    });
   });
 });
