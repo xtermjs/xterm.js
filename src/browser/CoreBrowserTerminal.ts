@@ -39,8 +39,9 @@ import { LinkProviderService } from 'browser/services/LinkProviderService';
 import { MouseService } from 'browser/services/MouseService';
 import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
+import { KeyboardService } from 'browser/services/KeyboardService';
 import { channels, color } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
 import * as Browser from 'common/Platform';
@@ -48,7 +49,6 @@ import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType,
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
-import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
@@ -80,8 +80,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _customWheelEventHandler: CustomWheelEventHandler | undefined;
 
   // Browser services
-  private _decorationService: DecorationService;
-  private _linkProviderService: ILinkProviderService;
+  private readonly _decorationService: DecorationService;
+  private readonly _keyboardService: IKeyboardService;
+  private readonly _linkProviderService: ILinkProviderService;
 
   // Optional browser services
   private _charSizeService: ICharSizeService | undefined;
@@ -173,6 +174,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
+    this._keyboardService = this._instantiationService.createInstance(KeyboardService);
+    this._instantiationService.setService(IKeyboardService, this._keyboardService);
     this._linkProviderService = this._instantiationService.createInstance(LinkProviderService);
     this._instantiationService.setService(ILinkProviderService, this._linkProviderService);
     this._linkProviderService.registerLinkProvider(this._instantiationService.createInstance(OscLinkProvider));
@@ -1081,7 +1084,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._unprocessedDeadKey = true;
     }
 
-    const result = evaluateKeyboardEvent(event, this.coreService.decPrivateModes.applicationCursorKeys, this.browser.isMac, this.options.macOptionIsMeta);
+    const result = this._keyboardService.evaluateKeyDown(event);
 
     this.updateCursorStyle(event);
 
@@ -1109,8 +1112,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
 
     // HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
-    // letters cannot be input while caps lock is on.
-    if (event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
+    // letters cannot be input while caps lock is on. Skip this hack when using kitty protocol
+    // as it needs to send proper CSI u sequences for all key events.
+    if (!this._keyboardService.useKitty && event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
       if (event.key.charCodeAt(0) >= 65 && event.key.charCodeAt(0) <= 90) {
         return true;
       }
@@ -1166,6 +1170,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     if (!wasModifierKeyOnlyEvent(ev)) {
       this.focus();
+    }
+
+    // Handle key release for Kitty keyboard protocol
+    const result = this._keyboardService.evaluateKeyUp(ev);
+    if (result?.key) {
+      this.coreService.triggerDataEvent(result.key, true);
     }
 
     this.updateCursorStyle(ev);

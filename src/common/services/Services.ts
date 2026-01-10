@@ -4,7 +4,7 @@
  */
 
 import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, type IOverviewRulerOptions } from '@xterm/xterm';
-import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import type { Emitter, Event } from 'vs/base/common/event';
@@ -85,6 +85,7 @@ export interface ICoreService {
 
   readonly modes: IModes;
   readonly decPrivateModes: IDecPrivateModes;
+  readonly kittyKeyboard: IKittyKeyboardState;
 
   readonly onData: Event<string>;
   readonly onUserInput: Event<void>;
@@ -265,6 +266,7 @@ export interface ITerminalOptions {
   overviewRuler?: IOverviewRulerOptions;
   quirks?: ITerminalQuirks;
   scrollOnEraseInDisplay?: boolean;
+  vtExtensions?: IVtExtensions;
 
   [key: string]: any;
   cancelEvents: boolean;
@@ -304,6 +306,11 @@ export interface ITheme {
 
 export interface ITerminalQuirks {
   allowSetCursorBlink?: boolean;
+}
+
+export interface IVtExtensions {
+  kittyKeyboard?: boolean;
+  kittySgrBoldFaintControl?: boolean;
 }
 
 export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');

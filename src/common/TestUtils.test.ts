@@ -114,6 +114,13 @@ export class MockCoreService implements ICoreService {
     synchronizedOutput: false,
     wraparound: true
   };
+  public kittyKeyboard = {
+    flags: 0,
+    mainFlags: 0,
+    altFlags: 0,
+    mainStack: [] as number[],
+    altStack: [] as number[]
+  };
   public onData: Event<string> = new Emitter<string>().event;
   public onUserInput: Event<void> = new Emitter<void>().event;
   public onBinary: Event<string> = new Emitter<string>().event;

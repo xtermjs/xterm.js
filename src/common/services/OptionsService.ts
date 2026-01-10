@@ -54,7 +54,8 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   termName: 'xterm',
   cancelEvents: false,
   overviewRuler: {},
-  quirks: {}
+  quirks: {},
+  vtExtensions: {}
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];

@@ -7,7 +7,7 @@ import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import { AllColorIndex, IDisposable } from 'common/Types';
+import { AllColorIndex, IDisposable, IKeyboardResult } from 'common/Types';
 import type { Event } from 'vs/base/common/event';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
@@ -155,4 +155,12 @@ export interface ILinkProviderService extends IDisposable {
 }
 export interface ILinkProvider {
   provideLinks(y: number, callback: (links: ILink[] | undefined) => void): void;
+}
+
+export const IKeyboardService = createDecorator<IKeyboardService>('KeyboardService');
+export interface IKeyboardService {
+  serviceBrand: undefined;
+  evaluateKeyDown(event: KeyboardEvent): IKeyboardResult;
+  evaluateKeyUp(event: KeyboardEvent): IKeyboardResult | undefined;
+  readonly useKitty: boolean;
 }

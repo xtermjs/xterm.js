@@ -33,7 +33,7 @@ if (files.length === 0) {
 
 console.log(`Linting ${files.length} changed file(s)...`);
 
-const eslintArgs = ['--max-warnings', '0'];
+const eslintArgs = ['--max-warnings', '0', '--no-warn-ignored'];
 if (fix) {
   eslintArgs.push('--fix');
 }
