@@ -2672,10 +2672,10 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 55) {
         // not overline
         attr.bg &= ~BgFlags.OVERLINE;
-      } else if (p === 221) {
+      } else if (p === 221 && (this._optionsService.rawOptions.vtExtensions?.kittySgrBoldFaintControl ?? true)) {
         // not bold (kitty extension)
         attr.fg &= ~FgFlags.BOLD;
-      } else if (p === 222) {
+      } else if (p === 222 && (this._optionsService.rawOptions.vtExtensions?.kittySgrBoldFaintControl ?? true)) {
         // not faint (kitty extension)
         attr.bg &= ~BgFlags.DIM;
       } else if (p === 59) {

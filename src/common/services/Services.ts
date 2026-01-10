@@ -310,6 +310,7 @@ export interface ITerminalQuirks {
 
 export interface IVtExtensions {
   kittyKeyboard?: boolean;
+  kittySgrBoldFaintControl?: boolean;
 }
 
 export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');
