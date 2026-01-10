@@ -125,6 +125,7 @@ export class Terminal extends Disposable implements ITerminalApi {
       sendFocusMode: m.sendFocus,
       showCursor: !this._core.coreService.isCursorHidden,
       synchronizedOutputMode: m.synchronizedOutput,
+      win32InputMode: m.win32InputMode,
       wraparoundMode: m.wraparound
     };
   }

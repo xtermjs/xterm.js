@@ -282,7 +282,10 @@ function createTerminal(): Terminal {
       buildNumber: 22621
     } : undefined,
     fontFamily: '"Fira Code", monospace, "Powerline Extra Symbols"',
-    theme: { ...xtermjsTheme }
+    theme: { ...xtermjsTheme },
+    vtExtensions: {
+      win32InputMode: isWindows
+    }
   } as ITerminalOptions);
 
   // Load addons

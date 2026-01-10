@@ -672,6 +672,7 @@ test.describe('API Integration Tests', () => {
         sendFocusMode: false,
         showCursor: true,
         synchronizedOutputMode: false,
+        win32InputMode: false,
         wraparoundMode: true
       });
     });

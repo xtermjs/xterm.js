@@ -2026,6 +2026,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
           this._coreService.decPrivateModes.synchronizedOutput = true;
           break;
+        case 9001: // win32-input-mode (https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md)
+          if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
+            this._coreService.decPrivateModes.win32InputMode = true;
+          }
+          break;
       }
     }
     return true;
@@ -2266,6 +2271,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.decPrivateModes.synchronizedOutput = false;
           this._onRequestRefreshRows.fire(undefined);
           break;
+        case 9001: // win32-input-mode
+          if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
+            this._coreService.decPrivateModes.win32InputMode = false;
+          }
+          break;
       }
     }
     return true;
@@ -2361,6 +2371,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 47 || p === 1047 || p === 1049) return f(p, b2v(active === alt));
     if (p === 2004) return f(p, b2v(dm.bracketedPasteMode));
     if (p === 2026) return f(p, b2v(dm.synchronizedOutput));
+    if (p === 9001) return this._optionsService.rawOptions.vtExtensions?.win32InputMode ? f(p, b2v(dm.win32InputMode)) : f(p, V.NOT_RECOGNIZED);
     return f(p, V.NOT_RECOGNIZED);
   }
 

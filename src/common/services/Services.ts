@@ -311,6 +311,7 @@ export interface ITerminalQuirks {
 export interface IVtExtensions {
   kittyKeyboard?: boolean;
   kittySgrBoldFaintControl?: boolean;
+  win32InputMode?: boolean;
 }
 
 export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');
