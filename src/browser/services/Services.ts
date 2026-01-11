@@ -163,4 +163,5 @@ export interface IKeyboardService {
   evaluateKeyDown(event: KeyboardEvent): IKeyboardResult;
   evaluateKeyUp(event: KeyboardEvent): IKeyboardResult | undefined;
   readonly useKitty: boolean;
+  readonly useWin32InputMode: boolean;
 }
