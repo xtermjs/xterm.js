@@ -186,7 +186,20 @@ function getScanCode(ev: IKeyboardEvent): number {
 function getUnicodeChar(ev: IKeyboardEvent): number {
   // Only single-character keys produce unicode output
   if (ev.key.length === 1) {
-    return ev.key.codePointAt(0) || 0;
+    const codePoint = ev.key.codePointAt(0) || 0;
+
+    // Handle Ctrl+letter combinations - these produce control characters (0x01-0x1A)
+    if (ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+      // Convert A-Z or a-z to control character (Ctrl+A = 0x01, Ctrl+C = 0x03, etc.)
+      if (codePoint >= 0x41 && codePoint <= 0x5A) { // A-Z
+        return codePoint - 0x40;
+      }
+      if (codePoint >= 0x61 && codePoint <= 0x7A) { // a-z
+        return codePoint - 0x60;
+      }
+    }
+
+    return codePoint;
   }
   return 0;
 }

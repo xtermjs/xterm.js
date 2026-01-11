@@ -119,6 +119,15 @@ describe('Win32InputMode', () => {
       it('symbol', () => test({ code: 'Digit4', key: '$', keyCode: 52, shiftKey: true }, true, p => assert.strictEqual(p!.uc, 36)));
     });
 
+    describe('ctrl+letter control characters', () => {
+      it('Ctrl+A produces 0x01', () => test({ code: 'KeyA', key: 'a', keyCode: 65, ctrlKey: true }, true, p => assert.strictEqual(p!.uc, 0x01)));
+      it('Ctrl+C produces 0x03 (ETX)', () => test({ code: 'KeyC', key: 'c', keyCode: 67, ctrlKey: true }, true, p => assert.strictEqual(p!.uc, 0x03)));
+      it('Ctrl+Z produces 0x1A', () => test({ code: 'KeyZ', key: 'z', keyCode: 90, ctrlKey: true }, true, p => assert.strictEqual(p!.uc, 0x1A)));
+      it('Ctrl+Shift+A (uppercase) produces 0x01', () => test({ code: 'KeyA', key: 'A', keyCode: 65, ctrlKey: true, shiftKey: true }, true, p => assert.strictEqual(p!.uc, 0x01)));
+      it('Ctrl+Shift+C (uppercase) produces 0x03', () => test({ code: 'KeyC', key: 'C', keyCode: 67, ctrlKey: true, shiftKey: true }, true, p => assert.strictEqual(p!.uc, 0x03)));
+      it('Ctrl+Alt+C does not produce control char', () => test({ code: 'KeyC', key: 'c', keyCode: 67, ctrlKey: true, altKey: true }, true, p => assert.strictEqual(p!.uc, 99)));
+    });
+
     describe('scan codes', () => {
       it('letter A', () => test({ code: 'KeyA', key: 'a', keyCode: 65 }, true, p => assert.strictEqual(p!.sc, 0x1E)));
       it('Escape', () => test({ code: 'Escape', key: 'Escape', keyCode: 27 }, true, p => assert.strictEqual(p!.sc, 0x01)));
