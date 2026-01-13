@@ -253,6 +253,7 @@ export interface ITerminalOptions {
   rescaleOverlappingGlyphs?: boolean;
   rightClickSelectsWord?: boolean;
   rows?: number;
+  showCursorImmediately?: boolean;
   screenReaderMode?: boolean;
   scrollback?: number;
   scrollOnUserInput?: boolean;

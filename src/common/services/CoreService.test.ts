@@ -18,6 +18,19 @@ describe('CoreService', () => {
       new MockOptionsService());
   });
 
+  describe('isCursorInitialized', () => {
+    it('should be false by default', () => {
+      assert.equal(coreService.isCursorInitialized, false);
+    });
+    it('should be true when showCursorImmediately is true', () => {
+      const coreServiceWithOption = new CoreService(
+        new MockBufferService(80, 30),
+        new MockLogService(),
+        new MockOptionsService({ showCursorImmediately: true }));
+      assert.equal(coreServiceWithOption.isCursorInitialized, true);
+    });
+  });
+
   describe('reset', () => {
     it('should not affect isCursorInitialized', () => {
       coreService.isCursorInitialized = true;

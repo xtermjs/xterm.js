@@ -38,7 +38,7 @@ const DEFAULT_KITTY_KEYBOARD_STATE = (): IKittyKeyboardState => ({
 export class CoreService extends Disposable implements ICoreService {
   public serviceBrand: any;
 
-  public isCursorInitialized: boolean = false;
+  public isCursorInitialized: boolean;
   public isCursorHidden: boolean = false;
   public modes: IModes;
   public decPrivateModes: IDecPrivateModes;
@@ -59,6 +59,7 @@ export class CoreService extends Disposable implements ICoreService {
     @IOptionsService private readonly _optionsService: IOptionsService
   ) {
     super();
+    this.isCursorInitialized = _optionsService.rawOptions.showCursorImmediately ?? false;
     this.modes = clone(DEFAULT_MODES);
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
     this.kittyKeyboard = DEFAULT_KITTY_KEYBOARD_STATE();
