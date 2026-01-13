@@ -340,6 +340,13 @@ declare module '@xterm/xterm' {
      * The number of rows in the terminal.
      */
     rows?: number;
+
+    /**
+     * Whether to show the cursor immediately when the terminal is created.
+     * When false (default), the cursor will not be visible until the terminal
+     * is focused for the first time.
+     */
+    showCursorImmediately?: boolean;
   }
 
   /**

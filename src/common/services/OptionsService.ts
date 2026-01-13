@@ -12,6 +12,7 @@ import { Emitter } from 'vs/base/common/event';
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
   rows: 24,
+  showCursorImmediately: false,
   cursorBlink: false,
   cursorStyle: 'block',
   cursorWidth: 1,
