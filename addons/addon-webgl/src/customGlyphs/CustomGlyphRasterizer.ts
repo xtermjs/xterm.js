@@ -4,8 +4,34 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { customGlyphDefinitions } from './CustomGlyphDefinitions';
-import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+
+/**
+ * Cached custom glyph definitions. This is loaded dynamically to support code splitting.
+ */
+let customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } | undefined;
+
+/**
+ * Promise that resolves when custom glyph definitions are loaded.
+ */
+let loadingPromise: Promise<void> | undefined;
+
+/**
+ * Begins loading the custom glyph definitions. This should be called as early as possible
+ * to ensure the definitions are ready when needed.
+ * @returns A promise that resolves when the definitions are loaded.
+ */
+export function loadCustomGlyphDefinitions(): Promise<void> {
+  if (customGlyphDefinitions) {
+    return Promise.resolve();
+  }
+  if (!loadingPromise) {
+    loadingPromise = import('./CustomGlyphDefinitions').then(module => {
+      customGlyphDefinitions = module.customGlyphDefinitions;
+    });
+  }
+  return loadingPromise;
+}
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -24,6 +50,11 @@ export function tryDrawCustomGlyph(
   devicePixelRatio: number,
   backgroundColor?: string
 ): boolean {
+  // If definitions are not loaded yet, return false to fall back to font rendering
+  if (!customGlyphDefinitions) {
+    return false;
+  }
+
   const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
     // Normalize to array for uniform handling
