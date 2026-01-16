@@ -28,7 +28,7 @@ import { OscLinkProvider } from 'browser/OscLinkProvider';
 import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal } from 'browser/Types';
 import { Viewport } from 'browser/Viewport';
 import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
-import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
+import type { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { IRenderer } from 'browser/renderer/shared/Types';
@@ -53,11 +53,33 @@ import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
-import { AccessibilityManager } from './AccessibilityManager';
+import type { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
 import { Emitter, Event } from 'vs/base/common/event';
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+
+/**
+ * Lazily loaded AccessibilityManager module.
+ */
+let accessibilityManagerModule: Promise<typeof import('./AccessibilityManager')> | undefined;
+function loadAccessibilityManager(): Promise<typeof import('./AccessibilityManager')> {
+  if (!accessibilityManagerModule) {
+    accessibilityManagerModule = import('./AccessibilityManager');
+  }
+  return accessibilityManagerModule;
+}
+
+/**
+ * Lazily loaded OverviewRulerRenderer module.
+ */
+let overviewRulerRendererModule: Promise<typeof import('browser/decorations/OverviewRulerRenderer')> | undefined;
+function loadOverviewRulerRenderer(): Promise<typeof import('browser/decorations/OverviewRulerRenderer')> {
+  if (!overviewRulerRendererModule) {
+    overviewRulerRendererModule = import('browser/decorations/OverviewRulerRenderer');
+  }
+  return overviewRulerRendererModule;
+}
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -277,7 +299,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _handleScreenReaderModeOptionChange(value: boolean): void {
     if (value) {
       if (!this._accessibilityManager.value && this._renderService) {
-        this._accessibilityManager.value = this._instantiationService.createInstance(AccessibilityManager, this);
+        loadAccessibilityManager().then(module => {
+          // Check again after async load in case option changed
+          if (this.options.screenReaderMode && !this._accessibilityManager.value && this._renderService) {
+            this._accessibilityManager.value = this._instantiationService.createInstance(module.AccessibilityManager, this);
+          }
+        });
       }
     } else {
       this._accessibilityManager.clear();
@@ -588,16 +615,28 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager.value = this._instantiationService.createInstance(AccessibilityManager, this);
+      loadAccessibilityManager().then(module => {
+        if (this.options.screenReaderMode && !this._accessibilityManager.value && this._renderService) {
+          this._accessibilityManager.value = this._instantiationService.createInstance(module.AccessibilityManager, this);
+        }
+      });
     }
     this._register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 
     if (this.options.overviewRuler.width) {
-      this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
+      loadOverviewRulerRenderer().then(module => {
+        if (this.options.overviewRuler.width && !this._overviewRulerRenderer && this._viewportElement && this.screenElement) {
+          this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(module.OverviewRulerRenderer, this._viewportElement, this.screenElement));
+        }
+      });
     }
     this.optionsService.onSpecificOptionChange('overviewRuler', value => {
       if (!this._overviewRulerRenderer && value && this._viewportElement && this.screenElement) {
-        this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
+        loadOverviewRulerRenderer().then(module => {
+          if (!this._overviewRulerRenderer && this.options.overviewRuler.width && this._viewportElement && this.screenElement) {
+            this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(module.OverviewRulerRenderer, this._viewportElement, this.screenElement));
+          }
+        });
       }
     });
     // Measure the character size
