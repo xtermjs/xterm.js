@@ -28,6 +28,10 @@ export function loadCustomGlyphDefinitions(): Promise<void> {
   if (!loadingPromise) {
     loadingPromise = import('./CustomGlyphDefinitions').then(module => {
       customGlyphDefinitions = module.customGlyphDefinitions;
+    }).catch(err => {
+      // Reset the loading promise on failure to allow retry
+      loadingPromise = undefined;
+      throw err;
     });
   }
   return loadingPromise;
