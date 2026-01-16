@@ -157,6 +157,18 @@ const ENHANCED_KEY_CODES = new Set([
 ]);
 
 /**
+ * Mapping of special keys (ev.key values) to their Unicode control character codes.
+ * These keys have multi-character ev.key strings but produce control characters.
+ * @see https://docs.microsoft.com/en-us/windows/console/key-event-record-str
+ */
+const KEY_TO_CONTROL_CHAR: { [key: string]: number } = {
+  'Enter': 0x0D,      // Carriage return
+  'Backspace': 0x08,  // Backspace
+  'Tab': 0x09,        // Horizontal tab
+  'Escape': 0x1B,     // Escape
+};
+
+/**
  * Get the Win32 virtual key code for a keyboard event.
  */
 function getVirtualKeyCode(ev: IKeyboardEvent): number {
@@ -184,6 +196,23 @@ function getScanCode(ev: IKeyboardEvent): number {
  * Returns 0 for non-character keys.
  */
 function getUnicodeChar(ev: IKeyboardEvent): number {
+  // Handle special keys that produce control characters
+  // Ctrl modifies some of these: Ctrl+Enter=LF, Ctrl+Backspace=DEL
+  if (ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+    if (ev.key === 'Enter') {
+      return 0x0A; // Line feed (Ctrl+Enter)
+    }
+    if (ev.key === 'Backspace') {
+      return 0x7F; // DEL (Ctrl+Backspace)
+    }
+  }
+
+  // Check for special keys that always produce control characters
+  const controlChar = KEY_TO_CONTROL_CHAR[ev.key];
+  if (controlChar !== undefined) {
+    return controlChar;
+  }
+
   // Only single-character keys produce unicode output
   if (ev.key.length === 1) {
     const codePoint = ev.key.codePointAt(0) || 0;

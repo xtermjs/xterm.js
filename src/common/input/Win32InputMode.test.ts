@@ -38,8 +38,8 @@ describe('Win32InputMode', () => {
       });
       it('letter key release', () => test({ code: 'KeyA', key: 'a', keyCode: 65 }, false, p => assert.strictEqual(p!.kd, 0)));
       it('digit key', () => test({ code: 'Digit1', key: '1', keyCode: 49 }, true, p => assert.deepStrictEqual([p!.vk, p!.uc], [0x31, 49])));
-      it('Enter key', () => test({ code: 'Enter', key: 'Enter', keyCode: 13 }, true, p => assert.deepStrictEqual([p!.vk, p!.uc], [0x0D, 0])));
-      it('Escape key', () => test({ code: 'Escape', key: 'Escape', keyCode: 27 }, true, p => assert.strictEqual(p!.vk, 0x1B)));
+      it('Enter key', () => test({ code: 'Enter', key: 'Enter', keyCode: 13 }, true, p => assert.deepStrictEqual([p!.vk, p!.uc], [0x0D, 13])));
+      it('Escape key', () => test({ code: 'Escape', key: 'Escape', keyCode: 27 }, true, p => assert.deepStrictEqual([p!.vk, p!.uc], [0x1B, 27])));
       it('Space key', () => test({ code: 'Space', key: ' ', keyCode: 32 }, true, p => assert.deepStrictEqual([p!.vk, p!.uc], [0x20, 32])));
     });
 
@@ -91,8 +91,8 @@ describe('Win32InputMode', () => {
           assert.ok(p!.cs & Win32ControlKeyState.ENHANCED_KEY);
         }));
       });
-      it('Tab', () => test({ code: 'Tab', key: 'Tab', keyCode: 9 }, true, p => assert.strictEqual(p!.vk, 0x09)));
-      it('Backspace', () => test({ code: 'Backspace', key: 'Backspace', keyCode: 8 }, true, p => assert.strictEqual(p!.vk, 0x08)));
+      it('Tab', () => test({ code: 'Tab', key: 'Tab', keyCode: 9 }, true, p => assert.deepStrictEqual([p!.vk, p!.uc], [0x09, 9])));
+      it('Backspace', () => test({ code: 'Backspace', key: 'Backspace', keyCode: 8 }, true, p => assert.deepStrictEqual([p!.vk, p!.uc], [0x08, 8])));
     });
 
     describe('numpad keys', () => {
@@ -187,6 +187,16 @@ describe('Win32InputMode', () => {
       it('Ctrl+Alt+/', () => test({ code: 'Slash', key: '/', keyCode: 191, ctrlKey: true, altKey: true }, true, p => {
         assert.ok(p!.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
         assert.ok(p!.cs & Win32ControlKeyState.LEFT_ALT_PRESSED);
+      }));
+      it('Ctrl+Enter produces LF (0x0A)', () => test({ code: 'Enter', key: 'Enter', keyCode: 13, ctrlKey: true }, true, p => {
+        assert.strictEqual(p!.vk, 0x0D);
+        assert.strictEqual(p!.uc, 0x0A);
+        assert.ok(p!.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
+      }));
+      it('Ctrl+Backspace produces DEL (0x7F)', () => test({ code: 'Backspace', key: 'Backspace', keyCode: 8, ctrlKey: true }, true, p => {
+        assert.strictEqual(p!.vk, 0x08);
+        assert.strictEqual(p!.uc, 0x7F);
+        assert.ok(p!.cs & Win32ControlKeyState.LEFT_CTRL_PRESSED);
       }));
     });
 
