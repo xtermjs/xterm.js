@@ -304,6 +304,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           if (this.options.screenReaderMode && !this._accessibilityManager.value && this._renderService) {
             this._accessibilityManager.value = this._instantiationService.createInstance(module.AccessibilityManager, this);
           }
+        }).catch(() => {
+          // Failed to load accessibility manager module
         });
       }
     } else {
@@ -619,6 +621,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
         if (this.options.screenReaderMode && !this._accessibilityManager.value && this._renderService) {
           this._accessibilityManager.value = this._instantiationService.createInstance(module.AccessibilityManager, this);
         }
+      }).catch(() => {
+        // Failed to load accessibility manager module
       });
     }
     this._register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
@@ -628,6 +632,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
         if (this.options.overviewRuler.width && !this._overviewRulerRenderer && this._viewportElement && this.screenElement) {
           this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(module.OverviewRulerRenderer, this._viewportElement, this.screenElement));
         }
+      }).catch(() => {
+        // Failed to load overview ruler renderer module
       });
     }
     this.optionsService.onSpecificOptionChange('overviewRuler', value => {
@@ -636,6 +642,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           if (!this._overviewRulerRenderer && this.options.overviewRuler.width && this._viewportElement && this.screenElement) {
             this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(module.OverviewRulerRenderer, this._viewportElement, this.screenElement));
           }
+        }).catch(() => {
+          // Failed to load overview ruler renderer module
         });
       }
     });
