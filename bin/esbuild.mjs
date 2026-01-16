@@ -26,7 +26,10 @@ const commonOptions = {
   target: 'es2021',
   sourcemap: true,
   treeShaking: true,
+  splitting: true,
+  chunkNames: 'chunks/[name]-[hash]',
   logLevel: 'warning',
+  outExtension: { '.js': '.mjs' },
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -103,7 +106,8 @@ if (config.addon) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`addons/addon-${config.addon}/src/${getAddonEntryPoint(config.addon)}.ts`],
-    outfile: `addons/addon-${config.addon}/lib/addon-${config.addon}.mjs`,
+    outdir: `addons/addon-${config.addon}/lib`,
+    entryNames: `addon-${config.addon}`,
   };
   outConfig = {
     ...outConfig,
@@ -128,11 +132,12 @@ if (config.addon) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`demo/client/client.ts`],
-    outfile: 'demo/dist/client-bundle.js',
+    outdir: 'demo/dist',
+    entryNames: 'client-bundle',
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
     alias: {
       // Library ESM imports
-      "@xterm/xterm": ".",
+      "@xterm/xterm": "./lib/xterm.mjs",
       "@xterm/addon-attach": "./addons/addon-attach/lib/addon-attach.mjs",
       "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/addon-clipboard.mjs",
       "@xterm/addon-fit": "./addons/addon-fit/lib/addon-fit.mjs",
@@ -164,6 +169,10 @@ if (config.addon) {
     format: 'cjs',
     platform: 'node',
     external: ['node-pty'],
+    // Splitting is not compatible with cjs format
+    splitting: false,
+    // Override the .mjs extension from commonOptions
+    outExtension: {},
   }
   skipOut = true;
   skipOutTest = true;
@@ -171,7 +180,8 @@ if (config.addon) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`src/headless/public/Terminal.ts`],
-    outfile: `headless/lib-headless/xterm-headless.mjs`
+    outdir: `headless/lib-headless`,
+    entryNames: 'xterm-headless',
   };
   outConfig = {
     ...outConfig,
@@ -183,7 +193,8 @@ if (config.addon) {
   bundleConfig = {
     ...bundleConfig,
     entryPoints: [`src/browser/public/Terminal.ts`],
-    outfile: `lib/xterm.mjs`
+    outdir: `lib`,
+    entryNames: 'xterm',
   };
   outConfig = {
     ...outConfig,
