@@ -137,7 +137,7 @@ if (config.addon) {
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
     alias: {
       // Library ESM imports
-      "@xterm/xterm": "./lib/xterm.mjs",
+      "@xterm/xterm": ".",
       "@xterm/addon-attach": "./addons/addon-attach/lib/addon-attach.mjs",
       "@xterm/addon-clipboard": "./addons/addon-clipboard/lib/addon-clipboard.mjs",
       "@xterm/addon-fit": "./addons/addon-fit/lib/addon-fit.mjs",
