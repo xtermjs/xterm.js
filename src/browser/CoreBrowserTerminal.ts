@@ -1241,10 +1241,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
-    // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
-    // support reading out character input which can doubling up input characters
-    // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
-    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen) && !this.optionsService.rawOptions.screenReaderMode) {
+    // Handle direct text input (not from composition).
+    // We skip input events when:
+    // - isComposing: Active composition in progress (e.g., emoji picker, CJK IME)
+    // - isSendingComposition: compositionend fired but setTimeout hasn't sent data yet
+    // CompositionHelper handles input in these cases to prevent duplicates.
+    // When NOT composing/sending, we accept input even if ev.composed=true, which fixes
+    // iOS Safari Chinese punctuation input (issue #3070, #4486).
+    // Screen reader mode needs the event to bubble for accessibility announcements.
+    const compositionHelper = this._compositionHelper!;
+    if (ev.data && ev.inputType === 'insertText' && !compositionHelper.isComposing && !compositionHelper.isSendingComposition && !this.optionsService.rawOptions.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
