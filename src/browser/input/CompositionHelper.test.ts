@@ -21,7 +21,7 @@ describe('CompositionHelper', () => {
         remove: () => {}
       },
       getBoundingClientRect: () => {
-        return { width: 0 };
+        return { width: 0, height: 0 };
       },
       style: {
         left: 0,
@@ -33,7 +33,10 @@ describe('CompositionHelper', () => {
       value: '',
       style: {
         left: 0,
-        top: 0
+        top: 0,
+        width: 0,
+        height: 0,
+        lineHeight: 0
       }
     } as any;
     const coreService = new MockCoreService();
@@ -43,6 +46,60 @@ describe('CompositionHelper', () => {
     handledText = '';
     const bufferService = new MockBufferService(10, 5);
     compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, new MockRenderService());
+  });
+
+  describe('updateCompositionElements', () => {
+    it('should not overflow when cursor is at the last column', () => {
+      const bufferService = (compositionHelper as any)._bufferService as MockBufferService;
+      const renderService = (compositionHelper as any)._renderService as MockRenderService;
+
+      // Set cursor to last column
+      bufferService.buffer.x = bufferService.cols - 1;
+      bufferService.buffer.y = 0;
+      // Ensure cursor is in viewport
+      bufferService.buffer.isCursorInViewport = true;
+
+      // Set cell dimensions
+      const cellWidth = 10;
+      const cellHeight = 20;
+      renderService.dimensions.css.cell.width = cellWidth;
+      renderService.dimensions.css.cell.height = cellHeight;
+
+      // Mock composition view with large width that would overflow
+      const compositionWidth = 80;
+      (compositionView as any).getBoundingClientRect = () => {
+        return { width: compositionWidth, height: cellHeight } as any;
+      };
+
+      // Set composition state
+      (compositionHelper as any)._isComposing = true;
+
+      // Call update
+      compositionHelper.updateCompositionElements(true);
+
+      // Parse the left and top values (they are strings like "0px")
+      const leftStr = (compositionView.style as any).left || '0px';
+      const topStr = (compositionView.style as any).top || '0px';
+      const left = parseFloat(leftStr.replace('px', ''));
+      const top = parseFloat(topStr.replace('px', ''));
+
+      // Calculate max right boundary
+      const maxRight = bufferService.cols * cellWidth;
+      const MARGIN = 20;
+      const cursorLeft = bufferService.buffer.x * cellWidth;
+      const wouldOverflow = (cursorLeft + compositionWidth) > (maxRight - MARGIN);
+
+      // Verify that composition view does not overflow (with margin)
+      assert.isAtMost(left + compositionWidth, maxRight - MARGIN, 'Composition view should not overflow terminal right edge');
+      
+      // If overflow was detected and fixed, top should be moved down one line
+      if (wouldOverflow) {
+        assert.equal(top, cellHeight, 'When overflow is fixed, composition view should be moved down one line');
+        assert.isAtMost(left, maxRight - compositionWidth - MARGIN, 'Left position should be adjusted to prevent overflow');
+      } else {
+        assert.equal(top, 0, 'When no overflow, top should remain at cursor position');
+      }
+    });
   });
 
   describe('Input', () => {
