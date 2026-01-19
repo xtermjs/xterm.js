@@ -176,6 +176,17 @@ export class TextureAtlas implements ITextureAtlas {
 
       // Gather details of the merge
       const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
+
+      // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
+      // effectively reduce page count and merging would cause issues.
+      if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
+        const newPage = new AtlasPage(this._document, this._textureSize);
+        this._pages.push(newPage);
+        this._activePages.push(newPage);
+        this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+        return newPage;
+      }
+
       const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
       const mergedPageIndex = this.pages.length - mergingPages.length;
 
