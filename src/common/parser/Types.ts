@@ -136,8 +136,6 @@ export type OscFallbackHandlerType = (ident: number, action: 'START' | 'PUT' | '
 
 /**
  * APC handler types.
- * APC (Application Program Command) sequences are used by protocols like
- * Kitty Graphics Protocol. Format: ESC _ <data> ESC \
  */
 export interface IApcHandler {
   /**
@@ -147,7 +145,6 @@ export interface IApcHandler {
   start(): void;
   /**
    * Incoming data chunk.
-   * Note: Data is borrowed.
    */
   put(data: Uint32Array, start: number, end: number): void;
   /**
