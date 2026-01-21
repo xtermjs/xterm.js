@@ -162,7 +162,8 @@ const states: number[] = [
   ParserState.DCS_PARAM,
   ParserState.DCS_IGNORE,
   ParserState.DCS_INTERMEDIATE,
-  ParserState.DCS_PASSTHROUGH
+  ParserState.DCS_PASSTHROUGH,
+  ParserState.APC_STRING
 ];
 let state: any;
 
@@ -276,7 +277,8 @@ describe('EscapeSequenceParser', () => {
       ];
       const exceptions: { [key: number]: { [key: string]: any[] } } = {
         8: { '\x18': [], '\x1a': [] }, // abort OSC_STRING
-        13: { '\x18': [['dcs unhook', false]], '\x1a': [['dcs unhook', false]] } // abort DCS_PASSTHROUGH
+        13: { '\x18': [['dcs unhook', false]], '\x1a': [['dcs unhook', false]] }, // abort DCS_PASSTHROUGH
+        14: { '\x18': [], '\x1a': [] } // abort APC_STRING
       };
       parser.reset();
       testTerminal.clear();
