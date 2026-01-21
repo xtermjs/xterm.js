@@ -18,8 +18,8 @@ import { ApcParser } from 'common/parser/ApcParser';
  *    value:  action << TableValue.TRANSITION_ACTION_SHIFT | nextState
  */
 const enum TableAccess {
-  TRANSITION_ACTION_SHIFT = 4,
-  TRANSITION_STATE_MASK = 15,
+  TRANSITION_ACTION_SHIFT = 8,
+  TRANSITION_STATE_MASK = 255,
   INDEX_STATE_SHIFT = 8
 }
 
@@ -27,10 +27,10 @@ const enum TableAccess {
  * Transition table for EscapeSequenceParser.
  */
 export class TransitionTable {
-  public table: Uint8Array;
+  public table: Uint16Array;
 
   constructor(length: number) {
-    this.table = new Uint8Array(length);
+    this.table = new Uint16Array(length);
   }
 
   /**
