@@ -58,8 +58,6 @@ export const enum OscState {
   ABORT = 3
 }
 
-// I actually don't know if below is correct..
-// If it is.. it seems like dup of OscState.
 /**
  * Internal states of ApcParser.
  */
