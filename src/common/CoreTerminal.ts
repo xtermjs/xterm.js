@@ -242,6 +242,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     return this._inputHandler.registerOscHandler(ident, callback);
   }
 
+  /** Add handler for APC escape sequence. See xterm.d.ts for details. */
+  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerApcHandler(ident, callback);
+  }
+
   protected _setup(): void {
     this._handleWindowsPtyOptionChange();
   }
