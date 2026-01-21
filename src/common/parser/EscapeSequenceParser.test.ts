@@ -705,22 +705,36 @@ describe('EscapeSequenceParser', () => {
     });
     it('trans ANYWHERE/ESCAPE --> SOS_PM_APC_STRING', () => {
       parser.reset();
-      // C0
-      let initializers = ['\x58', '\x5e', '\x5f'];
+      // C0 (only SOS and PM, APC has separate handling)
+      let initializers = ['\x58', '\x5e'];
       for (let i = 0; i < initializers.length; ++i) {
         parse(parser, '\x1b' + initializers[i]);
         assert.equal(parser.currentState, ParserState.SOS_PM_APC_STRING);
         parser.reset();
       }
-      // C1
+      // C1 (only SOS and PM, APC has separate handling)
       for (state in states) {
         parser.currentState = state;
-        initializers = ['\x98', '\x9e', '\x9f'];
+        initializers = ['\x98', '\x9e'];
         for (let i = 0; i < initializers.length; ++i) {
           parse(parser, initializers[i]);
           assert.equal(parser.currentState, ParserState.SOS_PM_APC_STRING);
           parser.reset();
         }
+      }
+    });
+    it('trans ANYWHERE/ESCAPE --> APC_STRING', () => {
+      parser.reset();
+      // C0 (ESC _)
+      parse(parser, '\x1b_');
+      assert.equal(parser.currentState, ParserState.APC_STRING);
+      parser.reset();
+      // C1
+      for (state in states) {
+        parser.currentState = state;
+        parse(parser, '\x9f');
+        assert.equal(parser.currentState, ParserState.APC_STRING);
+        parser.reset();
       }
     });
     it('state SOS_PM_APC_STRING ignore rules', () => {
@@ -1207,7 +1221,7 @@ describe('EscapeSequenceParser', () => {
       clearAccu();
     });
     it('print handler', () => {
-      parser2.setPrintHandler(function (data: Uint32Array, start: number, end: number): void {
+      parser2.setPrintHandler(function(data: Uint32Array, start: number, end: number): void {
         for (let i = start; i < end; ++i) {
           print += stringFromCodePoint(data[i]);
         }
@@ -1221,11 +1235,11 @@ describe('EscapeSequenceParser', () => {
       assert.equal(print, '');
     });
     it('ESC handler', () => {
-      parser2.registerEscHandler({ intermediates: '%', final: 'G' }, function (): boolean {
+      parser2.registerEscHandler({ intermediates: '%', final: 'G' }, function(): boolean {
         esc.push('%G');
         return true;
       });
-      parser2.registerEscHandler({ final: 'E' }, function (): boolean {
+      parser2.registerEscHandler({ final: 'E' }, function(): boolean {
         esc.push('E');
         return true;
       });
@@ -1293,7 +1307,7 @@ describe('EscapeSequenceParser', () => {
       });
     });
     it('CSI handler', () => {
-      parser2.registerCsiHandler({ final: 'm' }, function (params: IParams): boolean {
+      parser2.registerCsiHandler({ final: 'm' }, function(params: IParams): boolean {
         csi.push(['m', params.toArray(), '']);
         return true;
       });
@@ -1373,11 +1387,11 @@ describe('EscapeSequenceParser', () => {
       });
     });
     it('EXECUTE handler', () => {
-      parser2.setExecuteHandler('\n', function (): boolean {
+      parser2.setExecuteHandler('\n', function(): boolean {
         exe.push('\n');
         return true;
       });
-      parser2.setExecuteHandler('\r', function (): boolean {
+      parser2.setExecuteHandler('\r', function(): boolean {
         exe.push('\r');
         return true;
       });
@@ -1390,7 +1404,7 @@ describe('EscapeSequenceParser', () => {
       assert.deepEqual(exe, ['\n']);
     });
     it('OSC handler', () => {
-      parser2.registerOscHandler(1, new OscHandler(function (data: string): boolean {
+      parser2.registerOscHandler(1, new OscHandler(function(data: string): boolean {
         osc.push([1, data]);
         return true;
       }));
@@ -1471,17 +1485,17 @@ describe('EscapeSequenceParser', () => {
     });
     it('DCS handler', () => {
       parser2.registerDcsHandler({ intermediates: '+', final: 'p' }, {
-        hook: function (params: IParams): void {
+        hook: function(params: IParams): void {
           dcs.push(['hook', '', params.toArray(), 0]);
         },
-        put: function (data: Uint32Array, start: number, end: number): void {
+        put: function(data: Uint32Array, start: number, end: number): void {
           let s = '';
           for (let i = start; i < end; ++i) {
             s += stringFromCodePoint(data[i]);
           }
           dcs.push(['put', s]);
         },
-        unhook: function (): boolean {
+        unhook: function(): boolean {
           dcs.push(['unhook']);
           return true;
         }
@@ -1560,7 +1574,7 @@ describe('EscapeSequenceParser', () => {
     });
     it('ERROR handler', () => {
       let errorState: IParsingState | null = null;
-      parser2.setErrorHandler(function (state: IParsingState): IParsingState {
+      parser2.setErrorHandler(function(state: IParsingState): IParsingState {
         errorState = state;
         return state;
       });
@@ -1788,7 +1802,7 @@ describe('EscapeSequenceParser - async', () => {
       parser.setExecuteHandler('\r', () => { callstack.push(['EXE \r']); return true; });
       parser.setExecuteHandler('\n', () => { callstack.push(['EXE \n']); return true; });
       parser.registerOscHandler(1, new OscHandler(data => { callstack.push(['OSC 1', data]); return true; }));
-      parser.registerDcsHandler({final: 'a'}, new DcsHandler((data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true;}));
+      parser.registerDcsHandler({ final: 'a' }, new DcsHandler((data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true; }));
     });
 
     it('sync handlers keep being parsed in sync mode', () => {
@@ -1823,7 +1837,7 @@ describe('EscapeSequenceParser - async', () => {
       parser.setExecuteHandler('\r', () => { callstack.push(['EXE \r']); return true; });
       parser.setExecuteHandler('\n', () => { callstack.push(['EXE \n']); return true; });
       parser.registerOscHandler(1, new OscHandler(async data => { callstack.push(['OSC 1', data]); return true; }));
-      parser.registerDcsHandler({final: 'a'}, new DcsHandler(async (data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true;}));
+      parser.registerDcsHandler({ final: 'a' }, new DcsHandler(async (data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true; }));
     });
 
     it('sync parse call does not work anymore', () => {
@@ -2156,7 +2170,7 @@ describe('EscapeSequenceParser - async', () => {
     });
     it('multiple async DCS handlers', async () => {
       // register with fallback
-      const DCS2 = parser.registerDcsHandler({final: 'a'}, new DcsHandler(async (data, params) => { callstack.push(['#2 DCS a', [data, params.toArray()]]); return false;}));
+      const DCS2 = parser.registerDcsHandler({ final: 'a' }, new DcsHandler(async (data, params) => { callstack.push(['#2 DCS a', [data, params.toArray()]]); return false; }));
       await parseP(parser, INPUT);
       for (let i = 0; i < callstack.length; ++i) {
         const entry = callstack[i];
@@ -2187,7 +2201,7 @@ describe('EscapeSequenceParser - async', () => {
       clearAccu();
 
       // register without fallback
-      const DCS22 = parser.registerDcsHandler({final: 'a'}, new DcsHandler(async (data, params) => { callstack.push(['#2 DCS a', [data, params.toArray()]]); return true;}));
+      const DCS22 = parser.registerDcsHandler({ final: 'a' }, new DcsHandler(async (data, params) => { callstack.push(['#2 DCS a', [data, params.toArray()]]); return true; }));
       await parseP(parser, INPUT);
       for (let i = 0; i < callstack.length; ++i) {
         const entry = callstack[i];

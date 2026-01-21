@@ -36,7 +36,7 @@ export interface IParams {
   addSubParam(value: number): void;
   hasSubParams(idx: number): boolean;
   getSubParams(idx: number): Int32Array | null;
-  getSubParamsAll(): {[idx: number]: Int32Array};
+  getSubParamsAll(): { [idx: number]: Int32Array };
 }
 
 /**
@@ -135,6 +135,32 @@ export interface IOscHandler {
 export type OscFallbackHandlerType = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
 
 /**
+ * APC handler types.
+ * APC (Application Program Command) sequences are used by protocols like
+ * Kitty Graphics Protocol. Format: ESC _ <data> ESC \
+ */
+export interface IApcHandler {
+  /**
+   * Announces start of this APC command.
+   * Prepare needed data structures here.
+   */
+  start(): void;
+  /**
+   * Incoming data chunk.
+   * Note: Data is borrowed.
+   */
+  put(data: Uint32Array, start: number, end: number): void;
+  /**
+   * End of APC command. `success` indicates whether the
+   * command finished normally or got aborted, thus final
+   * execution of the command should depend on `success`.
+   * To save memory also cleanup data structures here.
+   */
+  end(success: boolean): boolean | Promise<boolean>;
+}
+export type ApcFallbackHandlerType = (ident: number, action: 'START' | 'PUT' | 'END', payload?: any) => void;
+
+/**
  * PRINT handler types.
  */
 export type PrintHandlerType = (data: Uint32Array, start: number, end: number) => void;
@@ -196,6 +222,10 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(handler: OscFallbackHandlerType): void;
 
+  registerApcHandler(ident: number, handler: IApcHandler): IDisposable;
+  clearApcHandler(ident: number): void;
+  setApcHandlerFallback(handler: ApcFallbackHandlerType): void;
+
   setErrorHandler(handler: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
 }
@@ -221,6 +251,11 @@ export interface IOscParser extends ISubParser<IOscHandler, OscFallbackHandlerTy
 export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerType> {
   hook(ident: number, params: IParams): void;
   unhook(success: boolean, promiseResult?: boolean): void | Promise<boolean>;
+}
+
+export interface IApcParser extends ISubParser<IApcHandler, ApcFallbackHandlerType> {
+  start(): void;
+  end(success: boolean, promiseResult?: boolean): void | Promise<boolean>;
 }
 
 /**
@@ -252,7 +287,8 @@ export const enum ParserStackType {
   CSI,
   ESC,
   OSC,
-  DCS
+  DCS,
+  APC
 }
 
 // aggregate of resumable handler lists

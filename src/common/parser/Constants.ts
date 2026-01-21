@@ -20,7 +20,8 @@ export const enum ParserState {
   DCS_PARAM = 10,
   DCS_IGNORE = 11,
   DCS_INTERMEDIATE = 12,
-  DCS_PASSTHROUGH = 13
+  DCS_PASSTHROUGH = 13,
+  APC_STRING = 14
 }
 
 /**
@@ -41,13 +42,28 @@ export const enum ParserAction {
   CLEAR = 11,
   DCS_HOOK = 12,
   DCS_PUT = 13,
-  DCS_UNHOOK = 14
+  DCS_UNHOOK = 14,
+  APC_START = 15,
+  APC_PUT = 16,
+  APC_END = 17
 }
 
 /**
  * Internal states of OscParser.
  */
 export const enum OscState {
+  START = 0,
+  ID = 1,
+  PAYLOAD = 2,
+  ABORT = 3
+}
+
+// I actually don't know if below is correct..
+// If it is.. it seems like dup of OscState.
+/**
+ * Internal states of ApcParser.
+ */
+export const enum ApcState {
   START = 0,
   ID = 1,
   PAYLOAD = 2,
