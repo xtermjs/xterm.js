@@ -1312,6 +1312,24 @@ declare module '@xterm/headless' {
      * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
+    /**
+     * Adds a handler for APC escape sequences.
+     * @param ident The identifier (first character) of the sequence as a
+     * character code, e.g. 71 for 'G' (Kitty graphics protocol).
+     * @param callback The function to handle the sequence. Note that the
+     * function will only be called once if the sequence finished successfully.
+     * There is currently no way to intercept smaller data chunks, data chunks
+     * will be stored up until the sequence is finished. Since APC sequences are
+     * not limited by the amount of data this might impose a problem for big
+     * payloads. Currently xterm.js limits APC payload to 10 MB which should
+     * give enough room for most use cases. The callback is called with APC data
+     * string (excluding the identifier character). Return true if the sequence
+     * was handled; false if we should try a previous handler. The most recently
+     * added handler is tried first.
+     * @returns An IDisposable you can call to remove this handler.
+     */
+    registerApcHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }
 
   /**
