@@ -156,7 +156,7 @@ const states: number[] = [
   ParserState.CSI_PARAM,
   ParserState.CSI_INTERMEDIATE,
   ParserState.CSI_IGNORE,
-  ParserState.SOS_PM_APC_STRING,
+  ParserState.SOS_PM_STRING,
   ParserState.OSC_STRING,
   ParserState.DCS_ENTRY,
   ParserState.DCS_PARAM,
@@ -703,13 +703,13 @@ describe('EscapeSequenceParser', () => {
         testTerminal.clear();
       }
     });
-    it('trans ANYWHERE/ESCAPE --> SOS_PM_APC_STRING', () => {
+    it('trans ANYWHERE/ESCAPE --> SOS_PM_STRING', () => {
       parser.reset();
       // C0 (only SOS and PM, APC has separate handling)
       let initializers = ['\x58', '\x5e'];
       for (let i = 0; i < initializers.length; ++i) {
         parse(parser, '\x1b' + initializers[i]);
-        assert.equal(parser.currentState, ParserState.SOS_PM_APC_STRING);
+        assert.equal(parser.currentState, ParserState.SOS_PM_STRING);
         parser.reset();
       }
       // C1 (only SOS and PM, APC has separate handling)
@@ -718,7 +718,7 @@ describe('EscapeSequenceParser', () => {
         initializers = ['\x98', '\x9e'];
         for (let i = 0; i < initializers.length; ++i) {
           parse(parser, initializers[i]);
-          assert.equal(parser.currentState, ParserState.SOS_PM_APC_STRING);
+          assert.equal(parser.currentState, ParserState.SOS_PM_STRING);
           parser.reset();
         }
       }
@@ -737,16 +737,16 @@ describe('EscapeSequenceParser', () => {
         parser.reset();
       }
     });
-    it('state SOS_PM_APC_STRING ignore rules', () => {
+    it('state SOS_PM_STRING ignore rules', () => {
       parser.reset();
       let ignored = r(0x00, 0x18);
       ignored = ignored.concat(['\x19']);
       ignored = ignored.concat(r(0x1c, 0x20));
       ignored = ignored.concat(r(0x20, 0x80));
       for (let i = 0; i < ignored.length; ++i) {
-        parser.currentState = ParserState.SOS_PM_APC_STRING;
+        parser.currentState = ParserState.SOS_PM_STRING;
         parse(parser, ignored[i]);
-        assert.equal(parser.currentState, ParserState.SOS_PM_APC_STRING);
+        assert.equal(parser.currentState, ParserState.SOS_PM_STRING);
         parser.reset();
       }
     });

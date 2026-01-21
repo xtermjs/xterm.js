@@ -14,7 +14,7 @@ export const enum ParserState {
   CSI_PARAM = 4,
   CSI_INTERMEDIATE = 5,
   CSI_IGNORE = 6,
-  SOS_PM_APC_STRING = 7,
+  SOS_PM_STRING = 7,
   OSC_STRING = 8,
   DCS_ENTRY = 9,
   DCS_PARAM = 10,

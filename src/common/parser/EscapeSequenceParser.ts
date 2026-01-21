@@ -105,7 +105,7 @@ export const VT500_TRANSITION_TABLE = (function(): TransitionTable {
     table.add(0x9c, state, ParserAction.IGNORE, ParserState.GROUND); // ST as terminator
     table.add(0x1b, state, ParserAction.CLEAR, ParserState.ESCAPE);  // ESC
     table.add(0x9d, state, ParserAction.OSC_START, ParserState.OSC_STRING);  // OSC
-    table.addMany([0x98, 0x9e], state, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);  // SOS, PM
+    table.addMany([0x98, 0x9e], state, ParserAction.IGNORE, ParserState.SOS_PM_STRING);  // SOS, PM
     table.add(0x9f, state, ParserAction.APC_START, ParserState.APC_STRING);  // APC
     table.add(0x9b, state, ParserAction.CLEAR, ParserState.CSI_ENTRY);  // CSI
     table.add(0x90, state, ParserAction.CLEAR, ParserState.DCS_ENTRY);  // DCS
@@ -130,13 +130,18 @@ export const VT500_TRANSITION_TABLE = (function(): TransitionTable {
   table.add(0x7f, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
   table.addMany([0x9c, 0x1b, 0x18, 0x1a, 0x07], ParserState.OSC_STRING, ParserAction.OSC_END, ParserState.GROUND);
   table.addMany(r(0x1c, 0x20), ParserState.OSC_STRING, ParserAction.IGNORE, ParserState.OSC_STRING);
-  // sos/pm/apc - sos/pm does nothing, apc gets separate handling
-  table.addMany([0x58, 0x5e], ParserState.ESCAPE, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);  // SOS, PM
-  table.add(0x5f, ParserState.ESCAPE, ParserAction.APC_START, ParserState.APC_STRING);  // APC ('_')
-  table.addMany(PRINTABLES, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
-  table.addMany(EXECUTABLES, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
-  table.add(0x9c, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.GROUND);
-  table.add(0x7f, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
+  // sos/pm
+  table.addMany([0x58, 0x5e], ParserState.ESCAPE, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  table.addMany(PRINTABLES, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  table.addMany(EXECUTABLES, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  table.add(0x9c, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.GROUND);
+  table.add(0x7f, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  // apc
+  table.add(0x5f, ParserState.ESCAPE, ParserAction.APC_START, ParserState.APC_STRING);
+  table.addMany(PRINTABLES, ParserState.APC_STRING, ParserAction.APC_PUT, ParserState.APC_STRING);
+  table.addMany(EXECUTABLES, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
+  table.add(0x7f, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
+  table.addMany([0x1b, 0x9c, 0x18, 0x1a], ParserState.APC_STRING, ParserAction.APC_END, ParserState.GROUND);
   // csi entries
   table.add(0x5b, ParserState.ESCAPE, ParserAction.CLEAR, ParserState.CSI_ENTRY);
   table.addMany(r(0x40, 0x7f), ParserState.CSI_ENTRY, ParserAction.CSI_DISPATCH, ParserState.GROUND);
@@ -190,11 +195,6 @@ export const VT500_TRANSITION_TABLE = (function(): TransitionTable {
   table.addMany(PRINTABLES, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
   table.add(0x7f, ParserState.DCS_PASSTHROUGH, ParserAction.IGNORE, ParserState.DCS_PASSTHROUGH);
   table.addMany([0x1b, 0x9c, 0x18, 0x1a], ParserState.DCS_PASSTHROUGH, ParserAction.DCS_UNHOOK, ParserState.GROUND);
-  // apc passthrough - similar to DCS passthrough
-  table.addMany(PRINTABLES, ParserState.APC_STRING, ParserAction.APC_PUT, ParserState.APC_STRING);
-  table.addMany(EXECUTABLES, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
-  table.add(0x7f, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
-  table.addMany([0x1b, 0x9c, 0x18, 0x1a], ParserState.APC_STRING, ParserAction.APC_END, ParserState.GROUND);
   // special handling of unicode chars
   table.add(NON_ASCII_PRINTABLE, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
   table.add(NON_ASCII_PRINTABLE, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
