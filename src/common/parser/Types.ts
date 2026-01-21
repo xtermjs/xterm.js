@@ -36,7 +36,7 @@ export interface IParams {
   addSubParam(value: number): void;
   hasSubParams(idx: number): boolean;
   getSubParams(idx: number): Int32Array | null;
-  getSubParamsAll(): { [idx: number]: Int32Array };
+  getSubParamsAll(): {[idx: number]: Int32Array};
 }
 
 /**
