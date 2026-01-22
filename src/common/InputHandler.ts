@@ -19,6 +19,7 @@ import { ICoreService, IBufferService, IOptionsService, ILogService, ICoreMouseS
 import { UnicodeService } from 'common/services/UnicodeService';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { ApcHandler } from 'common/parser/ApcParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
 import { Emitter } from 'vs/base/common/event';
@@ -710,6 +711,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerOscHandler(ident, new OscHandler(callback));
+  }
+
+  /**
+   * Forward registerApcHandler from parser.
+   */
+  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._parser.registerApcHandler(ident, new ApcHandler(callback));
   }
 
   /**
