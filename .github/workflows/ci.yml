@@ -2,134 +2,134 @@ name: CI
 
 on:
   push:
-    branches: ["master"]
+    branches: [ "master" ]
   pull_request:
-    branches: ["master"]
+    branches: [ "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22.x
-          cache: "npm"
-      - name: Install dependencies
-        run: npm ci
-      - name: Setup and run tsc
-        run: npm run setup
-      - name: Esbuild
-        run: npm run esbuild
-      - name: Zip artifacts
-        run: |
-          zip -r compressed-build \
-            ./lib/* \
-            ./out/* \
-            ./out-*/* \
-            ./addons/addon-attach/lib/* \
-            ./addons/addon-attach/out/* \
-            ./addons/addon-attach/out-*/* \
-            ./addons/addon-clipboard/lib/* \
-            ./addons/addon-clipboard/out/* \
-            ./addons/addon-clipboard/out-*/* \
-            ./addons/addon-fit/lib/* \
-            ./addons/addon-fit/out/* \
-            ./addons/addon-fit/out-*/* \
-            ./addons/addon-image/lib/* \
-            ./addons/addon-image/out/* \
-            ./addons/addon-image/out-*/* \
-            ./addons/addon-kitty-graphics/lib/* \
-            ./addons/addon-kitty-graphics/out/* \
-            ./addons/addon-kitty-graphics/out-*/* \
-            ./addons/addon-ligatures/lib/* \
-            ./addons/addon-ligatures/out/* \
-            ./addons/addon-ligatures/out-*/* \
-            ./addons/addon-progress/lib/* \
-            ./addons/addon-progress/out/* \
-            ./addons/addon-progress/out-*/* \
-            ./addons/addon-search/lib/* \
-            ./addons/addon-search/out/* \
-            ./addons/addon-search/out-*/* \
-            ./addons/addon-serialize/lib/* \
-            ./addons/addon-serialize/out/* \
-            ./addons/addon-serialize/out-*/* \
-            ./addons/addon-unicode11/lib/* \
-            ./addons/addon-unicode11/out/* \
-            ./addons/addon-unicode11/out-*/* \
-            ./addons/addon-unicode-graphemes/lib/* \
-            ./addons/addon-unicode-graphemes/out/* \
-            ./addons/addon-unicode-graphemes/out-*/* \
-            ./addons/addon-web-links/lib/* \
-            ./addons/addon-web-links/out/* \
-            ./addons/addon-web-links/out-*/* \
-            ./addons/addon-web-fonts/lib/* \
-            ./addons/addon-web-fonts/out/* \
-            ./addons/addon-web-fonts/out-*/* \
-            ./addons/addon-webgl/lib/* \
-            ./addons/addon-webgl/out/* \
-            ./addons/addon-webgl/out-*st/*
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: compressed-build.zip
-          if-no-files-found: error
+    - uses: actions/checkout@v3
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - name: Install dependencies
+      run: npm ci
+    - name: Setup and run tsc
+      run: npm run setup
+    - name: Esbuild
+      run: npm run esbuild
+    - name: Zip artifacts
+      run: |
+        zip -r compressed-build \
+          ./lib/* \
+          ./out/* \
+          ./out-*/* \
+          ./addons/addon-attach/lib/* \
+          ./addons/addon-attach/out/* \
+          ./addons/addon-attach/out-*/* \
+          ./addons/addon-clipboard/lib/* \
+          ./addons/addon-clipboard/out/* \
+          ./addons/addon-clipboard/out-*/* \
+          ./addons/addon-fit/lib/* \
+          ./addons/addon-fit/out/* \
+          ./addons/addon-fit/out-*/* \
+          ./addons/addon-image/lib/* \
+          ./addons/addon-image/out/* \
+          ./addons/addon-image/out-*/* \
+          ./addons/addon-kitty-graphics/lib/* \
+          ./addons/addon-kitty-graphics/out/* \
+          ./addons/addon-kitty-graphics/out-*/* \
+          ./addons/addon-ligatures/lib/* \
+          ./addons/addon-ligatures/out/* \
+          ./addons/addon-ligatures/out-*/* \
+          ./addons/addon-progress/lib/* \
+          ./addons/addon-progress/out/* \
+          ./addons/addon-progress/out-*/* \
+          ./addons/addon-search/lib/* \
+          ./addons/addon-search/out/* \
+          ./addons/addon-search/out-*/* \
+          ./addons/addon-serialize/lib/* \
+          ./addons/addon-serialize/out/* \
+          ./addons/addon-serialize/out-*/* \
+          ./addons/addon-unicode11/lib/* \
+          ./addons/addon-unicode11/out/* \
+          ./addons/addon-unicode11/out-*/* \
+          ./addons/addon-unicode-graphemes/lib/* \
+          ./addons/addon-unicode-graphemes/out/* \
+          ./addons/addon-unicode-graphemes/out-*/* \
+          ./addons/addon-web-links/lib/* \
+          ./addons/addon-web-links/out/* \
+          ./addons/addon-web-links/out-*/* \
+          ./addons/addon-web-fonts/lib/* \
+          ./addons/addon-web-fonts/out/* \
+          ./addons/addon-web-fonts/out-*/* \
+          ./addons/addon-webgl/lib/* \
+          ./addons/addon-webgl/out/* \
+          ./addons/addon-webgl/out-*st/*
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: compressed-build.zip
+        if-no-files-found: error
 
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22.x
-          cache: "npm"
-      - name: Install dependencies
-        run: |
-          npm ci
-      - name: Lint code
-        env:
-          NODE_OPTIONS: --max_old_space_size=4096
-        run: npm run lint
-      - name: Lint API
-        run: npm run lint-api
+    - uses: actions/checkout@v3
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - name: Install dependencies
+      run: |
+        npm ci
+    - name: Lint code
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096
+      run: npm run lint
+    - name: Lint API
+      run: npm run lint-api
 
   test-unit-coverage:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22.x
-          cache: "npm"
-      - name: Install dependencies
-        run: |
-          npm ci
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-      - name: Unzip artifacts
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-          else
-            unzip -o compressed-build.zip
-          fi
-          ls -R
-      - name: Unit test coverage
-        run: |
-          npm run test-unit-coverage --forbid-only
-          EXIT_CODE=$?
-          ./node_modules/.bin/nyc report --reporter=cobertura
-          exit $EXIT_CODE
+    - uses: actions/checkout@v3
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - name: Install dependencies
+      run: |
+        npm ci
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
+        else
+          unzip -o compressed-build.zip
+        fi
+        ls -R
+    - name: Unit test coverage
+      run: |
+        npm run test-unit-coverage --forbid-only
+        EXIT_CODE=$?
+        ./node_modules/.bin/nyc report --reporter=cobertura
+        exit $EXIT_CODE
 
   test-unit:
     timeout-minutes: 20
@@ -139,34 +139,34 @@ jobs:
         runs-on: [ubuntu, macos, windows]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}.x
-          cache: "npm"
-      - name: Install dependencies
-        run: |
-          npm ci
-      - name: Wait for build job
-        uses: NathanFirmo/wait-for-other-job@v1.1.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          job: build
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-      - name: Unzip artifacts
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-          else
-            unzip -o compressed-build.zip
-          fi
-          ls -R
-      - name: Unit tests
-        run: npm run test-unit --forbid-only
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'npm'
+    - name: Install dependencies
+      run: |
+        npm ci
+    - name: Wait for build job
+      uses: NathanFirmo/wait-for-other-job@v1.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        job: build
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
+        else
+          unzip -o compressed-build.zip
+        fi
+        ls -R
+    - name: Unit tests
+      run: npm run test-unit --forbid-only
 
   test-integration:
     timeout-minutes: 20
@@ -177,66 +177,64 @@ jobs:
         browser: [chromium, firefox, webkit]
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}.x
-          cache: "npm"
-      - name: Install dependencies
-        run: |
-          npm ci
-      - name: Install playwright
-        run: npx playwright install --with-deps ${{ matrix.browser }}
-      - name: Wait for build job
-        uses: NathanFirmo/wait-for-other-job@v1.1.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          job: build
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-      - name: Unzip artifacts
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-          else
-            unzip -o compressed-build.zip
-          fi
-          ls -R
-      - name: Build demo client
-        run: npm run esbuild-demo-client
-      - name: Build demo server
-        run: npm run esbuild-demo-server
-      - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
-      - name: Integration tests (addon-attach)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-attach
-      - name: Integration tests (addon-clipboard)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-clipboard
-      - name: Integration tests (addon-fit)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
-      - name: Integration tests (addon-image)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
-      - name: Integration tests (addon-kitty-graphics)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-kitty-graphics
-      - name: Integration tests (addon-progress)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
-      - name: Integration tests (addon-search)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
-      - name: Integration tests (addon-serialize)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-serialize
-      - name: Integration tests (addon-unicode-graphemes)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
-      - name: Integration tests (addon-unicode11)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
-      - name: Integration tests (addon-web-fonts)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-fonts
-      - name: Integration tests (addon-web-links)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
-      - name: Integration tests (addon-webgl)
-        run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'npm'
+    - name: Install dependencies
+      run: |
+        npm ci
+    - name: Install playwright
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+    - name: Wait for build job
+      uses: NathanFirmo/wait-for-other-job@v1.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        job: build
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
+        else
+          unzip -o compressed-build.zip
+        fi
+        ls -R
+    - name: Build demo client
+      run: npm run esbuild-demo-client
+    - name: Build demo server
+      run: npm run esbuild-demo-server
+    - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
+    - name: Integration tests (addon-attach)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-attach
+    - name: Integration tests (addon-clipboard)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-clipboard
+    - name: Integration tests (addon-fit)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
+    - name: Integration tests (addon-image)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
+    - name: Integration tests (addon-progress)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
+    - name: Integration tests (addon-search)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
+    - name: Integration tests (addon-serialize)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-serialize
+    - name: Integration tests (addon-unicode-graphemes)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
+    - name: Integration tests (addon-unicode11)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
+    - name: Integration tests (addon-web-fonts)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-fonts
+    - name: Integration tests (addon-web-links)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
+    - name: Integration tests (addon-webgl)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
 
   release-dry-run:
     needs: build
@@ -245,32 +243,32 @@ jobs:
       matrix:
         node-version: [22]
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}.x
-          cache: "npm"
-      - name: Install dependencies
-        run: |
-          npm ci
-      - name: Install playwright
-        run: npx playwright install
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-      - name: Unzip artifacts
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
-          else
-            unzip -o compressed-build.zip
-          fi
-          ls -R
-      - name: Package headless
-        run: |
-          npm run package-headless
-          node ./bin/package_headless.js
-      - name: Publish to npm (dry run)
-        run: node ./bin/publish.js --dry
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}.x
+        cache: 'npm'
+    - name: Install dependencies
+      run: |
+        npm ci
+    - name: Install playwright
+      run: npx playwright install
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+    - name: Unzip artifacts
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          pwsh -Command "7z x compressed-build.zip -aoa -o${{ github.workspace }}"
+        else
+          unzip -o compressed-build.zip
+        fi
+        ls -R
+    - name: Package headless
+      run: |
+        npm run package-headless
+        node ./bin/package_headless.js
+    - name: Publish to npm (dry run)
+      run: node ./bin/publish.js --dry
