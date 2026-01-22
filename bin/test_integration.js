@@ -25,6 +25,7 @@ const addons = [
   'clipboard',
   'fit',
   'image',
+  'kitty-graphics',
   'progress',
   'search',
   'serialize',

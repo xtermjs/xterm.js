@@ -9,6 +9,7 @@ import type { ImageAddon } from '@xterm/addon-image';
 import type { AttachAddon } from '@xterm/addon-attach';
 import type { ClipboardAddon } from '@xterm/addon-clipboard';
 import type { FitAddon } from '@xterm/addon-fit';
+import type { KittyGraphicsAddon } from '@xterm/addon-kitty-graphics';
 import type { LigaturesAddon } from '@xterm/addon-ligatures';
 import type { ProgressAddon } from '@xterm/addon-progress';
 import type { SearchAddon } from '@xterm/addon-search';
@@ -19,7 +20,7 @@ import type { WebFontsAddon } from '@xterm/addon-web-fonts';
 import type { WebLinksAddon } from '@xterm/addon-web-links';
 import type { WebglAddon } from '@xterm/addon-webgl';
 
-export type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webFonts' | 'webLinks' | 'webgl' | 'ligatures';
+export type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'kittyGraphics' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webFonts' | 'webLinks' | 'webgl' | 'ligatures';
 
 export interface IDemoAddon<T extends AddonType> {
   name: T;
@@ -29,32 +30,34 @@ export interface IDemoAddon<T extends AddonType> {
       T extends 'clipboard' ? typeof ClipboardAddon :
         T extends 'fit' ? typeof FitAddon :
           T extends 'image' ? typeof ImageAddon :
-            T extends 'ligatures' ? typeof LigaturesAddon :
-              T extends 'progress' ? typeof ProgressAddon :
-                T extends 'search' ? typeof SearchAddon :
-                  T extends 'serialize' ? typeof SerializeAddon :
-                    T extends 'webFonts' ? typeof WebFontsAddon :
-                      T extends 'webLinks' ? typeof WebLinksAddon :
-                        T extends 'unicode11' ? typeof Unicode11Addon :
-                          T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
-                            T extends 'webgl' ? typeof WebglAddon :
-                              never
+            T extends 'kittyGraphics' ? typeof KittyGraphicsAddon :
+              T extends 'ligatures' ? typeof LigaturesAddon :
+                T extends 'progress' ? typeof ProgressAddon :
+                  T extends 'search' ? typeof SearchAddon :
+                    T extends 'serialize' ? typeof SerializeAddon :
+                      T extends 'webFonts' ? typeof WebFontsAddon :
+                        T extends 'webLinks' ? typeof WebLinksAddon :
+                          T extends 'unicode11' ? typeof Unicode11Addon :
+                            T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
+                              T extends 'webgl' ? typeof WebglAddon :
+                                never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
       T extends 'clipboard' ? ClipboardAddon :
         T extends 'fit' ? FitAddon :
           T extends 'image' ? ImageAddon :
-            T extends 'ligatures' ? LigaturesAddon :
-              T extends 'progress' ? ProgressAddon :
-                T extends 'search' ? SearchAddon :
-                  T extends 'serialize' ? SerializeAddon :
-                    T extends 'webFonts' ? WebFontsAddon :
-                      T extends 'webLinks' ? WebLinksAddon :
-                        T extends 'unicode11' ? Unicode11Addon :
-                          T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
-                            T extends 'webgl' ? WebglAddon :
-                              never
+            T extends 'kittyGraphics' ? KittyGraphicsAddon :
+              T extends 'ligatures' ? LigaturesAddon :
+                T extends 'progress' ? ProgressAddon :
+                  T extends 'search' ? SearchAddon :
+                    T extends 'serialize' ? SerializeAddon :
+                      T extends 'webFonts' ? WebFontsAddon :
+                        T extends 'webLinks' ? WebLinksAddon :
+                          T extends 'unicode11' ? Unicode11Addon :
+                            T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
+                              T extends 'webgl' ? WebglAddon :
+                                never
   );
 }
 
