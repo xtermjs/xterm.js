@@ -266,6 +266,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
 
   /**
    * Decode an image and display it at the cursor position.
+   * @param image - The Kitty image to decode and display
    * @param columns - Optional: number of terminal columns to span
    * @param rows - Optional: number of terminal rows to span
    */

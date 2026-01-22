@@ -219,6 +219,8 @@ jobs:
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
     - name: Integration tests (addon-image)
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
+    - name: Integration tests (addon-kitty-graphics)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-kitty-graphics
     - name: Integration tests (addon-progress)
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
     - name: Integration tests (addon-search)
