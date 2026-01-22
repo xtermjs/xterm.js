@@ -76,7 +76,7 @@ const NON_ASCII_PRINTABLE = 0xA0;
  * VT500 compatible transition table.
  * Taken from https://vt100.net/emu/dec_ansi_parser.
  */
-export const VT500_TRANSITION_TABLE = (function(): TransitionTable {
+export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   const table: TransitionTable = new TransitionTable(4095);
 
   // range macro for byte
