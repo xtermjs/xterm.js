@@ -127,8 +127,8 @@ test.describe('KittyGraphicsAddon', () => {
     });
   });
 
-  // TODO: These tests will fail until decode + rendering is implemented
-  test.describe.skip('pixel verification', () => {
+  test.describe('pixel verification', () => {
+    // TODO: Add more intense ones.
     test('renders 1x1 black PNG at cursor position', async () => {
       // Send image with a=T to transmit and display
       const seq = `\x1b_Ga=T,f=100;${BLACK_1X1_BASE64}\x1b\\`;

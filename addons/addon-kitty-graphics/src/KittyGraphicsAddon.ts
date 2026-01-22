@@ -5,6 +5,7 @@
 
 import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { KittyGraphicsAddon as IKittyGraphicsApi, IKittyGraphicsOptions, IKittyImage } from '@xterm/addon-kitty-graphics';
+import { KittyImageRenderer } from './KittyImageRenderer';
 
 /**
  * Kitty graphics protocol action types.
@@ -81,7 +82,9 @@ export function parseKittyCommand(data: string): IKittyCommand {
 export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   private _terminal: Terminal | undefined;
   private _apcHandler: IDisposable | undefined;
+  private _renderer: KittyImageRenderer | undefined;
   private _images: Map<number, IKittyImage> = new Map();
+  private _decodedImages: Map<number, ImageBitmap> = new Map();
   private _pendingData: Map<number, string> = new Map();
   private _nextImageId = 1;
   private _debug: boolean;
@@ -96,8 +99,11 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    // TODO: Remove console log
-    console.log('[KittyGraphicsAddon] Activated');
+    this._renderer = new KittyImageRenderer(terminal);
+
+    if (this._debug) {
+      console.log('[KittyGraphicsAddon] Activating, registering APC handler for G (0x47)');
+    }
 
     // Register APC handler for 'G' (0x47) - Kitty graphics protocol
     // APC sequence format: ESC _ G <data> ESC \
@@ -108,8 +114,16 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
 
   public dispose(): void {
     this._apcHandler?.dispose();
+    this._renderer?.dispose();
     this._images.clear();
     this._pendingData.clear();
+
+    // Close all decoded bitmaps
+    for (const bitmap of this._decodedImages.values()) {
+      bitmap.close();
+    }
+    this._decodedImages.clear();
+
     this._terminal = undefined;
   }
 
@@ -175,9 +189,128 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   }
 
   private _handleTransmitDisplay(cmd: IKittyCommand): boolean {
+    // First store the image
     this._handleTransmit(cmd);
-    // TODO: Display image at cursor position (canvas layer)
+
+    // Get the image ID (same logic as _handleTransmit)
+    const id = cmd.id || (this._nextImageId - 1);
+    const image = this._images.get(id);
+
+    if (!image) {
+      return true;
+    }
+
+    // Decode and display with sizing
+    this._decodeAndDisplay(image, cmd.columns, cmd.rows).catch(err => {
+      if (this._debug) {
+        console.error(`[KittyGraphicsAddon] Failed to decode/display image ${id}:`, err);
+      }
+    });
+
     return true;
+  }
+
+  /**
+   * Decode base64 image data into an ImageBitmap.
+   */
+  private async _decodeImage(image: IKittyImage): Promise<ImageBitmap> {
+    const format = image.format;
+    const base64Data = image.data as string;
+
+    // Decode base64 to binary
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    if (format === KittyFormat.PNG) {
+      // PNG: create blob and decode
+      const blob = new Blob([bytes], { type: 'image/png' });
+      return createImageBitmap(blob);
+    }
+
+    // RGB (24) or RGBA (32): create ImageData
+    const width = image.width;
+    const height = image.height;
+
+    if (!width || !height) {
+      throw new Error('Width and height required for raw pixel data');
+    }
+
+    const bytesPerPixel = format === KittyFormat.RGBA ? 4 : 3;
+    const expectedBytes = width * height * bytesPerPixel;
+
+    if (bytes.length < expectedBytes) {
+      throw new Error(`Insufficient pixel data: got ${bytes.length}, expected ${expectedBytes}`);
+    }
+
+    // Convert to RGBA ImageData
+    const imageData = new ImageData(width, height);
+    const data = imageData.data;
+
+    for (let i = 0; i < width * height; i++) {
+      const srcOffset = i * bytesPerPixel;
+      const dstOffset = i * 4;
+
+      data[dstOffset] = bytes[srcOffset];         // R
+      data[dstOffset + 1] = bytes[srcOffset + 1]; // G
+      data[dstOffset + 2] = bytes[srcOffset + 2]; // B
+      data[dstOffset + 3] = format === KittyFormat.RGBA
+        ? bytes[srcOffset + 3]  // A from source
+        : 255;                   // Fully opaque for RGB
+    }
+
+    return createImageBitmap(imageData);
+  }
+
+  /**
+   * Decode an image and display it at the cursor position.
+   * @param columns - Optional: number of terminal columns to span
+   * @param rows - Optional: number of terminal rows to span
+   */
+  private async _decodeAndDisplay(image: IKittyImage, columns?: number, rows?: number): Promise<void> {
+    if (!this._renderer) {
+      return;
+    }
+
+    // Check if already decoded
+    let bitmap = this._decodedImages.get(image.id);
+
+    if (!bitmap) {
+      bitmap = await this._decodeImage(image);
+      this._decodedImages.set(image.id, bitmap);
+
+      if (this._debug) {
+        console.log(`[KittyGraphicsAddon] Decoded image ${image.id}: ${bitmap.width}x${bitmap.height}`);
+      }
+    }
+
+    // Calculate pixel dimensions from columns/rows if specified
+    let width = 0;
+    let height = 0;
+    if (columns || rows) {
+      const cellSize = this._renderer.getCellSize();
+      if (columns) {
+        width = columns * cellSize.width;
+      }
+      if (rows) {
+        height = rows * cellSize.height;
+      }
+      // If only one dimension specified, maintain aspect ratio
+      if (width && !height) {
+        height = Math.round(width * (bitmap.height / bitmap.width));
+      } else if (height && !width) {
+        width = Math.round(height * (bitmap.width / bitmap.height));
+      }
+    }
+
+    // Place at cursor position
+    this._renderer.placeImage(bitmap, image.id, undefined, undefined, width, height);
+
+    if (this._debug) {
+      console.log(`[KittyGraphicsAddon] Placed image ${image.id} at cursor, size: ${width || bitmap.width}x${height || bitmap.height}`);
+    }
   }
 
   private _handleQuery(cmd: IKittyCommand): boolean {
@@ -192,8 +325,23 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   private _handleDelete(cmd: IKittyCommand): boolean {
     if (cmd.id !== undefined) {
       this._images.delete(cmd.id);
+      // Close and remove decoded bitmap
+      const bitmap = this._decodedImages.get(cmd.id);
+      if (bitmap) {
+        bitmap.close();
+        this._decodedImages.delete(cmd.id);
+      }
+      // Remove from renderer
+      this._renderer?.removeByImageId(cmd.id);
     } else {
       this._images.clear();
+      // Close all decoded bitmaps
+      for (const bitmap of this._decodedImages.values()) {
+        bitmap.close();
+      }
+      this._decodedImages.clear();
+      // Clear all from renderer
+      this._renderer?.clearAll();
     }
     return true;
   }
