@@ -90,7 +90,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   EXECUTABLES.push(0x19);
   EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
 
-  const states: number[] = r(ParserState.GROUND, ParserState.APC_STRING + 1);
+  const states: number[] = r(ParserState.GROUND, ParserState.STATE_LENGTH);
   let state: any;
 
   // set default transition
