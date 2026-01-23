@@ -10,6 +10,8 @@ import type { ITerminalExt } from './Types';
 
 /**
  * Kitty graphics protocol action types.
+ * Possible actions from protocol.
+ * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'a'.
  */
 const enum KittyAction {
   TRANSMIT = 't',
@@ -21,6 +23,7 @@ const enum KittyAction {
 
 /**
  * Kitty graphics protocol format types.
+ * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference where the format for *-bit came from.
  */
 const enum KittyFormat {
   RGB = 24,
