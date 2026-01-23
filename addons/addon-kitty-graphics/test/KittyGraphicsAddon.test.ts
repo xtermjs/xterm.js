@@ -172,4 +172,98 @@ test.describe('KittyGraphicsAddon', () => {
       deepStrictEqual(pixels?.blue, [0, 0, 255, 255]);
     });
   });
+
+  test.describe('query support (a=q)', () => {
+    test('responds with OK for capability query without payload', async () => {
+      let response = '';
+      const disposable = ctx.proxy.onData(data => { response = data; });
+
+      await ctx.proxy.write('\x1b_Gi=31,a=q;\x1b\\');
+      await timeout(100);
+
+      disposable.dispose();
+
+      strictEqual(response, '\x1b_Gi=31;OK\x1b\\');
+    });
+
+    test('responds with OK for valid PNG query', async () => {
+      let response = '';
+      const disposable = ctx.proxy.onData(data => { response = data; });
+
+      // Send query with PNG data
+      await ctx.proxy.write(`\x1b_Gi=42,a=q,f=100;${BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      disposable.dispose();
+
+      strictEqual(response, '\x1b_Gi=42;OK\x1b\\');
+    });
+
+    test('query does NOT store the image (unlike transmit)', async () => {
+      const disposable = ctx.proxy.onData(() => { /* consume response */ });
+
+      await ctx.proxy.write(`\x1b_Gi=50,a=q,f=100;${BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      disposable.dispose();
+
+      // Image should NOT be stored
+      strictEqual(await ctx.page.evaluate('window.kittyAddon.images.has(50)'), false);
+    });
+
+    test('responds with error for invalid base64', async () => {
+      let response = '';
+      const disposable = ctx.proxy.onData(data => { response = data; });
+
+      // Send query with invalid base64
+      await ctx.proxy.write('\x1b_Gi=60,a=q,f=100;!!!invalid!!!\x1b\\');
+      await timeout(100);
+
+      disposable.dispose();
+
+      // Should contain EINVAL error
+      strictEqual(response.startsWith('\x1b_Gi=60;EINVAL:'), true);
+    });
+
+    test('responds with error for RGB data without dimensions', async () => {
+      let response = '';
+      const disposable = ctx.proxy.onData(data => { response = data; });
+
+      // RGB format (f=24) requires width (s) and height (v)
+      // Send RGB data without specifying s= and v=
+      await ctx.proxy.write('\x1b_Gi=70,a=q,f=24;AAAA\x1b\\');
+      await timeout(100);
+
+      disposable.dispose();
+
+      strictEqual(response, '\x1b_Gi=70;EINVAL:width and height required for raw pixel data\x1b\\');
+    });
+
+    test('suppresses OK response when q=1', async () => {
+      // q=1 means suppress OK responses
+      let gotResponse = false;
+      const disposable = ctx.proxy.onData(() => { gotResponse = true; });
+
+      await ctx.proxy.write(`\x1b_Gi=80,a=q,q=1,f=100;${BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      disposable.dispose();
+
+      strictEqual(gotResponse, false);
+    });
+
+    test('suppresses error response when q=2', async () => {
+      // q=2 means suppress error responses
+      let gotResponse = false;
+      const disposable = ctx.proxy.onData(() => { gotResponse = true; });
+
+      // Send invalid data with q=2
+      await ctx.proxy.write('\x1b_Gi=90,a=q,q=2,f=100;!!!invalid!!!\x1b\\');
+      await timeout(100);
+
+      disposable.dispose();
+
+      strictEqual(gotResponse, false);
+    });
+  });
 });

@@ -6,6 +6,7 @@
 import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { KittyGraphicsAddon as IKittyGraphicsApi, IKittyGraphicsOptions, IKittyImage } from '@xterm/addon-kitty-graphics';
 import { KittyImageRenderer } from './KittyImageRenderer';
+import type { ITerminalExt } from './Types';
 
 /**
  * Kitty graphics protocol action types.
@@ -80,7 +81,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
 }
 
 export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
-  private _terminal: Terminal | undefined;
+  private _terminal: ITerminalExt | undefined;
   private _apcHandler: IDisposable | undefined;
   private _renderer: KittyImageRenderer | undefined;
   private _images: Map<number, IKittyImage> = new Map();
@@ -98,11 +99,11 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   }
 
   public activate(terminal: Terminal): void {
-    this._terminal = terminal;
+    this._terminal = terminal as ITerminalExt;
     this._renderer = new KittyImageRenderer(terminal);
 
     if (this._debug) {
-      console.log('[KittyGraphicsAddon] Activating, registering APC handler for G (0x47)');
+      console.log('[KittyGraphicsAddon] Registering APC handler for G (0x47)');
     }
 
     // Register APC handler for 'G' (0x47) - Kitty graphics protocol
@@ -314,12 +315,119 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
     }
   }
 
-  private _handleQuery(cmd: IKittyCommand): boolean {
-    // TODO: Respond with APC sequence indicating graphics support
-    // Protocol: terminal should reply with ESC _ G i=<id>;OK ESC \
-    if (this._debug) {
-      console.log('[KittyGraphicsAddon] Query received');
+  /**
+   * Send a response back to the client via the terminal's data event.
+   * Per the Kitty protocol, responses are sent when an image id (i=) is specified.
+   * Format: ESC _ G i=<id>;message ESC \
+   *
+   * The quiet flag (q=) can suppress responses:
+   * - q=1: suppress OK responses
+   * - q=2: suppress error responses
+   *
+   * @param id - The image ID to include in the response
+   * @param message - The message (e.g., 'OK' or 'EINVAL:error description')
+   * @param quiet - The quiet flag value (0, 1, or 2)
+   */
+  private _sendResponse(id: number, message: string, quiet: number): void {
+    // Check quiet flag: q=1 suppresses OK, q=2 suppresses errors
+    const isOk = message === 'OK';
+    if (isOk && quiet === 1) {
+      return;
     }
+    if (!isOk && quiet === 2) {
+      return;
+    }
+
+    if (!this._terminal) {
+      return;
+    }
+
+    const response = `\x1b_Gi=${id};${message}\x1b\\`;
+    this._terminal._core.coreService.triggerDataEvent(response);
+
+    if (this._debug) {
+      console.log(`[KittyGraphicsAddon] Sent response: i=${id};${message}`);
+    }
+  }
+
+  /**
+   * Handle query action (a=q).
+   *
+   * Per the Kitty graphics protocol documentation:
+   * "Sometimes, using an id is not appropriate... In that case, you can use the
+   * query action, set a=q. Then the terminal emulator will try to load the image
+   * and respond with either OK or an error, as above, but it will not replace an
+   * existing image with the same id, nor will it store the image."
+   *
+   * The query is used by clients to check if the terminal supports the graphics
+   * protocol. A typical query looks like:
+   *   ESC _ G i=31,s=1,v=1,a=q,t=d,f=24;AAAA ESC \ ESC [c
+   *
+   * If the terminal supports graphics, it responds with:
+   *   ESC _ G i=31;OK ESC \
+   *
+   * @param cmd - The parsed Kitty command
+   */
+  private _handleQuery(cmd: IKittyCommand): boolean {
+    const id = cmd.id || 0;
+    const quiet = cmd.quiet || 0;
+
+    if (this._debug) {
+      console.log(`[KittyGraphicsAddon] Query received, id=${id}, quiet=${quiet}`);
+    }
+
+    // Try to validate the image data without storing it
+    const payload = cmd.payload || '';
+
+    if (!payload) {
+      // No payload - just checking if graphics protocol is supported
+      // Respond with OK to indicate support
+      this._sendResponse(id, 'OK', quiet);
+      return true;
+    }
+
+    // Validate the image data can be decoded
+    try {
+      // Decode base64 to verify it's valid
+      const binaryString = atob(payload);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const format = cmd.format || 32;
+
+      if (format === KittyFormat.PNG) {
+        // For PNG, we just verify base64 decoded successfully
+        // Full PNG validation would require async createImageBitmap
+        // which we can't do synchronously, so we trust the data is valid PNG
+        this._sendResponse(id, 'OK', quiet);
+      } else {
+        // RGB (24) or RGBA (32): verify we have enough bytes
+        const width = cmd.width || 0;
+        const height = cmd.height || 0;
+
+        if (!width || !height) {
+          this._sendResponse(id, 'EINVAL:width and height required for raw pixel data', quiet);
+          return true;
+        }
+
+        const bytesPerPixel = format === KittyFormat.RGBA ? 4 : 3;
+        const expectedBytes = width * height * bytesPerPixel;
+
+        if (bytes.length < expectedBytes) {
+          this._sendResponse(id, `EINVAL:insufficient pixel data, got ${bytes.length}, expected ${expectedBytes}`, quiet);
+          return true;
+        }
+
+        this._sendResponse(id, 'OK', quiet);
+      }
+    } catch (e) {
+      // Base64 decode failed or other error
+      const errorMsg = e instanceof Error ? e.message : 'unknown error';
+      this._sendResponse(id, `EINVAL:${errorMsg}`, quiet);
+    }
+
     return true;
   }
 
