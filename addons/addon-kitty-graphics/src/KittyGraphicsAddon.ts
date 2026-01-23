@@ -62,7 +62,9 @@ export function parseKittyCommand(data: string): IKittyCommand {
     const value = part.substring(eqIdx + 1);
 
     switch (key) {
+      // These are key(s) from: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
       // Question: How do we know which radix to use?
+      // TODO: Support more keys like type of compression, animations, etc
       case 'a': cmd.action = value; break;
       case 'f': cmd.format = parseInt(value); break;
       case 'i': cmd.id = parseInt(value); break;
@@ -84,6 +86,8 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   private _terminal: ITerminalExt | undefined;
   private _apcHandler: IDisposable | undefined;
   private _renderer: KittyImageRenderer | undefined;
+  // Question: ImageAddon has ImageStorage, lot going on there though comapred to IKittyImage atm.
+  // Maybe add more, rename to IKittyImageStorage instead of IKittyImage?
   private _images: Map<number, IKittyImage> = new Map();
   private _decodedImages: Map<number, ImageBitmap> = new Map();
   private _pendingData: Map<number, string> = new Map();
@@ -142,6 +146,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
 
     const action = cmd.action || 't';
 
+    // Actions from: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
     switch (action) {
       case KittyAction.TRANSMIT:
         return this._handleTransmit(cmd);
