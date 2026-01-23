@@ -79,16 +79,16 @@ export class KittyImageRenderer implements IDisposable {
     this._ctx = this._canvas.getContext('2d', { alpha: true });
 
     // Hook into render events to redraw when terminal scrolls
-    this._renderDisposable = this._terminal.onRender(() => this._onRender());
+    this._renderDisposable = this._terminal.onRender(() => this._draw());
 
     // Handle resize
-    this._resizeDisposable = this._terminal.onResize(() => this._onResize());
+    this._resizeDisposable = this._terminal.onResize(() => this._resizeCanvas());
   }
 
   /**
    * Get cell dimensions from terminal.
    */
-  public getCellSize(): { width: number; height: number } {
+  public getCellSize(): { width: number, height: number } {
     const dimensions = (this._terminal as any).dimensions;
     return {
       width: dimensions?.css?.cell?.width || 9,
@@ -98,6 +98,10 @@ export class KittyImageRenderer implements IDisposable {
 
   /**
    * Place a decoded image at cursor position.
+   * @param bitmap - The decoded ImageBitmap to place
+   * @param id - The image ID this placement belongs to
+   * @param col - Optional column position (defaults to cursor X)
+   * @param row - Optional row position (defaults to cursor Y + baseY)
    * @param width - Optional width in pixels (0 = original)
    * @param height - Optional height in pixels (0 = original)
    */
@@ -196,16 +200,9 @@ export class KittyImageRenderer implements IDisposable {
   }
 
   /**
-   * Called when terminal renders (scrolling, content change).
-   */
-  private _onRender(): void {
-    this._draw();
-  }
-
-  /**
    * Called when terminal resizes.
    */
-  private _onResize(): void {
+  private _resizeCanvas(): void {
     if (!this._canvas) {
       return;
     }
