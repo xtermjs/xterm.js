@@ -34,4 +34,7 @@ export class ParserApi implements IParser {
   public addOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this.registerOscHandler(ident, callback);
   }
+  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._core.registerApcHandler(ident, callback);
+  }
 }
