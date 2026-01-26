@@ -52,4 +52,6 @@ export interface IRenderLayer extends IDisposable {
    * Clear the state of the render layer.
    */
   reset(terminal: Terminal): void;
+
+  handleDirectionChange(direction: 'ltr' | 'rtl'): void;
 }

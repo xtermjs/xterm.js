@@ -7,6 +7,7 @@ import { assert } from 'chai';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { MockRenderService } from 'browser/TestUtils.test';
 import { MockCoreService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { DirectionService } from 'browser/services/DirectionService';
 
 describe('CompositionHelper', () => {
   let compositionHelper: CompositionHelper;
@@ -42,7 +43,7 @@ describe('CompositionHelper', () => {
     };
     handledText = '';
     const bufferService = new MockBufferService(10, 5);
-    compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, new MockRenderService());
+    compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, new MockRenderService(), new DirectionService());
   });
 
   describe('Input', () => {

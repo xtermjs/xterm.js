@@ -4,7 +4,7 @@
  */
 
 import { getWindow } from 'vs/base/browser/dom';
-import { ICharSizeService, IRenderService, IMouseService } from './Services';
+import { ICharSizeService, IRenderService, IMouseService, IDirectionService } from './Services';
 import { getCoords, getCoordsRelativeToElement } from 'browser/input/Mouse';
 
 export class MouseService implements IMouseService {
@@ -12,7 +12,8 @@ export class MouseService implements IMouseService {
 
   constructor(
     @IRenderService private readonly _renderService: IRenderService,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService
+    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IDirectionService private readonly _directionService: IDirectionService
   ) {
   }
 
@@ -26,7 +27,8 @@ export class MouseService implements IMouseService {
       this._charSizeService.hasValidSize,
       this._renderService.dimensions.css.cell.width,
       this._renderService.dimensions.css.cell.height,
-      isSelection
+      isSelection,
+      this._directionService.direction
     );
   }
 

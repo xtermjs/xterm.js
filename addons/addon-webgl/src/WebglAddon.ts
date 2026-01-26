@@ -68,6 +68,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
     const decorationService: IDecorationService = unsafeCore._decorationService;
     const logService: ILogService = unsafeCore._logService;
     const themeService: IThemeService = unsafeCore._themeService;
+    const directionService = unsafeCore._directionService;
 
     // Set trace logger just in case it hasn't been yet which could happen when the addon is
     // bundled separately to the core module
@@ -82,6 +83,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
       decorationService,
       optionsService,
       themeService,
+      directionService,
       this._customGlyphs,
       this._preserveDrawingBuffer
     ));

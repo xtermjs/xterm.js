@@ -165,3 +165,12 @@ export interface IKeyboardService {
   readonly useKitty: boolean;
   readonly useWin32InputMode: boolean;
 }
+
+export const IDirectionService = createDecorator<IDirectionService>('DirectionService');
+export interface IDirectionService {
+  serviceBrand: undefined;
+  readonly direction: 'ltr' | 'rtl';
+  readonly isRtl: boolean;
+  setDirection(direction: 'ltr' | 'rtl'): void;
+  readonly onDirectionChange: Event<'ltr' | 'rtl'>;
+}

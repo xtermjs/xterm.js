@@ -47,7 +47,7 @@ export const enum KittyKeyboardModifiers {
   HYPER     = 0b00010000,
   META      = 0b00100000,
   CAPS_LOCK = 0b01000000,
-  NUM_LOCK  = 0b10000000,
+  NUM_LOCK = 0b10000000,
 }
 
 /**
@@ -276,12 +276,14 @@ function isModifierKey(ev: IKeyboardEvent): boolean {
  * @param ev The keyboard event.
  * @param flags The active Kitty keyboard enhancement flags.
  * @param eventType The event type (press, repeat, release).
+ * @param direction The text direction ('ltr' or 'rtl').
  * @returns The keyboard result with the encoded key sequence.
  */
 export function evaluateKeyboardEventKitty(
   ev: IKeyboardEvent,
   flags: number,
-  eventType: KittyKeyboardEventType = KittyKeyboardEventType.PRESS
+  eventType: KittyKeyboardEventType = KittyKeyboardEventType.PRESS,
+  direction: 'ltr' | 'rtl' = 'ltr'
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
@@ -306,7 +308,14 @@ export function evaluateKeyboardEventKitty(
   // Check for CSI letter keys (arrows, Home, End)
   const csiLetter = CSI_LETTER_KEYS[ev.key];
   if (csiLetter) {
-    result.key = buildCsiLetterSequence(csiLetter, modifiers, eventType, reportEventTypes);
+    // Apply direction swapping for arrow keys
+    let adjustedLetter = csiLetter;
+    if (direction === 'rtl') {
+      if (csiLetter === 'C') adjustedLetter = 'D'; // right becomes left
+      else if (csiLetter === 'D') adjustedLetter = 'C'; // left becomes right
+    }
+
+    result.key = buildCsiLetterSequence(adjustedLetter, modifiers, eventType, reportEventTypes);
     result.cancel = true;
     return result;
   }

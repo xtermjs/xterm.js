@@ -9,7 +9,7 @@ import { acquireTextureAtlas, removeTerminalFromCache } from './CharAtlasCache';
 import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IDirectionService, IThemeService } from 'browser/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
@@ -51,6 +51,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _core: ITerminal;
   private _isAttached: boolean;
   private _contextRestorationTimeout: number | undefined;
+  private _isRtl: boolean = false;
 
   private readonly _onChangeTextureAtlas = this._register(new Emitter<HTMLCanvasElement>());
   public readonly onChangeTextureAtlas = this._onChangeTextureAtlas.event;
@@ -72,6 +73,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _decorationService: IDecorationService,
     private readonly _optionsService: IOptionsService,
     private readonly _themeService: IThemeService,
+    @IDirectionService private readonly _directionService: IDirectionService,
     private readonly _customGlyphs: boolean = true,
     preserveDrawingBuffer?: boolean
   ) {
@@ -96,15 +98,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
 
     this._core = (this._terminal as any)._core;
+    this._isRtl = this._directionService.isRtl; // تنظیم جهت اولیه
 
     this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService)
+      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService, _directionService)
     ];
     this.dimensions = createRenderDimensions();
     this._devicePixelRatio = this._coreBrowserService.dpr;
     this._updateDimensions();
     this._updateCursorBlink();
     this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
+
+    this._register(this._directionService.onDirectionChange((direction) => {
+      this.handleDirectionChange(direction);
+    }));
 
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
@@ -155,6 +162,32 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
     return this._charAtlas?.pages[0].canvas;
+  }
+
+  public handleDirectionChange(direction: 'ltr' | 'rtl'): void {
+    const newIsRtl = direction === 'rtl';
+    if (this._isRtl !== newIsRtl) {
+      this._isRtl = newIsRtl;
+
+      // اطلاع به rendererها
+      if (this._rectangleRenderer.value) {
+        this._rectangleRenderer.value.setRtl(this._isRtl);
+      }
+      if (this._glyphRenderer.value) {
+        this._glyphRenderer.value.setRtl(this._isRtl);
+      }
+
+      // اطلاع به render layers
+      for (const layer of this._renderLayers) {
+        if (layer.handleDirectionChange) {
+          layer.handleDirectionChange(direction);
+        }
+      }
+
+      // پاک‌سازی و بازسازی مدل
+      this._clearModel(true);
+      this._requestRedrawViewport();
+    }
   }
 
   private _handleColorChange(): void {
@@ -258,6 +291,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
     this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService);
     this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._optionsService);
+
+    // Set initial RTL state for renderers
+    this._rectangleRenderer.value.setRtl(this._isRtl);
+    this._glyphRenderer.value.setRtl(this._isRtl);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
@@ -475,29 +512,38 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         chars = cell.getChars();
         code = cell.getCode();
-        i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+
+        // محاسبه موقعیت X با توجه به جهت RTL
+        const renderX = this._isRtl ? terminal.cols - 1 - x : x;
+        i = ((y * terminal.cols) + renderX) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
         this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
 
-        // Override colors for cursor cell
+        // Override colors for cursor cell - اصلاح شده برای RTL
         if (isCursorVisible && row === cursorY) {
-          if (x === cursorX) {
+          // محاسبه موقعیت مکان‌نما با توجه به جهت RTL
+          const cursorRenderX = this._isRtl ? terminal.cols - 1 - cursorX : cursorX;
+          if (renderX === cursorRenderX) {
             this._model.cursor = {
-              x: cursorX,
+              x: cursorRenderX,
               y: viewportRelativeCursorY,
               width: cell.getWidth(),
               style: this._coreBrowserService.isFocused ? cursorStyle : terminal.options.cursorInactiveStyle,
               cursorWidth: terminal.options.cursorWidth,
               dpr: this._devicePixelRatio
             };
-            lastCursorX = cursorX + cell.getWidth() - 1;
+            lastCursorX = cursorRenderX + cell.getWidth() - 1;
           }
-          if (x >= cursorX && x <= lastCursorX &&
-              ((this._coreBrowserService.isFocused &&
+
+          // بررسی اینکه آیا سلول فعلی در محدوده مکان‌نما است
+          const inCursorRange = renderX >= cursorRenderX && renderX <= lastCursorX;
+
+          if (inCursorRange &&
+            ((this._coreBrowserService.isFocused &&
               cursorStyle === 'block') ||
               (this._coreBrowserService.isFocused === false &&
-              terminal.options.cursorInactiveStyle === 'block'))
+                terminal.options.cursorInactiveStyle === 'block'))
           ) {
             this._cellColorResolver.result.fg =
               Attributes.CM_RGB | (this._themeService.colors.cursorAccent.rgba >> 8 & Attributes.RGB_MASK);
@@ -512,9 +558,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
-            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
+          this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
+          this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
+          this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
           continue;
         }
 
@@ -532,7 +578,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
 
         width = cell.getWidth();
-        this._glyphRenderer.value!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, width, lastBg);
+        this._glyphRenderer.value!.updateCell(renderX, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, width, lastBg);
 
         if (isJoined) {
           // Restore work cell
@@ -540,8 +586,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
           // Null out non-first cells
           for (x++; x <= lastCharX; x++) {
-            j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-            this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
+            const nextRenderX = this._isRtl ? terminal.cols - 1 - x : x;
+            j = ((y * terminal.cols) + nextRenderX) * RENDER_MODEL_INDICIES_PER_CELL;
+            this._glyphRenderer.value!.updateCell(nextRenderX, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
             // supported

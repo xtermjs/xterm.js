@@ -107,6 +107,7 @@ export class GlyphRenderer extends Disposable {
       new Float32Array(0)
     ]
   };
+  private _isRtl: boolean = false; // افزودن متغیر جهت RTL
 
   constructor(
     private readonly _terminal: Terminal,
@@ -209,6 +210,12 @@ export class GlyphRenderer extends Disposable {
     this.handleResize();
   }
 
+  public setRtl(isRtl: boolean): void {
+    this._isRtl = isRtl;
+    // وقتی جهت تغییر می‌کند، باید موقعیت سلول‌ها را دوباره محاسبه کنیم
+    this.clear();
+  }
+
   public beginFrame(): boolean {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
@@ -218,7 +225,10 @@ export class GlyphRenderer extends Disposable {
     // should not instantiate any variables unless a new glyph is drawn to the cache where the
     // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
     // each glyph.
-    this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, width, lastBg);
+
+    // محاسبه موقعیت X با توجه به جهت RTL
+    const renderX = this._isRtl ? this._terminal.cols - 1 - x : x;
+    this._updateCell(this._vertices.attributes, renderX, y, code, bg, fg, ext, chars, width, lastBg);
   }
 
   private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
@@ -243,10 +253,23 @@ export class GlyphRenderer extends Disposable {
     }
 
     $leftCellPadding = Math.floor((this._dimensions.device.cell.width - this._dimensions.device.char.width) / 2);
+
+    // در حالت RTL، باید offsetX را معکوس کنیم
+    let offsetX = -$glyph.offset.x + this._dimensions.device.char.left;
+    if (this._isRtl) {
+      // محاسبه offsetX برای حالت RTL
+      offsetX = this._dimensions.device.cell.width - $glyph.size.x - offsetX;
+    }
+
     if (bg !== lastBg && $glyph.offset.x > $leftCellPadding) {
       $clippedPixels = $glyph.offset.x - $leftCellPadding;
       // a_origin
-      array[$i    ] = -($glyph.offset.x - $clippedPixels) + this._dimensions.device.char.left;
+      let clippedOffsetX = -($glyph.offset.x - $clippedPixels) + this._dimensions.device.char.left;
+      if (this._isRtl) {
+        clippedOffsetX = this._dimensions.device.cell.width - ($glyph.size.x - $clippedPixels) - clippedOffsetX;
+      }
+
+      array[$i] = clippedOffsetX;
       array[$i + 1] = -$glyph.offset.y + this._dimensions.device.char.top;
       // a_size
       array[$i + 2] = ($glyph.size.x - $clippedPixels) / this._dimensions.device.canvas.width;
@@ -261,7 +284,7 @@ export class GlyphRenderer extends Disposable {
       array[$i + 8] = $glyph.sizeClipSpace.y;
     } else {
       // a_origin
-      array[$i    ] = -$glyph.offset.x + this._dimensions.device.char.left;
+      array[$i] = offsetX;
       array[$i + 1] = -$glyph.offset.y + this._dimensions.device.char.top;
       // a_size
       array[$i + 2] = $glyph.size.x / this._dimensions.device.canvas.width;
@@ -275,7 +298,9 @@ export class GlyphRenderer extends Disposable {
       array[$i + 7] = $glyph.sizeClipSpace.x;
       array[$i + 8] = $glyph.sizeClipSpace.y;
     }
+
     // a_cellpos only changes on resize
+    // Note: cell position is already calculated correctly in clear() method
 
     // Reduce scale horizontally for wide glyphs printed in cells that would overlap with the
     // following cell (ie. the width is not 2).
@@ -308,7 +333,9 @@ export class GlyphRenderer extends Disposable {
     i = 0;
     for (let y = 0; y < terminal.rows; y++) {
       for (let x = 0; x < terminal.cols; x++) {
-        this._vertices.attributes[i + 9] = x / terminal.cols;
+        // محاسبه موقعیت X با توجه به جهت RTL
+        const renderX = this._isRtl ? terminal.cols - 1 - x : x;
+        this._vertices.attributes[i + 9] = renderX / terminal.cols;
         this._vertices.attributes[i + 10] = y / terminal.rows;
         i += INDICES_PER_CELL;
       }

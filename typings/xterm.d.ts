@@ -324,6 +324,8 @@ declare module '@xterm/xterm' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+
+    direction?: 'ltr' | 'rtl';
   }
 
   /**

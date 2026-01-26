@@ -272,6 +272,8 @@ export interface ITerminalOptions {
   [key: string]: any;
   cancelEvents: boolean;
   termName: string;
+
+  direction?: 'ltr' | 'rtl';
 }
 
 export interface ITheme {

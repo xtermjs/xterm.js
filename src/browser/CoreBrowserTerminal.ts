@@ -39,7 +39,7 @@ import { LinkProviderService } from 'browser/services/LinkProviderService';
 import { MouseService } from 'browser/services/MouseService';
 import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IDirectionService, IKeyboardService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
 import { KeyboardService } from 'browser/services/KeyboardService';
 import { channels, color } from 'common/Color';
@@ -58,6 +58,7 @@ import { Linkifier } from './Linkifier';
 import { Emitter, Event } from 'vs/base/common/event';
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { DirectionService } from 'browser/services/DirectionService';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -92,6 +93,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _themeService: IThemeService | undefined;
   private _characterJoinerService: ICharacterJoinerService | undefined;
   private _selectionService: ISelectionService | undefined;
+  private _directionService: IDirectionService | undefined;
 
   /**
    * Records whether the keydown event has already been handled and triggered a data event, if so
@@ -172,6 +174,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._setup();
 
+    this._directionService = this._instantiationService.createInstance(DirectionService);
+    this._instantiationService.setService(IDirectionService, this._directionService);
+    if (this.options.direction) {
+      this._directionService.setDirection(this.options.direction);
+    }
+
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
     this._keyboardService = this._instantiationService.createInstance(KeyboardService);
@@ -191,6 +199,17 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
     this._register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
     this._register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this._register(this.optionsService.onSpecificOptionChange('direction', (value: 'ltr' | 'rtl') => {
+      if (this._directionService && value) {
+        this._directionService.setDirection(value);
+      }
+    }));
+    this._register(this._directionService.onDirectionChange((direction) => {
+      if (this.element) {
+        this.element.dir = direction;
+      }
+      this._handleDirectionChange(direction);
+    }));
 
     // Setup listeners
     this._register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
@@ -199,6 +218,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._customKeyEventHandler = undefined;
       this.element?.parentNode?.removeChild(this.element);
     }));
+  }
+
+  private _handleDirectionChange(direction: 'ltr' | 'rtl'): void {
+    // بازسازی موقعیت textarea
+    this._syncTextArea();
   }
 
   /**
@@ -333,11 +357,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     const width = bufferLine.getWidth(cursorX);
     const cellWidth = this._renderService.dimensions.css.cell.width * width;
     const cursorTop = this.buffer.y * this._renderService.dimensions.css.cell.height;
-    const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
+    const cursorStart = cursorX * this._renderService.dimensions.css.cell.width;
 
     // Sync the textarea to the exact position of the composition view so the IME knows where the
     // text is.
-    this.textarea.style.left = cursorLeft + 'px';
+    const isRtl = this._directionService?.isRtl ?? false;
+
+    this.textarea.style.right = (isRtl) ? cursorStart + 'px' : '';
+    this.textarea.style.left = (isRtl) ? '' : cursorStart + 'px';
     this.textarea.style.top = cursorTop + 'px';
     this.textarea.style.width = cellWidth + 'px';
     this.textarea.style.height = cellHeight + 'px';
@@ -369,12 +396,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       // Firefox doesn't appear to fire the contextmenu event on right click
       this._register(addDisposableListener(this.element!, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord, this._directionService!.direction);
         }
       }));
     } else {
       this._register(addDisposableListener(this.element!, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord);
+        rightClickHandler(event, this.textarea!, this.screenElement!, this._selectionService!, this.options.rightClickSelectsWord, this._directionService!.direction);
       }));
     }
 
@@ -386,7 +413,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       // that the regular click event doesn't fire for the middle mouse button.
       this._register(addDisposableListener(this.element!, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
-          moveTextAreaUnderMouseCursor(event, this.textarea!, this.screenElement!);
+          moveTextAreaUnderMouseCursor(event, this.textarea!, this.screenElement!, this._directionService!.direction);
         }
       }));
     }
@@ -404,6 +431,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
     this._register(addDisposableListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this._register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
+    this._register(this._directionService!.onDirectionChange(() => this._compositionHelper!.updateCompositionElements()));
   }
 
   /**
@@ -436,7 +464,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Create main element container
     this.element = this._document.createElement('div');
-    this.element.dir = 'ltr';   // xterm.css assumes LTR
+    this.element.dir = this._directionService ? this._directionService.direction : 'ltr';
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.classList.toggle('allow-transparency', this.options.allowTransparency);

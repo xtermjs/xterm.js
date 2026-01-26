@@ -171,24 +171,54 @@ const KEY_TO_CONTROL_CHAR: { [key: string]: number } = {
 /**
  * Get the Win32 virtual key code for a keyboard event.
  */
-function getVirtualKeyCode(ev: IKeyboardEvent): number {
+function getVirtualKeyCode(ev: IKeyboardEvent, direction: 'ltr' | 'rtl' = 'ltr'): number {
+  // Helper function to get effective key code based on direction
+  const getAdjustedCode = (code: string): string => {
+    if (direction === 'rtl') {
+      // Swap left and right arrow codes in RTL mode
+      if (code === 'ArrowLeft') return 'ArrowRight';
+      if (code === 'ArrowRight') return 'ArrowLeft';
+    }
+    return code;
+  };
+
+  const adjustedCode = getAdjustedCode(ev.code);
+
   // Try code-based lookup first
-  const vk = CODE_TO_VK[ev.code];
+  const vk = CODE_TO_VK[adjustedCode];
   if (vk !== undefined) {
     return vk;
   }
 
   // Fall back to keyCode for unmapped keys
   // Note: keyCode is deprecated but provides reasonable fallback
-  return ev.keyCode || 0;
+  // Apply direction swapping to keyCode as well
+  let adjustedKeyCode = ev.keyCode || 0;
+  if (direction === 'rtl') {
+    if (adjustedKeyCode === 37) adjustedKeyCode = 39; // left becomes right
+    else if (adjustedKeyCode === 39) adjustedKeyCode = 37; // right becomes left
+  }
+
+  return adjustedKeyCode;
 }
 
 /**
  * Get the Win32 scan code for a keyboard event.
  * Returns 0 if unknown (scan codes vary by hardware).
  */
-function getScanCode(ev: IKeyboardEvent): number {
-  return CODE_TO_SCANCODE[ev.code] || 0;
+function getScanCode(ev: IKeyboardEvent, direction: 'ltr' | 'rtl' = 'ltr'): number {
+  // Helper function to get effective key code based on direction
+  const getAdjustedCode = (code: string): string => {
+    if (direction === 'rtl') {
+      // Swap left and right arrow codes in RTL mode
+      if (code === 'ArrowLeft') return 'ArrowRight';
+      if (code === 'ArrowRight') return 'ArrowLeft';
+    }
+    return code;
+  };
+
+  const adjustedCode = getAdjustedCode(ev.code);
+  return CODE_TO_SCANCODE[adjustedCode] || 0;
 }
 
 /**
@@ -236,7 +266,7 @@ function getUnicodeChar(ev: IKeyboardEvent): number {
 /**
  * Get the Win32 control key state flags.
  */
-function getControlKeyState(ev: IKeyboardEvent): number {
+function getControlKeyState(ev: IKeyboardEvent, direction: 'ltr' | 'rtl' = 'ltr'): number {
   let state = 0;
 
   if (ev.shiftKey) {
@@ -262,8 +292,19 @@ function getControlKeyState(ev: IKeyboardEvent): number {
     }
   }
 
+  // Helper function to check if code is enhanced with direction consideration
+  const isEnhancedCode = (code: string): boolean => {
+    // Apply direction swapping for arrow keys
+    let adjustedCode = code;
+    if (direction === 'rtl') {
+      if (code === 'ArrowLeft') adjustedCode = 'ArrowRight';
+      else if (code === 'ArrowRight') adjustedCode = 'ArrowLeft';
+    }
+    return ENHANCED_KEY_CODES.has(adjustedCode);
+  };
+
   // Check for enhanced key
-  if (ENHANCED_KEY_CODES.has(ev.code)) {
+  if (isEnhancedCode(ev.code)) {
     state |= Win32ControlKeyState.ENHANCED_KEY;
   }
 
@@ -279,11 +320,13 @@ function getControlKeyState(ev: IKeyboardEvent): number {
  *
  * @param ev The keyboard event.
  * @param isKeyDown Whether this is a keydown (true) or keyup (false) event.
+ * @param direction The text direction ('ltr' or 'rtl').
  * @returns The keyboard result with the encoded key sequence.
  */
 export function evaluateKeyboardEventWin32(
   ev: IKeyboardEvent,
-  isKeyDown: boolean
+  isKeyDown: boolean,
+  direction: 'ltr' | 'rtl' = 'ltr'
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
@@ -291,11 +334,11 @@ export function evaluateKeyboardEventWin32(
     key: undefined
   };
 
-  const vk = getVirtualKeyCode(ev);
-  const sc = getScanCode(ev);
+  const vk = getVirtualKeyCode(ev, direction);
+  const sc = getScanCode(ev, direction);
   const uc = getUnicodeChar(ev);
   const kd = isKeyDown ? 1 : 0;
-  const cs = getControlKeyState(ev);
+  const cs = getControlKeyState(ev, direction);
   const rc = 1; // Repeat count, always 1 for now
 
   // Format: CSI Vk ; Sc ; Uc ; Kd ; Cs ; Rc _

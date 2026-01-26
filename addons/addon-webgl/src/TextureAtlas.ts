@@ -108,6 +108,7 @@ export class TextureAtlas implements ITextureAtlas {
       page.canvas.remove();
     }
     this._onAddTextureAtlasCanvas.dispose();
+    this._onRemoveTextureAtlasCanvas.dispose();
   }
 
   public warmUp(): void {
@@ -132,7 +133,9 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _requestClearModel = false;
   public beginFrame(): boolean {
-    return this._requestClearModel;
+    const result = this._requestClearModel;
+    this._requestClearModel = false;
+    return result;
   }
 
   public clearTexture(): void {
@@ -627,7 +630,7 @@ export class TextureAtlas implements ITextureAtlas {
           case UnderlineStyle.DOTTED:
             const offsetWidth = nextOffset === 0 ? 0 :
               (nextOffset >= lineWidth ? lineWidth * 2 - nextOffset : lineWidth - nextOffset);
-              // a line and a gap.
+            // a line and a gap.
             const isLineStart = nextOffset >= lineWidth ? false : true;
             if (isLineStart === false || offsetWidth === 0) {
               this._tmpCtx.setLineDash([Math.round(lineWidth), Math.round(lineWidth)]);
@@ -691,7 +694,9 @@ export class TextureAtlas implements ITextureAtlas {
             this._tmpCtx.clip(clipRegion);
             this._tmpCtx.lineWidth = this._config.devicePixelRatio * 3;
             this._tmpCtx.strokeStyle = backgroundColor.css;
-            this._tmpCtx.strokeText(chars, padding, padding + this._config.deviceCharHeight);
+
+            const textX = xLeft;
+            this._tmpCtx.strokeText(chars, textX, padding + this._config.deviceCharHeight);
             this._tmpCtx.restore();
           }
         }
@@ -705,14 +710,24 @@ export class TextureAtlas implements ITextureAtlas {
       this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
-      this._tmpCtx.moveTo(padding, padding + yOffset);
-      this._tmpCtx.lineTo(padding + this._config.deviceCharWidth * chWidth, padding + yOffset);
+
+      // محاسبه موقعیت overline با توجه به جهت
+      const overlineXStart = padding;
+      const overlineXEnd = padding + this._config.deviceCharWidth * chWidth;
+
+      this._tmpCtx.moveTo(overlineXStart, padding + yOffset);
+      this._tmpCtx.lineTo(overlineXEnd, padding + yOffset);
       this._tmpCtx.stroke();
     }
 
     // Draw the character
     if (!customGlyph) {
-      this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight);
+      // محاسبه موقعیت متن با توجه به جهت و تراز
+      let textX = padding;
+      textX = padding + Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2);
+      this._tmpCtx.textAlign = 'left';
+
+      this._tmpCtx.fillText(chars, textX, padding + this._config.deviceCharHeight);
     }
 
     // If this character is underscore and beyond the cell bounds, shift it up until it is visible
@@ -725,7 +740,12 @@ export class TextureAtlas implements ITextureAtlas {
           this._tmpCtx.fillStyle = backgroundColor.css;
           this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
           this._tmpCtx.restore();
-          this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight - offset);
+
+          let underscoreX = padding;
+          underscoreX = padding + Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2);
+          this._tmpCtx.textAlign = 'left';
+
+          this._tmpCtx.fillText(chars, underscoreX, padding + this._config.deviceCharHeight - offset);
           isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
           if (!isBeyondCellBounds) {
             break;
@@ -734,15 +754,19 @@ export class TextureAtlas implements ITextureAtlas {
       }
     }
 
-    // Draw strokethrough
+    // Draw strikethrough
     if (strikethrough) {
       const lineWidth = Math.max(1, Math.floor(this._config.fontSize * this._config.devicePixelRatio / 10));
       const yOffset = this._tmpCtx.lineWidth % 2 === 1 ? 0.5 : 0; // When the width is odd, draw at 0.5 position
       this._tmpCtx.lineWidth = lineWidth;
       this._tmpCtx.strokeStyle = this._tmpCtx.fillStyle;
       this._tmpCtx.beginPath();
-      this._tmpCtx.moveTo(padding, padding + Math.floor(this._config.deviceCharHeight / 2) - yOffset);
-      this._tmpCtx.lineTo(padding + this._config.deviceCharWidth * chWidth, padding + Math.floor(this._config.deviceCharHeight / 2) - yOffset);
+
+      const strikethroughXStart = padding;
+      const strikethroughXEnd = padding + this._config.deviceCharWidth * chWidth;
+
+      this._tmpCtx.moveTo(strikethroughXStart, padding + Math.floor(this._config.deviceCharHeight / 2) - yOffset);
+      this._tmpCtx.lineTo(strikethroughXEnd, padding + Math.floor(this._config.deviceCharHeight / 2) - yOffset);
       this._tmpCtx.stroke();
     }
 
@@ -1010,6 +1034,11 @@ export class TextureAtlas implements ITextureAtlas {
         break;
       }
     }
+
+    // محاسبه offset با توجه به جهت RTL
+    const offsetX = -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ?
+      Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2) : 0);
+
     return {
       texturePage: 0,
       texturePosition: { x: 0, y: 0 },
@@ -1023,8 +1052,10 @@ export class TextureAtlas implements ITextureAtlas {
         y: (boundingBox.bottom - boundingBox.top + 1)
       },
       offset: {
-        x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.deviceCellWidth - this._config.deviceCharWidth) / 2) : 0),
-        y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.deviceCellHeight - this._config.deviceCharHeight) / 2) : 0)
+        x: offsetX,
+        y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ?
+          this._config.lineHeight === 1 ? 0 :
+            Math.round((this._config.deviceCellHeight - this._config.deviceCharHeight) / 2) : 0)
       }
     };
   }
@@ -1121,13 +1152,13 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match
     if (imageData.data[offset] === r &&
-        imageData.data[offset + 1] === g &&
-        imageData.data[offset + 2] === b) {
+      imageData.data[offset + 1] === g &&
+      imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
       // Check the threshold based difference
       if (enableThresholdCheck &&
-          (Math.abs(imageData.data[offset] - r) +
+        (Math.abs(imageData.data[offset] - r) +
           Math.abs(imageData.data[offset + 1] - g) +
           Math.abs(imageData.data[offset + 2] - b)) < threshold) {
         imageData.data[offset + 3] = 0;

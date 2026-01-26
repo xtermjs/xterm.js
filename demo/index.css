@@ -62,6 +62,10 @@ p:first-child {
     padding-left: 20px;
     vertical-align: top;
 }
+[dir="rtl"] .option-group {
+    padding-right: 20px;
+    padding-left: unset;
+}
 
 pre {
     display: block;
@@ -109,6 +113,10 @@ div:first-of-type.grid {
     opacity: 0.5;
     transition: opacity 0.1s;
 }
+#sidebar[dir="rtl"] {
+    left: 15px; /* Room for scrollbar */
+    right: unset;
+}
 #sidebar:hover {
     opacity: 1;
 }
@@ -125,6 +133,10 @@ div:first-of-type.grid {
     width: 6px;
     cursor: ew-resize;
     background: transparent;
+}
+[dir="rtl"] #sidebar-resize-handle-horizontal {
+    right: 0;
+    left: unset;
 }
 #sidebar-resize-handle-horizontal:hover {
     background: rgba(0, 120, 212, 0.3);
@@ -149,6 +161,10 @@ div:first-of-type.grid {
     height: 12px;
     cursor: nesw-resize;
     background: transparent;
+}
+[dir="rtl"] #sidebar-resize-handle-corner {
+    right: 0;
+    left: unset;
 }
 #sidebar-resize-handle-corner:hover {
     background: rgba(0, 120, 212, 0.5);
@@ -176,6 +192,10 @@ div:first-of-type.grid {
 
 .vt-button * {
   margin-right: 1em;
+}
+[dir="rtl"] .vt-button * {
+  margin-left: 1em;
+  margin-right: unset;
 }
 input#opt-cols_rows {
     width: 6em;

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderService } from 'browser/services/Services';
+import { IDirectionService, IRenderService } from 'browser/services/Services';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
 import { C0 } from 'common/data/EscapeSequences';
 
@@ -52,7 +52,8 @@ export class CompositionHelper {
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
-    @IRenderService private readonly _renderService: IRenderService
+    @IRenderService private readonly _renderService: IRenderService,
+    @IDirectionService private readonly _directionService: IDirectionService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;
@@ -227,13 +228,15 @@ export class CompositionHelper {
     }
 
     if (this._bufferService.buffer.isCursorInViewport) {
+      const direction = this._directionService.direction;
       const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
 
       const cellHeight = this._renderService.dimensions.css.cell.height;
       const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.css.cell.height;
-      const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
+      const cursorStart = cursorX * this._renderService.dimensions.css.cell.width;
 
-      this._compositionView.style.left = cursorLeft + 'px';
+      this._compositionView.style.left = (direction === 'rtl') ? '' : cursorStart + 'px';
+      this._compositionView.style.right = (direction === 'rtl') ? cursorStart + 'px' : '';
       this._compositionView.style.top = cursorTop + 'px';
       this._compositionView.style.height = cellHeight + 'px';
       this._compositionView.style.lineHeight = cellHeight + 'px';
@@ -242,7 +245,8 @@ export class CompositionHelper {
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
-      this._textarea.style.left = cursorLeft + 'px';
+      this._textarea.style.left = (direction === 'rtl') ? '' : cursorStart + 'px';
+      this._textarea.style.right = (direction === 'rtl') ? cursorStart + 'px' : '';
       this._textarea.style.top = cursorTop + 'px';
       // Ensure the text area is at least 1x1, otherwise certain IMEs may break
       this._textarea.style.width = Math.max(compositionViewBounds.width, 1) + 'px';

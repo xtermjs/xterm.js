@@ -8,7 +8,7 @@ import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/Type
 import { C0 } from 'common/data/EscapeSequences';
 
 // reg + shift key mappings for digits and special chars
-const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
+const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string] } = {
   // digits 0-9
   48: ['0', ')'],
   49: ['1', '!'],
@@ -39,7 +39,8 @@ export function evaluateKeyboardEvent(
   ev: IKeyboardEvent,
   applicationCursorMode: boolean,
   isMac: boolean,
-  macOptionIsMeta: boolean
+  macOptionIsMeta: boolean,
+  direction: 'ltr' | 'rtl' = 'ltr'
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
@@ -50,7 +51,20 @@ export function evaluateKeyboardEvent(
     key: undefined
   };
   const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
-  switch (ev.keyCode) {
+
+  // Helper function to get effective key code based on direction
+  const getEffectiveKeyCode = (keyCode: number): number => {
+    if (direction === 'rtl') {
+      // Swap left and right arrow keys in RTL mode
+      if (keyCode === 37) return 39; // left becomes right
+      if (keyCode === 39) return 37; // right becomes left
+    }
+    return keyCode;
+  };
+
+  const effectiveKeyCode = getEffectiveKeyCode(ev.keyCode);
+
+  switch (effectiveKeyCode) {
     case 0:
       if (ev.key === 'UIKeyInputUpArrow') {
         if (applicationCursorMode) {
@@ -362,9 +376,9 @@ export function evaluateKeyboardEvent(
         result.key = ev.key;
       } else if (ev.key && ev.ctrlKey && ev.shiftKey) {
         switch (ev.code) {
-          case 'Minus':  result.key = C0.US;  break; // ^_ (Ctrl+Shift+-_
+          case 'Minus': result.key = C0.US; break; // ^_ (Ctrl+Shift+-_
           case 'Digit2': result.key = C0.NUL; break; // ^@ (Ctrl+Shift+2)
-          case 'Digit6': result.key = C0.RS;  break; // ^^ (Ctrl+Shift+6)
+          case 'Digit6': result.key = C0.RS; break; // ^^ (Ctrl+Shift+6)
         }
       }
       break;

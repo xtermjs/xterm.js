@@ -15,7 +15,13 @@ export class StyleWindow extends BaseWindow implements IControlWindow {
   public build(container: HTMLElement): void {
     const wrapper = document.createElement('div');
     wrapper.style.display = 'inline-block';
-    wrapper.style.marginRight = '16px';
+    if (container.parentElement.dir === 'rtl') {
+      wrapper.style.marginLeft = '16px';
+      wrapper.style.marginRight = '';
+    } else {
+      wrapper.style.marginLeft = '';
+      wrapper.style.marginRight = '16px';
+    }
 
     const label = document.createElement('label');
     label.htmlFor = 'padding';

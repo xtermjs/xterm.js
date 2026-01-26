@@ -129,6 +129,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       { label: 'vtExtensions.win32InputMode', parent: 'vtExtensions', prop: 'win32InputMode' }
     ];
     const stringOptions: { [key: string]: string[] | null } = {
+      direction: ['ltr', 'rtl'],
       cursorStyle: ['block', 'underline', 'bar'],
       cursorInactiveStyle: ['outline', 'block', 'bar', 'underline', 'none'],
       fontFamily: null,
@@ -238,6 +239,12 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
           }
         } else if (o === 'theme') {
           value = this._getTheme();
+        } else if (o === 'direction') {
+          this._terminal.options[o] = value;
+          this._container.ownerDocument.getElementById('sidebar').dir = value;
+          this._container.ownerDocument.getElementById('banner').dir = value;
+          this._container.ownerDocument.getElementById('webgl-custom-glyphs').parentElement.style.marginLeft = (value === 'rtl') ? '' : '20px';
+          this._container.ownerDocument.getElementById('webgl-custom-glyphs').parentElement.style.marginRight = (value === 'rtl') ? '20px' : '';
         }
         this._terminal.options[o] = value;
         if (o === 'theme') {

@@ -74,6 +74,7 @@ let $b = 0;
 let $a = 0;
 
 export class RectangleRenderer extends Disposable {
+  private _isRtl: boolean = false;
 
   private _program: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
@@ -142,6 +143,14 @@ export class RectangleRenderer extends Disposable {
       this._updateCachedColors(e);
       this._updateViewportRectangle();
     }));
+  }
+
+  public setRtl(isRtl: boolean): void {
+    if (this._isRtl !== isRtl) {
+      this._isRtl = isRtl;
+      this._vertices.count = 0;
+      this._verticesCursor.count = 0;
+    }
   }
 
   public renderBackgrounds(): void {
@@ -217,7 +226,9 @@ export class RectangleRenderer extends Disposable {
       currentFg = 0;
       currentInverse = false;
       for (x = 0; x < terminal.cols; x++) {
-        modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        // محاسبه موقعیت X با توجه به جهت RTL
+        const renderX = this._isRtl ? terminal.cols - 1 - x : x;
+        modelIndex = ((y * terminal.cols) + renderX) * RENDER_MODEL_INDICIES_PER_CELL;
         bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
         fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
         inverse = !!(fg & FgFlags.INVERSE);
@@ -250,53 +261,101 @@ export class RectangleRenderer extends Disposable {
       return;
     }
 
+    // محاسبه موقعیت مکان‌نما با توجه به جهت RTL
+    const cursorX = this._isRtl ? this._terminal.cols - 1 - cursor.x : cursor.x;
+
     let offset: number;
     let rectangleCount = 0;
 
     if (cursor.style === 'bar' || cursor.style === 'outline') {
-      // Left edge
+      // Left edge (or Right edge in RTL)
       offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+      const barWidth = cursor.style === 'bar' ? cursor.dpr * cursor.cursorWidth : cursor.dpr;
+
+      // محاسبه موقعیت نوار مکان‌نما با توجه به جهت
+      let barX: number;
+      if (this._isRtl) {
+        // در حالت RTL، نوار در سمت راست سلول قرار می‌گیرد
+        barX = (cursorX + 1) * this._dimensions.device.cell.width - barWidth;
+      } else {
+        // در حالت LTR، نوار در سمت چپ سلول قرار می‌گیرد
+        barX = cursorX * this._dimensions.device.cell.width;
+      }
+
       this._addRectangleFloat(
         vertices.attributes,
         offset,
-        cursor.x * this._dimensions.device.cell.width,
+        barX,
         cursor.y * this._dimensions.device.cell.height,
-        cursor.style === 'bar' ? cursor.dpr * cursor.cursorWidth : cursor.dpr,
+        barWidth,
         this._dimensions.device.cell.height,
         this._cursorFloat
       );
     }
+
     if (cursor.style === 'underline' || cursor.style === 'outline') {
       // Bottom edge
       offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+
+      let underlineX: number;
+      if (this._isRtl) {
+        // در حالت RTL، underline از سمت راست شروع می‌شود
+        underlineX = (cursorX + 1) * this._dimensions.device.cell.width - (cursor.width * this._dimensions.device.cell.width);
+      } else {
+        // در حالت LTR، underline از سمت چپ شروع می‌شود
+        underlineX = cursorX * this._dimensions.device.cell.width;
+      }
+
       this._addRectangleFloat(
         vertices.attributes,
         offset,
-        cursor.x * this._dimensions.device.cell.width,
+        underlineX,
         (cursor.y + 1) * this._dimensions.device.cell.height - cursor.dpr,
         cursor.width * this._dimensions.device.cell.width,
         cursor.dpr,
         this._cursorFloat
       );
     }
+
     if (cursor.style === 'outline') {
       // Top edge
       offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+
+      let outlineTopX: number;
+      if (this._isRtl) {
+        // در حالت RTL، outline از سمت راست شروع می‌شود
+        outlineTopX = (cursorX + 1) * this._dimensions.device.cell.width - (cursor.width * this._dimensions.device.cell.width);
+      } else {
+        // در حالت LTR، outline از سمت چپ شروع می‌شود
+        outlineTopX = cursorX * this._dimensions.device.cell.width;
+      }
+
       this._addRectangleFloat(
         vertices.attributes,
         offset,
-        cursor.x * this._dimensions.device.cell.width,
+        outlineTopX,
         cursor.y * this._dimensions.device.cell.height,
         cursor.width * this._dimensions.device.cell.width,
         cursor.dpr,
         this._cursorFloat
       );
-      // Right edge
+
+      // Right edge (or Left edge in RTL)
       offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+
+      let outlineRightX: number;
+      if (this._isRtl) {
+        // در حالت RTL، این لبه سمت چپ است
+        outlineRightX = cursorX * this._dimensions.device.cell.width;
+      } else {
+        // در حالت LTR، این لبه سمت راست است
+        outlineRightX = (cursorX + cursor.width) * this._dimensions.device.cell.width - cursor.dpr;
+      }
+
       this._addRectangleFloat(
         vertices.attributes,
         offset,
-        (cursor.x + cursor.width) * this._dimensions.device.cell.width - cursor.dpr,
+        outlineRightX,
         cursor.y * this._dimensions.device.cell.height,
         cursor.dpr,
         this._dimensions.device.cell.height,
@@ -339,18 +398,29 @@ export class RectangleRenderer extends Disposable {
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
     }
-    $x1 = startX * this._dimensions.device.cell.width;
+
+    // محاسبه موقعیت X با توجه به جهت RTL
+    if (this._isRtl) {
+      const canvasWidth = this._terminal.cols * this._dimensions.device.cell.width;
+      // در حالت RTL، مستطیل از سمت راست شروع می‌شود
+      $x1 = canvasWidth - (endX * this._dimensions.device.cell.width);
+    } else {
+      $x1 = startX * this._dimensions.device.cell.width;
+    }
+
+    const width = (endX - startX) * this._dimensions.device.cell.width;
+
     $y1 = y * this._dimensions.device.cell.height;
     $r = (($rgba >> 24) & 0xFF) / 255;
     $g = (($rgba >> 16) & 0xFF) / 255;
-    $b = (($rgba >> 8 ) & 0xFF) / 255;
+    $b = (($rgba >> 8) & 0xFF) / 255;
     $a = 1;
 
-    this._addRectangle(vertices.attributes, offset, $x1, $y1, (endX - startX) * this._dimensions.device.cell.width, this._dimensions.device.cell.height, $r, $g, $b, $a);
+    this._addRectangle(vertices.attributes, offset, $x1, $y1, width, this._dimensions.device.cell.height, $r, $g, $b, $a);
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {
-    array[offset    ] = x1 / this._dimensions.device.canvas.width;
+    array[offset] = x1 / this._dimensions.device.canvas.width;
     array[offset + 1] = y1 / this._dimensions.device.canvas.height;
     array[offset + 2] = width / this._dimensions.device.canvas.width;
     array[offset + 3] = height / this._dimensions.device.canvas.height;
@@ -361,7 +431,7 @@ export class RectangleRenderer extends Disposable {
   }
 
   private _addRectangleFloat(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, color: Float32Array): void {
-    array[offset    ] = x1 / this._dimensions.device.canvas.width;
+    array[offset] = x1 / this._dimensions.device.canvas.width;
     array[offset + 1] = y1 / this._dimensions.device.canvas.height;
     array[offset + 2] = width / this._dimensions.device.canvas.width;
     array[offset + 3] = height / this._dimensions.device.canvas.height;
@@ -375,8 +445,8 @@ export class RectangleRenderer extends Disposable {
     return new Float32Array([
       ((color.rgba >> 24) & 0xFF) / 255,
       ((color.rgba >> 16) & 0xFF) / 255,
-      ((color.rgba >> 8 ) & 0xFF) / 255,
-      ((color.rgba      ) & 0xFF) / 255
+      ((color.rgba >> 8) & 0xFF) / 255,
+      ((color.rgba) & 0xFF) / 255
     ]);
   }
 }

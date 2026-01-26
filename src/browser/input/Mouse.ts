@@ -3,13 +3,20 @@
  * @license MIT
  */
 
-export function getCoordsRelativeToElement(window: Pick<Window, 'getComputedStyle'>, event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
+export function getCoordsRelativeToElement(window: Pick<Window, 'getComputedStyle'>, event: { clientX: number, clientY: number }, element: HTMLElement, direction?: 'ltr' | 'rtl'): [number, number] {
   const rect = element.getBoundingClientRect();
   const elementStyle = window.getComputedStyle(element);
   const leftPadding = parseInt(elementStyle.getPropertyValue('padding-left'));
+  const rightPadding = parseInt(elementStyle.getPropertyValue('padding-right'));
   const topPadding = parseInt(elementStyle.getPropertyValue('padding-top'));
+
+  const relativeX = (direction === 'rtl')
+    ? rect.right - event.clientX - rightPadding
+    : event.clientX - rect.left - leftPadding
+  ;
+
   return [
-    event.clientX - rect.left - leftPadding,
+    relativeX,
     event.clientY - rect.top - topPadding
   ];
 }
@@ -27,16 +34,16 @@ export function getCoordsRelativeToElement(window: Pick<Window, 'getComputedStyl
  * @param cssCellWidth The cell width device pixel render dimensions.
  * @param cssCellHeight The cell height device pixel render dimensions.
  * @param isSelection Whether the request is for the selection or not. This will
- * apply an offset to the x value such that the left half of the cell will
- * select that cell and the right half will select the next cell.
+ * apply an offset to the x value such that the left/right half of the cell will
+ * select that cell and the right/left half will select the next cell.
  */
-export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<MouseEvent, 'clientX' | 'clientY'>, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, cssCellWidth: number, cssCellHeight: number, isSelection?: boolean): [number, number] | undefined {
+export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<MouseEvent, 'clientX' | 'clientY'>, element: HTMLElement, colCount: number, rowCount: number, hasValidCharSize: boolean, cssCellWidth: number, cssCellHeight: number, isSelection?: boolean, direction?: 'ltr' | 'rtl'): [number, number] | undefined {
   // Coordinates cannot be measured if there are no valid
   if (!hasValidCharSize) {
     return undefined;
   }
 
-  const coords = getCoordsRelativeToElement(window, event, element);
+  const coords = getCoordsRelativeToElement(window, event, element, direction);
   if (!coords) {
     return undefined;
   }

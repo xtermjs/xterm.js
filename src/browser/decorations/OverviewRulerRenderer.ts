@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
-import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
+import { ICoreBrowserService, IDirectionService, IRenderService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
 
@@ -56,7 +56,8 @@ export class OverviewRulerRenderer extends Disposable {
     @IRenderService private readonly _renderService: IRenderService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IThemeService private readonly _themeService: IThemeService,
-    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
+    @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
+    @IDirectionService private readonly _directionService: IDirectionService
   ) {
     super();
     this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
@@ -101,6 +102,7 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshDrawConstants(): void {
+    const direction = this._directionService.direction;
     // width
     const outerWidth = Math.floor((this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH) / 3);
     const innerWidth = Math.ceil((this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH) / 3);
@@ -112,9 +114,15 @@ export class OverviewRulerRenderer extends Disposable {
     this._refreshDrawHeightConstants();
     // x
     drawX.full = Constants.OVERVIEW_RULER_BORDER_WIDTH;
-    drawX.left = Constants.OVERVIEW_RULER_BORDER_WIDTH;
-    drawX.center = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left;
-    drawX.right = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left + drawWidth.center;
+    if (direction === 'rtl') {
+      drawX.right = Constants.OVERVIEW_RULER_BORDER_WIDTH;
+      drawX.center = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.right;
+      drawX.left = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.right + drawWidth.center;
+    } else {
+      drawX.left = Constants.OVERVIEW_RULER_BORDER_WIDTH;
+      drawX.center = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left;
+      drawX.right = Constants.OVERVIEW_RULER_BORDER_WIDTH + drawWidth.left + drawWidth.center;
+    }
   }
 
   private _refreshDrawHeightConstants(): void {

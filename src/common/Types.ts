@@ -35,6 +35,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   cancelEvents?: boolean;
   convertEol?: boolean;
   termName?: string;
+  direction?: 'ltr' | 'rtl';
 }
 
 export type CursorStyle = 'block' | 'underline' | 'bar';

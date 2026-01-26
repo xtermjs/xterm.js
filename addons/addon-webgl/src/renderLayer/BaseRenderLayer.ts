@@ -6,7 +6,7 @@
 import { ReadonlyColorSet } from 'browser/Types';
 import { acquireTextureAtlas } from '../CharAtlasCache';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
-import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ICoreBrowserService, IDirectionService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
@@ -25,6 +25,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   private _deviceCellHeight: number = 0;
   private _deviceCharLeft: number = 0;
   private _deviceCharTop: number = 0;
+  protected _isRtl: boolean = false;
 
   protected _charAtlas: ITextureAtlas | undefined;
 
@@ -36,14 +37,25 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     private _alpha: boolean,
     protected readonly _coreBrowserService: ICoreBrowserService,
     protected readonly _optionsService: IOptionsService,
-    protected readonly _themeService: IThemeService
+    protected readonly _themeService: IThemeService,
+    @IDirectionService protected readonly _directionService: IDirectionService
   ) {
     super();
     this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
+
+    // تنظیم جهت اولیه
+    this._isRtl = this._directionService.isRtl;
+
     this._initCanvas();
     this._container.appendChild(this._canvas);
+
+    // گوش دادن به تغییرات جهت
+    this._register(this._directionService.onDirectionChange((direction) => {
+      this.handleDirectionChange(direction);
+    }));
+
     this._register(this._themeService.onChangeColors(e => {
       this._refreshCharAtlas(terminal, e);
       this.reset(terminal);
@@ -61,11 +73,23 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     }
   }
 
-  public handleBlur(terminal: Terminal): void {}
-  public handleFocus(terminal: Terminal): void {}
-  public handleCursorMove(terminal: Terminal): void {}
-  public handleGridChanged(terminal: Terminal, startRow: number, endRow: number): void {}
-  public handleSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void {}
+  public handleBlur(terminal: Terminal): void { }
+  public handleFocus(terminal: Terminal): void { }
+  public handleCursorMove(terminal: Terminal): void { }
+  public handleGridChanged(terminal: Terminal, startRow: number, endRow: number): void { }
+  public handleSelectionChanged(terminal: Terminal, start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean = false): void { }
+
+  /**
+   * Handle direction change for RTL support
+   */
+  public handleDirectionChange(direction: 'ltr' | 'rtl'): void {
+    const newIsRtl = direction === 'rtl';
+    if (this._isRtl !== newIsRtl) {
+      this._isRtl = newIsRtl;
+      // نیاز به بازسازی لایه با جهت جدید
+      this._clearAll();
+    }
+  }
 
   protected _setTransparency(terminal: Terminal, alpha: boolean): void {
     // Do nothing when alpha doesn't change
@@ -123,14 +147,30 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   public abstract reset(terminal: Terminal): void;
 
   /**
+   * Helper method to get actual X position based on RTL direction
+   * @param x The column position
+   * @param width The width of the element
+   * @returns The actual X position for rendering
+   */
+  protected _getActualX(x: number, width: number = 1): number {
+    if (!this._isRtl) {
+      return x;
+    }
+    // در حالت RTL، موقعیت از سمت راست محاسبه می‌شود
+    const cols = this._optionsService.rawOptions.cols || 80;
+    return cols - x - width;
+  }
+
+  /**
    * Fills a 1px line (2px on HDPI) at the bottom of the cell. This uses the
    * existing fillStyle on the context.
    * @param x The column to fill.
    * @param y The row to fill.
    */
   protected _fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
+    const actualX = this._getActualX(x, width);
     this._ctx.fillRect(
-      x * this._deviceCellWidth,
+      actualX * this._deviceCellWidth,
       (y + 1) * this._deviceCellHeight - this._coreBrowserService.dpr - 1 /* Ensure it's drawn within the cell */,
       width * this._deviceCellWidth,
       this._coreBrowserService.dpr);
@@ -156,16 +196,17 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param height The number of rows to clear.
    */
   protected _clearCells(x: number, y: number, width: number, height: number): void {
+    const actualX = this._getActualX(x, width);
     if (this._alpha) {
       this._ctx.clearRect(
-        x * this._deviceCellWidth,
+        actualX * this._deviceCellWidth,
         y * this._deviceCellHeight,
         width * this._deviceCellWidth,
         height * this._deviceCellHeight);
     } else {
       this._ctx.fillStyle = this._themeService.colors.background.css;
       this._ctx.fillRect(
-        x * this._deviceCellWidth,
+        actualX * this._deviceCellWidth,
         y * this._deviceCellHeight,
         width * this._deviceCellWidth,
         height * this._deviceCellHeight);
@@ -182,13 +223,30 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
    * @param y The row to draw at.
    */
   protected _fillCharTrueColor(terminal: Terminal, cell: CellData, x: number, y: number): void {
+    const cellWidth = cell.getWidth();
+    const actualX = this._getActualX(x, cellWidth);
+
     this._ctx.font = this._getFont(terminal, false, false);
     this._ctx.textBaseline = TEXT_BASELINE;
-    this._clipCell(x, y, cell.getWidth());
+    this._clipCell(actualX, y, cellWidth);
+
+    // برای حالت RTL، متن باید از سمت راست تراز شود
+    let textX = actualX * this._deviceCellWidth + this._deviceCharLeft;
+    if (this._isRtl) {
+      // در حالت RTL، باید کاراکتر از سمت راست سلول شروع شود
+      const textWidth = cellWidth * this._deviceCellWidth;
+      textX = actualX * this._deviceCellWidth + (textWidth - this._deviceCharWidth) - this._deviceCharLeft;
+      this._ctx.textAlign = 'right';
+    } else {
+      this._ctx.textAlign = 'left';
+    }
+
     this._ctx.fillText(
       cell.getChars(),
-      x * this._deviceCellWidth + this._deviceCharLeft,
+      textX,
       y * this._deviceCellHeight + this._deviceCharTop + this._deviceCharHeight);
+
+    this._ctx.textAlign = 'left';
   }
 
   /**

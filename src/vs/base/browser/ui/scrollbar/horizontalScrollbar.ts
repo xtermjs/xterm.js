@@ -67,14 +67,28 @@ export class HorizontalScrollbar extends AbstractScrollbar {
 	}
 
 	protected _updateSlider(sliderSize: number, sliderPosition: number): void {
+		const direction = this._direction;
 		this.slider.setWidth(sliderSize);
-		this.slider.setLeft(sliderPosition);
+		if (direction === 'rtl') {
+			this.slider.setLeft(sliderPosition);
+			this.slider.setRight('');
+		} else {
+			this.slider.setRight(sliderPosition);
+			this.slider.setLeft('');
+		}
 	}
 
 	protected _renderDomNode(largeSize: number, smallSize: number): void {
+		const direction = this._direction;
 		this.domNode.setWidth(largeSize);
 		this.domNode.setHeight(smallSize);
-		this.domNode.setLeft(0);
+		if (direction === 'rtl') {
+			this.domNode.setRight(0);
+			this.domNode.setLeft('');
+		} else {
+			this.domNode.setLeft(0);
+			this.domNode.setRight('');
+		}
 		this.domNode.setBottom(0);
 	}
 
@@ -110,5 +124,6 @@ export class HorizontalScrollbar extends AbstractScrollbar {
 		this._scrollbarState.setOppositeScrollbarSize(options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize);
 		this._visibilityController.setVisibility(options.horizontal);
 		this._scrollByPage = options.scrollByPage;
+		this.setDirection(options.direction);
 	}
 }

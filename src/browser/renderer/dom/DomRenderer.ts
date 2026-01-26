@@ -9,7 +9,7 @@ import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shar
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { ICharSizeService, ICoreBrowserService, IDirectionService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
@@ -64,7 +64,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
-    @IThemeService private readonly _themeService: IThemeService
+    @IThemeService private readonly _themeService: IThemeService,
+    @IDirectionService private readonly _directionService: IDirectionService,
   ) {
     super();
     this._rowContainer = this._document.createElement('div');
@@ -75,6 +76,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._selectionContainer = this._document.createElement('div');
     this._selectionContainer.classList.add(SELECTION_CLASS);
     this._selectionContainer.setAttribute('aria-hidden', 'true');
+
+    // Set initial direction
+    this._applyDirectionStyles();
 
     this.dimensions = createRenderDimensions();
     this._updateDimensions();
@@ -116,6 +120,36 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._optionsService.rawOptions.fontWeightBold
     );
     this._setDefaultSpacing();
+
+    // Listen for direction changes
+    this._register(this._directionService.onDirectionChange((direction) => {
+      this.handleDirectionChange(direction);
+    }));
+  }
+
+  private _applyDirectionStyles(): void {
+    if (this._directionService.direction === 'rtl') {
+      this._rowContainer.style.direction = 'rtl';
+      this._rowContainer.style.textAlign = 'right';
+    } else {
+      this._rowContainer.style.direction = 'ltr';
+      this._rowContainer.style.textAlign = 'left';
+    }
+  }
+
+  public handleDirectionChange(direction: 'ltr' | 'rtl'): void {
+    // Apply direction styles
+    this._applyDirectionStyles();
+    // Re-inject CSS with new direction
+    this._injectCss(this._themeService.colors);
+    // Recreate selection elements with new direction
+    this.handleSelectionChanged(
+      this._selectionRenderModel.selectionStart,
+      this._selectionRenderModel.selectionEnd,
+      this._selectionRenderModel.columnSelectMode
+    );
+    // Trigger redraw
+    this.renderRows(0, this._bufferService.rows - 1);
   }
 
   private _updateDimensions(): void {
@@ -260,14 +294,27 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` height: calc(100% - 1px);` +
       `}`;
     // Selection
+    if (this._directionService.direction === 'rtl') {
+      styles +=
+        `${this._terminalSelector} .${SELECTION_CLASS} {` +
+        ` position: absolute;` +
+        ` top: 0;` +
+        ` right: 0;` +
+        ` z-index: 1;` +
+        ` pointer-events: none;` +
+        `}`;
+    } else {
+      styles +=
+        `${this._terminalSelector} .${SELECTION_CLASS} {` +
+        ` position: absolute;` +
+        ` top: 0;` +
+        ` left: 0;` +
+        ` z-index: 1;` +
+        ` pointer-events: none;` +
+        `}`;
+    }
+
     styles +=
-      `${this._terminalSelector} .${SELECTION_CLASS} {` +
-      ` position: absolute;` +
-      ` top: 0;` +
-      ` left: 0;` +
-      ` z-index: 1;` +
-      ` pointer-events: none;` +
-      `}` +
       `${this._terminalSelector}.focus .${SELECTION_CLASS} div {` +
       ` position: absolute;` +
       ` background-color: ${colors.selectionBackgroundOpaque.css};` +
@@ -405,15 +452,19 @@ export class DomRenderer extends Disposable implements IRenderer {
    */
   private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
     const element = this._document.createElement('div');
-    const left = colStart * this.dimensions.css.cell.width;
+    const start = colStart * this.dimensions.css.cell.width;
     let width = this.dimensions.css.cell.width * (colEnd - colStart);
-    if (left + width > this.dimensions.css.canvas.width) {
-      width = this.dimensions.css.canvas.width - left;
+    if (start + width > this.dimensions.css.canvas.width) {
+      width = this.dimensions.css.canvas.width - start;
     }
 
     element.style.height = `${rowCount * this.dimensions.css.cell.height}px`;
     element.style.top = `${row * this.dimensions.css.cell.height}px`;
-    element.style.left = `${left}px`;
+    if (this._directionService.direction === 'rtl') {
+      element.style.right = `${start}px`;
+    } else {
+      element.style.left = `${start}px`;
+    }
     element.style.width = `${width}px`;
     return element;
   }

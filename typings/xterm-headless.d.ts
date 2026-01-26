@@ -236,6 +236,8 @@ declare module '@xterm/headless' {
      * Enable various VT extensions. All extensions are disabled by default.
      */
     vtExtensions?: IVtExtensions;
+
+    direction?: 'ltr' | 'rtl';
   }
 
   /**
