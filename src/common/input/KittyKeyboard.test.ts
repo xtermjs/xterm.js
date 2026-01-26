@@ -33,12 +33,14 @@ describe('KittyKeyboard', () => {
     describe('modifier encoding (value = 1 + modifiers)', () => {
       const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES;
 
-      it('shift=2 (1+1)', () => {
-        const result = evaluateKeyboardEventKitty(createEvent({ key: 'a', shiftKey: true }), flags);
-        assert.strictEqual(result.key, '\x1b[97;2u');
+      it('shift+letter sends plain character in DISAMBIGUATE mode', () => {
+        // Kitty spec: DISAMBIGUATE only encodes keys ambiguous in legacy encoding
+        // Shift+a → "A" is not ambiguous, so send plain "A"
+        const result = evaluateKeyboardEventKitty(createEvent({ key: 'A', shiftKey: true }), flags);
+        assert.strictEqual(result.key, 'A');
       });
 
-      it('alt=3 (1+2)', () => {
+      it('alt=3 (1+2) still uses CSI u', () => {
         const result = evaluateKeyboardEventKitty(createEvent({ key: 'a', altKey: true }), flags);
         assert.strictEqual(result.key, '\x1b[97;3u');
       });
@@ -598,9 +600,10 @@ describe('KittyKeyboard', () => {
     describe('edge cases', () => {
       const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES;
 
-      it('always uses lowercase codepoint for letters', () => {
+      it('shift+letter sends plain character in DISAMBIGUATE mode', () => {
+        // Shift+A produces printable "A", not ambiguous, so send plain character
         const result = evaluateKeyboardEventKitty(createEvent({ key: 'A', shiftKey: true }), flags);
-        assert.strictEqual(result.key, '\x1b[97;2u');
+        assert.strictEqual(result.key, 'A');
       });
 
       it('ctrl+shift+a sends lowercase codepoint 97', () => {
