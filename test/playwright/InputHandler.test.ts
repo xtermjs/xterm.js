@@ -1234,8 +1234,30 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI > Ps n - Disable key modifier options, xterm', () => {
       // TODO: Implement
     });
-    test.describe.skip('CSI ? Ps n - DSR: Device Status Report (DEC-specific).', () => {
-      // TODO: Implement
+    test.describe('CSI ? Ps n - DECDSR: Device Status Report (DEC-specific)', () => {
+      test('Color Scheme Query - CSI ? 996 n (dark theme)', async () => {
+        // Default theme has dark background (#000000) and light foreground (#ffffff)
+        await ctx.proxy.write('\x1b[?996n');
+        deepStrictEqual(recordedData, ['\x1b[?997;1n']);
+      });
+
+      test('Color Scheme Query - CSI ? 996 n (light theme)', async () => {
+        recordedData.length = 0;
+        await ctx.page.evaluate(`window.term.options.theme = { background: '#ffffff', foreground: '#000000' }`);
+        await ctx.proxy.write('\x1b[?996n');
+        deepStrictEqual(recordedData, ['\x1b[?997;2n']);
+        // Restore default theme
+        await ctx.page.evaluate(`window.term.options.theme = { background: '#000000', foreground: '#ffffff' }`);
+      });
+
+      test('Color Scheme Query disabled via vtExtensions.colorSchemeQuery', async () => {
+        recordedData.length = 0;
+        await ctx.page.evaluate(`window.term.options.vtExtensions = { colorSchemeQuery: false }`);
+        await ctx.proxy.write('\x1b[?996n');
+        deepStrictEqual(recordedData, []);
+        // Re-enable
+        await ctx.page.evaluate(`window.term.options.vtExtensions = { colorSchemeQuery: true }`);
+      });
     });
     test.skip('CSI > Ps p - XTSMPOINTER: Set resource value pointerMode, xterm', () => {
       // TODO: Implement

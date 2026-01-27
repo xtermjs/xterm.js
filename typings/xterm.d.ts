@@ -291,7 +291,7 @@ declare module '@xterm/xterm' {
     theme?: ITheme;
 
     /**
-     * Enable various VT extensions. All extensions are disabled by default.
+     * Enable various VT extensions.
      */
     vtExtensions?: IVtExtensions;
 
@@ -473,6 +473,18 @@ declare module '@xterm/xterm' {
      * [0]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md
      */
     win32InputMode?: boolean;
+
+    /**
+     * Whether [color scheme query and notification][0] (`CSI ? 996 n` and
+     * `DECSET 2031`) is enabled. When enabled, the terminal will respond to
+     * color scheme queries with `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n`
+     * (light) based on the relative luminance of the background and foreground
+     * theme colors. Programs can enable unsolicited notifications via
+     * `CSI ? 2031 h`. The default is true.
+     *
+     * [0]: https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
+     */
+    colorSchemeQuery?: boolean;
   }
 
   /**

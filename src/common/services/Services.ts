@@ -313,6 +313,7 @@ export interface IVtExtensions {
   kittyKeyboard?: boolean;
   kittySgrBoldFaintControl?: boolean;
   win32InputMode?: boolean;
+  colorSchemeQuery?: boolean;
 }
 
 export const IOscLinkService = createDecorator<IOscLinkService>('OscLinkService');

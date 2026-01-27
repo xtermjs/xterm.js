@@ -159,6 +159,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public readonly onTitleChange = this._onTitleChange.event;
   private readonly _onColor = this._register(new Emitter<IColorEvent>());
   public readonly onColor = this._onColor.event;
+  private readonly _onRequestColorSchemeQuery = this._register(new Emitter<void>());
+  public readonly onRequestColorSchemeQuery = this._onRequestColorSchemeQuery.event;
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -2026,6 +2028,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
           this._coreService.decPrivateModes.synchronizedOutput = true;
           break;
+        case 2031: // color scheme updates (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+          if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+            this._coreService.decPrivateModes.colorSchemeUpdates = true;
+          }
+          break;
         case 9001: // win32-input-mode (https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md)
           if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
             this._coreService.decPrivateModes.win32InputMode = true;
@@ -2270,6 +2277,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
           this._coreService.decPrivateModes.synchronizedOutput = false;
           this._onRequestRefreshRows.fire(undefined);
+          break;
+        case 2031: // color scheme updates (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+          if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+            this._coreService.decPrivateModes.colorSchemeUpdates = false;
+          }
           break;
         case 9001: // win32-input-mode
           if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
@@ -2773,6 +2785,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 53:
         // no dec locator/mouse
         // this.handler(C0.ESC + '[?50n');
+        break;
+      case 996:
+        // color scheme query (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+        if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+          this._onRequestColorSchemeQuery.fire();
+        }
         break;
     }
     return true;
