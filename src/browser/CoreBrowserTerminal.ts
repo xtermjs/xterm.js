@@ -42,7 +42,7 @@ import { SelectionService } from 'browser/services/SelectionService';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
 import { KeyboardService } from 'browser/services/KeyboardService';
-import { channels, color } from 'common/Color';
+import { channels, color, rgb } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
 import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
@@ -250,6 +250,20 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           break;
       }
     }
+  }
+
+  /**
+   * Reports the current color scheme (dark or light) based on the relative luminance
+   * of the background and foreground theme colors.
+   * Sends CSI ? 997 ; 1 n for dark mode or CSI ? 997 ; 2 n for light mode.
+   */
+  private _reportColorScheme(): void {
+    if (!this._themeService) return;
+    const bgLuminance = rgb.relativeLuminance(this._themeService.colors.background.rgba >> 8);
+    const fgLuminance = rgb.relativeLuminance(this._themeService.colors.foreground.rgba >> 8);
+    // Dark mode = background is darker than foreground (lower luminance)
+    const colorSchemeMode = bgLuminance < fgLuminance ? 1 : 2;
+    this.coreService.triggerDataEvent(`${C0.ESC}[?997;${colorSchemeMode}n`);
   }
 
   protected _setup(): void {
@@ -494,6 +508,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._themeService = this._instantiationService.createInstance(ThemeService);
     this._instantiationService.setService(IThemeService, this._themeService);
+
+    // CSI ? 996 n - color scheme query (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+    this._register(this._inputHandler.onRequestColorSchemeQuery(() => this._reportColorScheme()));
+
+    // Emit unsolicited color scheme notification on theme change when DECSET 2031 is enabled
+    this._register(this._themeService.onChangeColors(() => {
+      if (this.coreService.decPrivateModes.colorSchemeUpdates) {
+        this._reportColorScheme();
+      }
+    }));
 
     this._characterJoinerService = this._instantiationService.createInstance(CharacterJoinerService);
     this._instantiationService.setService(ICharacterJoinerService, this._characterJoinerService);
