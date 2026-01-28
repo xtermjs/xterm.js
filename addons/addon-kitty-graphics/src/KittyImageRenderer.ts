@@ -41,6 +41,23 @@ export class KittyImageRenderer implements IDisposable {
     this._terminal = terminal;
   }
 
+  public dispose(): void {
+    this._renderDisposable?.dispose();
+    this._resizeDisposable?.dispose();
+
+    // Close all bitmaps
+    for (const placement of this._placements.values()) {
+      placement.bitmap.close();
+    }
+    this._placements.clear();
+
+    if (this._canvas) {
+      this._canvas.remove();
+      this._canvas = undefined;
+      this._ctx = undefined;
+    }
+  }
+
   /**
    * Initialize the canvas layer. Called when first image is placed.
    */
@@ -215,23 +232,6 @@ export class KittyImageRenderer implements IDisposable {
       this._canvas.width = width;
       this._canvas.height = height;
       this._draw();
-    }
-  }
-
-  public dispose(): void {
-    this._renderDisposable?.dispose();
-    this._resizeDisposable?.dispose();
-
-    // Close all bitmaps
-    for (const placement of this._placements.values()) {
-      placement.bitmap.close();
-    }
-    this._placements.clear();
-
-    if (this._canvas) {
-      this._canvas.remove();
-      this._canvas = undefined;
-      this._ctx = undefined;
     }
   }
 }

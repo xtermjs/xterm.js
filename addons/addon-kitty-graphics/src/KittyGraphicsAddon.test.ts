@@ -69,6 +69,19 @@ describe('KittyGraphicsAddon', () => {
       assert.equal(cmd.action, 'd');
       assert.equal(cmd.id, 5);
     });
+
+    it('should parse empty action as empty string', () => {
+      const cmd = parseKittyCommand('a=,f=100');
+      assert.equal(cmd.action, '');
+      assert.equal(cmd.format, 100);
+    });
+
+    it('should leave action undefined when key is not present (parser only)', () => {
+      const cmd = parseKittyCommand('f=100,i=5');
+      assert.equal(cmd.action, undefined);
+      assert.equal(cmd.format, 100);
+      assert.equal(cmd.id, 5);
+    });
   });
 
   describe('APC handler', () => {
@@ -110,6 +123,24 @@ describe('KittyGraphicsAddon', () => {
 
       // Image should still be stored??
       assert.equal(addon.images.size, 1);
+    });
+
+    it('should default to transmit action when action is omitted', async () => {
+      // No a= key - should default to 't' (transmit)
+      const sequence = `\x1b_Gf=100;${BLACK_1X1_BASE64}\x1b\\`;
+      await writeP(terminal, sequence);
+
+      // Image should be stored (transmit action)
+      assert.equal(addon.images.size, 1);
+    });
+
+    it('should ignore command when action is empty string', async () => {
+      // a= with no value is invalid - should be ignored
+      const sequence = `\x1b_Ga=,f=100;${BLACK_1X1_BASE64}\x1b\\`;
+      await writeP(terminal, sequence);
+
+      // Empty action is invalid, command should be ignored
+      assert.equal(addon.images.size, 0);
     });
 
     it('should delete image by id', async () => {

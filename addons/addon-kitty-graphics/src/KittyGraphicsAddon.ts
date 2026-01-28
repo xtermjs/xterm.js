@@ -171,7 +171,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
       console.log('[KittyGraphicsAddon] Received command:', cmd);
     }
 
-    const action = cmd.action || 't';
+    const action = cmd.action ?? 't';
 
     // Actions from: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
     switch (action) {
@@ -535,8 +535,8 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
    * @param cmd - The parsed Kitty command
    */
   private _handleQuery(cmd: IKittyCommand): boolean {
-    const id = cmd.id || 0;
-    const quiet = cmd.quiet || 0;
+    const id = cmd.id ?? 0;
+    const quiet = cmd.quiet ?? 0;
 
     if (this._debug) {
       console.log(`[KittyGraphicsAddon] Query received, id=${id}, quiet=${quiet}`);
