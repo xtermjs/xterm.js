@@ -14,8 +14,6 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   private _apcHandler: IDisposable | undefined;
   private _kittyApcHandler: KittyApcHandler | undefined;
   private _renderer: KittyImageRenderer | undefined;
-  // Question: ImageAddon has ImageStorage, lot going on there though comapred to IKittyImage atm.
-  // Maybe add more, rename to IKittyImageStorage instead of IKittyImage?
   private _images: Map<number, IKittyImage> = new Map();
   private _decodedImages: Map<number, ImageBitmap> = new Map();
   private _debug: boolean;
