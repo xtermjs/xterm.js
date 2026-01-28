@@ -599,7 +599,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
-      const format = cmd.format || 32;
+      const format = cmd.format || KittyFormat.RGBA;
 
       if (format === KittyFormat.PNG) {
         // For PNG, we just verify base64 decoded successfully
