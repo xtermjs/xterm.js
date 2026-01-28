@@ -32,6 +32,15 @@ const enum KittyFormat {
 }
 
 /**
+ * Kitty graphics protocol compression types.
+ * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'o'.
+ */
+const enum KittyCompression {
+  NONE = '',
+  ZLIB = 'z'
+}
+
+/**
  * Parsed Kitty graphics command.
  */
 export interface IKittyCommand {
@@ -46,6 +55,7 @@ export interface IKittyCommand {
   rows?: number;
   more?: number;
   quiet?: number;
+  compression?: string;
   payload?: string;
 }
 
@@ -66,8 +76,6 @@ export function parseKittyCommand(data: string): IKittyCommand {
 
     switch (key) {
       // These are key(s) from: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
-      // Question: How do we know which radix to use?
-      // TODO: Support more keys like type of compression, animations, etc
       case 'a': cmd.action = value; break;
       case 'f': cmd.format = parseInt(value); break;
       case 'i': cmd.id = parseInt(value); break;
@@ -79,10 +87,22 @@ export function parseKittyCommand(data: string): IKittyCommand {
       case 'r': cmd.rows = parseInt(value); break;
       case 'm': cmd.more = parseInt(value); break;
       case 'q': cmd.quiet = parseInt(value); break;
+      case 'o': cmd.compression = value; break;
     }
   }
 
   return cmd;
+}
+
+/**
+ * Pending chunked transmission state.
+ * Stores metadata from the first chunk while accumulating payload data.
+ */
+interface IPendingTransmission {
+  /** The parsed command from the first chunk (contains action, format, dimensions, etc.) */
+  cmd: IKittyCommand;
+  /** Accumulated base64 payload data */
+  data: string;
 }
 
 export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
@@ -93,7 +113,11 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   // Maybe add more, rename to IKittyImageStorage instead of IKittyImage?
   private _images: Map<number, IKittyImage> = new Map();
   private _decodedImages: Map<number, ImageBitmap> = new Map();
-  private _pendingData: Map<number, string> = new Map();
+  /**
+   * Pending chunked transmissions keyed by image ID.
+   * ID 0 is used for transmissions without an explicit ID (the "anonymous" transmission).
+   */
+  private _pendingTransmissions: Map<number, IPendingTransmission> = new Map();
   private _nextImageId = 1;
   private _debug: boolean;
 
@@ -124,7 +148,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
     this._apcHandler?.dispose();
     this._renderer?.dispose();
     this._images.clear();
-    this._pendingData.clear();
+    this._pendingTransmissions.clear();
 
     // Close all decoded bitmaps
     for (const bitmap of this._decodedImages.values()) {
@@ -165,27 +189,88 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
   }
 
   private _handleTransmit(cmd: IKittyCommand): boolean {
-    const id = cmd.id || this._nextImageId++;
-    const payload = cmd.payload || '';
+    const payload = cmd.payload ?? '';
+    // Use 0 as the key for anonymous transmissions (no explicit i=)
+    const pendingKey = cmd.id ?? 0;
 
-    if (cmd.more === 1) {
-      const existing = this._pendingData.get(id) || '';
-      this._pendingData.set(id, existing + payload);
+    // Check if this is a continuation of a chunked transmission
+    const isMoreComing = cmd.more === 1;
+    const pending = this._pendingTransmissions.get(pendingKey);
+
+    if (pending) {
+      // This is a continuation chunk - append data
+      pending.data += payload;
+
+      if (this._debug) {
+        console.log(`[KittyGraphicsAddon] Chunk continuation for id=${pendingKey}, total size=${pending.data.length}, more=${isMoreComing}`);
+      }
+
+      if (isMoreComing) {
+        // More chunks coming, keep waiting
+        return true;
+      }
+
+      // Final chunk - use the stored command's metadata
+      const originalCmd = pending.cmd;
+      const fullPayload = pending.data;
+      this._pendingTransmissions.delete(pendingKey);
+
+      // Assign a real ID if this was anonymous (pendingKey === 0)
+      const id = originalCmd.id ?? this._nextImageId++;
+
+      const image: IKittyImage = {
+        id,
+        data: fullPayload,
+        width: originalCmd.width ?? 0,
+        height: originalCmd.height ?? 0,
+        format: (originalCmd.format ?? KittyFormat.PNG) as 24 | 32 | 100,
+        compression: originalCmd.compression ?? ''
+      };
+
+      this._images.set(id, image);
+
+      if (this._debug) {
+        console.log(`[KittyGraphicsAddon] Stored chunked image ${id}, payload size=${fullPayload.length}`);
+      }
+
+      // If the original action was 'T' (transmit+display), display the image now
+      if (originalCmd.action === KittyAction.TRANSMIT_DISPLAY) {
+        this._decodeAndDisplay(image, originalCmd.columns, originalCmd.rows).catch(err => {
+          if (this._debug) {
+            console.error(`[KittyGraphicsAddon] Failed to decode/display chunked image ${id}:`, err);
+          }
+        });
+      }
+
+      cmd.id = id;
       return true;
     }
 
-    let fullPayload = payload;
-    if (this._pendingData.has(id)) {
-      fullPayload = this._pendingData.get(id)! + payload;
-      this._pendingData.delete(id);
+    // This is the first chunk (or a non-chunked transmission)
+    if (isMoreComing) {
+      // First chunk of a multi-chunk transmission - store the command and start accumulating
+      this._pendingTransmissions.set(pendingKey, {
+        cmd: { ...cmd },  // Clone the command to preserve metadata
+        data: payload
+      });
+
+      if (this._debug) {
+        console.log(`[KittyGraphicsAddon] Started chunked transmission, id=${pendingKey}, format=${cmd.format}, compression=${cmd.compression}, size=${cmd.width}x${cmd.height}, initial payload=${payload.length}`);
+      }
+
+      return true;
     }
+
+    // Non-chunked transmission - store immediately
+    const id = cmd.id ?? this._nextImageId++;
 
     const image: IKittyImage = {
       id,
-      data: fullPayload,
-      width: cmd.width || 0,
-      height: cmd.height || 0,
-      format: (cmd.format || KittyFormat.PNG) as 24 | 32 | 100
+      data: payload,
+      width: cmd.width ?? 0,
+      height: cmd.height ?? 0,
+      format: (cmd.format ?? KittyFormat.PNG) as 24 | 32 | 100,
+      compression: cmd.compression ?? ''
     };
 
     this._images.set(id, image);
@@ -194,18 +279,41 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
       console.log(`[KittyGraphicsAddon] Stored image ${id}`);
     }
 
+    // Update cmd.id for _handleTransmitDisplay
+    cmd.id = id;
     return true;
   }
 
   private _handleTransmitDisplay(cmd: IKittyCommand): boolean {
-    // First store the image
+    const pendingKey = cmd.id ?? 0;
+    const wasPendingBefore = this._pendingTransmissions.has(pendingKey);
+
+    // Delegate to _handleTransmit which will:
+    // 1. Accumulate chunks if m=1
+    // 2. Store the image when complete
+    // 3. Trigger display when chunked transmission completes (checks original action)
     this._handleTransmit(cmd);
 
-    // Get the image ID (same logic as _handleTransmit)
-    const id = cmd.id || (this._nextImageId - 1);
+    // If this was a chunked transmission (first chunk with m=1), _handleTransmit
+    // stored it as pending and will display when complete. Don't display now.
+    if (cmd.more === 1) {
+      return true;
+    }
+
+    // If there was a pending transmission that just completed, _handleTransmit
+    // already triggered the display. Don't display again.
+    if (wasPendingBefore) {
+      return true;
+    }
+
+    // For non-chunked transmission, display now
+    const id = cmd.id!;
     const image = this._images.get(id);
 
     if (!image) {
+      if (this._debug) {
+        console.log(`[KittyGraphicsAddon] No image found for id=${id} after transmit`);
+      }
       return true;
     }
 
@@ -228,9 +336,17 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
 
     // Decode base64 to binary
     const binaryString = atob(base64Data);
-    const bytes = new Uint8Array(binaryString.length);
+    let bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Decompress if needed (o=z means zlib/deflate compression)
+    if (image.compression === KittyCompression.ZLIB) {
+      bytes = await this._decompressZlib(bytes);
+      if (this._debug) {
+        console.log(`[KittyGraphicsAddon] Decompressed ${binaryString.length} -> ${bytes.length} bytes`);
+      }
     }
 
     if (format === KittyFormat.PNG) {
@@ -271,6 +387,48 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
     }
 
     return createImageBitmap(imageData);
+  }
+
+  /**
+   * Decompress zlib/deflate compressed data using the browser's DecompressionStream API.
+   */
+  private async _decompressZlib(compressed: Uint8Array): Promise<Uint8Array> {
+    // Use DecompressionStream API (available in modern browsers)
+    // 'deflate-raw' is the format used by zlib without headers
+    // Try 'deflate' first (zlib with header), fall back to 'deflate-raw' if that fails
+    try {
+      return await this._decompress(compressed, 'deflate');
+    } catch {
+      // If 'deflate' fails, try 'deflate-raw'
+      return await this._decompress(compressed, 'deflate-raw');
+    }
+  }
+
+  private async _decompress(compressed: Uint8Array, format: 'deflate' | 'deflate-raw'): Promise<Uint8Array> {
+    const ds = new DecompressionStream(format);
+    const writer = ds.writable.getWriter();
+    writer.write(compressed);
+    writer.close();
+
+    const chunks: Uint8Array[] = [];
+    const reader = ds.readable.getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+
+    // Combine chunks into single Uint8Array
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    return result;
   }
 
   /**

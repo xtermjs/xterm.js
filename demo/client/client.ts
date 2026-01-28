@@ -327,7 +327,9 @@ function createTerminal(): Terminal {
     }
     const cols = size.cols;
     const rows = size.rows;
-    const url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
+    const pixelWidth = Math.round(term.dimensions?.css?.canvas?.width ?? 0);
+    const pixelHeight = Math.round(term.dimensions?.css?.canvas?.height ?? 0);
+    const url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight;
 
     fetch(url, { method: 'POST' });
   });
@@ -378,7 +380,9 @@ function createTerminal(): Terminal {
     if (useRealTerminal instanceof HTMLInputElement && !useRealTerminal.checked) {
       runFakeTerminal();
     } else {
-      const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+      const pixelWidth = Math.round(term.dimensions?.css?.canvas?.width ?? 0);
+      const pixelHeight = Math.round(term.dimensions?.css?.canvas?.height ?? 0);
+      const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight, { method: 'POST' });
       const processId = await res.text();
       pid = processId;
       socketURL += processId;

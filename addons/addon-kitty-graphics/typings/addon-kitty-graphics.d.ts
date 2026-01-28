@@ -78,5 +78,12 @@ declare module '@xterm/addon-kitty-graphics' {
      * - 100: PNG
      */
     format: 24 | 32 | 100;
+
+    /**
+     * Compression type.
+     * - '': no compression
+     * - 'z': zlib compression
+     */
+    compression?: string;
   }
 }
