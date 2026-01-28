@@ -414,22 +414,23 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
     }
 
     // Convert to RGBA ImageData
-    const imageData = new ImageData(width, height);
-    const data = imageData.data;
+    // TODO: Get this checked by Daniel.
+    const pixelCount = width * height;
+    const data = new Uint8ClampedArray(pixelCount * BYTES_PER_PIXEL_RGBA);
+    const isRgba = format === KittyFormat.RGBA;
 
-    for (let i = 0; i < width * height; i++) {
-      const srcOffset = i * bytesPerPixel;
-      const dstOffset = i * BYTES_PER_PIXEL_RGBA;
-
-      data[dstOffset] = bytes[srcOffset];         // R
+    let srcOffset = 0;
+    let dstOffset = 0;
+    for (let i = 0; i < pixelCount; i++) {
+      data[dstOffset    ] = bytes[srcOffset    ]; // R
       data[dstOffset + 1] = bytes[srcOffset + 1]; // G
       data[dstOffset + 2] = bytes[srcOffset + 2]; // B
-      data[dstOffset + 3] = format === KittyFormat.RGBA
-        ? bytes[srcOffset + 3]  // A from source
-        : ALPHA_OPAQUE;         // Fully opaque for RGB
+      data[dstOffset + 3] = isRgba ? bytes[srcOffset + 3] : ALPHA_OPAQUE;
+      srcOffset += bytesPerPixel;
+      dstOffset += BYTES_PER_PIXEL_RGBA;
     }
 
-    return createImageBitmap(imageData);
+    return createImageBitmap(new ImageData(data, width, height));
   }
 
   /**
