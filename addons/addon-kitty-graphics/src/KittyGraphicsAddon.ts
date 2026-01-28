@@ -47,7 +47,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
     // Register APC handler for 'G' (0x47) - Kitty graphics protocol
     // APC sequence format: ESC _ G <data> ESC \
     this._apcHandler = terminal.parser.registerApcHandler(0x47, (data: string) => {
-      return this._kittyApcHandler!.handle(data);
+      return this._kittyApcHandler?.handle(data) ?? true;
     });
   }
 

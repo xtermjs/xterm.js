@@ -230,6 +230,7 @@ export class KittyApcHandler {
     const payload = cmd.payload ?? '';
     const pendingKey = cmd.id ?? 0;
 
+    // larger image would require chunking.
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
 
