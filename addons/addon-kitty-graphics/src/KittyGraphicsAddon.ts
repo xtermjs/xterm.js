@@ -41,6 +41,37 @@ const enum KittyCompression {
 }
 
 /**
+ * Kitty graphics protocol control data keys.
+ * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
+ */
+const enum KittyKey {
+  // Action to perform (t=transmit, T=transmit+display, q=query, p=placement, d=delete)
+  ACTION = 'a',
+  // Image format (24=RGB, 32=RGBA, 100=PNG)
+  FORMAT = 'f',
+  // Image ID for referencing stored images
+  ID = 'i',
+  // Source image width in pixels
+  WIDTH = 's',
+  // Source image height in pixels
+  HEIGHT = 'v',
+  // The left edge (in pixels) of the image area to display
+  X_OFFSET = 'x',
+  // The top edge (in pixels) of the image area to display
+  Y_OFFSET = 'y',
+  // Number of terminal columns to display the image over
+  COLUMNS = 'c',
+  // Number of terminal rows to display the image over
+  ROWS = 'r',
+  // More data flag (1=more chunks coming, 0=final chunk)
+  MORE = 'm',
+  // Compression type (z=zlib)
+  COMPRESSION = 'o',
+  // Quiet mode (1=suppress OK responses, 2=suppress error responses)
+  QUIET = 'q'
+}
+
+/**
  * Parsed Kitty graphics command.
  */
 export interface IKittyCommand {
@@ -75,19 +106,18 @@ export function parseKittyCommand(data: string): IKittyCommand {
     const value = part.substring(eqIdx + 1);
 
     switch (key) {
-      // These are key(s) from: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
-      case 'a': cmd.action = value; break;
-      case 'f': cmd.format = parseInt(value); break;
-      case 'i': cmd.id = parseInt(value); break;
-      case 's': cmd.width = parseInt(value); break;
-      case 'v': cmd.height = parseInt(value); break;
-      case 'x': cmd.x = parseInt(value); break;
-      case 'y': cmd.y = parseInt(value); break;
-      case 'c': cmd.columns = parseInt(value); break;
-      case 'r': cmd.rows = parseInt(value); break;
-      case 'm': cmd.more = parseInt(value); break;
-      case 'o': cmd.compression = value; break;
-      case 'q': cmd.quiet = parseInt(value); break;
+      case KittyKey.ACTION: cmd.action = value; break;
+      case KittyKey.FORMAT: cmd.format = parseInt(value); break;
+      case KittyKey.ID: cmd.id = parseInt(value); break;
+      case KittyKey.WIDTH: cmd.width = parseInt(value); break;
+      case KittyKey.HEIGHT: cmd.height = parseInt(value); break;
+      case KittyKey.X_OFFSET: cmd.x = parseInt(value); break;
+      case KittyKey.Y_OFFSET: cmd.y = parseInt(value); break;
+      case KittyKey.COLUMNS: cmd.columns = parseInt(value); break;
+      case KittyKey.ROWS: cmd.rows = parseInt(value); break;
+      case KittyKey.MORE: cmd.more = parseInt(value); break;
+      case KittyKey.COMPRESSION: cmd.compression = value; break;
+      case KittyKey.QUIET: cmd.quiet = parseInt(value); break;
     }
   }
 
