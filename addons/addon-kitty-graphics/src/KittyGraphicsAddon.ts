@@ -509,7 +509,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
     }
 
     const response = `\x1b_Gi=${id};${message}\x1b\\`;
-    this._terminal._core.coreService.triggerDataEvent(response);
+    this._terminal.input(response, false);
 
     if (this._debug) {
       console.log(`[KittyGraphicsAddon] Sent response: i=${id};${message}`);
