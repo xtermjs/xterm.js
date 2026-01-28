@@ -169,6 +169,9 @@ export function parseKittyCommand(data: string): IKittyCommand {
  *
  * TODO: Go over this with Daniel: Like SixelHandler, this receives direct references to storage
  * and terminal rather than using callbacks.
+ *
+ * TODO: File transmission (t=f) is not supported since browsers cannot access the filesystem.
+ * Maybe we need something from VS Code?
  */
 export class KittyApcHandler {
   /**
