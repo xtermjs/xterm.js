@@ -75,9 +75,9 @@ export class KittyImageRenderer implements IDisposable {
     }
 
     // Get dimensions from terminal
-    const dimensions = (this._terminal as any).dimensions;
-    const width = dimensions?.css?.canvas?.width || 800;
-    const height = dimensions?.css?.canvas?.height || 600;
+    const dimensions = this._terminal.dimensions;
+    const width = dimensions?.css.canvas.width || 800;
+    const height = dimensions?.css.canvas.height || 600;
 
     // Create canvas
     this._canvas = document.createElement('canvas');
@@ -106,10 +106,10 @@ export class KittyImageRenderer implements IDisposable {
    * Get cell dimensions from terminal.
    */
   public getCellSize(): { width: number, height: number } {
-    const dimensions = (this._terminal as any).dimensions;
+    const dimensions = this._terminal.dimensions;
     return {
-      width: dimensions?.css?.cell?.width || 9,
-      height: dimensions?.css?.cell?.height || 17
+      width: dimensions?.css.cell.width || 9,
+      height: dimensions?.css.cell.height || 17
     };
   }
 
@@ -224,9 +224,9 @@ export class KittyImageRenderer implements IDisposable {
       return;
     }
 
-    const dimensions = (this._terminal as any).dimensions;
-    const width = dimensions?.css?.canvas?.width || 800;
-    const height = dimensions?.css?.canvas?.height || 600;
+    const dimensions = this._terminal.dimensions;
+    const width = dimensions?.css.canvas.width || 800;
+    const height = dimensions?.css.canvas.height || 600;
 
     if (this._canvas.width !== width || this._canvas.height !== height) {
       this._canvas.width = width;
