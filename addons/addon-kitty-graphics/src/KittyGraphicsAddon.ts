@@ -86,8 +86,8 @@ export function parseKittyCommand(data: string): IKittyCommand {
       case 'c': cmd.columns = parseInt(value); break;
       case 'r': cmd.rows = parseInt(value); break;
       case 'm': cmd.more = parseInt(value); break;
-      case 'q': cmd.quiet = parseInt(value); break;
       case 'o': cmd.compression = value; break;
+      case 'q': cmd.quiet = parseInt(value); break;
     }
   }
 
