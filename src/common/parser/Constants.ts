@@ -21,7 +21,9 @@ export const enum ParserState {
   DCS_IGNORE = 11,
   DCS_INTERMEDIATE = 12,
   DCS_PASSTHROUGH = 13,
-  APC_STRING = 14
+  APC_STRING = 14,
+  // Number of states, meaning LAST_STATE + 1.
+  STATE_LENGTH = 15
 }
 
 /**

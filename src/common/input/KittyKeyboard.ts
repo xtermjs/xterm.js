@@ -351,8 +351,13 @@ export function evaluateKeyboardEventKitty(
     } else if (isFunc) {
       useCsiU = true;
     } else if (modifiers > 0) {
-      // Any modified key
-      useCsiU = true;
+      // Shift-only + printable character (e.g., Shift+a → "A") should NOT use CSI u
+      // per Kitty spec: DISAMBIGUATE only encodes keys ambiguous in legacy encoding
+      if (ev.shiftKey && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.key.length === 1) {
+        useCsiU = false;
+      } else {
+        useCsiU = true;
+      }
     }
   }
 
