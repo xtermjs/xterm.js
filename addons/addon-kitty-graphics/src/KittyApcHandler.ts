@@ -537,6 +537,9 @@ export class KittyApcHandler {
     }
 
     if (format === KittyFormat.PNG) {
+      // TODO: Older Safari versions cannot createImageBitmap from Blob and need a workaround
+      // with new Image() instead. See IIPHandler for the Safari fallback pattern.
+      // ---> Things seem to work for my safari, but still try to see how I can verify.
       const blob = new Blob([bytes], { type: 'image/png' });
       return createImageBitmap(blob);
     }
@@ -557,6 +560,7 @@ export class KittyApcHandler {
 
     // Convert to RGBA ImageData
     // TODO: Get this checked by Daniel.
+    // TODO: Follow Jerch's feedback!
     const pixelCount = width * height;
     const data = new Uint8ClampedArray(pixelCount * BYTES_PER_PIXEL_RGBA);
     const isRgba = format === KittyFormat.RGBA;

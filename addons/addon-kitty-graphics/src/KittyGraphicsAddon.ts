@@ -44,6 +44,10 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
 
     // Register APC handler for 'G' (0x47) - Kitty graphics protocol
     // APC sequence format: ESC _ G <data> ESC \
+    // TODO: Follow jerch's feedback: The string-based handler interface is limited to 10MB
+    // and has bad runtime due to string conversion overhead. Implement IApcHandler interface with
+    // start/put/end methods to receive raw Uint32Array codepoints without copying.
+    // See SixelHandler and IIPHandler.
     this._apcHandler = terminal.parser.registerApcHandler(0x47, (data: string) => {
       return this._kittyApcHandler?.handle(data) ?? true;
     });
