@@ -105,19 +105,27 @@ export function parseKittyCommand(data: string): IKittyCommand {
     const key = part.substring(0, eqIdx);
     const value = part.substring(eqIdx + 1);
 
+    // Handle string keys first
+    if (key === KittyKey.ACTION) {
+      cmd.action = value;
+      continue;
+    }
+    if (key === KittyKey.COMPRESSION) {
+      cmd.compression = value;
+      continue;
+    }
+    const numValue = parseInt(value);
     switch (key) {
-      case KittyKey.ACTION: cmd.action = value; break;
-      case KittyKey.FORMAT: cmd.format = parseInt(value); break;
-      case KittyKey.ID: cmd.id = parseInt(value); break;
-      case KittyKey.WIDTH: cmd.width = parseInt(value); break;
-      case KittyKey.HEIGHT: cmd.height = parseInt(value); break;
-      case KittyKey.X_OFFSET: cmd.x = parseInt(value); break;
-      case KittyKey.Y_OFFSET: cmd.y = parseInt(value); break;
-      case KittyKey.COLUMNS: cmd.columns = parseInt(value); break;
-      case KittyKey.ROWS: cmd.rows = parseInt(value); break;
-      case KittyKey.MORE: cmd.more = parseInt(value); break;
-      case KittyKey.COMPRESSION: cmd.compression = value; break;
-      case KittyKey.QUIET: cmd.quiet = parseInt(value); break;
+      case KittyKey.FORMAT: cmd.format = numValue; break;
+      case KittyKey.ID: cmd.id = numValue; break;
+      case KittyKey.WIDTH: cmd.width = numValue; break;
+      case KittyKey.HEIGHT: cmd.height = numValue; break;
+      case KittyKey.X_OFFSET: cmd.x = numValue; break;
+      case KittyKey.Y_OFFSET: cmd.y = numValue; break;
+      case KittyKey.COLUMNS: cmd.columns = numValue; break;
+      case KittyKey.ROWS: cmd.rows = numValue; break;
+      case KittyKey.MORE: cmd.more = numValue; break;
+      case KittyKey.QUIET: cmd.quiet = numValue; break;
     }
   }
 
