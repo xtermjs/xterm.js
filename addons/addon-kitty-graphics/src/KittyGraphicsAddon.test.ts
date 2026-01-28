@@ -4,7 +4,8 @@
  */
 import { assert } from 'chai';
 import { Terminal } from 'browser/public/Terminal';
-import { KittyGraphicsAddon, parseKittyCommand } from './KittyGraphicsAddon';
+import { KittyGraphicsAddon } from './KittyGraphicsAddon';
+import { parseKittyCommand } from './KittyApcHandler';
 
 /**
  * Write data to terminal and wait for completion.
