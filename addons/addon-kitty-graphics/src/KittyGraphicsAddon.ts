@@ -65,11 +65,16 @@ const enum KittyKey {
   ROWS = 'r',
   // More data flag (1=more chunks coming, 0=final chunk)
   MORE = 'm',
-  // Compression type (z=zlib)
+  // Compression type (z=zlib). This is essential for chunking larger images.
   COMPRESSION = 'o',
   // Quiet mode (1=suppress OK responses, 2=suppress error responses)
   QUIET = 'q'
 }
+
+// Pixel format constants
+const BYTES_PER_PIXEL_RGB = 3;
+const BYTES_PER_PIXEL_RGBA = 4;
+const ALPHA_OPAQUE = 255;
 
 /**
  * Parsed Kitty graphics command.
@@ -401,7 +406,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
       throw new Error('Width and height required for raw pixel data');
     }
 
-    const bytesPerPixel = format === KittyFormat.RGBA ? 4 : 3;
+    const bytesPerPixel = format === KittyFormat.RGBA ? BYTES_PER_PIXEL_RGBA : BYTES_PER_PIXEL_RGB;
     const expectedBytes = width * height * bytesPerPixel;
 
     if (bytes.length < expectedBytes) {
@@ -414,14 +419,14 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
 
     for (let i = 0; i < width * height; i++) {
       const srcOffset = i * bytesPerPixel;
-      const dstOffset = i * 4;
+      const dstOffset = i * BYTES_PER_PIXEL_RGBA;
 
       data[dstOffset] = bytes[srcOffset];         // R
       data[dstOffset + 1] = bytes[srcOffset + 1]; // G
       data[dstOffset + 2] = bytes[srcOffset + 2]; // B
       data[dstOffset + 3] = format === KittyFormat.RGBA
         ? bytes[srcOffset + 3]  // A from source
-        : 255;                   // Fully opaque for RGB
+        : ALPHA_OPAQUE;         // Fully opaque for RGB
     }
 
     return createImageBitmap(imageData);
@@ -616,7 +621,7 @@ export class KittyGraphicsAddon implements ITerminalAddon, IKittyGraphicsApi {
           return true;
         }
 
-        const bytesPerPixel = format === KittyFormat.RGBA ? 4 : 3;
+        const bytesPerPixel = format === KittyFormat.RGBA ? BYTES_PER_PIXEL_RGBA : BYTES_PER_PIXEL_RGB;
         const expectedBytes = width * height * bytesPerPixel;
 
         if (bytes.length < expectedBytes) {
