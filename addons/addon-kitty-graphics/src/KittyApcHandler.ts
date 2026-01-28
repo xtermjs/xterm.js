@@ -520,6 +520,9 @@ export class KittyApcHandler {
     const format = image.format;
     const base64Data = image.data as string;
 
+    // TODO: This atob + charCodeAt loop has bad runtime and creates memory pressure with large
+    // images. Consider using the wasm-based base64 decoder from xterm-wasm-parts which also
+    // supports chunked data ingestion. See addon-image/src/IIPHandler.ts for chunked usage.
     const binaryString = atob(base64Data);
     let bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
