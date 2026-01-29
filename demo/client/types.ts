@@ -19,7 +19,7 @@ import type { WebFontsAddon } from '@xterm/addon-web-fonts';
 import type { WebLinksAddon } from '@xterm/addon-web-links';
 import type { WebglAddon } from '@xterm/addon-webgl';
 
-export type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webFonts' | 'webLinks' | 'webgl' | 'ligatures';
+export type AddonType = 'attach' | 'clipboard' | 'fit' | 'image' | 'ligatures' | 'progress' | 'search' | 'serialize' | 'unicode11' | 'unicodeGraphemes' | 'webFonts' | 'webLinks' | 'webgl';
 
 export interface IDemoAddon<T extends AddonType> {
   name: T;
