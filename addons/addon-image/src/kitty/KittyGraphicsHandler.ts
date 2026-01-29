@@ -9,6 +9,7 @@
 import { IApcHandler, IImageAddonOptions, IResetHandler, ITerminalExt } from '../Types';
 import { ImageRenderer } from '../ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from '../ImageStorage';
+import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import {
   KittyAction,
   KittyFormat,
@@ -21,6 +22,13 @@ import {
   ALPHA_OPAQUE,
   parseKittyCommand
 } from './KittyGraphicsTypes';
+
+// Memory limit for base64 decoder (4MB, same as IIPHandler)
+const DECODER_KEEP_DATA = 4194304;
+
+// Base64 shard size for chunked decoding (1MB encoded → ~768KB decoded)
+// This prevents memory pressure with large images
+const BASE64_SHARD_SIZE = 1048576;
 
 /**
  * Kitty graphics protocol handler.
@@ -84,22 +92,22 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
   /**
    * Called for each chunk of data in the APC sequence.
-   * Accumulates codepoints as a string.
+   * Accumulates codepoints as a string for control data parsing.
+   * The base64 payload is decoded later using the wasm decoder.
    */
   public put(data: Uint32Array, start: number, end: number): void {
     if (this._aborted) return;
 
     // Check size limit
     if (this._data.length + (end - start) > this._opts.kittySizeLimit) {
-      console.warn('[KittyHandler] Data exceeds size limit, aborting');
+      console.warn('[KittyGraphicsHandler] Data exceeds size limit, aborting');
       this._aborted = true;
       return;
     }
 
-    // Convert Uint32Array codepoints to string
-    // TODO: This atob + charCodeAt pattern has bad runtime. Consider using the wasm-based
-    // base64 decoder from xterm-wasm-parts which supports chunked data ingestion.
-    // For now, we accumulate as string and decode at the end.
+    // Convert Uint32Array codepoints to string for control data parsing
+    // Note: We accumulate as string because we need to parse control data (before semicolon).
+    // The base64 payload is decoded efficiently using the wasm-based decoder in _decodeImage().
     for (let i = start; i < end; i++) {
       this._data += String.fromCodePoint(data[i]);
     }
@@ -244,11 +252,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     }
 
     try {
-      const binaryString = atob(payload);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+      const bytes = this._decodeBase64(payload);
 
       const format = cmd.format || KittyFormat.RGBA;
 
@@ -375,25 +379,21 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
   /**
    * Decode base64 image data into an ImageBitmap.
+   * Uses the wasm-based decoder from xterm-wasm-parts for better performance.
    */
   private async _decodeImage(image: IKittyImageData): Promise<ImageBitmap> {
     const format = image.format;
     const base64Data = image.data;
 
-    // TODO: This atob + charCodeAt loop has bad runtime and creates memory pressure with large
-    // images. Consider using the wasm-based base64 decoder from xterm-wasm-parts.
-    const binaryString = atob(base64Data);
-    let bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
+    // TODO: Get this confirmed!
+    let bytes = this._decodeBase64(base64Data);
 
     if (image.compression === KittyCompression.ZLIB) {
       bytes = await this._decompressZlib(bytes) as Uint8Array<ArrayBuffer>;
     }
 
     if (format === KittyFormat.PNG) {
-      const blob = new Blob([bytes], { type: 'image/png' });
+      const blob = new Blob([new Uint8Array(bytes)], { type: 'image/png' });
       // Safari fallback pattern (from IIPHandler)
       if (!window.createImageBitmap) {
         const url = URL.createObjectURL(blob);
@@ -482,6 +482,75 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       offset += chunk.length;
     }
 
+    return result;
+  }
+
+  /**
+   * Decode base64 string using the wasm-based decoder for better performance.
+   * Uses shard-based decoding (1MB chunks) to prevent memory pressure with large images.
+   */
+  private _decodeBase64(base64Data: string): Uint8Array {
+    const length = base64Data.length;
+
+    // For small data, decode directly without sharding
+    if (length <= BASE64_SHARD_SIZE) {
+      return this._decodeBase64Shard(base64Data);
+    }
+
+    // For large data, decode in 1MB shards and accumulate
+    // Base64 must be decoded in multiples of 4 chars, so align shard boundaries
+    const shardSize = BASE64_SHARD_SIZE - (BASE64_SHARD_SIZE % 4);
+    const chunks: Uint8Array[] = [];
+    let totalLength = 0;
+
+    for (let offset = 0; offset < length; offset += shardSize) {
+      const end = Math.min(offset + shardSize, length);
+      const shard = base64Data.substring(offset, end);
+      const decoded = this._decodeBase64Shard(shard);
+      chunks.push(decoded);
+      totalLength += decoded.length;
+    }
+
+    // Combine all chunks into final result
+    const result = new Uint8Array(totalLength);
+    let writeOffset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, writeOffset);
+      writeOffset += chunk.length;
+    }
+
+    return result;
+  }
+
+  /**
+   * Decode a single base64 shard using the wasm decoder.
+   */
+  private _decodeBase64Shard(base64Data: string): Uint8Array {
+    // Calculate exact decoded size from base64 string
+    // Formula: (encoded_length * 3) / 4 - padding_count
+    let padding = 0;
+    if (base64Data.endsWith('==')) padding = 2;
+    else if (base64Data.endsWith('=')) padding = 1;
+    const decodedSize = Math.floor(base64Data.length * 3 / 4) - padding;
+
+    // Convert string to Uint32Array of codepoints for the wasm decoder
+    const codepoints = new Uint32Array(base64Data.length);
+    for (let i = 0; i < base64Data.length; i++) {
+      codepoints[i] = base64Data.charCodeAt(i);
+    }
+
+    const decoder = new Base64Decoder(DECODER_KEEP_DATA);
+    decoder.init(decodedSize);
+    decoder.put(codepoints, 0, codepoints.length);
+
+    if (decoder.end()) {
+      decoder.release();
+      throw new Error('Base64 decode failed');
+    }
+
+    // Copy the decoded data before releasing
+    const result = new Uint8Array(decoder.data8);
+    decoder.release();
     return result;
   }
 
