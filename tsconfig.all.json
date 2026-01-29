@@ -11,7 +11,6 @@
     { "path": "./addons/addon-clipboard" },
     { "path": "./addons/addon-fit" },
     { "path": "./addons/addon-image" },
-    { "path": "./addons/addon-kitty-graphics" },
     { "path": "./addons/addon-ligatures" },
     { "path": "./addons/addon-progress" },
     { "path": "./addons/addon-search" },

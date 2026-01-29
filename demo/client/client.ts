@@ -29,7 +29,6 @@ import { TestWindow } from './components/window/testWindow';
 import { VtWindow } from './components/window/vtWindow';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
-import { KittyGraphicsAddon } from '@xterm/addon-kitty-graphics';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { ProgressAddon } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
@@ -48,7 +47,6 @@ export interface IWindowWithTerminal extends Window {
   ClipboardAddon?: typeof ClipboardAddon;
   FitAddon?: typeof FitAddon;
   ImageAddon?: typeof ImageAddon;
-  KittyGraphicsAddon?: typeof KittyGraphicsAddon;
   ProgressAddon?: typeof ProgressAddon;
   SearchAddon?: typeof SearchAddon;
   SerializeAddon?: typeof SerializeAddon;
@@ -76,7 +74,6 @@ const addons: AddonCollection = {
   clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon, canChange: true },
-  kittyGraphics: { name: 'kittyGraphics', ctor: KittyGraphicsAddon, canChange: true },
   progress: { name: 'progress', ctor: ProgressAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
@@ -199,7 +196,6 @@ if (document.location.pathname === '/test') {
   window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
-  window.KittyGraphicsAddon = KittyGraphicsAddon;
   window.ProgressAddon = ProgressAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;
@@ -298,7 +294,6 @@ function createTerminal(): Terminal {
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
   addons.image.instance = new ImageAddon();
-  addons.kittyGraphics.instance = new KittyGraphicsAddon();
   addons.progress.instance = new ProgressAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
@@ -311,7 +306,6 @@ function createTerminal(): Terminal {
   addons.webFonts.instance = new WebFontsAddon();
   typedTerm.loadAddon(addons.fit.instance);
   typedTerm.loadAddon(addons.image.instance);
-  typedTerm.loadAddon(addons.kittyGraphics.instance);
   typedTerm.loadAddon(addons.progress.instance);
   typedTerm.loadAddon(addons.search.instance);
   typedTerm.loadAddon(addons.serialize.instance);

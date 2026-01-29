@@ -76,6 +76,15 @@ declare module '@xterm/addon-image' {
     iipSupport?: boolean;
     /** IIP sequence size limit (default 20000000 bytes). */
     iipSizeLimit?: number;
+
+    /**
+     * Kitty graphics protocol settings
+     */
+
+    /** Whether Kitty graphics protocol is enabled (default is true). */
+    kittySupport?: boolean;
+    /** Kitty image size limit in bytes (default 20000000 bytes). */
+    kittySizeLimit?: number;
   }
 
   export class ImageAddon implements ITerminalAddon {

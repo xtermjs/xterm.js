@@ -11,7 +11,6 @@
       "@xterm/addon-clipboard": ["../../addons/addon-clipboard"],
       "@xterm/addon-fit": ["../../addons/addon-fit"],
       "@xterm/addon-image": ["../../addons/addon-image"],
-      "@xterm/addon-kitty-graphics": ["../../addons/addon-kitty-graphics"],
       "@xterm/addon-progress": ["../../addons/addon-progress"],
       "@xterm/addon-search": ["../../addons/addon-search"],
       "@xterm/addon-serialize": ["../../addons/addon-serialize"],
@@ -19,12 +18,11 @@
       "@xterm/addon-web-links": ["../../addons/addon-web-links"],
       "@xterm/addon-webgl": ["../../addons/addon-webgl"],
       "@xterm/addon-unicode11": ["../../addons/addon-unicode11"],
-      "@xterm/addon-unicode-graphemes": ["../../addons/addon-unicode-graphemes"],
+      "@xterm/addon-unicode-graphemes": [
+        "../../addons/addon-unicode-graphemes"
+      ],
       "@xterm/addon-ligatures": ["../../addons/addon-ligatures"]
     }
   },
-  "include": [
-    "./**/*",
-    "../../typings/xterm.d.ts"
-  ]
+  "include": ["./**/*", "../../typings/xterm.d.ts"]
 }

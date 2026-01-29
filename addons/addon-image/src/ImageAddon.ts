@@ -8,6 +8,7 @@ import type { ImageAddon as IImageApi } from '@xterm/addon-image';
 import { IIPHandler } from './IIPHandler';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
+import { KittyGraphicsHandler } from './kitty/KittyGraphicsHandler';
 import { SixelHandler } from './SixelHandler';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
 
@@ -22,7 +23,9 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   storageLimit: 128,
   showPlaceholder: true,
   iipSupport: true,
-  iipSizeLimit: 20000000
+  iipSizeLimit: 20000000,
+  kittySupport: true,
+  kittySizeLimit: 20000000
 };
 
 // max palette size supported by the sixel lib (compile time setting)
@@ -142,6 +145,15 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
       this._handlers.set('iip', iipHandler);
       this._disposeLater(
         terminal._core._inputHandler._parser.registerOscHandler(1337, iipHandler)
+      );
+    }
+
+    // Kitty graphics handler
+    if (this._opts.kittySupport) {
+      const kittyHandler = new KittyGraphicsHandler(this._opts, this._renderer!, this._storage!, terminal);
+      this._handlers.set('kitty', kittyHandler);
+      this._disposeLater(
+        terminal._core._inputHandler._parser.registerApcHandler(0x47, kittyHandler)
       );
     }
   }
