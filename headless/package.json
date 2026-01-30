@@ -3,13 +3,15 @@
  "description": "A headless terminal component that runs in Node.js",
  "version": "6.0.0",
  "main": "lib-headless/xterm-headless.js",
- "module": "lib/xterm.mjs",
+ "module": "lib-headless/xterm-headless.mjs",
  "types": "typings/xterm-headless.d.ts",
+ "exports": {
+  "types": "./typings/xterm-headless.d.ts",
+  "import": "./lib-headless/xterm-headless.mjs",
+  "require": "./lib-headless/xterm-headless.js"
+ },
  "repository": "https://github.com/xtermjs/xterm.js",
  "license": "MIT",
- "workspaces": [
-  "addons/*"
- ],
  "keywords": [
   "cli",
   "command-line",
