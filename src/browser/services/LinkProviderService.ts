@@ -1,5 +1,5 @@
 import { ILinkProvider, ILinkProviderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 
 export class LinkProviderService extends Disposable implements ILinkProviderService {

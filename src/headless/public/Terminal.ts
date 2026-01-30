@@ -10,8 +10,8 @@ import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITer
 import { Terminal as TerminalCore } from 'headless/Terminal';
 import { AddonManager } from 'common/public/AddonManager';
 import { ITerminalOptions } from 'common/Types';
-import { Disposable } from 'vs/base/common/lifecycle';
-import type { Event } from 'vs/base/common/event';
+import { Disposable } from 'common/Lifecycle';
+import type { IEvent } from 'common/Event';
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
@@ -72,16 +72,16 @@ export class Terminal extends Disposable implements ITerminalApi {
     }
   }
 
-  public get onBell(): Event<void> { return this._core.onBell; }
-  public get onBinary(): Event<string> { return this._core.onBinary; }
-  public get onCursorMove(): Event<void> { return this._core.onCursorMove; }
-  public get onData(): Event<string> { return this._core.onData; }
-  public get onLineFeed(): Event<void> { return this._core.onLineFeed; }
-  public get onRender(): Event<{ start: number, end: number }> { return this._core.onRender; }
-  public get onResize(): Event<{ cols: number, rows: number }> { return this._core.onResize; }
-  public get onScroll(): Event<number> { return this._core.onScroll; }
-  public get onTitleChange(): Event<string> { return this._core.onTitleChange; }
-  public get onWriteParsed(): Event<void> { return this._core.onWriteParsed; }
+  public get onBell(): IEvent<void> { return this._core.onBell; }
+  public get onBinary(): IEvent<string> { return this._core.onBinary; }
+  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
+  public get onData(): IEvent<string> { return this._core.onData; }
+  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
+  public get onScroll(): IEvent<number> { return this._core.onScroll; }
+  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get parser(): IParser {
     if (!this._parser) {
