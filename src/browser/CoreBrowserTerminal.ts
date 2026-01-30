@@ -55,7 +55,7 @@ import { IDecorationService } from 'common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
-import { Emitter, Event } from 'common/Event';
+import { Emitter, EventUtils, type IEvent } from 'common/Event';
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 
@@ -135,15 +135,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public readonly onBell = this._onBell.event;
 
   private _onFocus = this._register(new Emitter<void>());
-  public get onFocus(): Event<void> { return this._onFocus.event; }
+  public get onFocus(): IEvent<void> { return this._onFocus.event; }
   private _onBlur = this._register(new Emitter<void>());
-  public get onBlur(): Event<void> { return this._onBlur.event; }
+  public get onBlur(): IEvent<void> { return this._onBlur.event; }
   private _onA11yCharEmitter = this._register(new Emitter<string>());
-  public get onA11yChar(): Event<string> { return this._onA11yCharEmitter.event; }
+  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
   private _onA11yTabEmitter = this._register(new Emitter<number>());
-  public get onA11yTab(): Event<number> { return this._onA11yTabEmitter.event; }
+  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
   private _onWillOpen = this._register(new Emitter<HTMLElement>());
-  public get onWillOpen(): Event<HTMLElement> { return this._onWillOpen.event; }
+  public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
   private readonly _onDimensionsChange = this._register(new Emitter<IRenderDimensionsApi>());
   public readonly onDimensionsChange = this._onDimensionsChange.event;
 
@@ -187,10 +187,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(this._inputHandler.onRequestReset(() => this.reset()));
     this._register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this._register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
-    this._register(Event.forward(this._inputHandler.onCursorMove, this._onCursorMove));
-    this._register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
-    this._register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-    this._register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this._register(EventUtils.forward(this._inputHandler.onCursorMove, this._onCursorMove));
+    this._register(EventUtils.forward(this._inputHandler.onTitleChange, this._onTitleChange));
+    this._register(EventUtils.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this._register(EventUtils.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
 
     // Setup listeners
     this._register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
@@ -566,7 +566,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea!.focus();
       this.textarea!.select();
     }));
-    this._register(Event.any(
+    this._register(EventUtils.any(
       this._onScroll.event,
       this._inputHandler.onScroll
     )(() => {

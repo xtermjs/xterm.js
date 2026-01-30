@@ -68,7 +68,7 @@ export class Emitter<T> {
   }
 }
 
-export namespace Event {
+export namespace EventUtils {
   export function forward<T>(from: IEvent<T>, to: Emitter<T>): IDisposable {
     return from(e => to.fire(e));
   }

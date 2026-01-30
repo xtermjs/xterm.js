@@ -6,7 +6,7 @@
 import { Terminal } from '@xterm/xterm';
 import { ITerminal } from 'browser/Types';
 import { IDisposable } from 'common/Types';
-import type { Event } from 'common/Event';
+import type { IEvent } from 'common/Event';
 
 export interface IDimensions {
   width: number;
@@ -57,7 +57,7 @@ export interface IRenderer extends IDisposable {
    * Fires when the renderer is requesting to be redrawn on the next animation
    * frame but is _not_ a result of content changing (eg. selection changes).
    */
-  readonly onRequestRedraw: Event<IRequestRedrawEvent>;
+  readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
 
   dispose(): void;
   handleDevicePixelRatioChange(): void;

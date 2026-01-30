@@ -13,7 +13,7 @@ import { ICoreService, IDecorationService, ILogService, IOptionsService } from '
 import { IWebGL2RenderingContext } from './Types';
 import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
-import { Emitter, Event } from 'common/Event';
+import { Emitter, EventUtils } from 'common/Event';
 
 export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
   private _terminal?: Terminal;
@@ -85,10 +85,10 @@ export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi
       this._customGlyphs,
       this._preserveDrawingBuffer
     ));
-    this._register(Event.forward(this._renderer.onContextLoss, this._onContextLoss));
-    this._register(Event.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
-    this._register(Event.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
-    this._register(Event.forward(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
+    this._register(EventUtils.forward(this._renderer.onContextLoss, this._onContextLoss));
+    this._register(EventUtils.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
+    this._register(EventUtils.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
+    this._register(EventUtils.forward(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
     renderService.setRenderer(this._renderer);
 
     this._register(toDisposable(() => {

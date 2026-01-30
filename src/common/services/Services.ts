@@ -7,7 +7,7 @@ import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, ty
 import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import type { Emitter, Event } from 'common/Event';
+import type { Emitter, IEvent } from 'common/Event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -18,8 +18,8 @@ export interface IBufferService {
   readonly buffer: IBuffer;
   readonly buffers: IBufferSet;
   isUserScrolling: boolean;
-  onResize: Event<IBufferResizeEvent>;
-  onScroll: Event<number>;
+  onResize: IEvent<IBufferResizeEvent>;
+  onScroll: IEvent<number>;
   scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   resize(cols: number, rows: number): void;
@@ -59,7 +59,7 @@ export interface ICoreMouseService {
   /**
    * Event to announce changes in mouse tracking.
    */
-  onProtocolChange: Event<CoreMouseEventType>;
+  onProtocolChange: IEvent<CoreMouseEventType>;
 
   /**
    * Human readable version of mouse events.
@@ -87,10 +87,10 @@ export interface ICoreService {
   readonly decPrivateModes: IDecPrivateModes;
   readonly kittyKeyboard: IKittyKeyboardState;
 
-  readonly onData: Event<string>;
-  readonly onUserInput: Event<void>;
-  readonly onBinary: Event<string>;
-  readonly onRequestScrollToBottom: Event<void>;
+  readonly onData: IEvent<string>;
+  readonly onUserInput: IEvent<void>;
+  readonly onBinary: IEvent<string>;
+  readonly onRequestScrollToBottom: IEvent<void>;
 
   reset(): void;
 
@@ -201,7 +201,7 @@ export interface IOptionsService {
   /**
    * Adds an event listener for when any option changes.
    */
-  readonly onOptionChange: Event<keyof ITerminalOptions>;
+  readonly onOptionChange: IEvent<keyof ITerminalOptions>;
 
   /**
    * Adds an event listener for when a specific option changes, this is a convenience method that is
@@ -364,7 +364,7 @@ export interface IUnicodeService {
   /** Currently active version. */
   activeVersion: string;
   /** Event triggered, when activate version changed. */
-  readonly onChange: Event<string>;
+  readonly onChange: IEvent<string>;
 
   /**
    * Unicode version dependent
@@ -389,8 +389,8 @@ export const IDecorationService = createDecorator<IDecorationService>('Decoratio
 export interface IDecorationService extends IDisposable {
   serviceBrand: undefined;
   readonly decorations: IterableIterator<IInternalDecoration>;
-  readonly onDecorationRegistered: Event<IInternalDecoration>;
-  readonly onDecorationRemoved: Event<IInternalDecoration>;
+  readonly onDecorationRegistered: IEvent<IInternalDecoration>;
+  readonly onDecorationRemoved: IEvent<IInternalDecoration>;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   reset(): void;
   /**
