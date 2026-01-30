@@ -6,7 +6,7 @@
 import { Terminal } from '@xterm/xterm';
 import { ITerminal } from 'browser/Types';
 import { IDisposable } from 'common/Types';
-import type { Event } from 'vs/base/common/event';
+import type { Event } from 'common/Event';
 
 export interface IDimensions {
   width: number;

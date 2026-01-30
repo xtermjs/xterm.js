@@ -5,7 +5,7 @@
 
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IUnicodeService, IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 export class UnicodeService implements IUnicodeService {
   public serviceBrand: any;

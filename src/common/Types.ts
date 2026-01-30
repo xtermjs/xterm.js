@@ -9,7 +9,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
 import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
-import type { Emitter, Event } from 'vs/base/common/event';
+import type { Emitter, Event } from 'common/Event';
 
 export interface ICoreTerminal {
   coreMouseService: ICoreMouseService;

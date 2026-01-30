@@ -4,7 +4,7 @@
  */
 
 import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker, ICharset, IDisposable } from 'common/Types';
-import type { Event } from 'vs/base/common/event';
+import type { Event } from 'common/Event';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];

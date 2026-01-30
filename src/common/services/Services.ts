@@ -7,7 +7,7 @@ import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, ty
 import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import type { Emitter, Event } from 'vs/base/common/event';
+import type { Emitter, Event } from 'common/Event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {

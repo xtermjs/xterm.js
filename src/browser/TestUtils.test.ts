@@ -18,7 +18,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { css } from 'common/Color';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { Emitter, type Event } from 'vs/base/common/event';
+import { Emitter, type Event } from 'common/Event';
 
 export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }

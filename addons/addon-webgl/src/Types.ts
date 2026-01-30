@@ -7,7 +7,7 @@ import { FontWeight } from '@xterm/xterm';
 import { IColorSet } from 'browser/Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { CursorInactiveStyle, CursorStyle, type IDisposable } from 'common/Types';
-import type { Event } from 'vs/base/common/event';
+import type { Event } from 'common/Event';
 
 export interface IRenderModel {
   cells: Uint32Array;

@@ -12,9 +12,9 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderMode
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 import { addDisposableListener } from 'vs/base/browser/dom';
 
 
