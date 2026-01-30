@@ -8,16 +8,16 @@
 
 import { IDisposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 
-export interface Event<T> {
+export interface IEvent<T> {
   (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore): IDisposable;
 }
 
 export class Emitter<T> {
-  private _listeners: Array<{ fn: (e: T) => any; thisArgs: any }> = [];
+  private _listeners: { fn: (e: T) => any, thisArgs: any }[] = [];
   private _disposed = false;
-  private _event: Event<T> | undefined;
+  private _event: IEvent<T> | undefined;
 
-  public get event(): Event<T> {
+  public get event(): IEvent<T> {
     if (!this._event) {
       this._event = (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore) => {
         if (this._disposed) {
@@ -69,19 +69,19 @@ export class Emitter<T> {
 }
 
 export namespace Event {
-  export function forward<T>(from: Event<T>, to: Emitter<T>): IDisposable {
+  export function forward<T>(from: IEvent<T>, to: Emitter<T>): IDisposable {
     return from(e => to.fire(e));
   }
 
-  export function map<I, O>(event: Event<I>, map: (i: I) => O): Event<O> {
+  export function map<I, O>(event: IEvent<I>, map: (i: I) => O): IEvent<O> {
     return (listener: (e: O) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore) => {
       return event(i => listener.call(thisArgs, map(i)), undefined, disposables);
     };
   }
 
-  export function any<T>(...events: Event<T>[]): Event<T>;
-  export function any(...events: Event<any>[]): Event<void>;
-  export function any<T>(...events: Event<T>[]): Event<T> {
+  export function any<T>(...events: IEvent<T>[]): IEvent<T>;
+  export function any(...events: IEvent<any>[]): IEvent<void>;
+  export function any<T>(...events: IEvent<T>[]): IEvent<T> {
     return (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore) => {
       const store = new DisposableStore();
       for (const event of events) {
@@ -98,7 +98,7 @@ export namespace Event {
     };
   }
 
-  export function runAndSubscribe<T>(event: Event<T>, handler: (e: T | undefined) => void): IDisposable {
+  export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T | undefined) => void): IDisposable {
     handler(undefined);
     return event(e => handler(e));
   }
