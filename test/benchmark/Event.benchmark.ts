@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
+import { perfContext, before, RuntimeCase } from 'xterm-benchmark';
 import { Emitter } from 'common/Event';
 
 const ITERATIONS = 1_000_000;
@@ -14,12 +14,12 @@ perfContext('Emitter.fire()', () => {
     before(() => {
       emitter = new Emitter<number>();
     });
-    new ThroughputRuntimeCase('', () => {
+    new RuntimeCase('', () => {
       for (let i = 0; i < ITERATIONS; i++) {
         emitter.fire(i);
       }
       return { payloadSize: ITERATIONS };
-    }, { fork: false }).showAverageThroughput();
+    }, { fork: false }).showAverageRuntime();
   });
 
   perfContext('1 listener', () => {
@@ -29,12 +29,12 @@ perfContext('Emitter.fire()', () => {
       emitter = new Emitter<number>();
       emitter.event(e => { sum += e; });
     });
-    new ThroughputRuntimeCase('', () => {
+    new RuntimeCase('', () => {
       for (let i = 0; i < ITERATIONS; i++) {
         emitter.fire(i);
       }
-      return { payloadSize: ITERATIONS };
-    }, { fork: false }).showAverageThroughput();
+      return { payloadSize: ITERATIONS, sum };
+    }, { fork: false }).showAverageRuntime();
   });
 
   perfContext('2 listeners', () => {
@@ -45,12 +45,12 @@ perfContext('Emitter.fire()', () => {
       emitter.event(e => { sum += e; });
       emitter.event(e => { sum += e * 2; });
     });
-    new ThroughputRuntimeCase('', () => {
+    new RuntimeCase('', () => {
       for (let i = 0; i < ITERATIONS; i++) {
         emitter.fire(i);
       }
-      return { payloadSize: ITERATIONS };
-    }, { fork: false }).showAverageThroughput();
+      return { payloadSize: ITERATIONS, sum };
+    }, { fork: false }).showAverageRuntime();
   });
 
   perfContext('5 listeners', () => {
@@ -62,11 +62,11 @@ perfContext('Emitter.fire()', () => {
         emitter.event(e => { sum += e; });
       }
     });
-    new ThroughputRuntimeCase('', () => {
+    new RuntimeCase('', () => {
       for (let i = 0; i < ITERATIONS; i++) {
         emitter.fire(i);
       }
-      return { payloadSize: ITERATIONS };
-    }, { fork: false }).showAverageThroughput();
+      return { payloadSize: ITERATIONS, sum };
+    }, { fork: false }).showAverageRuntime();
   });
 });
