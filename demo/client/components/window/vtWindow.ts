@@ -5,7 +5,6 @@
 
 import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
-import type { Terminal } from '@xterm/xterm';
 
 export class VtWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'vt';
