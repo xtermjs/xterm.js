@@ -4,7 +4,7 @@
  */
 
 import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, ISubParserStackState } from 'common/parser/Types';
-import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
+import { OscState, ParserConstants } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 
@@ -192,7 +192,7 @@ export class OscParser implements IOscParser {
  * as OSC handlers.
  */
 export class OscHandler implements IOscHandler {
-  private static PAYLOAD_LIMIT = PAYLOAD_LIMIT;
+  private static PAYLOAD_LIMIT = ParserConstants.PAYLOAD_LIMIT;
 
   private _data = '';
   private _hitLimit: boolean = false;
