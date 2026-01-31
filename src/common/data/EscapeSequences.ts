@@ -149,6 +149,6 @@ export const enum C1 {
   APC = '\x9f'
 }
 
-export const enum C1_ESCAPED {
+export const enum C1ESCAPED {
   ST = '\x1b\\'
 }
