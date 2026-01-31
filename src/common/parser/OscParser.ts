@@ -23,9 +23,7 @@ export class OscParser implements IOscParser {
   };
 
   public registerHandler(ident: number, handler: IOscHandler): IDisposable {
-    if (this._handlers[ident] === undefined) {
-      this._handlers[ident] = [];
-    }
+    this._handlers[ident] ??= [];
     const handlerList = this._handlers[ident];
     handlerList.push(handler);
     return {

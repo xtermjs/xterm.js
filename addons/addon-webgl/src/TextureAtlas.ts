@@ -410,7 +410,7 @@ export class TextureAtlas implements ITextureAtlas {
     const cache = this._getContrastCache(dim);
     const adjustedColor = cache.getColor(bg, fg);
     if (adjustedColor !== undefined) {
-      return adjustedColor || undefined;
+      return adjustedColor ?? undefined;
     }
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);

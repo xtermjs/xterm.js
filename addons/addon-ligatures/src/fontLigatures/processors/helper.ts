@@ -52,12 +52,10 @@ export function processLookaheadPosition(
     }
     processedEntries.add(currentEntry.entry);
 
-    if (!currentEntry.entry.forward) {
-      currentEntry.entry.forward = {
-        individual: {},
-        range: []
-      };
-    }
+    currentEntry.entry.forward ??= {
+      individual: {},
+      range: []
+    };
 
     // All glyphs at this position share ONE entry - lookahead just needs to match,
     // all paths lead to the same result
@@ -97,12 +95,10 @@ export function processBacktrackPosition(
     }
     processedEntries.add(currentEntry.entry);
 
-    if (!currentEntry.entry.reverse) {
-      currentEntry.entry.reverse = {
-        individual: {},
-        range: []
-      };
-    }
+    currentEntry.entry.reverse ??= {
+      individual: {},
+      range: []
+    };
 
     // All glyphs at this position share ONE entry - backtrack just needs to match,
     // all paths lead to the same result

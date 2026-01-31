@@ -84,9 +84,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
 
   public get parser(): IParser {
-    if (!this._parser) {
-      this._parser = new ParserApi(this._core);
-    }
+    this._parser ??= new ParserApi(this._core);
     return this._parser;
   }
   public get unicode(): IUnicodeHandling {
@@ -96,9 +94,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
-    if (!this._buffer) {
-      this._buffer = this._register(new BufferNamespaceApi(this._core));
-    }
+    this._buffer ??= this._register(new BufferNamespaceApi(this._core));
     return this._buffer;
   }
   public get markers(): ReadonlyArray<IMarker> {

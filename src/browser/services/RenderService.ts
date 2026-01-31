@@ -347,13 +347,11 @@ class SynchronizedOutputHandler {
       this._end = Math.max(this._end, end);
     }
 
-    if (this._timeout === undefined) {
-      this._timeout = this._coreBrowserService.window.setTimeout(() => {
-        this._timeout = undefined;
-        this._coreService.decPrivateModes.synchronizedOutput = false;
-        this._onTimeout();
-      }, Constants.SYNCHRONIZED_OUTPUT_TIMEOUT_MS);
-    }
+    this._timeout ??= this._coreBrowserService.window.setTimeout(() => {
+      this._timeout = undefined;
+      this._coreService.decPrivateModes.synchronizedOutput = false;
+      this._onTimeout();
+    }, Constants.SYNCHRONIZED_OUTPUT_TIMEOUT_MS);
   }
 
   public flush(): { start: number, end: number } | undefined {

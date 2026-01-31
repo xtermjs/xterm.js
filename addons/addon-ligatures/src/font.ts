@@ -80,9 +80,7 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
         console.error(err.name, err.message);
       }
     }
-    if (!fontsPromise) {
-      fontsPromise = Promise.resolve({});
-    }
+    fontsPromise ??= Promise.resolve({});
   }
 
   const fonts = await fontsPromise;

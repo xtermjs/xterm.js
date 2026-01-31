@@ -84,10 +84,7 @@ export class Terminal extends Disposable implements ITerminalApi {
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
-    if (!this._parser) {
-      this._parser = new ParserApi(this._core);
-    }
-    return this._parser;
+    return this._parser ??= new ParserApi(this._core);
   }
   public get unicode(): IUnicodeHandling {
     this._checkProposedApi();
@@ -97,10 +94,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
-    if (!this._buffer) {
-      this._buffer = this._register(new BufferNamespaceApi(this._core));
-    }
-    return this._buffer;
+    return this._buffer ??= this._register(new BufferNamespaceApi(this._core));
   }
   public get markers(): ReadonlyArray<IMarker> {
     return this._core.markers;
