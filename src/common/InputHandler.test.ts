@@ -269,6 +269,26 @@ describe('InputHandler', () => {
       inputHandler.resetModePrivate(Params.fromArray([2004]));
       assert.equal(coreService.decPrivateModes.bracketedPasteMode, false);
     });
+    it('should toggle colorSchemeUpdates (DECSET 2031)', () => {
+      const coreService = new MockCoreService();
+      const optionsService = new MockOptionsService();
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      // Set color scheme updates mode (default colorSchemeQuery=true)
+      inputHandler.setModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, true);
+      // Reset color scheme updates mode
+      inputHandler.resetModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, false);
+    });
+    it('should not toggle colorSchemeUpdates when colorSchemeQuery is disabled', () => {
+      const coreService = new MockCoreService();
+      const optionsService = new MockOptionsService();
+      optionsService.rawOptions.vtExtensions = { colorSchemeQuery: false };
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      // Attempt to set color scheme updates mode
+      inputHandler.setModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, false);
+    });
   });
   describe('regression tests', function (): void {
     function termContent(bufferService: IBufferService, trim: boolean): string[] {
