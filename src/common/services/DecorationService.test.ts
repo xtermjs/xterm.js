@@ -6,8 +6,8 @@
 import { assert } from 'chai';
 import { DecorationService } from './DecorationService';
 import { IMarker } from 'common/Types';
-import { Disposable } from 'vs/base/common/lifecycle';
-import { Emitter } from 'vs/base/common/event';
+import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'common/Event';
 
 function createFakeMarker(line: number): IMarker {
   return Object.freeze(new class extends Disposable {

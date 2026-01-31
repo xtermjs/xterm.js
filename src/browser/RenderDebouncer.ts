@@ -40,8 +40,8 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
     this._rowCount = rowCount;
     // Get the min/max row start/end for the arg values
-    rowStart = rowStart !== undefined ? rowStart : 0;
-    rowEnd = rowEnd !== undefined ? rowEnd : this._rowCount - 1;
+    rowStart = rowStart ?? 0;
+    rowEnd = rowEnd ?? this._rowCount - 1;
     // Set the properties to the updated values
     this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
     this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;

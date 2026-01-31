@@ -457,7 +457,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   }
 }
 
-export class SerializeAddon implements ITerminalAddon , ISerializeApi {
+export class SerializeAddon implements ITerminalAddon, ISerializeApi {
   private _terminal: Terminal | undefined;
 
   public activate(terminal: Terminal): void {
@@ -601,7 +601,7 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    return this._serializeBufferAsHTML(this._terminal, options || {});
+    return this._serializeBufferAsHTML(this._terminal, options ?? {});
   }
 
   public dispose(): void { }

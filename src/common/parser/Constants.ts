@@ -14,13 +14,16 @@ export const enum ParserState {
   CSI_PARAM = 4,
   CSI_INTERMEDIATE = 5,
   CSI_IGNORE = 6,
-  SOS_PM_APC_STRING = 7,
+  SOS_PM_STRING = 7,
   OSC_STRING = 8,
   DCS_ENTRY = 9,
   DCS_PARAM = 10,
   DCS_IGNORE = 11,
   DCS_INTERMEDIATE = 12,
-  DCS_PASSTHROUGH = 13
+  DCS_PASSTHROUGH = 13,
+  APC_STRING = 14,
+  // Number of states, meaning LAST_STATE + 1.
+  STATE_LENGTH = 15
 }
 
 /**
@@ -41,13 +44,26 @@ export const enum ParserAction {
   CLEAR = 11,
   DCS_HOOK = 12,
   DCS_PUT = 13,
-  DCS_UNHOOK = 14
+  DCS_UNHOOK = 14,
+  APC_START = 15,
+  APC_PUT = 16,
+  APC_END = 17
 }
 
 /**
  * Internal states of OscParser.
  */
 export const enum OscState {
+  START = 0,
+  ID = 1,
+  PAYLOAD = 2,
+  ABORT = 3
+}
+
+/**
+ * Internal states of ApcParser.
+ */
+export const enum ApcState {
   START = 0,
   ID = 1,
   PAYLOAD = 2,

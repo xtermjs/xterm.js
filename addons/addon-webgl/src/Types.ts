@@ -7,7 +7,7 @@ import { FontWeight } from '@xterm/xterm';
 import { IColorSet } from 'browser/Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { CursorInactiveStyle, CursorStyle, type IDisposable } from 'common/Types';
-import type { Event } from 'vs/base/common/event';
+import type { IEvent } from 'common/Event';
 
 export interface IRenderModel {
   cells: Uint32Array;
@@ -58,8 +58,8 @@ export interface ICharAtlasConfig {
 export interface ITextureAtlas extends IDisposable {
   readonly pages: { canvas: HTMLCanvasElement, version: number }[];
 
-  onAddTextureAtlasCanvas: Event<HTMLCanvasElement>;
-  onRemoveTextureAtlasCanvas: Event<HTMLCanvasElement>;
+  onAddTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
+  onRemoveTextureAtlasCanvas: IEvent<HTMLCanvasElement>;
 
   /**
    * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.

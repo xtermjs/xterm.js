@@ -6,14 +6,14 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { CoreBrowserTerminal as TerminalCore } from 'browser/CoreBrowserTerminal';
 import { IBufferRange, ITerminal } from 'browser/Types';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { ITerminalOptions } from 'common/Types';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
 import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, IRenderDimensions, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from '@xterm/xterm';
-import type { Event } from 'vs/base/common/event';
+import type { IEvent } from 'common/Event';
 
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
@@ -68,26 +68,23 @@ export class Terminal extends Disposable implements ITerminalApi {
     }
   }
 
-  public get onBell(): Event<void> { return this._core.onBell; }
-  public get onBinary(): Event<string> { return this._core.onBinary; }
-  public get onCursorMove(): Event<void> { return this._core.onCursorMove; }
-  public get onData(): Event<string> { return this._core.onData; }
-  public get onKey(): Event<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
-  public get onLineFeed(): Event<void> { return this._core.onLineFeed; }
-  public get onRender(): Event<{ start: number, end: number }> { return this._core.onRender; }
-  public get onResize(): Event<{ cols: number, rows: number }> { return this._core.onResize; }
-  public get onScroll(): Event<number> { return this._core.onScroll; }
-  public get onSelectionChange(): Event<void> { return this._core.onSelectionChange; }
-  public get onTitleChange(): Event<string> { return this._core.onTitleChange; }
-  public get onWriteParsed(): Event<void> { return this._core.onWriteParsed; }
-  public get onDimensionsChange(): Event<IRenderDimensions> { return this._core.onDimensionsChange; }
+  public get onBell(): IEvent<void> { return this._core.onBell; }
+  public get onBinary(): IEvent<string> { return this._core.onBinary; }
+  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
+  public get onData(): IEvent<string> { return this._core.onData; }
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
+  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
+  public get onScroll(): IEvent<number> { return this._core.onScroll; }
+  public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
+  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
+  public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._core.onDimensionsChange; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
   public get parser(): IParser {
-    if (!this._parser) {
-      this._parser = new ParserApi(this._core);
-    }
-    return this._parser;
+    return this._parser ??= new ParserApi(this._core);
   }
   public get unicode(): IUnicodeHandling {
     this._checkProposedApi();
@@ -97,10 +94,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
   public get buffer(): IBufferNamespaceApi {
-    if (!this._buffer) {
-      this._buffer = this._register(new BufferNamespaceApi(this._core));
-    }
-    return this._buffer;
+    return this._buffer ??= this._register(new BufferNamespaceApi(this._core));
   }
   public get markers(): ReadonlyArray<IMarker> {
     return this._core.markers;

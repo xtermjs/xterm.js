@@ -494,8 +494,8 @@ export class DomRendererRowFactory {
       // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
       // non-dim cells
       const ratio = this._optionsService.rawOptions.minimumContrastRatio / (cell.isDim() ? 2 : 1);
-      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, ratio);
-      cache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
+      adjustedColor = color.ensureContrastRatio(bgOverride ?? bg, fgOverride ?? fg, ratio);
+      cache.setColor((bgOverride ?? bg).rgba, (fgOverride ?? fg).rgba, adjustedColor ?? null);
     }
 
     if (adjustedColor) {

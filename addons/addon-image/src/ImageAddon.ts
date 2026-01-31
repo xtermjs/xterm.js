@@ -48,7 +48,7 @@ const enum GaStatus {
 }
 
 
-export class ImageAddon implements ITerminalAddon , IImageApi {
+export class ImageAddon implements ITerminalAddon, IImageApi {
   private _opts: IImageAddonOptions;
   private _defaultOpts: IImageAddonOptions;
   private _storage: ImageStorage | undefined;
@@ -90,7 +90,7 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
       // windowOptions.getCellSizePixels = true;
       // windowOptions.getWinSizeChars = true;
       // terminal.setOption('windowOptions', windowOptions);
-      const windowOps = terminal.options.windowOptions || {};
+      const windowOps = terminal.options.windowOptions ?? {};
       windowOps.getWinSizePixels = true;
       windowOps.getCellSizePixels = true;
       windowOps.getWinSizeChars = true;

@@ -1,28 +1,41 @@
 /**
- * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2025 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
-import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, ISubParserStackState } from 'common/parser/Types';
-import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
+import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, ISubParserStackState } from 'common/parser/Types';
+import { ApcState, PAYLOAD_LIMIT } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 
-const EMPTY_HANDLERS: IOscHandler[] = [];
+const EMPTY_HANDLERS: IApcHandler[] = [];
 
-export class OscParser implements IOscParser {
-  private _state = OscState.START;
+/**
+ * APC Parser for handling Application Program Command sequences.
+ * APC sequences use the format: ESC _ <identifier><data> ESC \
+ *
+ * Unlike OSC which uses numeric identifiers (e.g., OSC 1337),
+ * APC uses the first character as the identifier (e.g., 'G' for Kitty graphics).
+ * The identifier is the character code of the first byte after ESC _.
+ */
+export class ApcParser implements IApcParser {
+  private _state = ApcState.START;
   private _active = EMPTY_HANDLERS;
   private _id = -1;
-  private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
-  private _handlerFb: OscFallbackHandlerType = () => { };
+  private _handlers: IHandlerCollection<IApcHandler> = Object.create(null);
+  private _handlerFb: ApcFallbackHandlerType = () => { };
   private _stack: ISubParserStackState = {
     paused: false,
     loopPosition: 0,
     fallThrough: false
   };
 
-  public registerHandler(ident: number, handler: IOscHandler): IDisposable {
+  /**
+   * Register an APC handler for a specific identifier.
+   * @param ident The character code of the first byte (e.g., 0x47 for 'G')
+   * @param handler The handler to register
+   */
+  public registerHandler(ident: number, handler: IApcHandler): IDisposable {
     this._handlers[ident] ??= [];
     const handlerList = this._handlers[ident];
     handlerList.push(handler);
@@ -35,10 +48,12 @@ export class OscParser implements IOscParser {
       }
     };
   }
+
   public clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
-  public setHandlerFallback(handler: OscFallbackHandlerType): void {
+
+  public setHandlerFallback(handler: ApcFallbackHandlerType): void {
     this._handlerFb = handler;
   }
 
@@ -50,7 +65,7 @@ export class OscParser implements IOscParser {
 
   public reset(): void {
     // force cleanup handlers if payload was already sent
-    if (this._state === OscState.PAYLOAD) {
+    if (this._state === ApcState.PAYLOAD) {
       for (let j = this._stack.paused ? this._stack.loopPosition - 1 : this._active.length - 1; j >= 0; --j) {
         this._active[j].end(false);
       }
@@ -58,7 +73,7 @@ export class OscParser implements IOscParser {
     this._stack.paused = false;
     this._active = EMPTY_HANDLERS;
     this._id = -1;
-    this._state = OscState.START;
+    this._state = ApcState.START;
   }
 
   private _start(): void {
@@ -85,59 +100,51 @@ export class OscParser implements IOscParser {
   public start(): void {
     // always reset leftover handlers
     this.reset();
-    this._state = OscState.ID;
+    this._state = ApcState.ID;
   }
 
   /**
-   * Put data to current OSC command.
-   * Expects the identifier of the OSC command in the form
-   * OSC id ; payload ST/BEL
-   * Payload chunks are not further processed and get
-   * directly passed to the handlers.
+   * Put data to current APC command.
+   * For APC, the first character is used as the identifier.
+   * Format: ESC _ <identifier><payload> ESC \
+   * Example: ESC _ G f=100,a=T;... ESC \ (Kitty graphics, identifier='G')
    */
   public put(data: Uint32Array, start: number, end: number): void {
-    if (this._state === OscState.ABORT) {
+    if (this._state === ApcState.ABORT) {
       return;
     }
-    if (this._state === OscState.ID) {
-      while (start < end) {
-        const code = data[start++];
-        if (code === 0x3b) {
-          this._state = OscState.PAYLOAD;
-          this._start();
-          break;
-        }
-        if (code < 0x30 || 0x39 < code) {
-          this._state = OscState.ABORT;
-          return;
-        }
-        if (this._id === -1) {
-          this._id = 0;
-        }
-        this._id = this._id * 10 + code - 48;
+    if (this._state === ApcState.ID) {
+      // The first character is the identifier
+      if (start < end) {
+        this._id = data[start++];
+        this._state = ApcState.PAYLOAD;
+        this._start();
       }
     }
-    if (this._state === OscState.PAYLOAD && end - start > 0) {
+    if (this._state === ApcState.PAYLOAD && end - start > 0) {
       this._put(data, start, end);
     }
   }
 
   /**
-   * Indicates end of an OSC command.
-   * Whether the OSC got aborted or finished normally
+   * Indicates end of an APC command.
+   * Whether the APC got aborted or finished normally
    * is indicated by `success`.
    */
   public end(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
-    if (this._state === OscState.START) {
+    if (this._state === ApcState.START) {
       return;
     }
     // do nothing if command was faulty
-    if (this._state !== OscState.ABORT) {
+    if (this._state !== ApcState.ABORT) {
       // if we are still in ID state and get an early end
-      // means that the command has no payload thus we still have
-      // to announce START and send END right after
-      if (this._state === OscState.ID) {
-        this._start();
+      // means we got an empty APC sequence with no identifier,
+      // which is invalid - just reset and return
+      if (this._state === ApcState.ID) {
+        this._active = EMPTY_HANDLERS;
+        this._id = -1;
+        this._state = ApcState.START;
+        return;
       }
 
       if (!this._active.length) {
@@ -183,15 +190,15 @@ export class OscParser implements IOscParser {
     }
     this._active = EMPTY_HANDLERS;
     this._id = -1;
-    this._state = OscState.START;
+    this._state = ApcState.START;
   }
 }
 
 /**
  * Convenient class to allow attaching string based handler functions
- * as OSC handlers.
+ * as APC handlers.
  */
-export class OscHandler implements IOscHandler {
+export class ApcHandler implements IApcHandler {
   private _data = '';
   private _hitLimit: boolean = false;
 

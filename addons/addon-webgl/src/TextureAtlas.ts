@@ -15,7 +15,7 @@ import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { IUnicodeService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -176,6 +176,17 @@ export class TextureAtlas implements ITextureAtlas {
 
       // Gather details of the merge
       const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
+
+      // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
+      // effectively reduce page count and merging would cause issues.
+      if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
+        const newPage = new AtlasPage(this._document, this._textureSize);
+        this._pages.push(newPage);
+        this._activePages.push(newPage);
+        this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+        return newPage;
+      }
+
       const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
       const mergedPageIndex = this.pages.length - mergingPages.length;
 
@@ -399,7 +410,7 @@ export class TextureAtlas implements ITextureAtlas {
     const cache = this._getContrastCache(dim);
     const adjustedColor = cache.getColor(bg, fg);
     if (adjustedColor !== undefined) {
-      return adjustedColor || undefined;
+      return adjustedColor ?? undefined;
     }
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);

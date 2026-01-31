@@ -38,7 +38,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
      * Only the DOM output canvas should be on the terminal's document,
      * which gets explicitly checked in `insertLayerToDom`.
      */
-    const canvas = (localDocument || document).createElement('canvas');
+    const canvas = (localDocument ?? document).createElement('canvas');
     canvas.width = width | 0;
     canvas.height = height | 0;
     return canvas;
@@ -242,7 +242,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
       }
       if (!this._placeholder) return;
       this._ctx.drawImage(
-        this._placeholderBitmap || this._placeholder!,
+        this._placeholderBitmap ?? this._placeholder!,
         col * width,
         (row * height) % 2 ? 0 : 1,  // needs %2 offset correction
         width * count,

@@ -48,16 +48,16 @@ import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
-import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
+import { C0, C1ESCAPED } from 'common/data/EscapeSequences';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
-import { Emitter, Event } from 'vs/base/common/event';
+import { Emitter, EventUtils, type IEvent } from 'common/Event';
 import { addDisposableListener } from 'vs/base/browser/dom';
-import { MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -135,15 +135,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public readonly onBell = this._onBell.event;
 
   private _onFocus = this._register(new Emitter<void>());
-  public get onFocus(): Event<void> { return this._onFocus.event; }
+  public get onFocus(): IEvent<void> { return this._onFocus.event; }
   private _onBlur = this._register(new Emitter<void>());
-  public get onBlur(): Event<void> { return this._onBlur.event; }
+  public get onBlur(): IEvent<void> { return this._onBlur.event; }
   private _onA11yCharEmitter = this._register(new Emitter<string>());
-  public get onA11yChar(): Event<string> { return this._onA11yCharEmitter.event; }
+  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
   private _onA11yTabEmitter = this._register(new Emitter<number>());
-  public get onA11yTab(): Event<number> { return this._onA11yTabEmitter.event; }
+  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
   private _onWillOpen = this._register(new Emitter<HTMLElement>());
-  public get onWillOpen(): Event<HTMLElement> { return this._onWillOpen.event; }
+  public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
   private readonly _onDimensionsChange = this._register(new Emitter<IRenderDimensionsApi>());
   public readonly onDimensionsChange = this._onDimensionsChange.event;
 
@@ -187,10 +187,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(this._inputHandler.onRequestReset(() => this.reset()));
     this._register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
     this._register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
-    this._register(Event.forward(this._inputHandler.onCursorMove, this._onCursorMove));
-    this._register(Event.forward(this._inputHandler.onTitleChange, this._onTitleChange));
-    this._register(Event.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
-    this._register(Event.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
+    this._register(EventUtils.forward(this._inputHandler.onCursorMove, this._onCursorMove));
+    this._register(EventUtils.forward(this._inputHandler.onTitleChange, this._onTitleChange));
+    this._register(EventUtils.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
+    this._register(EventUtils.forward(this._inputHandler.onA11yTab, this._onA11yTabEmitter));
 
     // Setup listeners
     this._register(this._bufferService.onResize(e => this._afterResize(e.cols, e.rows)));
@@ -235,7 +235,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           const colorRgb = color.toColorRGB(acc === 'ansi'
             ? this._themeService.colors.ansi[req.index]
             : this._themeService.colors[acc]);
-          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(colorRgb)}${C1_ESCAPED.ST}`);
+          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(colorRgb)}${C1ESCAPED.ST}`);
           break;
         case ColorRequestType.SET:
           if (acc === 'ansi') {
@@ -590,7 +590,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea!.focus();
       this.textarea!.select();
     }));
-    this._register(Event.any(
+    this._register(EventUtils.any(
       this._onScroll.event,
       this._inputHandler.onScroll
     )(() => {
@@ -817,15 +817,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       if (!(events & CoreMouseEventType.UP)) {
         this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
         requestedEvents.mouseup = null;
-      } else if (!requestedEvents.mouseup) {
-        requestedEvents.mouseup = eventListeners.mouseup;
+      } else {
+        requestedEvents.mouseup ??= eventListeners.mouseup;
       }
 
       if (!(events & CoreMouseEventType.DRAG)) {
         this._document!.removeEventListener('mousemove', requestedEvents.mousedrag!);
         requestedEvents.mousedrag = null;
-      } else if (!requestedEvents.mousedrag) {
-        requestedEvents.mousedrag = eventListeners.mousedrag;
+      } else {
+        requestedEvents.mousedrag ??= eventListeners.mousedrag;
       }
     }));
     // force initial onProtocolChange so we dont miss early mouse requests

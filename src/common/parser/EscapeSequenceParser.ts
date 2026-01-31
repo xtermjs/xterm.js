@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType, IApcHandler, IApcParser, ApcFallbackHandlerType } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 import { Params } from 'common/parser/Params';
 import { OscParser } from 'common/parser/OscParser';
 import { DcsParser } from 'common/parser/DcsParser';
+import { ApcParser } from 'common/parser/ApcParser';
 
 /**
  * Table values are generated like this:
@@ -17,8 +18,8 @@ import { DcsParser } from 'common/parser/DcsParser';
  *    value:  action << TableValue.TRANSITION_ACTION_SHIFT | nextState
  */
 const enum TableAccess {
-  TRANSITION_ACTION_SHIFT = 4,
-  TRANSITION_STATE_MASK = 15,
+  TRANSITION_ACTION_SHIFT = 8,
+  TRANSITION_STATE_MASK = 255,
   INDEX_STATE_SHIFT = 8
 }
 
@@ -26,10 +27,10 @@ const enum TableAccess {
  * Transition table for EscapeSequenceParser.
  */
 export class TransitionTable {
-  public table: Uint8Array;
+  public table: Uint16Array;
 
   constructor(length: number) {
-    this.table = new Uint8Array(length);
+    this.table = new Uint16Array(length);
   }
 
   /**
@@ -89,7 +90,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   EXECUTABLES.push(0x19);
   EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
 
-  const states: number[] = r(ParserState.GROUND, ParserState.DCS_PASSTHROUGH + 1);
+  const states: number[] = r(ParserState.GROUND, ParserState.STATE_LENGTH);
   let state: any;
 
   // set default transition
@@ -104,7 +105,8 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
     table.add(0x9c, state, ParserAction.IGNORE, ParserState.GROUND); // ST as terminator
     table.add(0x1b, state, ParserAction.CLEAR, ParserState.ESCAPE);  // ESC
     table.add(0x9d, state, ParserAction.OSC_START, ParserState.OSC_STRING);  // OSC
-    table.addMany([0x98, 0x9e, 0x9f], state, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
+    table.addMany([0x98, 0x9e], state, ParserAction.IGNORE, ParserState.SOS_PM_STRING);  // SOS, PM
+    table.add(0x9f, state, ParserAction.APC_START, ParserState.APC_STRING);  // APC
     table.add(0x9b, state, ParserAction.CLEAR, ParserState.CSI_ENTRY);  // CSI
     table.add(0x90, state, ParserAction.CLEAR, ParserState.DCS_ENTRY);  // DCS
   }
@@ -128,12 +130,18 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.add(0x7f, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
   table.addMany([0x9c, 0x1b, 0x18, 0x1a, 0x07], ParserState.OSC_STRING, ParserAction.OSC_END, ParserState.GROUND);
   table.addMany(r(0x1c, 0x20), ParserState.OSC_STRING, ParserAction.IGNORE, ParserState.OSC_STRING);
-  // sos/pm/apc does nothing
-  table.addMany([0x58, 0x5e, 0x5f], ParserState.ESCAPE, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
-  table.addMany(PRINTABLES, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
-  table.addMany(EXECUTABLES, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
-  table.add(0x9c, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.GROUND);
-  table.add(0x7f, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
+  // sos/pm
+  table.addMany([0x58, 0x5e], ParserState.ESCAPE, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  table.addMany(PRINTABLES, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  table.addMany(EXECUTABLES, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  table.add(0x9c, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.GROUND);
+  table.add(0x7f, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
+  // apc
+  table.add(0x5f, ParserState.ESCAPE, ParserAction.APC_START, ParserState.APC_STRING);
+  table.addMany(PRINTABLES, ParserState.APC_STRING, ParserAction.APC_PUT, ParserState.APC_STRING);
+  table.addMany(EXECUTABLES, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
+  table.add(0x7f, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
+  table.addMany([0x1b, 0x9c, 0x18, 0x1a], ParserState.APC_STRING, ParserAction.APC_END, ParserState.GROUND);
   // csi entries
   table.add(0x5b, ParserState.ESCAPE, ParserAction.CLEAR, ParserState.CSI_ENTRY);
   table.addMany(r(0x40, 0x7f), ParserState.CSI_ENTRY, ParserAction.CSI_DISPATCH, ParserState.GROUND);
@@ -193,6 +201,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.add(NON_ASCII_PRINTABLE, ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
   table.add(NON_ASCII_PRINTABLE, ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
   table.add(NON_ASCII_PRINTABLE, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
+  table.add(NON_ASCII_PRINTABLE, ParserState.APC_STRING, ParserAction.APC_PUT, ParserState.APC_STRING);
   return table;
 })();
 
@@ -243,6 +252,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _escHandlers: IHandlerCollection<EscHandlerType>;
   protected readonly _oscParser: IOscParser;
   protected readonly _dcsParser: IDcsParser;
+  protected readonly _apcParser: IApcParser;
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
@@ -290,6 +300,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     }));
     this._oscParser = this._register(new OscParser());
     this._dcsParser = this._register(new DcsParser());
+    this._apcParser = this._register(new ApcParser());
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)
@@ -351,9 +362,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   public registerEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
     const ident = this._identifier(id, [0x30, 0x7e]);
-    if (this._escHandlers[ident] === undefined) {
-      this._escHandlers[ident] = [];
-    }
+    this._escHandlers[ident] ??= [];
     const handlerList = this._escHandlers[ident];
     handlerList.push(handler);
     return {
@@ -384,9 +393,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   public registerCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
     const ident = this._identifier(id);
-    if (this._csiHandlers[ident] === undefined) {
-      this._csiHandlers[ident] = [];
-    }
+    this._csiHandlers[ident] ??= [];
     const handlerList = this._csiHandlers[ident];
     handlerList.push(handler);
     return {
@@ -425,6 +432,16 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._oscParser.setHandlerFallback(handler);
   }
 
+  public registerApcHandler(ident: number, handler: IApcHandler): IDisposable {
+    return this._apcParser.registerHandler(ident, handler);
+  }
+  public clearApcHandler(ident: number): void {
+    this._apcParser.clearHandler(ident);
+  }
+  public setApcHandlerFallback(handler: ApcFallbackHandlerType): void {
+    this._apcParser.setHandlerFallback(handler);
+  }
+
   public setErrorHandler(callback: (state: IParsingState) => IParsingState): void {
     this._errorHandler = callback;
   }
@@ -445,6 +462,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.currentState = this.initialState;
     this._oscParser.reset();
     this._dcsParser.reset();
+    this._apcParser.reset();
     this._params.reset();
     this._params.addParam(0); // ZDM
     this._collect = 0;
@@ -598,6 +616,17 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           case ParserStackType.OSC:
             code = data[this._parseStack.chunkPos];
             handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a, promiseResult);
+            if (handlerResult) {
+              return handlerResult;
+            }
+            if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
+            this._params.reset();
+            this._params.addParam(0); // ZDM
+            this._collect = 0;
+            break;
+          case ParserStackType.APC:
+            code = data[this._parseStack.chunkPos];
+            handlerResult = this._apcParser.end(code !== 0x18 && code !== 0x1a, promiseResult);
             if (handlerResult) {
               return handlerResult;
             }
@@ -777,6 +806,31 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a);
           if (handlerResult) {
             this._preserveStack(ParserStackType.OSC, [], 0, transition, i);
+            return handlerResult;
+          }
+          if (code === 0x1b) transition |= ParserState.ESCAPE;
+          this._params.reset();
+          this._params.addParam(0); // ZDM
+          this._collect = 0;
+          this.precedingJoinState = 0;
+          break;
+        case ParserAction.APC_START:
+          this._apcParser.start();
+          break;
+        case ParserAction.APC_PUT:
+          // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
+          for (let j = i + 1; ; ++j) {
+            if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || code === 0x9c || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
+              this._apcParser.put(data, i, j);
+              i = j - 1;
+              break;
+            }
+          }
+          break;
+        case ParserAction.APC_END:
+          handlerResult = this._apcParser.end(code !== 0x18 && code !== 0x1a);
+          if (handlerResult) {
+            this._preserveStack(ParserStackType.APC, [], 0, transition, i);
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;

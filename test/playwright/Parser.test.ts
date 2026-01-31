@@ -21,6 +21,7 @@ declare global {
     customDcsHandlerCallStack?: [string, (number | number[])[], string][];
     customEscHandlerCallStack?: string[];
     customOscHandlerCallStack?: string[][];
+    customApcHandlerCallStack?: string[][];
     disposable?: IDisposable;
     disposables?: IDisposable[];
   }
@@ -238,6 +239,112 @@ test.describe('Parser Integration Tests', () => {
         ['C', 'some data'],
         ['B', 'some data'],
         ['A', 'some data']
+      ]);
+    });
+  });
+  test.describe('registerApcHandler', () => {
+    // TODO: Remove when Kitty Graphics tests added (real-world usage replaces this)
+    test('should call custom APC handler with identifier', async () => {
+      await ctx.proxy.evaluate(([term]) => {
+        window.customApcHandlerCallStack = [];
+        // APC uses first character as identifier (e.g., 0x41 = 'A')
+        window.disposable = term.parser.registerApcHandler(0x41, data => {
+          window.customApcHandlerCallStack!.push(['handler', data]);
+          return true;
+        });
+      });
+      // APC format: ESC _ <identifier> <data> ESC \
+      await ctx.proxy.write('\x1b_Asome data here\x1b\\');
+      deepStrictEqual(await ctx.page.evaluate(() => window.customApcHandlerCallStack), [
+        ['handler', 'some data here']
+      ]);
+    });
+    // TODO: Remove when Kitty Graphics tests added
+    test('should handle short data', async () => {
+      await ctx.proxy.evaluate(([term]) => {
+        window.customApcHandlerCallStack = [];
+        window.disposable = term.parser.registerApcHandler(0x42, data => {
+          window.customApcHandlerCallStack!.push(['handler', data]);
+          return true;
+        });
+      });
+      // Short APC with minimal data
+      await ctx.proxy.write('\x1b_Bhi\x1b\\');
+      deepStrictEqual(await ctx.page.evaluate(() => window.customApcHandlerCallStack), [
+        ['handler', 'hi']
+      ]);
+    });
+    test('should respect return value', async () => {
+      await ctx.proxy.evaluate(([term]) => {
+        window.customApcHandlerCallStack = [];
+        window.disposables = [
+          term.parser.registerApcHandler(0x43, data => {
+            window.customApcHandlerCallStack!.push(['A', data]);
+            return false;
+          }),
+          term.parser.registerApcHandler(0x43, data => {
+            window.customApcHandlerCallStack!.push(['B', data]);
+            return true;
+          }),
+          term.parser.registerApcHandler(0x43, data => {
+            window.customApcHandlerCallStack!.push(['C', data]);
+            return false;
+          })
+        ];
+      });
+      await ctx.proxy.write('\x1b_Csome data\x1b\\');
+      deepStrictEqual(await ctx.page.evaluate(() => window.customApcHandlerCallStack), [
+        ['C', 'some data'],
+        ['B', 'some data']
+      ]);
+    });
+    test('async', async () => {
+      await ctx.proxy.evaluate(([term]) => {
+        window.customApcHandlerCallStack = [];
+        window.disposables = [
+          term.parser.registerApcHandler(0x44, data => {
+            window.customApcHandlerCallStack!.push(['A', data]);
+            return false;
+          }),
+          term.parser.registerApcHandler(0x44, data => {
+            return new Promise(res => setTimeout(res, 50)).then(() => {
+              window.customApcHandlerCallStack!.push(['B', data]);
+              return false;
+            });
+          }),
+          term.parser.registerApcHandler(0x44, data => {
+            window.customApcHandlerCallStack!.push(['C', data]);
+            return false;
+          })
+        ];
+      });
+      await ctx.proxy.write('\x1b_Dsome data\x1b\\');
+      deepStrictEqual(await ctx.page.evaluate(() => window.customApcHandlerCallStack), [
+        ['C', 'some data'],
+        ['B', 'some data'],
+        ['A', 'some data']
+      ]);
+    });
+    // TODO: Remove when Kitty Graphics tests added
+    test('should handle different identifiers independently', async () => {
+      await ctx.proxy.evaluate(([term]) => {
+        window.customApcHandlerCallStack = [];
+        window.disposables = [
+          term.parser.registerApcHandler(0x46, data => { // 'F'
+            window.customApcHandlerCallStack!.push(['F', data]);
+            return true;
+          }),
+          term.parser.registerApcHandler(0x58, data => { // 'X'
+            window.customApcHandlerCallStack!.push(['X', data]);
+            return true;
+          })
+        ];
+      });
+      await ctx.proxy.write('\x1b_Ffirst data\x1b\\');
+      await ctx.proxy.write('\x1b_Xsecond data\x1b\\');
+      deepStrictEqual(await ctx.page.evaluate(() => window.customApcHandlerCallStack), [
+        ['F', 'first data'],
+        ['X', 'second data']
       ]);
     });
   });
