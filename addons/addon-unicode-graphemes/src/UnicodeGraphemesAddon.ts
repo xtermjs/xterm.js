@@ -16,12 +16,8 @@ export class UnicodeGraphemesAddon implements ITerminalAddon , IUnicodeGraphemes
   private _oldVersion: string = '';
 
   public activate(terminal: Terminal): void {
-    if (! this._provider15) {
-      this._provider15 = new UnicodeGraphemeProvider(false);
-    }
-    if (! this._provider15Graphemes) {
-      this._provider15Graphemes = new UnicodeGraphemeProvider(true);
-    }
+    this._provider15 ??= new UnicodeGraphemeProvider(false);
+    this._provider15Graphemes ??= new UnicodeGraphemeProvider(true);
     const unicode = terminal.unicode;
     this._unicode = unicode;
     unicode.register(this._provider15);

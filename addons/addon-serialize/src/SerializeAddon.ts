@@ -601,7 +601,7 @@ export class SerializeAddon implements ITerminalAddon , ISerializeApi {
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    return this._serializeBufferAsHTML(this._terminal, options || {});
+    return this._serializeBufferAsHTML(this._terminal, options ?? {});
   }
 
   public dispose(): void { }

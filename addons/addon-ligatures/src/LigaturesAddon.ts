@@ -22,7 +22,7 @@ export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
 
   constructor(options?: Partial<ILigatureOptions>) {
     // Source: calt set from https://github.com/be5invis/Iosevka?tab=readme-ov-file#ligations
-    this._fallbackLigatures = (options?.fallbackLigatures || [
+    this._fallbackLigatures = (options?.fallbackLigatures ?? [
       '<--', '<---', '<<-', '<-', '->', '->>', '-->', '--->',
       '<==', '<===', '<<=', '<=', '=>', '=>>', '==>', '===>', '>=', '>>=',
       '<->', '<-->', '<--->', '<---->', '<=>', '<==>', '<===>', '<====>', '::', ':::',

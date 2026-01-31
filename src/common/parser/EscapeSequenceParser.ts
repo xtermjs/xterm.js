@@ -362,9 +362,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   public registerEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
     const ident = this._identifier(id, [0x30, 0x7e]);
-    if (this._escHandlers[ident] === undefined) {
-      this._escHandlers[ident] = [];
-    }
+    this._escHandlers[ident] ??= [];
     const handlerList = this._escHandlers[ident];
     handlerList.push(handler);
     return {
@@ -395,9 +393,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   public registerCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
     const ident = this._identifier(id);
-    if (this._csiHandlers[ident] === undefined) {
-      this._csiHandlers[ident] = [];
-    }
+    this._csiHandlers[ident] ??= [];
     const handlerList = this._csiHandlers[ident];
     handlerList.push(handler);
     return {

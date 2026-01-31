@@ -381,7 +381,7 @@ export class ImageStorage implements IDisposable {
       if (!line) return;
       for (let col = 0; col < cols; ++col) {
         if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
-          let e: IExtendedAttrsImage = line._extendedAttrs[col] || EMPTY_ATTRS;
+          let e: IExtendedAttrsImage = line._extendedAttrs[col] ?? EMPTY_ATTRS;
           const imageId = e.imageId;
           if (imageId === undefined || imageId === -1) {
             continue;
@@ -400,7 +400,7 @@ export class ImageStorage implements IDisposable {
             while (
               ++col < cols
               && (line.getBg(col) & BgFlags.HAS_EXTENDED)
-              && (e = line._extendedAttrs[col] || EMPTY_ATTRS)
+              && (e = line._extendedAttrs[col] ?? EMPTY_ATTRS)
               && (e.imageId === imageId)
               && (e.tileId === startTile + count)
             ) {
@@ -442,7 +442,7 @@ export class ImageStorage implements IDisposable {
     for (let row = 0; row < rows; ++row) {
       const line = buffer.lines.get(row) as IBufferLineExt;
       if (line.getBg(oldCol) & BgFlags.HAS_EXTENDED) {
-        const e: IExtendedAttrsImage = line._extendedAttrs[oldCol] || EMPTY_ATTRS;
+        const e: IExtendedAttrsImage = line._extendedAttrs[oldCol] ?? EMPTY_ATTRS;
         const imageId = e.imageId;
         if (imageId === undefined || imageId === -1) {
           continue;
@@ -487,7 +487,7 @@ export class ImageStorage implements IDisposable {
     const buffer = this._terminal._core.buffer;
     const line = buffer.lines.get(y) as IBufferLineExt;
     if (line && line.getBg(x) & BgFlags.HAS_EXTENDED) {
-      const e: IExtendedAttrsImage = line._extendedAttrs[x] || EMPTY_ATTRS;
+      const e: IExtendedAttrsImage = line._extendedAttrs[x] ?? EMPTY_ATTRS;
       if (e.imageId && e.imageId !== -1) {
         const orig = this._images.get(e.imageId)?.orig;
         if (window.ImageBitmap && orig instanceof ImageBitmap) {
@@ -507,7 +507,7 @@ export class ImageStorage implements IDisposable {
     const buffer = this._terminal._core.buffer;
     const line = buffer.lines.get(y) as IBufferLineExt;
     if (line && line.getBg(x) & BgFlags.HAS_EXTENDED) {
-      const e: IExtendedAttrsImage = line._extendedAttrs[x] || EMPTY_ATTRS;
+      const e: IExtendedAttrsImage = line._extendedAttrs[x] ?? EMPTY_ATTRS;
       if (e.imageId && e.imageId !== -1 && e.tileId !== -1) {
         const spec = this._images.get(e.imageId);
         if (spec) {

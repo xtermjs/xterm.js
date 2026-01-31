@@ -66,6 +66,7 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-confusing-void-expression': ['warn', { ignoreArrowShorthand: true }],
       '@typescript-eslint/no-useless-constructor': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': ['warn', { ignorePrimitives: true }],
       '@typescript-eslint/prefer-namespace-keyword': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { vars: 'all', args: 'none' }],
       '@typescript-eslint/no-require-imports': 'off',
@@ -139,6 +140,13 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-member-accessibility': 'off'
+    }
+  },
+  {
+    // Disable prefer-nullish-coalescing for files without strictNullChecks
+    files: ['demo/**/*.ts', '**/*.benchmark.ts'],
+    rules: {
+      '@typescript-eslint/prefer-nullish-coalescing': 'off'
     }
   }
 );

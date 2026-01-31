@@ -793,15 +793,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       if (!(events & CoreMouseEventType.UP)) {
         this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
         requestedEvents.mouseup = null;
-      } else if (!requestedEvents.mouseup) {
-        requestedEvents.mouseup = eventListeners.mouseup;
+      } else {
+        requestedEvents.mouseup ??= eventListeners.mouseup;
       }
 
       if (!(events & CoreMouseEventType.DRAG)) {
         this._document!.removeEventListener('mousemove', requestedEvents.mousedrag!);
         requestedEvents.mousedrag = null;
-      } else if (!requestedEvents.mousedrag) {
-        requestedEvents.mousedrag = eventListeners.mousedrag;
+      } else {
+        requestedEvents.mousedrag ??= eventListeners.mousedrag;
       }
     }));
     // force initial onProtocolChange so we dont miss early mouse requests

@@ -48,7 +48,7 @@ export class WebLinksAddon implements ITerminalAddon , IWebLinksApi {
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
     const options = this._options as ILinkProviderOptions;
-    const regex = options.urlRegex || strictUrlRegex;
+    const regex = options.urlRegex ?? strictUrlRegex;
     this._linkProvider = this._terminal.registerLinkProvider(new WebLinkProvider(this._terminal, regex, this._handler, options));
   }
 

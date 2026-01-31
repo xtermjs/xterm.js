@@ -18,33 +18,34 @@ export class Emitter<T> {
   private _event: IEvent<T> | undefined;
 
   public get event(): IEvent<T> {
-    if (!this._event) {
-      this._event = (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore) => {
-        if (this._disposed) {
-          return toDisposable(() => {});
-        }
-
-        const entry = { fn: listener, thisArgs };
-        this._listeners.push(entry);
-
-        const result = toDisposable(() => {
-          const idx = this._listeners.indexOf(entry);
-          if (idx !== -1) {
-            this._listeners.splice(idx, 1);
-          }
-        });
-
-        if (disposables) {
-          if (Array.isArray(disposables)) {
-            disposables.push(result);
-          } else {
-            disposables.add(result);
-          }
-        }
-
-        return result;
-      };
+    if (this._event) {
+      return this._event;
     }
+    this._event = (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore) => {
+      if (this._disposed) {
+        return toDisposable(() => {});
+      }
+
+      const entry = { fn: listener, thisArgs };
+      this._listeners.push(entry);
+
+      const result = toDisposable(() => {
+        const idx = this._listeners.indexOf(entry);
+        if (idx !== -1) {
+          this._listeners.splice(idx, 1);
+        }
+      });
+
+      if (disposables) {
+        if (Array.isArray(disposables)) {
+          disposables.push(result);
+        } else {
+          disposables.add(result);
+        }
+      }
+
+      return result;
+    };
     return this._event;
   }
 
