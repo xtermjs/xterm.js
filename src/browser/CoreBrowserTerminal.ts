@@ -48,7 +48,7 @@ import * as Browser from 'common/Platform';
 import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
-import { C0, C1_ESCAPED } from 'common/data/EscapeSequences';
+import { C0, C1ESCAPED } from 'common/data/EscapeSequences';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
@@ -235,7 +235,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           const colorRgb = color.toColorRGB(acc === 'ansi'
             ? this._themeService.colors.ansi[req.index]
             : this._themeService.colors[acc]);
-          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(colorRgb)}${C1_ESCAPED.ST}`);
+          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(colorRgb)}${C1ESCAPED.ST}`);
           break;
         case ColorRequestType.SET:
           if (acc === 'ansi') {
