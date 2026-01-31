@@ -4,7 +4,7 @@
  */
 
 import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, ISubParserStackState } from 'common/parser/Types';
-import { ApcState, PAYLOAD_LIMIT } from 'common/parser/Constants';
+import { ApcState, ParserConstants } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 
@@ -199,6 +199,8 @@ export class ApcParser implements IApcParser {
  * as APC handlers.
  */
 export class ApcHandler implements IApcHandler {
+  private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
+
   private _data = '';
   private _hitLimit: boolean = false;
 
@@ -214,7 +216,7 @@ export class ApcHandler implements IApcHandler {
       return;
     }
     this._data += utf32ToString(data, start, end);
-    if (this._data.length > PAYLOAD_LIMIT) {
+    if (this._data.length > ApcHandler._payloadLimit) {
       this._data = '';
       this._hitLimit = true;
     }

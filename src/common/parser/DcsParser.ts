@@ -7,7 +7,7 @@ import { IDisposable } from 'common/Types';
 import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from 'common/parser/Types';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
-import { PAYLOAD_LIMIT } from 'common/parser/Constants';
+import { ParserConstants } from 'common/parser/Constants';
 
 const EMPTY_HANDLERS: IDcsHandler[] = [];
 
@@ -138,6 +138,8 @@ EMPTY_PARAMS.addParam(0);
  * Note: The payload is currently limited to 50 MB (hardcoded).
  */
 export class DcsHandler implements IDcsHandler {
+  private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
+
   private _data = '';
   private _params: IParams = EMPTY_PARAMS;
   private _hitLimit: boolean = false;
@@ -159,7 +161,7 @@ export class DcsHandler implements IDcsHandler {
       return;
     }
     this._data += utf32ToString(data, start, end);
-    if (this._data.length > PAYLOAD_LIMIT) {
+    if (this._data.length > DcsHandler._payloadLimit) {
       this._data = '';
       this._hitLimit = true;
     }
