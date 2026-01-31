@@ -10,7 +10,7 @@ export class StyleWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'style';
   public readonly label = 'Style';
 
-  private _paddingElement: HTMLInputElement;
+  private _paddingElement!: HTMLInputElement;
 
   public build(container: HTMLElement): void {
     const wrapper = document.createElement('div');

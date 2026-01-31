@@ -11,8 +11,7 @@ export class VtWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'vt';
   public readonly label = 'VT';
 
-  private _container: HTMLElement;
-  private _term: Terminal | undefined;
+  private _container!: HTMLElement;
 
   public build(container: HTMLElement): void {
     this._container = container;
@@ -65,7 +64,7 @@ export class VtWindow extends BaseWindow implements IControlWindow {
     const writeCsiSplit = writeCsi.split('|');
     const prefix = writeCsiSplit.length === 2 ? writeCsiSplit[0] : '';
     const suffix = writeCsiSplit[writeCsiSplit.length - 1];
-    element.addEventListener('click', () => this._term?.write(this._csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
+    element.addEventListener('click', () => this._terminal.write(this._csi(`${prefix}${inputs.map(e => e.value).join(';')}${suffix}`)));
 
     const desc = document.createElement('span');
     desc.textContent = description;

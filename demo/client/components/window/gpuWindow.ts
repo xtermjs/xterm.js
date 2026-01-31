@@ -10,7 +10,7 @@ export class GpuWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'gpu';
   public readonly label = 'WebGL';
 
-  private _textureAtlasContainer: HTMLElement;
+  private _textureAtlasContainer!: HTMLElement;
 
   public build(container: HTMLElement): void {
     const zoomCheckbox = document.createElement('input');
