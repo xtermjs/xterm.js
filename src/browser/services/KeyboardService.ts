@@ -24,16 +24,12 @@ export class KeyboardService implements IKeyboardService {
   }
 
   private _getWin32InputMode(): Win32InputMode {
-    if (!this._win32InputMode) {
-      this._win32InputMode = new Win32InputMode();
-    }
+    this._win32InputMode ??= new Win32InputMode();
     return this._win32InputMode;
   }
 
   private _getKittyKeyboard(): KittyKeyboard {
-    if (!this._kittyKeyboard) {
-      this._kittyKeyboard = new KittyKeyboard();
-    }
+    this._kittyKeyboard ??= new KittyKeyboard();
     return this._kittyKeyboard;
   }
 
