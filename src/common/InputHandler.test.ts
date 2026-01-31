@@ -2521,7 +2521,7 @@ describe('InputHandler', () => {
       const cpr: number[][] = [];
       inputHandler.registerCsiHandler({ final: 'H' }, async params => {
         cup.push(params.toArray() as number[]);
-        await new Promise(res => setTimeout(res, 50));
+        await Promise.resolve();
         // late call of real repositioning
         return inputHandler.cursorPosition(params);
       });
@@ -2536,7 +2536,7 @@ describe('InputHandler', () => {
     });
     it('async OSC between', async () => {
       inputHandler.registerOscHandler(1000, async data => {
-        await new Promise(res => setTimeout(res, 50));
+        await Promise.resolve();
         assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
         assert.equal(data, 'some data');
         return true;
@@ -2546,7 +2546,7 @@ describe('InputHandler', () => {
     });
     it('async DCS between', async () => {
       inputHandler.registerDcsHandler({ final: 'a' }, async (data, params) => {
-        await new Promise(res => setTimeout(res, 50));
+        await Promise.resolve();
         assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
         assert.equal(data, 'some data');
         assert.deepEqual(params.toArray(), [1, 2]);

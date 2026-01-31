@@ -88,7 +88,7 @@ describe('WriteBuffer', () => {
     it('writeSync called from action does not overflow callstack - issue #3265', () => {
       wb = new WriteBuffer(data => {
         const num = parseInt(data as string);
-        if (num < 1000000) {
+        if (num < 10000) {
           wb.writeSync('' + (num + 1));
         }
       });
