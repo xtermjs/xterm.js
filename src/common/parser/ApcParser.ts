@@ -199,6 +199,8 @@ export class ApcParser implements IApcParser {
  * as APC handlers.
  */
 export class ApcHandler implements IApcHandler {
+  private static PAYLOAD_LIMIT = PAYLOAD_LIMIT;
+
   private _data = '';
   private _hitLimit: boolean = false;
 
@@ -214,7 +216,7 @@ export class ApcHandler implements IApcHandler {
       return;
     }
     this._data += utf32ToString(data, start, end);
-    if (this._data.length > PAYLOAD_LIMIT) {
+    if (this._data.length > ApcHandler.PAYLOAD_LIMIT) {
       this._data = '';
       this._hitLimit = true;
     }

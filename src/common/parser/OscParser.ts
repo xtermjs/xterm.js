@@ -192,6 +192,8 @@ export class OscParser implements IOscParser {
  * as OSC handlers.
  */
 export class OscHandler implements IOscHandler {
+  private static PAYLOAD_LIMIT = PAYLOAD_LIMIT;
+
   private _data = '';
   private _hitLimit: boolean = false;
 
@@ -207,7 +209,7 @@ export class OscHandler implements IOscHandler {
       return;
     }
     this._data += utf32ToString(data, start, end);
-    if (this._data.length > PAYLOAD_LIMIT) {
+    if (this._data.length > OscHandler.PAYLOAD_LIMIT) {
       this._data = '';
       this._hitLimit = true;
     }
