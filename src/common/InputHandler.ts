@@ -1780,7 +1780,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param term The terminal name to evaluate
    */
   private _is(term: string): boolean {
-    return (this._optionsService.rawOptions.termName + '').indexOf(term) === 0;
+    return (this._optionsService.rawOptions.termName + '').startsWith(term);
   }
 
   /**
