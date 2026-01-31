@@ -53,10 +53,20 @@ export class Emitter<T> {
     if (this._disposed) {
       return;
     }
-    // Snapshot listeners to allow modifications during iteration
-    const listeners = this._listeners.slice();
-    for (const { fn, thisArgs } of listeners) {
-      fn.call(thisArgs, event);
+    switch (this._listeners.length) {
+      case 0: return;
+      case 1: {
+        const { fn, thisArgs } = this._listeners[0];
+        fn.call(thisArgs, event);
+        return;
+      }
+      default: {
+        // Snapshot listeners to allow modifications during iteration (2+ listeners)
+        const listeners = this._listeners.slice();
+        for (const { fn, thisArgs } of listeners) {
+          fn.call(thisArgs, event);
+        }
+      }
     }
   }
 
