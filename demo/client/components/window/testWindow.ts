@@ -139,7 +139,9 @@ export class TestWindow extends BaseWindow implements IControlWindow {
     }
     dd.appendChild(button);
     dl.appendChild(dd);
-    button.addEventListener('click', handler);
+    if (handler) {
+      button.addEventListener('click', handler);
+    }
   }
 
   private _addDdWithCheckbox(dl: HTMLElement, id: string, label: string, title: string, checked: boolean): void {
@@ -465,7 +467,7 @@ function customGlyphAlignmentHandler(term: Terminal): void {
   while (fillChars.length > 0) {
     const batch = fillChars.splice(0, 10);
     for (const fillChar of batch) {
-      term.write(`${fillChar.codePointAt(0).toString(16).toUpperCase().padEnd(5, ' ')} `);
+      term.write(`${fillChar.codePointAt(0)!.toString(16).toUpperCase().padEnd(5, ' ')} `);
     }
     term.write('\n\r');
     for (let i = 0; i < 3; i++) {
@@ -864,7 +866,7 @@ function addDecoration(term: Terminal, dim: number = 1): void {
     foregroundColor: '#00FE00',
     overviewRulerOptions: { color: '#ef292980', position: 'left' }
   });
-  decoration.onRender((e: HTMLElement) => {
+  decoration?.onRender((e: HTMLElement) => {
     e.style.right = '100%';
     e.style.backgroundColor = '#ef292980';
   });
@@ -896,13 +898,16 @@ function decorationStressTest(term: Terminal): void {
     for (const x of [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]) {
       for (let y = 0; y < term.buffer.active.length; y++) {
         const cursorOffsetY = y - cursorY;
-        decorationStressTestDecorations.push(term.registerDecoration({
+        const decoration = term.registerDecoration({
           marker: term.registerMarker(cursorOffsetY),
           x,
           width: 4,
           backgroundColor: '#FF0000',
           overviewRulerOptions: { color: '#FF0000' }
-        }));
+        });
+        if (decoration) {
+          decorationStressTestDecorations.push(decoration);
+        }
       }
     }
   }
@@ -919,56 +924,57 @@ function initProgress(term: Terminal, addons: AddonCollection): void {
     // NOTE: This is most likely not what you want to do for other progress indicators,
     //       that have a proper visual state for error/paused.
     value = Math.min(10 + value * 0.9, 100);
-    document.getElementById('progress-percent').style.width = `${value}%`;
-    document.getElementById('progress-percent').style.backgroundColor = COLORS[state];
-    document.getElementById('progress-state').innerText = `State: ${STATES[state]}`;
+    document.getElementById('progress-percent')!.style.width = `${value}%`;
+    document.getElementById('progress-percent')!.style.backgroundColor = COLORS[state];
+    document.getElementById('progress-state')!.innerText = `State: ${STATES[state]}`;
 
-    document.getElementById('progress-percent').style.display = state === 3 ? 'none' : 'block';
-    document.getElementById('progress-indeterminate').style.display = state === 3 ? 'block' : 'none';
+    document.getElementById('progress-percent')!.style.display = state === 3 ? 'none' : 'block';
+    document.getElementById('progress-indeterminate')!.style.display = state === 3 ? 'block' : 'none';
   }
 
-  const progressAddon = addons.progress.instance;
+  const progressAddon = addons.progress.instance!;
   progressAddon.onChange(progressHandler);
 
   // apply initial state once to make it visible on page load
   const initialProgress = progressAddon.progress;
   progressHandler(initialProgress);
 
-  document.getElementById('progress-run').addEventListener('click', async () => {
+  document.getElementById('progress-run')!.addEventListener('click', async () => {
     term.write('\x1b]9;4;0\x1b\\');
     for (let i = 0; i <= 100; i += 5) {
       term.write(`\x1b]9;4;1;${i}\x1b\\`);
       await new Promise(res => setTimeout(res, 200));
     }
   });
-  document.getElementById('progress-0').addEventListener('click', () => term.write('\x1b]9;4;0\x1b\\'));
-  document.getElementById('progress-1').addEventListener('click', () => term.write('\x1b]9;4;1;20\x1b\\'));
-  document.getElementById('progress-2').addEventListener('click', () => term.write('\x1b]9;4;2\x1b\\'));
-  document.getElementById('progress-3').addEventListener('click', () => term.write('\x1b]9;4;3\x1b\\'));
-  document.getElementById('progress-4').addEventListener('click', () => term.write('\x1b]9;4;4\x1b\\'));
+  document.getElementById('progress-0')!.addEventListener('click', () => term.write('\x1b]9;4;0\x1b\\'));
+  document.getElementById('progress-1')!.addEventListener('click', () => term.write('\x1b]9;4;1;20\x1b\\'));
+  document.getElementById('progress-2')!.addEventListener('click', () => term.write('\x1b]9;4;2\x1b\\'));
+  document.getElementById('progress-3')!.addEventListener('click', () => term.write('\x1b]9;4;3\x1b\\'));
+  document.getElementById('progress-4')!.addEventListener('click', () => term.write('\x1b]9;4;4\x1b\\'));
 }
 
 function initImageAddonExposed(term: Terminal, addons: AddonCollection): void {
-  const DEFAULT_OPTIONS: IImageAddonOptions = (addons.image.instance as any)._defaultOpts;
-  const limitStorageElement = document.querySelector<HTMLInputElement>('#image-storagelimit');
-  limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
+  const imageAddon = addons.image.instance!;
+  const DEFAULT_OPTIONS: IImageAddonOptions = (imageAddon as any)._defaultOpts;
+  const limitStorageElement = document.querySelector<HTMLInputElement>('#image-storagelimit')!;
+  limitStorageElement.valueAsNumber = imageAddon.storageLimit;
   addDomListener(term, limitStorageElement, 'change', () => {
     try {
-      addons.image.instance.storageLimit = limitStorageElement.valueAsNumber;
-      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
-      console.log('changed storageLimit to', addons.image.instance.storageLimit);
+      imageAddon.storageLimit = limitStorageElement.valueAsNumber;
+      limitStorageElement.valueAsNumber = imageAddon.storageLimit;
+      console.log('changed storageLimit to', imageAddon.storageLimit);
     } catch (e) {
-      limitStorageElement.valueAsNumber = addons.image.instance.storageLimit;
-      console.log('storageLimit at', addons.image.instance.storageLimit);
+      limitStorageElement.valueAsNumber = imageAddon.storageLimit;
+      console.log('storageLimit at', imageAddon.storageLimit);
       throw e;
     }
   });
-  const showPlaceholderElement = document.querySelector<HTMLInputElement>('#image-showplaceholder');
-  showPlaceholderElement.checked = addons.image.instance.showPlaceholder;
+  const showPlaceholderElement = document.querySelector<HTMLInputElement>('#image-showplaceholder')!;
+  showPlaceholderElement.checked = imageAddon.showPlaceholder;
   addDomListener(term, showPlaceholderElement, 'change', () => {
-    addons.image.instance.showPlaceholder = showPlaceholderElement.checked;
+    imageAddon.showPlaceholder = showPlaceholderElement.checked;
   });
-  const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options');
+  const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options')!;
   ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
 
   const sixelDemo = (url: string) => () => fetch(url)
@@ -988,16 +994,16 @@ function initImageAddonExposed(term: Terminal, addons: AddonCollection): void {
       term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
     });
 
-  document.getElementById('image-demo1').addEventListener('click',
+  document.getElementById('image-demo1')!.addEventListener('click',
     sixelDemo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
-  document.getElementById('image-demo2').addEventListener('click',
+  document.getElementById('image-demo2')!.addEventListener('click',
     sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
-  document.getElementById('image-demo3').addEventListener('click',
+  document.getElementById('image-demo3')!.addEventListener('click',
     iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
 
   // demo for image retrieval API
-  term.element.addEventListener('click', (ev: MouseEvent) => {
-    if (!ev.ctrlKey || !addons.image.instance) return;
+  term.element!.addEventListener('click', (ev: MouseEvent) => {
+    if (!ev.ctrlKey || !imageAddon) return;
 
     // TODO...
     // if (ev.altKey) {
@@ -1015,10 +1021,10 @@ function initImageAddonExposed(term: Terminal, addons: AddonCollection): void {
     const y = pos[1] - 1;
     const canvas = ev.shiftKey
       // ctrl+shift+click: get single tile
-      ? addons.image.instance.extractTileAtBufferCell(x, term.buffer.active.viewportY + y)
+      ? imageAddon.extractTileAtBufferCell(x, term.buffer.active.viewportY + y)
       // ctrl+click: get original image
-      : addons.image.instance.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
-    canvas?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+      : imageAddon.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
+    canvas?.toBlob(data => data && window.open(URL.createObjectURL(data), '_blank'));
   });
 }
 

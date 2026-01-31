@@ -10,9 +10,9 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addon-image';
   public readonly label = 'image';
 
-  private _imageStorageLimitInput: HTMLInputElement;
-  private _imageShowPlaceholderCheckbox: HTMLInputElement;
-  private _imageOptionsTextarea: HTMLTextAreaElement;
+  private _imageStorageLimitInput!: HTMLInputElement;
+  private _imageShowPlaceholderCheckbox!: HTMLInputElement;
+  private _imageOptionsTextarea!: HTMLTextAreaElement;
 
   public build(container: HTMLElement): void {
     // Storage limit

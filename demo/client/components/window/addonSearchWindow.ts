@@ -10,13 +10,13 @@ export class AddonSearchWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addon-search';
   public readonly label = 'search';
 
-  private _findNextInput: HTMLInputElement;
-  private _findPreviousInput: HTMLInputElement;
-  private _findResultsSpan: HTMLElement;
-  private _regexCheckbox: HTMLInputElement;
-  private _caseSensitiveCheckbox: HTMLInputElement;
-  private _wholeWordCheckbox: HTMLInputElement;
-  private _highlightAllMatchesCheckbox: HTMLInputElement;
+  private _findNextInput!: HTMLInputElement;
+  private _findPreviousInput!: HTMLInputElement;
+  private _findResultsSpan!: HTMLElement;
+  private _regexCheckbox!: HTMLInputElement;
+  private _caseSensitiveCheckbox!: HTMLInputElement;
+  private _wholeWordCheckbox!: HTMLInputElement;
+  private _highlightAllMatchesCheckbox!: HTMLInputElement;
 
   public build(container: HTMLElement): void {
     const wrapper = document.createElement('div');

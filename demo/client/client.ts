@@ -58,11 +58,11 @@ export interface IWindowWithTerminal extends Window {
 }
 declare let window: IWindowWithTerminal;
 
-let term;
-let protocol;
-let socketURL;
-let socket;
-let pid;
+let term: Terminal | null;
+let protocol: string;
+let socketURL: string;
+let socket: WebSocket | null;
+let pid: string;
 let controlBar: ControlBar;
 let addonsWindow: AddonsWindow;
 let addonSearchWindow: AddonSearchWindow;
@@ -73,7 +73,7 @@ const addons: AddonCollection = {
   attach: { name: 'attach', ctor: AttachAddon, canChange: false },
   clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
-  image: { name: 'image', ctor: ImageAddon, canChange: true },
+  image: { name: 'image', ctor: ImageAddon!, canChange: true },
   progress: { name: 'progress', ctor: ProgressAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
@@ -116,8 +116,8 @@ const xtermjsTheme = {
   brightWhite: '#FFFFFF'
 } satisfies ITheme;
 function setPadding(): void {
-  term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
-  addons.fit.instance.fit();
+  term!.element!.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
+  addons.fit.instance!.fit();
 }
 
 function getSearchOptions(): ISearchOptions {
@@ -141,7 +141,7 @@ const disposeRecreateButtonHandler: () => void = () => {
   if (term) {
     term.dispose();
     term = null;
-    window.term = null;
+    (window as any).term = null;
     socket = null;
     addons.attach.instance = undefined;
     addons.clipboard.instance = undefined;
@@ -154,10 +154,10 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.ligatures.instance = undefined;
     addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
-    document.getElementById('dispose').innerHTML = 'Recreate Terminal';
+    document.getElementById('dispose')!.innerHTML = 'Recreate Terminal';
   } else {
     createTerminal();
-    document.getElementById('dispose').innerHTML = 'Dispose terminal';
+    document.getElementById('dispose')!.innerHTML = 'Dispose terminal';
   }
 };
 
@@ -165,7 +165,7 @@ const createNewWindowButtonHandler: () => void = () => {
   if (term) {
     disposeRecreateButtonHandler();
   }
-  const win = window.open();
+  const win = window.open()!;
   terminalContainer = win.document.createElement('div');
   terminalContainer.id = 'terminal-container';
   win.document.body.appendChild(terminalContainer);
@@ -207,7 +207,7 @@ if (document.location.pathname === '/test') {
 } else {
   const typedTerm = createTerminal();
 
-  controlBar = new ControlBar(document.getElementById('sidebar'), document.querySelector('.banner-tabs'), []);
+  controlBar = new ControlBar(document.getElementById('sidebar')!, document.querySelector('.banner-tabs')!, []);
   optionsWindow = controlBar.registerWindow(new OptionsWindow(typedTerm, addons, { updateTerminalSize, updateTerminalContainerBackground }));
   const styleWindow = controlBar.registerWindow(new StyleWindow(typedTerm, addons));
   controlBar.registerWindow(new CellInspectorWindow(typedTerm, addons));
@@ -234,43 +234,43 @@ if (document.location.pathname === '/test') {
   controlBar.setTabVisible('addon-serialize', true);
   controlBar.setTabVisible('addon-image', true);
   controlBar.setTabVisible('addon-web-fonts', true);
-  addonWebglWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
-  addons.webgl.instance.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
-  addons.webgl.instance.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
-  addons.webgl.instance.onRemoveTextureAtlasCanvas(e => addonWebglWindow.removeTextureAtlas(e));
+  addonWebglWindow.setTextureAtlas(addons.webgl.instance!.textureAtlas!);
+  addons.webgl.instance!.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
+  addons.webgl.instance!.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
+  addons.webgl.instance!.onRemoveTextureAtlasCanvas(e => addonWebglWindow.removeTextureAtlas(e));
 
   paddingElement.value = '0';
   addDomListener(paddingElement, 'change', setPadding);
   addDomListener(actionElements.findNext, 'keydown', (e) => {
     if (e.key === 'Enter') {
-      addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+      addons.search.instance!.findNext(actionElements.findNext.value, getSearchOptions());
       e.preventDefault();
     }
   });
   addDomListener(actionElements.findNext, 'input', (e) => {
-    addons.search.instance.findNext(actionElements.findNext.value, getSearchOptions());
+    addons.search.instance!.findNext(actionElements.findNext.value, getSearchOptions());
   });
   addDomListener(actionElements.findPrevious, 'keydown', (e) => {
     if (e.key === 'Enter') {
-      addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+      addons.search.instance!.findPrevious(actionElements.findPrevious.value, getSearchOptions());
       e.preventDefault();
     }
   });
   addDomListener(actionElements.findPrevious, 'input', (e) => {
-    addons.search.instance.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+    addons.search.instance!.findPrevious(actionElements.findPrevious.value, getSearchOptions());
   });
   addDomListener(actionElements.findNext, 'blur', (e) => {
-    addons.search.instance.clearActiveDecoration();
+    addons.search.instance!.clearActiveDecoration();
   });
   addDomListener(actionElements.findPrevious, 'blur', (e) => {
-    addons.search.instance.clearActiveDecoration();
+    addons.search.instance!.clearActiveDecoration();
   });
 }
 
 function createTerminal(): Terminal {
   // Clean terminal
-  while (terminalContainer.children.length) {
-    terminalContainer.removeChild(terminalContainer.children[0]);
+  while (terminalContainer!.children.length) {
+    terminalContainer!.removeChild(terminalContainer!.children[0]);
   }
 
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
@@ -290,7 +290,7 @@ function createTerminal(): Terminal {
   addons.search.instance = new SearchAddon();
   addons.serialize.instance = new SerializeAddon();
   addons.fit.instance = new FitAddon();
-  addons.image.instance = new ImageAddon();
+  addons.image.instance = new ImageAddon!();
   addons.progress.instance = new ProgressAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
@@ -311,7 +311,7 @@ function createTerminal(): Terminal {
   typedTerm.loadAddon(addons.webFonts.instance);
   typedTerm.loadAddon(addons.clipboard.instance);
 
-  window.term = term;  // Expose `term` to window for debugging purposes
+  (window as any).term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
     if (!pid) {
       return;
@@ -330,7 +330,7 @@ function createTerminal(): Terminal {
   if (addons.webgl.instance) {
     try {
       typedTerm.loadAddon(addons.webgl.instance);
-      term.open(terminalContainer);
+      term.open(terminalContainer!);
     } catch (e) {
       console.warn('error during loading webgl addon:', e);
       addons.webgl.instance.dispose();
@@ -339,7 +339,7 @@ function createTerminal(): Terminal {
   }
   if (!typedTerm.element) {
     // webgl loading failed for some reason, attach with DOM renderer
-    term.open(terminalContainer);
+    term.open(terminalContainer!);
   }
 
   term.focus();
@@ -349,13 +349,13 @@ function createTerminal(): Terminal {
     if (optionsWindow.autoResize) {
       // In general this should be debounced to avoid excessive work on the main
       // thread by firing the expensive resize action repeatedly
-      addons.fit.instance.fit();
+      addons.fit.instance!.fit();
     }
   });
-  resizeObserver.observe(terminalContainer);
+  resizeObserver.observe(terminalContainer!);
 
   window.addEventListener('resize', () => {
-    terminalContainer.style.width = document.body.clientWidth + 'px';
+    terminalContainer!.style.width = document.body.clientWidth + 'px';
   });
 
   // fit is called within a setTimeout, cols and rows need this.
@@ -369,7 +369,7 @@ function createTerminal(): Terminal {
     if (useRealTerminal instanceof HTMLInputElement && !useRealTerminal.checked) {
       runFakeTerminal();
     } else {
-      const res = await fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' });
+      const res = await fetch('/terminals?cols=' + term!.cols + '&rows=' + term!.rows, { method: 'POST' });
       const processId = await res.text();
       pid = processId;
       socketURL += processId;
@@ -384,52 +384,52 @@ function createTerminal(): Terminal {
 }
 
 function runRealTerminal(): void {
-  addons.attach.instance = new AttachAddon(socket);
-  term.loadAddon(addons.attach.instance);
-  term._initialized = true;
-  initAddons(term);
+  addons.attach.instance = new AttachAddon(socket!);
+  term!.loadAddon(addons.attach.instance);
+  (term as any)._initialized = true;
+  initAddons(term!);
 }
 
 function runFakeTerminal(): void {
-  if (term._initialized) {
+  if ((term as any)._initialized) {
     return;
   }
 
-  term._initialized = true;
-  initAddons(term);
+  (term as any)._initialized = true;
+  initAddons(term!);
 
-  term.prompt = () => {
-    term.write('\r\n$ ');
+  (term as any).prompt = () => {
+    term!.write('\r\n$ ');
   };
 
-  term.writeln('Welcome to xterm.js');
-  term.writeln('This is a local terminal emulation, without a real terminal in the back-end.');
-  term.writeln('Type some keys and commands to play around.');
-  term.writeln('');
-  term.prompt();
+  term!.writeln('Welcome to xterm.js');
+  term!.writeln('This is a local terminal emulation, without a real terminal in the back-end.');
+  term!.writeln('Type some keys and commands to play around.');
+  term!.writeln('');
+  (term as any).prompt();
 
-  term.onKey((e: { key: string, domEvent: KeyboardEvent }) => {
+  term!.onKey((e: { key: string, domEvent: KeyboardEvent }) => {
     const ev = e.domEvent;
     const printable = !ev.altKey && !ev.ctrlKey && !ev.metaKey;
 
     if (ev.keyCode === 13) {
-      term.prompt();
+      (term as any).prompt();
     } else if (ev.keyCode === 8) {
       // Do not delete the prompt
-      if (term._core.buffer.x > 2) {
-        term.write('\b \b');
+      if ((term as any)._core.buffer.x > 2) {
+        term!.write('\b \b');
       }
     } else if (printable) {
-      term.write(e.key);
+      term!.write(e.key);
     }
   });
 }
 
 function updateTerminalContainerBackground(): void {
-  if (term.options.allowTransparency) {
-    terminalContainer.style.background = 'repeating-conic-gradient(#000000 0% 25%, #101010 0% 50%) 50% / 20px 20px';
+  if (term!.options.allowTransparency) {
+    terminalContainer!.style.background = 'repeating-conic-gradient(#000000 0% 25%, #101010 0% 50%) 50% / 20px 20px';
   } else {
-    terminalContainer.style.background = term.options.theme?.background ?? '#000000';
+    terminalContainer!.style.background = term!.options.theme?.background ?? '#000000';
   }
 }
 
@@ -439,19 +439,19 @@ function initAddons(term: Terminal): void {
   function postInitWebgl(): void {
     controlBar.setTabVisible('addon-webgl', true);
     setTimeout(() => {
-      addonWebglWindow.setTextureAtlas(addons.webgl.instance.textureAtlas);
-      addons.webgl.instance.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
-      addons.webgl.instance.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
+      addonWebglWindow.setTextureAtlas(addons.webgl.instance!.textureAtlas!);
+      addons.webgl.instance!.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
+      addons.webgl.instance!.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
     }, 500);
   }
   function preDisposeWebgl(): void {
     controlBar.setTabVisible('addon-webgl', false);
-    if (addons.webgl.instance.textureAtlas) {
-      addons.webgl.instance.textureAtlas.remove();
+    if (addons.webgl.instance!.textureAtlas) {
+      addons.webgl.instance!.textureAtlas.remove();
     }
   }
 
-  Object.keys(addons).forEach((name: AddonType) => {
+  (Object.keys(addons) as AddonType[]).forEach(name => {
     const addon = addons[name];
     const checkbox = document.createElement('input') as HTMLInputElement;
     checkbox.type = 'checkbox';
@@ -466,12 +466,12 @@ function initAddons(term: Terminal): void {
       term.unicode.activeVersion = '15-graphemes';
     }
     if (name === 'search' && checkbox.checked) {
-      addons[name].instance.onDidChangeResults(e => updateFindResults(e));
+      addons[name].instance!.onDidChangeResults(e => updateFindResults(e));
     }
     addDomListener(checkbox, 'change', () => {
       if (name === 'image') {
         if (checkbox.checked) {
-          const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options').value;
+          const ctorOptionsJson = document.querySelector<HTMLTextAreaElement>('#image-options')!.value;
           addon.instance = ctorOptionsJson
             ? new addons[name].ctor(JSON.parse(ctorOptionsJson))
             : new addons[name].ctor();
@@ -497,7 +497,7 @@ function initAddons(term: Terminal): void {
             term.unicode.activeVersion = '15-graphemes';
           } else if (name === 'search') {
             controlBar.setTabVisible('addon-search', true);
-            addons[name].instance.onDidChangeResults(e => updateFindResults(e));
+            addons[name].instance!.onDidChangeResults(e => updateFindResults(e));
           } else if (name === 'serialize') {
             controlBar.setTabVisible('addon-serialize', true);
           }
@@ -587,17 +587,17 @@ function updateFindResults(e: { resultIndex: number, resultCount: number } | und
 
 function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
   element.addEventListener(type, handler);
-  term._core._register({ dispose: () => element.removeEventListener(type, handler) });
+  (term as any)._core._register({ dispose: () => element.removeEventListener(type, handler) });
 }
 
 function updateTerminalSize(): void {
   const width = optionsWindow.autoResize ? '100%'
-    : (term.dimensions.css.canvas.width + term._core.viewport.scrollBarWidth).toString() + 'px';
+    : ((term as any).dimensions.css.canvas.width + (term as any)._core.viewport.scrollBarWidth).toString() + 'px';
   const height = optionsWindow.autoResize ? '100%'
-    : (term.dimensions.css.canvas.height).toString() + 'px';
-  terminalContainer.style.width = width;
-  terminalContainer.style.height = height;
-  addons.fit.instance.fit();
+    : ((term as any).dimensions.css.canvas.height).toString() + 'px';
+  terminalContainer!.style.width = width;
+  terminalContainer!.style.height = height;
+  addons.fit.instance!.fit();
 }
 
 (console as any).image = (source: ImageData | HTMLCanvasElement, scale: number = 1) => {
