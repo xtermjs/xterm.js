@@ -35,6 +35,7 @@ export default tseslint.config(
       }
     },
     rules: {
+      '@stylistic/comma-spacing': ['warn', { before: false, after: true }],
       '@stylistic/indent': ['warn', 2],
       '@stylistic/semi': ['warn', 'always'],
       '@stylistic/quotes': ['warn', 'single', { allowTemplateLiterals: true }],

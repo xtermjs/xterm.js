@@ -48,7 +48,7 @@ const enum GaStatus {
 }
 
 
-export class ImageAddon implements ITerminalAddon , IImageApi {
+export class ImageAddon implements ITerminalAddon, IImageApi {
   private _opts: IImageAddonOptions;
   private _defaultOpts: IImageAddonOptions;
   private _storage: ImageStorage | undefined;

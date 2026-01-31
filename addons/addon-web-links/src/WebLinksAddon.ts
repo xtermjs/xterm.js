@@ -35,7 +35,7 @@ function handleLink(event: MouseEvent, uri: string): void {
   }
 }
 
-export class WebLinksAddon implements ITerminalAddon , IWebLinksApi {
+export class WebLinksAddon implements ITerminalAddon, IWebLinksApi {
   private _terminal: Terminal | undefined;
   private _linkProvider: IDisposable | undefined;
 

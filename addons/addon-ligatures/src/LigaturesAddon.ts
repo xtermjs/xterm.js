@@ -13,7 +13,7 @@ export interface ITerminalAddon {
   dispose(): void;
 }
 
-export class LigaturesAddon implements ITerminalAddon , ILigaturesApi {
+export class LigaturesAddon implements ITerminalAddon, ILigaturesApi {
   private readonly _fallbackLigatures: string[];
   private readonly _fontFeatureSettings?: string;
 

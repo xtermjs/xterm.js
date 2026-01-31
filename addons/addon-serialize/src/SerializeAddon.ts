@@ -457,7 +457,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   }
 }
 
-export class SerializeAddon implements ITerminalAddon , ISerializeApi {
+export class SerializeAddon implements ITerminalAddon, ISerializeApi {
   private _terminal: Terminal | undefined;
 
   public activate(terminal: Terminal): void {

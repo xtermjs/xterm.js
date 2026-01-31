@@ -9,7 +9,7 @@ import type { Terminal, ITerminalAddon } from '@xterm/xterm';
 import type { Unicode11Addon as IUnicode11Api } from '@xterm/addon-unicode11';
 import { UnicodeV11 } from './UnicodeV11';
 
-export class Unicode11Addon implements ITerminalAddon , IUnicode11Api {
+export class Unicode11Addon implements ITerminalAddon, IUnicode11Api {
   public activate(terminal: Terminal): void {
     terminal.unicode.register(new UnicodeV11());
   }
