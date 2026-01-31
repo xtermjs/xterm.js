@@ -15,7 +15,7 @@ import { WebglRenderer } from './WebglRenderer';
 import { setTraceLogger } from 'common/services/LogService';
 import { Emitter, EventUtils } from 'common/Event';
 
-export class WebglAddon extends Disposable implements ITerminalAddon , IWebglApi {
+export class WebglAddon extends Disposable implements ITerminalAddon, IWebglApi {
   private _terminal?: Terminal;
   private _renderer?: WebglRenderer;
 

@@ -9,7 +9,7 @@ import type { Terminal, ITerminalAddon, IUnicodeHandling } from '@xterm/xterm';
 import type { UnicodeGraphemesAddon as IUnicodeGraphemesApi } from '@xterm/addon-unicode-graphemes';
 import { UnicodeGraphemeProvider } from './UnicodeGraphemeProvider';
 
-export class UnicodeGraphemesAddon implements ITerminalAddon , IUnicodeGraphemesApi {
+export class UnicodeGraphemesAddon implements ITerminalAddon, IUnicodeGraphemesApi {
   private _provider15Graphemes?: UnicodeGraphemeProvider;
   private _provider15?: UnicodeGraphemeProvider;
   private _unicode?: IUnicodeHandling;
