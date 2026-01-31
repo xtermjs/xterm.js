@@ -106,6 +106,7 @@ export class MockCoreService implements ICoreService {
     applicationCursorKeys: false,
     applicationKeypad: false,
     bracketedPasteMode: false,
+    colorSchemeUpdates: false,
     cursorBlink: undefined,
     cursorStyle: undefined,
     origin: false,

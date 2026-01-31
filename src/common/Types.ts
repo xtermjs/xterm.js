@@ -269,6 +269,7 @@ export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
   applicationKeypad: boolean;
   bracketedPasteMode: boolean;
+  colorSchemeUpdates: boolean;
   cursorBlink: boolean | undefined;
   cursorStyle: CursorStyle | undefined;
   origin: boolean;
