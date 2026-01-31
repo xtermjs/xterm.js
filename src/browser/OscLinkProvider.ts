@@ -9,6 +9,8 @@ import { CellData } from 'common/buffer/CellData';
 import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
 
 export class OscLinkProvider implements ILinkProvider {
+  private readonly _workCell = new CellData();
+
   constructor(
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
@@ -25,7 +27,7 @@ export class OscLinkProvider implements ILinkProvider {
 
     const result: ILink[] = [];
     const linkHandler = this._optionsService.rawOptions.linkHandler;
-    const cell = new CellData();
+    const cell = this._workCell;
     const lineLength = line.getTrimmedLength();
     let currentLinkId = -1;
     let currentStart = -1;
