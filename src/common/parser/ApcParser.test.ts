@@ -6,7 +6,6 @@ import { assert } from 'chai';
 import { ApcParser, ApcHandler } from 'common/parser/ApcParser';
 import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
 import { IApcHandler } from 'common/parser/Types';
-import { PAYLOAD_LIMIT } from 'common/parser/Constants';
 
 function toUtf32(s: string): Uint32Array {
   const utf32 = new Uint32Array(s.length);
@@ -216,6 +215,21 @@ describe('ApcParser', () => {
   });
 
   describe('ApcHandler convenience class', () => {
+    const TEST_PAYLOAD_LIMIT = 100;
+    const CHUNK_SIZE = 10;
+    let originalPayloadLimit: number;
+
+    beforeEach(() => {
+      const handlerConstructor = ApcHandler as unknown as { PAYLOAD_LIMIT: number };
+      originalPayloadLimit = handlerConstructor.PAYLOAD_LIMIT;
+      handlerConstructor.PAYLOAD_LIMIT = TEST_PAYLOAD_LIMIT;
+    });
+
+    afterEach(() => {
+      const handlerConstructor = ApcHandler as unknown as { PAYLOAD_LIMIT: number };
+      handlerConstructor.PAYLOAD_LIMIT = originalPayloadLimit;
+    });
+
     it('should be called once on end(true)', () => {
       const G_CODE = 0x47;
       const results: [number, string][] = [];
@@ -257,12 +271,12 @@ describe('ApcParser', () => {
       parser.start();
       let data = toUtf32('G');
       parser.put(data, 0, data.length);
-      data = toUtf32('A'.repeat(1000));
-      for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {
+      data = toUtf32('A'.repeat(CHUNK_SIZE));
+      for (let i = 0; i < TEST_PAYLOAD_LIMIT; i += CHUNK_SIZE) {
         parser.put(data, 0, data.length);
       }
       parser.end(true);
-      assert.deepEqual(results, [[G_CODE, 'A'.repeat(PAYLOAD_LIMIT)]]);
+      assert.deepEqual(results, [[G_CODE, 'A'.repeat(TEST_PAYLOAD_LIMIT)]]);
     });
 
     it('should abort for payload over limit', function(): void {
@@ -276,8 +290,8 @@ describe('ApcParser', () => {
       parser.start();
       let data = toUtf32('G');
       parser.put(data, 0, data.length);
-      data = toUtf32('A'.repeat(1000));
-      for (let i = 0; i < PAYLOAD_LIMIT; i += 1000) {
+      data = toUtf32('A'.repeat(CHUNK_SIZE));
+      for (let i = 0; i < TEST_PAYLOAD_LIMIT; i += CHUNK_SIZE) {
         parser.put(data, 0, data.length);
       }
       data = toUtf32('A');

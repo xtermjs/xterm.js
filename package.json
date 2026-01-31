@@ -53,6 +53,7 @@
     "lint-fix": "eslint --fix src/ addons/ demo/",
     "lint-api": "eslint --config eslint.config.typings.mjs --max-warnings 0 typings/",
     "test-unit": "node ./bin/test_unit.js",
+    "test-unit-slow-tests": "npm run test-unit | grep \"ms)\"",
     "test-unit-coverage": "node ./bin/test_unit.js --coverage",
     "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
     "test-integration": "node ./bin/test_integration.js --workers=75%",
