@@ -630,20 +630,6 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     }
   }
 
-  private _padStart(target: string, targetLength: number, padString: string): string {
-    targetLength = targetLength >> 0;
-    padString = padString ?? ' ';
-    if (target.length > targetLength) {
-      return target;
-    }
-
-    targetLength -= target.length;
-    if (targetLength > padString.length) {
-      padString += padString.repeat(targetLength / padString.length);
-    }
-    return padString.slice(0, targetLength) + target;
-  }
-
   protected _beforeSerialize(rows: number, start: number, end: number): void {
     this._htmlContent += '<html><body><!--StartFragment--><pre>';
 
@@ -680,7 +666,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
         (color >>  8) & 255,
         (color      ) & 255
       ];
-      return '#' + rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
+      return '#' + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
     }
     if (isFg ? cell.isFgPalette() : cell.isBgPalette()) {
       return this._ansiColors[color].css;
@@ -700,7 +686,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
         (color >>  8) & 255,
         (color      ) & 255
       ];
-      return '#' + rgb.map(x => this._padStart(x.toString(16), 2, '0')).join('');
+      return '#' + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
     }
     // Palette color
     return this._ansiColors[color].css;
