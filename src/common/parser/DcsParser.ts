@@ -138,7 +138,7 @@ EMPTY_PARAMS.addParam(0);
  * Note: The payload is currently limited to 50 MB (hardcoded).
  */
 export class DcsHandler implements IDcsHandler {
-  private static PAYLOAD_LIMIT = ParserConstants.PAYLOAD_LIMIT;
+  private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
   private _data = '';
   private _params: IParams = EMPTY_PARAMS;
@@ -161,7 +161,7 @@ export class DcsHandler implements IDcsHandler {
       return;
     }
     this._data += utf32ToString(data, start, end);
-    if (this._data.length > DcsHandler.PAYLOAD_LIMIT) {
+    if (this._data.length > DcsHandler._payloadLimit) {
       this._data = '';
       this._hitLimit = true;
     }

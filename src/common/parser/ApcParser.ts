@@ -199,7 +199,7 @@ export class ApcParser implements IApcParser {
  * as APC handlers.
  */
 export class ApcHandler implements IApcHandler {
-  private static PAYLOAD_LIMIT = ParserConstants.PAYLOAD_LIMIT;
+  private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
   private _data = '';
   private _hitLimit: boolean = false;
@@ -216,7 +216,7 @@ export class ApcHandler implements IApcHandler {
       return;
     }
     this._data += utf32ToString(data, start, end);
-    if (this._data.length > ApcHandler.PAYLOAD_LIMIT) {
+    if (this._data.length > ApcHandler._payloadLimit) {
       this._data = '';
       this._hitLimit = true;
     }

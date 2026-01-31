@@ -174,14 +174,14 @@ describe('OscParser', () => {
     let originalPayloadLimit: number;
 
     beforeEach(() => {
-      const handlerConstructor = OscHandler as unknown as { PAYLOAD_LIMIT: number };
-      originalPayloadLimit = handlerConstructor.PAYLOAD_LIMIT;
-      handlerConstructor.PAYLOAD_LIMIT = TEST_PAYLOAD_LIMIT;
+      const handlerConstructor = OscHandler as unknown as { _payloadLimit: number };
+      originalPayloadLimit = handlerConstructor._payloadLimit;
+      handlerConstructor._payloadLimit = TEST_PAYLOAD_LIMIT;
     });
 
     afterEach(() => {
-      const handlerConstructor = OscHandler as unknown as { PAYLOAD_LIMIT: number };
-      handlerConstructor.PAYLOAD_LIMIT = originalPayloadLimit;
+      const handlerConstructor = OscHandler as unknown as { _payloadLimit: number };
+      handlerConstructor._payloadLimit = originalPayloadLimit;
     });
 
     it('should be called once on end(true)', () => {
