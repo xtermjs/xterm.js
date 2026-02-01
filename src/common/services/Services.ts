@@ -270,7 +270,6 @@ export interface ITerminalOptions {
   vtExtensions?: IVtExtensions;
 
   [key: string]: any;
-  cancelEvents: boolean;
   termName: string;
 }
 

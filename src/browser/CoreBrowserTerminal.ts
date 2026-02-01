@@ -763,11 +763,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
             this._document!.removeEventListener('mousemove', requestedEvents.mousedrag);
           }
         }
-        return this.cancel(ev);
       },
       wheel: (ev: WheelEvent) => {
         sendEvent(ev);
-        return this.cancel(ev, true);
+        ev.preventDefault();
+        ev.stopPropagation();
+        return false;
       },
       mousedrag: (ev: MouseEvent) => {
         // deal only with move while a button is held
@@ -867,8 +868,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       if (requestedEvents.mousedrag) {
         this._document!.addEventListener('mousemove', requestedEvents.mousedrag);
       }
-
-      return this.cancel(ev);
     }));
 
     this._register(addDisposableListener(el, 'wheel', (ev: WheelEvent) => {
@@ -899,13 +898,17 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           self._coreBrowserService?.dpr
         );
         if (lines === 0) {
-          return this.cancel(ev, true);
+          ev.preventDefault();
+          ev.stopPropagation();
+          return false;
         }
 
         // Construct and send sequences
         const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
         this.coreService.triggerDataEvent(sequence, true);
-        return this.cancel(ev, true);
+        ev.preventDefault();
+        ev.stopPropagation();
+        return false;
       }
     }, { passive: false }));
   }
@@ -1115,7 +1118,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     if (result.type === KeyboardResultType.PAGE_DOWN || result.type === KeyboardResultType.PAGE_UP) {
       const scrollCount = this.rows - 1;
       this.scrollLines(result.type === KeyboardResultType.PAGE_UP ? -scrollCount : scrollCount);
-      return this.cancel(event, true);
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
     }
 
     if (result.type === KeyboardResultType.SELECT_ALL) {
@@ -1128,7 +1133,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     if (result.cancel) {
       // The event is canceled at the end already, is this necessary?
-      this.cancel(event, true);
+      event.preventDefault();
+      event.stopPropagation();
     }
 
     if (!result.key) {
@@ -1165,7 +1171,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // is also depressed) so that the cursor textarea can be updated, which triggers the screen
     // reader to read it.
     if (!this.optionsService.rawOptions.screenReaderMode || event.altKey || event.ctrlKey) {
-      return this.cancel(event, true);
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
     }
 
     this._keyDownHandled = true;
@@ -1225,8 +1233,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
-    this.cancel(ev);
-
     if (ev.charCode) {
       key = ev.charCode;
     } else if (ev.which === null || ev.which === undefined) {
@@ -1279,8 +1285,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);
-
-      this.cancel(ev);
       return true;
     }
 
@@ -1392,15 +1396,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
   }
 
-  // TODO: Remove cancel function and cancelEvents option
-  public cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): boolean | undefined {
-    if (!this.options.cancelEvents && !force) {
-      return;
-    }
-    ev.preventDefault();
-    ev.stopPropagation();
-    return false;
-  }
 }
 
 /**

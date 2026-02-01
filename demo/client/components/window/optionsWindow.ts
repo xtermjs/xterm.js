@@ -109,7 +109,6 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
 
   public initOptions(addDomListener: (el: HTMLElement, type: string, handler: (...args: any[]) => any) => void): void {
     const blacklistedOptions = [
-      'cancelEvents',
       'convertEol',
       'termName',
       'cols', 'rows',
