@@ -15,7 +15,14 @@ const ctxWrapper: ISharedRendererTestContext = { value: undefined } as any;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
   await openTerminal(ctx);
-  shouldSkip = !(await ctx.page.evaluate(() => !!(navigator as Navigator & { gpu?: unknown }).gpu));
+  shouldSkip = !(await ctx.page.evaluate(async () => {
+    const gpu = (navigator as Navigator & { gpu?: { requestAdapter?: () => Promise<unknown> } }).gpu;
+    if (!gpu?.requestAdapter) {
+      return false;
+    }
+    const adapter = await gpu.requestAdapter();
+    return !!adapter;
+  }));
   if (shouldSkip) {
     return;
   }

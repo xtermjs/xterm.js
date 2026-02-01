@@ -79,11 +79,31 @@ export class WebgpuAddon extends Disposable implements ITerminalAddon, IWebgpuAp
       return;
     }
 
-    this._register(EventUtils.forward(this._renderer.onContextLoss, this._onContextLoss));
+    let isReady = false;
+    this._register(this._renderer.onReady(() => {
+      if ((this._terminal as any)._core._store._isDisposed) {
+        return;
+      }
+      isReady = true;
+      renderService.setRenderer(this._renderer!);
+      renderService.handleResize(terminal.cols, terminal.rows);
+    }));
+    this._register(this._renderer.onContextLoss(() => {
+      this._onContextLoss.fire();
+      if (isReady) {
+        return;
+      }
+      if ((this._terminal as any)._core._store._isDisposed) {
+        return;
+      }
+      this._renderer?.dispose();
+      this._renderer = undefined;
+      renderService.setRenderer((this._terminal as any)._core._createRenderer());
+      renderService.handleResize(terminal.cols, terminal.rows);
+    }));
     this._register(EventUtils.forward(this._renderer.onChangeTextureAtlas, this._onChangeTextureAtlas));
     this._register(EventUtils.forward(this._renderer.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas));
     this._register(EventUtils.forward(this._renderer.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas));
-    renderService.setRenderer(this._renderer);
 
     this._register(toDisposable(() => {
       if ((this._terminal as any)._core._store._isDisposed) {

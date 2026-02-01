@@ -1,0 +1,8 @@
+{
+  "browser": "chromium",
+  "chromiumSandbox": false,
+  "launchOptions": {
+    "headless": true,
+    "args": ["--no-sandbox"]
+  }
+}

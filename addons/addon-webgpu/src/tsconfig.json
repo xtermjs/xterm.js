@@ -6,7 +6,7 @@
       "dom",
       "es2021"
     ],
-    "rootDir": ".",
+    "rootDir": "../..",
     "outDir": "../out",
     "moduleResolution": "node",
     "sourceMap": true,
