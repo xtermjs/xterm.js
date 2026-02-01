@@ -53,7 +53,6 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
-  cancelEvents: false,
   overviewRuler: {},
   quirks: {},
   vtExtensions: {}

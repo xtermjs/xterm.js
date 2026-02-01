@@ -29,8 +29,6 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   onA11yChar: IEvent<string>;
   onA11yTab: IEvent<number>;
   onWillOpen: IEvent<HTMLElement>;
-
-  cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): boolean | void;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;

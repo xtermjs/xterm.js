@@ -198,9 +198,6 @@ export class MockTerminal implements ITerminal {
   public scrollToRow(absoluteRow: number): number {
     throw new Error('Method not implemented.');
   }
-  public cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): void {
-    throw new Error('Method not implemented.');
-  }
   public log(text: string): void {
     throw new Error('Method not implemented.');
   }

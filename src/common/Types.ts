@@ -32,7 +32,6 @@ export interface IDisposable {
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
   [key: string]: any;
-  cancelEvents?: boolean;
   convertEol?: boolean;
   termName?: string;
 }
