@@ -1012,7 +1012,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.writeln('\x1b[31;42;7m\u{E0B4} red fg green bg inverse\x1b[0m');
       await ctx.value.proxy.writeln('\x1b[32;41;7m\u{E0B4} green fg red bg inverse\x1b[0m');
       await ctx.value.proxy.selectAll();
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255,255,255,255]);
+      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 255, 255, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 2), [230, 128, 128, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 3), [128, 230, 128, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 4), [128, 230, 128, 255]);
@@ -1397,9 +1397,7 @@ export function injectSharedRendererTestsStandalone(ctx: ISharedRendererTestCont
  * @param row The 1-based row index to get the color for.
  */
 async function getCellColor(ctx: ITestContext, col: number, row: number, position: CellColorPosition = CellColorPosition.CENTER): Promise<[red: number, green: number, blue: number, alpha: number]> {
-  if (!frameDetails) {
-    frameDetails = await getFrameDetails(ctx);
-  }
+  frameDetails ??= await getFrameDetails(ctx);
   switch (position) {
     case CellColorPosition.CENTER:
       return getCellColorInner(frameDetails, col, row);
