@@ -4,10 +4,10 @@
  */
 
 import { clone } from 'common/Clone';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { IDecPrivateModes, IKittyKeyboardState, IModes } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 const DEFAULT_MODES: IModes = Object.freeze({
   insertMode: false
@@ -17,6 +17,7 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   applicationCursorKeys: false,
   applicationKeypad: false,
   bracketedPasteMode: false,
+  colorSchemeUpdates: false,
   cursorBlink: undefined,
   cursorStyle: undefined,
   origin: false,

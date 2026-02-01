@@ -5,13 +5,13 @@
 
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ViewportConstants } from 'browser/shared/Constants';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { addDisposableListener, scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
-import { Emitter, Event } from 'vs/base/common/event';
+import { Emitter, EventUtils } from 'common/Event';
 import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
 import { Gesture, EventType as GestureEventType, type GestureEvent } from 'vs/base/browser/touch';
 
@@ -71,7 +71,7 @@ export class Viewport extends Disposable {
     }));
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
-    this._register(Event.runAndSubscribe(themeService.onChangeColors, () => {
+    this._register(EventUtils.runAndSubscribe(themeService.onChangeColors, () => {
       element.style.backgroundColor = themeService.colors.background.css;
       this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
     }));
@@ -81,7 +81,7 @@ export class Viewport extends Disposable {
     this._styleElement = coreBrowserService.mainDocument.createElement('style');
     screenElement.appendChild(this._styleElement);
     this._register(toDisposable(() => this._styleElement.remove()));
-    this._register(Event.runAndSubscribe(themeService.onChangeColors, () => {
+    this._register(EventUtils.runAndSubscribe(themeService.onChangeColors, () => {
       this._styleElement.textContent = [
         `.xterm .xterm-scrollable-element > .scrollbar > .slider {`,
         `  background: ${themeService.colors.scrollbarSliderBackground.css};`,

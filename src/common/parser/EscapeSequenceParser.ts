@@ -5,7 +5,7 @@
 
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType, IApcHandler, IApcParser, ApcFallbackHandlerType } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 import { Params } from 'common/parser/Params';
 import { OscParser } from 'common/parser/OscParser';
@@ -90,15 +90,14 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   EXECUTABLES.push(0x19);
   EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
 
-  const states: number[] = r(ParserState.GROUND, ParserState.APC_STRING + 1);
-  let state: any;
+  const states: number[] = r(ParserState.GROUND, ParserState.STATE_LENGTH);
 
   // set default transition
   table.setDefault(ParserAction.ERROR, ParserState.GROUND);
   // printables
   table.addMany(PRINTABLES, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
   // global anywhere rules
-  for (state in states) {
+  for (const state of states) {
     table.addMany([0x18, 0x1a, 0x99, 0x9a], state, ParserAction.EXECUTE, ParserState.GROUND);
     table.addMany(r(0x80, 0x90), state, ParserAction.EXECUTE, ParserState.GROUND);
     table.addMany(r(0x90, 0x98), state, ParserAction.EXECUTE, ParserState.GROUND);
@@ -362,9 +361,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   public registerEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
     const ident = this._identifier(id, [0x30, 0x7e]);
-    if (this._escHandlers[ident] === undefined) {
-      this._escHandlers[ident] = [];
-    }
+    this._escHandlers[ident] ??= [];
     const handlerList = this._escHandlers[ident];
     handlerList.push(handler);
     return {
@@ -395,9 +392,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   public registerCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
     const ident = this._identifier(id);
-    if (this._csiHandlers[ident] === undefined) {
-      this._csiHandlers[ident] = [];
-    }
+    this._csiHandlers[ident] ??= [];
     const handlerList = this._csiHandlers[ident];
     handlerList.push(handler);
     return {

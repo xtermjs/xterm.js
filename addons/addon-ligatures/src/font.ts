@@ -42,11 +42,11 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
         if (status && status.state !== 'granted') {
           throw new Error('Permission to access local fonts not granted.');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // A `TypeError` indicates the 'local-fonts'
         // permission is not yet implemented, so
         // only `throw` if this is _not_ the problem.
-        if (err.name !== 'TypeError') {
+        if (err instanceof Error && err.name !== 'TypeError') {
           throw err;
         }
       }
@@ -60,8 +60,10 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
           fonts[metadata.family].push(metadata);
         }
         fontsPromise = Promise.resolve(fonts);
-      } catch (err: any) {
-        console.error(err.name, err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error(err.name, err.message);
+        }
       }
     }
     // Latest proposal https://bugs.chromium.org/p/chromium/issues/detail?id=1312603
@@ -76,13 +78,13 @@ export default async function load(fontFamily: string, cacheSize: number): Promi
           fonts[metadata.family].push(metadata);
         }
         fontsPromise = Promise.resolve(fonts);
-      } catch (err: any) {
-        console.error(err.name, err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.error(err.name, err.message);
+        }
       }
     }
-    if (!fontsPromise) {
-      fontsPromise = Promise.resolve({});
-    }
+    fontsPromise ??= Promise.resolve({});
   }
 
   const fonts = await fontsPromise;

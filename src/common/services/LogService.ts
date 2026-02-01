@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { ILogService, IOptionsService, LogLevelEnum } from 'common/services/Services';
 
 type LogType = (message?: any, ...optionalParams: any[]) => void;
@@ -43,9 +43,6 @@ export class LogService extends Disposable implements ILogService {
     super();
     this._updateLogLevel();
     this._register(this._optionsService.onSpecificOptionChange('logLevel', () => this._updateLogLevel()));
-
-    // For trace logging, assume the latest created log service is valid
-    traceLogger = this;
   }
 
   private _updateLogLevel(): void {
@@ -94,31 +91,4 @@ export class LogService extends Disposable implements ILogService {
       this._log(this._optionsService.options.logger?.error.bind(this._optionsService.options.logger) ?? console.error, message, optionalParams);
     }
   }
-}
-
-let traceLogger: ILogService;
-export function setTraceLogger(logger: ILogService): void {
-  traceLogger = logger;
-}
-
-/**
- * A decorator that can be used to automatically log trace calls to the decorated function.
- */
-export function traceCall(_target: any, key: string, descriptor: any): any {
-  if (typeof descriptor.value !== 'function') {
-    throw new Error('not supported');
-  }
-  const fnKey = 'value';
-  const fn = descriptor.value;
-  descriptor[fnKey] = function (...args: any[]) {
-    // Early exit
-    if (traceLogger.logLevel !== LogLevelEnum.TRACE) {
-      return fn.apply(this, args);
-    }
-
-    traceLogger.trace(`GlyphRenderer#${fn.name}(${args.map(e => JSON.stringify(e)).join(', ')})`);
-    const result = fn.apply(this, args);
-    traceLogger.trace(`GlyphRenderer#${fn.name} return`, result);
-    return result;
-  };
 }

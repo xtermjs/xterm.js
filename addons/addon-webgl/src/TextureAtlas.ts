@@ -15,7 +15,7 @@ import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
 import { IUnicodeService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -410,7 +410,7 @@ export class TextureAtlas implements ITextureAtlas {
     const cache = this._getContrastCache(dim);
     const adjustedColor = cache.getColor(bg, fg);
     if (adjustedColor !== undefined) {
-      return adjustedColor || undefined;
+      return adjustedColor ?? undefined;
     }
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);

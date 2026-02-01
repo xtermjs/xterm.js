@@ -8,7 +8,7 @@ import { IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { AllColorIndex, IDisposable, IKeyboardResult } from 'common/Types';
-import type { Event } from 'vs/base/common/event';
+import type { IEvent } from 'common/Event';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {
@@ -18,7 +18,7 @@ export interface ICharSizeService {
   readonly height: number;
   readonly hasValidSize: boolean;
 
-  readonly onCharSizeChange: Event<void>;
+  readonly onCharSizeChange: IEvent<void>;
 
   measure(): void;
 }
@@ -29,8 +29,8 @@ export interface ICoreBrowserService {
 
   readonly isFocused: boolean;
 
-  readonly onDprChange: Event<number>;
-  readonly onWindowChange: Event<Window & typeof globalThis>;
+  readonly onDprChange: IEvent<number>;
+  readonly onWindowChange: IEvent<Window & typeof globalThis>;
 
   /**
    * Gets or sets the parent window that the terminal is rendered into. DOM and rendering APIs (e.g.
@@ -61,17 +61,17 @@ export const IRenderService = createDecorator<IRenderService>('RenderService');
 export interface IRenderService extends IDisposable {
   serviceBrand: undefined;
 
-  onDimensionsChange: Event<IRenderDimensions>;
+  onDimensionsChange: IEvent<IRenderDimensions>;
   /**
    * Fires when buffer changes are rendered. This does not fire when only cursor
    * or selections are rendered.
    */
-  onRenderedViewportChange: Event<{ start: number, end: number }>;
+  onRenderedViewportChange: IEvent<{ start: number, end: number }>;
   /**
    * Fires on render
    */
-  onRender: Event<{ start: number, end: number }>;
-  onRefreshRequest: Event<{ start: number, end: number }>;
+  onRender: IEvent<{ start: number, end: number }>;
+  onRefreshRequest: IEvent<{ start: number, end: number }>;
 
   dimensions: IRenderDimensions;
 
@@ -101,10 +101,10 @@ export interface ISelectionService {
   readonly selectionStart: [number, number] | undefined;
   readonly selectionEnd: [number, number] | undefined;
 
-  readonly onLinuxMouseSelection: Event<string>;
-  readonly onRequestRedraw: Event<ISelectionRequestRedrawEvent>;
-  readonly onRequestScrollLines: Event<ISelectionRequestScrollLinesEvent>;
-  readonly onSelectionChange: Event<void>;
+  readonly onLinuxMouseSelection: IEvent<string>;
+  readonly onRequestRedraw: IEvent<ISelectionRequestRedrawEvent>;
+  readonly onRequestScrollLines: IEvent<ISelectionRequestScrollLinesEvent>;
+  readonly onSelectionChange: IEvent<void>;
 
   disable(): void;
   enable(): void;
@@ -136,7 +136,7 @@ export interface IThemeService {
 
   readonly colors: ReadonlyColorSet;
 
-  readonly onChangeColors: Event<ReadonlyColorSet>;
+  readonly onChangeColors: IEvent<ReadonlyColorSet>;
 
   restoreColor(slot?: AllColorIndex): void;
   /**

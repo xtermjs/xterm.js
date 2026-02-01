@@ -269,6 +269,26 @@ describe('InputHandler', () => {
       inputHandler.resetModePrivate(Params.fromArray([2004]));
       assert.equal(coreService.decPrivateModes.bracketedPasteMode, false);
     });
+    it('should toggle colorSchemeUpdates (DECSET 2031)', () => {
+      const coreService = new MockCoreService();
+      const optionsService = new MockOptionsService();
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      // Set color scheme updates mode (default colorSchemeQuery=true)
+      inputHandler.setModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, true);
+      // Reset color scheme updates mode
+      inputHandler.resetModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, false);
+    });
+    it('should not toggle colorSchemeUpdates when colorSchemeQuery is disabled', () => {
+      const coreService = new MockCoreService();
+      const optionsService = new MockOptionsService();
+      optionsService.rawOptions.vtExtensions = { colorSchemeQuery: false };
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      // Attempt to set color scheme updates mode
+      inputHandler.setModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, false);
+    });
   });
   describe('regression tests', function (): void {
     function termContent(bufferService: IBufferService, trim: boolean): string[] {
@@ -2501,7 +2521,7 @@ describe('InputHandler', () => {
       const cpr: number[][] = [];
       inputHandler.registerCsiHandler({ final: 'H' }, async params => {
         cup.push(params.toArray() as number[]);
-        await new Promise(res => setTimeout(res, 50));
+        await Promise.resolve();
         // late call of real repositioning
         return inputHandler.cursorPosition(params);
       });
@@ -2516,7 +2536,7 @@ describe('InputHandler', () => {
     });
     it('async OSC between', async () => {
       inputHandler.registerOscHandler(1000, async data => {
-        await new Promise(res => setTimeout(res, 50));
+        await Promise.resolve();
         assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
         assert.equal(data, 'some data');
         return true;
@@ -2526,7 +2546,7 @@ describe('InputHandler', () => {
     });
     it('async DCS between', async () => {
       inputHandler.registerDcsHandler({ final: 'a' }, async (data, params) => {
-        await new Promise(res => setTimeout(res, 50));
+        await Promise.resolve();
         assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
         assert.equal(data, 'some data');
         assert.deepEqual(params.toArray(), [1, 2]);

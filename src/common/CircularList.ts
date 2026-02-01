@@ -4,8 +4,8 @@
  */
 
 import { ICircularList } from 'common/Types';
-import { Disposable } from 'vs/base/common/lifecycle';
-import { Emitter } from 'vs/base/common/event';
+import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'common/Event';
 
 export interface IInsertEvent {
   index: number;

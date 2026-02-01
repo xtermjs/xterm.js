@@ -33,7 +33,7 @@ function _getComputedStyle(el: HTMLElement): CSSStyleDeclaration {
   return getWindow(el).getComputedStyle(el, null);
 }
 
-export class FitAddon implements ITerminalAddon , IFitApi {
+export class FitAddon implements ITerminalAddon, IFitApi {
   private _terminal: Terminal | undefined;
 
   public activate(terminal: Terminal): void {

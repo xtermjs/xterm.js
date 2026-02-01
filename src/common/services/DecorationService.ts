@@ -4,12 +4,12 @@
  */
 
 import { css } from 'common/Color';
-import { Disposable, DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 // Work variables to avoid garbage collection
 let $xmin = 0;

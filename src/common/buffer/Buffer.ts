@@ -122,9 +122,7 @@ export class Buffer implements IBuffer {
    */
   public fillViewportRows(fillAttr?: IAttributeData): void {
     if (this.lines.length === 0) {
-      if (fillAttr === undefined) {
-        fillAttr = DEFAULT_ATTR_DATA;
-      }
+      fillAttr ??= DEFAULT_ATTR_DATA;
       let i = this._rows;
       while (i--) {
         this.lines.push(this.getBlankLine(fillAttr));
@@ -589,9 +587,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor to the previous tab stop.
    */
   public prevStop(x?: number): number {
-    if (x === null || x === undefined) {
-      x = this.x;
-    }
+    x ??= this.x;
     while (!this.tabs[--x] && x > 0);
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }
@@ -601,9 +597,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor one tab stop forward.
    */
   public nextStop(x?: number): number {
-    if (x === null || x === undefined) {
-      x = this.x;
-    }
+    x ??= this.x;
     while (!this.tabs[++x] && x < this._cols);
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }

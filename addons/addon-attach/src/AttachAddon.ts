@@ -12,7 +12,7 @@ interface IAttachOptions {
   bidirectional?: boolean;
 }
 
-export class AttachAddon implements ITerminalAddon , IAttachApi {
+export class AttachAddon implements ITerminalAddon, IAttachApi {
   private _socket: WebSocket;
   private _bidirectional: boolean;
   private _disposables: IDisposable[] = [];

@@ -80,8 +80,8 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'options';
   public readonly label = 'Options';
 
-  private _container: HTMLElement;
-  private _optionsContainer: HTMLElement;
+  private _container!: HTMLElement;
+  private _optionsContainer!: HTMLElement;
   private _autoResize: boolean = true;
 
   constructor(
@@ -109,7 +109,6 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
 
   public initOptions(addDomListener: (el: HTMLElement, type: string, handler: (...args: any[]) => any) => void): void {
     const blacklistedOptions = [
-      'cancelEvents',
       'convertEol',
       'termName',
       'cols', 'rows',
@@ -143,7 +142,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
     const booleanOptions: string[] = [];
     const numberOptions: string[] = [];
     options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
-      switch (typeof this._terminal.options[o]) {
+      switch (typeof (this._terminal.options as Record<string, unknown>)[o]) {
         case 'boolean':
           booleanOptions.push(o);
           break;
@@ -160,25 +159,25 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
     let html = '';
     html += '<div class="option-group">';
     booleanOptions.forEach(o => {
-      html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${this._terminal.options[o] ? 'checked' : ''}/> ${o}</label></div>`;
+      html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${(this._terminal.options as Record<string, unknown>)[o] ? 'checked' : ''}/> ${o}</label></div>`;
     });
     nestedBooleanOptions.forEach(({ label, parent, prop }) => {
-      const checked = this._terminal.options[parent]?.[prop] ?? false;
+      const checked = (this._terminal.options as Record<string, Record<string, unknown> | undefined>)[parent]?.[prop] ?? false;
       html += `<div class="option"><label><input id="opt-${label.replace('.', '-')}" type="checkbox" ${checked ? 'checked' : ''}/> ${label}</label></div>`;
     });
     html += '</div><div class="option-group">';
     numberOptions.forEach(o => {
-      html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${this._terminal.options[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
+      html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${(this._terminal.options as Record<string, unknown>)[o] ?? ''}" step="${o === 'lineHeight' || o === 'scrollSensitivity' ? '0.1' : '1'}"/></label></div>`;
     });
     html += '</div><div class="option-group">';
     Object.keys(stringOptions).forEach(o => {
       if (o === 'colsRows') {
         html += `<div class="option"><label>size (<var>cols</var><code>x</code><var>rows</var> or <code>auto</code>) <input id="opt-${o}" type="text" value="auto"/></label></div>`;
       } else if (stringOptions[o]) {
-        const selectedOption = o === 'theme' ? 'xtermjs' : this._terminal.options[o];
+        const selectedOption = o === 'theme' ? 'xtermjs' : (this._terminal.options as Record<string, unknown>)[o];
         html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o]!.map(v => `<option ${v === selectedOption ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
       } else {
-        html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${this._terminal.options[o]}"/></label></div>`;
+        html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${(this._terminal.options as Record<string, unknown>)[o]}"/></label></div>`;
       }
     });
     html += '</div>';
@@ -190,7 +189,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
       addDomListener(input, 'change', () => {
         console.log('change', o, input.checked);
-        this._terminal.options[o] = input.checked;
+        (this._terminal.options as Record<string, unknown>)[o] = input.checked;
         if (o ==='allowTransparency') {
           this._terminal.options.theme = this._getTheme();
           this._handlers.updateTerminalContainerBackground();
@@ -201,7 +200,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       const input = document.getElementById(`opt-${label.replace('.', '-')}`) as HTMLInputElement;
       addDomListener(input, 'change', () => {
         console.log('change', label, input.checked);
-        this._terminal.options[parent] = { ...this._terminal.options[parent], [prop]: input.checked };
+        (this._terminal.options as Record<string, unknown>)[parent] = { ...(this._terminal.options as Record<string, Record<string, unknown> | undefined>)[parent], [prop]: input.checked };
       });
     });
     numberOptions.forEach(o => {
@@ -216,7 +215,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
           this._terminal.options.scrollback = parseInt(input.value);
           setTimeout(() => this._handlers.updateTerminalSize(), 5);
         } else {
-          this._terminal.options[o] = parseInt(input.value);
+          (this._terminal.options as Record<string, unknown>)[o] = parseInt(input.value);
         }
         this._handlers.updateTerminalSize();
       });
@@ -225,7 +224,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       const input = document.getElementById(`opt-${o}`) as HTMLInputElement;
       addDomListener(input, 'change', () => {
         console.log('change', o, input.value);
-        let value: any = input.value;
+        let value: unknown = input.value;
         if (o === 'colsRows') {
           const m = input.value.match(/^([0-9]+)x([0-9]+)$/);
           if (m) {
@@ -239,7 +238,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
         } else if (o === 'theme') {
           value = this._getTheme();
         }
-        this._terminal.options[o] = value;
+        (this._terminal.options as Record<string, unknown>)[o] = value;
         if (o === 'theme') {
           this._handlers.updateTerminalContainerBackground();
         }
@@ -259,11 +258,11 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
   }
 
   private _getTheme(): ITheme {
-    const input = document.querySelector<HTMLInputElement>('#opt-theme');
-    let theme: ITheme;
+    const input = document.querySelector<HTMLInputElement>('#opt-theme')!;
+    let theme: ITheme = {};
     switch (input.value) {
       case 'default':
-        theme = undefined;
+        theme = {};
         break;
       case 'xtermjs':
         theme = { ...xtermjsTheme };

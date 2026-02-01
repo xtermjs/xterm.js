@@ -6,6 +6,7 @@
     "rootDir": ".",
     "sourceMap": true,
     "baseUrl": ".",
+    "strict": true,
     "paths": {
       "@xterm/addon-attach": ["../../addons/addon-attach"],
       "@xterm/addon-clipboard": ["../../addons/addon-clipboard"],

@@ -397,7 +397,7 @@ export class DomRendererRowFactory {
           break;
         case Attributes.CM_RGB:
           resolvedBg = channels.toColor(bg >> 16, bg >> 8 & 0xFF, bg & 0xFF);
-          this._addStyle(charElement, `background-color:#${padStart((bg >>> 0).toString(16), '0', 6)}`);
+          this._addStyle(charElement, `background-color:#${(bg >>> 0).toString(16).padStart(6, '0')}`);
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -434,7 +434,7 @@ export class DomRendererRowFactory {
             (fg      ) & 0xFF
           );
           if (!this._applyMinimumContrast(charElement, resolvedBg, color, cell, bgOverride, fgOverride)) {
-            this._addStyle(charElement, `color:#${padStart(fg.toString(16), '0', 6)}`);
+            this._addStyle(charElement, `color:#${fg.toString(16).padStart(6, '0')}`);
           }
           break;
         case Attributes.CM_DEFAULT:
@@ -494,8 +494,8 @@ export class DomRendererRowFactory {
       // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
       // non-dim cells
       const ratio = this._optionsService.rawOptions.minimumContrastRatio / (cell.isDim() ? 2 : 1);
-      adjustedColor = color.ensureContrastRatio(bgOverride || bg, fgOverride || fg, ratio);
-      cache.setColor((bgOverride || bg).rgba, (fgOverride || fg).rgba, adjustedColor ?? null);
+      adjustedColor = color.ensureContrastRatio(bgOverride ?? bg, fgOverride ?? fg, ratio);
+      cache.setColor((bgOverride ?? bg).rgba, (fgOverride ?? fg).rgba, adjustedColor ?? null);
     }
 
     if (adjustedColor) {
@@ -536,11 +536,4 @@ export class DomRendererRowFactory {
         (start[1] < end[1] && y === end[1] && x < end[0]) ||
         (start[1] < end[1] && y === start[1] && x >= start[0]);
   }
-}
-
-function padStart(text: string, padChar: string, length: number): string {
-  while (text.length < length) {
-    text = padChar + text;
-  }
-  return text;
 }

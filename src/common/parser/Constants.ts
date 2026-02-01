@@ -21,7 +21,9 @@ export const enum ParserState {
   DCS_IGNORE = 11,
   DCS_INTERMEDIATE = 12,
   DCS_PASSTHROUGH = 13,
-  APC_STRING = 14
+  APC_STRING = 14,
+  // Number of states, meaning LAST_STATE + 1.
+  STATE_LENGTH = 15
 }
 
 /**
@@ -69,4 +71,6 @@ export const enum ApcState {
 }
 
 // payload limit for OSC and DCS
-export const PAYLOAD_LIMIT = 10000000;
+export const enum ParserConstants {
+  PAYLOAD_LIMIT = 10000000
+}

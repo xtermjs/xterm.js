@@ -39,6 +39,7 @@ export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 
 // Work variables to avoid garbage collection
 let $startIndex = 0;
+const $workCell = new CellData();
 
 /** Factor when to cleanup underlying array buffer after shrinking. */
 const CLEANUP_THRESHOLD = 2;
@@ -66,7 +67,7 @@ export class BufferLine implements IBufferLine {
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
     this._data = new Uint32Array(cols * CELL_SIZE);
-    const cell = fillCellData || CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    const cell = fillCellData ?? CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {
       this.setCell(i, cell);
     }
@@ -262,9 +263,8 @@ export class BufferLine implements IBufferLine {
     }
 
     if (n < this.length - pos) {
-      const cell = new CellData();
       for (let i = this.length - pos - n - 1; i >= 0; --i) {
-        this.setCell(pos + n + i, this.loadCell(pos + i, cell));
+        this.setCell(pos + n + i, this.loadCell(pos + i, $workCell));
       }
       for (let i = 0; i < n; ++i) {
         this.setCell(pos + i, fillCellData);
@@ -284,9 +284,8 @@ export class BufferLine implements IBufferLine {
   public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
     pos %= this.length;
     if (n < this.length - pos) {
-      const cell = new CellData();
       for (let i = 0; i < this.length - pos - n; ++i) {
-        this.setCell(pos + i, this.loadCell(pos + n + i, cell));
+        this.setCell(pos + i, this.loadCell(pos + n + i, $workCell));
       }
       for (let i = this.length - n; i < this.length; ++i) {
         this.setCell(i, fillCellData);

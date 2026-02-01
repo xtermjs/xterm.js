@@ -8,7 +8,7 @@ import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
@@ -22,7 +22,7 @@ import { DcsHandler } from 'common/parser/DcsParser';
 import { ApcHandler } from 'common/parser/ApcParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 import { XTERM_VERSION } from 'common/Version';
 
 /**
@@ -160,6 +160,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public readonly onTitleChange = this._onTitleChange.event;
   private readonly _onColor = this._register(new Emitter<IColorEvent>());
   public readonly onColor = this._onColor.event;
+  private readonly _onRequestColorSchemeQuery = this._register(new Emitter<void>());
+  public readonly onRequestColorSchemeQuery = this._onRequestColorSchemeQuery.event;
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -405,8 +407,19 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _logSlowResolvingAsync(p: Promise<boolean>): void {
     // log a limited warning about an async handler taking too long
     if (this._logService.logLevel <= LogLevelEnum.WARN) {
-      Promise.race([p, new Promise((res, rej) => setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT))])
-        .catch(err => {
+      let slowTimeout: ReturnType<typeof setTimeout> | undefined;
+      const slowPromise = new Promise<never>((_res, rej) => {
+        slowTimeout = setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT);
+      });
+      Promise.race([p, slowPromise])
+        .then(() => {
+          if (slowTimeout !== undefined) {
+            clearTimeout(slowTimeout);
+          }
+        }, err => {
+          if (slowTimeout !== undefined) {
+            clearTimeout(slowTimeout);
+          }
           if (err !== '#SLOW_TIMEOUT') {
             throw err;
           }
@@ -1780,7 +1793,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param term The terminal name to evaluate
    */
   private _is(term: string): boolean {
-    return (this._optionsService.rawOptions.termName + '').indexOf(term) === 0;
+    return (this._optionsService.rawOptions.termName + '').startsWith(term);
   }
 
   /**
@@ -2034,6 +2047,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
           this._coreService.decPrivateModes.synchronizedOutput = true;
           break;
+        case 2031: // color scheme updates (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+          if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+            this._coreService.decPrivateModes.colorSchemeUpdates = true;
+          }
+          break;
         case 9001: // win32-input-mode (https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md)
           if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
             this._coreService.decPrivateModes.win32InputMode = true;
@@ -2278,6 +2296,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
           this._coreService.decPrivateModes.synchronizedOutput = false;
           this._onRequestRefreshRows.fire(undefined);
+          break;
+        case 2031: // color scheme updates (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+          if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+            this._coreService.decPrivateModes.colorSchemeUpdates = false;
+          }
           break;
         case 9001: // win32-input-mode
           if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
@@ -2701,12 +2724,6 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.extended = attr.extended.clone();
         attr.extended.underlineColor = -1;
         attr.updateExtended();
-      } else if (p === 100) { // FIXME: dead branch, p=100 already handled above!
-        // reset fg/bg
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else {
         this._logService.debug('Unknown SGR attribute: %d.', p);
       }
@@ -2781,6 +2798,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 53:
         // no dec locator/mouse
         // this.handler(C0.ESC + '[?50n');
+        break;
+      case 996:
+        // color scheme query (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+        if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+          this._onRequestColorSchemeQuery.fire();
+        }
         break;
     }
     return true;
@@ -3343,7 +3366,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (collectAndFlag[0] === '/') {
       return true;  // TODO: Is this supported?
     }
-    this._charsetService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+    this._charsetService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] ?? DEFAULT_CHARSET);
     return true;
   }
 
