@@ -77,6 +77,7 @@ const TESTDATA_IIP: [string, [number, number]][] = [
 
 // Kitty graphics test images
 const KITTY_BLACK_1X1_BASE64 = readFileSync('./addons/addon-image/fixture/kitty/black-1x1.png').toString('base64');
+const KITTY_BLACK_1X1_BYTES = Array.from(readFileSync('./addons/addon-image/fixture/kitty/black-1x1.png'));
 const KITTY_RGB_3X1_BASE64 = readFileSync('./addons/addon-image/fixture/kitty/rgb-3x1.png').toString('base64');
 
 let ctx: ITestContext;
@@ -386,8 +387,8 @@ test.describe('ImageAddon', () => {
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=99;${part2}\x1b\\`);
       await timeout(100);
 
-      const storedData = await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.get(99).data`);
-      strictEqual(storedData, KITTY_BLACK_1X1_BASE64);
+      const storedData = await ctx.page.evaluate(`Array.from(window.imageAddon._handlers.get('kitty').images.get(99).data)`);
+      deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
     });
 
     test('delete command (a=d) removes specific image by id', async () => {

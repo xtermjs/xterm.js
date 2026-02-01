@@ -93,13 +93,19 @@ export interface IKittyCommand {
 
 /**
  * Pending chunked transmission state.
- * Stores metadata from the first chunk while accumulating payload data.
+ * Stores metadata from the first chunk while accumulating decoded payload data.
  */
 export interface IPendingTransmission {
   /** The parsed command from the first chunk (contains action, format, dimensions, etc.) */
   cmd: IKittyCommand;
-  /** Accumulated base64 payload data */
-  data: string;
+  /** Accumulated decoded payload chunks */
+  chunks: Uint8Array[];
+  /** Total size of accumulated chunks */
+  totalSize: number;
+  /** Leftover base64 bytes (0-3) that weren't aligned in previous chunk */
+  leftover: Uint32Array;
+  /** Number of valid bytes in leftover */
+  leftoverLength: number;
 }
 
 /**
@@ -107,7 +113,8 @@ export interface IPendingTransmission {
  */
 export interface IKittyImageData {
   id: number;
-  data: string;
+  /** Decoded image bytes (already decoded from base64) */
+  data: Uint8Array;
   width: number;
   height: number;
   format: 24 | 32 | 100;
