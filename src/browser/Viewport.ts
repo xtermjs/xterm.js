@@ -9,11 +9,11 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { addDisposableListener, scheduleAtNextAnimationFrame } from 'browser/Dom';
-import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
-import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
+import { SmoothScrollableElement } from 'browser/scrollable/scrollableElement';
+import type { ScrollableElementChangeOptions } from 'browser/scrollable/scrollableElementOptions';
 import { Emitter, EventUtils } from 'common/Event';
-import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
-import { Gesture, EventType as GestureEventType, type GestureEvent } from 'vs/base/browser/touch';
+import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'browser/scrollable/scrollable';
+import { Gesture, EventType as GestureEventType, type GestureEvent } from 'browser/scrollable/touch';
 
 export class Viewport extends Disposable {
 

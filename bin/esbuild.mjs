@@ -127,6 +127,7 @@ if (config.addon) {
 } else if (config.isDemoClient) {
   bundleConfig = {
     ...bundleConfig,
+    sourcemap: false,
     entryPoints: [`demo/client/client.ts`],
     outfile: 'demo/dist/client-bundle.js',
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
