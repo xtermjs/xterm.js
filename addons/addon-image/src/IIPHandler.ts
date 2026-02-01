@@ -105,7 +105,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       return true;
     }
 
-    const blob = new Blob([new Uint8Array(this._dec.data8)], { type: this._metrics.mime });
+    // HACK: The types on Blob are too restrictive, this is a Uint8Array so the browser accepts it
+    const blob = new Blob([this._dec.data8 as Uint8Array<ArrayBuffer>], { type: this._metrics.mime });
     this._dec.release();
 
     if (!window.createImageBitmap) {
