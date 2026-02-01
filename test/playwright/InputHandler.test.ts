@@ -316,14 +316,16 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('abcdefg\x1b[3D\x1b[10b#\x1b[3b');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['#', ' #', 'abcd####']);
     });
-    test.skip('CSI Ps c - ', async () => {
-      // TODO: Implement
+    test('CSI Ps c - ', async () => {
+      await ctx.proxy.write('\x1b[c');
+      await pollFor(ctx.page, () => recordedData, ['\x1b[?1;2c']);
     });
     test.skip('CSI = Ps c - ', async () => {
       // TODO: Implement
     });
-    test.skip('CSI > Ps c - ', async () => {
-      // TODO: Implement
+    test('CSI > Ps c - ', async () => {
+      await ctx.proxy.write('\x1b[>c');
+      await pollFor(ctx.page, () => recordedData, ['\x1b[>0;276;0c']);
     });
     test('CSI Ps d - VPA: Line Position Absolute [row] (default = [1,column])', async () => {
       // Default
@@ -425,8 +427,14 @@ test.describe('InputHandler Integration Tests', () => {
       test.skip('Ps = 1 0 - Show toolbar (rxvt)', async () => {
       // TODO: Implement
       });
-      test.skip('Ps = 1 2 - Start blinking cursor (AT&T 610)', async () => {
-      // TODO: Implement
+      test('Ps = 1 2 - Start blinking cursor (AT&T 610)', async () => {
+        const previousQuirks = await ctx.proxy.getOption('quirks');
+        const previousCursorBlink = await ctx.proxy.getOption('cursorBlink');
+        await ctx.proxy.setOption('quirks', { ...(previousQuirks ?? {}), allowSetCursorBlink: true });
+        await ctx.proxy.write('\x1b[?12h');
+        await pollFor(ctx.page, async () => await ctx.proxy.getOption('cursorBlink'), true);
+        await ctx.proxy.setOption('quirks', previousQuirks);
+        await ctx.proxy.setOption('cursorBlink', previousCursorBlink);
       });
       test.skip('Ps = 1 3 - Start blinking cursor (set only via resource or menu)', async () => {
       // TODO: Implement
@@ -655,8 +663,18 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?1048l');
         await pollFor(ctx.page, () => getCursor(), { col: 4, row: 3 });
       });
-      test.skip('Ps = 1 0 4 9 - Save cursor as in DECSC, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 9 - Save cursor as in DECSC, xterm', async () => {
+        await ctx.proxy.write('main');
+        await pollFor(ctx.page, () => getLinesAsArray(1), ['main']);
+        await ctx.proxy.write('\x1b[4;6H');
+        await ctx.proxy.write('\x1b[?1049h');
+        await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'alternate');
+        await ctx.proxy.write('\x1b[Halt');
+        await pollFor(ctx.page, () => getLinesAsArray(1), ['alt']);
+        await ctx.proxy.write('\x1b[?1049l');
+        await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'normal');
+        await pollFor(ctx.page, () => getLinesAsArray(1), ['main']);
+        await pollFor(ctx.page, () => getCursor(), { col: 5, row: 3 });
       });
       test.skip('Ps = 1 0 5 0 - Set terminfo/termcap function-key mode, xterm', async () => {
       // TODO: Implement
@@ -727,8 +745,15 @@ test.describe('InputHandler Integration Tests', () => {
       test.skip('Ps = 2 - Designate VT52 mode (DECANM), VT100.', async () => {
         // TODO: Implement
       });
-      test.skip('Ps = 3 - 80 Column Mode (DECCOLM), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 3 - 80 Column Mode (DECCOLM), VT100.', async () => {
+        const windowOptions = await ctx.proxy.getOption('windowOptions');
+        await ctx.proxy.setOption('windowOptions', { ...windowOptions, setWinLines: true });
+        await ctx.proxy.write('\x1b[?3h');
+        await pollFor(ctx.page, async () => await ctx.proxy.cols, 132);
+        await ctx.proxy.write('\x1b[?3l');
+        await pollFor(ctx.page, async () => await ctx.proxy.cols, 80);
+        await ctx.proxy.resize(80, 24);
+        await ctx.proxy.setOption('windowOptions', windowOptions);
       });
       test.skip('Ps = 4 - Jump (Fast) Scroll (DECSCLM), VT100.', async () => {
         // TODO: Implement
@@ -770,8 +795,15 @@ test.describe('InputHandler Integration Tests', () => {
       test.skip('Ps = 1 0 - Hide toolbar (rxvt).', async () => {
         // TODO: Implement
       });
-      test.skip('Ps = 1 2 - Stop blinking cursor (AT&T 610).', async () => {
-        // TODO: Implement
+      test('Ps = 1 2 - Stop blinking cursor (AT&T 610).', async () => {
+        const previousQuirks = await ctx.proxy.getOption('quirks');
+        const previousCursorBlink = await ctx.proxy.getOption('cursorBlink');
+        await ctx.proxy.setOption('quirks', { ...(previousQuirks ?? {}), allowSetCursorBlink: true });
+        await ctx.proxy.setOption('cursorBlink', true);
+        await ctx.proxy.write('\x1b[?12l');
+        await pollFor(ctx.page, async () => await ctx.proxy.getOption('cursorBlink'), false);
+        await ctx.proxy.setOption('quirks', previousQuirks);
+        await ctx.proxy.setOption('cursorBlink', previousCursorBlink);
       });
       test.skip('Ps = 1 3 - Disable blinking cursor (reset only via resource or menu).', async () => {
         // TODO: Implement
@@ -1492,8 +1524,14 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[0 q');
       deepStrictEqual(await getCursorMode(), { style: undefined, blink: undefined });
     });
-    test.skip('CSI Ps " q - Select character protection attribute (DECSCA), VT220.', async () => {
-      // TODO: Implement
+    test('CSI Ps " q - Select character protection attribute (DECSCA), VT220.', async () => {
+      await ctx.proxy.write('\x1b[1"q');
+      await ctx.proxy.write('PROT');
+      await ctx.proxy.write('\x1b[2"q');
+      await ctx.proxy.write('open');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['PROTopen']);
+      await ctx.proxy.write('\x1b[1;1H\x1b[?2K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['PROT']);
     });
     test.skip('CSI # q - Pop video attributes from stack (XTPOPSGR), xterm.', async () => {
       // TODO: Implement
