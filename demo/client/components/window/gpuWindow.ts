@@ -31,11 +31,18 @@ export class WebgpuWindow extends BaseWindow implements IControlWindow {
   }
 
   public setTextureAtlas(canvas: HTMLCanvasElement): void {
+    if (!canvas) {
+      this._textureAtlasContainer.replaceChildren();
+      return;
+    }
     this._styleAtlasPage(canvas);
     this._textureAtlasContainer.replaceChildren(canvas);
   }
 
   public appendTextureAtlas(canvas: HTMLCanvasElement): void {
+    if (!canvas) {
+      return;
+    }
     this._styleAtlasPage(canvas);
     this._textureAtlasContainer.appendChild(canvas);
   }

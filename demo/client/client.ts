@@ -462,7 +462,10 @@ function initAddons(term: Terminal): void {
   function postInitWebgpu(): void {
     controlBar.setTabVisible('addon-webgpu', true);
     setTimeout(() => {
-      addonWebgpuWindow.setTextureAtlas(addons.webgpu.instance!.textureAtlas!);
+      const atlas = addons.webgpu.instance!.textureAtlas;
+      if (atlas) {
+        addonWebgpuWindow.setTextureAtlas(atlas);
+      }
       addons.webgpu.instance!.onChangeTextureAtlas(e => addonWebgpuWindow.setTextureAtlas(e));
       addons.webgpu.instance!.onAddTextureAtlasCanvas(e => addonWebgpuWindow.appendTextureAtlas(e));
       addons.webgpu.instance!.onRemoveTextureAtlasCanvas(e => addonWebgpuWindow.removeTextureAtlas(e));
