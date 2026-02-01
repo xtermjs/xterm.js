@@ -9,10 +9,6 @@ import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
-
-// eslint-disable-next-line
-declare const Buffer: any;
-
 // limit hold memory in base64 decoder
 const KEEP_DATA = 4194304;
 
