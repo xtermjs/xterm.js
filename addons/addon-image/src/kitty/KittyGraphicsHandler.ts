@@ -410,6 +410,16 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   }
 
   private _handleTransmit(cmd: IKittyCommand, bytes: Uint8Array, decodeError: boolean): boolean {
+    // TODO: Support file-based transmission modes (t=f, t=t, t=s)
+    // Currently only supports direct transmission (t=d, the default).
+    // - t=f (file): Payload is base64-encoded file path. Terminal reads image from that path.
+    // - t=t (temp file): Payload is base64-encoded path in temp directory. Terminal reads, deletes.
+    // - t=s Payload is base64-encoded POSIX shm name. Terminal reads from shared memory.
+    // These modes require filesystem/IPC access not available in browsers. For Node.js/Electron:
+    // 1. Check cmd.transmission (t key) before treating bytes as image data
+    // 2. For t=f/t/s: decode bytes as UTF-8 string (the path/name), then read file contents
+    // 3. For t=d: treat bytes as image data (current behavior)
+
     const pendingKey = cmd.id ?? 0;
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
