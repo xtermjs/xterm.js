@@ -101,7 +101,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   public put(data: Uint32Array, start: number, end: number): void {
     if (this._aborted) return;
 
-    if (this._inControlData) {
+    if (!this._inControlData) {
+      this._streamPayload(data, start, end);
+    } else {
       // Scan for semicolon
       let controlEnd = end;
       for (let i = start; i < end; i++) {
@@ -128,8 +130,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
           this._streamPayload(data, payloadStart, end);
         }
       }
-    } else {
-      this._streamPayload(data, start, end);
     }
   }
 
