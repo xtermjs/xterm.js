@@ -227,9 +227,9 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[2S');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['3', '4', '5', '', '']);
     });
-    test.skip('CSI ? Pi ; Pa ; Pv S - XTSMGRAPHICS: Set or request graphics attribute, xterm', async () => {
-      // TODO: Implement
-    });
+    // This is intentionally not implemented here are image support lives within an addon
+    // test.skip('CSI ? Pi ; Pa ; Pv S - XTSMGRAPHICS: Set or request graphics attribute, xterm', async () => {
+    // });
     test('CSI Ps T - SD: Scroll down Ps lines (default = 1), VT420', async () => {
       await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
@@ -316,14 +316,16 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('abcdefg\x1b[3D\x1b[10b#\x1b[3b');
       await pollFor(ctx.page, () => getLinesAsArray(3), ['#', ' #', 'abcd####']);
     });
-    test.skip('CSI Ps c - ', async () => {
-      // TODO: Implement
+    test('CSI Ps c - ', async () => {
+      await ctx.proxy.write('\x1b[c');
+      await pollFor(ctx.page, () => recordedData, ['\x1b[?1;2c']);
     });
     test.skip('CSI = Ps c - ', async () => {
       // TODO: Implement
     });
-    test.skip('CSI > Ps c - ', async () => {
-      // TODO: Implement
+    test('CSI > Ps c - ', async () => {
+      await ctx.proxy.write('\x1b[>c');
+      await pollFor(ctx.page, () => recordedData, ['\x1b[>0;276;0c']);
     });
     test('CSI Ps d - VPA: Line Position Absolute [row] (default = [1,column])', async () => {
       // Default
@@ -384,11 +386,11 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.resize(80, 24);
         await ctx.proxy.setOption('windowOptions', windowOptions);
       });
-      test.skip('Ps = 4 - Smooth (Slow) Scroll (DECSCLM), VT100', async () => {
-      // TODO: Implement
+      test('Ps = 4 - Smooth (Slow) Scroll (DECSCLM), VT100', async () => {
+        await assertNoModeChange('\x1b[?4h');
       });
-      test.skip('Ps = 5 - Reverse Video (DECSCNM), VT100', async () => {
-      // TODO: Implement
+      test('Ps = 5 - Reverse Video (DECSCNM), VT100', async () => {
+        await assertNoModeChange('\x1b[?5h');
       });
       test('Ps = 6 - Origin Mode (DECOM), VT100', async () => {
         await ctx.proxy.write('\x1b[?6h');
@@ -411,8 +413,8 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, () => getLinesAsArray(1), ['1234X']);
         await ctx.proxy.resize(80, 24);
       });
-      test.skip('Ps = 8 - Auto-Repeat Keys (DECARM), VT100', async () => {
-      // TODO: Implement
+      test('Ps = 8 - Auto-Repeat Keys (DECARM), VT100', async () => {
+        await assertNoModeChange('\x1b[?8h');
       });
       test('Ps = 9 - Send Mouse X & Y on button press', async () => {
         const selectionBefore = await dragSelection();
@@ -422,23 +424,29 @@ test.describe('InputHandler Integration Tests', () => {
         const selectionAfter = await dragSelection();
         ok(selectionAfter === 0);
       });
-      test.skip('Ps = 1 0 - Show toolbar (rxvt)', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 - Show toolbar (rxvt)', async () => {
+        await assertNoModeChange('\x1b[?10h');
       });
-      test.skip('Ps = 1 2 - Start blinking cursor (AT&T 610)', async () => {
-      // TODO: Implement
+      test('Ps = 1 2 - Start blinking cursor (AT&T 610)', async () => {
+        const previousQuirks = await ctx.proxy.getOption('quirks');
+        const previousCursorBlink = await ctx.proxy.getOption('cursorBlink');
+        await ctx.proxy.setOption('quirks', { ...(previousQuirks ?? {}), allowSetCursorBlink: true });
+        await ctx.proxy.write('\x1b[?12h');
+        await pollFor(ctx.page, async () => await ctx.proxy.getOption('cursorBlink'), true);
+        await ctx.proxy.setOption('quirks', previousQuirks);
+        await ctx.proxy.setOption('cursorBlink', previousCursorBlink);
       });
-      test.skip('Ps = 1 3 - Start blinking cursor (set only via resource or menu)', async () => {
-      // TODO: Implement
+      test('Ps = 1 3 - Start blinking cursor (set only via resource or menu)', async () => {
+        await assertNoModeChange('\x1b[?13h');
       });
-      test.skip('Ps = 1 4 - Enable XOR of blinking cursor control sequence and menu', async () => {
-      // TODO: Implement
+      test('Ps = 1 4 - Enable XOR of blinking cursor control sequence and menu', async () => {
+        await assertNoModeChange('\x1b[?14h');
       });
-      test.skip('Ps = 1 8 - Print Form Feed (DECPFF), VT220', async () => {
-      // TODO: Implement
+      test('Ps = 1 8 - Print Form Feed (DECPFF), VT220', async () => {
+        await assertNoModeChange('\x1b[?18h');
       });
-      test.skip('Ps = 1 9 - Set print extent to full screen (DECPEX), VT220', async () => {
-      // TODO: Implement
+      test('Ps = 1 9 - Set print extent to full screen (DECPEX), VT220', async () => {
+        await assertNoModeChange('\x1b[?19h');
       });
       test('Ps = 2 5 - Show cursor (DECTCEM), VT220', async () => {
         await ctx.proxy.write('\x1b[?25l');
@@ -446,32 +454,32 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?25h');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).showCursor, true);
       });
-      test.skip('Ps = 3 0 - Show scrollbar (rxvt)', async () => {
-      // TODO: Implement
+      test('Ps = 3 0 - Show scrollbar (rxvt)', async () => {
+        await assertNoModeChange('\x1b[?30h');
       });
-      test.skip('Ps = 3 5 - Enable font-shifting functions (rxvt)', async () => {
-      // TODO: Implement
+      test('Ps = 3 5 - Enable font-shifting functions (rxvt)', async () => {
+        await assertNoModeChange('\x1b[?35h');
       });
-      test.skip('Ps = 3 8 - Enter Tektronix mode (DECTEK), VT240, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 3 8 - Enter Tektronix mode (DECTEK), VT240, xterm', async () => {
+        await assertNoModeChange('\x1b[?38h');
       });
-      test.skip('Ps = 4 0 - Allow 80 ⇒  132 mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 4 0 - Allow 80 ⇒  132 mode, xterm', async () => {
+        await assertNoModeChange('\x1b[?40h');
       });
-      test.skip('Ps = 4 1 - more(1) fix (see curses resource)', async () => {
-      // TODO: Implement
+      test('Ps = 4 1 - more(1) fix (see curses resource)', async () => {
+        await assertNoModeChange('\x1b[?41h');
       });
-      test.skip('Ps = 4 2 - Enable National Replacement Character sets (DECNRCM), VT220', async () => {
-      // TODO: Implement
+      test('Ps = 4 2 - Enable National Replacement Character sets (DECNRCM), VT220', async () => {
+        await assertNoModeChange('\x1b[?42h');
       });
-      test.skip('Ps = 4 3 - Enable Graphic Expanded Print Mode (DECGEPM), VT340', async () => {
-      // TODO: Implement
+      test('Ps = 4 3 - Enable Graphic Expanded Print Mode (DECGEPM), VT340', async () => {
+        await assertNoModeChange('\x1b[?43h');
       });
-      test.skip('Ps = 4 4 - Turn on margin bell, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 4 4 - Turn on margin bell, xterm', async () => {
+        await assertNoModeChange('\x1b[?44h');
       });
-      test.skip('Ps = 4 4 - Enable Graphic Print Color Mode (DECGPCM), VT340', async () => {
-      // TODO: Implement
+      test('Ps = 4 4 - Enable Graphic Print Color Mode (DECGPCM), VT340', async () => {
+        await assertNoModeChange('\x1b[?44h');
       });
       test('Ps = 4 5 - Reverse-wraparound mode (XTREVWRAP), xterm', async () => {
         await ctx.proxy.write('\x1b[?45h');
@@ -484,13 +492,12 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.resize(80, 24);
       });
       test.skip('Ps = 4 5 - Enable Graphic Print Color Syntax (DECGPCS), VT340', async () => {
-      // TODO: Implement
       });
-      test.skip('Ps = 4 6 - Start logging (XTLOGGING), xterm', async () => {
-      // TODO: Implement
+      test('Ps = 4 6 - Start logging (XTLOGGING), xterm', async () => {
+        await assertNoModeChange('\x1b[?46h');
       });
-      test.skip('Ps = 4 6 - Graphic Print Background Mode, VT340', async () => {
-      // TODO: Implement
+      test('Ps = 4 6 - Graphic Print Background Mode, VT340', async () => {
+        await assertNoModeChange('\x1b[?46h');
       });
       test('Ps = 4 7 - Use Alternate Screen Buffer, xterm', async () => {
         await ctx.proxy.write('main');
@@ -505,23 +512,21 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, () => getLinesAsArray(1), ['main']);
       });
       test.skip('Ps = 4 7 - Enable Graphic Rotated Print Mode (DECGRPM), VT340', async () => {
-      // TODO: Implement
       });
       test('Ps = 6 6 - Application keypad mode (DECNKM), VT320', async () => {
         await ctx.proxy.write('\x1b[?66h');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).applicationKeypadMode, true);
       });
-      test.skip('Ps = 6 7 - Backarrow key sends backspace (DECBKM), VT340, VT420', async () => {
-      // TODO: Implement
+      test('Ps = 6 7 - Backarrow key sends backspace (DECBKM), VT340, VT420', async () => {
+        await assertNoModeChange('\x1b[?67h');
       });
-      test.skip('Ps = 6 9 - Enable left and right margin mode (DECLRMM), VT420 and up', async () => {
-      // TODO: Implement
+      test('Ps = 6 9 - Enable left and right margin mode (DECLRMM), VT420 and up', async () => {
+        await assertNoModeChange('\x1b[?69h');
       });
-      test.skip('Ps = 8 0 - Enable Sixel Display Mode (DECSDM), VT330, VT340, VT382', async () => {
-      // TODO: Implement
-      });
-      test.skip('Ps = 9 5 - Do not clear screen when DECCOLM is set/reset (DECNCSM), VT510 and up', async () => {
-      // TODO: Implement
+      // test.skip('Ps = 8 0 - Enable Sixel Display Mode (DECSDM), VT330, VT340, VT382', async () => {
+      // });
+      test('Ps = 9 5 - Do not clear screen when DECCOLM is set/reset (DECNCSM), VT510 and up', async () => {
+        await assertNoModeChange('\x1b[?95h');
       });
       test('Ps = 1 0 0 0 - Send Mouse X & Y on button press and release', async () => {
         const selectionBefore = await dragSelection();
@@ -531,8 +536,8 @@ test.describe('InputHandler Integration Tests', () => {
         const selectionAfter = await dragSelection();
         ok(selectionAfter === 0);
       });
-      test.skip('Ps = 1 0 0 1 - Use Hilite Mouse Tracking, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 0 1 - Use Hilite Mouse Tracking, xterm', async () => {
+        await assertNoModeChange('\x1b[?1001h');
       });
       test('Ps = 1 0 0 2 - Use Cell Motion Mouse Tracking, xterm', async () => {
         const selectionBefore = await dragSelection();
@@ -577,64 +582,70 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.blur();
         await pollFor(ctx.page, () => recordedData, ['\x1b[I', '\x1b[O']);
       });
-      test.skip('Ps = 1 0 0 5 - Enable UTF-8 Mouse Mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 0 5 - Enable UTF-8 Mouse Mode, xterm', async () => {
+        await ctx.proxy.write('\x1b[?1006h');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await ctx.proxy.write('\x1b[?1005h');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 0 6 - Enable SGR Mouse Mode, xterm', async () => {
         await ctx.proxy.write('\x1b[?1006h');
         await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
       });
-      test.skip('Ps = 1 0 0 7 - Enable Alternate Scroll Mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 0 7 - Enable Alternate Scroll Mode, xterm', async () => {
+        await assertNoModeChange('\x1b[?1007h');
       });
-      test.skip('Ps = 1 0 1 0 - Scroll to bottom on tty output (rxvt)', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 1 0 - Scroll to bottom on tty output (rxvt)', async () => {
+        await assertNoModeChange('\x1b[?1010h');
       });
-      test.skip('Ps = 1 0 1 1 - Scroll to bottom on key press (rxvt)', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 1 1 - Scroll to bottom on key press (rxvt)', async () => {
+        await assertNoModeChange('\x1b[?1011h');
       });
-      test.skip('Ps = 1 0 1 5 - Enable urxvt Mouse Mode', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 1 5 - Enable urxvt Mouse Mode', async () => {
+        await ctx.proxy.write('\x1b[?1006h');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await ctx.proxy.write('\x1b[?1015h');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 1 6 - Enable SGR Mouse PixelMode, xterm', async () => {
         await ctx.proxy.write('\x1b[?1016h');
         await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR_PIXELS');
       });
-      test.skip('Ps = 1 0 3 4 - Interpret "meta" key, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 3 4 - Interpret "meta" key, xterm', async () => {
+        await assertNoModeChange('\x1b[?1034h');
       });
-      test.skip('Ps = 1 0 3 5 - Enable special modifiers for Alt and NumLock keys, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 3 5 - Enable special modifiers for Alt and NumLock keys, xterm', async () => {
+        await assertNoModeChange('\x1b[?1035h');
       });
-      test.skip('Ps = 1 0 3 6 - Send ESC   when Meta modifies a key, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 3 6 - Send ESC   when Meta modifies a key, xterm', async () => {
+        await assertNoModeChange('\x1b[?1036h');
       });
-      test.skip('Ps = 1 0 3 7 - Send DEL from the editing-keypad Delete key, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 3 7 - Send DEL from the editing-keypad Delete key, xterm', async () => {
+        await assertNoModeChange('\x1b[?1037h');
       });
-      test.skip('Ps = 1 0 3 9 - Send ESC  when Alt modifies a key, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 3 9 - Send ESC  when Alt modifies a key, xterm', async () => {
+        await assertNoModeChange('\x1b[?1039h');
       });
-      test.skip('Ps = 1 0 4 0 - Keep selection even if not highlighted, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 0 - Keep selection even if not highlighted, xterm', async () => {
+        await assertNoModeChange('\x1b[?1040h');
       });
-      test.skip('Ps = 1 0 4 1 - Use the CLIPBOARD selection, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 1 - Use the CLIPBOARD selection, xterm', async () => {
+        await assertNoModeChange('\x1b[?1041h');
       });
-      test.skip('Ps = 1 0 4 2 - Enable Urgency window manager hint when Control-G is received, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 2 - Enable Urgency window manager hint when Control-G is received, xterm', async () => {
+        await assertNoModeChange('\x1b[?1042h');
       });
-      test.skip('Ps = 1 0 4 3 - Enable raising of the window when Control-G is received, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 3 - Enable raising of the window when Control-G is received, xterm', async () => {
+        await assertNoModeChange('\x1b[?1043h');
       });
-      test.skip('Ps = 1 0 4 4 - Reuse the most recent data copied to CLIPBOARD, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 4 - Reuse the most recent data copied to CLIPBOARD, xterm', async () => {
+        await assertNoModeChange('\x1b[?1044h');
       });
-      test.skip('Ps = 1 0 4 5 - XTREVWRAP2: Extended Reverse-wraparound mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 5 - XTREVWRAP2: Extended Reverse-wraparound mode, xterm', async () => {
+        await assertNoModeChange('\x1b[?1045h');
       });
-      test.skip('Ps = 1 0 4 6 - Enable switching to/from Alternate Screen Buffer, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 6 - Enable switching to/from Alternate Screen Buffer, xterm', async () => {
+        await assertNoModeChange('\x1b[?1046h');
       });
       test('Ps = 1 0 4 7 - Use Alternate Screen Buffer, xterm', async () => {
         await ctx.proxy.write('main');
@@ -655,35 +666,45 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?1048l');
         await pollFor(ctx.page, () => getCursor(), { col: 4, row: 3 });
       });
-      test.skip('Ps = 1 0 4 9 - Save cursor as in DECSC, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 4 9 - Save cursor as in DECSC, xterm', async () => {
+        await ctx.proxy.write('main');
+        await pollFor(ctx.page, () => getLinesAsArray(1), ['main']);
+        await ctx.proxy.write('\x1b[4;6H');
+        await ctx.proxy.write('\x1b[?1049h');
+        await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'alternate');
+        await ctx.proxy.write('\x1b[Halt');
+        await pollFor(ctx.page, () => getLinesAsArray(1), ['alt']);
+        await ctx.proxy.write('\x1b[?1049l');
+        await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'normal');
+        await pollFor(ctx.page, () => getLinesAsArray(1), ['main']);
+        await pollFor(ctx.page, () => getCursor(), { col: 5, row: 3 });
       });
-      test.skip('Ps = 1 0 5 0 - Set terminfo/termcap function-key mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 5 0 - Set terminfo/termcap function-key mode, xterm', async () => {
+        await assertNoModeChange('\x1b[?1050h');
       });
-      test.skip('Ps = 1 0 5 1 - Set Sun function-key mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 5 1 - Set Sun function-key mode, xterm', async () => {
+        await assertNoModeChange('\x1b[?1051h');
       });
-      test.skip('Ps = 1 0 5 2 - Set HP function-key mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 5 2 - Set HP function-key mode, xterm', async () => {
+        await assertNoModeChange('\x1b[?1052h');
       });
-      test.skip('Ps = 1 0 5 3 - Set SCO function-key mode, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 5 3 - Set SCO function-key mode, xterm', async () => {
+        await assertNoModeChange('\x1b[?1053h');
       });
-      test.skip('Ps = 1 0 6 0 - Set legacy keyboard emulation, i.e, X11R6, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 6 0 - Set legacy keyboard emulation, i.e, X11R6, xterm', async () => {
+        await assertNoModeChange('\x1b[?1060h');
       });
-      test.skip('Ps = 1 0 6 1 - Set VT220 keyboard emulation, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 1 0 6 1 - Set VT220 keyboard emulation, xterm', async () => {
+        await assertNoModeChange('\x1b[?1061h');
       });
-      test.skip('Ps = 2 0 0 1 - Enable readline mouse button-1, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 2 0 0 1 - Enable readline mouse button-1, xterm', async () => {
+        await assertNoModeChange('\x1b[?2001h');
       });
-      test.skip('Ps = 2 0 0 2 - Enable readline mouse button-2, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 2 0 0 2 - Enable readline mouse button-2, xterm', async () => {
+        await assertNoModeChange('\x1b[?2002h');
       });
-      test.skip('Ps = 2 0 0 3 - Enable readline mouse button-3, xterm', async () => {
-      // TODO: Implement
+      test('Ps = 2 0 0 3 - Enable readline mouse button-3, xterm', async () => {
+        await assertNoModeChange('\x1b[?2003h');
       });
       test('Pm = 2 0 0 4, Set bracketed paste mode', async () => {
         if (ctx.browser.browserType().name() !== 'chromium') {
@@ -696,11 +717,11 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?2004l');
         await pollFor(ctx.page, () => simulatePaste('baz'), 'baz');
       });
-      test.skip('Ps = 2 0 0 5 - Enable readline character-quoting, xterm', async () => {
-        // TODO: Implement
+      test('Ps = 2 0 0 5 - Enable readline character-quoting, xterm', async () => {
+        await assertNoModeChange('\x1b[?2005h');
       });
-      test.skip('Ps = 2 0 0 6 - Enable readline newline pasting, xterm', async () => {
-        // TODO: Implement
+      test('Ps = 2 0 0 6 - Enable readline newline pasting, xterm', async () => {
+        await assertNoModeChange('\x1b[?2006h');
       });
     });
     test.skip('CSI Ps i - MC: Media Copy', async () => {
@@ -724,17 +745,24 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?1l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).applicationCursorKeysMode, false);
       });
-      test.skip('Ps = 2 - Designate VT52 mode (DECANM), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 2 - Designate VT52 mode (DECANM), VT100.', async () => {
+        await assertNoModeChange('\x1b[?2l');
       });
-      test.skip('Ps = 3 - 80 Column Mode (DECCOLM), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 3 - 80 Column Mode (DECCOLM), VT100.', async () => {
+        const windowOptions = await ctx.proxy.getOption('windowOptions');
+        await ctx.proxy.setOption('windowOptions', { ...windowOptions, setWinLines: true });
+        await ctx.proxy.write('\x1b[?3h');
+        await pollFor(ctx.page, async () => await ctx.proxy.cols, 132);
+        await ctx.proxy.write('\x1b[?3l');
+        await pollFor(ctx.page, async () => await ctx.proxy.cols, 80);
+        await ctx.proxy.resize(80, 24);
+        await ctx.proxy.setOption('windowOptions', windowOptions);
       });
-      test.skip('Ps = 4 - Jump (Fast) Scroll (DECSCLM), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 4 - Jump (Fast) Scroll (DECSCLM), VT100.', async () => {
+        await assertNoModeChange('\x1b[?4l');
       });
-      test.skip('Ps = 5 - Normal Video (DECSCNM), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 5 - Normal Video (DECSCNM), VT100.', async () => {
+        await assertNoModeChange('\x1b[?5l');
       });
       test('Ps = 6 - Normal Cursor Mode (DECOM), VT100.', async () => {
         await ctx.proxy.write('\x1b[?6h');
@@ -758,8 +786,8 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, () => getLinesAsArray(2), ['12345', 'X']);
         await ctx.proxy.resize(80, 24);
       });
-      test.skip('Ps = 8 - No Auto-Repeat Keys (DECARM), VT100.', async () => {
-        // TODO: Implement
+      test('Ps = 8 - No Auto-Repeat Keys (DECARM), VT100.', async () => {
+        await assertNoModeChange('\x1b[?8l');
       });
       test('Ps = 9 - Don\'t send Mouse X & Y on button press, xterm.', async () => {
         await ctx.proxy.write('\x1b[?9h');
@@ -767,23 +795,30 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?9l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).mouseTrackingMode, 'none');
       });
-      test.skip('Ps = 1 0 - Hide toolbar (rxvt).', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 - Hide toolbar (rxvt).', async () => {
+        await assertNoModeChange('\x1b[?10l');
       });
-      test.skip('Ps = 1 2 - Stop blinking cursor (AT&T 610).', async () => {
-        // TODO: Implement
+      test('Ps = 1 2 - Stop blinking cursor (AT&T 610).', async () => {
+        const previousQuirks = await ctx.proxy.getOption('quirks');
+        const previousCursorBlink = await ctx.proxy.getOption('cursorBlink');
+        await ctx.proxy.setOption('quirks', { ...(previousQuirks ?? {}), allowSetCursorBlink: true });
+        await ctx.proxy.setOption('cursorBlink', true);
+        await ctx.proxy.write('\x1b[?12l');
+        await pollFor(ctx.page, async () => await ctx.proxy.getOption('cursorBlink'), false);
+        await ctx.proxy.setOption('quirks', previousQuirks);
+        await ctx.proxy.setOption('cursorBlink', previousCursorBlink);
       });
-      test.skip('Ps = 1 3 - Disable blinking cursor (reset only via resource or menu).', async () => {
-        // TODO: Implement
+      test('Ps = 1 3 - Disable blinking cursor (reset only via resource or menu).', async () => {
+        await assertNoModeChange('\x1b[?13l');
       });
-      test.skip('Ps = 1 4 - Disable XOR of blinking cursor control sequence and menu.', async () => {
-        // TODO: Implement
+      test('Ps = 1 4 - Disable XOR of blinking cursor control sequence and menu.', async () => {
+        await assertNoModeChange('\x1b[?14l');
       });
-      test.skip('Ps = 1 8 - Don\'t Print Form Feed (DECPFF), VT220.', async () => {
-        // TODO: Implement
+      test('Ps = 1 8 - Don\'t Print Form Feed (DECPFF), VT220.', async () => {
+        await assertNoModeChange('\x1b[?18l');
       });
-      test.skip('Ps = 1 9 - Limit print to scrolling region (DECPEX), VT220.', async () => {
-        // TODO: Implement
+      test('Ps = 1 9 - Limit print to scrolling region (DECPEX), VT220.', async () => {
+        await assertNoModeChange('\x1b[?19l');
       });
       test('Ps = 2 5 - Hide cursor (DECTCEM), VT220.', async () => {
         await ctx.proxy.write('\x1b[?25h');
@@ -791,29 +826,29 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?25l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).showCursor, false);
       });
-      test.skip('Ps = 3 0 - Don\'t show scrollbar (rxvt).', async () => {
-        // TODO: Implement
+      test('Ps = 3 0 - Don\'t show scrollbar (rxvt).', async () => {
+        await assertNoModeChange('\x1b[?30l');
       });
-      test.skip('Ps = 3 5 - Disable font-shifting functions (rxvt).', async () => {
-        // TODO: Implement
+      test('Ps = 3 5 - Disable font-shifting functions (rxvt).', async () => {
+        await assertNoModeChange('\x1b[?35l');
       });
-      test.skip('Ps = 4 0 - Disallow 80 ⇒  132 mode, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 4 0 - Disallow 80 ⇒  132 mode, xterm.', async () => {
+        await assertNoModeChange('\x1b[?40l');
       });
-      test.skip('Ps = 4 1 - No more(1) fix (see curses resource).', async () => {
-        // TODO: Implement
+      test('Ps = 4 1 - No more(1) fix (see curses resource).', async () => {
+        await assertNoModeChange('\x1b[?41l');
       });
-      test.skip('Ps = 4 2 - Disable National Replacement Character sets (DECNRCM), VT220.', async () => {
-        // TODO: Implement
+      test('Ps = 4 2 - Disable National Replacement Character sets (DECNRCM), VT220.', async () => {
+        await assertNoModeChange('\x1b[?42l');
       });
-      test.skip('Ps = 4 3 - Disable Graphic Expanded Print Mode (DECGEPM), VT340.', async () => {
-        // TODO: Implement
+      test('Ps = 4 3 - Disable Graphic Expanded Print Mode (DECGEPM), VT340.', async () => {
+        await assertNoModeChange('\x1b[?43l');
       });
-      test.skip('Ps = 4 4 - Turn off margin bell, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 4 4 - Turn off margin bell, xterm.', async () => {
+        await assertNoModeChange('\x1b[?44l');
       });
-      test.skip('Ps = 4 4 - Disable Graphic Print Color Mode (DECGPCM), VT340.', async () => {
-        // TODO: Implement
+      test('Ps = 4 4 - Disable Graphic Print Color Mode (DECGPCM), VT340.', async () => {
+        await assertNoModeChange('\x1b[?44l');
       });
       test('Ps = 4 5 - No Reverse-wraparound mode (XTREVWRAP), xterm.', async () => {
         await ctx.proxy.write('\x1b[?45h');
@@ -822,10 +857,9 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).reverseWraparoundMode, false);
       });
       test.skip('Ps = 4 5 - Disable Graphic Print Color Syntax (DECGPCS), VT340.', async () => {
-        // TODO: Implement
       });
-      test.skip('Ps = 4 6 - Stop logging (XTLOGGING), xterm.  This is normally disabled by a compile-time option.', async () => {
-        // TODO: Implement
+      test('Ps = 4 6 - Stop logging (XTLOGGING), xterm.  This is normally disabled by a compile-time option.', async () => {
+        await assertNoModeChange('\x1b[?46l');
       });
       test('Ps = 4 7 - Use Normal Screen Buffer, xterm.', async () => {
         await ctx.proxy.write('\x1b[?47h');
@@ -834,7 +868,6 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'normal');
       });
       test.skip('Ps = 4 7 - Disable Graphic Rotated Print Mode (DECGRPM), VT340.', async () => {
-        // TODO: Implement
       });
       test('Ps = 6 6 - Numeric keypad mode (DECNKM), VT320.', async () => {
         await ctx.proxy.write('\x1b[?66h');
@@ -842,17 +875,17 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?66l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).applicationKeypadMode, false);
       });
-      test.skip('Ps = 6 7 - Backarrow key sends delete (DECBKM), VT340, VT420.  This sets the backarrowKey resource to "false".', async () => {
-        // TODO: Implement
+      test('Ps = 6 7 - Backarrow key sends delete (DECBKM), VT340, VT420.  This sets the backarrowKey resource to "false".', async () => {
+        await assertNoModeChange('\x1b[?67l');
       });
-      test.skip('Ps = 6 9 - Disable left and right margin mode (DECLRMM), VT420 and up.', async () => {
-        // TODO: Implement
+      test('Ps = 6 9 - Disable left and right margin mode (DECLRMM), VT420 and up.', async () => {
+        await assertNoModeChange('\x1b[?69l');
       });
-      test.skip('Ps = 8 0 - Disable Sixel Display Mode (DECSDM), VT330, VT340, VT382.  Turns on "Sixel Scrolling".  See the section Sixel Graphics and mode 8 4 5 2 .', async () => {
-        // TODO: Implement
-      });
-      test.skip('Ps = 9 5 - Clear screen when DECCOLM is set/reset (DECNCSM), VT510 and up.', async () => {
-        // TODO: Implement
+      // This is intentionally not implemented here are image support lives within an addon
+      // test.skip('Ps = 8 0 - Disable Sixel Display Mode (DECSDM), VT330, VT340, VT382.  Turns on "Sixel Scrolling".  See the section Sixel Graphics and mode 8 4 5 2 .', async () => {
+      // });
+      test('Ps = 9 5 - Clear screen when DECCOLM is set/reset (DECNCSM), VT510 and up.', async () => {
+        await assertNoModeChange('\x1b[?95l');
       });
       test('Ps = 1 0 0 0 - Don\'t send Mouse X & Y on button press and release.  See the section Mouse Tracking.', async () => {
         await ctx.proxy.write('\x1b[?1000h');
@@ -860,8 +893,8 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?1000l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).mouseTrackingMode, 'none');
       });
-      test.skip('Ps = 1 0 0 1 - Don\'t use Hilite Mouse Tracking, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 0 1 - Don\'t use Hilite Mouse Tracking, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1001l');
       });
       test('Ps = 1 0 0 2 - Don\'t use Cell Motion Mouse Tracking, xterm.  See the section Button-event tracking.', async () => {
         await ctx.proxy.write('\x1b[?1002h');
@@ -881,8 +914,11 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?1004l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).sendFocusMode, false);
       });
-      test.skip('Ps = 1 0 0 5 - Disable UTF-8 Mouse Mode, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 0 5 - Disable UTF-8 Mouse Mode, xterm.', async () => {
+        await ctx.proxy.write('\x1b[?1006h');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await ctx.proxy.write('\x1b[?1005l');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 0 6 - Disable SGR Mouse Mode, xterm.', async () => {
         await ctx.proxy.write('\x1b[?1006h');
@@ -890,17 +926,20 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?1006l');
         await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'DEFAULT');
       });
-      test.skip('Ps = 1 0 0 7 - Disable Alternate Scroll Mode, xterm.  This corresponds to the alternateScroll resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 0 7 - Disable Alternate Scroll Mode, xterm.  This corresponds to the alternateScroll resource.', async () => {
+        await assertNoModeChange('\x1b[?1007l');
       });
-      test.skip('Ps = 1 0 1 0 - Don\'t scroll to bottom on tty output (rxvt).  This sets the scrollTtyOutput resource to "false".', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 1 0 - Don\'t scroll to bottom on tty output (rxvt).  This sets the scrollTtyOutput resource to "false".', async () => {
+        await assertNoModeChange('\x1b[?1010l');
       });
-      test.skip('Ps = 1 0 1 1 - Don\'t scroll to bottom on key press (rxvt). This sets the scrollKey resource to "false".', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 1 1 - Don\'t scroll to bottom on key press (rxvt). This sets the scrollKey resource to "false".', async () => {
+        await assertNoModeChange('\x1b[?1011l');
       });
-      test.skip('Ps = 1 0 1 5 - Disable urxvt Mouse Mode.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 1 5 - Disable urxvt Mouse Mode.', async () => {
+        await ctx.proxy.write('\x1b[?1006h');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await ctx.proxy.write('\x1b[?1015l');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 1 6 - Disable SGR Mouse Pixel-Mode, xterm.', async () => {
         await ctx.proxy.write('\x1b[?1016h');
@@ -908,38 +947,38 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?1016l');
         await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'DEFAULT');
       });
-      test.skip('Ps = 1 0 3 4 - Don\'t interpret "meta" key, xterm.  This disables the eightBitInput resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 3 4 - Don\'t interpret "meta" key, xterm.  This disables the eightBitInput resource.', async () => {
+        await assertNoModeChange('\x1b[?1034l');
       });
-      test.skip('Ps = 1 0 3 5 - Disable special modifiers for Alt and NumLock keys, xterm.  This disables the numLock resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 3 5 - Disable special modifiers for Alt and NumLock keys, xterm.  This disables the numLock resource.', async () => {
+        await assertNoModeChange('\x1b[?1035l');
       });
-      test.skip('Ps = 1 0 3 6 - Don\'t send ESC  when Meta modifies a key, xterm.  This disables the metaSendsEscape resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 3 6 - Don\'t send ESC  when Meta modifies a key, xterm.  This disables the metaSendsEscape resource.', async () => {
+        await assertNoModeChange('\x1b[?1036l');
       });
-      test.skip('Ps = 1 0 3 7 - Send VT220 Remove from the editing-keypad Delete key, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 3 7 - Send VT220 Remove from the editing-keypad Delete key, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1037l');
       });
-      test.skip('Ps = 1 0 3 9 - Don\'t send ESC when Alt modifies a key, xterm.  This disables the altSendsEscape resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 3 9 - Don\'t send ESC when Alt modifies a key, xterm.  This disables the altSendsEscape resource.', async () => {
+        await assertNoModeChange('\x1b[?1039l');
       });
-      test.skip('Ps = 1 0 4 0 - Do not keep selection when not highlighted, xterm.  This disables the keepSelection resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 4 0 - Do not keep selection when not highlighted, xterm.  This disables the keepSelection resource.', async () => {
+        await assertNoModeChange('\x1b[?1040l');
       });
-      test.skip('Ps = 1 0 4 1 - Use the PRIMARY selection, xterm.  This disables the selectToClipboard resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 4 1 - Use the PRIMARY selection, xterm.  This disables the selectToClipboard resource.', async () => {
+        await assertNoModeChange('\x1b[?1041l');
       });
-      test.skip('Ps = 1 0 4 2 - Disable Urgency window manager hint when Control-G is received, xterm.  This disables the bellIsUrgent resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 4 2 - Disable Urgency window manager hint when Control-G is received, xterm.  This disables the bellIsUrgent resource.', async () => {
+        await assertNoModeChange('\x1b[?1042l');
       });
-      test.skip('Ps = 1 0 4 3 - Disable raising of the window when Control- G is received, xterm.  This disables the popOnBell resource.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 4 3 - Disable raising of the window when Control- G is received, xterm.  This disables the popOnBell resource.', async () => {
+        await assertNoModeChange('\x1b[?1043l');
       });
-      test.skip('Ps = 1 0 4 5 - No Extended Reverse-wraparound mode (XTREVWRAP2), xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 4 5 - No Extended Reverse-wraparound mode (XTREVWRAP2), xterm.', async () => {
+        await assertNoModeChange('\x1b[?1045l');
       });
-      test.skip('Ps = 1 0 4 6 - Disable switching to/from Alternate Screen Buffer, xterm.  This works for terminfo-based systems, updating the titeInhibit resource.  If currently using the Alternate Screen Buffer, xterm switches to the Normal Screen Buffer.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 4 6 - Disable switching to/from Alternate Screen Buffer, xterm.  This works for terminfo-based systems, updating the titeInhibit resource.  If currently using the Alternate Screen Buffer, xterm switches to the Normal Screen Buffer.', async () => {
+        await assertNoModeChange('\x1b[?1046l');
       });
       test('Ps = 1 0 4 7 - Use Normal Screen Buffer, xterm.  Clear the screen first if in the Alternate Screen Buffer.  This may be disabled by the titeInhibit resource.', async () => {
         await ctx.proxy.write('\x1b[?1047h');
@@ -964,32 +1003,32 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'normal');
         await pollFor(ctx.page, () => getCursor(), { col: 3, row: 2 });
       });
-      test.skip('Ps = 1 0 5 0 - Reset terminfo/termcap function-key mode, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 5 0 - Reset terminfo/termcap function-key mode, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1050l');
       });
-      test.skip('Ps = 1 0 5 1 - Reset Sun function-key mode, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 5 1 - Reset Sun function-key mode, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1051l');
       });
-      test.skip('Ps = 1 0 5 2 - Reset HP function-key mode, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 5 2 - Reset HP function-key mode, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1052l');
       });
-      test.skip('Ps = 1 0 5 3 - Reset SCO function-key mode, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 5 3 - Reset SCO function-key mode, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1053l');
       });
-      test.skip('Ps = 1 0 6 0 - Reset legacy keyboard emulation, i.e, X11R6, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 6 0 - Reset legacy keyboard emulation, i.e, X11R6, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1060l');
       });
-      test.skip('Ps = 1 0 6 1 - Reset keyboard emulation to Sun/PC style, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 1 0 6 1 - Reset keyboard emulation to Sun/PC style, xterm.', async () => {
+        await assertNoModeChange('\x1b[?1061l');
       });
-      test.skip('Ps = 2 0 0 1 - Disable readline mouse button-1, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 2 0 0 1 - Disable readline mouse button-1, xterm.', async () => {
+        await assertNoModeChange('\x1b[?2001l');
       });
-      test.skip('Ps = 2 0 0 2 - Disable readline mouse button-2, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 2 0 0 2 - Disable readline mouse button-2, xterm.', async () => {
+        await assertNoModeChange('\x1b[?2002l');
       });
-      test.skip('Ps = 2 0 0 3 - Disable readline mouse button-3, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 2 0 0 3 - Disable readline mouse button-3, xterm.', async () => {
+        await assertNoModeChange('\x1b[?2003l');
       });
       test('Ps = 2 0 0 4 - Reset bracketed paste mode, xterm.', async () => {
         await ctx.proxy.write('\x1b[?2004h');
@@ -997,11 +1036,11 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?2004l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).bracketedPasteMode, false);
       });
-      test.skip('Ps = 2 0 0 5 - Disable readline character-quoting, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 2 0 0 5 - Disable readline character-quoting, xterm.', async () => {
+        await assertNoModeChange('\x1b[?2005l');
       });
-      test.skip('Ps = 2 0 0 6 - Disable readline newline pasting, xterm.', async () => {
-        // TODO: Implement
+      test('Ps = 2 0 0 6 - Disable readline newline pasting, xterm.', async () => {
+        await assertNoModeChange('\x1b[?2006l');
       });
     });
     test.describe('CSI Pm m - SGR: Character Attributes', () => {
@@ -1492,8 +1531,14 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[0 q');
       deepStrictEqual(await getCursorMode(), { style: undefined, blink: undefined });
     });
-    test.skip('CSI Ps " q - Select character protection attribute (DECSCA), VT220.', async () => {
-      // TODO: Implement
+    test('CSI Ps " q - Select character protection attribute (DECSCA), VT220.', async () => {
+      await ctx.proxy.write('\x1b[1"q');
+      await ctx.proxy.write('PROT');
+      await ctx.proxy.write('\x1b[2"q');
+      await ctx.proxy.write('open');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['PROTopen']);
+      await ctx.proxy.write('\x1b[1;1H\x1b[?2K');
+      await pollFor(ctx.page, () => getLinesAsArray(1), ['PROT']);
     });
     test.skip('CSI # q - Pop video attributes from stack (XTPOPSGR), xterm.', async () => {
       // TODO: Implement
@@ -1795,6 +1840,25 @@ test.describe('InputHandler Integration Tests', () => {
     });
   });
 });
+
+
+async function getModeSnapshot(): Promise<any> {
+  return {
+    modes: await ctx.proxy.modes,
+    cursorBlink: await ctx.proxy.getOption('cursorBlink'),
+    cols: await ctx.proxy.cols,
+    rows: await ctx.proxy.rows,
+    bufferType: await ctx.proxy.buffer.active.type,
+    mouseProtocol: await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeProtocol),
+    mouseEncoding: await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding)
+  };
+}
+
+async function assertNoModeChange(sequence: string): Promise<void> {
+  const before = await getModeSnapshot();
+  await ctx.proxy.write(sequence);
+  deepStrictEqual(await getModeSnapshot(), before);
+}
 
 
 async function getLinesAsArray(count: number, start: number = 0): Promise<string[]> {
