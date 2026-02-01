@@ -81,7 +81,7 @@ function toName(data: Uint32Array): string {
   return new TextDecoder().decode(b);
 }
 
-const DECODERS: {[key: string]: (v: Uint32Array) => any} = {
+const DECODERS: {[key: string]: (v: Uint32Array) => number | string} = {
   inline: toInt,
   size: toInt,
   name: toName,
@@ -100,7 +100,7 @@ export class HeaderParser {
   private _buffer = new Uint32Array(MAX_FIELDCHARS);
   private _position = 0;
   private _key = '';
-  public fields: {[key: string]: any} = {};
+  public fields: {[key: string]: number | string | Uint32Array | null} = {};
 
   public reset(): void {
     this._buffer.fill(0);

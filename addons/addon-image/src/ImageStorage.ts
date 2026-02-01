@@ -132,8 +132,10 @@ export class ImageStorage implements IDisposable {
   ) {
     try {
       this.setLimit(this._opts.storageLimit);
-    } catch (e: any) {
-      console.error(e.message);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        console.error(e.message);
+      }
       console.warn(`storageLimit is set to ${this.getLimit()} MB`);
     }
     this._viewportMetrics = {
