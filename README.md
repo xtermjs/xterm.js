@@ -87,6 +87,7 @@ The xterm.js team maintains the following addons, but anyone can build them:
 - [`@xterm/addon-web-fonts`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-fonts): Easily integrate web fonts
 - [`@xterm/addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-web-links): Adds web link detection and interaction
 - [`@xterm/addon-webgl`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-webgl): Renders xterm.js using a `canvas` element's webgl2 context
+- [`@xterm/addon-webgpu`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-webgpu): Renders xterm.js using a `canvas` element's webgpu context
 
 ## Browser Support
 

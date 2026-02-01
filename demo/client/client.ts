@@ -36,6 +36,7 @@ import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebFontsAddon } from '@xterm/addon-web-fonts';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
+import { WebgpuAddon } from '@xterm/addon-webgpu';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 import { AddonCollection, type AddonType, type IDemoAddon } from './types';
@@ -52,6 +53,7 @@ export interface IWindowWithTerminal extends Window {
   SerializeAddon?: typeof SerializeAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
+  WebgpuAddon?: typeof WebgpuAddon;
   Unicode11Addon?: typeof Unicode11Addon;
   UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon;
   LigaturesAddon?: typeof LigaturesAddon;
@@ -80,6 +82,7 @@ const addons: AddonCollection = {
   webFonts: { name: 'webFonts', ctor: WebFontsAddon, canChange: true },
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
+  webgpu: { name: 'webgpu', ctor: WebgpuAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
   unicodeGraphemes: { name: 'unicodeGraphemes', ctor: UnicodeGraphemesAddon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
@@ -204,6 +207,7 @@ if (document.location.pathname === '/test') {
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
+  window.WebgpuAddon = WebgpuAddon;
 } else {
   const typedTerm = createTerminal();
 

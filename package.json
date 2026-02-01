@@ -90,6 +90,7 @@
     "@types/utf8": "^3.0.0",
     "@types/webpack": "^5.28.0",
     "@types/ws": "^8.2.0",
+    "@webgpu/types": "^0.1.40",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
     "chai": "^4.3.4",

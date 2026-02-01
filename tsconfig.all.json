@@ -19,6 +19,7 @@
     { "path": "./addons/addon-unicode-graphemes" },
     { "path": "./addons/addon-web-fonts" },
     { "path": "./addons/addon-web-links" },
-    { "path": "./addons/addon-webgl" }
+    { "path": "./addons/addon-webgl" },
+    { "path": "./addons/addon-webgpu" }
   ]
 }
