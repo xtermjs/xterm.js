@@ -5,8 +5,8 @@
 
 import type { ISearchResultChangeEvent } from '@xterm/addon-search';
 import type { IDisposable } from '@xterm/xterm';
-import { Emitter, Event } from 'vs/base/common/event';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter, type IEvent } from 'common/Event';
+import { Disposable } from 'common/Lifecycle';
 import type { ISearchResult } from './SearchEngine';
 
 /**
@@ -25,7 +25,7 @@ export class SearchResultTracker extends Disposable {
   private _selectedDecoration: ISelectedDecoration | undefined;
 
   private readonly _onDidChangeResults = this._register(new Emitter<ISearchResultChangeEvent>());
-  public get onDidChangeResults(): Event<ISearchResultChangeEvent> { return this._onDidChangeResults.event; }
+  public get onDidChangeResults(): IEvent<ISearchResultChangeEvent> { return this._onDidChangeResults.event; }
 
   /**
    * Gets the current search results.

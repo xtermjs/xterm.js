@@ -15,6 +15,9 @@
       "../../../node_modules/@types/mocha"
     ],
     "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
       "browser/*": [
         "../../../src/browser/*"
       ],
@@ -33,6 +36,9 @@
   "references": [
     {
       "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../src/common"
     },
     {
       "path": "../../../src/vs"

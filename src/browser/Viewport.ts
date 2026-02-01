@@ -8,7 +8,7 @@ import { ViewportConstants } from 'browser/shared/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
-import { addDisposableListener, scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
+import { addDisposableListener, scheduleAtNextAnimationFrame } from 'browser/Dom';
 import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
 import { Emitter, EventUtils } from 'common/Event';

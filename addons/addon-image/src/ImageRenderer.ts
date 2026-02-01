@@ -6,7 +6,7 @@
 import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from '@xterm/xterm';
 import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
-import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 const PLACEHOLDER_LENGTH = 4096;
 const PLACEHOLDER_HEIGHT = 24;
