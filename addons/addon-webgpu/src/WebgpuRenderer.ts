@@ -53,6 +53,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
   private _format: IGPUTextureFormat | undefined;
   private _rectangleRenderer: MutableDisposable<WebgpuRectangleRenderer> = this._register(new MutableDisposable());
   private _glyphRenderer: MutableDisposable<WebgpuGlyphRenderer> = this._register(new MutableDisposable());
+  private _isWebgpuStateInitialized: boolean = false;
 
   public readonly dimensions: IRenderDimensions;
 
@@ -285,11 +286,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
 
     this._rectangleRenderer.value = new WebgpuRectangleRenderer(this._terminal, this._device, this._format, this.dimensions, this._themeService);
     this._glyphRenderer.value = new WebgpuGlyphRenderer(this._terminal, this._device, this._format, this.dimensions, this._optionsService, this._maxAtlasPages);
-    this._rectangleRenderer.value.handleResize();
-    this._glyphRenderer.value.handleResize();
-
-    this._refreshCharAtlas();
-    this._requestRedrawViewport();
+    this.handleCharSizeChanged();
     this._onReady.fire();
   }
 
@@ -306,16 +303,11 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
       return;
     }
     this._format = gpu.getPreferredCanvasFormat();
-    this._context.configure({
-      device: this._device,
-      format: this._format,
-      alphaMode: 'premultiplied',
-      usage: WebgpuTextureUsage.RENDER_ATTACHMENT | WebgpuTextureUsage.COPY_DST
-    });
+    this._tryConfigureContext();
 
     void this._device.lost.then(() => this._onContextLoss.fire());
 
-    this._initializeWebgpuState();
+    this._maybeInitializeWebgpuState();
   }
 
   private _renderFrame(): void {
@@ -354,14 +346,8 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     this._canvas.style.height = `${this.dimensions.css.canvas.height}px`;
     this._core.screenElement!.style.width = `${this.dimensions.css.canvas.width}px`;
     this._core.screenElement!.style.height = `${this.dimensions.css.canvas.height}px`;
-    if (this._device && this._format) {
-      this._context.configure({
-        device: this._device,
-        format: this._format,
-        alphaMode: 'premultiplied',
-        usage: WebgpuTextureUsage.RENDER_ATTACHMENT | WebgpuTextureUsage.COPY_DST
-      });
-    }
+    this._tryConfigureContext();
+    this._maybeInitializeWebgpuState();
   }
 
   private _updateDimensions(): void {
@@ -392,7 +378,31 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     }
     this._canvas.width = width;
     this._canvas.height = height;
+    this._tryConfigureContext();
     this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1, sync: true });
+  }
+
+  private _tryConfigureContext(): void {
+    if (!this._device || !this._format) {
+      return;
+    }
+    if (this._canvas.width === 0 || this._canvas.height === 0) {
+      return;
+    }
+    this._context.configure({
+      device: this._device,
+      format: this._format,
+      alphaMode: 'premultiplied',
+      usage: WebgpuTextureUsage.RENDER_ATTACHMENT | WebgpuTextureUsage.COPY_DST
+    });
+  }
+
+  private _maybeInitializeWebgpuState(): void {
+    if (this._isWebgpuStateInitialized || !this._device || !this._format) {
+      return;
+    }
+    this._isWebgpuStateInitialized = true;
+    this._initializeWebgpuState();
   }
 
   private _updateCursorBlink(): void {

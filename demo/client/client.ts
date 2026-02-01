@@ -237,15 +237,15 @@ if (document.location.pathname === '/test') {
   // TODO: Most of below should be encapsulated within windows
   paddingElement = styleWindow.paddingElement;
 
-  controlBar.setTabVisible('addon-webgl', true);
+  controlBar.setTabVisible('addon-webgpu', true);
   controlBar.setTabVisible('addon-search', true);
   controlBar.setTabVisible('addon-serialize', true);
   controlBar.setTabVisible('addon-image', true);
   controlBar.setTabVisible('addon-web-fonts', true);
-  addonWebglWindow.setTextureAtlas(addons.webgl.instance!.textureAtlas!);
-  addons.webgl.instance!.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
-  addons.webgl.instance!.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
-  addons.webgl.instance!.onRemoveTextureAtlasCanvas(e => addonWebglWindow.removeTextureAtlas(e));
+  addonWebgpuWindow.setTextureAtlas(addons.webgpu.instance!.textureAtlas!);
+  addons.webgpu.instance!.onChangeTextureAtlas(e => addonWebgpuWindow.setTextureAtlas(e));
+  addons.webgpu.instance!.onAddTextureAtlasCanvas(e => addonWebgpuWindow.appendTextureAtlas(e));
+  addons.webgpu.instance!.onRemoveTextureAtlasCanvas(e => addonWebgpuWindow.removeTextureAtlas(e));
 
   paddingElement.value = '0';
   addDomListener(paddingElement, 'change', setPadding);
@@ -302,8 +302,8 @@ function createTerminal(): Terminal {
   addons.progress.instance = new ProgressAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
-  try {  // try to start with webgl renderer (might throw on older safari/webkit)
-    addons.webgl.instance = new WebglAddon();
+  try {  // try to start with webgpu renderer (might throw if unsupported)
+    addons.webgpu.instance = new WebgpuAddon();
   } catch (e) {
     console.warn(e);
   }
@@ -335,18 +335,18 @@ function createTerminal(): Terminal {
 
   addons.fit.instance!.fit();
 
-  if (addons.webgl.instance) {
+  if (addons.webgpu.instance) {
     try {
-      typedTerm.loadAddon(addons.webgl.instance);
+      typedTerm.loadAddon(addons.webgpu.instance);
       term.open(terminalContainer!);
     } catch (e) {
-      console.warn('error during loading webgl addon:', e);
-      addons.webgl.instance.dispose();
-      addons.webgl.instance = undefined;
+      console.warn('error during loading webgpu addon:', e);
+      addons.webgpu.instance.dispose();
+      addons.webgpu.instance = undefined;
     }
   }
   if (!typedTerm.element) {
-    // webgl loading failed for some reason, attach with DOM renderer
+    // webgpu loading failed for some reason, attach with DOM renderer
     term.open(terminalContainer!);
   }
 

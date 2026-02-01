@@ -46,7 +46,7 @@ function createGlyphShaderSource(maxAtlasPages: number): string {
   let sampleChain = '';
   for (let i = 0; i < maxAtlasPages; i++) {
     const prefix = i === 0 ? '' : 'else ';
-    sampleChain += `${prefix}if (page == ${i}u) { color = textureSample(atlasTexture${i}, atlasSampler, input.texCoord); }\n`;
+    sampleChain += `${prefix}if (page == ${i}u) { color = textureSampleLevel(atlasTexture${i}, atlasSampler, input.texCoord, 0.0); }\n`;
   }
 
   return `
@@ -397,7 +397,7 @@ export class WebgpuGlyphRenderer extends Disposable {
       const texture = this._device.createTexture({
         size: { width: 1, height: 1, depthOrArrayLayers: 1 },
         format: 'rgba8unorm',
-        usage: WebgpuTextureUsage.TEXTURE_BINDING | WebgpuTextureUsage.COPY_DST
+        usage: WebgpuTextureUsage.TEXTURE_BINDING | WebgpuTextureUsage.COPY_DST | WebgpuTextureUsage.RENDER_ATTACHMENT
       });
       const view = texture.createView();
       this._device.queue.writeTexture(
@@ -441,13 +441,16 @@ export class WebgpuGlyphRenderer extends Disposable {
     let needsBindGroup = false;
     for (let i = 0; i < this._atlas.pages.length && i < this._atlasTextures.length; i++) {
       const page = this._atlas.pages[i];
+      if (page.canvas.width === 0 || page.canvas.height === 0) {
+        continue;
+      }
       const existing = this._atlasTextures[i];
       if (existing.width !== page.canvas.width || existing.height !== page.canvas.height) {
         existing.texture.destroy?.();
         const texture = this._device.createTexture({
           size: { width: page.canvas.width, height: page.canvas.height, depthOrArrayLayers: 1 },
           format: 'rgba8unorm',
-          usage: WebgpuTextureUsage.TEXTURE_BINDING | WebgpuTextureUsage.COPY_DST
+          usage: WebgpuTextureUsage.TEXTURE_BINDING | WebgpuTextureUsage.COPY_DST | WebgpuTextureUsage.RENDER_ATTACHMENT
         });
         existing.texture = texture;
         existing.view = texture.createView();
