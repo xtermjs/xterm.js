@@ -8,6 +8,7 @@ declare const Buffer: any;
 
 
 export interface IHeaderFields {
+  [key: string]: number | string | Uint32Array | null | undefined;
   // base-64 encoded filename. Defaults to "Unnamed file".
   name: string;
   // File size in bytes. The file transfer will be canceled if this size is exceeded.
@@ -100,7 +101,7 @@ export class HeaderParser {
   private _buffer = new Uint32Array(MAX_FIELDCHARS);
   private _position = 0;
   private _key = '';
-  public fields: {[key: string]: number | string | Uint32Array | null} = {};
+  public fields: {[key: string]: number | string | Uint32Array | null | undefined} = {};
 
   public reset(): void {
     this._buffer.fill(0);
