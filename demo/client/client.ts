@@ -16,9 +16,12 @@ if ('WebAssembly' in window) {
 import { Terminal, ITerminalOptions, type ITheme } from '@xterm/xterm';
 import { AttachAddon } from '@xterm/addon-attach';
 import { AddonImageWindow } from './components/window/addonImageWindow';
+import { AddonLigaturesWindow } from './components/window/addonLigaturesWindow';
+import { AddonProgressWindow } from './components/window/addonProgressWindow';
 import { AddonSearchWindow } from './components/window/addonSearchWindow';
 import { AddonSerializeWindow } from './components/window/addonSerializeWindow';
 import { AddonWebFontsWindow } from './components/window/addonWebFontsWindow';
+import { AddonWebLinksWindow } from './components/window/addonWebLinksWindow';
 import { AddonsWindow } from './components/window/addonsWindow';
 import { CellInspectorWindow } from './components/window/cellInspectorWindow';
 import { ControlBar } from './components/controlBar';
@@ -213,11 +216,14 @@ if (document.location.pathname === '/test') {
   controlBar.registerWindow(new CellInspectorWindow(typedTerm, addons));
   controlBar.registerWindow(new VtWindow(typedTerm, addons));
   addonsWindow = controlBar.registerWindow(new AddonsWindow(typedTerm, addons));
-  addonSearchWindow = controlBar.registerWindow(new AddonSearchWindow(typedTerm, addons), { afterId: 'addons', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonImageWindow(typedTerm, addons), { afterId: 'addons', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonLigaturesWindow(typedTerm, addons), { afterId: 'addon-image', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonProgressWindow(typedTerm, addons), { afterId: 'addon-ligatures', hidden: true, italics: true });
+  addonSearchWindow = controlBar.registerWindow(new AddonSearchWindow(typedTerm, addons), { afterId: 'addon-progress', hidden: true, italics: true });
   controlBar.registerWindow(new AddonSerializeWindow(typedTerm, addons), { afterId: 'addon-search', hidden: true, italics: true });
-  controlBar.registerWindow(new AddonImageWindow(typedTerm, addons), { afterId: 'addon-serialize', hidden: true, italics: true });
-  controlBar.registerWindow(new AddonWebFontsWindow(typedTerm, addons), { afterId: 'addon-image', hidden: true, italics: true });
-  addonWebglWindow = controlBar.registerWindow(new WebglWindow(typedTerm, addons), { afterId: 'addon-web-fonts', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonWebFontsWindow(typedTerm, addons), { afterId: 'addon-serialize', hidden: true, italics: true });
+  controlBar.registerWindow(new AddonWebLinksWindow(typedTerm, addons), { afterId: 'addon-web-fonts', hidden: true, italics: true });
+  addonWebglWindow = controlBar.registerWindow(new WebglWindow(typedTerm, addons), { afterId: 'addon-web-links', hidden: true, italics: true });
   controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }), { afterId: 'options' });
   actionElements = {
     findNext: addonSearchWindow.findNextInput,
@@ -229,11 +235,14 @@ if (document.location.pathname === '/test') {
   // TODO: Most of below should be encapsulated within windows
   paddingElement = styleWindow.paddingElement;
 
-  controlBar.setTabVisible('addon-webgl', true);
+  controlBar.setTabVisible('addon-image', !!addons.image.instance);
+  controlBar.setTabVisible('addon-ligatures', !!addons.ligatures.instance);
+  controlBar.setTabVisible('addon-progress', !!addons.progress.instance);
   controlBar.setTabVisible('addon-search', true);
   controlBar.setTabVisible('addon-serialize', true);
-  controlBar.setTabVisible('addon-image', true);
   controlBar.setTabVisible('addon-web-fonts', true);
+  controlBar.setTabVisible('addon-web-links', !!addons.webLinks.instance);
+  controlBar.setTabVisible('addon-webgl', true);
   addonWebglWindow.setTextureAtlas(addons.webgl.instance!.textureAtlas!);
   addons.webgl.instance!.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
   addons.webgl.instance!.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
@@ -500,6 +509,12 @@ function initAddons(term: Terminal): void {
             addons[name].instance!.onDidChangeResults(e => updateFindResults(e));
           } else if (name === 'serialize') {
             controlBar.setTabVisible('addon-serialize', true);
+          } else if (name === 'ligatures') {
+            controlBar.setTabVisible('addon-ligatures', true);
+          } else if (name === 'progress') {
+            controlBar.setTabVisible('addon-progress', true);
+          } else if (name === 'webLinks') {
+            controlBar.setTabVisible('addon-web-links', true);
           }
         }
         catch {
@@ -516,6 +531,12 @@ function initAddons(term: Terminal): void {
           controlBar.setTabVisible('addon-search', false);
         } else if (name === 'serialize') {
           controlBar.setTabVisible('addon-serialize', false);
+        } else if (name === 'ligatures') {
+          controlBar.setTabVisible('addon-ligatures', false);
+        } else if (name === 'progress') {
+          controlBar.setTabVisible('addon-progress', false);
+        } else if (name === 'webLinks') {
+          controlBar.setTabVisible('addon-web-links', false);
         }
         addon.instance!.dispose();
         addon.instance = undefined;
