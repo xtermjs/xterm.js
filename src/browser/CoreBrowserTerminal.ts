@@ -1156,9 +1156,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea!.value = '';
     }
 
+    const wasModifierOnly = this._keyboardService.useWin32InputMode && wasModifierKeyOnlyEvent(event);
     this._onKey.fire({ key: result.key, domEvent: event });
     this._showCursor();
-    this.coreService.triggerDataEvent(result.key, true);
+    this.coreService.triggerDataEvent(result.key, !wasModifierOnly);
 
     // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
     // other listeners. When screen reader mode is enabled, we don't cancel them (unless ctrl or alt
@@ -1199,7 +1200,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Handle key release for Kitty keyboard protocol
     const result = this._keyboardService.evaluateKeyUp(ev);
     if (result?.key) {
-      this.coreService.triggerDataEvent(result.key, true);
+      const wasModifierOnly = this._keyboardService.useWin32InputMode && wasModifierKeyOnlyEvent(ev);
+      this.coreService.triggerDataEvent(result.key, !wasModifierOnly);
     }
 
     this.updateCursorStyle(ev);
@@ -1410,5 +1412,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 function wasModifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift
     ev.keyCode === 17 || // Ctrl
-    ev.keyCode === 18; // Alt
+    ev.keyCode === 18 || // Alt
+    ev.keyCode === 91 || // Meta (Left)
+    ev.keyCode === 92 || // Meta (Right)
+    ev.keyCode === 93 || // Meta (Menu)
+    ev.keyCode === 224 || // Meta (Firefox)
+    ev.key === 'Meta';
 }

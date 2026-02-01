@@ -401,6 +401,42 @@ describe('Terminal', () => {
       });
     });
 
+    describe('keyDown', () => {
+      it('should not scroll down on modifier-only input in win32 input mode', async () => {
+        term.options.vtExtensions = { win32InputMode: true };
+        term.coreService.decPrivateModes.win32InputMode = true;
+        (term as any).textarea = { value: '' };
+
+        await term.writeP('test\r\n'.repeat(term.rows * 3));
+        const startYDisp = term.buffer.ydisp;
+        term.scrollLines(-1);
+        const scrolledYDisp = term.buffer.ydisp;
+        assert.equal(scrolledYDisp, startYDisp - 1);
+
+        const evKeyDown = {
+          type: 'keydown',
+          key: 'Control',
+          keyCode: 17,
+          ctrlKey: true,
+          preventDefault: () => { },
+          stopPropagation: () => { }
+        } as KeyboardEvent;
+
+        const evKeyUp = {
+          type: 'keyup',
+          key: 'Control',
+          keyCode: 17,
+          preventDefault: () => { },
+          stopPropagation: () => { }
+        } as KeyboardEvent;
+
+        term.keyDown(evKeyDown);
+        assert.equal(term.buffer.ydisp, scrolledYDisp);
+        (term as any)._keyUp(evKeyUp);
+        assert.equal(term.buffer.ydisp, scrolledYDisp);
+      });
+    });
+
     describe('scroll() function', () => {
       describe('when scrollback > 0', () => {
         it('should create a new line and scroll', () => {
