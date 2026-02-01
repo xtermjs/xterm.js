@@ -182,7 +182,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
     await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(`\x1b[8;40m■\x1b[8;41m■\x1b[8;42m■\x1b[8;43m■\x1b[8;44m■\x1b[8;45m■\x1b[8;46m■\x1b[8;47m■`));
-    const getBgColor = (col: number, row: number) => getCellDomBackgroundColor(ctx.value, col, row);
+    const getBgColor = (col: number, row: number): Promise<[number, number, number, number]> => getCellDomBackgroundColor(ctx.value, col, row);
     await pollFor(ctx.value.page, () => getBgColor(1, 1), [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getBgColor(2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getBgColor(3, 1), [7, 8, 9, 255]);
@@ -344,7 +344,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       data += '\r\n';
     }
     await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
-    const getBgColor = (col: number, row: number) => getCellDomBackgroundColor(ctx.value, col, row);
+    const getBgColor = (col: number, row: number): Promise<[number, number, number, number]> => getCellDomBackgroundColor(ctx.value, col, row);
     const firstCssColor = COLORS_16_TO_255[1];
     const firstR = parseInt(firstCssColor.slice(1, 3), 16);
     const firstG = parseInt(firstCssColor.slice(3, 5), 16);
@@ -725,7 +725,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       data += '\r\n';
     }
     await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
-    const getBgColor = (col: number, row: number) => getCellDomBackgroundColor(ctx.value, col, row);
+    const getBgColor = (col: number, row: number): Promise<[number, number, number, number]> => getCellDomBackgroundColor(ctx.value, col, row);
     await pollFor(ctx.value.page, () => getBgColor(2, 1), [1, 1, 1, 255]);
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
@@ -914,7 +914,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
           255
         ];
       };
-      const getFgColor = async (col: number, row: number) => compositeOverBackground(await getCellDomForegroundColor(ctx.value, col, row));
+      const getFgColor = async (col: number, row: number): Promise<[number, number, number, number]> => compositeOverBackground(await getCellDomForegroundColor(ctx.value, col, row));
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
@@ -1384,10 +1384,10 @@ async function pollForCellColorFresh(ctx: ITestContext, col: number, row: number
   });
 }
 
-async function pollForCellColorApproximateFresh(ctx: ITestContext, marginOfError: number, col: number, row: number, expected: [number, number, number, number], position: CellColorPosition = CellColorPosition.CENTER): Promise<void> {
-  await pollForApproximate(ctx.page, marginOfError, () => getCellColor(ctx, col, row, position), expected, async () => {
-    frameDetails = undefined;
-  });
+interface ICellDomInfo {
+  fg: string;
+  bg: string;
+  char: string;
 }
 
 function parseCssColor(value: string): [number, number, number, number] {
@@ -1405,7 +1405,7 @@ function parseCssColor(value: string): [number, number, number, number] {
   return [r, g, b, a];
 }
 
-async function getCellDomInfo(ctx: ITestContext, col: number, row: number): Promise<{ fg: string; bg: string; char: string }> {
+async function getCellDomInfo(ctx: ITestContext, col: number, row: number): Promise<ICellDomInfo> {
   const info = await ctx.page.evaluate(({ col, row }) => {
     const rows = document.querySelectorAll('#terminal-container .xterm-rows > div');
     const rowEl = rows[row - 1];
