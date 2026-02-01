@@ -10,13 +10,13 @@ import { ICoreService, IDecorationService, IOptionsService } from 'common/servic
 import { Terminal } from '@xterm/xterm';
 import { Emitter, EventUtils } from 'common/Event';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import type { GPU, GPUCanvasContext, GPUDevice, GPUTextureFormat } from './WebgpuTypes';
+import type { IGPU, IGPUCanvasContext, IGPUDevice, IGPUTextureFormat } from './WebgpuTypes';
 
 export class WebgpuRenderer extends Disposable implements IRenderer {
   private readonly _canvas: HTMLCanvasElement;
-  private readonly _context: GPUCanvasContext;
-  private _device: GPUDevice | undefined;
-  private _format: GPUTextureFormat | undefined;
+  private readonly _context: IGPUCanvasContext;
+  private _device: IGPUDevice | undefined;
+  private _format: IGPUTextureFormat | undefined;
   private _fallbackRenderer: IRenderer;
   private _core: ITerminal;
 
@@ -61,7 +61,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     this._canvas.style.left = '0';
     this._canvas.style.pointerEvents = 'none';
 
-    const context = this._canvas.getContext('webgpu') as unknown as GPUCanvasContext | null;
+    const context = this._canvas.getContext('webgpu') as unknown as IGPUCanvasContext | null;
     if (!context) {
       throw new Error('WebGPU not supported');
     }
@@ -147,7 +147,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
   }
 
   private async _initializeWebgpu(): Promise<void> {
-    const gpu = (navigator as Navigator & { gpu?: GPU }).gpu;
+    const gpu = (navigator as Navigator & { gpu?: IGPU }).gpu;
     const adapter = await gpu?.requestAdapter();
     if (!adapter) {
       this._onContextLoss.fire();

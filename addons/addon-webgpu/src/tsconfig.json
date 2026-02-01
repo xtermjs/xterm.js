@@ -4,7 +4,6 @@
     "target": "es2021",
     "lib": [
       "dom",
-      "dom.webgpu",
       "es2021"
     ],
     "rootDir": ".",
@@ -31,8 +30,7 @@
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "types": [
-      "../../../node_modules/@types/mocha",
-      "../../../node_modules/@webgpu/types"
+      "../../../node_modules/@types/mocha"
     ]
   },
   "include": [

@@ -3,63 +3,65 @@
  * @license MIT
  */
 
-export type GPUTextureFormat = string;
+export type IGPUTextureFormat = string;
 
-export interface GPUTextureView {
+export interface IGPUTextureView {
 }
 
-export interface GPUTexture {
-  createView(): GPUTextureView;
+export interface IGPUTexture {
+  createView(): IGPUTextureView;
 }
 
-export interface GPUCanvasConfiguration {
-  device: GPUDevice;
-  format: GPUTextureFormat;
+export interface IGPUCanvasConfiguration {
+  device: IGPUDevice;
+  format: IGPUTextureFormat;
   alphaMode?: 'opaque' | 'premultiplied';
 }
 
-export interface GPUCanvasContext {
-  configure(config: GPUCanvasConfiguration): void;
-  getCurrentTexture(): GPUTexture;
+export interface IGPUCanvasContext {
+  configure(config: IGPUCanvasConfiguration): void;
+  getCurrentTexture(): IGPUTexture;
 }
 
-export interface GPUQueue {
-  submit(commandBuffers: GPUCommandBuffer[]): void;
+export interface IGPUQueue {
+  submit(commandBuffers: IGPUCommandBuffer[]): void;
 }
 
-export interface GPURenderPassEncoder {
+export interface IGPURenderPassEncoder {
   end(): void;
 }
 
-export interface GPUCommandBuffer {
+export interface IGPUCommandBuffer {
 }
 
-export interface GPURenderPassDescriptor {
-  colorAttachments: Array<{
-    view: GPUTextureView;
-    clearValue?: { r: number; g: number; b: number; a: number };
-    loadOp: 'load' | 'clear';
-    storeOp: 'store' | 'discard';
-  }>;
+export interface IGPURenderPassColorAttachment {
+  view: IGPUTextureView;
+  clearValue?: { r: number, g: number, b: number, a: number };
+  loadOp: 'load' | 'clear';
+  storeOp: 'store' | 'discard';
 }
 
-export interface GPUCommandEncoder {
-  beginRenderPass(descriptor: GPURenderPassDescriptor): GPURenderPassEncoder;
-  finish(): GPUCommandBuffer;
+export interface IGPURenderPassDescriptor {
+  colorAttachments: IGPURenderPassColorAttachment[];
 }
 
-export interface GPUDevice {
-  queue: GPUQueue;
+export interface IGPUCommandEncoder {
+  beginRenderPass(descriptor: IGPURenderPassDescriptor): IGPURenderPassEncoder;
+  finish(): IGPUCommandBuffer;
+}
+
+export interface IGPUDevice {
+  queue: IGPUQueue;
   lost: Promise<unknown>;
-  createCommandEncoder(): GPUCommandEncoder;
+  createCommandEncoder(): IGPUCommandEncoder;
   destroy?(): void;
 }
 
-export interface GPUAdapter {
-  requestDevice(): Promise<GPUDevice>;
+export interface IGPUAdapter {
+  requestDevice(): Promise<IGPUDevice>;
 }
 
-export interface GPU {
-  requestAdapter(): Promise<GPUAdapter | null>;
-  getPreferredCanvasFormat(): GPUTextureFormat;
+export interface IGPU {
+  requestAdapter(): Promise<IGPUAdapter | null>;
+  getPreferredCanvasFormat(): IGPUTextureFormat;
 }

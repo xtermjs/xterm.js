@@ -11,7 +11,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { WebgpuRenderer } from './WebgpuRenderer';
 import { Emitter, EventUtils } from 'common/Event';
-import type { GPU } from './WebgpuTypes';
+import type { IGPU } from './WebgpuTypes';
 
 export class WebgpuAddon extends Disposable implements ITerminalAddon, IWebgpuApi {
   private _terminal?: Terminal;
@@ -104,6 +104,6 @@ export class WebgpuAddon extends Disposable implements ITerminalAddon, IWebgpuAp
   }
 
   private static _isWebgpuSupported(): boolean {
-    return typeof navigator !== 'undefined' && !!(navigator as Navigator & { gpu?: GPU }).gpu;
+    return typeof navigator !== 'undefined' && !!(navigator as Navigator & { gpu?: IGPU }).gpu;
   }
 }

@@ -143,7 +143,7 @@ if (config.addon) {
       "@xterm/addon-web-fonts": "./addons/addon-web-fonts/lib/addon-web-fonts.mjs",
       "@xterm/addon-web-links": "./addons/addon-web-links/lib/addon-web-links.mjs",
       "@xterm/addon-webgl": "./addons/addon-webgl/lib/addon-webgl.mjs",
-      "@xterm/addon-webgpu": "./addons/addon-webgpu/lib/addon-webgpu.mjs",
+      "@xterm/addon-webgpu": "./addons/addon-webgpu/src/WebgpuAddon.ts",
       "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/addon-unicode11.mjs",
       "@xterm/addon-unicode-graphemes": "./addons/addon-unicode-graphemes/lib/addon-unicode-graphemes.mjs",
 

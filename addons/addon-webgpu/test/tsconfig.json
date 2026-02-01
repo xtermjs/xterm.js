@@ -4,7 +4,6 @@
     "target": "ESNext",
     "lib": [
       "dom",
-      "dom.webgpu",
       "es2021"
     ],
     "rootDir": ".",
@@ -23,8 +22,7 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/node",
-      "../../../node_modules/@lunapaint/png-codec",
-      "../../../node_modules/@webgpu/types"
+      "../../../node_modules/@lunapaint/png-codec"
     ]
   },
   "include": [
