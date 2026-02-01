@@ -6,25 +6,27 @@
 import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
 
-export class GpuWindow extends BaseWindow implements IControlWindow {
-  public readonly id = 'gpu';
-  public readonly label = 'WebGL';
+export class WebgpuWindow extends BaseWindow implements IControlWindow {
+  public readonly id = 'addon-webgpu';
+  public readonly label = 'webgpu';
 
   private _textureAtlasContainer!: HTMLElement;
 
   public build(container: HTMLElement): void {
+    const zoomId = `${this.id}-texture-atlas-zoom`;
     const zoomCheckbox = document.createElement('input');
     zoomCheckbox.type = 'checkbox';
-    zoomCheckbox.id = 'texture-atlas-zoom';
+    zoomCheckbox.id = zoomId;
+    zoomCheckbox.classList.add('texture-atlas-zoom');
     container.appendChild(zoomCheckbox);
 
     const zoomLabel = document.createElement('label');
-    zoomLabel.htmlFor = 'texture-atlas-zoom';
+    zoomLabel.htmlFor = zoomId;
     zoomLabel.textContent = 'Zoom texture atlas';
     container.appendChild(zoomLabel);
 
     this._textureAtlasContainer = document.createElement('div');
-    this._textureAtlasContainer.id = 'texture-atlas';
+    this._textureAtlasContainer.classList.add('texture-atlas');
     container.appendChild(this._textureAtlasContainer);
   }
 

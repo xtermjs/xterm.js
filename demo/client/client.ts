@@ -23,6 +23,7 @@ import { AddonsWindow } from './components/window/addonsWindow';
 import { CellInspectorWindow } from './components/window/cellInspectorWindow';
 import { ControlBar } from './components/controlBar';
 import { WebglWindow } from './components/window/webglWindow';
+import { WebgpuWindow } from './components/window/gpuWindow';
 import { OptionsWindow } from './components/window/optionsWindow';
 import { StyleWindow } from './components/window/styleWindow';
 import { TestWindow } from './components/window/testWindow';
@@ -69,6 +70,7 @@ let controlBar: ControlBar;
 let addonsWindow: AddonsWindow;
 let addonSearchWindow: AddonSearchWindow;
 let addonWebglWindow: WebglWindow;
+let addonWebgpuWindow: WebgpuWindow;
 let optionsWindow: OptionsWindow;
 
 const addons: AddonCollection = {
@@ -157,6 +159,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.ligatures.instance = undefined;
     addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
+    addons.webgpu.instance = undefined;
     document.getElementById('dispose')!.innerHTML = 'Recreate Terminal';
   } else {
     createTerminal();
@@ -222,6 +225,7 @@ if (document.location.pathname === '/test') {
   controlBar.registerWindow(new AddonImageWindow(typedTerm, addons), { afterId: 'addon-serialize', hidden: true, italics: true });
   controlBar.registerWindow(new AddonWebFontsWindow(typedTerm, addons), { afterId: 'addon-image', hidden: true, italics: true });
   addonWebglWindow = controlBar.registerWindow(new WebglWindow(typedTerm, addons), { afterId: 'addon-web-fonts', hidden: true, italics: true });
+  addonWebgpuWindow = controlBar.registerWindow(new WebgpuWindow(typedTerm, addons), { afterId: 'addon-webgl', hidden: true, italics: true });
   controlBar.registerWindow(new TestWindow(typedTerm, addons, { disposeRecreateButtonHandler, createNewWindowButtonHandler }), { afterId: 'options' });
   actionElements = {
     findNext: addonSearchWindow.findNextInput,
@@ -446,12 +450,28 @@ function initAddons(term: Terminal): void {
       addonWebglWindow.setTextureAtlas(addons.webgl.instance!.textureAtlas!);
       addons.webgl.instance!.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
       addons.webgl.instance!.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
+      addons.webgl.instance!.onRemoveTextureAtlasCanvas(e => addonWebglWindow.removeTextureAtlas(e));
     }, 500);
   }
   function preDisposeWebgl(): void {
     controlBar.setTabVisible('addon-webgl', false);
     if (addons.webgl.instance!.textureAtlas) {
       addons.webgl.instance!.textureAtlas.remove();
+    }
+  }
+  function postInitWebgpu(): void {
+    controlBar.setTabVisible('addon-webgpu', true);
+    setTimeout(() => {
+      addonWebgpuWindow.setTextureAtlas(addons.webgpu.instance!.textureAtlas!);
+      addons.webgpu.instance!.onChangeTextureAtlas(e => addonWebgpuWindow.setTextureAtlas(e));
+      addons.webgpu.instance!.onAddTextureAtlasCanvas(e => addonWebgpuWindow.appendTextureAtlas(e));
+      addons.webgpu.instance!.onRemoveTextureAtlasCanvas(e => addonWebgpuWindow.removeTextureAtlas(e));
+    }, 500);
+  }
+  function preDisposeWebgpu(): void {
+    controlBar.setTabVisible('addon-webgpu', false);
+    if (addons.webgpu.instance!.textureAtlas) {
+      addons.webgpu.instance!.textureAtlas.remove();
     }
   }
 
@@ -495,6 +515,8 @@ function initAddons(term: Terminal): void {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
             postInitWebgl();
+          } else if (name === 'webgpu') {
+            postInitWebgpu();
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'unicodeGraphemes') {
@@ -514,6 +536,8 @@ function initAddons(term: Terminal): void {
       } else {
         if (name === 'webgl') {
           preDisposeWebgl();
+        } else if (name === 'webgpu') {
+          preDisposeWebgpu();
         } else if (name === 'unicode11' || name === 'unicodeGraphemes') {
           term.unicode.activeVersion = '6';
         } else if (name === 'search') {
@@ -527,13 +551,21 @@ function initAddons(term: Terminal): void {
       if (name === 'ligatures') {
         // Recreate webgl when ligatures are toggled so texture atlas picks up any font feature
         // settings changes
+        const webglCustomGlyphsCheckbox = document.getElementById('webgl-custom-glyphs') as HTMLInputElement | null;
         if (addons.webgl.instance) {
           preDisposeWebgl();
           addons.webgl.instance.dispose();
-          const customGlyphsCheckbox = document.getElementById('webgl-custom-glyphs') as HTMLInputElement;
-          addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: customGlyphsCheckbox?.checked ?? true });
+          addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: webglCustomGlyphsCheckbox?.checked ?? true });
           term.loadAddon(addons.webgl.instance);
           postInitWebgl();
+        }
+        const webgpuCustomGlyphsCheckbox = document.getElementById('webgpu-custom-glyphs') as HTMLInputElement | null;
+        if (addons.webgpu.instance) {
+          preDisposeWebgpu();
+          addons.webgpu.instance.dispose();
+          addons.webgpu.instance = new addons.webgpu.ctor({ customGlyphs: webgpuCustomGlyphsCheckbox?.checked ?? true });
+          term.loadAddon(addons.webgpu.instance);
+          postInitWebgpu();
         }
       }
     });
@@ -548,19 +580,27 @@ function initAddons(term: Terminal): void {
     wrapper.classList.add('addon');
     wrapper.appendChild(label);
 
-    // Add customGlyphs sub-checkbox for webgl addon
-    if (name === 'webgl') {
+    // Add customGlyphs sub-checkbox for webgl/webgpu addons
+    if (name === 'webgl' || name === 'webgpu') {
+      const isWebgl = name === 'webgl';
       const customGlyphsCheckbox = document.createElement('input') as HTMLInputElement;
       customGlyphsCheckbox.type = 'checkbox';
       customGlyphsCheckbox.checked = true; // Default to enabled
-      customGlyphsCheckbox.id = 'webgl-custom-glyphs';
+      customGlyphsCheckbox.id = isWebgl ? 'webgl-custom-glyphs' : 'webgpu-custom-glyphs';
       addDomListener(customGlyphsCheckbox, 'change', () => {
-        if (addons.webgl.instance) {
+        if (isWebgl && addons.webgl.instance) {
           preDisposeWebgl();
           addons.webgl.instance.dispose();
           addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: customGlyphsCheckbox.checked });
           term.loadAddon(addons.webgl.instance);
           postInitWebgl();
+        }
+        if (!isWebgl && addons.webgpu.instance) {
+          preDisposeWebgpu();
+          addons.webgpu.instance.dispose();
+          addons.webgpu.instance = new addons.webgpu.ctor({ customGlyphs: customGlyphsCheckbox.checked });
+          term.loadAddon(addons.webgpu.instance);
+          postInitWebgpu();
         }
       });
       const customGlyphsLabel = document.createElement('label');

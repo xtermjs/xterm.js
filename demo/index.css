@@ -161,15 +161,15 @@ div:first-of-type.grid {
     border-top: none;
 }
 
-#texture-atlas-zoom:checked ~ #texture-atlas canvas {
+.texture-atlas-zoom:checked ~ .texture-atlas canvas {
     /* Zoom atlas to the width of the container*/
     width: 100% !important;
     height: auto !important;
 }
-#texture-atlas {
+.texture-atlas {
     width: 100%;
 }
-#texture-atlas canvas {
+.texture-atlas canvas {
     image-rendering: pixelated;
     border: 1px solid #ccc;
 }

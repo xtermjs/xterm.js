@@ -790,7 +790,7 @@ stop at final '?': Maybe this one http://example.com/with?arguments=false?
 }
 
 function loadTest(term: Terminal, addons: AddonCollection): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
+  const rendererName = addons.webgpu.instance ? 'webgpu' : addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
@@ -823,7 +823,7 @@ function loadTest(term: Terminal, addons: AddonCollection): void {
 }
 
 function loadTestLongLines(term: Terminal, addons: AddonCollection): void {
-  const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
+  const rendererName = addons.webgpu.instance ? 'webgpu' : addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
   let byteCount = 0;
   for (let i = 0; i < 50; i++) {
