@@ -29,7 +29,46 @@ function fromByteString(s: string): Uint8Array {
   return result;
 }
 
-const BATCH_SIZE = 2048;
+function assertDecodedRange(
+  min: number,
+  max: number,
+  skip: (codePoint: number) => boolean,
+  buildChar: (codePoint: number) => string,
+  decode: (input: string, target: Uint32Array) => number,
+  outputToString: (data: Uint32Array, length: number) => string
+): void {
+  if (max <= min) {
+    return;
+  }
+  let input = '';
+  let count = 0;
+  for (let i = min; i < max; ++i) {
+    if (skip(i)) {
+      continue;
+    }
+    input += buildChar(i);
+    count++;
+  }
+  const target = new Uint32Array(count);
+  const length = decode(input, target);
+  assert.equal(length, count);
+  let mismatchIndex = -1;
+  let index = 0;
+  for (let i = min; i < max; ++i) {
+    if (skip(i)) {
+      continue;
+    }
+    if (target[index] !== i) {
+      mismatchIndex = index;
+      break;
+    }
+    index++;
+  }
+  assert.equal(mismatchIndex, -1);
+  assert.equal(outputToString(target, length), input);
+}
+
+const BATCH_SIZE = 8192;
 
 const TEST_STRINGS = [
   'Лорем ипсум долор сит амет, ех сеа аццусам диссентиет. Ан еос стет еирмод витуперата. Иус дицерет урбанитас ет. Ан при алтера долорес сплендиде, цу яуо интегре денияуе, игнота волуптариа инструцтиор цу вим.',
@@ -60,34 +99,31 @@ describe('text encodings', () => {
         const max = Math.min(min + BATCH_SIZE, 65536);
         it(`${formatRange(min, max)}`, () => {
           const decoder = new StringToUtf32();
-          const target = new Uint32Array(5);
-          for (let i = min; i < max; ++i) {
-            // skip surrogate pairs and a BOM
-            if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
-              continue;
-            }
-            const length = decoder.decode(String.fromCharCode(i), target);
-            assert.equal(length, 1);
-            assert.equal(target[0], i);
-            assert.equal(utf32ToString(target, 0, length), String.fromCharCode(i));
-            decoder.clear();
-          }
+          assertDecodedRange(
+            min,
+            max,
+            (i) => (i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF,
+            (i) => String.fromCharCode(i),
+            (input, target) => decoder.decode(input, target),
+            (data, length) => utf32ToString(data, 0, length)
+          );
         });
       }
       for (let min = 65536; min < 0x10FFFF; min += BATCH_SIZE) {
         const max = Math.min(min + BATCH_SIZE, 0x10FFFF);
         it(`${formatRange(min, max)} (surrogates)`, () => {
           const decoder = new StringToUtf32();
-          const target = new Uint32Array(5);
-          for (let i = min; i < max; ++i) {
-            const codePoint = i - 0x10000;
-            const s = String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
-            const length = decoder.decode(s, target);
-            assert.equal(length, 1);
-            assert.equal(target[0], i);
-            assert.equal(utf32ToString(target, 0, length), s);
-            decoder.clear();
-          }
+          assertDecodedRange(
+            min,
+            max,
+            () => false,
+            (i) => {
+              const codePoint = i - 0x10000;
+              return String.fromCharCode((codePoint >> 10) + 0xD800, (codePoint % 0x400) + 0xDC00);
+            },
+            (input, target) => decoder.decode(input, target),
+            (data, length) => utf32ToString(data, 0, length)
+          );
         });
       }
 
@@ -131,18 +167,14 @@ describe('text encodings', () => {
         const max = Math.min(min + BATCH_SIZE, 65536);
         it(`${formatRange(min, max)} (1/2/3 byte sequences)`, () => {
           const decoder = new Utf8ToUtf32();
-          const target = new Uint32Array(5);
-          for (let i = min; i < max; ++i) {
-            // skip surrogate pairs and a BOM
-            if ((i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF) {
-              continue;
-            }
-            const utf8Data = fromByteString(encode(String.fromCharCode(i)));
-            const length = decoder.decode(utf8Data, target);
-            assert.equal(length, 1);
-            assert.equal(toString(target, length), String.fromCharCode(i));
-            decoder.clear();
-          }
+          assertDecodedRange(
+            min,
+            max,
+            (i) => (i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF,
+            (i) => String.fromCharCode(i),
+            (input, target) => decoder.decode(fromByteString(encode(input)), target),
+            (data, length) => toString(data, length)
+          );
         });
       }
       for (let minRaw = 60000; minRaw < 0x10FFFF; minRaw += BATCH_SIZE) {
@@ -150,14 +182,14 @@ describe('text encodings', () => {
         const max = Math.min(minRaw + BATCH_SIZE, 0x10FFFF);
         it(`${formatRange(min, max)} (4 byte sequences)`, function (): void {
           const decoder = new Utf8ToUtf32();
-          const target = new Uint32Array(5);
-          for (let i = min; i < max; ++i) {
-            const utf8Data = fromByteString(encode(stringFromCodePoint(i)));
-            const length = decoder.decode(utf8Data, target);
-            assert.equal(length, 1);
-            assert.equal(target[0], i);
-            decoder.clear();
-          }
+          assertDecodedRange(
+            min,
+            max,
+            () => false,
+            (i) => stringFromCodePoint(i),
+            (input, target) => decoder.decode(fromByteString(encode(input)), target),
+            (data, length) => toString(data, length)
+          );
         });
       }
 
