@@ -250,7 +250,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
    * Decode partial shard, storing leftover bytes for m=1 chunks.
    */
   private _decodePartialShardWithLeftover(pendingKey: number, cmd: IKittyCommand): boolean {
-    let length = this._shardBufferPos;
+    const length = this._shardBufferPos;
     if (length === 0) return true;
 
     // Align to 4 bytes
@@ -695,7 +695,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private async _decompressZlib(compressed: Uint8Array): Promise<Uint8Array> {
     try {
       return await this._decompress(compressed, 'deflate');
-    } catch (e) {
+    } catch {
       return await this._decompress(compressed, 'deflate-raw');
     }
   }
