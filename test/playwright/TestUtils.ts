@@ -46,19 +46,17 @@ class EventEmitter<T, U = void> {
   private _disposed: boolean = false;
 
   public get event(): IEvent<T, U> {
-    if (!this._event) {
-      this._event = (listener: (arg1: T, arg2: U) => any) => {
-        this._listeners.add(listener);
-        const disposable = {
-          dispose: () => {
-            if (!this._disposed) {
-              this._listeners.delete(listener);
-            }
+    this._event ??= (listener: (arg1: T, arg2: U) => any) => {
+      this._listeners.add(listener);
+      const disposable = {
+        dispose: () => {
+          if (!this._disposed) {
+            this._listeners.delete(listener);
           }
-        };
-        return disposable;
+        }
       };
-    }
+      return disposable;
+    };
     return this._event;
   }
 
@@ -525,9 +523,7 @@ interface IPollForOptions<T> {
 }
 
 export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, options?: IPollForOptions<T>): Promise<void> {
-  if (!options) {
-    options = {};
-  }
+  options ??= {};
   options.stack ??= new Error().stack;
   if (preFn) {
     await preFn();
@@ -551,9 +547,7 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
   }
 
   if (!equalityCheck) {
-    if (options.maxDuration === undefined) {
-      options.maxDuration = 2000;
-    }
+    options.maxDuration ??= 2000;
     if (options.maxDuration <= 0) {
       deepStrictEqual(result, val, ([
         `pollFor max duration exceeded.`,
