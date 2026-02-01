@@ -13,6 +13,7 @@ export interface ISharedRendererTestContext {
   skipDomExceptions?: boolean;
 }
 
+
 export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void {
   test.beforeEach(async () => {
     await ctx.value.proxy.reset();
@@ -66,7 +67,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       window.term.options.drawBoldTextInBrightColors = true;
     `);
     await ctx.value.proxy.write(`\x1b[1;30m■\x1b[1;31m■\x1b[1;32m■\x1b[1;33m■\x1b[1;34m■\x1b[1;35m■\x1b[1;36m■\x1b[1;37m■`);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
+    await pollForCellColorFresh(ctx.value, 1, 1, [1, 2, 3, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 1), [10, 11, 12, 255]);
@@ -180,15 +181,16 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       white: '#161718'
     };
     await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
-    await ctx.value.proxy.write(`\x1b[8;40m■\x1b[8;41m■\x1b[8;42m■\x1b[8;43m■\x1b[8;44m■\x1b[8;45m■\x1b[8;46m■\x1b[8;47m■`);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [1, 2, 3, 255]);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [4, 5, 6, 255]);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [7, 8, 9, 255]);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 4, 1), [10, 11, 12, 255]);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 5, 1), [13, 14, 15, 255]);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 1), [16, 17, 18, 255]);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 1), [19, 20, 21, 255]);
-    await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [22, 23, 24, 255]);
+    await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(`\x1b[8;40m■\x1b[8;41m■\x1b[8;42m■\x1b[8;43m■\x1b[8;44m■\x1b[8;45m■\x1b[8;46m■\x1b[8;47m■`));
+    const getBgColor = (col: number, row: number): Promise<[number, number, number, number]> => getCellDomBackgroundColor(ctx.value, col, row);
+    await pollFor(ctx.value.page, () => getBgColor(1, 1), [1, 2, 3, 255]);
+    await pollFor(ctx.value.page, () => getBgColor(2, 1), [4, 5, 6, 255]);
+    await pollFor(ctx.value.page, () => getBgColor(3, 1), [7, 8, 9, 255]);
+    await pollFor(ctx.value.page, () => getBgColor(4, 1), [10, 11, 12, 255]);
+    await pollFor(ctx.value.page, () => getBgColor(5, 1), [13, 14, 15, 255]);
+    await pollFor(ctx.value.page, () => getBgColor(6, 1), [16, 17, 18, 255]);
+    await pollFor(ctx.value.page, () => getBgColor(7, 1), [19, 20, 21, 255]);
+    await pollFor(ctx.value.page, () => getBgColor(8, 1), [22, 23, 24, 255]);
   });
 
   test('foreground 0-15 bright', async () => {
@@ -245,7 +247,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       }
       data += '\r\n';
     }
-    await ctx.value.proxy.write(data);
+    await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
         const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -265,7 +267,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       }
       data += '\r\n';
     }
-    await ctx.value.proxy.write(data);
+    await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
         const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -285,7 +287,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       }
       data += '\r\n';
     }
-    await ctx.value.proxy.write(data);
+    await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
         const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -305,7 +307,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       }
       data += '\r\n';
     }
-    await ctx.value.proxy.write(data);
+    await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
         const cssColor = COLORS_16_TO_255[y * 16 + x];
@@ -341,14 +343,20 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       }
       data += '\r\n';
     }
-    await ctx.value.proxy.write(data);
+    await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
+    const getBgColor = (col: number, row: number): Promise<[number, number, number, number]> => getCellDomBackgroundColor(ctx.value, col, row);
+    const firstCssColor = COLORS_16_TO_255[1];
+    const firstR = parseInt(firstCssColor.slice(1, 3), 16);
+    const firstG = parseInt(firstCssColor.slice(3, 5), 16);
+    const firstB = parseInt(firstCssColor.slice(5, 7), 16);
+    await pollFor(ctx.value.page, () => getBgColor(2, 1), [firstR, firstG, firstB, 255]);
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
         const cssColor = COLORS_16_TO_255[y * 16 + x];
         const r = parseInt(cssColor.slice(1, 3), 16);
         const g = parseInt(cssColor.slice(3, 5), 16);
         const b = parseInt(cssColor.slice(5, 7), 16);
-        await pollFor(ctx.value.page, () => getCellColor(ctx.value, x + 1, y + 1), [r, g, b, 255]);
+        await pollFor(ctx.value.page, () => getBgColor(x + 1, y + 1), [r, g, b, 255]);
       }
     }
   });
@@ -716,11 +724,13 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       }
       data += '\r\n';
     }
-    await ctx.value.proxy.write(data);
+    await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(data));
+    const getBgColor = (col: number, row: number): Promise<[number, number, number, number]> => getCellDomBackgroundColor(ctx.value, col, row);
+    await pollFor(ctx.value.page, () => getBgColor(2, 1), [1, 1, 1, 255]);
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const i = y * 16 + x;
-        await pollFor(ctx.value.page, () => getCellColor(ctx.value, x + 1, y + 1), [i, i, i, 255]);
+        await pollFor(ctx.value.page, () => getBgColor(x + 1, y + 1), [i, i, i, 255]);
       }
     }
   });
@@ -886,50 +896,61 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         window.term.options.theme = ${JSON.stringify(theme)};
         window.term.options.minimumContrastRatio = 1;
       `);
-      await ctx.value.proxy.write(
+      await waitForRenderAfter(ctx.value, () => ctx.value.proxy.write(
         '\x1b[2m' +
         `\x1b[30m■\x1b[31m■\x1b[32m■\x1b[33m■\x1b[34m■\x1b[35m■\x1b[36m■\x1b[37m■\r\n` +
         `\x1b[90m■\x1b[91m■\x1b[92m■\x1b[93m■\x1b[94m■\x1b[95m■\x1b[96m■\x1b[97m■`
-      );
+      ));
       // Validate before minimumContrastRatio is applied
       const marginOfError = 1;
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 1), [Math.floor((255 + 0xc4) / 2), Math.floor((255 + 0xa0) / 2), Math.floor((255 + 0x00) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 1), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x65) / 2), Math.floor((255 + 0xa4) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 1), [Math.floor((255 + 0x75) / 2), Math.floor((255 + 0x50) / 2), Math.floor((255 + 0x7b) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 1), [Math.floor((255 + 0x06) / 2), Math.floor((255 + 0x98) / 2), Math.floor((255 + 0x9a) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 1), [Math.floor((255 + 0xd3) / 2), Math.floor((255 + 0xd7) / 2), Math.floor((255 + 0xcf) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 2), [Math.floor((255 + 0x55) / 2), Math.floor((255 + 0x57) / 2), Math.floor((255 + 0x53) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 2), [Math.floor((255 + 0xef) / 2), Math.floor((255 + 0x29) / 2), Math.floor((255 + 0x29) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 2), [Math.floor((255 + 0x8a) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0x34) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 2), [Math.floor((255 + 0xfc) / 2), Math.floor((255 + 0xe9) / 2), Math.floor((255 + 0x4f) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 2), [Math.floor((255 + 0x72) / 2), Math.floor((255 + 0x9f) / 2), Math.floor((255 + 0xcf) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
+      const background: [number, number, number, number] = [255, 255, 255, 255];
+      const compositeOverBackground = (fg: [number, number, number, number]): [number, number, number, number] => {
+        const alpha = fg[3] / 255;
+        const inv = 1 - alpha;
+        return [
+          Math.round(fg[0] * alpha + background[0] * inv),
+          Math.round(fg[1] * alpha + background[1] * inv),
+          Math.round(fg[2] * alpha + background[2] * inv),
+          255
+        ];
+      };
+      const getFgColor = async (col: number, row: number): Promise<[number, number, number, number]> => compositeOverBackground(await getCellDomForegroundColor(ctx.value, col, row));
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(1, 1), [Math.floor((255 + 0x2e) / 2), Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x36) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(2, 1), [Math.floor((255 + 0xcc) / 2), Math.floor((255 + 0x00) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(3, 1), [Math.floor((255 + 0x4e) / 2), Math.floor((255 + 0x9a) / 2), Math.floor((255 + 0x06) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(4, 1), [Math.floor((255 + 0xc4) / 2), Math.floor((255 + 0xa0) / 2), Math.floor((255 + 0x00) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(5, 1), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0x65) / 2), Math.floor((255 + 0xa4) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(6, 1), [Math.floor((255 + 0x75) / 2), Math.floor((255 + 0x50) / 2), Math.floor((255 + 0x7b) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(7, 1), [Math.floor((255 + 0x06) / 2), Math.floor((255 + 0x98) / 2), Math.floor((255 + 0x9a) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(8, 1), [Math.floor((255 + 0xd3) / 2), Math.floor((255 + 0xd7) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(1, 2), [Math.floor((255 + 0x55) / 2), Math.floor((255 + 0x57) / 2), Math.floor((255 + 0x53) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(2, 2), [Math.floor((255 + 0xef) / 2), Math.floor((255 + 0x29) / 2), Math.floor((255 + 0x29) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(3, 2), [Math.floor((255 + 0x8a) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0x34) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(4, 2), [Math.floor((255 + 0xfc) / 2), Math.floor((255 + 0xe9) / 2), Math.floor((255 + 0x4f) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(5, 2), [Math.floor((255 + 0x72) / 2), Math.floor((255 + 0x9f) / 2), Math.floor((255 + 0xcf) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
       // Setting and check for minimum contrast values, note that these are not
       // exact to the contrast ratio, if the increase luminance algorithm
       // changes then these will probably fail
-      await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
-      frameDetails = undefined;
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 1), [150, 153, 154, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 1), [229, 127, 127, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 1), [63, 124, 4, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 1), [127, 104, 0, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 1), [153, 178, 209, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 1), [186, 167, 189, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 1), [4, 122, 124, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 1), [110, 112, 108, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 1, 2), [170, 171, 169, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 2, 2), [215, 36, 36, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 3, 2), [72, 117, 25, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 4, 2), [117, 109, 36, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 5, 2), [72, 103, 135, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 6, 2), [125, 91, 121, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 7, 2), [25, 117, 117, 255]);
-      await pollForApproximate(ctx.value.page, marginOfError, () => getCellColor(ctx.value, 8, 2), [111, 111, 110, 255]);
+      await waitForRenderAfter(ctx.value, () => ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`));
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(1, 1), [150, 153, 154, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(2, 1), [229, 127, 127, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(3, 1), [63, 124, 4, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(4, 1), [127, 104, 0, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(5, 1), [153, 178, 209, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(6, 1), [186, 167, 189, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(7, 1), [4, 122, 124, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(8, 1), [110, 112, 108, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(1, 2), [170, 171, 169, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(2, 2), [215, 36, 36, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(3, 2), [72, 117, 25, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(4, 2), [117, 109, 36, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(5, 2), [72, 103, 135, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(6, 2), [125, 91, 121, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(7, 2), [25, 117, 117, 255]);
+      await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(8, 2), [111, 111, 110, 255]);
     });
   });
 
@@ -1160,11 +1181,11 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       // Regression test: #4758 when multiple invisible characters are used
       await ctx.value.proxy.writeln(`■\x1b[8m■■`);
       // Full refresh as the before result is the same as after
-      await ctx.value.proxy.refresh(0, await ctx.value.proxy.rows - 1);
-      // Control to ensure rendering has occurred
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 255, 255, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 1), [0, 0, 0, 255]);
-      await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 1), [0, 0, 0, 255]);
+      const rows = await ctx.value.proxy.rows;
+      await waitForRenderAfter(ctx.value, () => ctx.value.proxy.refresh(0, rows - 1));
+      await pollFor(ctx.value.page, () => getCellDomChar(ctx.value, 1, 1), '■');
+      await pollFor(ctx.value.page, () => getCellDomChar(ctx.value, 2, 1), ' ');
+      await pollFor(ctx.value.page, () => getCellDomChar(ctx.value, 3, 1), ' ');
     });
     // HACK: It's not clear why DOM is failing here
     (ctx.skipDomExceptions ? test.skip : test)('#4759: minimum contrast ratio should be respected on inverse text', async () => {
@@ -1339,6 +1360,95 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
   });
+}
+
+async function waitForRender(ctx: ITestContext): Promise<void> {
+  await new Promise<void>(resolve => {
+    const disposable = ctx.proxy.onRender(() => {
+      disposable.dispose();
+      resolve();
+    });
+  });
+}
+
+async function waitForRenderAfter(ctx: ITestContext, action: () => Promise<void>): Promise<void> {
+  const renderPromise = waitForRender(ctx);
+  await action();
+  await renderPromise;
+  frameDetails = undefined;
+}
+
+async function pollForCellColorFresh(ctx: ITestContext, col: number, row: number, expected: [number, number, number, number], position: CellColorPosition = CellColorPosition.CENTER): Promise<void> {
+  await pollFor(ctx.page, () => getCellColor(ctx, col, row, position), expected, async () => {
+    frameDetails = undefined;
+  });
+}
+
+interface ICellDomInfo {
+  fg: string;
+  bg: string;
+  char: string;
+}
+
+function parseCssColor(value: string): [number, number, number, number] {
+  if (value === 'transparent') {
+    return [0, 0, 0, 0];
+  }
+  const match = value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)$/);
+  if (!match) {
+    throw new Error(`Unsupported color format: ${value}`);
+  }
+  const r = Number(match[1]);
+  const g = Number(match[2]);
+  const b = Number(match[3]);
+  const a = match[4] === undefined ? 255 : Math.round(Number(match[4]) * 255);
+  return [r, g, b, a];
+}
+
+async function getCellDomInfo(ctx: ITestContext, col: number, row: number): Promise<ICellDomInfo> {
+  const info = await ctx.page.evaluate(({ col, row }) => {
+    const rows = document.querySelectorAll('#terminal-container .xterm-rows > div');
+    const rowEl = rows[row - 1];
+    if (!rowEl) {
+      return undefined;
+    }
+    let currentCol = 1;
+    for (const el of Array.from(rowEl.children)) {
+      const text = el.textContent ?? '';
+      const chars = Array.from(text);
+      const nextCol = currentCol + chars.length;
+      if (col >= currentCol && col < nextCol) {
+        const style = window.getComputedStyle(el as HTMLElement);
+        return {
+          fg: style.color,
+          bg: style.backgroundColor,
+          char: chars[col - currentCol] ?? ''
+        };
+      }
+      currentCol = nextCol;
+    }
+    return undefined;
+  }, { col, row });
+
+  if (!info) {
+    throw new Error(`Cell not found: ${col},${row}`);
+  }
+  return info;
+}
+
+async function getCellDomBackgroundColor(ctx: ITestContext, col: number, row: number): Promise<[number, number, number, number]> {
+  const info = await getCellDomInfo(ctx, col, row);
+  return parseCssColor(info.bg);
+}
+
+async function getCellDomForegroundColor(ctx: ITestContext, col: number, row: number): Promise<[number, number, number, number]> {
+  const info = await getCellDomInfo(ctx, col, row);
+  return parseCssColor(info.fg);
+}
+
+async function getCellDomChar(ctx: ITestContext, col: number, row: number): Promise<string> {
+  const info = await getCellDomInfo(ctx, col, row);
+  return info.char;
 }
 
 enum CellColorPosition {
