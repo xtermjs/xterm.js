@@ -5,20 +5,22 @@
 
 import { ITerminal } from 'browser/Types';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
+import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
-import { Emitter, EventUtils } from 'common/Event';
+import { Emitter } from 'common/Event';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import type { IGPU, IGPUCanvasContext, IGPUDevice, IGPUTextureFormat } from './WebgpuTypes';
 
 export class WebgpuRenderer extends Disposable implements IRenderer {
+  private readonly _terminal: Terminal;
   private readonly _canvas: HTMLCanvasElement;
   private readonly _context: IGPUCanvasContext;
   private _device: IGPUDevice | undefined;
   private _format: IGPUTextureFormat | undefined;
-  private _fallbackRenderer: IRenderer;
   private _core: ITerminal;
+  private _devicePixelRatio: number;
 
   public readonly dimensions: IRenderDimensions;
 
@@ -36,23 +38,22 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
   constructor(
     terminal: Terminal,
     _characterJoinerService: ICharacterJoinerService,
-    _charSizeService: ICharSizeService,
+    private readonly _charSizeService: ICharSizeService,
     private readonly _coreBrowserService: ICoreBrowserService,
     _coreService: ICoreService,
     _decorationService: IDecorationService,
-    _optionsService: IOptionsService,
+    private readonly _optionsService: IOptionsService,
     _themeService: IThemeService,
     _customGlyphs: boolean = true,
     _preserveDrawingBuffer?: boolean
   ) {
     super();
 
+    this._terminal = terminal;
     this._core = (terminal as any)._core;
-    this._fallbackRenderer = (this._core as any)._createRenderer();
-    this._register(this._fallbackRenderer);
-    this._register(EventUtils.forward(this._fallbackRenderer.onRequestRedraw, this._onRequestRedraw));
-
-    this.dimensions = this._fallbackRenderer.dimensions;
+    this.dimensions = createRenderDimensions();
+    this._devicePixelRatio = this._coreBrowserService.dpr;
+    this._updateDimensions();
 
     this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
     this._canvas.classList.add('xterm-webgpu');
@@ -87,48 +88,45 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
   }
 
   public handleDevicePixelRatioChange(): void {
-    this._fallbackRenderer.handleDevicePixelRatioChange();
-    this._syncCanvasDimensions();
-    this._drawFrame();
+    if (this._devicePixelRatio === this._coreBrowserService.dpr) {
+      return;
+    }
+    this._devicePixelRatio = this._coreBrowserService.dpr;
+    this.handleResize(this._terminal.cols, this._terminal.rows);
   }
 
-  public handleResize(cols: number, rows: number): void {
-    this._fallbackRenderer.handleResize(cols, rows);
+  public handleResize(_cols: number, _rows: number): void {
+    this._updateDimensions();
     this._syncCanvasDimensions();
-    this._drawFrame();
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1, sync: true });
   }
 
   public handleCharSizeChanged(): void {
-    this._fallbackRenderer.handleCharSizeChanged();
-    this._syncCanvasDimensions();
-    this._drawFrame();
+    this.handleResize(this._terminal.cols, this._terminal.rows);
   }
 
   public handleBlur(): void {
-    this._fallbackRenderer.handleBlur();
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public handleFocus(): void {
-    this._fallbackRenderer.handleFocus();
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
-  public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
-    this._fallbackRenderer.handleSelectionChanged(start, end, columnSelectMode);
-    this._drawFrame();
+  public handleSelectionChanged(_start: [number, number] | undefined, _end: [number, number] | undefined, _columnSelectMode: boolean): void {
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
   public handleCursorMove(): void {
-    this._fallbackRenderer.handleCursorMove();
-    this._drawFrame();
+    const cursorY = this._terminal.buffer.active.cursorY;
+    this._onRequestRedraw.fire({ start: cursorY, end: cursorY });
   }
 
   public clear(): void {
-    this._fallbackRenderer.clear();
     this._drawFrame();
   }
 
-  public renderRows(start: number, end: number): void {
-    this._fallbackRenderer.renderRows(start, end);
+  public renderRows(_start: number, _end: number): void {
     this._drawFrame();
   }
 
@@ -137,6 +135,8 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     this._canvas.height = this.dimensions.device.canvas.height;
     this._canvas.style.width = `${this.dimensions.css.canvas.width}px`;
     this._canvas.style.height = `${this.dimensions.css.canvas.height}px`;
+    this._core.screenElement!.style.width = `${this.dimensions.css.canvas.width}px`;
+    this._core.screenElement!.style.height = `${this.dimensions.css.canvas.height}px`;
     if (this._device && this._format) {
       this._context.configure({
         device: this._device,
@@ -144,6 +144,27 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
         alphaMode: 'premultiplied'
       });
     }
+  }
+
+  private _updateDimensions(): void {
+    if (!this._charSizeService.width || !this._charSizeService.height) {
+      return;
+    }
+
+    this.dimensions.device.char.width = Math.floor(this._charSizeService.width * this._devicePixelRatio);
+    this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * this._devicePixelRatio);
+    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
+    this.dimensions.device.char.top = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
+    this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
+    this.dimensions.device.char.left = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
+
+    this.dimensions.device.canvas.height = this._terminal.rows * this.dimensions.device.cell.height;
+    this.dimensions.device.canvas.width = this._terminal.cols * this.dimensions.device.cell.width;
+
+    this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / this._devicePixelRatio);
+    this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / this._devicePixelRatio);
+    this.dimensions.css.cell.height = this.dimensions.device.cell.height / this._devicePixelRatio;
+    this.dimensions.css.cell.width = this.dimensions.device.cell.width / this._devicePixelRatio;
   }
 
   private async _initializeWebgpu(): Promise<void> {
