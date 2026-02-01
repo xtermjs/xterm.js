@@ -275,7 +275,7 @@ class TestHandlerAsync implements IOscHandler {
     this.output.push([this.msg, this.id, 'PUT', utf32ToString(data, start, end)]);
   }
   public async end(success: boolean): Promise<boolean> {
-    await new Promise(res => setTimeout(res, 20));
+    await Promise.resolve();
     this.output.push([this.msg, this.id, 'END', success]);
     if (this.returnFalse) {
       return false;

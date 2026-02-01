@@ -278,7 +278,7 @@ class TestHandlerAsync implements IDcsHandler {
   }
   public async unhook(success: boolean): Promise<boolean> {
     // simple sleep to check in tests whether ordering gets messed up
-    await new Promise(res => setTimeout(res, 20));
+    await Promise.resolve();
     this.output.push([this.msg, 'UNHOOK', success]);
     if (this.returnFalse) {
       return false;
