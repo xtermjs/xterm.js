@@ -56,6 +56,7 @@ export class Viewport extends Disposable {
       horizontal: ScrollbarVisibility.HIDDEN,
       useShadows: false,
       mouseWheelSmoothScroll: true,
+      verticalHasArrows: this._optionsService.rawOptions.scrollbar?.showArrows ?? false,
       ...this._getChangeOptions()
     }, scrollable));
     this._register(this._optionsService.onMultipleOptionChange([

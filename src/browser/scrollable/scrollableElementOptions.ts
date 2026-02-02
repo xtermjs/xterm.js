@@ -68,11 +68,6 @@ export interface IScrollableElementCreationOptions {
    */
   scrollPredominantAxis?: boolean;
   /**
-   * Height for vertical arrows (top/bottom) and width for horizontal arrows (left/right).
-   * Defaults to 11.
-   */
-  arrowSize?: number;
-  /**
    * The dom node events should be bound to.
    * If no listenOnDomNode is provided, the constructor dom node is used.
    */
@@ -151,7 +146,6 @@ export interface IScrollableElementResolvedOptions {
   fastScrollSensitivity: number;
   scrollPredominantAxis: boolean;
   mouseWheelSmoothScroll: boolean;
-  arrowSize: number;
   listenOnDomNode: HTMLElement | null;
   horizontal: ScrollbarVisibility;
   horizontalScrollbarSize: number;

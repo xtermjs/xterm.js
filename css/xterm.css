@@ -225,7 +225,19 @@
 /* Arrows */
 .xterm .xterm-scrollable-element > .scrollbar > .scra {
 	cursor: pointer;
-	font-size: 11px !important;
+    background-color: var(--vscode-scrollbarSliderBackground, rgba(100, 100, 100, 0.4));
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'><path d='M1.5 8.5 L5.5 2.5 L9.5 8.5 Z' fill='black'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'><path d='M1.5 8.5 L5.5 2.5 L9.5 8.5 Z' fill='black'/></svg>");
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    mask-position: center center;
+    -webkit-mask-position: center center;
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+}
+
+.xterm .xterm-scrollable-element > .scrollbar > .scra.xterm-arrow-down {
+    transform: rotate(180deg);
 }
 
 .xterm .xterm-scrollable-element > .visible {

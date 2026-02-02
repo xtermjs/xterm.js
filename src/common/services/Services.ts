@@ -266,6 +266,7 @@ export interface ITerminalOptions {
   wordSeparator?: string;
   overviewRuler?: IOverviewRulerOptions;
   quirks?: ITerminalQuirks;
+  scrollbar?: IScrollbarOptions;
   scrollOnEraseInDisplay?: boolean;
   vtExtensions?: IVtExtensions;
 
@@ -307,6 +308,10 @@ export interface ITheme {
 
 export interface ITerminalQuirks {
   allowSetCursorBlink?: boolean;
+}
+
+export interface IScrollbarOptions {
+  showArrows?: boolean;
 }
 
 export interface IVtExtensions {

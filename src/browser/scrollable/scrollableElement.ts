@@ -572,7 +572,6 @@ function resolveOptions(opts: IScrollableElementCreationOptions): IScrollableEle
     fastScrollSensitivity: (typeof opts.fastScrollSensitivity !== 'undefined' ? opts.fastScrollSensitivity : 5),
     scrollPredominantAxis: (typeof opts.scrollPredominantAxis !== 'undefined' ? opts.scrollPredominantAxis : true),
     mouseWheelSmoothScroll: (typeof opts.mouseWheelSmoothScroll !== 'undefined' ? opts.mouseWheelSmoothScroll : true),
-    arrowSize: (typeof opts.arrowSize !== 'undefined' ? opts.arrowSize : 11),
 
     listenOnDomNode: (typeof opts.listenOnDomNode !== 'undefined' ? opts.listenOnDomNode : null),
 

@@ -17,7 +17,7 @@ export class HorizontalScrollbar extends AbstractScrollbar {
       lazyRender: options.lazyRender,
       host: host,
       scrollbarState: new ScrollbarState(
-        (options.horizontalHasArrows ? options.arrowSize : 0),
+        (options.horizontalHasArrows ? options.horizontalScrollbarSize : 0),
         (options.horizontal === ScrollbarVisibility.HIDDEN ? 0 : options.horizontalScrollbarSize),
         (options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize),
         scrollDimensions.width,

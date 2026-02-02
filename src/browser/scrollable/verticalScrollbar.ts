@@ -17,7 +17,7 @@ export class VerticalScrollbar extends AbstractScrollbar {
       lazyRender: options.lazyRender,
       host: host,
       scrollbarState: new ScrollbarState(
-        (options.verticalHasArrows ? options.arrowSize : 0),
+        (options.verticalHasArrows ? options.verticalScrollbarSize : 0),
         (options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize),
         0,
         scrollDimensions.height,
@@ -31,7 +31,24 @@ export class VerticalScrollbar extends AbstractScrollbar {
     });
 
     if (options.verticalHasArrows) {
-      throw new Error('horizontalHasArrows is not supported in xterm.js');
+      const arrowSize = options.verticalScrollbarSize;
+      const arrowDelta = 0;
+      this._createArrow({
+        className: 'scra xterm-arrow-up',
+        top: arrowDelta,
+        left: arrowDelta,
+        bgWidth: options.verticalScrollbarSize,
+        bgHeight: arrowSize,
+        handleActivate: () => this._arrowScroll(-arrowSize)
+      });
+      this._createArrow({
+        className: 'scra xterm-arrow-down',
+        bottom: arrowDelta,
+        left: arrowDelta,
+        bgWidth: options.verticalScrollbarSize,
+        bgHeight: arrowSize,
+        handleActivate: () => this._arrowScroll(arrowSize)
+      });
     }
 
     this._createSlider(0, Math.floor((options.verticalScrollbarSize - options.verticalSliderSize) / 2), options.verticalSliderSize, undefined);
@@ -74,6 +91,11 @@ export class VerticalScrollbar extends AbstractScrollbar {
 
   public writeScrollPosition(target: INewScrollPosition, scrollPosition: number): void {
     target.scrollTop = scrollPosition;
+  }
+
+  private _arrowScroll(delta: number): void {
+    const currentPosition = this._scrollable.getCurrentScrollPosition();
+    this._scrollable.setScrollPositionNow({ scrollTop: currentPosition.scrollTop + delta });
   }
 
   public updateOptions(options: IScrollableElementResolvedOptions): void {

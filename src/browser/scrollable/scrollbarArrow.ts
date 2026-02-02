@@ -8,11 +8,6 @@ import { Widget } from './widget';
 import { TimeoutTimer } from 'common/Async';
 import * as dom from '../Dom';
 
-/**
- * The arrow image size.
- */
-const ARROW_IMG_SIZE = 11;
-
 export interface IScrollbarArrowOptions {
   handleActivate: () => void;
   className: string;
@@ -63,8 +58,9 @@ export class ScrollbarArrow extends Widget {
     // this.domNode.classList.add(...ThemeIcon.asClassNameArray(opts.icon));
 
     this.domNode.style.position = 'absolute';
-    this.domNode.style.width = ARROW_IMG_SIZE + 'px';
-    this.domNode.style.height = ARROW_IMG_SIZE + 'px';
+    const arrowSize = Math.min(opts.bgWidth, opts.bgHeight);
+    this.domNode.style.width = arrowSize + 'px';
+    this.domNode.style.height = arrowSize + 'px';
     if (typeof opts.top !== 'undefined') {
       this.domNode.style.top = opts.top + 'px';
     }
