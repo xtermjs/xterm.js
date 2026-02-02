@@ -10,76 +10,76 @@ import { INewScrollPosition, Scrollable, ScrollbarVisibility, ScrollEvent } from
 
 export class HorizontalScrollbar extends AbstractScrollbar {
 
-	constructor(scrollable: Scrollable, options: ScrollableElementResolvedOptions, host: ScrollbarHost) {
-		const scrollDimensions = scrollable.getScrollDimensions();
-		const scrollPosition = scrollable.getCurrentScrollPosition();
-		super({
-			lazyRender: options.lazyRender,
-			host: host,
-			scrollbarState: new ScrollbarState(
-				(options.horizontalHasArrows ? options.arrowSize : 0),
-				(options.horizontal === ScrollbarVisibility.Hidden ? 0 : options.horizontalScrollbarSize),
-				(options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize),
-				scrollDimensions.width,
-				scrollDimensions.scrollWidth,
-				scrollPosition.scrollLeft
-			),
-			visibility: options.horizontal,
-			extraScrollbarClassName: 'horizontal',
-			scrollable: scrollable,
-			scrollByPage: options.scrollByPage
-		});
+  constructor(scrollable: Scrollable, options: ScrollableElementResolvedOptions, host: ScrollbarHost) {
+    const scrollDimensions = scrollable.getScrollDimensions();
+    const scrollPosition = scrollable.getCurrentScrollPosition();
+    super({
+      lazyRender: options.lazyRender,
+      host: host,
+      scrollbarState: new ScrollbarState(
+        (options.horizontalHasArrows ? options.arrowSize : 0),
+        (options.horizontal === ScrollbarVisibility.Hidden ? 0 : options.horizontalScrollbarSize),
+        (options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize),
+        scrollDimensions.width,
+        scrollDimensions.scrollWidth,
+        scrollPosition.scrollLeft
+      ),
+      visibility: options.horizontal,
+      extraScrollbarClassName: 'horizontal',
+      scrollable: scrollable,
+      scrollByPage: options.scrollByPage
+    });
 
-		if (options.horizontalHasArrows) {
-			throw new Error('horizontalHasArrows is not supported in xterm.js');
-		}
+    if (options.horizontalHasArrows) {
+      throw new Error('horizontalHasArrows is not supported in xterm.js');
+    }
 
-		this._createSlider(Math.floor((options.horizontalScrollbarSize - options.horizontalSliderSize) / 2), 0, undefined, options.horizontalSliderSize);
-	}
+    this._createSlider(Math.floor((options.horizontalScrollbarSize - options.horizontalSliderSize) / 2), 0, undefined, options.horizontalSliderSize);
+  }
 
-	protected _updateSlider(sliderSize: number, sliderPosition: number): void {
-		this.slider.setWidth(sliderSize);
-		this.slider.setLeft(sliderPosition);
-	}
+  protected _updateSlider(sliderSize: number, sliderPosition: number): void {
+    this.slider.setWidth(sliderSize);
+    this.slider.setLeft(sliderPosition);
+  }
 
-	protected _renderDomNode(largeSize: number, smallSize: number): void {
-		this.domNode.setWidth(largeSize);
-		this.domNode.setHeight(smallSize);
-		this.domNode.setLeft(0);
-		this.domNode.setBottom(0);
-	}
+  protected _renderDomNode(largeSize: number, smallSize: number): void {
+    this.domNode.setWidth(largeSize);
+    this.domNode.setHeight(smallSize);
+    this.domNode.setLeft(0);
+    this.domNode.setBottom(0);
+  }
 
-	public onDidScroll(e: ScrollEvent): boolean {
-		this._shouldRender = this._onElementScrollSize(e.scrollWidth) || this._shouldRender;
-		this._shouldRender = this._onElementScrollPosition(e.scrollLeft) || this._shouldRender;
-		this._shouldRender = this._onElementSize(e.width) || this._shouldRender;
-		return this._shouldRender;
-	}
+  public onDidScroll(e: ScrollEvent): boolean {
+    this._shouldRender = this._onElementScrollSize(e.scrollWidth) || this._shouldRender;
+    this._shouldRender = this._onElementScrollPosition(e.scrollLeft) || this._shouldRender;
+    this._shouldRender = this._onElementSize(e.width) || this._shouldRender;
+    return this._shouldRender;
+  }
 
-	protected _pointerDownRelativePosition(offsetX: number, offsetY: number): number {
-		return offsetX;
-	}
+  protected _pointerDownRelativePosition(offsetX: number, offsetY: number): number {
+    return offsetX;
+  }
 
-	protected _sliderPointerPosition(e: ISimplifiedPointerEvent): number {
-		return e.pageX;
-	}
+  protected _sliderPointerPosition(e: ISimplifiedPointerEvent): number {
+    return e.pageX;
+  }
 
-	protected _sliderOrthogonalPointerPosition(e: ISimplifiedPointerEvent): number {
-		return e.pageY;
-	}
+  protected _sliderOrthogonalPointerPosition(e: ISimplifiedPointerEvent): number {
+    return e.pageY;
+  }
 
-	protected _updateScrollbarSize(size: number): void {
-		this.slider.setHeight(size);
-	}
+  protected _updateScrollbarSize(size: number): void {
+    this.slider.setHeight(size);
+  }
 
-	public writeScrollPosition(target: INewScrollPosition, scrollPosition: number): void {
-		target.scrollLeft = scrollPosition;
-	}
+  public writeScrollPosition(target: INewScrollPosition, scrollPosition: number): void {
+    target.scrollLeft = scrollPosition;
+  }
 
-	public updateOptions(options: ScrollableElementResolvedOptions): void {
-		this.updateScrollbarSize(options.horizontal === ScrollbarVisibility.Hidden ? 0 : options.horizontalScrollbarSize);
-		this._scrollbarState.setOppositeScrollbarSize(options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize);
-		this._visibilityController.setVisibility(options.horizontal);
-		this._scrollByPage = options.scrollByPage;
-	}
+  public updateOptions(options: ScrollableElementResolvedOptions): void {
+    this.updateScrollbarSize(options.horizontal === ScrollbarVisibility.Hidden ? 0 : options.horizontalScrollbarSize);
+    this._scrollbarState.setOppositeScrollbarSize(options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize);
+    this._visibilityController.setVisibility(options.horizontal);
+    this._scrollByPage = options.scrollByPage;
+  }
 }

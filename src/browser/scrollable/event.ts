@@ -12,7 +12,7 @@ export interface Event<T> {
 }
 
 export class Emitter<T> {
-  private _listeners: { fn: (e: T) => any; thisArgs: any }[] = [];
+  private _listeners: { fn: (e: T) => any, thisArgs: any }[] = [];
   private _disposed = false;
   private _event: Event<T> | undefined;
 
