@@ -7,7 +7,7 @@ import * as dom from './dom';
 import { IKeyboardEvent, StandardKeyboardEvent } from './keyboardEvent';
 import { IMouseEvent, StandardMouseEvent } from './mouseEvent';
 import { Gesture } from './touch';
-import { Disposable, IDisposable } from './lifecycle';
+import { Disposable, IDisposable } from 'common/Lifecycle';
 
 export abstract class Widget extends Disposable {
 

@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IntervalTimer } from './async';
-import { Emitter, Event } from './event';
-import { DisposableStore, IDisposable } from './lifecycle';
+import { IntervalTimer } from 'common/Async';
+import { Emitter, IEvent } from 'common/Event';
+import { DisposableStore, IDisposable } from 'common/Lifecycle';
 
 export interface IRegisteredWindow {
   readonly window: Window;
@@ -13,7 +13,7 @@ export interface IRegisteredWindow {
 }
 
 const _onDidRegisterWindow = new Emitter<IRegisteredWindow>();
-export const onDidRegisterWindow: Event<IRegisteredWindow> = _onDidRegisterWindow.event;
+export const onDidRegisterWindow: IEvent<IRegisteredWindow> = _onDidRegisterWindow.event;
 
 export function registerWindow(window: Window): IDisposable {
   const disposables = new DisposableStore();
@@ -88,14 +88,7 @@ export const EventType = {
   WHEEL: 'wheel'
 } as const;
 
-export interface IDomNodePagePosition {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-
-export function getDomNodePagePosition(domNode: HTMLElement): IDomNodePagePosition {
+export function getDomNodePagePosition(domNode: HTMLElement): { left: number, top: number, width: number, height: number } {
   const bb = domNode.getBoundingClientRect();
   const win = getWindow(domNode);
   return {

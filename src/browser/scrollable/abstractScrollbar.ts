@@ -11,7 +11,7 @@ import { ScrollbarArrow, ScrollbarArrowOptions } from './scrollbarArrow';
 import { ScrollbarState } from './scrollbarState';
 import { ScrollbarVisibilityController } from './scrollbarVisibilityController';
 import { Widget } from './widget';
-import * as platform from './platform';
+import * as platform from 'common/Platform';
 import { INewScrollPosition, Scrollable, ScrollbarVisibility } from './scrollable';
 
 /**
@@ -31,7 +31,7 @@ export interface ScrollbarHost {
   onDragEnd(): void;
 }
 
-export interface AbstractScrollbarOptions {
+interface AbstractScrollbarOptions {
   lazyRender: boolean;
   host: ScrollbarHost;
   scrollbarState: ScrollbarState;

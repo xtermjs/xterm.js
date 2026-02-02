@@ -5,13 +5,13 @@
 
 import { GlobalPointerMoveMonitor } from './globalPointerMoveMonitor';
 import { Widget } from './widget';
-import { TimeoutTimer } from './async';
+import { TimeoutTimer } from 'common/Async';
 import * as dom from './dom';
 
 /**
  * The arrow image size.
  */
-export const ARROW_IMG_SIZE = 11;
+const ARROW_IMG_SIZE = 11;
 
 export interface ScrollbarArrowOptions {
   onActivate: () => void;

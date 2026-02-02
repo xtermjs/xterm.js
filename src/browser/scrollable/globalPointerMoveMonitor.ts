@@ -4,21 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as dom from './dom';
-import { DisposableStore, IDisposable, toDisposable } from './lifecycle';
+import { DisposableStore, IDisposable, toDisposable } from 'common/Lifecycle';
 
-export interface IPointerMoveCallback {
-  (event: PointerEvent): void;
-}
-
-export interface IOnStopCallback {
-  (browserEvent?: PointerEvent | KeyboardEvent): void;
-}
+type PointerMoveCallback = (event: PointerEvent) => void;
+type OnStopCallback = (browserEvent?: PointerEvent | KeyboardEvent) => void;
 
 export class GlobalPointerMoveMonitor implements IDisposable {
 
   private readonly _hooks = new DisposableStore();
-  private _pointerMoveCallback: IPointerMoveCallback | null = null;
-  private _onStopCallback: IOnStopCallback | null = null;
+  private _pointerMoveCallback: PointerMoveCallback | null = null;
+  private _onStopCallback: OnStopCallback | null = null;
 
   public dispose(): void {
     this.stopMonitoring(false);
@@ -48,8 +43,8 @@ export class GlobalPointerMoveMonitor implements IDisposable {
     initialElement: Element,
     pointerId: number,
     initialButtons: number,
-    pointerMoveCallback: IPointerMoveCallback,
-    onStopCallback: IOnStopCallback
+    pointerMoveCallback: PointerMoveCallback,
+    onStopCallback: OnStopCallback
   ): void {
     if (this.isMonitoring()) {
       this.stopMonitoring(false);

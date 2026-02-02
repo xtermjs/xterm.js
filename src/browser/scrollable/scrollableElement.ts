@@ -12,10 +12,10 @@ import { HorizontalScrollbar } from './horizontalScrollbar';
 import { ScrollableElementChangeOptions, ScrollableElementCreationOptions, ScrollableElementResolvedOptions } from './scrollableElementOptions';
 import { VerticalScrollbar } from './verticalScrollbar';
 import { Widget } from './widget';
-import { TimeoutTimer } from './async';
-import { Emitter, Event } from './event';
-import { IDisposable, dispose } from './lifecycle';
-import * as platform from './platform';
+import { TimeoutTimer } from 'common/Async';
+import { Emitter, IEvent } from 'common/Event';
+import { IDisposable, dispose } from 'common/Lifecycle';
+import * as platform from 'common/Platform';
 import { INewScrollDimensions, INewScrollPosition, IScrollDimensions, IScrollPosition, ScrollEvent, Scrollable, ScrollbarVisibility } from './scrollable';
 // import 'vs/css!./media/scrollbars';
 
@@ -180,10 +180,10 @@ export abstract class AbstractScrollableElement extends Widget {
   private _revealOnScroll: boolean;
 
   private readonly _onScroll = this._register(new Emitter<ScrollEvent>());
-  public readonly onScroll: Event<ScrollEvent> = this._onScroll.event;
+  public readonly onScroll: IEvent<ScrollEvent> = this._onScroll.event;
 
   private readonly _onWillScroll = this._register(new Emitter<ScrollEvent>());
-  public readonly onWillScroll: Event<ScrollEvent> = this._onWillScroll.event;
+  public readonly onWillScroll: IEvent<ScrollEvent> = this._onWillScroll.event;
 
   public get options(): Readonly<ScrollableElementResolvedOptions> {
     return this._options;
@@ -281,7 +281,7 @@ export abstract class AbstractScrollableElement extends Widget {
 
   public updateClassName(newClassName: string): void {
     this._options.className = newClassName;
-    if (platform.isMacintosh) {
+    if (platform.isMac) {
       this._options.className += ' mac';
     }
     this._domNode.className = 'xterm-scrollable-element ' + this._options.className;
@@ -382,7 +382,7 @@ export abstract class AbstractScrollableElement extends Widget {
         [deltaY, deltaX] = [deltaX, deltaY];
       }
 
-      const shiftConvert = !platform.isMacintosh && e.browserEvent && e.browserEvent.shiftKey;
+      const shiftConvert = !platform.isMac && e.browserEvent && e.browserEvent.shiftKey;
       if ((this._options.scrollYToX || shiftConvert) && !deltaX) {
         deltaX = deltaY;
         deltaY = 0;
@@ -575,54 +575,6 @@ export class SmoothScrollableElement extends AbstractScrollableElement {
 
 }
 
-export class DomScrollableElement extends AbstractScrollableElement {
-
-  private _element: HTMLElement;
-
-  constructor(element: HTMLElement, options: ScrollableElementCreationOptions) {
-    options = options || {};
-    options.mouseWheelSmoothScroll = false;
-    const scrollable = new Scrollable({
-      forceIntegerValues: false,
-      smoothScrollDuration: 0,
-      scheduleAtNextAnimationFrame: (callback) => dom.scheduleAtNextAnimationFrame(dom.getWindow(element), callback)
-    });
-    super(element, options, scrollable);
-    this._register(scrollable);
-    this._element = element;
-    this._register(this.onScroll((e) => {
-      if (e.scrollTopChanged) {
-        this._element.scrollTop = e.scrollTop;
-      }
-      if (e.scrollLeftChanged) {
-        this._element.scrollLeft = e.scrollLeft;
-      }
-    }));
-    this.scanDomNode();
-  }
-
-  public setScrollPosition(update: INewScrollPosition): void {
-    this._scrollable.setScrollPositionNow(update);
-  }
-
-  public getScrollPosition(): IScrollPosition {
-    return this._scrollable.getCurrentScrollPosition();
-  }
-
-  public scanDomNode(): void {
-    this.setScrollDimensions({
-      width: this._element.clientWidth,
-      scrollWidth: this._element.scrollWidth,
-      height: this._element.clientHeight,
-      scrollHeight: this._element.scrollHeight
-    });
-    this.setScrollPosition({
-      scrollLeft: this._element.scrollLeft,
-      scrollTop: this._element.scrollTop,
-    });
-  }
-}
-
 function resolveOptions(opts: ScrollableElementCreationOptions): ScrollableElementResolvedOptions {
   const result: ScrollableElementResolvedOptions = {
     lazyRender: (typeof opts.lazyRender !== 'undefined' ? opts.lazyRender : false),
@@ -657,7 +609,7 @@ function resolveOptions(opts: ScrollableElementCreationOptions): ScrollableEleme
   result.horizontalSliderSize = (typeof opts.horizontalSliderSize !== 'undefined' ? opts.horizontalSliderSize : result.horizontalScrollbarSize);
   result.verticalSliderSize = (typeof opts.verticalSliderSize !== 'undefined' ? opts.verticalSliderSize : result.verticalScrollbarSize);
 
-  if (platform.isMacintosh) {
+  if (platform.isMac) {
     result.className += ' mac';
   }
 

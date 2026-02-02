@@ -7,8 +7,8 @@ import * as DomUtils from './dom';
 import { mainWindow } from './window';
 import * as arrays from './arrays';
 import { memoize } from './decorators';
-import { Event as EventUtils } from './event';
-import { Disposable, IDisposable, markAsSingleton, toDisposable } from './lifecycle';
+import { EventUtils } from 'common/Event';
+import { Disposable, IDisposable, toDisposable } from 'common/Lifecycle';
 import { LinkedList } from './linkedList';
 
 export namespace EventType {
@@ -104,7 +104,7 @@ export class Gesture extends Disposable {
       return Disposable.None;
     }
     if (!Gesture.INSTANCE) {
-      Gesture.INSTANCE = markAsSingleton(new Gesture());
+      Gesture.INSTANCE = new Gesture();
     }
 
     const remove = Gesture.INSTANCE.targets.push(element);
@@ -116,7 +116,7 @@ export class Gesture extends Disposable {
       return Disposable.None;
     }
     if (!Gesture.INSTANCE) {
-      Gesture.INSTANCE = markAsSingleton(new Gesture());
+      Gesture.INSTANCE = new Gesture();
     }
 
     const remove = Gesture.INSTANCE.ignoreTargets.push(element);

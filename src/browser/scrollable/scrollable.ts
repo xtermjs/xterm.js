@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Emitter, Event } from './event';
-import { Disposable, IDisposable } from './lifecycle';
+import { Emitter, IEvent } from 'common/Event';
+import { Disposable, IDisposable } from 'common/Lifecycle';
 
 export const enum ScrollbarVisibility {
   Auto = 1,
@@ -223,7 +223,7 @@ export class Scrollable extends Disposable {
   private _smoothScrolling: SmoothScrollingOperation | null;
 
   private _onScroll = this._register(new Emitter<ScrollEvent>());
-  public readonly onScroll: Event<ScrollEvent> = this._onScroll.event;
+  public readonly onScroll: IEvent<ScrollEvent> = this._onScroll.event;
 
   constructor(options: IScrollableOptions) {
     super();

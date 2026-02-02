@@ -5,7 +5,7 @@
 
 import * as browser from './browser';
 import { IframeUtils } from './iframe';
-import * as platform from './platform';
+import * as platform from 'common/Platform';
 
 export interface IMouseEvent {
   readonly browserEvent: MouseEvent;
@@ -148,7 +148,7 @@ export class StandardWheelEvent {
         const ev = e as unknown as WheelEvent;
 
         if (ev.deltaMode === ev.DOM_DELTA_LINE) {
-          if (browser.isFirefox && !platform.isMacintosh) {
+          if (browser.isFirefox && !platform.isMac) {
             this.deltaY = -e.deltaY / 3;
           } else {
             this.deltaY = -e.deltaY;
@@ -172,7 +172,7 @@ export class StandardWheelEvent {
         const ev = e as unknown as WheelEvent;
 
         if (ev.deltaMode === ev.DOM_DELTA_LINE) {
-          if (browser.isFirefox && !platform.isMacintosh) {
+          if (browser.isFirefox && !platform.isMac) {
             this.deltaX = -e.deltaX / 3;
           } else {
             this.deltaX = -e.deltaX;
