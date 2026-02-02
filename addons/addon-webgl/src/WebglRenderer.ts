@@ -478,7 +478,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
-        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
+        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width, this.dimensions.device.cell.height);
 
         // Override colors for cursor cell
         if (isCursorVisible && row === cursorY) {

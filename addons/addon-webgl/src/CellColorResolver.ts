@@ -42,7 +42,7 @@ export class CellColorResolver {
    * Resolves colors for the cell, putting the result into the shared {@link result}. This resolves
    * overrides, inverse and selection for the cell which can then be used to feed into the renderer.
    */
-  public resolve(cell: ICellData, x: number, y: number, deviceCellWidth: number): void {
+  public resolve(cell: ICellData, x: number, y: number, deviceCellWidth: number, deviceCellHeight: number): void {
     this.result.bg = cell.bg;
     this.result.fg = cell.fg;
     this.result.ext = cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0;
@@ -62,6 +62,11 @@ export class CellColorResolver {
     if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
       const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
       $variantOffset = x * deviceCellWidth % (Math.round(lineWidth) * 2);
+    }
+    if ($variantOffset === 0) {
+      if ((code >= 0x2591 && code <= 0x2593) || (code >= 0x1FB8C && code <= 0x1FB94)) {
+        $variantOffset = ((x * deviceCellWidth) % 2) * 2 + ((y * deviceCellHeight) % 2);
+      }
     }
 
     // Apply decorations on the bottom layer
