@@ -118,8 +118,8 @@ export class StandardWheelEvent {
 
   constructor(e: IMouseWheelEvent | null, deltaX: number = 0, deltaY: number = 0) {
 
-    this.browserEvent = e || null;
-    this.target = e ? (e.target || (e as any).targetNode || e.srcElement) : null;
+    this.browserEvent = e ?? null;
+    this.target = e ? (e.target ?? (e as any).targetNode ?? e.srcElement ?? null) : null;
 
     this.deltaY = deltaY;
     this.deltaX = deltaX;

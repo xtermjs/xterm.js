@@ -189,7 +189,7 @@ export abstract class AbstractScrollableElement extends Widget {
     return this._options;
   }
 
-  protected constructor(element: HTMLElement, options: IScrollableElementCreationOptions, scrollable: Scrollable) {
+  public constructor(element: HTMLElement, options: IScrollableElementCreationOptions, scrollable: Scrollable) {
     super();
     this._options = resolveOptions(options);
     this._scrollable = scrollable;
@@ -234,7 +234,7 @@ export abstract class AbstractScrollableElement extends Widget {
       this._topLeftShadowDomNode = null;
     }
 
-    this._listenOnDomNode = this._options.listenOnDomNode || this._domNode;
+    this._listenOnDomNode = this._options.listenOnDomNode ?? this._domNode;
 
     this._mouseWheelToDispose = [];
     this._setListeningToMouseWheel(this._options.handleMouseWheel);
@@ -344,7 +344,7 @@ export abstract class AbstractScrollableElement extends Widget {
     this._mouseWheelToDispose = dispose(this._mouseWheelToDispose);
 
     if (shouldListen) {
-      const onMouseWheel = (browserEvent: IMouseWheelEvent) => {
+      const onMouseWheel = (browserEvent: IMouseWheelEvent): void => {
         this._handleMouseWheel(new StandardWheelEvent(browserEvent));
       };
 
@@ -556,10 +556,6 @@ export class ScrollableElement extends AbstractScrollableElement {
 }
 
 export class SmoothScrollableElement extends AbstractScrollableElement {
-
-  constructor(element: HTMLElement, options: IScrollableElementCreationOptions, scrollable: Scrollable) {
-    super(element, options, scrollable);
-  }
 
   public setScrollPosition(update: INewScrollPosition & { reuseAnimation?: boolean }): void {
     if (update.reuseAnimation) {

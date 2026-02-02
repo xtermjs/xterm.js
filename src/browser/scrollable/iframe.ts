@@ -24,14 +24,15 @@ function getParentWindowIfSameOrigin(w: Window): Window | null {
     return null;
   }
 
-  // Cannot really tell if we have access to the parent window unless we try to access something in it
+  // Cannot really tell if we have access to the parent window unless we try
+  // to access something in it.
   try {
     const location = w.location;
     const parentLocation = w.parent.location;
     if (location.origin !== 'null' && parentLocation.origin !== 'null' && location.origin !== parentLocation.origin) {
       return null;
     }
-  } catch (e) {
+  } catch {
     return null;
   }
 
@@ -41,10 +42,12 @@ function getParentWindowIfSameOrigin(w: Window): Window | null {
 export class IframeUtils {
 
   /**
-   * Returns a chain of embedded windows with the same origin (which can be accessed programmatically).
-   * Having a chain of length 1 might mean that the current execution environment is running outside of an iframe or inside an iframe embedded in a window with a different origin.
+   * Returns a chain of embedded windows with the same origin.
+   * The chain can be accessed programmatically.
+   * Having a chain of length 1 might mean that the current execution environment is
+   * running outside of an iframe or inside an iframe embedded in a window with a different origin.
    */
-  private static getSameOriginWindowChain(targetWindow: Window): IWindowChainElement[] {
+  private static _getSameOriginWindowChain(targetWindow: Window): IWindowChainElement[] {
     let windowChainCache = sameOriginWindowChainCache.get(targetWindow);
     if (!windowChainCache) {
       windowChainCache = [];
@@ -56,7 +59,7 @@ export class IframeUtils {
         if (parent) {
           windowChainCache.push({
             window: new WeakRef(w),
-            iframeElement: w.frameElement || null
+            iframeElement: w.frameElement ?? null
           });
         } else {
           windowChainCache.push({
@@ -73,7 +76,7 @@ export class IframeUtils {
   /**
    * Returns the position of `childWindow` relative to `ancestorWindow`
    */
-  public static getPositionOfChildWindowRelativeToAncestorWindow(childWindow: Window, ancestorWindow: Window | null) {
+  public static getPositionOfChildWindowRelativeToAncestorWindow(childWindow: Window, ancestorWindow: Window | null): { top: number, left: number } {
 
     if (!ancestorWindow || childWindow === ancestorWindow) {
       return {
@@ -84,7 +87,7 @@ export class IframeUtils {
 
     let top = 0; let left = 0;
 
-    const windowChain = this.getSameOriginWindowChain(childWindow);
+    const windowChain = this._getSameOriginWindowChain(childWindow);
 
     for (const windowChainEl of windowChain) {
       const windowInChain = windowChainEl.window.deref();

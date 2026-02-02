@@ -13,7 +13,7 @@ import { SmoothScrollableElement } from 'browser/scrollable/scrollableElement';
 import type { IScrollableElementChangeOptions } from 'browser/scrollable/scrollableElementOptions';
 import { Emitter, EventUtils } from 'common/Event';
 import { Scrollable, ScrollbarVisibility, type IScrollEvent } from 'browser/scrollable/scrollable';
-import { Gesture, EventType as GestureEventType, type GestureEvent } from 'browser/scrollable/touch';
+import { Gesture, EventType as GestureEventType, type IGestureEvent } from 'browser/scrollable/touch';
 
 export class Viewport extends Disposable {
 
@@ -108,7 +108,7 @@ export class Viewport extends Disposable {
 
     // Touch/gesture scrolling support
     this._register(Gesture.addTarget(screenElement));
-    this._register(addDisposableListener(screenElement, GestureEventType.Change, (e: GestureEvent) => this._handleGestureChange(e)));
+    this._register(addDisposableListener(screenElement, GestureEventType.CHANGE, (e: IGestureEvent) => this._handleGestureChange(e)));
   }
 
   public scrollLines(disp: number): void {
@@ -196,7 +196,7 @@ export class Viewport extends Disposable {
     this._isHandlingScroll = false;
   }
 
-  private _handleGestureChange(e: GestureEvent): void {
+  private _handleGestureChange(e: IGestureEvent): void {
     e.preventDefault();
     e.stopPropagation();
     const pos = this._scrollableElement.getScrollPosition();

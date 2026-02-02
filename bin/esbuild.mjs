@@ -191,9 +191,7 @@ if (config.addon) {
     entryPoints: [
       'src/browser/**/*.ts',
       'src/common/**/*.ts',
-      'src/headless/**/*.ts',
-      'src/vs/base/**/*.ts',
-      'src/vs/patches/**/*.ts'
+      'src/headless/**/*.ts'
     ],
     outdir: 'out-esbuild/'
   };

@@ -36,19 +36,19 @@ export class TimeoutTimer implements IDisposable {
   private _token: any = -1;
   private _isDisposed = false;
 
-  dispose(): void {
+  public dispose(): void {
     this.cancel();
     this._isDisposed = true;
   }
 
-  cancel(): void {
+  public cancel(): void {
     if (this._token !== -1) {
       clearTimeout(this._token);
       this._token = -1;
     }
   }
 
-  cancelAndSet(runner: () => void, timeout: number): void {
+  public cancelAndSet(runner: () => void, timeout: number): void {
     if (this._isDisposed) {
       throw new Error('Calling cancelAndSet on a disposed TimeoutTimer');
     }
@@ -59,7 +59,7 @@ export class TimeoutTimer implements IDisposable {
     }, timeout);
   }
 
-  setIfNotSet(runner: () => void, timeout: number): void {
+  public setIfNotSet(runner: () => void, timeout: number): void {
     if (this._isDisposed) {
       throw new Error('Calling setIfNotSet on a disposed TimeoutTimer');
     }
@@ -77,12 +77,12 @@ export class IntervalTimer implements IDisposable {
   private _disposable: IDisposable | undefined;
   private _isDisposed = false;
 
-  cancel(): void {
+  public cancel(): void {
     this._disposable?.dispose();
     this._disposable = undefined;
   }
 
-  cancelAndSet(runner: () => void, interval: number, context: Window | typeof globalThis = globalThis): void {
+  public cancelAndSet(runner: () => void, interval: number, context: Window | typeof globalThis = globalThis): void {
     if (this._isDisposed) {
       throw new Error('Calling cancelAndSet on a disposed IntervalTimer');
     }
@@ -98,7 +98,7 @@ export class IntervalTimer implements IDisposable {
     };
   }
 
-  dispose(): void {
+  public dispose(): void {
     this.cancel();
     this._isDisposed = true;
   }

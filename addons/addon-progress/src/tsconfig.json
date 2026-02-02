@@ -21,9 +21,6 @@
       "browser/*": [
         "../../../src/browser/*"
       ],
-      "vs/*": [
-        "../../../src/vs/*"
-      ],
       "@xterm/addon-progress": [
         "../typings/addon-progress.d.ts"
       ]
@@ -39,9 +36,6 @@
     },
     {
       "path": "../../../src/common"
-    },
-    {
-      "path": "../../../src/vs"
     }
   ]
 }

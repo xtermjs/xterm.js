@@ -22,9 +22,6 @@
       ],
       "common/*": [
         "../../src/common/*"
-      ],
-      "vs/*": [
-        "../../src/vs/*"
       ]
     },
     "target": "ESNext",
@@ -41,9 +38,6 @@
     },
     {
       "path": "../../src/common"
-    },
-    {
-      "path": "../../src/vs"
     }
   ]
 }

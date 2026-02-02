@@ -88,7 +88,6 @@ export const eventType = {
   WHEEL: 'wheel'
 } as const;
 
-export const EventType = eventType;
 
 export function getDomNodePagePosition(domNode: HTMLElement): { left: number, top: number, width: number, height: number } {
   const bb = domNode.getBoundingClientRect();

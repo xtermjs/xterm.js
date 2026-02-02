@@ -73,8 +73,8 @@ export interface IScrollableElementCreationOptions {
    */
   arrowSize?: number;
   /**
-  * The dom node events should be bound to.
-  * If no listenOnDomNode is provided, the constructor dom node is used.
+   * The dom node events should be bound to.
+   * If no listenOnDomNode is provided, the constructor dom node is used.
    */
   listenOnDomNode?: HTMLElement;
   /**

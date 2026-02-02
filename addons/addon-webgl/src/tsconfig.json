@@ -18,9 +18,6 @@
       "browser/*": [
         "../../../src/browser/*"
       ],
-      "vs/*": [
-        "../../../src/vs/*"
-      ],
       "@xterm/addon-webgl": [
         "../typings/addon-webgl.d.ts"
       ]
@@ -42,9 +39,6 @@
     },
     {
       "path": "../../../src/browser"
-    },
-    {
-      "path": "../../../src/vs"
     }
   ]
 }
