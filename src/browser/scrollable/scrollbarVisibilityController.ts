@@ -45,10 +45,10 @@ export class ScrollbarVisibilityController extends Disposable {
   }
 
   private _applyVisibilitySetting(): boolean {
-    if (this._visibility === ScrollbarVisibility.Hidden) {
+    if (this._visibility === ScrollbarVisibility.HIDDEN) {
       return false;
     }
-    if (this._visibility === ScrollbarVisibility.Visible) {
+    if (this._visibility === ScrollbarVisibility.VISIBLE) {
       return true;
     }
     return this._rawShouldBeVisible;

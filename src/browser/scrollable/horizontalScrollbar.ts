@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AbstractScrollbar, ISimplifiedPointerEvent, ScrollbarHost } from './abstractScrollbar';
-import { ScrollableElementResolvedOptions } from './scrollableElementOptions';
+import { AbstractScrollbar, ISimplifiedPointerEvent, IScrollbarHost } from './abstractScrollbar';
+import { IScrollableElementResolvedOptions } from './scrollableElementOptions';
 import { ScrollbarState } from './scrollbarState';
-import { INewScrollPosition, Scrollable, ScrollbarVisibility, ScrollEvent } from './scrollable';
+import { INewScrollPosition, Scrollable, ScrollbarVisibility, IScrollEvent } from './scrollable';
 
 export class HorizontalScrollbar extends AbstractScrollbar {
 
-  constructor(scrollable: Scrollable, options: ScrollableElementResolvedOptions, host: ScrollbarHost) {
+  constructor(scrollable: Scrollable, options: IScrollableElementResolvedOptions, host: IScrollbarHost) {
     const scrollDimensions = scrollable.getScrollDimensions();
     const scrollPosition = scrollable.getCurrentScrollPosition();
     super({
@@ -18,8 +18,8 @@ export class HorizontalScrollbar extends AbstractScrollbar {
       host: host,
       scrollbarState: new ScrollbarState(
         (options.horizontalHasArrows ? options.arrowSize : 0),
-        (options.horizontal === ScrollbarVisibility.Hidden ? 0 : options.horizontalScrollbarSize),
-        (options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize),
+        (options.horizontal === ScrollbarVisibility.HIDDEN ? 0 : options.horizontalScrollbarSize),
+        (options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize),
         scrollDimensions.width,
         scrollDimensions.scrollWidth,
         scrollPosition.scrollLeft
@@ -49,10 +49,10 @@ export class HorizontalScrollbar extends AbstractScrollbar {
     this.domNode.setBottom(0);
   }
 
-  public onDidScroll(e: ScrollEvent): boolean {
-    this._shouldRender = this._onElementScrollSize(e.scrollWidth) || this._shouldRender;
-    this._shouldRender = this._onElementScrollPosition(e.scrollLeft) || this._shouldRender;
-    this._shouldRender = this._onElementSize(e.width) || this._shouldRender;
+  public handleScroll(e: IScrollEvent): boolean {
+    this._shouldRender = this._handleElementScrollSize(e.scrollWidth) || this._shouldRender;
+    this._shouldRender = this._handleElementScrollPosition(e.scrollLeft) || this._shouldRender;
+    this._shouldRender = this._handleElementSize(e.width) || this._shouldRender;
     return this._shouldRender;
   }
 
@@ -76,9 +76,9 @@ export class HorizontalScrollbar extends AbstractScrollbar {
     target.scrollLeft = scrollPosition;
   }
 
-  public updateOptions(options: ScrollableElementResolvedOptions): void {
-    this.updateScrollbarSize(options.horizontal === ScrollbarVisibility.Hidden ? 0 : options.horizontalScrollbarSize);
-    this._scrollbarState.setOppositeScrollbarSize(options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize);
+  public updateOptions(options: IScrollableElementResolvedOptions): void {
+    this.updateScrollbarSize(options.horizontal === ScrollbarVisibility.HIDDEN ? 0 : options.horizontalScrollbarSize);
+    this._scrollbarState.setOppositeScrollbarSize(options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize);
     this._visibilityController.setVisibility(options.horizontal);
     this._scrollByPage = options.scrollByPage;
   }

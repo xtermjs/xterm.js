@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-export function memoize(_target: any, key: string, descriptor: any) {
+export function memoize(_target: any, key: string, descriptor: PropertyDescriptor): void {
   let fnKey: string | null = null;
   let fn: Function | null = null;
 
@@ -24,7 +24,8 @@ export function memoize(_target: any, key: string, descriptor: any) {
   }
 
   const memoizeKey = `$memoize$${key}`;
-  descriptor[fnKey!] = function (...args: any[]) {
+  const descriptorAny = descriptor as { [key: string]: any };
+  descriptorAny[fnKey!] = function (...args: any[]) {
     if (!this.hasOwnProperty(memoizeKey)) {
       Object.defineProperty(this, memoizeKey, {
         configurable: false,
@@ -34,7 +35,7 @@ export function memoize(_target: any, key: string, descriptor: any) {
       });
     }
 
-    return this[memoizeKey];
+    return (this as { [key: string]: any })[memoizeKey];
   };
 }
 

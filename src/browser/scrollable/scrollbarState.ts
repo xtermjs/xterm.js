@@ -4,9 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The minimal size of the slider (such that it can still be clickable) -- it is artificially enlarged.
+ * The minimal size of the slider (such that it can still be clickable).
+ * The slider is artificially enlarged to keep it usable.
  */
 const MINIMUM_SLIDER_SIZE = 20;
+
+interface IScrollbarStateComputedValues {
+  computedAvailableSize: number;
+  computedIsNeeded: boolean;
+  computedSliderSize: number;
+  computedSliderRatio: number;
+  computedSliderPosition: number;
+}
 
 export class ScrollbarState {
 
@@ -122,7 +131,13 @@ export class ScrollbarState {
     this._oppositeScrollbarSize = Math.round(oppositeScrollbarSize);
   }
 
-  private static _computeValues(oppositeScrollbarSize: number, arrowSize: number, visibleSize: number, scrollSize: number, scrollPosition: number) {
+  private static _computeValues(
+    oppositeScrollbarSize: number,
+    arrowSize: number,
+    visibleSize: number,
+    scrollSize: number,
+    scrollPosition: number
+  ): IScrollbarStateComputedValues {
     const computedAvailableSize = Math.max(0, visibleSize - oppositeScrollbarSize);
     const computedRepresentableSize = Math.max(0, computedAvailableSize - 2 * arrowSize);
     const computedIsNeeded = (scrollSize > 0 && scrollSize > visibleSize);

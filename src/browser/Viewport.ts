@@ -10,9 +10,9 @@ import { IBufferService, ICoreMouseService, IOptionsService } from 'common/servi
 import { CoreMouseEventType } from 'common/Types';
 import { addDisposableListener, scheduleAtNextAnimationFrame } from 'browser/Dom';
 import { SmoothScrollableElement } from 'browser/scrollable/scrollableElement';
-import type { ScrollableElementChangeOptions } from 'browser/scrollable/scrollableElementOptions';
+import type { IScrollableElementChangeOptions } from 'browser/scrollable/scrollableElementOptions';
 import { Emitter, EventUtils } from 'common/Event';
-import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'browser/scrollable/scrollable';
+import { Scrollable, ScrollbarVisibility, type IScrollEvent } from 'browser/scrollable/scrollable';
 import { Gesture, EventType as GestureEventType, type GestureEvent } from 'browser/scrollable/touch';
 
 export class Viewport extends Disposable {
@@ -52,8 +52,8 @@ export class Viewport extends Disposable {
     }));
 
     this._scrollableElement = this._register(new SmoothScrollableElement(screenElement, {
-      vertical: ScrollbarVisibility.Auto,
-      horizontal: ScrollbarVisibility.Hidden,
+      vertical: ScrollbarVisibility.AUTO,
+      horizontal: ScrollbarVisibility.HIDDEN,
       useShadows: false,
       mouseWheelSmoothScroll: true,
       ...this._getChangeOptions()
@@ -129,7 +129,7 @@ export class Viewport extends Disposable {
     });
   }
 
-  private _getChangeOptions(): ScrollableElementChangeOptions {
+  private _getChangeOptions(): IScrollableElementChangeOptions {
     return {
       mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
       fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
@@ -179,7 +179,7 @@ export class Viewport extends Disposable {
     this._isSyncing = false;
   }
 
-  private _handleScroll(e: ScrollEvent): void {
+  private _handleScroll(e: IScrollEvent): void {
     if (!this._renderService) {
       return;
     }

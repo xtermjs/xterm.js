@@ -5,7 +5,7 @@
 
 import { ScrollbarVisibility } from './scrollable';
 
-export interface ScrollableElementCreationOptions {
+export interface IScrollableElementCreationOptions {
   /**
    * The scrollable element should not do any DOM mutations until renderNow() is called.
    * Defaults to false.
@@ -73,8 +73,8 @@ export interface ScrollableElementCreationOptions {
    */
   arrowSize?: number;
   /**
-   * The dom node events should be bound to.
-   * If no listenOnDomNode is provided, the dom node passed to the constructor will be used for event listening.
+  * The dom node events should be bound to.
+  * If no listenOnDomNode is provided, the constructor dom node is used.
    */
   listenOnDomNode?: HTMLElement;
   /**
@@ -126,7 +126,7 @@ export interface ScrollableElementCreationOptions {
   scrollByPage?: boolean;
 }
 
-export interface ScrollableElementChangeOptions {
+export interface IScrollableElementChangeOptions {
   handleMouseWheel?: boolean;
   mouseWheelScrollSensitivity?: number;
   fastScrollSensitivity?: number;
@@ -138,7 +138,7 @@ export interface ScrollableElementChangeOptions {
   scrollByPage?: boolean;
 }
 
-export interface ScrollableElementResolvedOptions {
+export interface IScrollableElementResolvedOptions {
   lazyRender: boolean;
   className: string;
   useShadows: boolean;

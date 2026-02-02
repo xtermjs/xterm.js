@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AbstractScrollbar, ISimplifiedPointerEvent, ScrollbarHost } from './abstractScrollbar';
-import { ScrollableElementResolvedOptions } from './scrollableElementOptions';
+import { AbstractScrollbar, ISimplifiedPointerEvent, IScrollbarHost } from './abstractScrollbar';
+import { IScrollableElementResolvedOptions } from './scrollableElementOptions';
 import { ScrollbarState } from './scrollbarState';
-import { INewScrollPosition, Scrollable, ScrollbarVisibility, ScrollEvent } from './scrollable';
+import { INewScrollPosition, Scrollable, ScrollbarVisibility, IScrollEvent } from './scrollable';
 
 export class VerticalScrollbar extends AbstractScrollbar {
 
-  constructor(scrollable: Scrollable, options: ScrollableElementResolvedOptions, host: ScrollbarHost) {
+  constructor(scrollable: Scrollable, options: IScrollableElementResolvedOptions, host: IScrollbarHost) {
     const scrollDimensions = scrollable.getScrollDimensions();
     const scrollPosition = scrollable.getCurrentScrollPosition();
     super({
@@ -18,7 +18,7 @@ export class VerticalScrollbar extends AbstractScrollbar {
       host: host,
       scrollbarState: new ScrollbarState(
         (options.verticalHasArrows ? options.arrowSize : 0),
-        (options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize),
+        (options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize),
         0,
         scrollDimensions.height,
         scrollDimensions.scrollHeight,
@@ -49,10 +49,10 @@ export class VerticalScrollbar extends AbstractScrollbar {
     this.domNode.setTop(0);
   }
 
-  public onDidScroll(e: ScrollEvent): boolean {
-    this._shouldRender = this._onElementScrollSize(e.scrollHeight) || this._shouldRender;
-    this._shouldRender = this._onElementScrollPosition(e.scrollTop) || this._shouldRender;
-    this._shouldRender = this._onElementSize(e.height) || this._shouldRender;
+  public handleScroll(e: IScrollEvent): boolean {
+    this._shouldRender = this._handleElementScrollSize(e.scrollHeight) || this._shouldRender;
+    this._shouldRender = this._handleElementScrollPosition(e.scrollTop) || this._shouldRender;
+    this._shouldRender = this._handleElementSize(e.height) || this._shouldRender;
     return this._shouldRender;
   }
 
@@ -76,8 +76,8 @@ export class VerticalScrollbar extends AbstractScrollbar {
     target.scrollTop = scrollPosition;
   }
 
-  public updateOptions(options: ScrollableElementResolvedOptions): void {
-    this.updateScrollbarSize(options.vertical === ScrollbarVisibility.Hidden ? 0 : options.verticalScrollbarSize);
+  public updateOptions(options: IScrollableElementResolvedOptions): void {
+    this.updateScrollbarSize(options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize);
     this._scrollbarState.setOppositeScrollbarSize(0);
     this._visibilityController.setVisibility(options.vertical);
     this._scrollByPage = options.scrollByPage;

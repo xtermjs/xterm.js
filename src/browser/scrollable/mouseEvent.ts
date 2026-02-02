@@ -55,7 +55,7 @@ export class StandardMouseEvent implements IMouseEvent {
 
     this.target = e.target as HTMLElement;
 
-    this.detail = e.detail || 1;
+    this.detail = e.detail ?? 1;
     if (e.type === 'dblclick') {
       this.detail = 2;
     }
@@ -134,7 +134,7 @@ export class StandardWheelEvent {
     if (e) {
       const e1 = e as IWebKitMouseWheelEvent as any;
       const e2 = e as unknown as IGeckoMouseWheelEvent;
-      const devicePixelRatio = e.view?.devicePixelRatio || 1;
+      const devicePixelRatio = e.view?.devicePixelRatio ?? 1;
 
       if (typeof e1.wheelDeltaY !== 'undefined') {
         if (shouldFactorDPR) {

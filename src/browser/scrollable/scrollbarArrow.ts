@@ -13,8 +13,8 @@ import * as dom from './dom';
  */
 const ARROW_IMG_SIZE = 11;
 
-export interface ScrollbarArrowOptions {
-  onActivate: () => void;
+export interface IScrollbarArrowOptions {
+  handleActivate: () => void;
   className: string;
   // icon: ThemeIcon;
 
@@ -29,16 +29,16 @@ export interface ScrollbarArrowOptions {
 
 export class ScrollbarArrow extends Widget {
 
-  private _onActivate: () => void;
+  private _handleActivate: () => void;
   public bgDomNode: HTMLElement;
   public domNode: HTMLElement;
   private _pointerdownRepeatTimer: dom.WindowIntervalTimer;
   private _pointerdownScheduleRepeatTimer: TimeoutTimer;
   private _pointerMoveMonitor: GlobalPointerMoveMonitor;
 
-  constructor(opts: ScrollbarArrowOptions) {
+  constructor(opts: IScrollbarArrowOptions) {
     super();
-    this._onActivate = opts.onActivate;
+    this._handleActivate = opts.handleActivate;
 
     this.bgDomNode = document.createElement('div');
     this.bgDomNode.className = 'arrow-background';
@@ -79,8 +79,8 @@ export class ScrollbarArrow extends Widget {
     }
 
     this._pointerMoveMonitor = this._register(new GlobalPointerMoveMonitor());
-    this._register(dom.addStandardDisposableListener(this.bgDomNode, dom.EventType.POINTER_DOWN, (e) => this._arrowPointerDown(e)));
-    this._register(dom.addStandardDisposableListener(this.domNode, dom.EventType.POINTER_DOWN, (e) => this._arrowPointerDown(e)));
+    this._register(dom.addStandardDisposableListener(this.bgDomNode, dom.eventType.POINTER_DOWN, (e) => this._arrowPointerDown(e)));
+    this._register(dom.addStandardDisposableListener(this.domNode, dom.eventType.POINTER_DOWN, (e) => this._arrowPointerDown(e)));
 
     this._pointerdownRepeatTimer = this._register(new dom.WindowIntervalTimer());
     this._pointerdownScheduleRepeatTimer = this._register(new TimeoutTimer());
@@ -90,11 +90,11 @@ export class ScrollbarArrow extends Widget {
     if (!e.target || !(e.target instanceof Element)) {
       return;
     }
-    const scheduleRepeater = () => {
-      this._pointerdownRepeatTimer.cancelAndSet(() => this._onActivate(), 1000 / 24, dom.getWindow(e));
+    const scheduleRepeater = (): void => {
+      this._pointerdownRepeatTimer.cancelAndSet(() => this._handleActivate(), 1000 / 24, dom.getWindow(e));
     };
 
-    this._onActivate();
+    this._handleActivate();
     this._pointerdownRepeatTimer.cancel();
     this._pointerdownScheduleRepeatTimer.cancelAndSet(scheduleRepeater, 200);
 

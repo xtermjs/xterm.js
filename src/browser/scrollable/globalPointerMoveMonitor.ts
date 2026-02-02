@@ -59,11 +59,11 @@ export class GlobalPointerMoveMonitor implements IDisposable {
       this._hooks.add(toDisposable(() => {
         try {
           initialElement.releasePointerCapture(pointerId);
-        } catch (err) {
+        } catch {
           // ignore
         }
       }));
-    } catch (err) {
+    } catch {
       eventSource = dom.getWindow(initialElement);
     }
 

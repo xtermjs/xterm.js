@@ -5,13 +5,13 @@
 
 class Node<E> {
 
-  static readonly Undefined = new Node<any>(undefined);
+  public static readonly Undefined = new Node<any>(undefined);
 
-  element: E;
-  next: Node<E>;
-  prev: Node<E>;
+  public element: E;
+  public next: Node<E>;
+  public prev: Node<E>;
 
-  constructor(element: E) {
+  public constructor(element: E) {
     this.element = element;
     this.next = Node.Undefined;
     this.prev = Node.Undefined;
@@ -24,15 +24,15 @@ export class LinkedList<E> {
   private _last: Node<E> = Node.Undefined;
   private _size: number = 0;
 
-  get size(): number {
+  public get size(): number {
     return this._size;
   }
 
-  isEmpty(): boolean {
+  public isEmpty(): boolean {
     return this._first === Node.Undefined;
   }
 
-  clear(): void {
+  public clear(): void {
     let node = this._first;
     while (node !== Node.Undefined) {
       const next = node.next;
@@ -46,11 +46,11 @@ export class LinkedList<E> {
     this._size = 0;
   }
 
-  unshift(element: E): () => void {
+  public unshift(element: E): () => void {
     return this._insert(element, false);
   }
 
-  push(element: E): () => void {
+  public push(element: E): () => void {
     return this._insert(element, true);
   }
 
@@ -85,7 +85,7 @@ export class LinkedList<E> {
     };
   }
 
-  shift(): E | undefined {
+  public shift(): E | undefined {
     if (this._first === Node.Undefined) {
       return undefined;
     }
@@ -95,7 +95,7 @@ export class LinkedList<E> {
 
   }
 
-  pop(): E | undefined {
+  public pop(): E | undefined {
     if (this._last === Node.Undefined) {
       return undefined;
     }
@@ -132,7 +132,7 @@ export class LinkedList<E> {
     this._size -= 1;
   }
 
-  *[Symbol.iterator](): Iterator<E> {
+  public *[Symbol.iterator](): Iterator<E> {
     let node = this._first;
     while (node !== Node.Undefined) {
       yield node.element;

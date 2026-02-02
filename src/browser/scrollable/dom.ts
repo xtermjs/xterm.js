@@ -12,12 +12,12 @@ export interface IRegisteredWindow {
   readonly disposables: DisposableStore;
 }
 
-const _onDidRegisterWindow = new Emitter<IRegisteredWindow>();
-export const onDidRegisterWindow: IEvent<IRegisteredWindow> = _onDidRegisterWindow.event;
+const onDidRegisterWindowEmitter = new Emitter<IRegisteredWindow>();
+export const onDidRegisterWindow: IEvent<IRegisteredWindow> = onDidRegisterWindowEmitter.event;
 
 export function registerWindow(window: Window): IDisposable {
   const disposables = new DisposableStore();
-  _onDidRegisterWindow.fire({ window, disposables });
+  onDidRegisterWindowEmitter.fire({ window, disposables });
   return disposables;
 }
 
@@ -70,7 +70,7 @@ export function addStandardDisposableListener(node: HTMLElement, type: string, h
   return addDisposableListener(node, type, handler, useCapture);
 }
 
-export const EventType = {
+export const eventType = {
   CLICK: 'click',
   MOUSE_DOWN: 'mousedown',
   MOUSE_OVER: 'mouseover',
@@ -87,6 +87,8 @@ export const EventType = {
   MOUSE_WHEEL: 'wheel',
   WHEEL: 'wheel'
 } as const;
+
+export const EventType = eventType;
 
 export function getDomNodePagePosition(domNode: HTMLElement): { left: number, top: number, width: number, height: number } {
   const bb = domNode.getBoundingClientRect();

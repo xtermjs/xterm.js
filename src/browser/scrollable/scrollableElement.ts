@@ -7,16 +7,16 @@ import { getZoomFactor, isChrome } from './browser';
 import * as dom from './dom';
 import { FastDomNode, createFastDomNode } from './fastDomNode';
 import { IMouseEvent, IMouseWheelEvent, StandardWheelEvent } from './mouseEvent';
-import { ScrollbarHost } from './abstractScrollbar';
+import { IScrollbarHost } from './abstractScrollbar';
 import { HorizontalScrollbar } from './horizontalScrollbar';
-import { ScrollableElementChangeOptions, ScrollableElementCreationOptions, ScrollableElementResolvedOptions } from './scrollableElementOptions';
+import { IScrollableElementChangeOptions, IScrollableElementCreationOptions, IScrollableElementResolvedOptions } from './scrollableElementOptions';
 import { VerticalScrollbar } from './verticalScrollbar';
 import { Widget } from './widget';
 import { TimeoutTimer } from 'common/Async';
 import { Emitter, IEvent } from 'common/Event';
 import { IDisposable, dispose } from 'common/Lifecycle';
 import * as platform from 'common/Platform';
-import { INewScrollDimensions, INewScrollPosition, IScrollDimensions, IScrollPosition, ScrollEvent, Scrollable, ScrollbarVisibility } from './scrollable';
+import { INewScrollDimensions, INewScrollPosition, IScrollDimensions, IScrollPosition, IScrollEvent, Scrollable, ScrollbarVisibility } from './scrollable';
 // import 'vs/css!./media/scrollbars';
 
 const HIDE_TIMEOUT = 500;
@@ -68,7 +68,7 @@ export class MouseWheelClassifier {
     let iteration = 1;
 
     let index = this._rear;
-    do {
+    while (index !== -1) {
       const influence = (index === this._front ? remainingInfluence : Math.pow(2, -iteration));
       remainingInfluence -= influence;
       score += this._memory[index].score * influence;
@@ -79,7 +79,7 @@ export class MouseWheelClassifier {
 
       index = (this._capacity + index - 1) % this._capacity;
       iteration++;
-    } while (true);
+    }
 
     return (score <= 0.5);
   }
@@ -157,7 +157,7 @@ export class MouseWheelClassifier {
 
 export abstract class AbstractScrollableElement extends Widget {
 
-  private readonly _options: ScrollableElementResolvedOptions;
+  private readonly _options: IScrollableElementResolvedOptions;
   protected readonly _scrollable: Scrollable;
   private readonly _verticalScrollbar: VerticalScrollbar;
   private readonly _horizontalScrollbar: HorizontalScrollbar;
@@ -179,31 +179,31 @@ export abstract class AbstractScrollableElement extends Widget {
 
   private _revealOnScroll: boolean;
 
-  private readonly _onScroll = this._register(new Emitter<ScrollEvent>());
-  public readonly onScroll: IEvent<ScrollEvent> = this._onScroll.event;
+  private readonly _onScroll = this._register(new Emitter<IScrollEvent>());
+  public readonly onScroll: IEvent<IScrollEvent> = this._onScroll.event;
 
-  private readonly _onWillScroll = this._register(new Emitter<ScrollEvent>());
-  public readonly onWillScroll: IEvent<ScrollEvent> = this._onWillScroll.event;
+  private readonly _onWillScroll = this._register(new Emitter<IScrollEvent>());
+  public readonly onWillScroll: IEvent<IScrollEvent> = this._onWillScroll.event;
 
-  public get options(): Readonly<ScrollableElementResolvedOptions> {
+  public get options(): Readonly<IScrollableElementResolvedOptions> {
     return this._options;
   }
 
-  protected constructor(element: HTMLElement, options: ScrollableElementCreationOptions, scrollable: Scrollable) {
+  protected constructor(element: HTMLElement, options: IScrollableElementCreationOptions, scrollable: Scrollable) {
     super();
     this._options = resolveOptions(options);
     this._scrollable = scrollable;
 
     this._register(this._scrollable.onScroll((e) => {
       this._onWillScroll.fire(e);
-      this._onDidScroll(e);
+      this._handleScroll(e);
       this._onScroll.fire(e);
     }));
 
-    const scrollbarHost: ScrollbarHost = {
-      onMouseWheel: (mouseWheelEvent: StandardWheelEvent) => this._onMouseWheel(mouseWheelEvent),
-      onDragStart: () => this._onDragStart(),
-      onDragEnd: () => this._onDragEnd(),
+    const scrollbarHost: IScrollbarHost = {
+      handleMouseWheel: (mouseWheelEvent: StandardWheelEvent) => this._handleMouseWheel(mouseWheelEvent),
+      handleDragStart: () => this._handleDragStart(),
+      handleDragEnd: () => this._handleDragEnd(),
     };
     this._verticalScrollbar = this._register(new VerticalScrollbar(this._scrollable, this._options, scrollbarHost));
     this._horizontalScrollbar = this._register(new HorizontalScrollbar(this._scrollable, this._options, scrollbarHost));
@@ -239,8 +239,8 @@ export abstract class AbstractScrollableElement extends Widget {
     this._mouseWheelToDispose = [];
     this._setListeningToMouseWheel(this._options.handleMouseWheel);
 
-    this.onmouseover(this._listenOnDomNode, (e) => this._onMouseOver(e));
-    this.onmouseleave(this._listenOnDomNode, (e) => this._onMouseLeave(e));
+    this._onmouseover(this._listenOnDomNode, (e) => this._handleMouseOver(e));
+    this._onmouseleave(this._listenOnDomNode, (e) => this._handleMouseLeave(e));
 
     this._hideTimeout = this._register(new TimeoutTimer());
     this._isDragging = false;
@@ -287,7 +287,7 @@ export abstract class AbstractScrollableElement extends Widget {
     this._domNode.className = 'xterm-scrollable-element ' + this._options.className;
   }
 
-  public updateOptions(newOptions: ScrollableElementChangeOptions): void {
+  public updateOptions(newOptions: IScrollableElementChangeOptions): void {
     if (typeof newOptions.handleMouseWheel !== 'undefined') {
       this._options.handleMouseWheel = newOptions.handleMouseWheel;
       this._setListeningToMouseWheel(this._options.handleMouseWheel);
@@ -324,12 +324,12 @@ export abstract class AbstractScrollableElement extends Widget {
     }
   }
 
-  public setRevealOnScroll(value: boolean) {
+  public setRevealOnScroll(value: boolean): void {
     this._revealOnScroll = value;
   }
 
-  public delegateScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent) {
-    this._onMouseWheel(new StandardWheelEvent(browserEvent));
+  public delegateScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent): void {
+    this._handleMouseWheel(new StandardWheelEvent(browserEvent));
   }
 
   // -------------------- mouse wheel scrolling --------------------
@@ -345,14 +345,14 @@ export abstract class AbstractScrollableElement extends Widget {
 
     if (shouldListen) {
       const onMouseWheel = (browserEvent: IMouseWheelEvent) => {
-        this._onMouseWheel(new StandardWheelEvent(browserEvent));
+        this._handleMouseWheel(new StandardWheelEvent(browserEvent));
       };
 
-      this._mouseWheelToDispose.push(dom.addDisposableListener(this._listenOnDomNode, dom.EventType.MOUSE_WHEEL, onMouseWheel, { passive: false }));
+      this._mouseWheelToDispose.push(dom.addDisposableListener(this._listenOnDomNode, dom.eventType.MOUSE_WHEEL, onMouseWheel, { passive: false }));
     }
   }
 
-  private _onMouseWheel(e: StandardWheelEvent): void {
+  private _handleMouseWheel(e: StandardWheelEvent): void {
     if (e.browserEvent?.defaultPrevented) {
       return;
     }
@@ -441,9 +441,9 @@ export abstract class AbstractScrollableElement extends Widget {
     }
   }
 
-  private _onDidScroll(e: ScrollEvent): void {
-    this._shouldRender = this._horizontalScrollbar.onDidScroll(e) || this._shouldRender;
-    this._shouldRender = this._verticalScrollbar.onDidScroll(e) || this._shouldRender;
+  private _handleScroll(e: IScrollEvent): void {
+    this._shouldRender = this._horizontalScrollbar.handleScroll(e) || this._shouldRender;
+    this._shouldRender = this._verticalScrollbar.handleScroll(e) || this._shouldRender;
 
     if (this._options.useShadows) {
       this._shouldRender = true;
@@ -492,22 +492,22 @@ export abstract class AbstractScrollableElement extends Widget {
 
   // -------------------- fade in / fade out --------------------
 
-  private _onDragStart(): void {
+  private _handleDragStart(): void {
     this._isDragging = true;
     this._reveal();
   }
 
-  private _onDragEnd(): void {
+  private _handleDragEnd(): void {
     this._isDragging = false;
     this._hide();
   }
 
-  private _onMouseLeave(e: IMouseEvent): void {
+  private _handleMouseLeave(e: IMouseEvent): void {
     this._mouseIsOver = false;
     this._hide();
   }
 
-  private _onMouseOver(e: IMouseEvent): void {
+  private _handleMouseOver(e: IMouseEvent): void {
     this._mouseIsOver = true;
     this._reveal();
   }
@@ -534,8 +534,8 @@ export abstract class AbstractScrollableElement extends Widget {
 
 export class ScrollableElement extends AbstractScrollableElement {
 
-  constructor(element: HTMLElement, options: ScrollableElementCreationOptions) {
-    options = options || {};
+  constructor(element: HTMLElement, options: IScrollableElementCreationOptions) {
+    options = options ?? {};
     options.mouseWheelSmoothScroll = false;
     const scrollable = new Scrollable({
       forceIntegerValues: true,
@@ -557,7 +557,7 @@ export class ScrollableElement extends AbstractScrollableElement {
 
 export class SmoothScrollableElement extends AbstractScrollableElement {
 
-  constructor(element: HTMLElement, options: ScrollableElementCreationOptions, scrollable: Scrollable) {
+  constructor(element: HTMLElement, options: IScrollableElementCreationOptions, scrollable: Scrollable) {
     super(element, options, scrollable);
   }
 
@@ -575,8 +575,8 @@ export class SmoothScrollableElement extends AbstractScrollableElement {
 
 }
 
-function resolveOptions(opts: ScrollableElementCreationOptions): ScrollableElementResolvedOptions {
-  const result: ScrollableElementResolvedOptions = {
+function resolveOptions(opts: IScrollableElementCreationOptions): IScrollableElementResolvedOptions {
+  const result: IScrollableElementResolvedOptions = {
     lazyRender: (typeof opts.lazyRender !== 'undefined' ? opts.lazyRender : false),
     className: (typeof opts.className !== 'undefined' ? opts.className : ''),
     useShadows: (typeof opts.useShadows !== 'undefined' ? opts.useShadows : true),
@@ -593,12 +593,12 @@ function resolveOptions(opts: ScrollableElementCreationOptions): ScrollableEleme
 
     listenOnDomNode: (typeof opts.listenOnDomNode !== 'undefined' ? opts.listenOnDomNode : null),
 
-    horizontal: (typeof opts.horizontal !== 'undefined' ? opts.horizontal : ScrollbarVisibility.Auto),
+    horizontal: (typeof opts.horizontal !== 'undefined' ? opts.horizontal : ScrollbarVisibility.AUTO),
     horizontalScrollbarSize: (typeof opts.horizontalScrollbarSize !== 'undefined' ? opts.horizontalScrollbarSize : 10),
     horizontalSliderSize: (typeof opts.horizontalSliderSize !== 'undefined' ? opts.horizontalSliderSize : 0),
     horizontalHasArrows: (typeof opts.horizontalHasArrows !== 'undefined' ? opts.horizontalHasArrows : false),
 
-    vertical: (typeof opts.vertical !== 'undefined' ? opts.vertical : ScrollbarVisibility.Auto),
+    vertical: (typeof opts.vertical !== 'undefined' ? opts.vertical : ScrollbarVisibility.AUTO),
     verticalScrollbarSize: (typeof opts.verticalScrollbarSize !== 'undefined' ? opts.verticalScrollbarSize : 10),
     verticalHasArrows: (typeof opts.verticalHasArrows !== 'undefined' ? opts.verticalHasArrows : false),
     verticalSliderSize: (typeof opts.verticalSliderSize !== 'undefined' ? opts.verticalSliderSize : 0),
