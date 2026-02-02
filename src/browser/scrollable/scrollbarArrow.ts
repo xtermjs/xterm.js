@@ -6,7 +6,7 @@
 import { GlobalPointerMoveMonitor } from './globalPointerMoveMonitor';
 import { Widget } from './widget';
 import { TimeoutTimer } from 'common/Async';
-import * as dom from './dom';
+import * as dom from '../Dom';
 
 /**
  * The arrow image size.

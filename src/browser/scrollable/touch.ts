@@ -3,11 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as DomUtils from './dom';
+import * as DomUtils from '../Dom';
 import { mainWindow } from './window';
 import * as arrays from './arrays';
 import { memoize } from './decorators';
-import { EventUtils } from 'common/Event';
 import { Disposable, IDisposable, toDisposable } from 'common/Lifecycle';
 import { LinkedList } from './linkedList';
 
@@ -92,11 +91,10 @@ export class Gesture extends Disposable {
     this._handle = null;
     this._lastSetTapCountTime = 0;
 
-    this._register(EventUtils.runAndSubscribe(DomUtils.onDidRegisterWindow, ({ window, disposables }) => {
-      disposables.add(DomUtils.addDisposableListener(window.document, 'touchstart', (e: ITouchEvent) => this._handleTouchStart(e), { passive: false }));
-      disposables.add(DomUtils.addDisposableListener(window.document, 'touchend', (e: ITouchEvent) => this._handleTouchEnd(window, e)));
-      disposables.add(DomUtils.addDisposableListener(window.document, 'touchmove', (e: ITouchEvent) => this._handleTouchMove(e), { passive: false }));
-    }, { window: mainWindow, disposables: this._store }));
+    const targetWindow = mainWindow;
+    this._register(DomUtils.addDisposableListener(targetWindow.document, 'touchstart', (e: ITouchEvent) => this._handleTouchStart(e), { passive: false }));
+    this._register(DomUtils.addDisposableListener(targetWindow.document, 'touchend', (e: ITouchEvent) => this._handleTouchEnd(targetWindow, e)));
+    this._register(DomUtils.addDisposableListener(targetWindow.document, 'touchmove', (e: ITouchEvent) => this._handleTouchMove(e), { passive: false }));
   }
 
   public static addTarget(element: HTMLElement): IDisposable {

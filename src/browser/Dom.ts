@@ -5,6 +5,7 @@
  * Minimal DOM helpers for xterm.js browser code.
  */
 
+import { IntervalTimer } from 'common/Async';
 import { IDisposable } from 'common/Lifecycle';
 
 export function getWindow(e: Node | UIEvent | undefined | null): Window {
@@ -50,6 +51,39 @@ export function addDisposableListener(node: EventTarget, type: string, handler: 
 export function addDisposableListener(node: EventTarget, type: string, handler: (event: any) => void, options: AddEventListenerOptions): IDisposable;
 export function addDisposableListener(node: EventTarget, type: string, handler: (event: any) => void, useCaptureOrOptions?: boolean | AddEventListenerOptions): IDisposable {
   return new DomListener(node, type, handler, useCaptureOrOptions);
+}
+
+export function addStandardDisposableListener(node: HTMLElement, type: string, handler: (event: any) => void, useCapture?: boolean): IDisposable {
+  return addDisposableListener(node, type, handler, useCapture);
+}
+
+export const eventType = {
+  CLICK: 'click',
+  MOUSE_DOWN: 'mousedown',
+  MOUSE_OVER: 'mouseover',
+  MOUSE_LEAVE: 'mouseleave',
+  KEY_DOWN: 'keydown',
+  KEY_UP: 'keyup',
+  INPUT: 'input',
+  BLUR: 'blur',
+  FOCUS: 'focus',
+  CHANGE: 'change',
+  POINTER_DOWN: 'pointerdown',
+  POINTER_MOVE: 'pointermove',
+  POINTER_UP: 'pointerup',
+  MOUSE_WHEEL: 'wheel',
+  WHEEL: 'wheel'
+} as const;
+
+export function getDomNodePagePosition(domNode: HTMLElement): { left: number, top: number, width: number, height: number } {
+  const bb = domNode.getBoundingClientRect();
+  const win = getWindow(domNode);
+  return {
+    left: bb.left + win.scrollX,
+    top: bb.top + win.scrollY,
+    width: bb.width,
+    height: bb.height
+  };
 }
 
 class AnimationFrameQueueItem implements IDisposable {
@@ -128,4 +162,17 @@ export function scheduleAtNextAnimationFrame(targetWindow: Window, runner: () =>
   }
 
   return item;
+}
+
+export class WindowIntervalTimer extends IntervalTimer {
+  private readonly _defaultTarget?: Window;
+
+  constructor(node?: Node) {
+    super();
+    this._defaultTarget = node ? getWindow(node) : undefined;
+  }
+
+  public cancelAndSet(runner: () => void, interval: number, targetWindow?: Window): void {
+    super.cancelAndSet(runner, interval, targetWindow ?? this._defaultTarget ?? window);
+  }
 }

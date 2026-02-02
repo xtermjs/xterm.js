@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as browser from './browser';
 import { IframeUtils } from './iframe';
 import * as platform from 'common/Platform';
 
@@ -125,7 +124,7 @@ export class StandardWheelEvent {
     this.deltaX = deltaX;
 
     let shouldFactorDPR: boolean = false;
-    if (browser.isChrome) {
+    if (platform.isChrome) {
       const chromeVersionMatch = navigator.userAgent.match(/Chrome\/(\d+)/);
       const chromeMajorVersion = chromeVersionMatch ? parseInt(chromeVersionMatch[1]) : 123;
       shouldFactorDPR = chromeMajorVersion <= 122;
@@ -148,7 +147,7 @@ export class StandardWheelEvent {
         const ev = e as unknown as WheelEvent;
 
         if (ev.deltaMode === ev.DOM_DELTA_LINE) {
-          if (browser.isFirefox && !platform.isMac) {
+          if (platform.isFirefox && !platform.isMac) {
             this.deltaY = -e.deltaY / 3;
           } else {
             this.deltaY = -e.deltaY;
@@ -159,7 +158,7 @@ export class StandardWheelEvent {
       }
 
       if (typeof e1.wheelDeltaX !== 'undefined') {
-        if (browser.isSafari && platform.isWindows) {
+        if (platform.isSafari && platform.isWindows) {
           this.deltaX = -(e1.wheelDeltaX / 120);
         } else if (shouldFactorDPR) {
           this.deltaX = e1.wheelDeltaX / (120 * devicePixelRatio);
@@ -172,7 +171,7 @@ export class StandardWheelEvent {
         const ev = e as unknown as WheelEvent;
 
         if (ev.deltaMode === ev.DOM_DELTA_LINE) {
-          if (browser.isFirefox && !platform.isMac) {
+          if (platform.isFirefox && !platform.isMac) {
             this.deltaX = -e.deltaX / 3;
           } else {
             this.deltaX = -e.deltaX;

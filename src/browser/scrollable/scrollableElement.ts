@@ -3,8 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { getZoomFactor, isChrome } from './browser';
-import * as dom from './dom';
+import * as dom from '../Dom';
 import { FastDomNode, createFastDomNode } from './fastDomNode';
 import { IMouseEvent, IMouseWheelEvent, StandardWheelEvent } from './mouseEvent';
 import { IScrollbarHost } from './abstractScrollbar';
@@ -22,11 +21,6 @@ import { INewScrollDimensions, INewScrollPosition, IScrollDimensions, IScrollPos
 const HIDE_TIMEOUT = 500;
 const SCROLL_WHEEL_SENSITIVITY = 50;
 const SCROLL_WHEEL_SMOOTH_SCROLL_ENABLED = true;
-
-export interface IOverviewRulerLayoutInfo {
-  parent: HTMLElement;
-  insertBefore: HTMLElement;
-}
 
 class MouseWheelClassifierItem {
   public timestamp: number;
@@ -85,9 +79,9 @@ export class MouseWheelClassifier {
   }
 
   public acceptStandardWheelEvent(e: StandardWheelEvent): void {
-    if (isChrome) {
+    if (platform.isChrome) {
       const targetWindow = dom.getWindow(e.browserEvent);
-      const pageZoomFactor = getZoomFactor(targetWindow);
+      const pageZoomFactor = platform.getZoomFactor(targetWindow);
       this.accept(Date.now(), e.deltaX * pageZoomFactor, e.deltaY * pageZoomFactor);
     } else {
       this.accept(Date.now(), e.deltaX, e.deltaY);
@@ -258,13 +252,6 @@ export abstract class AbstractScrollableElement extends Widget {
 
   public getDomNode(): HTMLElement {
     return this._domNode;
-  }
-
-  public getOverviewRulerLayoutInfo(): IOverviewRulerLayoutInfo {
-    return {
-      parent: this._domNode,
-      insertBefore: this._verticalScrollbar.domNode.domNode,
-    };
   }
 
   public delegateVerticalScrollbarPointerDown(browserEvent: PointerEvent): void {

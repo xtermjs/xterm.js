@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as dom from './dom';
+import * as dom from '../Dom';
 import { DisposableStore, IDisposable, toDisposable } from 'common/Lifecycle';
 
 type PointerMoveCallback = (event: PointerEvent) => void;
