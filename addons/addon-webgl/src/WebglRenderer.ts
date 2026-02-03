@@ -107,12 +107,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._updateCursorBlink();
     this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
-    this._textBlinkStateManager = new TextBlinkStateManager(
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
       () => this._requestRedrawViewport(),
       this._coreBrowserService
-    );
+    ));
     this._textBlinkStateManager.setIntervalDuration(this._optionsService.rawOptions.blinkIntervalDuration);
-    this._register(toDisposable(() => this._textBlinkStateManager.dispose()));
 
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 

@@ -98,12 +98,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._cursorBlinkStateManager = new CursorBlinkStateManager(this._rowContainer, this._coreBrowserService);
     this._register(addDisposableListener(this._document, 'mousedown', () => this._cursorBlinkStateManager.restartBlinkAnimation()));
     this._register(toDisposable(() => this._cursorBlinkStateManager.dispose()));
-    this._textBlinkStateManager = new TextBlinkStateManager(
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
       () => this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 }),
       this._coreBrowserService
-    );
+    ));
     this._textBlinkStateManager.setIntervalDuration(this._optionsService.rawOptions.blinkIntervalDuration);
-    this._register(toDisposable(() => this._textBlinkStateManager.dispose()));
 
     this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
