@@ -11,6 +11,8 @@ export class TextBlinkStateManager extends Disposable {
   private _intervalDuration: number = 0;
   private _interval: number | undefined;
   private _blinkOn: boolean = true;
+  private _needsBlinkInViewport: boolean = false;
+  private _isViewportVisible: boolean = true;
 
   constructor(
     private readonly _renderCallback: () => void,
@@ -33,6 +35,24 @@ export class TextBlinkStateManager extends Disposable {
     return this._intervalDuration > 0;
   }
 
+  public setNeedsBlinkInViewport(needsBlinkInViewport: boolean): void {
+    if (this._needsBlinkInViewport === needsBlinkInViewport) {
+      return;
+    }
+
+    this._needsBlinkInViewport = needsBlinkInViewport;
+    this._updateIntervalState();
+  }
+
+  public setViewportVisible(isVisible: boolean): void {
+    if (this._isViewportVisible === isVisible) {
+      return;
+    }
+
+    this._isViewportVisible = isVisible;
+    this._updateIntervalState();
+  }
+
   public setIntervalDuration(duration: number): void {
     if (duration === this._intervalDuration) {
       return;
@@ -40,22 +60,31 @@ export class TextBlinkStateManager extends Disposable {
 
     this._intervalDuration = duration;
     this._clearInterval();
+    this._updateIntervalState();
+  }
 
-    const wasBlinkOn = this._blinkOn;
-    if (duration > 0) {
+  private _updateIntervalState(): void {
+    const shouldBlink = this._intervalDuration > 0 && this._needsBlinkInViewport && this._isViewportVisible;
+    if (shouldBlink) {
+      if (this._interval !== undefined) {
+        return;
+      }
+      const wasBlinkOn = this._blinkOn;
       this._blinkOn = true;
       this._interval = this._coreBrowserService.window.setInterval(() => {
         this._blinkOn = !this._blinkOn;
         this._renderCallback();
-      }, duration);
+      }, this._intervalDuration);
       if (!wasBlinkOn) {
         this._renderCallback();
       }
-    } else {
+      return;
+    }
+
+    this._clearInterval();
+    if (!this._blinkOn) {
       this._blinkOn = true;
-      if (!wasBlinkOn) {
-        this._renderCallback();
-      }
+      this._renderCallback();
     }
   }
 
