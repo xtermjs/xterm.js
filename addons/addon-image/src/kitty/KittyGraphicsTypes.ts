@@ -47,6 +47,8 @@ export const enum KittyKey {
   FORMAT = 'f',
   // Image ID for referencing stored images
   ID = 'i',
+  // Image number (alternative to ID, terminal assigns ID)
+  IMAGE_NUMBER = 'I',
   // Source image width in pixels
   WIDTH = 's',
   // Source image height in pixels
@@ -79,6 +81,7 @@ export interface IKittyCommand {
   action?: string;
   format?: number;
   id?: number;
+  imageNumber?: number;
   width?: number;
   height?: number;
   x?: number;
@@ -148,6 +151,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
     switch (key) {
       case KittyKey.FORMAT: cmd.format = numValue; break;
       case KittyKey.ID: cmd.id = numValue; break;
+      case KittyKey.IMAGE_NUMBER: cmd.imageNumber = numValue; break;
       case KittyKey.WIDTH: cmd.width = numValue; break;
       case KittyKey.HEIGHT: cmd.height = numValue; break;
       case KittyKey.X_OFFSET: cmd.x = numValue; break;

@@ -30,7 +30,7 @@ const BASE64_SHARD_SIZE = 1048576;
 const DECODED_SHARD_SIZE = 786432;
 
 // Maximum control data size
-const MAX_CONTROL_DATA_SIZE = 4096;
+const MAX_CONTROL_DATA_SIZE = 512;
 
 // Semicolon codepoint
 const SEMICOLON = 0x3B;
@@ -211,6 +211,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     // Parse command to check m=1 and get pending key
     const cmd = parseKittyCommand(this._parseControlDataString());
+
+    // Per spec: specifying both i and I is an error
+    if (cmd.id !== undefined && cmd.imageNumber !== undefined) {
+      this._sendResponse(cmd.id, 'EINVAL:cannot specify both i and I keys', cmd.quiet ?? 0);
+      return true;
+    }
+
     const pendingKey = cmd.id ?? 0;
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
@@ -381,6 +388,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
   private _handleNoPayloadCommand(): boolean | Promise<boolean> {
     const cmd = parseKittyCommand(this._parseControlDataString());
+
+    // Per spec: specifying both i and I is an error
+    if (cmd.id !== undefined && cmd.imageNumber !== undefined) {
+      this._sendResponse(cmd.id, 'EINVAL:cannot specify both i and I keys', cmd.quiet ?? 0);
+      return true;
+    }
+
     const action = cmd.action ?? 't';
 
     switch (action) {

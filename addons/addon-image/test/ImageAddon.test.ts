@@ -504,6 +504,36 @@ test.describe('ImageAddon', () => {
 
       strictEqual(await ctx.page.evaluate('window.kittyGotResponse'), false);
     });
+
+    test('responds with EINVAL when both i and I keys are specified', async () => {
+      let response = '';
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      // Per spec: "Specifying both i and I keys in any command is an error"
+      await ctx.proxy.write(`\x1b_Gi=100,I=200,a=q,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      response = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '\x1b_Gi=100;EINVAL:cannot specify both i and I keys\x1b\\');
+    });
+
+    test('responds with EINVAL for i+I conflict even without payload', async () => {
+      let response = '';
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      // Delete command with both i and I (no payload case)
+      await ctx.proxy.write('\x1b_Gi=101,I=201,a=d\x1b\\');
+      await timeout(100);
+
+      response = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '\x1b_Gi=101;EINVAL:cannot specify both i and I keys\x1b\\');
+    });
   });
 
   test.describe('Kitty pixel verification', () => {
