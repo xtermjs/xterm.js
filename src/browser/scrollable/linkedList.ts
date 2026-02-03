@@ -22,33 +22,6 @@ export class LinkedList<E> {
 
   private _first: Node<E> = Node.Undefined;
   private _last: Node<E> = Node.Undefined;
-  private _size: number = 0;
-
-  public get size(): number {
-    return this._size;
-  }
-
-  public isEmpty(): boolean {
-    return this._first === Node.Undefined;
-  }
-
-  public clear(): void {
-    let node = this._first;
-    while (node !== Node.Undefined) {
-      const next = node.next;
-      node.prev = Node.Undefined;
-      node.next = Node.Undefined;
-      node = next;
-    }
-
-    this._first = Node.Undefined;
-    this._last = Node.Undefined;
-    this._size = 0;
-  }
-
-  public unshift(element: E): () => void {
-    return this._insert(element, false);
-  }
 
   public push(element: E): () => void {
     return this._insert(element, true);
@@ -74,8 +47,6 @@ export class LinkedList<E> {
       newNode.next = oldFirst;
       oldFirst.prev = newNode;
     }
-    this._size += 1;
-
     let didRemove = false;
     return () => {
       if (!didRemove) {
@@ -83,26 +54,6 @@ export class LinkedList<E> {
         this._remove(newNode);
       }
     };
-  }
-
-  public shift(): E | undefined {
-    if (this._first === Node.Undefined) {
-      return undefined;
-    }
-    const res = this._first.element;
-    this._remove(this._first);
-    return res;
-
-  }
-
-  public pop(): E | undefined {
-    if (this._last === Node.Undefined) {
-      return undefined;
-    }
-    const res = this._last.element;
-    this._remove(this._last);
-    return res;
-
   }
 
   private _remove(node: Node<E>): void {
@@ -129,7 +80,6 @@ export class LinkedList<E> {
     }
 
     // done
-    this._size -= 1;
   }
 
   public *[Symbol.iterator](): Iterator<E> {

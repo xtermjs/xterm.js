@@ -303,7 +303,7 @@ export class Scrollable extends Disposable {
       if (reuseAnimation) {
         newSmoothScrolling = new SmoothScrollingOperation(this._smoothScrolling.from, validTarget, this._smoothScrolling.startTime, this._smoothScrolling.duration);
       } else {
-        newSmoothScrolling = this._smoothScrolling.combine(this._state, validTarget, this._smoothScrollDuration);
+        newSmoothScrolling = SmoothScrollingOperation.start(this._state, validTarget, this._smoothScrollDuration);
       }
       this._smoothScrolling.dispose();
       this._smoothScrolling = newSmoothScrolling;
@@ -364,7 +364,7 @@ export class Scrollable extends Disposable {
   }
 }
 
-export class SmoothScrollingUpdate {
+class SmoothScrollingUpdate {
 
   public readonly scrollLeft: number;
   public readonly scrollTop: number;
@@ -398,7 +398,7 @@ function createComposed(a: IAnimation, b: IAnimation, cut: number): IAnimation {
   };
 }
 
-export class SmoothScrollingOperation {
+class SmoothScrollingOperation {
 
   public readonly from: ISmoothScrollPosition;
   public to: ISmoothScrollPosition;
@@ -467,10 +467,6 @@ export class SmoothScrollingOperation {
     }
 
     return new SmoothScrollingUpdate(this.to.scrollLeft, this.to.scrollTop, true);
-  }
-
-  public combine(from: ISmoothScrollPosition, to: ISmoothScrollPosition, duration: number): SmoothScrollingOperation {
-    return SmoothScrollingOperation.start(from, to, duration);
   }
 
   public static start(from: ISmoothScrollPosition, to: ISmoothScrollPosition, duration: number): SmoothScrollingOperation {

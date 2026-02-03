@@ -20,7 +20,6 @@ import { INewScrollDimensions, INewScrollPosition, IScrollDimensions, IScrollPos
 
 const HIDE_TIMEOUT = 500;
 const SCROLL_WHEEL_SENSITIVITY = 50;
-const SCROLL_WHEEL_SMOOTH_SCROLL_ENABLED = true;
 
 class MouseWheelClassifierItem {
   public timestamp: number;
@@ -36,7 +35,7 @@ class MouseWheelClassifierItem {
   }
 }
 
-export class MouseWheelClassifier {
+class MouseWheelClassifier {
 
   public static readonly INSTANCE = new MouseWheelClassifier();
 
@@ -345,9 +344,7 @@ export abstract class AbstractScrollableElement extends Widget {
     }
 
     const classifier = MouseWheelClassifier.INSTANCE;
-    if (SCROLL_WHEEL_SMOOTH_SCROLL_ENABLED) {
-      classifier.acceptStandardWheelEvent(e);
-    }
+    classifier.acceptStandardWheelEvent(e);
 
     let didScroll = false;
 
@@ -399,8 +396,7 @@ export abstract class AbstractScrollableElement extends Widget {
       if (futureScrollPosition.scrollLeft !== desiredScrollPosition.scrollLeft || futureScrollPosition.scrollTop !== desiredScrollPosition.scrollTop) {
 
         const canPerformSmoothScroll = (
-          SCROLL_WHEEL_SMOOTH_SCROLL_ENABLED
-					&& this._options.mouseWheelSmoothScroll
+          this._options.mouseWheelSmoothScroll
 					&& classifier.isPhysicalMouseWheel()
         );
 
@@ -519,30 +515,24 @@ export abstract class AbstractScrollableElement extends Widget {
   }
 }
 
-export class ScrollableElement extends AbstractScrollableElement {
-
-  constructor(element: HTMLElement, options: IScrollableElementCreationOptions) {
-    options = options ?? {};
-    options.mouseWheelSmoothScroll = false;
-    const scrollable = new Scrollable({
-      forceIntegerValues: true,
-      smoothScrollDuration: 0,
-      scheduleAtNextAnimationFrame: (callback) => dom.scheduleAtNextAnimationFrame(dom.getWindow(element), callback)
-    });
-    super(element, options, scrollable);
-    this._register(scrollable);
-  }
-
-  public setScrollPosition(update: INewScrollPosition): void {
-    this._scrollable.setScrollPositionNow(update);
-  }
-
-  public getScrollPosition(): IScrollPosition {
-    return this._scrollable.getCurrentScrollPosition();
-  }
-}
-
 export class SmoothScrollableElement extends AbstractScrollableElement {
+
+  constructor(element: HTMLElement, options: IScrollableElementCreationOptions, scrollable?: Scrollable) {
+    options = options ?? {};
+    const ownsScrollable = !scrollable;
+    if (!scrollable) {
+      options.mouseWheelSmoothScroll = false;
+      scrollable = new Scrollable({
+        forceIntegerValues: true,
+        smoothScrollDuration: 0,
+        scheduleAtNextAnimationFrame: (callback) => dom.scheduleAtNextAnimationFrame(dom.getWindow(element), callback)
+      });
+    }
+    super(element, options, scrollable);
+    if (ownsScrollable) {
+      this._register(scrollable);
+    }
+  }
 
   public setScrollPosition(update: INewScrollPosition & { reuseAnimation?: boolean }): void {
     if (update.reuseAnimation) {
