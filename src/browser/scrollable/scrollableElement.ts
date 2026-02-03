@@ -175,9 +175,6 @@ export class SmoothScrollableElement extends Widget {
   private readonly _onScroll = this._register(new Emitter<IScrollEvent>());
   public readonly onScroll: IEvent<IScrollEvent> = this._onScroll.event;
 
-  private readonly _onWillScroll = this._register(new Emitter<IScrollEvent>());
-  public readonly onWillScroll: IEvent<IScrollEvent> = this._onWillScroll.event;
-
   public get options(): Readonly<IScrollableElementResolvedOptions> {
     return this._options;
   }
@@ -202,7 +199,6 @@ export class SmoothScrollableElement extends Widget {
     this._scrollable = resolvedScrollable;
 
     this._register(this._scrollable.onScroll((e) => {
-      this._onWillScroll.fire(e);
       this._handleScroll(e);
       this._onScroll.fire(e);
     }));
@@ -270,10 +266,6 @@ export class SmoothScrollableElement extends Widget {
     return this._domNode;
   }
 
-  public delegateVerticalScrollbarPointerDown(browserEvent: PointerEvent): void {
-    this._verticalScrollbar.delegatePointerDown(browserEvent);
-  }
-
   public getScrollDimensions(): IScrollDimensions {
     return this._scrollable.getScrollDimensions();
   }
@@ -337,10 +329,6 @@ export class SmoothScrollableElement extends Widget {
     if (!this._options.lazyRender) {
       this._render();
     }
-  }
-
-  public setRevealOnScroll(value: boolean): void {
-    this._revealOnScroll = value;
   }
 
   public delegateScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent): void {
