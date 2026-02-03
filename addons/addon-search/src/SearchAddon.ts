@@ -4,7 +4,7 @@
  */
 
 import type { Terminal, IDisposable, ITerminalAddon } from '@xterm/xterm';
-import type { SearchAddon as ISearchApi, ISearchOptions, ISearchAddonOptions, ISearchResultChangeEvent } from '@xterm/addon-search';
+import type { SearchAddon as ISearchApi, ISearchOptions, ISearchAddonOptions, ISearchResultChangeEvent, ISearchDecorationOptions } from '@xterm/addon-search';
 import { Emitter, type IEvent } from 'common/Event';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { disposableTimeout } from 'common/Async';
@@ -222,7 +222,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param result The result to select.
    * @returns Whether a result was selected.
    */
-  private _selectResult(result: ISearchResult | undefined, options?: any, noScroll?: boolean): boolean {
+  private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
     if (!this._terminal || !this._decorationManager) {
       return false;
     }

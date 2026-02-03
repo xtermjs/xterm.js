@@ -229,6 +229,7 @@ export interface ITerminalOptions {
   cols?: number;
   convertEol?: boolean;
   cursorBlink?: boolean;
+  blinkIntervalDuration?: number;
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
   cursorInactiveStyle?: CursorInactiveStyle;
@@ -271,7 +272,6 @@ export interface ITerminalOptions {
   vtExtensions?: IVtExtensions;
 
   [key: string]: any;
-  cancelEvents: boolean;
   termName: string;
 }
 

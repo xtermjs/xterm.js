@@ -91,14 +91,13 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
 
   const states: number[] = r(ParserState.GROUND, ParserState.STATE_LENGTH);
-  let state: any;
 
   // set default transition
   table.setDefault(ParserAction.ERROR, ParserState.GROUND);
   // printables
   table.addMany(PRINTABLES, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
   // global anywhere rules
-  for (state in states) {
+  for (const state of states) {
     table.addMany([0x18, 0x1a, 0x99, 0x9a], state, ParserAction.EXECUTE, ParserState.GROUND);
     table.addMany(r(0x80, 0x90), state, ParserAction.EXECUTE, ParserState.GROUND);
     table.addMany(r(0x90, 0x98), state, ParserAction.EXECUTE, ParserState.GROUND);

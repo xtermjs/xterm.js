@@ -9,10 +9,6 @@ import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
-
-// eslint-disable-next-line
-declare const Buffer: any;
-
 // limit hold memory in base64 decoder
 const KEEP_DATA = 4194304;
 
@@ -105,7 +101,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       return true;
     }
 
-    const blob = new Blob([new Uint8Array(this._dec.data8)], { type: this._metrics.mime });
+    // HACK: The types on Blob are too restrictive, this is a Uint8Array so the browser accepts it
+    const blob = new Blob([this._dec.data8 as Uint8Array<ArrayBuffer>], { type: this._metrics.mime });
     this._dec.release();
 
     if (!window.createImageBitmap) {

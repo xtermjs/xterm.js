@@ -8,6 +8,7 @@ import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
@@ -45,10 +46,14 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _widthCache: WidthCache;
   private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
   private _cursorBlinkStateManager: CursorBlinkStateManager;
+  private _textBlinkStateManager: TextBlinkStateManager;
+  private _rowHasBlinkingCells: boolean[] = [];
+  private _rowHasBlinkingCellsCount: number = 0;
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>()).event;
+  private readonly _onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>());
+  public readonly onRequestRedraw = this._onRequestRedraw.event;
 
   constructor(
     private readonly _terminal: ITerminal,
@@ -95,6 +100,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._cursorBlinkStateManager = new CursorBlinkStateManager(this._rowContainer, this._coreBrowserService);
     this._register(addDisposableListener(this._document, 'mousedown', () => this._cursorBlinkStateManager.restartBlinkAnimation()));
     this._register(toDisposable(() => this._cursorBlinkStateManager.dispose()));
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
+      () => this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 }),
+      this._coreBrowserService,
+      this._optionsService
+    ));
 
     this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
@@ -193,6 +203,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} span.${RowCss.ITALIC_CLASS} {` +
       ` font-style: italic;` +
+      `}` +
+      `${this._terminalSelector} span.${RowCss.BLINK_HIDDEN_CLASS} {` +
+      ` visibility: hidden;` +
       `}`;
     // Blink animation
     const blinkAnimationUnderlineId = `blink_underline_${this._terminalClass}`;
@@ -318,10 +331,14 @@ export class DomRenderer extends Disposable implements IRenderer {
       const row = this._document.createElement('div');
       this._rowContainer.appendChild(row);
       this._rowElements.push(row);
+      this._rowHasBlinkingCells.push(false);
     }
     // Remove excess elements
     while (this._rowElements.length > rows) {
       this._rowContainer.removeChild(this._rowElements.pop()!);
+      if (this._rowHasBlinkingCells.pop()) {
+        this._rowHasBlinkingCellsCount--;
+      }
     }
   }
 
@@ -347,6 +364,10 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowContainer.classList.add(FOCUS_CLASS);
     this._cursorBlinkStateManager.resume();
     this.renderRows(this._bufferService.buffer.y, this._bufferService.buffer.y);
+  }
+
+  public handleViewportVisibilityChange(isVisible: boolean): void {
+    this._textBlinkStateManager.setViewportVisible(isVisible);
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
@@ -450,6 +471,11 @@ export class DomRenderer extends Disposable implements IRenderer {
        */
       e.replaceChildren();
     }
+    if (this._rowHasBlinkingCellsCount > 0) {
+      this._rowHasBlinkingCells.fill(false);
+      this._rowHasBlinkingCellsCount = 0;
+      this._textBlinkStateManager.setNeedsBlinkInViewport(false);
+    }
   }
 
   public renderRows(start: number, end: number): void {
@@ -459,6 +485,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorBlink = this._coreService.decPrivateModes.cursorBlink ?? this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._coreService.decPrivateModes.cursorStyle ?? this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
+    const rowInfo = { hasBlinkingCells: false };
 
     for (let y = start; y <= end; y++) {
       const row = y + buffer.ydisp;
@@ -476,13 +503,17 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorInactiveStyle,
           cursorX,
           cursorBlink,
+          this._textBlinkStateManager.isBlinkOn,
           this.dimensions.css.cell.width,
           this._widthCache,
           -1,
-          -1
+          -1,
+          rowInfo
         )
       );
+      this._setRowBlinkState(y, rowInfo.hasBlinkingCells);
     }
+    this._updateTextBlinkState();
   }
 
   private get _terminalSelector(): string {
@@ -527,6 +558,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
+    const rowInfo = { hasBlinkingCells: false };
 
     // refresh rows within link range
     for (let i = y; i <= y2; ++i) {
@@ -545,13 +577,30 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorInactiveStyle,
           cursorX,
           cursorBlink,
+          this._textBlinkStateManager.isBlinkOn,
           this.dimensions.css.cell.width,
           this._widthCache,
           enabled ? (i === y ? x : 0) : -1,
-          enabled ? ((i === y2 ? x2 : cols) - 1) : -1
+          enabled ? ((i === y2 ? x2 : cols) - 1) : -1,
+          rowInfo
         )
       );
+      this._setRowBlinkState(i, rowInfo.hasBlinkingCells);
     }
+    this._updateTextBlinkState();
+  }
+
+  private _setRowBlinkState(row: number, hasBlinkingCells: boolean): void {
+    const previous = this._rowHasBlinkingCells[row];
+    if (previous === hasBlinkingCells) {
+      return;
+    }
+    this._rowHasBlinkingCells[row] = hasBlinkingCells;
+    this._rowHasBlinkingCellsCount += hasBlinkingCells ? 1 : -1;
+  }
+
+  private _updateTextBlinkState(): void {
+    this._textBlinkStateManager.setNeedsBlinkInViewport(this._rowHasBlinkingCellsCount > 0);
   }
 }
 

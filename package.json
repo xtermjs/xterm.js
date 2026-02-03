@@ -57,7 +57,7 @@
     "test-unit-coverage": "node ./bin/test_unit.js --coverage",
     "test-unit-dev": "cross-env NODE_PATH='./out' mocha",
     "test-integration": "node ./bin/test_integration.js --workers=75%",
-    "test-integration-chromium": "node ./bin/test_integration.js --workers=75% \"--project=ChromeStable\"",
+    "test-integration-chromium": "node ./bin/test_integration.js --workers=75% \"--project=Chromium\"",
     "test-integration-firefox": "node ./bin/test_integration.js --workers=75% \"--project=FirefoxStable\"",
     "test-integration-webkit": "node ./bin/test_integration.js --workers=75% \"--project=WebKit\"",
     "test-integration-debug": "node ./bin/test_integration.js  --workers=1 --headed --timeout=30000",

@@ -8,8 +8,6 @@ import type { IControlWindow } from '../controlBar';
 import { BaseWindow } from './baseWindow';
 import type { IDisposable, Terminal } from '@xterm/xterm';
 import type { AddonCollection } from 'types';
-import type { IProgressState } from '@xterm/addon-progress';
-import type { IImageAddonOptions } from '@xterm/addon-image';
 
 export class TestWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'test';
@@ -66,61 +64,13 @@ export class TestWindow extends BaseWindow implements IControlWindow {
     this._addDdWithButton(dl, 'add-overview-ruler', 'Add Overview Ruler', 'Add an overview ruler to the terminal', () => addOverviewRuler(this._terminal));
     this._addDdWithButton(dl, 'decoration-stress-test', 'Stress Test', 'Toggle between adding and removing a decoration to each line', () => decorationStressTest(this._terminal));
 
-    // Ligatures Addon section
-    this._addDt(dl, 'Ligatures Addon');
-    this._addDdWithButton(dl, 'ligatures-test', 'Common ligatures', 'Write common ligatures sequences', () => ligaturesTest(this._terminal));
-
-    // Weblinks Addon section
-    this._addDt(dl, 'Weblinks Addon');
-    this._addDdWithButton(dl, 'weblinks-test', 'Test URLs', 'Various url conditions from demo data, hover&click to test', () => testWeblinks(this._terminal));
-
-    // Image Test section
-    this._addDt(dl, 'Image Test');
-    this._addDdWithButton(dl, 'image-demo1', 'snake (sixel)', '');
-    this._addDdWithButton(dl, 'image-demo2', 'oranges (sixel)', '');
-    this._addDdWithButton(dl, 'image-demo3', 'palette (iip)', '');
-
     // Events Test section
     this._addDt(dl, 'Events Test');
     this._addDdWithButton(dl, 'event-focus', 'focus', '', () => this._terminal.focus());
     this._addDdWithButton(dl, 'event-blur', 'blur', '', () => this._terminal.blur());
 
-    // Progress Addon section
-    this._addDt(dl, 'Progress Addon');
-    this._addDdWithButton(dl, 'progress-run', 'full set run', '');
-    this._addDdWithButton(dl, 'progress-0', 'state 0: remove', '');
-    this._addDdWithButton(dl, 'progress-1', 'state 1: set 20%', '');
-    this._addDdWithButton(dl, 'progress-2', 'state 2: error', '');
-    this._addDdWithButton(dl, 'progress-3', 'state 3: indeterminate', '');
-    this._addDdWithButton(dl, 'progress-4', 'state 4: pause', '');
-
-    // Progress bar
-    const progressDd = document.createElement('dd');
-    const progressDiv = document.createElement('div');
-    progressDiv.id = 'progress-progress';
-    const progressPercent = document.createElement('div');
-    progressPercent.id = 'progress-percent';
-    const progressIndeterminate = document.createElement('div');
-    progressIndeterminate.id = 'progress-indeterminate';
-    progressDiv.appendChild(progressPercent);
-    progressDiv.appendChild(progressIndeterminate);
-    progressDd.appendChild(progressDiv);
-    dl.appendChild(progressDd);
-
-    // Progress state
-    const stateDd = document.createElement('dd');
-    const stateDiv = document.createElement('div');
-    stateDiv.id = 'progress-state';
-    stateDiv.textContent = 'State:';
-    stateDd.appendChild(stateDiv);
-    dl.appendChild(stateDd);
-
     wrapper.appendChild(dl);
     container.appendChild(wrapper);
-
-    initProgress(this._terminal, this._addons);
-    this._addProgressStyles(container);
-    initImageAddonExposed(this._terminal, this._addons);
   }
 
   private _addDt(dl: HTMLElement, text: string): void {
@@ -161,38 +111,6 @@ export class TestWindow extends BaseWindow implements IControlWindow {
     dl.appendChild(dd);
   }
 
-  private _addProgressStyles(container: HTMLElement): void {
-    const style = document.createElement('style');
-    style.textContent = `
-      #progress-progress {
-        border: 1px solid black;
-        height: 10px;
-      }
-      #progress-percent {
-        height: 100%;
-      }
-      #progress-indeterminate {
-        display: none;
-        position: relative;
-        height: 100%;
-      }
-      #progress-indeterminate:before {
-        content: '';
-        position: absolute;
-        left: 0;
-        bottom: 0px;
-        width: 50px;
-        height: 10px;
-        background: blue;
-        animation: ballbns 1s ease-in-out infinite alternate;
-      }
-      @keyframes ballbns {
-        0% {  left: 0; transform: translateX(0%); }
-        100% {  left: 100%; transform: translateX(-100%); }
-      }
-    `;
-    container.appendChild(style);
-  }
 }
 
 /**
@@ -753,42 +671,6 @@ Test BG-colored Erase (BCE):
   term.write(data.split('\n').join('\r\n'));
 }
 
-function ligaturesTest(term: Terminal): void {
-  term.write([
-    '',
-    '-<< -< -<- <-- <--- <<- <- -> ->> --> ---> ->- >- >>-',
-    '=<< =< =<= <== <=== <<= <= => =>> ==> ===> =>= >= >>=',
-    '<-> <--> <---> <----> <=> <==> <===> <====> :: ::: __',
-    '<~~ </ </> /> ~~> == != /= ~= <> === !== !=== =/= =!=',
-    '<: := *= *+ <* <*> *> <| <|> |> <. <.> .> +* =* =: :>',
-    '(* *) /* */ [| |] {| |} ++ +++ \/ /\ |- -| <!-- <!---',
-    '==== ===== ====== ======= ======== =========',
-    '---- ----- ------ ------- -------- ---------'
-  ].join('\r\n'));
-}
-
-function testWeblinks(term: Terminal): void {
-  const linkExamples = `
-aaa http://example.com aaa http://example.com aaa
-￥￥￥ http://example.com aaa http://example.com aaa
-aaa http://example.com ￥￥￥ http://example.com aaa
-￥￥￥ http://example.com ￥￥￥ http://example.com aaa
-aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 aaa
-￥￥￥ https://ko.wikipedia.org/wiki/위키백과:대문 aaa https://ko.wikipedia.org/wiki/위키백과:대문 ￥￥￥
-aaa http://test:password@example.com/some_path aaa
-brackets enclosed:
-aaa [http://example.de] aaa
-aaa (http://example.de) aaa
-aaa <http://example.de> aaa
-aaa {http://example.de} aaa
-ipv6 https://[::1]/with/some?vars=and&a#hash aaa
-stop at final '.': This is a sentence with an url to http://example.com.
-stop at final '?': Is this the right url http://example.com/?
-stop at final '?': Maybe this one http://example.com/with?arguments=false?
-`;
-  term.write(linkExamples.split('\n').join('\r\n'));
-}
-
 function loadTest(term: Terminal, addons: AddonCollection): void {
   const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
@@ -911,124 +793,4 @@ function decorationStressTest(term: Terminal): void {
       }
     }
   }
-}
-
-function initProgress(term: Terminal, addons: AddonCollection): void {
-  const STATES = { 0: 'remove', 1: 'set', 2: 'error', 3: 'indeterminate', 4: 'pause' };
-  const COLORS = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
-
-  function progressHandler({ state, value }: IProgressState): void {
-    // Simulate windows taskbar hack by windows terminal:
-    // Since the taskbar has no means to indicate error/pause state other than by coloring
-    // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
-    // NOTE: This is most likely not what you want to do for other progress indicators,
-    //       that have a proper visual state for error/paused.
-    value = Math.min(10 + value * 0.9, 100);
-    document.getElementById('progress-percent')!.style.width = `${value}%`;
-    document.getElementById('progress-percent')!.style.backgroundColor = COLORS[state];
-    document.getElementById('progress-state')!.innerText = `State: ${STATES[state]}`;
-
-    document.getElementById('progress-percent')!.style.display = state === 3 ? 'none' : 'block';
-    document.getElementById('progress-indeterminate')!.style.display = state === 3 ? 'block' : 'none';
-  }
-
-  const progressAddon = addons.progress.instance!;
-  progressAddon.onChange(progressHandler);
-
-  // apply initial state once to make it visible on page load
-  const initialProgress = progressAddon.progress;
-  progressHandler(initialProgress);
-
-  document.getElementById('progress-run')!.addEventListener('click', async () => {
-    term.write('\x1b]9;4;0\x1b\\');
-    for (let i = 0; i <= 100; i += 5) {
-      term.write(`\x1b]9;4;1;${i}\x1b\\`);
-      await new Promise(res => setTimeout(res, 200));
-    }
-  });
-  document.getElementById('progress-0')!.addEventListener('click', () => term.write('\x1b]9;4;0\x1b\\'));
-  document.getElementById('progress-1')!.addEventListener('click', () => term.write('\x1b]9;4;1;20\x1b\\'));
-  document.getElementById('progress-2')!.addEventListener('click', () => term.write('\x1b]9;4;2\x1b\\'));
-  document.getElementById('progress-3')!.addEventListener('click', () => term.write('\x1b]9;4;3\x1b\\'));
-  document.getElementById('progress-4')!.addEventListener('click', () => term.write('\x1b]9;4;4\x1b\\'));
-}
-
-function initImageAddonExposed(term: Terminal, addons: AddonCollection): void {
-  const imageAddon = addons.image.instance!;
-  const DEFAULT_OPTIONS: IImageAddonOptions = (imageAddon as any)._defaultOpts;
-  const limitStorageElement = document.querySelector<HTMLInputElement>('#image-storagelimit')!;
-  limitStorageElement.valueAsNumber = imageAddon.storageLimit;
-  addDomListener(term, limitStorageElement, 'change', () => {
-    try {
-      imageAddon.storageLimit = limitStorageElement.valueAsNumber;
-      limitStorageElement.valueAsNumber = imageAddon.storageLimit;
-      console.log('changed storageLimit to', imageAddon.storageLimit);
-    } catch (e) {
-      limitStorageElement.valueAsNumber = imageAddon.storageLimit;
-      console.log('storageLimit at', imageAddon.storageLimit);
-      throw e;
-    }
-  });
-  const showPlaceholderElement = document.querySelector<HTMLInputElement>('#image-showplaceholder')!;
-  showPlaceholderElement.checked = imageAddon.showPlaceholder;
-  addDomListener(term, showPlaceholderElement, 'change', () => {
-    imageAddon.showPlaceholder = showPlaceholderElement.checked;
-  });
-  const ctorOptionsElement = document.querySelector<HTMLTextAreaElement>('#image-options')!;
-  ctorOptionsElement.value = JSON.stringify(DEFAULT_OPTIONS, null, 2);
-
-  const sixelDemo = (url: string) => () => fetch(url)
-    .then(resp => resp.arrayBuffer())
-    .then(buffer => {
-      term.write('\r\n');
-      term.write(new Uint8Array(buffer));
-    });
-
-  const iipDemo = (url: string) => () => fetch(url)
-    .then(resp => resp.arrayBuffer())
-    .then(buffer => {
-      const data = new Uint8Array(buffer);
-      let sdata = '';
-      for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
-      term.write('\r\n');
-      term.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
-    });
-
-  document.getElementById('image-demo1')!.addEventListener('click',
-    sixelDemo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
-  document.getElementById('image-demo2')!.addEventListener('click',
-    sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
-  document.getElementById('image-demo3')!.addEventListener('click',
-    iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
-
-  // demo for image retrieval API
-  term.element!.addEventListener('click', (ev: MouseEvent) => {
-    if (!ev.ctrlKey || !imageAddon) return;
-
-    // TODO...
-    // if (ev.altKey) {
-    //   const sel = term.getSelectionPosition();
-    //   if (sel) {
-    //     addons.image.instance
-    //       .extractCanvasAtBufferRange(term.getSelectionPosition())
-    //       ?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
-    //     return;
-    //   }
-    // }
-
-    const pos = (term as any)._core._mouseService!.getCoords(ev, (term as any)._core.screenElement!, term.cols, term.rows);
-    const x = pos[0] - 1;
-    const y = pos[1] - 1;
-    const canvas = ev.shiftKey
-      // ctrl+shift+click: get single tile
-      ? imageAddon.extractTileAtBufferCell(x, term.buffer.active.viewportY + y)
-      // ctrl+click: get original image
-      : imageAddon.getImageAtBufferCell(x, term.buffer.active.viewportY + y);
-    canvas?.toBlob(data => data && window.open(URL.createObjectURL(data), '_blank'));
-  });
-}
-
-function addDomListener(term: Terminal, element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
-  element.addEventListener(type, handler);
-  (term as any)._core._register({ dispose: () => element.removeEventListener(type, handler) });
 }
