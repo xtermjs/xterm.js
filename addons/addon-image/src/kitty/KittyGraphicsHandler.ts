@@ -65,6 +65,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private _decodedChunks: Uint8Array[] = [];
   private _totalDecodedSize = 0;
 
+  /** Parsed command. These are the control data before semicolon. */
+  private _parsedCommand: IKittyCommand | null = null;
+
   // Storage related states
 
   private _pendingTransmissions: Map<number, IPendingTransmission> = new Map();
@@ -96,6 +99,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     this._shardBufferPos = 0;
     this._decodedChunks = [];
     this._totalDecodedSize = 0;
+    this._parsedCommand = null;
   }
 
   public put(data: Uint32Array, start: number, end: number): void {
@@ -124,7 +128,22 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       this._controlLength += copyLength;
 
       if (!this._inControlData) {
-        // Found semicolon - stream remaining as payload
+        // Found semicolon - parse control data early for validation
+        this._parsedCommand = parseKittyCommand(this._parseControlDataString());
+
+        // Early validation: i+I conflict
+        if (this._parsedCommand.id !== undefined && this._parsedCommand.imageNumber !== undefined) {
+          this._sendResponse(this._parsedCommand.id, 'EINVAL:cannot specify both i and I keys', this._parsedCommand.quiet ?? 0);
+          this._aborted = true;
+          return;
+        }
+
+        // Delete action doesn't need payload - skip streaming
+        if (this._parsedCommand.action === KittyAction.DELETE) {
+          return;
+        }
+
+        // Stream remaining as payload
         const payloadStart = controlEnd + 1;
         if (payloadStart < end) {
           this._streamPayload(data, payloadStart, end);
@@ -209,13 +228,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       return this._handleNoPayloadCommand();
     }
 
-    // Parse command to check m=1 and get pending key
-    const cmd = parseKittyCommand(this._parseControlDataString());
+    // Use command parsed early in put() - i+I already validated there
+    const cmd = this._parsedCommand!;
 
-    // Per spec: specifying both i and I is an error
-    if (cmd.id !== undefined && cmd.imageNumber !== undefined) {
-      this._sendResponse(cmd.id, 'EINVAL:cannot specify both i and I keys', cmd.quiet ?? 0);
-      return true;
+    // Delete action was handled by skipping payload - just execute
+    if (cmd.action === KittyAction.DELETE) {
+      return this._handleDelete(cmd);
     }
 
     const pendingKey = cmd.id ?? 0;
