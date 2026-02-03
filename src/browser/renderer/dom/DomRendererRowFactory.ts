@@ -71,10 +71,14 @@ export class DomRendererRowFactory {
     cellWidth: number,
     widthCache: WidthCache,
     linkStart: number,
-    linkEnd: number
+    linkEnd: number,
+    rowInfo?: { hasBlinkingCells: boolean }
   ): HTMLSpanElement[] {
 
     const elements: HTMLSpanElement[] = [];
+    if (rowInfo) {
+      rowInfo.hasBlinkingCells = false;
+    }
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
     const colors = this._themeService.colors;
 
@@ -155,6 +159,9 @@ export class DomRendererRowFactory {
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
       const isLinkHover = hasHover && x >= linkStart && x <= linkEnd;
+      if (rowInfo && cell.isBlink()) {
+        rowInfo.hasBlinkingCells = true;
+      }
       const isBlinkHidden = !blinkOn && cell.isBlink();
       if (isBlinkHidden) {
         classes.push(RowCss.BLINK_HIDDEN_CLASS);
