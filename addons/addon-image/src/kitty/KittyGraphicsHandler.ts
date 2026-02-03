@@ -675,6 +675,22 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     } else {
       this._storage.addImage(bitmap);
     }
+
+    // TODO: Implement cursor movement per Kitty graphics protocol spec
+    // Per spec: "After placing an image on the screen the cursor must be moved to the
+    // right by the number of cols in the image placement rectangle and down by the
+    // number of rows in the image placement rectangle."
+    //
+    // Default behavior (C=0 or unspecified): Move cursor by cols/rows
+    // With C=1: Don't move cursor at all
+    //
+    // Implementation would need:
+    // 1. Get placement.C value (cursor movement policy)
+    // 2. Calculate cols = placement.columns || Math.ceil(w / cellWidth)
+    // 3. Calculate rows = placement.rows || Math.ceil(h / cellHeight)
+    // 4. If C !== 1: Move cursor right by cols and down by rows
+    //    this._bufferService.buffer.x += cols;
+    //    this._bufferService.buffer.y += rows;
   }
 
   /**
