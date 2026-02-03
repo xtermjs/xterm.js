@@ -8,6 +8,7 @@ import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
@@ -45,10 +46,12 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _widthCache: WidthCache;
   private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
   private _cursorBlinkStateManager: CursorBlinkStateManager;
+  private _textBlinkStateManager: TextBlinkStateManager;
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>()).event;
+  private readonly _onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>());
+  public readonly onRequestRedraw = this._onRequestRedraw.event;
 
   constructor(
     private readonly _terminal: ITerminal,
@@ -95,6 +98,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._cursorBlinkStateManager = new CursorBlinkStateManager(this._rowContainer, this._coreBrowserService);
     this._register(addDisposableListener(this._document, 'mousedown', () => this._cursorBlinkStateManager.restartBlinkAnimation()));
     this._register(toDisposable(() => this._cursorBlinkStateManager.dispose()));
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
+      () => this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 }),
+      this._coreBrowserService,
+      this._optionsService
+    ));
 
     this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
@@ -193,6 +201,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} span.${RowCss.ITALIC_CLASS} {` +
       ` font-style: italic;` +
+      `}` +
+      `${this._terminalSelector} span.${RowCss.BLINK_HIDDEN_CLASS} {` +
+      ` visibility: hidden;` +
       `}`;
     // Blink animation
     const blinkAnimationUnderlineId = `blink_underline_${this._terminalClass}`;
@@ -476,6 +487,7 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorInactiveStyle,
           cursorX,
           cursorBlink,
+          this._textBlinkStateManager.isBlinkOn,
           this.dimensions.css.cell.width,
           this._widthCache,
           -1,
@@ -545,6 +557,7 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorInactiveStyle,
           cursorX,
           cursorBlink,
+          this._textBlinkStateManager.isBlinkOn,
           this.dimensions.css.cell.width,
           this._widthCache,
           enabled ? (i === y ? x : 0) : -1,

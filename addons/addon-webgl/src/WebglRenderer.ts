@@ -13,7 +13,8 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeS
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -30,6 +31,7 @@ import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
+  private _textBlinkStateManager: TextBlinkStateManager;
   private _charAtlasDisposable = this._register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
@@ -105,6 +107,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._updateCursorBlink();
     this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
+      () => this._requestRedrawViewport(),
+      this._coreBrowserService,
+      this._optionsService
+    ));
 
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
@@ -504,6 +511,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
             this._cellColorResolver.result.bg =
               Attributes.CM_RGB | (this._themeService.colors.cursor.rgba >> 8 & Attributes.RGB_MASK);
           }
+        }
+
+        if (this._textBlinkStateManager.isEnabled && !this._textBlinkStateManager.isBlinkOn && cell.isBlink()) {
+          this._cellColorResolver.result.fg |= FgFlags.INVISIBLE;
         }
 
         if (code !== NULL_CELL_CODE) {
