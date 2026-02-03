@@ -391,6 +391,39 @@ test.describe('ImageAddon', () => {
       deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
     });
 
+    test('enforces size limit across chunked transmissions', async () => {
+      // Create a custom addon with very small size limit (100 bytes)
+      // The 1x1 PNG is ~164 bytes base64, so 2 chunks should exceed 100
+      await ctx.page.evaluate(() => {
+        (window as any).smallLimitAddon = new ImageAddon({
+          kittySupport: true,
+          kittySizeLimit: 100  // Very small limit
+        });
+        (window as any).term.loadAddon((window as any).smallLimitAddon);
+      });
+
+      // Split the base64 data into two chunks
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      // Send chunked data - first chunk (~82 bytes) is under limit
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=777,m=1;${part1}\x1b\\`);
+      await timeout(50);
+
+      // Second chunk brings total to ~164 bytes, exceeding 100 byte limit
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=777;${part2}\x1b\\`);
+      await timeout(100);
+
+      // Image should NOT be stored due to size limit
+      strictEqual(await ctx.page.evaluate(`window.smallLimitAddon._handlers.get('kitty').images.has(777)`), false);
+
+      // Cleanup
+      await ctx.page.evaluate(() => {
+        (window as any).smallLimitAddon.dispose();
+      });
+    });
+
     test('delete command (a=d) removes specific image by id', async () => {
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=10;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(50);

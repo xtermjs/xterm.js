@@ -103,8 +103,10 @@ export interface IPendingTransmission {
   cmd: IKittyCommand;
   /** Accumulated decoded payload chunks */
   chunks: Uint8Array[];
-  /** Total size of accumulated chunks */
+  /** Total size of accumulated decoded chunks */
   totalSize: number;
+  /** Total encoded (base64) bytes received across all chunks - for size limit enforcement */
+  totalEncodedSize: number;
   /** Leftover base64 bytes (0-3) that weren't aligned in previous chunk */
   leftover: Uint32Array;
   /** Number of valid bytes in leftover */

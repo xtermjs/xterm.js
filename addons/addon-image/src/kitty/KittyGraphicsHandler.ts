@@ -65,6 +65,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private _decodedChunks: Uint8Array[] = [];
   private _totalDecodedSize = 0;
 
+  /** Pre-calculated encoded size limit */
+  private _encodedSizeLimit = 0;
+  private _totalEncodedSize = 0;
+
   /** Parsed command. These are the control data before semicolon. */
   private _parsedCommand: IKittyCommand | null = null;
 
@@ -100,6 +104,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     this._decodedChunks = [];
     this._totalDecodedSize = 0;
     this._parsedCommand = null;
+    // Pre-calculate encoded limit once: base64 is 4 bytes encoded → 3 bytes decoded
+    this._encodedSizeLimit = Math.ceil(this._opts.kittySizeLimit * 4 / 3);
+    this._totalEncodedSize = 0;
   }
 
   public put(data: Uint32Array, start: number, end: number): void {
@@ -158,9 +165,14 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private _streamPayload(data: Uint32Array, start: number, end: number): void {
     if (this._aborted) return;
 
-    // Check size limit
-    const estimatedTotal = this._totalDecodedSize + Math.ceil(this._shardBufferPos * 3 / 4) + Math.ceil((end - start) * 3 / 4);
-    if (estimatedTotal > this._opts.kittySizeLimit) {
+    // Check size limit (compare encoded bytes against pre-calculated limit)
+    // Include cumulative size from pending transmission for multi-chunk images
+    const pendingKey = this._parsedCommand?.id ?? 0;
+    const pending = this._pendingTransmissions.get(pendingKey);
+    const previousEncodedSize = pending?.totalEncodedSize ?? 0;
+    this._totalEncodedSize += end - start;
+    const cumulativeEncodedSize = previousEncodedSize + this._totalEncodedSize;
+    if (cumulativeEncodedSize > this._encodedSizeLimit) {
       this._aborted = true;
       return;
     }
@@ -290,6 +302,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
           cmd: { ...cmd },
           chunks: [],
           totalSize: 0,
+          totalEncodedSize: 0,
           leftover: new Uint32Array(4),
           leftoverLength: 0
         };
@@ -466,6 +479,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
         pending.chunks.push(bytes);
         pending.totalSize += bytes.length;
       }
+      // Track cumulative encoded size for size limit enforcement
+      pending.totalEncodedSize += this._totalEncodedSize;
 
       if (isMoreComing) return true;
 
@@ -498,6 +513,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
         cmd: { ...cmd },
         chunks: bytes.length > 0 ? [bytes] : [],
         totalSize: bytes.length,
+        totalEncodedSize: this._totalEncodedSize,
         leftover: new Uint32Array(4),
         leftoverLength: 0
       });
