@@ -13,7 +13,7 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeS
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, ExtFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -26,7 +26,6 @@ import { Emitter, EventUtils } from 'common/Event';
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { blockPatternCodepoints } from './customGlyphs/CustomGlyphDefinitions';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -479,12 +478,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
         // Load colors/resolve overrides into work colors
-        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
-        if ((this._cellColorResolver.result.ext & ExtFlags.VARIANT_OFFSET) === 0 && blockPatternCodepoints.has(code)) {
-          const variantOffset = ((x * this.dimensions.device.cell.width) % 2) * 2 + ((row * this.dimensions.device.cell.height) % 2);
-          this._cellColorResolver.result.ext &= ~ExtFlags.VARIANT_OFFSET;
-          this._cellColorResolver.result.ext |= (variantOffset << 29) & ExtFlags.VARIANT_OFFSET;
-        }
+        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width, this.dimensions.device.cell.height);
 
         // Override colors for cursor cell
         if (isCursorVisible && row === cursorY) {
