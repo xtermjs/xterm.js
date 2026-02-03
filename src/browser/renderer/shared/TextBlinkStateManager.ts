@@ -5,6 +5,7 @@
 
 import { ICoreBrowserService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
+import { IOptionsService } from 'common/services/Services';
 
 export class TextBlinkStateManager extends Disposable {
   private _intervalDuration: number = 0;
@@ -13,9 +14,14 @@ export class TextBlinkStateManager extends Disposable {
 
   constructor(
     private readonly _renderCallback: () => void,
-    private readonly _coreBrowserService: ICoreBrowserService
+    private readonly _coreBrowserService: ICoreBrowserService,
+    private readonly _optionsService: IOptionsService
   ) {
     super();
+    this._register(this._optionsService.onSpecificOptionChange('blinkIntervalDuration', duration => {
+      this.setIntervalDuration(duration);
+    }));
+    this.setIntervalDuration(this._optionsService.rawOptions.blinkIntervalDuration);
     this._register(toDisposable(() => this._clearInterval()));
   }
 
