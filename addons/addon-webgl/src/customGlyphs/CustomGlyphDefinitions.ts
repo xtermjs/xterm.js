@@ -820,6 +820,20 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   // #endregion
 };
 
+export const blockPatternCodepoints = new Set<number>();
+for (const [char, definition] of Object.entries(customGlyphDefinitions)) {
+  if (!definition) {
+    continue;
+  }
+  const parts = Array.isArray(definition) ? definition : [definition];
+  if (parts.some(part => part.type === CustomGlyphDefinitionType.BLOCK_PATTERN)) {
+    const codepoint = char.codePointAt(0);
+    if (codepoint !== undefined) {
+      blockPatternCodepoints.add(codepoint);
+    }
+  }
+}
+
 /**
  * Generates a drawing function for sextant characters. Sextants are a 2x3 grid where each cell
  * can be on or off.
