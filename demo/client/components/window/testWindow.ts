@@ -397,6 +397,13 @@ function customGlyphAlignmentHandler(term: Terminal): void {
     }
   }
 
+  term.write('\x1b[0mTriangular fill tests:\x1b[36m\n\r');
+  term.write('1FB9C 1FB9D 1FB9E 1FB9F all\n\r');
+  term.write('\u{1FB90}\u{1FB90}\u{1FB90}\u{1FB9C}  \u{1FB9D}\u{1FB90}\u{1FB90}\u{1FB90}  \u{00020}\u{00020}\u{00020}\u{1FB9E}  \u{1FB9F}\u{00020}\u{00020}\u{00020}  \u{00020}\u{1FB9E}\u{1FB9F}\u{00020}\n\r');
+  term.write('\u{1FB90}\u{1FB90}\u{1FB9C}\u{00020}  \u{00020}\u{1FB9D}\u{1FB90}\u{1FB90}  \u{00020}\u{00020}\u{1FB9E}\u{1FB90}  \u{1FB90}\u{1FB9F}\u{00020}\u{00020}  \u{1FB9E}\u{1FB90}\u{1FB90}\u{1FB9F}\n\r');
+  term.write('\u{1FB90}\u{1FB9C}\u{00020}\u{00020}  \u{00020}\u{00020}\u{1FB9D}\u{1FB90}  \u{00020}\u{1FB9E}\u{1FB90}\u{1FB90}  \u{1FB90}\u{1FB90}\u{1FB9F}\u{00020}  \u{1FB9D}\u{1FB90}\u{1FB90}\u{1FB9C}\n\r');
+  term.write('\u{1FB9C}\u{00020}\u{00020}\u{00020}  \u{00020}\u{00020}\u{00020}\u{1FB9D}  \u{1FB9E}\u{1FB90}\u{1FB90}\u{1FB90}  \u{1FB90}\u{1FB90}\u{1FB90}\u{1FB9F}  \u{00020}\u{1FB9D}\u{1FB9C}\u{00020}\n\r');
+
   term.write('\x1b[0mPowerline alignment tests:\n\r');
   const powerlineLeftChars = ['\u{E0B2}', '\u{E0B3}', '\u{E0B6}', '\u{E0B7}', '\u{E0BA}', '\u{E0BB}', '\u{E0BE}', '\u{E0BF}', '\u{E0C2}', '\u{E0C3}', '\u{E0C5}', '\u{E0C7}', '\u{E0CA}', '\u{E0D4}'];
   const powerlineRightChars = ['\u{E0B0}', '\u{E0B1}', '\u{E0B4}', '\u{E0B5}', '\u{E0B8}', '\u{E0B9}', '\u{E0BC}', '\u{E0BD}', '\u{E0C0}', '\u{E0C1}', '\u{E0C4}', '\u{E0C6}', '\u{E0C8}', '\u{E0D2}', '\u{E0CC}', '\u{E0CD}', '\u{E0CE}', '\u{E0CF}', '\u{E0D0}', '\u{E0D1}'];
