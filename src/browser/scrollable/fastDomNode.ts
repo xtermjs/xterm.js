@@ -121,10 +121,6 @@ export class FastDomNode<T extends HTMLElement> {
 
 }
 
-export function createFastDomNode<T extends HTMLElement>(domNode: T): FastDomNode<T> {
-  return new FastDomNode(domNode);
-}
-
 function numberAsPixels(value: number | string): string {
   return (typeof value === 'number' ? `${value}px` : value);
 }

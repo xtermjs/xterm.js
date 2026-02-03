@@ -4,11 +4,129 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as DomUtils from '../Dom';
-import { mainWindow } from './window';
-import * as arrays from './arrays';
-import { memoize } from './decorators';
 import { Disposable, IDisposable, toDisposable } from 'common/Lifecycle';
-import { LinkedList } from './linkedList';
+
+const mainWindow = (typeof window === 'object' ? window : globalThis) as Window & typeof globalThis;
+
+function tail<T>(array: ArrayLike<T>, n: number = 0): T | undefined {
+  return array[array.length - (1 + n)];
+}
+
+function memoize(_target: any, key: string, descriptor: PropertyDescriptor): void {
+  let fnKey: string | null = null;
+  let fn: Function | null = null;
+
+  if (typeof descriptor.value === 'function') {
+    fnKey = 'value';
+    fn = descriptor.value;
+
+    if (fn!.length !== 0) {
+      console.warn('Memoize should only be used in functions with zero parameters');
+    }
+  } else if (typeof descriptor.get === 'function') {
+    fnKey = 'get';
+    fn = descriptor.get;
+  }
+
+  if (!fn || !fnKey) {
+    throw new Error('not supported');
+  }
+
+  const memoizeKey = `$memoize$${key}`;
+  const descriptorAny = descriptor as { [key: string]: any };
+  descriptorAny[fnKey] = function (...args: any[]) {
+    if (!this.hasOwnProperty(memoizeKey)) {
+      Object.defineProperty(this, memoizeKey, {
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: fn.apply(this, args)
+      });
+    }
+
+    return (this as { [key: string]: any })[memoizeKey];
+  };
+}
+
+class LinkedListNode<E> {
+
+  public static readonly Undefined = new LinkedListNode<any>(undefined);
+
+  public element: E;
+  public next: LinkedListNode<E>;
+  public prev: LinkedListNode<E>;
+
+  public constructor(element: E) {
+    this.element = element;
+    this.next = LinkedListNode.Undefined;
+    this.prev = LinkedListNode.Undefined;
+  }
+}
+
+class LinkedList<E> {
+
+  private _first: LinkedListNode<E> = LinkedListNode.Undefined;
+  private _last: LinkedListNode<E> = LinkedListNode.Undefined;
+
+  public push(element: E): () => void {
+    return this._insert(element, true);
+  }
+
+  private _insert(element: E, atTheEnd: boolean): () => void {
+    const newNode = new LinkedListNode(element);
+    if (this._first === LinkedListNode.Undefined) {
+      this._first = newNode;
+      this._last = newNode;
+
+    } else if (atTheEnd) {
+      const oldLast = this._last;
+      this._last = newNode;
+      newNode.prev = oldLast;
+      oldLast.next = newNode;
+
+    } else {
+      const oldFirst = this._first;
+      this._first = newNode;
+      newNode.next = oldFirst;
+      oldFirst.prev = newNode;
+    }
+    let didRemove = false;
+    return () => {
+      if (!didRemove) {
+        didRemove = true;
+        this._remove(newNode);
+      }
+    };
+  }
+
+  private _remove(node: LinkedListNode<E>): void {
+    if (node.prev !== LinkedListNode.Undefined && node.next !== LinkedListNode.Undefined) {
+      const anchor = node.prev;
+      anchor.next = node.next;
+      node.next.prev = anchor;
+
+    } else if (node.prev === LinkedListNode.Undefined && node.next === LinkedListNode.Undefined) {
+      this._first = LinkedListNode.Undefined;
+      this._last = LinkedListNode.Undefined;
+
+    } else if (node.next === LinkedListNode.Undefined) {
+      this._last = this._last.prev!;
+      this._last.next = LinkedListNode.Undefined;
+
+    } else if (node.prev === LinkedListNode.Undefined) {
+      this._first = this._first.next!;
+      this._first.prev = LinkedListNode.Undefined;
+    }
+  }
+
+  public *[Symbol.iterator](): Iterator<E> {
+    let node = this._first;
+    while (node !== LinkedListNode.Undefined) {
+      yield node.element;
+      node = node.next;
+    }
+  }
+}
 
 export namespace EventType {
   export const TAP = '-xterm-gesturetap';
@@ -188,28 +306,28 @@ export class Gesture extends Disposable {
       const holdTime = Date.now() - data.initialTimeStamp;
 
       if (holdTime < Gesture._holdDelay
-				&& Math.abs(data.initialPageX - arrays.tail(data.rollingPageX)!) < 30
-				&& Math.abs(data.initialPageY - arrays.tail(data.rollingPageY)!) < 30) {
+        && Math.abs(data.initialPageX - tail(data.rollingPageX)!) < 30
+        && Math.abs(data.initialPageY - tail(data.rollingPageY)!) < 30) {
 
         const evt = this._newGestureEvent(EventType.TAP, data.initialTarget);
-        evt.pageX = arrays.tail(data.rollingPageX)!;
-        evt.pageY = arrays.tail(data.rollingPageY)!;
+        evt.pageX = tail(data.rollingPageX)!;
+        evt.pageY = tail(data.rollingPageY)!;
         this._dispatchEvent(evt);
 
       } else if (holdTime >= Gesture._holdDelay
-				&& Math.abs(data.initialPageX - arrays.tail(data.rollingPageX)!) < 30
-				&& Math.abs(data.initialPageY - arrays.tail(data.rollingPageY)!) < 30) {
+				&& Math.abs(data.initialPageX - tail(data.rollingPageX)!) < 30
+				&& Math.abs(data.initialPageY - tail(data.rollingPageY)!) < 30) {
 
         const evt = this._newGestureEvent(EventType.CONTEXT_MENU, data.initialTarget);
-        evt.pageX = arrays.tail(data.rollingPageX)!;
-        evt.pageY = arrays.tail(data.rollingPageY)!;
+        evt.pageX = tail(data.rollingPageX)!;
+        evt.pageY = tail(data.rollingPageY)!;
         this._dispatchEvent(evt);
 
       } else if (activeTouchCount === 1) {
-        const finalX = arrays.tail(data.rollingPageX)!;
-        const finalY = arrays.tail(data.rollingPageY)!;
+        const finalX = tail(data.rollingPageX)!;
+        const finalY = tail(data.rollingPageY)!;
 
-        const deltaT = arrays.tail(data.rollingTimestamps)! - data.rollingTimestamps[0];
+        const deltaT = tail(data.rollingTimestamps)! - data.rollingTimestamps[0];
         const deltaX = finalX - data.rollingPageX[0];
         const deltaY = finalY - data.rollingPageY[0];
 
@@ -337,8 +455,8 @@ export class Gesture extends Disposable {
       const data = this._activeTouches[touch.identifier];
 
       const evt = this._newGestureEvent(EventType.CHANGE, data.initialTarget);
-      evt.translationX = touch.pageX - arrays.tail(data.rollingPageX)!;
-      evt.translationY = touch.pageY - arrays.tail(data.rollingPageY)!;
+      evt.translationX = touch.pageX - tail(data.rollingPageX)!;
+      evt.translationY = touch.pageY - tail(data.rollingPageY)!;
       evt.pageX = touch.pageX;
       evt.pageY = touch.pageY;
       this._dispatchEvent(evt);

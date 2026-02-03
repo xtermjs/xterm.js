@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as dom from '../Dom';
-import { FastDomNode, createFastDomNode } from './fastDomNode';
+import { FastDomNode } from './fastDomNode';
 import { IMouseEvent, IMouseWheelEvent, StandardWheelEvent } from './mouseEvent';
 import { IScrollbarHost } from './abstractScrollbar';
 import { HorizontalScrollbar } from './horizontalScrollbar';
@@ -227,15 +227,15 @@ export class SmoothScrollableElement extends Widget {
     this._domNode.appendChild(this._verticalScrollbar.domNode.domNode);
 
     if (this._options.useShadows) {
-      this._leftShadowDomNode = createFastDomNode(document.createElement('div'));
+      this._leftShadowDomNode = new FastDomNode(document.createElement('div'));
       this._leftShadowDomNode.setClassName('shadow');
       this._domNode.appendChild(this._leftShadowDomNode.domNode);
 
-      this._topShadowDomNode = createFastDomNode(document.createElement('div'));
+      this._topShadowDomNode = new FastDomNode(document.createElement('div'));
       this._topShadowDomNode.setClassName('shadow');
       this._domNode.appendChild(this._topShadowDomNode.domNode);
 
-      this._topLeftShadowDomNode = createFastDomNode(document.createElement('div'));
+      this._topLeftShadowDomNode = new FastDomNode(document.createElement('div'));
       this._topLeftShadowDomNode.setClassName('shadow');
       this._domNode.appendChild(this._topLeftShadowDomNode.domNode);
     } else {

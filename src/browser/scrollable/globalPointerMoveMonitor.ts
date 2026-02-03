@@ -7,7 +7,7 @@ import * as dom from '../Dom';
 import { DisposableStore, IDisposable, toDisposable } from 'common/Lifecycle';
 
 type PointerMoveCallback = (event: PointerEvent) => void;
-type OnStopCallback = (browserEvent?: PointerEvent | KeyboardEvent) => void;
+type OnStopCallback = () => void;
 
 export class GlobalPointerMoveMonitor implements IDisposable {
 
@@ -20,7 +20,7 @@ export class GlobalPointerMoveMonitor implements IDisposable {
     this._hooks.dispose();
   }
 
-  public stopMonitoring(invokeStopCallback: boolean, browserEvent?: PointerEvent | KeyboardEvent): void {
+  public stopMonitoring(invokeStopCallback: boolean): void {
     if (!this.isMonitoring()) {
       return;
     }
@@ -31,7 +31,7 @@ export class GlobalPointerMoveMonitor implements IDisposable {
     this._onStopCallback = null;
 
     if (invokeStopCallback && onStopCallback) {
-      onStopCallback(browserEvent);
+      onStopCallback();
     }
   }
 
