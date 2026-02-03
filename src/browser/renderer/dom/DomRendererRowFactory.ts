@@ -24,6 +24,7 @@ export const enum RowCss {
   UNDERLINE_CLASS = 'xterm-underline',
   OVERLINE_CLASS = 'xterm-overline',
   STRIKETHROUGH_CLASS = 'xterm-strikethrough',
+  BLINK_HIDDEN_CLASS = 'xterm-blink-hidden',
   CURSOR_CLASS = 'xterm-cursor',
   CURSOR_BLINK_CLASS = 'xterm-cursor-blink',
   CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block',
@@ -66,6 +67,7 @@ export class DomRendererRowFactory {
     cursorInactiveStyle: string | undefined,
     cursorX: number,
     cursorBlink: boolean,
+    blinkOn: boolean,
     cellWidth: number,
     widthCache: WidthCache,
     linkStart: number,
@@ -153,6 +155,10 @@ export class DomRendererRowFactory {
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
       const isLinkHover = hasHover && x >= linkStart && x <= linkEnd;
+      const isBlinkHidden = !blinkOn && cell.isBlink();
+      if (isBlinkHidden) {
+        classes.push(RowCss.BLINK_HIDDEN_CLASS);
+      }
 
       let isDecorated = false;
       this._decorationService.forEachDecorationAtCell(x, row, undefined, d => {

@@ -229,6 +229,7 @@ export interface ITerminalOptions {
   cols?: number;
   convertEol?: boolean;
   cursorBlink?: boolean;
+  blinkIntervalDuration?: number;
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
   cursorInactiveStyle?: CursorInactiveStyle;
