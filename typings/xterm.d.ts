@@ -912,6 +912,12 @@ declare module '@xterm/xterm' {
     readonly element: HTMLElement | undefined;
 
     /**
+    * The screen element containing the terminal's canvas rendering layers and decorations,
+    * excluding the viewport and the scrollbar.
+    */
+    readonly screenElement: HTMLElement | undefined;
+
+    /**
      * The textarea that accepts input for the terminal.
      */
     readonly textarea: HTMLTextAreaElement | undefined;
