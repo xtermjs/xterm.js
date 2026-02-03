@@ -223,11 +223,12 @@
 }
 
 /* Arrows */
+
 .xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-scra {
 	cursor: pointer;
     background-color: var(--vscode-scrollbarSliderBackground, rgba(100, 100, 100, 0.4));
-    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'><path d='M1.5 8.5 L5.5 2.5 L9.5 8.5 Z' fill='black'/></svg>");
-    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'><path d='M1.5 8.5 L5.5 2.5 L9.5 8.5 Z' fill='black'/></svg>");
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'><path d='M2.5 8.5 L5.5 2.5 L8.5 8.5 Z' fill='black'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'><path d='M2.5 8.5 L5.5 2.5 L8.5 8.5 Z' fill='black'/></svg>");
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
     mask-position: center center;
