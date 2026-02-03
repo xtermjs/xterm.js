@@ -5,7 +5,7 @@
 
 import type { Terminal, IDisposable, IDecoration } from '@xterm/xterm';
 import type { ISearchDecorationOptions } from '@xterm/addon-search';
-import { dispose, Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { dispose, Disposable, toDisposable } from 'common/Lifecycle';
 import type { ISearchResult } from './SearchEngine';
 
 /**

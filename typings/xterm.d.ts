@@ -282,6 +282,11 @@ declare module '@xterm/xterm' {
     scrollSensitivity?: number;
 
     /**
+     * Options for configuring the scrollbar.
+     */
+    scrollbar?: IScrollbarOptions;
+
+    /**
      * The duration to smoothly scroll between the origin and the target in
      * milliseconds. Set to 0 to disable smooth scrolling and scroll instantly.
      */
@@ -727,6 +732,17 @@ declare module '@xterm/xterm' {
      * {@link ITheme.overviewRulerBorder} color.
      */
     showBottomBorder?: boolean;
+  }
+
+  /**
+   * Options for configuring the scrollbar.
+   */
+  export interface IScrollbarOptions {
+    /**
+     * Whether to show arrows at the top and bottom of the scrollbar. Defaults
+     * to false.
+     */
+    showArrows?: boolean;
   }
 
   /**

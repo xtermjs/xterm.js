@@ -16,7 +16,7 @@ import { color } from 'common/Color';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'common/Event';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { addDisposableListener } from 'browser/Dom';
 
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';

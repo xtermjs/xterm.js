@@ -24,7 +24,7 @@ import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { Emitter, EventUtils } from 'common/Event';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { addDisposableListener } from 'browser/Dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 

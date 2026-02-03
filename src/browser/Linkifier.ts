@@ -9,7 +9,7 @@ import { IDisposable } from 'common/Types';
 import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
 import { Emitter } from 'common/Event';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { addDisposableListener } from 'browser/Dom';
 
 export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
