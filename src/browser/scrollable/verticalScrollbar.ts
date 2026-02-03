@@ -25,7 +25,7 @@ export class VerticalScrollbar extends AbstractScrollbar {
         scrollPosition.scrollTop
       ),
       visibility: options.vertical,
-      extraScrollbarClassName: 'vertical',
+      extraScrollbarClassName: 'xterm-vertical',
       scrollable: scrollable,
       scrollByPage: options.scrollByPage
     });
@@ -34,7 +34,7 @@ export class VerticalScrollbar extends AbstractScrollbar {
       const arrowSize = options.verticalScrollbarSize;
       const arrowDelta = 0;
       this._createArrow({
-        className: 'scra xterm-arrow-up',
+        className: 'xterm-scra xterm-arrow-up',
         top: arrowDelta,
         left: arrowDelta,
         bgWidth: options.verticalScrollbarSize,
@@ -42,7 +42,7 @@ export class VerticalScrollbar extends AbstractScrollbar {
         handleActivate: () => this._arrowScroll(-arrowSize)
       });
       this._createArrow({
-        className: 'scra xterm-arrow-down',
+        className: 'xterm-scra xterm-arrow-down',
         bottom: arrowDelta,
         left: arrowDelta,
         bgWidth: options.verticalScrollbarSize,

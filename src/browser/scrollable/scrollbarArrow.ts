@@ -36,7 +36,7 @@ export class ScrollbarArrow extends Widget {
     this._handleActivate = opts.handleActivate;
 
     this.bgDomNode = document.createElement('div');
-    this.bgDomNode.className = 'arrow-background';
+    this.bgDomNode.className = 'xterm-arrow-background';
     this.bgDomNode.style.position = 'absolute';
     this.bgDomNode.style.width = opts.bgWidth + 'px';
     this.bgDomNode.style.height = opts.bgHeight + 'px';

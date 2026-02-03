@@ -108,6 +108,6 @@ export class ScrollbarVisibilityController extends Disposable {
       return;
     }
     this._isVisible = false;
-    this._domNode?.setClassName(this._invisibleClassName + (withFadeAway ? ' fade' : ''));
+    this._domNode?.setClassName(this._invisibleClassName + (withFadeAway ? ' xterm-fade' : ''));
   }
 }

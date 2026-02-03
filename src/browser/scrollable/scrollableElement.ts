@@ -224,15 +224,15 @@ export class SmoothScrollableElement extends Widget {
 
     if (this._options.useShadows) {
       this._leftShadowDomNode = new FastDomNode(document.createElement('div'));
-      this._leftShadowDomNode.setClassName('shadow');
+      this._leftShadowDomNode.setClassName('xterm-shadow');
       this._domNode.appendChild(this._leftShadowDomNode.domNode);
 
       this._topShadowDomNode = new FastDomNode(document.createElement('div'));
-      this._topShadowDomNode.setClassName('shadow');
+      this._topShadowDomNode.setClassName('xterm-shadow');
       this._domNode.appendChild(this._topShadowDomNode.domNode);
 
       this._topLeftShadowDomNode = new FastDomNode(document.createElement('div'));
-      this._topLeftShadowDomNode.setClassName('shadow');
+      this._topLeftShadowDomNode.setClassName('xterm-shadow');
       this._domNode.appendChild(this._topLeftShadowDomNode.domNode);
     } else {
       this._leftShadowDomNode = null;
@@ -289,7 +289,7 @@ export class SmoothScrollableElement extends Widget {
   public updateClassName(newClassName: string): void {
     this._options.className = newClassName;
     if (platform.isMac) {
-      this._options.className += ' mac';
+      this._options.className += ' xterm-mac';
     }
     this._domNode.className = 'xterm-scrollable-element ' + this._options.className;
   }
@@ -481,12 +481,12 @@ export class SmoothScrollableElement extends Widget {
       const enableTop = scrollState.scrollTop > 0;
       const enableLeft = scrollState.scrollLeft > 0;
 
-      const leftClassName = (enableLeft ? ' left' : '');
-      const topClassName = (enableTop ? ' top' : '');
-      const topLeftClassName = (enableLeft || enableTop ? ' top-left-corner' : '');
-      this._leftShadowDomNode!.setClassName(`shadow${leftClassName}`);
-      this._topShadowDomNode!.setClassName(`shadow${topClassName}`);
-      this._topLeftShadowDomNode!.setClassName(`shadow${topLeftClassName}${topClassName}${leftClassName}`);
+      const leftClassName = (enableLeft ? ' xterm-shadow-left' : '');
+      const topClassName = (enableTop ? ' xterm-shadow-top' : '');
+      const topLeftClassName = (enableLeft || enableTop ? ' xterm-shadow-top-left-corner' : '');
+      this._leftShadowDomNode!.setClassName(`xterm-shadow${leftClassName}`);
+      this._topShadowDomNode!.setClassName(`xterm-shadow${topClassName}`);
+      this._topLeftShadowDomNode!.setClassName(`xterm-shadow${topLeftClassName}${topClassName}${leftClassName}`);
     }
   }
 
@@ -566,7 +566,7 @@ function resolveOptions(opts: IScrollableElementCreationOptions): IScrollableEle
   result.verticalSliderSize = (typeof opts.verticalSliderSize !== 'undefined' ? opts.verticalSliderSize : result.verticalScrollbarSize);
 
   if (platform.isMac) {
-    result.className += ' mac';
+    result.className += ' xterm-mac';
   }
 
   return result;

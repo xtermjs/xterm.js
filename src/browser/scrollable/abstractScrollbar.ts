@@ -63,7 +63,7 @@ export abstract class AbstractScrollbar extends Widget {
     this._scrollable = opts.scrollable;
     this._scrollByPage = opts.scrollByPage;
     this._scrollbarState = opts.scrollbarState;
-    this._visibilityController = this._register(new ScrollbarVisibilityController(opts.visibility, 'visible scrollbar ' + opts.extraScrollbarClassName, 'invisible scrollbar ' + opts.extraScrollbarClassName));
+    this._visibilityController = this._register(new ScrollbarVisibilityController(opts.visibility, 'xterm-visible xterm-scrollbar ' + opts.extraScrollbarClassName, 'xterm-invisible xterm-scrollbar ' + opts.extraScrollbarClassName));
     this._visibilityController.setIsNeeded(this._scrollbarState.isNeeded());
     this._pointerMoveMonitor = this._register(new GlobalPointerMoveMonitor());
     this._shouldRender = true;
@@ -93,7 +93,7 @@ export abstract class AbstractScrollbar extends Widget {
    */
   protected _createSlider(top: number, left: number, width: number | undefined, height: number | undefined): void {
     this.slider = new FastDomNode(document.createElement('div'));
-    this.slider.setClassName('slider');
+    this.slider.setClassName('xterm-slider');
     this.slider.setPosition('absolute');
     this.slider.setTop(top);
     this.slider.setLeft(left);
@@ -236,7 +236,7 @@ export abstract class AbstractScrollbar extends Widget {
     const initialPointerPosition = this._sliderPointerPosition(e);
     const initialPointerOrthogonalPosition = this._sliderOrthogonalPointerPosition(e);
     const initialScrollbarState = this._scrollbarState.clone();
-    this.slider.toggleClassName('active', true);
+    this.slider.toggleClassName('xterm-active', true);
 
     this._pointerMoveMonitor.startMonitoring(
       e.target,
@@ -256,7 +256,7 @@ export abstract class AbstractScrollbar extends Widget {
         this._setDesiredScrollPositionNow(initialScrollbarState.getDesiredScrollPositionFromDelta(pointerDelta));
       },
       () => {
-        this.slider.toggleClassName('active', false);
+        this.slider.toggleClassName('xterm-active', false);
         this._host.handleDragEnd();
       }
     );

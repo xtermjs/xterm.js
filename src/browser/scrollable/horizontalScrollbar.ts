@@ -25,7 +25,7 @@ export class HorizontalScrollbar extends AbstractScrollbar {
         scrollPosition.scrollLeft
       ),
       visibility: options.horizontal,
-      extraScrollbarClassName: 'horizontal',
+      extraScrollbarClassName: 'xterm-horizontal',
       scrollable: scrollable,
       scrollByPage: options.scrollByPage
     });
