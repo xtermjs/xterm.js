@@ -83,6 +83,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._core.onDimensionsChange; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
+  public get screenElement(): HTMLElement | undefined { return this._core.screenElement; }
   public get parser(): IParser {
     return this._parser ??= new ParserApi(this._core);
   }
