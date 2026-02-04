@@ -23,11 +23,9 @@ import {
 // Memory limit for base64 decoder (4MB, same as IIPHandler)
 const DECODER_KEEP_DATA = 4194304;
 
-// Base64 shard size (~1MB, must be divisible by 4)
-const BASE64_SHARD_SIZE = 1048576;
-
-// Decoded shard size: 1MB base64 → 768KB decoded
-const DECODED_SHARD_SIZE = 786432;
+// Base64 alignment size
+// TODO: Remove once decoder handles alignment internally
+const BASE64_ALIGNMENT = 4;
 
 // Maximum control data size
 const MAX_CONTROL_DATA_SIZE = 512;
@@ -57,9 +55,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private _controlData = new Uint32Array(MAX_CONTROL_DATA_SIZE);
   private _controlLength = 0;
 
-  /** Shard buffer for base64 bytes (filled until 4-byte aligned boundary). */
-  private _shardBuffer = new Uint32Array(BASE64_SHARD_SIZE);
-  private _shardBufferPos = 0;
+  /** Leftover base64 bytes (0-3) to preserve 4-byte alignment across chunks.
+   * TODO: Remove once decoder handles alignment internally */
+  private _leftover = new Uint32Array(BASE64_ALIGNMENT);
+  private _leftoverLength = 0;
 
   /** Accumulated decoded chunks. */
   private _decodedChunks: Uint8Array[] = [];
@@ -100,7 +99,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     this._decodeError = false;
     this._inControlData = true;
     this._controlLength = 0;
-    this._shardBufferPos = 0;
+    this._leftoverLength = 0;
     this._decodedChunks = [];
     this._totalDecodedSize = 0;
     this._parsedCommand = null;
@@ -177,57 +176,61 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       return;
     }
 
-    const inputLength = end - start;
-    const freeSpace = BASE64_SHARD_SIZE - this._shardBufferPos;
+    if (this._decodeError) return;
 
-    if (inputLength < freeSpace) {
-      // Fits in current shard
-      this._shardBuffer.set(data.subarray(start, end), this._shardBufferPos);
-      this._shardBufferPos += inputLength;
+    if (this._leftoverLength === 0 && pending?.leftoverLength) {
+      this._leftover.set(pending.leftover.subarray(0, pending.leftoverLength), 0);
+      this._leftoverLength = pending.leftoverLength;
+      pending.leftoverLength = 0;
+    }
+
+    const dataLength = end - start;
+    const totalLength = this._leftoverLength + dataLength;
+    const alignedLength = Math.floor(totalLength / BASE64_ALIGNMENT) * BASE64_ALIGNMENT;
+
+    if (alignedLength === 0) {
+      for (let i = start; i < end; i++) {
+        this._leftover[this._leftoverLength++] = data[i];
+      }
       return;
     }
 
-    // Fill shard to capacity
-    this._shardBuffer.set(data.subarray(start, start + freeSpace), this._shardBufferPos);
-    this._shardBufferPos = BASE64_SHARD_SIZE;
+    const alignedFromData = alignedLength - this._leftoverLength;
+    const padding = this._countAlignedPadding(data, start, alignedLength);
+    const decodedSize = Math.floor(alignedLength / 4) * 3 - padding;
 
-    // Decode full shard (exactly 1MB → 768KB)
-    if (!this._decodeFullShard()) {
-      this._aborted = true;
-      return;
-    }
+    if (decodedSize > 0) {
+      this._decoder.init(decodedSize);
 
-    // Reset and process remaining
-    this._shardBufferPos = 0;
-    const remaining = start + freeSpace;
-    if (remaining < end) {
-      this._streamPayload(data, remaining, end);
-    }
-  }
+      if (this._leftoverLength > 0 && this._decoder.put(this._leftover, 0, this._leftoverLength)) {
+        this._decoder.release();
+        this._decodeError = true;
+        return;
+      }
 
-  /**
-   * Decode a full 1MB shard (768KB output).
-   */
-  private _decodeFullShard(): boolean {
-    this._decoder.init(DECODED_SHARD_SIZE);
+      if (alignedFromData > 0 && this._decoder.put(data, start, start + alignedFromData)) {
+        this._decoder.release();
+        this._decodeError = true;
+        return;
+      }
 
-    if (this._decoder.put(this._shardBuffer, 0, BASE64_SHARD_SIZE)) {
+      if (this._decoder.end()) {
+        this._decoder.release();
+        this._decodeError = true;
+        return;
+      }
+
+      const chunk = new Uint8Array(this._decoder.data8);
+      this._decodedChunks.push(chunk);
+      this._totalDecodedSize += chunk.length;
       this._decoder.release();
-      this._decodeError = true;
-      return false;
     }
 
-    if (this._decoder.end()) {
-      this._decoder.release();
-      this._decodeError = true;
-      return false;
+    this._leftoverLength = 0;
+    const leftoverStart = start + alignedFromData;
+    for (let i = leftoverStart; i < end; i++) {
+      this._leftover[this._leftoverLength++] = data[i];
     }
-
-    const chunk = new Uint8Array(this._decoder.data8);
-    this._decodedChunks.push(chunk);
-    this._totalDecodedSize += chunk.length;
-    this._decoder.release();
-    return true;
   }
 
   public end(success: boolean): boolean | Promise<boolean> {
@@ -252,29 +255,27 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
 
-    // If continuing a pending transmission, prepend leftover bytes
-    if (pending && pending.leftoverLength > 0) {
-      // Shift current buffer to make room for leftover
-      const newPos = pending.leftoverLength + this._shardBufferPos;
-      if (newPos <= BASE64_SHARD_SIZE) {
-        // Shift existing data right
-        for (let i = this._shardBufferPos - 1; i >= 0; i--) {
-          this._shardBuffer[i + pending.leftoverLength] = this._shardBuffer[i];
+    if (isMoreComing) {
+      if (this._leftoverLength > 0) {
+        let pendingEntry = pending;
+        if (!pendingEntry) {
+          pendingEntry = {
+            cmd: { ...cmd },
+            chunks: [],
+            totalSize: 0,
+            totalEncodedSize: 0,
+            leftover: new Uint32Array(BASE64_ALIGNMENT),
+            leftoverLength: 0
+          };
+          this._pendingTransmissions.set(pendingKey, pendingEntry);
         }
-        // Prepend leftover
-        this._shardBuffer.set(pending.leftover.subarray(0, pending.leftoverLength), 0);
-        this._shardBufferPos = newPos;
+        pendingEntry.leftover.set(this._leftover.subarray(0, this._leftoverLength), 0);
+        pendingEntry.leftoverLength = this._leftoverLength;
       }
-      pending.leftoverLength = 0;
-    }
-
-    // Decode with 4-byte alignment, preserving leftover if m=1
-    if (this._shardBufferPos > 0) {
-      if (isMoreComing) {
-        this._decodePartialShardWithLeftover(pendingKey, cmd);
-      } else {
-        this._decodePartialShard();
-      }
+      this._leftoverLength = 0;
+    } else if (this._leftoverLength > 0) {
+      this._decodePaddedLeftover();
+      this._leftoverLength = 0;
     }
 
     // Combine all decoded chunks
@@ -284,114 +285,73 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   }
 
   /**
-   * Decode partial shard, storing leftover bytes for m=1 chunks.
+   * TODO: Remove once decoder handles alignment internally.
+   * This and related alignment helpers become unnecessary when decoder.init()
+   * no longer requires decoded size and decoder handles base64 padding.
    */
-  private _decodePartialShardWithLeftover(pendingKey: number, cmd: IKittyCommand): boolean {
-    const length = this._shardBufferPos;
-    if (length === 0) return true;
-
-    // Align to 4 bytes
-    const aligned = Math.floor(length / 4) * 4;
-    const leftoverCount = length - aligned;
-
-    // Store leftover bytes for next chunk
-    if (leftoverCount > 0) {
-      let pending = this._pendingTransmissions.get(pendingKey);
-      if (!pending) {
-        pending = {
-          cmd: { ...cmd },
-          chunks: [],
-          totalSize: 0,
-          totalEncodedSize: 0,
-          leftover: new Uint32Array(4),
-          leftoverLength: 0
-        };
-        this._pendingTransmissions.set(pendingKey, pending);
-      }
-      pending.leftover.set(this._shardBuffer.subarray(aligned, length), 0);
-      pending.leftoverLength = leftoverCount;
-    }
-
-    if (aligned === 0) return true;
-
-    // Count padding (shouldn't have padding in m=1 chunks, but be safe)
+  private _countAlignedPadding(
+    data: Uint32Array,
+    start: number,
+    alignedLength: number
+  ): number {
     let padding = 0;
-    if (aligned >= 1 && this._shardBuffer[aligned - 1] === EQUALS) padding++;
-    if (aligned >= 2 && this._shardBuffer[aligned - 2] === EQUALS) padding++;
-
-    const decodedSize = Math.floor(aligned * 3 / 4) - padding;
-    if (decodedSize <= 0) return true;
-
-    this._decoder.init(decodedSize);
-
-    if (this._decoder.put(this._shardBuffer, 0, aligned)) {
-      this._decoder.release();
-      this._decodeError = true;
-      return false;
+    if (alignedLength >= 1 && this._getAlignedCharFromEnd(data, start, alignedLength, 1) === EQUALS) {
+      padding++;
     }
-
-    if (this._decoder.end()) {
-      this._decoder.release();
-      this._decodeError = true;
-      return false;
+    if (alignedLength >= 2 && this._getAlignedCharFromEnd(data, start, alignedLength, 2) === EQUALS) {
+      padding++;
     }
+    return padding;
+  }
 
-    const chunk = new Uint8Array(this._decoder.data8);
-    this._decodedChunks.push(chunk);
-    this._totalDecodedSize += chunk.length;
-    this._decoder.release();
-    return true;
+  private _getAlignedCharFromEnd(
+    data: Uint32Array,
+    start: number,
+    alignedLength: number,
+    offsetFromEnd: number
+  ): number {
+    const index = alignedLength - offsetFromEnd;
+    if (index < this._leftoverLength) {
+      return this._leftover[index];
+    }
+    return data[start + index - this._leftoverLength];
   }
 
   /**
-   * Decode partial shard with proper 4-byte alignment.
-   * For final chunks, pad with = if not aligned instead of truncating.
+   * TODO: Remove once decoder handles alignment internally
    */
-  private _decodePartialShard(): boolean {
-    let length = this._shardBufferPos;
-    if (length === 0) return true;
+  private _decodePaddedLeftover(): void {
+    if (this._decodeError) return;
+    if (this._leftoverLength === 0) return;
 
+    const padded = new Uint32Array(BASE64_ALIGNMENT);
+    padded.set(this._leftover.subarray(0, this._leftoverLength), 0);
 
-    // Count ORIGINAL padding BEFORE we add any
-    let padding = 0;
-    if (length >= 1 && this._shardBuffer[length - 1] === EQUALS) padding++;
-    if (length >= 2 && this._shardBuffer[length - 2] === EQUALS) padding++;
-
-    // Pad to 4-byte boundary with = if needed (instead of truncating)
-    const remainder = length % 4;
-    if (remainder > 0) {
-      const paddingNeeded = 4 - remainder;
-      for (let i = 0; i < paddingNeeded; i++) {
-        this._shardBuffer[length + i] = EQUALS;
-      }
-      length += paddingNeeded;
-      // Count the artificial padding too!
-      padding += paddingNeeded;
+    const paddingNeeded = BASE64_ALIGNMENT - this._leftoverLength;
+    for (let i = 0; i < paddingNeeded; i++) {
+      padded[this._leftoverLength + i] = EQUALS;
     }
 
-    // Calculate decoded size
-    const decodedSize = Math.floor(length * 3 / 4) - padding;
-    if (decodedSize <= 0) return true;
+    const decodedSize = 3 - paddingNeeded;
+    if (decodedSize <= 0) return;
 
     this._decoder.init(decodedSize);
-
-    if (this._decoder.put(this._shardBuffer, 0, length)) {
+    if (this._decoder.put(padded, 0, BASE64_ALIGNMENT)) {
       this._decoder.release();
       this._decodeError = true;
-      return false;
+      return;
     }
 
     if (this._decoder.end()) {
       this._decoder.release();
       this._decodeError = true;
-      return false;
+      return;
     }
 
     const chunk = new Uint8Array(this._decoder.data8);
     this._decodedChunks.push(chunk);
     this._totalDecodedSize += chunk.length;
     this._decoder.release();
-    return true;
   }
 
   private _combineChunks(): Uint8Array {
