@@ -716,6 +716,7 @@ declare module '@xterm/xterm' {
     /**
      * When defined, renders decorations in the overview ruler to the right of
      * the terminal. This must be set in order to see the overview ruler.
+     * This is ignored when {@link IScrollbarOptions.showScrollbar} is false.
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
@@ -738,6 +739,11 @@ declare module '@xterm/xterm' {
    * Options for configuring the scrollbar.
    */
   export interface IScrollbarOptions {
+    /**
+     * Whether to show the scrollbar. When false, this supersedes
+     * {@link IOverviewRulerOptions.width}. Defaults to true.
+     */
+    showScrollbar?: boolean;
     /**
      * Whether to show arrows at the top and bottom of the scrollbar. Defaults
      * to false.

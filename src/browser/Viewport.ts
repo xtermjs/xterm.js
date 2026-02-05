@@ -62,7 +62,8 @@ export class Viewport extends Disposable {
     this._register(this._optionsService.onMultipleOptionChange([
       'scrollSensitivity',
       'fastScrollSensitivity',
-      'overviewRuler'
+      'overviewRuler',
+      'scrollbar'
     ], () => this._scrollableElement.updateOptions(this._getChangeOptions())));
     // Don't handle mouse wheel if wheel events are supported by the current mouse prototcol
     this._register(coreMouseService.onProtocolChange(type => {
@@ -131,10 +132,17 @@ export class Viewport extends Disposable {
   }
 
   private _getChangeOptions(): IScrollableElementChangeOptions {
+    const showScrollbar = this._optionsService.rawOptions.scrollbar?.showScrollbar ?? true;
+    const showArrows = this._optionsService.rawOptions.scrollbar?.showArrows ?? false;
+    const verticalScrollbarSize = showScrollbar
+      ? (this._optionsService.rawOptions.overviewRuler?.width ?? ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH)
+      : 0;
     return {
       mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
       fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
-      verticalScrollbarSize: this._optionsService.rawOptions.overviewRuler?.width || ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH
+      vertical: showScrollbar ? ScrollbarVisibility.AUTO : ScrollbarVisibility.HIDDEN,
+      verticalScrollbarSize,
+      verticalHasArrows: showArrows
     };
   }
 
