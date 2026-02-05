@@ -27,7 +27,7 @@ export class MockBufferService implements IBufferService {
     public rows: number,
     optionsService: IOptionsService = new MockOptionsService()
   ) {
-    this.buffers = new BufferSet(optionsService, this);
+    this.buffers = new BufferSet(optionsService, this, new MockLogService());
     // Listen to buffer activation events and automatically fire scroll events
     this.buffers.onBufferActivate(e => {
       this._onScroll.fire(e.activeBuffer.ydisp);
