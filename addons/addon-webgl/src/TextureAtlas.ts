@@ -5,7 +5,7 @@
 
 import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
-import { tryDrawCustomGlyph } from './customGlyphs/CustomGlyphRasterizer';
+import { loadCustomGlyphDefinitions, tryDrawCustomGlyph } from './customGlyphs/CustomGlyphRasterizer';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
 import { NULL_COLOR, channels, color, rgba } from 'common/Color';
@@ -100,6 +100,10 @@ export class TextureAtlas implements ITextureAtlas {
       alpha: this._config.allowTransparency,
       willReadFrequently: true
     }));
+    // Start loading custom glyph definitions asynchronously if custom glyphs are enabled
+    if (this._config.customGlyphs !== false) {
+      loadCustomGlyphDefinitions();
+    }
   }
 
   public dispose(): void {
