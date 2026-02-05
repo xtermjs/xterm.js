@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { Buffer } from 'common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
-import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
+import { MockOptionsService, MockBufferService, MockLogService } from 'common/TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
@@ -23,7 +23,7 @@ describe('Buffer', () => {
   beforeEach(() => {
     optionsService = new MockOptionsService({ scrollback: INIT_SCROLLBACK });
     bufferService = new MockBufferService(INIT_COLS, INIT_ROWS);
-    buffer = new Buffer(true, optionsService, bufferService);
+    buffer = new Buffer(true, optionsService, bufferService, new MockLogService());
   });
 
   describe('constructor', () => {
@@ -151,7 +151,7 @@ describe('Buffer', () => {
 
       describe('no scrollback', () => {
         it('should trim from the top of the buffer when the cursor reaches the bottom', () => {
-          buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService);
+          buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
@@ -1054,7 +1054,7 @@ describe('Buffer', () => {
   describe('buffer marked to have no scrollback', () => {
     it('should always have a scrollback of 0', () => {
       // Test size on initialization
-      buffer = new Buffer(false, new MockOptionsService({ scrollback: 1000 }), bufferService);
+      buffer = new Buffer(false, new MockOptionsService({ scrollback: 1000 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       assert.equal(buffer.lines.maxLength, INIT_ROWS);
       // Test size on buffer increase
@@ -1068,7 +1068,7 @@ describe('Buffer', () => {
 
   describe('addMarker', () => {
     it('should adjust a marker line when the buffer is trimmed', () => {
-      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService);
+      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
       assert.equal(marker.line, buffer.lines.length - 1);
@@ -1076,7 +1076,7 @@ describe('Buffer', () => {
       assert.equal(marker.line, buffer.lines.length - 2);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
-      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService);
+      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       assert.equal(buffer.markers.length, 0);
       const marker = buffer.addMarker(0);
@@ -1088,7 +1088,7 @@ describe('Buffer', () => {
     });
     it('should call onDispose', () => {
       const eventStack: string[] = [];
-      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService);
+      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       assert.equal(buffer.markers.length, 0);
       const marker = buffer.addMarker(0);
