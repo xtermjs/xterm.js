@@ -314,6 +314,12 @@ export class SmoothScrollableElement extends Widget {
     if (typeof newOptions.vertical !== 'undefined') {
       this._options.vertical = newOptions.vertical;
     }
+    if (typeof newOptions.horizontalHasArrows !== 'undefined') {
+      this._options.horizontalHasArrows = newOptions.horizontalHasArrows;
+    }
+    if (typeof newOptions.verticalHasArrows !== 'undefined') {
+      this._options.verticalHasArrows = newOptions.verticalHasArrows;
+    }
     if (typeof newOptions.horizontalScrollbarSize !== 'undefined') {
       this._options.horizontalScrollbarSize = newOptions.horizontalScrollbarSize;
     }

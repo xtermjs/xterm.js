@@ -38,7 +38,11 @@ export class OverviewRulerRenderer extends Disposable {
   private readonly _ctx: CanvasRenderingContext2D;
   private readonly _colorZoneStore: IColorZoneStore = new ColorZoneStore();
   private get _width(): number {
-    return this._optionsService.options.overviewRuler?.width || 0;
+    const showScrollbar = this._optionsService.rawOptions.scrollbar?.showScrollbar ?? true;
+    if (!showScrollbar) {
+      return 0;
+    }
+    return this._optionsService.rawOptions.overviewRuler?.width ?? 0;
   }
   private _animationFrame: number | undefined;
 
@@ -96,6 +100,7 @@ export class OverviewRulerRenderer extends Disposable {
 
     this._register(this._coreBrowserService.onDprChange(() => this._queueRefresh(true)));
     this._register(this._optionsService.onSpecificOptionChange('overviewRuler', () => this._queueRefresh(true)));
+    this._register(this._optionsService.onSpecificOptionChange('scrollbar', () => this._queueRefresh(true)));
     this._register(this._themeService.onChangeColors(() => this._queueRefresh()));
     this._queueRefresh(true);
   }

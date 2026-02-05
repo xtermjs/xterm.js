@@ -311,6 +311,7 @@ export interface ITerminalQuirks {
 }
 
 export interface IScrollbarOptions {
+  showScrollbar?: boolean;
   showArrows?: boolean;
 }
 

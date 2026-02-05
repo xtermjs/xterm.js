@@ -35,7 +35,7 @@ export class ScrollbarState {
    * For the vertical scrollbar: the height of the scrollbar's arrows.
    * For the horizontal scrollbar: the width of the scrollbar's arrows.
    */
-  private readonly _arrowSize: number;
+  private _arrowSize: number;
 
   // --- variables
   /**
@@ -125,6 +125,14 @@ export class ScrollbarState {
 
   public setScrollbarSize(scrollbarSize: number): void {
     this._scrollbarSize = Math.round(scrollbarSize);
+  }
+
+  public setArrowSize(arrowSize: number): void {
+    const iArrowSize = Math.round(arrowSize);
+    if (this._arrowSize !== iArrowSize) {
+      this._arrowSize = iArrowSize;
+      this._refreshComputedValues();
+    }
   }
 
   public setOppositeScrollbarSize(oppositeScrollbarSize: number): void {

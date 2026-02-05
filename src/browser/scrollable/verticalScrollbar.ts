@@ -7,17 +7,22 @@ import { AbstractScrollbar, ISimplifiedPointerEvent, IScrollbarHost } from './ab
 import { IScrollableElementResolvedOptions } from './scrollableElementOptions';
 import { ScrollbarState } from './scrollbarState';
 import { INewScrollPosition, Scrollable, ScrollbarVisibility, IScrollEvent } from './scrollable';
+import type { ScrollbarArrow } from './scrollbarArrow';
 
 export class VerticalScrollbar extends AbstractScrollbar {
+  private _arrowUp: ScrollbarArrow | undefined;
+  private _arrowDown: ScrollbarArrow | undefined;
+  private _arrowScrollDelta: number = 0;
 
   constructor(scrollable: Scrollable, options: IScrollableElementResolvedOptions, host: IScrollbarHost) {
     const scrollDimensions = scrollable.getScrollDimensions();
     const scrollPosition = scrollable.getCurrentScrollPosition();
+    const hasArrows = options.verticalHasArrows;
     super({
       lazyRender: options.lazyRender,
       host: host,
       scrollbarState: new ScrollbarState(
-        (options.verticalHasArrows ? options.verticalScrollbarSize : 0),
+        (hasArrows ? options.verticalScrollbarSize : 0),
         (options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize),
         0,
         scrollDimensions.height,
@@ -30,26 +35,7 @@ export class VerticalScrollbar extends AbstractScrollbar {
       scrollByPage: options.scrollByPage
     });
 
-    if (options.verticalHasArrows) {
-      const arrowSize = options.verticalScrollbarSize;
-      const arrowDelta = 0;
-      this._createArrow({
-        className: 'xterm-scra xterm-arrow-up',
-        top: arrowDelta,
-        left: arrowDelta,
-        bgWidth: options.verticalScrollbarSize,
-        bgHeight: arrowSize,
-        handleActivate: () => this._arrowScroll(-arrowSize)
-      });
-      this._createArrow({
-        className: 'xterm-scra xterm-arrow-down',
-        bottom: arrowDelta,
-        left: arrowDelta,
-        bgWidth: options.verticalScrollbarSize,
-        bgHeight: arrowSize,
-        handleActivate: () => this._arrowScroll(arrowSize)
-      });
-    }
+    this._setArrows(hasArrows, options.verticalScrollbarSize);
 
     this._createSlider(0, Math.floor((options.verticalScrollbarSize - options.verticalSliderSize) / 2), options.verticalSliderSize, undefined);
   }
@@ -98,7 +84,56 @@ export class VerticalScrollbar extends AbstractScrollbar {
     this._scrollable.setScrollPositionNow({ scrollTop: currentPosition.scrollTop + delta });
   }
 
+  private _setArrows(showArrows: boolean, size: number): void {
+    this._arrowScrollDelta = size;
+    if (!this._arrowUp || !this._arrowDown) {
+      const arrowDelta = 0;
+      this._arrowUp = this._createArrow({
+        className: 'xterm-scra xterm-arrow-up',
+        top: arrowDelta,
+        left: arrowDelta,
+        bgWidth: size,
+        bgHeight: size,
+        handleActivate: () => this._arrowScroll(-this._arrowScrollDelta)
+      });
+      this._arrowDown = this._createArrow({
+        className: 'xterm-scra xterm-arrow-down',
+        bottom: arrowDelta,
+        left: arrowDelta,
+        bgWidth: size,
+        bgHeight: size,
+        handleActivate: () => this._arrowScroll(this._arrowScrollDelta)
+      });
+    }
+
+    this._updateArrowSize(this._arrowUp, size);
+    this._updateArrowSize(this._arrowDown, size);
+
+    if (!this._arrowUp || !this._arrowDown) {
+      return;
+    }
+
+    const display = showArrows ? '' : 'none';
+    this._arrowUp.bgDomNode.style.display = display;
+    this._arrowUp.domNode.style.display = display;
+    this._arrowDown.bgDomNode.style.display = display;
+    this._arrowDown.domNode.style.display = display;
+  }
+
+  private _updateArrowSize(arrow: ScrollbarArrow | undefined, size: number): void {
+    if (!arrow) {
+      return;
+    }
+    arrow.bgDomNode.style.width = `${size}px`;
+    arrow.bgDomNode.style.height = `${size}px`;
+    arrow.domNode.style.width = `${size}px`;
+    arrow.domNode.style.height = `${size}px`;
+  }
+
   public updateOptions(options: IScrollableElementResolvedOptions): void {
+    const arrowSize = options.verticalHasArrows ? options.verticalScrollbarSize : 0;
+    this._scrollbarState.setArrowSize(arrowSize);
+    this._setArrows(options.verticalHasArrows, options.verticalScrollbarSize);
     this.updateScrollbarSize(options.vertical === ScrollbarVisibility.HIDDEN ? 0 : options.verticalScrollbarSize);
     this._scrollbarState.setOppositeScrollbarSize(0);
     this._visibilityController.setVisibility(options.vertical);
