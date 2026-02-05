@@ -22,19 +22,14 @@ import {
 
 // Memory limit for base64 decoder (4MB, same as IIPHandler)
 const DECODER_KEEP_DATA = 4194304;
-
-// Base64 alignment size
-// TODO: Remove once decoder handles alignment internally
-const BASE64_ALIGNMENT = 4;
+const DECODER_INITIAL_DATA = 4194304; // 4MB
+const DECODER_SUCCESS = 0;
 
 // Maximum control data size
 const MAX_CONTROL_DATA_SIZE = 512;
 
 // Semicolon codepoint
 const SEMICOLON = 0x3B;
-
-// Padding character '='
-const EQUALS = 0x3D;
 
 /**
  * Kitty graphics protocol handler with streaming base64 decoding.
@@ -43,8 +38,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private _aborted = false;
   private _decodeError = false;
 
-  /** Reusable base64 decoder - avoids WASM cold-start on each chunk */
-  private _decoder = new Base64Decoder(DECODER_KEEP_DATA);
+  private _activeDecoder: Base64Decoder | null = null;
+  private readonly _maxEncodedBytes: number;
+  private readonly _initialEncodedBytes: number;
 
   // Streaming related states
 
@@ -54,15 +50,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   /** Buffer for control data. */
   private _controlData = new Uint32Array(MAX_CONTROL_DATA_SIZE);
   private _controlLength = 0;
-
-  /** Leftover base64 bytes (0-3) to preserve 4-byte alignment across chunks.
-   * TODO: Remove once decoder handles alignment internally */
-  private _leftover = new Uint32Array(BASE64_ALIGNMENT);
-  private _leftoverLength = 0;
-
-  /** Accumulated decoded chunks. */
-  private _decodedChunks: Uint8Array[] = [];
-  private _totalDecodedSize = 0;
 
   /** Pre-calculated encoded size limit */
   private _encodedSizeLimit = 0;
@@ -83,10 +70,22 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     private readonly _renderer: ImageRenderer,
     private readonly _storage: ImageStorage,
     private readonly _coreTerminal: ITerminalExt
-  ) {}
+  ) {
+    // Convert decoded size limit -> max encoded bytes.
+    this._maxEncodedBytes = Math.ceil(this._opts.kittySizeLimit * 4 / 3);
+    // ensure we preallocate more than configured limit while using 4mb initial size.
+    this._initialEncodedBytes = Math.min(DECODER_INITIAL_DATA, this._maxEncodedBytes);
+  }
 
   public reset(): void {
+    for (const pending of this._pendingTransmissions.values()) {
+      pending.decoder.release();
+    }
     this._pendingTransmissions.clear();
+    if (this._activeDecoder) {
+      this._activeDecoder.release();
+      this._activeDecoder = null;
+    }
     this._images.clear();
     for (const bitmap of this._decodedImages.values()) {
       bitmap.close();
@@ -99,13 +98,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     this._decodeError = false;
     this._inControlData = true;
     this._controlLength = 0;
-    this._leftoverLength = 0;
-    this._decodedChunks = [];
-    this._totalDecodedSize = 0;
     this._parsedCommand = null;
     // Pre-calculate encoded limit once: base64 is 4 bytes encoded → 3 bytes decoded
-    this._encodedSizeLimit = Math.ceil(this._opts.kittySizeLimit * 4 / 3);
+    this._encodedSizeLimit = this._maxEncodedBytes;
     this._totalEncodedSize = 0;
+    this._activeDecoder = null;
   }
 
   public put(data: Uint32Array, start: number, end: number): void {
@@ -159,7 +156,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   }
 
   /**
-   * Stream payload bytes, decode at 4-byte aligned boundaries.
+   * Stream payload bytes into the base64 decoder.
    */
   private _streamPayload(data: Uint32Array, start: number, end: number): void {
     if (this._aborted) return;
@@ -172,69 +169,44 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     this._totalEncodedSize += end - start;
     const cumulativeEncodedSize = previousEncodedSize + this._totalEncodedSize;
     if (cumulativeEncodedSize > this._encodedSizeLimit) {
+      const decoderToRelease = this._activeDecoder ?? pending?.decoder;
+      if (decoderToRelease) {
+        decoderToRelease.release();
+      }
+      this._activeDecoder = null;
+      if (pending) {
+        this._pendingTransmissions.delete(pendingKey);
+      }
       this._aborted = true;
       return;
     }
 
     if (this._decodeError) return;
 
-    if (this._leftoverLength === 0 && pending?.leftoverLength) {
-      this._leftover.set(pending.leftover.subarray(0, pending.leftoverLength), 0);
-      this._leftoverLength = pending.leftoverLength;
-      pending.leftoverLength = 0;
+    if (pending?.decoder && !this._activeDecoder) {
+      this._activeDecoder = pending.decoder;
+    }
+    if (!this._activeDecoder) {
+      this._activeDecoder = new Base64Decoder(DECODER_KEEP_DATA, this._maxEncodedBytes, this._initialEncodedBytes);
+      this._activeDecoder.init();
     }
 
-    const dataLength = end - start;
-    const totalLength = this._leftoverLength + dataLength;
-    const alignedLength = Math.floor(totalLength / BASE64_ALIGNMENT) * BASE64_ALIGNMENT;
-
-    if (alignedLength === 0) {
-      for (let i = start; i < end; i++) {
-        this._leftover[this._leftoverLength++] = data[i];
+    if (this._activeDecoder.put(data.subarray(start, end)) !== DECODER_SUCCESS) {
+      this._activeDecoder.release();
+      this._activeDecoder = null;
+      this._decodeError = true;
+      if (pending) {
+        this._pendingTransmissions.delete(pendingKey);
       }
-      return;
-    }
-
-    const alignedFromData = alignedLength - this._leftoverLength;
-    const padding = this._countAlignedPadding(data, start, alignedLength);
-    const decodedSize = Math.floor(alignedLength / 4) * 3 - padding;
-
-    if (decodedSize > 0) {
-      this._decoder.init(decodedSize);
-
-      if (this._leftoverLength > 0 && this._decoder.put(this._leftover, 0, this._leftoverLength)) {
-        this._decoder.release();
-        this._decodeError = true;
-        return;
-      }
-
-      if (alignedFromData > 0 && this._decoder.put(data, start, start + alignedFromData)) {
-        this._decoder.release();
-        this._decodeError = true;
-        return;
-      }
-
-      if (this._decoder.end()) {
-        this._decoder.release();
-        this._decodeError = true;
-        return;
-      }
-
-      const chunk = new Uint8Array(this._decoder.data8);
-      this._decodedChunks.push(chunk);
-      this._totalDecodedSize += chunk.length;
-      this._decoder.release();
-    }
-
-    this._leftoverLength = 0;
-    const leftoverStart = start + alignedFromData;
-    for (let i = leftoverStart; i < end; i++) {
-      this._leftover[this._leftoverLength++] = data[i];
     }
   }
 
   public end(success: boolean): boolean | Promise<boolean> {
     if (this._aborted || !success) {
+      if (this._activeDecoder) {
+        this._activeDecoder.release();
+        this._activeDecoder = null;
+      }
       return true;
     }
 
@@ -256,115 +228,45 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const pending = this._pendingTransmissions.get(pendingKey);
 
     if (isMoreComing) {
-      if (this._leftoverLength > 0) {
-        let pendingEntry = pending;
-        if (!pendingEntry) {
-          pendingEntry = {
+      if (this._activeDecoder) {
+        if (pending) {
+          pending.totalEncodedSize += this._totalEncodedSize;
+          pending.decodeError = pending.decodeError || this._decodeError;
+        } else {
+          this._pendingTransmissions.set(pendingKey, {
             cmd: { ...cmd },
-            chunks: [],
-            totalSize: 0,
-            totalEncodedSize: 0,
-            leftover: new Uint32Array(BASE64_ALIGNMENT),
-            leftoverLength: 0
-          };
-          this._pendingTransmissions.set(pendingKey, pendingEntry);
+            decoder: this._activeDecoder,
+            totalEncodedSize: this._totalEncodedSize,
+            decodeError: this._decodeError
+          });
         }
-        pendingEntry.leftover.set(this._leftover.subarray(0, this._leftoverLength), 0);
-        pendingEntry.leftoverLength = this._leftoverLength;
+        this._activeDecoder = null;
       }
-      this._leftoverLength = 0;
-    } else if (this._leftoverLength > 0) {
-      this._decodePaddedLeftover();
-      this._leftoverLength = 0;
+      return true;
     }
 
-    // Combine all decoded chunks
-    const imageBytes = this._combineChunks();
+    let decodeError = this._decodeError;
+    let finalCmd = cmd;
+    let decoder = this._activeDecoder;
 
-    return this._handleCommandWithBytesAndCmd(cmd, imageBytes, this._decodeError);
-  }
-
-  /**
-   * TODO: Remove once decoder handles alignment internally.
-   * This and related alignment helpers become unnecessary when decoder.init()
-   * no longer requires decoded size and decoder handles base64 padding.
-   */
-  private _countAlignedPadding(
-    data: Uint32Array,
-    start: number,
-    alignedLength: number
-  ): number {
-    let padding = 0;
-    if (alignedLength >= 1 && this._getAlignedCharFromEnd(data, start, alignedLength, 1) === EQUALS) {
-      padding++;
-    }
-    if (alignedLength >= 2 && this._getAlignedCharFromEnd(data, start, alignedLength, 2) === EQUALS) {
-      padding++;
-    }
-    return padding;
-  }
-
-  private _getAlignedCharFromEnd(
-    data: Uint32Array,
-    start: number,
-    alignedLength: number,
-    offsetFromEnd: number
-  ): number {
-    const index = alignedLength - offsetFromEnd;
-    if (index < this._leftoverLength) {
-      return this._leftover[index];
-    }
-    return data[start + index - this._leftoverLength];
-  }
-
-  /**
-   * TODO: Remove once decoder handles alignment internally
-   */
-  private _decodePaddedLeftover(): void {
-    if (this._decodeError) return;
-    if (this._leftoverLength === 0) return;
-
-    const padded = new Uint32Array(BASE64_ALIGNMENT);
-    padded.set(this._leftover.subarray(0, this._leftoverLength), 0);
-
-    const paddingNeeded = BASE64_ALIGNMENT - this._leftoverLength;
-    for (let i = 0; i < paddingNeeded; i++) {
-      padded[this._leftoverLength + i] = EQUALS;
+    if (pending) {
+      finalCmd = pending.cmd;
+      decoder = pending.decoder;
+      decodeError = decodeError || pending.decodeError;
+      this._pendingTransmissions.delete(pendingKey);
     }
 
-    const decodedSize = 3 - paddingNeeded;
-    if (decodedSize <= 0) return;
-
-    this._decoder.init(decodedSize);
-    if (this._decoder.put(padded, 0, BASE64_ALIGNMENT)) {
-      this._decoder.release();
-      this._decodeError = true;
-      return;
+    let imageBytes = new Uint8Array(0);
+    if (decoder) {
+      if (decoder.end() !== DECODER_SUCCESS) {
+        decodeError = true;
+      }
+      imageBytes = decoder.data8;
+      decoder.release();
     }
+    this._activeDecoder = null;
 
-    if (this._decoder.end()) {
-      this._decoder.release();
-      this._decodeError = true;
-      return;
-    }
-
-    const chunk = new Uint8Array(this._decoder.data8);
-    this._decodedChunks.push(chunk);
-    this._totalDecodedSize += chunk.length;
-    this._decoder.release();
-  }
-
-  private _combineChunks(): Uint8Array {
-    if (this._decodedChunks.length === 0) return new Uint8Array(0);
-    if (this._decodedChunks.length === 1) return this._decodedChunks[0];
-
-    const result = new Uint8Array(this._totalDecodedSize);
-    let offset = 0;
-    for (const chunk of this._decodedChunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return result;
+    return this._handleCommandWithBytesAndCmd(finalCmd, imageBytes, decodeError);
   }
 
   // Command handling
@@ -425,62 +327,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     // 2. For t=f/t/s: decode bytes as UTF-8 string (the path/name), then read file contents
     // 3. For t=d: treat bytes as image data (current behavior)
 
-    const pendingKey = cmd.id ?? 0;
-    const isMoreComing = cmd.more === 1;
-    const pending = this._pendingTransmissions.get(pendingKey);
-
-
-    // For m=1 intermediate chunks, reject if decode error
-    if (decodeError && !pending && isMoreComing) return true;
-
-    if (pending) {
-      // Append to existing pending transmission (even if decode error, we keep accumulated data)
-      if (bytes.length > 0) {
-        pending.chunks.push(bytes);
-        pending.totalSize += bytes.length;
-      }
-      // Track cumulative encoded size for size limit enforcement
-      pending.totalEncodedSize += this._totalEncodedSize;
-
-      if (isMoreComing) return true;
-
-      // Final chunk - merge all (even if the final chunk had a decode error)
-      const fullData = this._mergeChunks(pending.chunks, pending.totalSize);
-      this._pendingTransmissions.delete(pendingKey);
-
-
-      if (fullData.length === 0) return true; // Nothing to store
-
-      const id = pending.cmd.id ?? this._nextImageId++;
-      const image: IKittyImageData = {
-        id,
-        data: fullData,
-        width: pending.cmd.width ?? 0,
-        height: pending.cmd.height ?? 0,
-        format: (pending.cmd.format ?? KittyFormat.PNG) as 24 | 32 | 100,
-        compression: pending.cmd.compression ?? ''
-      };
-      this._images.set(id, image);
-
-      // Note: Don't display here - _handleTransmitDisplay will do it
-      return true;
-    }
-
-    if (isMoreComing) {
-      // Start new pending transmission (reject if decode error for first chunk)
-      if (decodeError) return true;
-      this._pendingTransmissions.set(pendingKey, {
-        cmd: { ...cmd },
-        chunks: bytes.length > 0 ? [bytes] : [],
-        totalSize: bytes.length,
-        totalEncodedSize: this._totalEncodedSize,
-        leftover: new Uint32Array(4),
-        leftoverLength: 0
-      });
-      return true;
-    }
-
-    // Single-chunk transmission - reject if decode error or no data
     if (decodeError || bytes.length === 0) return true;
 
     const id = cmd.id ?? this._nextImageId++;
@@ -494,17 +340,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     };
     this._images.set(id, image);
     return true;
-  }
-
-  private _mergeChunks(chunks: Uint8Array[], totalSize: number): Uint8Array {
-    if (chunks.length === 1) return chunks[0];
-    const result = new Uint8Array(totalSize);
-    let offset = 0;
-    for (const chunk of chunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return result;
   }
 
   private _handleTransmitDisplay(cmd: IKittyCommand, bytes: Uint8Array, decodeError: boolean): boolean | Promise<boolean> {

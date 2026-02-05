@@ -5,6 +5,8 @@
  * Kitty graphics protocol types, constants, and parsing utilities.
  */
 
+import type Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
+
 /**
  * Kitty graphics protocol action types.
  * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'a'.
@@ -101,16 +103,12 @@ export interface IKittyCommand {
 export interface IPendingTransmission {
   /** The parsed command from the first chunk (contains action, format, dimensions, etc.) */
   cmd: IKittyCommand;
-  /** Accumulated decoded payload chunks */
-  chunks: Uint8Array[];
-  /** Total size of accumulated decoded chunks */
-  totalSize: number;
+  /** Decoder used across chunked payloads */
+  decoder: Base64Decoder;
   /** Total encoded (base64) bytes received across all chunks - for size limit enforcement */
   totalEncodedSize: number;
-  /** Leftover base64 bytes (0-3) that weren't aligned in previous chunk */
-  leftover: Uint32Array;
-  /** Number of valid bytes in leftover */
-  leftoverLength: number;
+  /** Whether any chunk has failed to decode */
+  decodeError: boolean;
 }
 
 /**
