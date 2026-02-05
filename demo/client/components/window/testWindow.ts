@@ -738,7 +738,7 @@ function loadTestLongLines(term: Terminal, addons: AddonCollection): void {
 }
 
 function addDecoration(term: Terminal, dim: number = 1): void {
-  term.options['overviewRuler'] = { width: 14 };
+  term.options.scrollbar = { ...(term.options.scrollbar ?? {}), width: 14, overviewRuler: term.options.scrollbar?.overviewRuler ?? {} };
   const marker = term.registerMarker(1);
   const decoration = term.registerDecoration({
     marker,
@@ -755,7 +755,7 @@ function addDecoration(term: Terminal, dim: number = 1): void {
 }
 
 function addOverviewRuler(term: Terminal): void {
-  term.options['overviewRuler'] = { width: 14 };
+  term.options.scrollbar = { ...(term.options.scrollbar ?? {}), width: 14, overviewRuler: term.options.scrollbar?.overviewRuler ?? {} };
   term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
   term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
   term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });

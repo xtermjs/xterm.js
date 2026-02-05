@@ -38,11 +38,12 @@ export class OverviewRulerRenderer extends Disposable {
   private readonly _ctx: CanvasRenderingContext2D;
   private readonly _colorZoneStore: IColorZoneStore = new ColorZoneStore();
   private get _width(): number {
-    const showScrollbar = this._optionsService.rawOptions.scrollbar?.showScrollbar ?? true;
+    const scrollbar = this._optionsService.rawOptions.scrollbar;
+    const showScrollbar = scrollbar?.showScrollbar ?? true;
     if (!showScrollbar) {
       return 0;
     }
-    return this._optionsService.rawOptions.overviewRuler?.width ?? 0;
+    return scrollbar?.width ?? 0;
   }
   private _animationFrame: number | undefined;
 
@@ -99,7 +100,6 @@ export class OverviewRulerRenderer extends Disposable {
     }));
 
     this._register(this._coreBrowserService.onDprChange(() => this._queueRefresh(true)));
-    this._register(this._optionsService.onSpecificOptionChange('overviewRuler', () => this._queueRefresh(true)));
     this._register(this._optionsService.onSpecificOptionChange('scrollbar', () => this._queueRefresh(true)));
     this._register(this._themeService.onChangeColors(() => this._queueRefresh()));
     this._queueRefresh(true);
@@ -181,10 +181,10 @@ export class OverviewRulerRenderer extends Disposable {
   private _renderRulerOutline(): void {
     this._ctx.fillStyle = this._themeService.colors.overviewRulerBorder.css;
     this._ctx.fillRect(0, 0, Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.height);
-    if (this._optionsService.rawOptions.overviewRuler.showTopBorder) {
+    if (this._optionsService.rawOptions.scrollbar?.overviewRuler?.showTopBorder) {
       this._ctx.fillRect(Constants.OVERVIEW_RULER_BORDER_WIDTH, 0, this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH, Constants.OVERVIEW_RULER_BORDER_WIDTH);
     }
-    if (this._optionsService.rawOptions.overviewRuler.showBottomBorder) {
+    if (this._optionsService.rawOptions.scrollbar?.overviewRuler?.showBottomBorder) {
       this._ctx.fillRect(Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.height - Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.width - Constants.OVERVIEW_RULER_BORDER_WIDTH, this._canvas.height);
     }
   }

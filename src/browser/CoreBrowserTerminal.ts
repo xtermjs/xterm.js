@@ -617,17 +617,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 
     const showScrollbar = this.options.scrollbar?.showScrollbar ?? true;
-    if (showScrollbar && this.options.overviewRuler.width) {
+    const overviewRulerWidth = this.options.scrollbar?.width;
+    if (showScrollbar && overviewRulerWidth) {
       this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
     }
-    this.optionsService.onSpecificOptionChange('overviewRuler', value => {
-      const shouldShow = (this.options.scrollbar?.showScrollbar ?? true) && !!value?.width;
-      if (!this._overviewRulerRenderer && shouldShow && this._viewportElement && this.screenElement) {
-        this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
-      }
-    });
     this.optionsService.onSpecificOptionChange('scrollbar', value => {
-      const shouldShow = (value?.showScrollbar ?? true) && !!this.options.overviewRuler.width;
+      const shouldShow = (value?.showScrollbar ?? true) && !!value?.width;
       if (!this._overviewRulerRenderer && shouldShow && this._viewportElement && this.screenElement) {
         this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
       }

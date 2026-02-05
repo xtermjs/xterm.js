@@ -115,19 +115,20 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       'documentOverride',
       'linkHandler',
       'logger',
-      'overviewRuler',
       'quirks',
       'theme',
       'vtExtensions',
       'windowOptions',
       'windowsPty',
     ];
-    const nestedBooleanOptions: { label: string, parent: string, prop: string }[] = [
-      { label: 'scrollbar.showScrollbar', parent: 'scrollbar', prop: 'showScrollbar' },
-      { label: 'scrollbar.showArrows', parent: 'scrollbar', prop: 'showArrows' },
-      { label: 'vtExtensions.kittyKeyboard', parent: 'vtExtensions', prop: 'kittyKeyboard' },
-      { label: 'vtExtensions.kittySgrBoldFaintControl', parent: 'vtExtensions', prop: 'kittySgrBoldFaintControl' },
-      { label: 'vtExtensions.win32InputMode', parent: 'vtExtensions', prop: 'win32InputMode' }
+    const nestedBooleanOptions: { label: string, path: string[], prop: string }[] = [
+      { label: 'scrollbar.showScrollbar', path: ['scrollbar'], prop: 'showScrollbar' },
+      { label: 'scrollbar.showArrows', path: ['scrollbar'], prop: 'showArrows' },
+      { label: 'scrollbar.overviewRuler.showTopBorder', path: ['scrollbar', 'overviewRuler'], prop: 'showTopBorder' },
+      { label: 'scrollbar.overviewRuler.showBottomBorder', path: ['scrollbar', 'overviewRuler'], prop: 'showBottomBorder' },
+      { label: 'vtExtensions.kittyKeyboard', path: ['vtExtensions'], prop: 'kittyKeyboard' },
+      { label: 'vtExtensions.kittySgrBoldFaintControl', path: ['vtExtensions'], prop: 'kittySgrBoldFaintControl' },
+      { label: 'vtExtensions.win32InputMode', path: ['vtExtensions'], prop: 'win32InputMode' }
     ];
     const stringOptions: { [key: string]: string[] | null } = {
       cursorStyle: ['block', 'underline', 'bar'],
@@ -163,8 +164,10 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
     booleanOptions.forEach(o => {
       html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${(this._terminal.options as Record<string, unknown>)[o] ? 'checked' : ''}/> ${o}</label></div>`;
     });
-    nestedBooleanOptions.forEach(({ label, parent, prop }) => {
-      const checked = (this._terminal.options as Record<string, Record<string, unknown> | undefined>)[parent]?.[prop] ?? false;
+    nestedBooleanOptions.forEach(({ label, path, prop }) => {
+      const options = this._terminal.options as Record<string, unknown>;
+      const parent = path.reduce<Record<string, unknown> | undefined>((acc, key) => (acc as Record<string, unknown> | undefined)?.[key] as Record<string, unknown> | undefined, options);
+      const checked = (parent as Record<string, unknown> | undefined)?.[prop] ?? false;
       html += `<div class="option"><label><input id="opt-${label.replace('.', '-')}" type="checkbox" ${checked ? 'checked' : ''}/> ${label}</label></div>`;
     });
     html += '</div><div class="option-group">';
@@ -198,11 +201,22 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
         }
       });
     });
-    nestedBooleanOptions.forEach(({ label, parent, prop }) => {
+    nestedBooleanOptions.forEach(({ label, path, prop }) => {
       const input = document.getElementById(`opt-${label.replace('.', '-')}`) as HTMLInputElement;
       addDomListener(input, 'change', () => {
         console.log('change', label, input.checked);
-        (this._terminal.options as Record<string, unknown>)[parent] = { ...(this._terminal.options as Record<string, Record<string, unknown> | undefined>)[parent], [prop]: input.checked };
+        const options = this._terminal.options as Record<string, unknown>;
+        if (path.length === 1) {
+          const parentKey = path[0];
+          options[parentKey] = { ...(options[parentKey] as Record<string, unknown> | undefined), [prop]: input.checked };
+          return;
+        }
+        if (path.length === 2) {
+          const [parentKey, childKey] = path;
+          const parent = (options[parentKey] as Record<string, unknown> | undefined) ?? {};
+          const child = (parent[childKey] as Record<string, unknown> | undefined) ?? {};
+          options[parentKey] = { ...parent, [childKey]: { ...child, [prop]: input.checked } };
+        }
       });
     });
     numberOptions.forEach(o => {
