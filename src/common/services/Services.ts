@@ -265,7 +265,6 @@ export interface ITerminalOptions {
   windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
-  overviewRuler?: IOverviewRulerOptions;
   quirks?: ITerminalQuirks;
   scrollbar?: IScrollbarOptions;
   scrollOnEraseInDisplay?: boolean;
@@ -313,6 +312,8 @@ export interface ITerminalQuirks {
 export interface IScrollbarOptions {
   showScrollbar?: boolean;
   showArrows?: boolean;
+  width?: number;
+  overviewRuler?: IOverviewRulerOptions;
 }
 
 export interface IVtExtensions {

@@ -72,7 +72,7 @@ export class FitAddon implements ITerminalAddon, IFitApi {
     const showScrollbar = this._terminal.options.scrollbar?.showScrollbar ?? true;
     const scrollbarWidth = (this._terminal.options.scrollback === 0 || !showScrollbar
       ? 0
-      : (this._terminal.options.overviewRuler?.width ?? ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
+      : (this._terminal.options.scrollbar?.width ?? ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
     const parentElementStyle = _getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
