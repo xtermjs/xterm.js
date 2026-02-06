@@ -308,9 +308,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     switch (action) {
       case KittyAction.TRANSMIT:
-        return this._handleTransmit(cmd, bytes, decodeError);
+        return this._handleTransmit(cmd, new Uint8Array(bytes), decodeError);
       case KittyAction.TRANSMIT_DISPLAY:
-        return this._handleTransmitDisplay(cmd, bytes, decodeError);
+        return this._handleTransmitDisplay(cmd, new Uint8Array(bytes), decodeError);
       case KittyAction.QUERY:
         return this._handleQuery(cmd, bytes, decodeError);
       default:
