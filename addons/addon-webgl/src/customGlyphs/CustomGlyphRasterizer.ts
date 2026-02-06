@@ -22,14 +22,15 @@ export function tryDrawCustomGlyph(
   deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
-  backgroundColor?: string
+  backgroundColor?: string,
+  variantOffset: number = 0
 ): boolean {
   const unifiedCharDefinition = customGlyphDefinitions[c];
   if (unifiedCharDefinition) {
     // Normalize to array for uniform handling
     const parts = Array.isArray(unifiedCharDefinition) ? unifiedCharDefinition : [unifiedCharDefinition];
     for (const part of parts) {
-      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, fontSize, devicePixelRatio, backgroundColor);
+      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, fontSize, devicePixelRatio, backgroundColor, variantOffset);
     }
     return true;
   }
@@ -48,7 +49,8 @@ function drawDefinitionPart(
   deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
-  backgroundColor?: string
+  backgroundColor?: string,
+  variantOffset: number = 0
 ): void {
   // Handle scaleType - adjust dimensions and offset when scaling to character area
   let drawWidth = deviceCellWidth;
@@ -74,7 +76,7 @@ function drawDefinitionPart(
       drawBlockVectorChar(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
       break;
     case CustomGlyphDefinitionType.BLOCK_PATTERN:
-      drawPatternChar(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
+      drawPatternChar(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, variantOffset);
       break;
     case CustomGlyphDefinitionType.PATH_FUNCTION:
       drawPathFunctionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
@@ -437,7 +439,8 @@ function drawPatternChar(
   xOffset: number,
   yOffset: number,
   deviceCellWidth: number,
-  deviceCellHeight: number
+  deviceCellHeight: number,
+  variantOffset: number = 0
 ): void {
   let patternSet = cachedPatterns.get(charDefinition);
   if (!patternSet) {
@@ -485,6 +488,15 @@ function drawPatternChar(
     tmpCtx.putImageData(imageData, 0, 0);
     pattern = throwIfFalsy(ctx.createPattern(tmpCanvas, null));
     patternSet.set(fillStyle, pattern);
+  }
+  // Apply pattern offset to ensure seamless tiling across cells when cell dimensions are odd.
+  // variantOffset encodes: bit 1 = x pixel shift, bit 0 = y pixel shift.
+  const dx = (variantOffset >> 1) & 1;
+  const dy = variantOffset & 1;
+  if (dx !== 0 || dy !== 0) {
+    pattern.setTransform(new DOMMatrix().translateSelf(-dx, -dy));
+  } else {
+    pattern.setTransform(new DOMMatrix());
   }
   ctx.fillStyle = pattern;
   ctx.fillRect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);

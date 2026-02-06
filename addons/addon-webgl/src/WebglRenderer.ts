@@ -500,7 +500,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
 
         // Load colors/resolve overrides into work colors
-        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
+        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width, this.dimensions.device.cell.height);
 
         // Override colors for cursor cell
         if (isCursorVisible && row === cursorY) {
