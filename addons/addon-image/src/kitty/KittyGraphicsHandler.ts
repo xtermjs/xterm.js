@@ -6,7 +6,7 @@
 import { IApcHandler, IImageAddonOptions, IResetHandler, ITerminalExt } from '../Types';
 import { ImageRenderer } from '../ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from '../ImageStorage';
-import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
+import Base64Decoder, { type DecodeStatus } from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import {
   KittyAction,
   KittyFormat,
@@ -23,7 +23,9 @@ import {
 // Memory limit for base64 decoder (4MB, same as IIPHandler)
 const DECODER_KEEP_DATA = 4194304;
 const DECODER_INITIAL_DATA = 4194304; // 4MB
-const DECODER_SUCCESS = 0;
+
+// Local mirror of const enum (esbuild can't inline const enums from external packages)
+const DECODER_OK: DecodeStatus.OK = 0;
 
 // Maximum control data size
 const MAX_CONTROL_DATA_SIZE = 512;
@@ -191,7 +193,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       this._activeDecoder.init();
     }
 
-    if (this._activeDecoder.put(data.subarray(start, end)) !== DECODER_SUCCESS) {
+    if (this._activeDecoder.put(data.subarray(start, end)) !== DECODER_OK) {
       this._activeDecoder.release();
       this._activeDecoder = null;
       this._decodeError = true;
@@ -258,7 +260,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     let imageBytes = new Uint8Array(0);
     if (decoder) {
-      if (decoder.end() !== DECODER_SUCCESS) {
+      if (decoder.end() !== DECODER_OK) {
         decodeError = true;
       }
       imageBytes = decoder.data8;

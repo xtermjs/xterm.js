@@ -5,14 +5,16 @@
 import { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
-import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
+import Base64Decoder, { type DecodeStatus } from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
 // limit hold memory in base64 decoder (encoded bytes)
 const KEEP_DATA = 4194304;
 const INITIAL_DATA = 1048576;
-const DECODER_SUCCESS = 0;
+
+// Local mirror of const enum (esbuild can't inline const enums from external packages)
+const DECODER_OK: DecodeStatus.OK = 0;
 
 // default IIP header values
 const DEFAULT_HEADER: IHeaderFields = {
@@ -56,7 +58,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     if (this._aborted) return;
 
     if (this._hp.state === HeaderState.END) {
-      if (this._dec.put(data.subarray(start, end)) !== DECODER_SUCCESS) {
+      if (this._dec.put(data.subarray(start, end)) !== DECODER_OK) {
         this._dec.release();
         this._aborted = true;
       }
@@ -73,7 +75,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
           return;
         }
         this._dec.init();
-        if (this._dec.put(data.subarray(dataPos, end)) !== DECODER_SUCCESS) {
+        if (this._dec.put(data.subarray(dataPos, end)) !== DECODER_OK) {
           this._dec.release();
           this._aborted = true;
         }
