@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, IAttributeData, ICellData, IExtendedAttrs } from 'common/Types';
+import { CharData, ICellData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
@@ -110,20 +110,19 @@ export class CellData extends AttributeData implements ICellData {
       return false;
     }
     if (this.isUnderline()) {
-      const otherData = other as unknown as IAttributeData;
-      if (this.getUnderlineStyle() !== otherData.getUnderlineStyle()) {
+      if (this.getUnderlineStyle() !== other.getUnderlineStyle()) {
         return false;
       }
       const thisDefault = this.isUnderlineColorDefault();
-      const otherDefault = otherData.isUnderlineColorDefault();
+      const otherDefault = other.isUnderlineColorDefault();
       if (!(thisDefault && otherDefault)) {
         if (thisDefault !== otherDefault) {
           return false;
         }
-        if (this.getUnderlineColor() !== otherData.getUnderlineColor()) {
+        if (this.getUnderlineColor() !== other.getUnderlineColor()) {
           return false;
         }
-        if (this.getUnderlineColorMode() !== otherData.getUnderlineColorMode()) {
+        if (this.getUnderlineColorMode() !== other.getUnderlineColorMode()) {
           return false;
         }
       }
