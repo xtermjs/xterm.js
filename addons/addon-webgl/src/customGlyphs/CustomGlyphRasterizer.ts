@@ -512,6 +512,11 @@ function drawPathFunctionCharacter(
   devicePixelRatio: number,
   strokeWidth?: number
 ): void {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(xOffset, yOffset, deviceCellWidth, deviceCellHeight);
+  ctx.clip();
+
   ctx.beginPath();
   let actualInstructions: string;
   if (typeof charDefinition === 'function') {
@@ -538,7 +543,7 @@ function drawPathFunctionCharacter(
     if (!args[0] || !args[1]) {
       continue;
     }
-    f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio), state);
+    f(ctx, translateArgs(args, deviceCellWidth, deviceCellHeight, xOffset, yOffset, true, devicePixelRatio, 0, 0, false), state);
     state.lastCommand = type;
   }
   if (strokeWidth !== undefined) {
@@ -549,6 +554,7 @@ function drawPathFunctionCharacter(
     ctx.fill();
   }
   ctx.closePath();
+  ctx.restore();
 }
 
 /**
@@ -697,7 +703,7 @@ const svgToCanvasInstructionMap: { [index: string]: (ctx: CanvasRenderingContext
   }
 };
 
-function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, devicePixelRatio: number, leftPadding: number = 0, rightPadding: number = 0): number[] {
+function translateArgs(args: string[], cellWidth: number, cellHeight: number, xOffset: number, yOffset: number, doClamp: boolean, devicePixelRatio: number, leftPadding: number = 0, rightPadding: number = 0, clampToCell: boolean = true): number[] {
   const result = args.map(e => parseFloat(e) || parseInt(e));
 
   if (result.length < 2) {
@@ -707,10 +713,11 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
   for (let x = 0; x < result.length; x += 2) {
     // Translate from 0-1 to 0-cellWidth
     result[x] *= cellWidth - (leftPadding * devicePixelRatio) - (rightPadding * devicePixelRatio);
-    // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
-    // line at 100% devicePixelRatio
+    // Round to the nearest 0.5 to ensure a crisp line at 100% devicePixelRatio, and optionally
+    // clamp to the cell bounds.
     if (doClamp && result[x] !== 0) {
-      result[x] = clamp(Math.round(result[x] + 0.5) - 0.5, cellWidth, 0);
+      const rounded = Math.round(result[x] + 0.5) - 0.5;
+      result[x] = clampToCell ? clamp(rounded, cellWidth, 0) : rounded;
     }
     // Apply the cell's offset (ie. x*cellWidth)
     result[x] += xOffset + (leftPadding * devicePixelRatio);
@@ -719,10 +726,11 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
   for (let y = 1; y < result.length; y += 2) {
     // Translate from 0-1 to 0-cellHeight
     result[y] *= cellHeight;
-    // Ensure coordinate doesn't escape cell bounds and round to the nearest 0.5 to ensure a crisp
-    // line at 100% devicePixelRatio
+    // Round to the nearest 0.5 to ensure a crisp line at 100% devicePixelRatio, and optionally
+    // clamp to the cell bounds.
     if (doClamp && result[y] !== 0) {
-      result[y] = clamp(Math.round(result[y] + 0.5) - 0.5, cellHeight, 0);
+      const rounded = Math.round(result[y] + 0.5) - 0.5;
+      result[y] = clampToCell ? clamp(rounded, cellHeight, 0) : rounded;
     }
     // Apply the cell's offset (ie. x*cellHeight)
     result[y] += yOffset;
