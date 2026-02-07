@@ -1853,6 +1853,26 @@ declare module '@xterm/xterm' {
 
     /** Whether the cell has the default attribute (no color or style). */
     isAttributeDefault(): boolean;
+
+    /** Gets the underline style, see {@link UnderlineStyle}. */
+    getUnderlineStyle(): number;
+    /** Gets the underline color number, following the same rules as foreground colors. */
+    getUnderlineColor(): number;
+    /** Gets the underline color mode, see {@link Attributes.CM_DEFAULT} etc. */
+    getUnderlineColorMode(): number;
+    /** Whether the cell is using the RGB underline color mode. */
+    isUnderlineColorRGB(): boolean;
+    /** Whether the cell is using the palette underline color mode. */
+    isUnderlineColorPalette(): boolean;
+    /** Whether the cell is using the default underline color mode. */
+    isUnderlineColorDefault(): boolean;
+
+    /**
+     * Compares the cell's attributes (colors and styles) with another cell.
+     * This does not compare the cell's content and excludes URL ids and
+     * underline variant offsets.
+     */
+    attributesEquals(other: IBufferCell): boolean;
   }
 
   /**

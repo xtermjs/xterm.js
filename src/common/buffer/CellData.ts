@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { CharData, ICellData, IExtendedAttrs } from 'common/Types';
+import { CharData, IAttributeData, ICellData, IExtendedAttrs } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
+import type { IBufferCell as IBufferCellApi } from '@xterm/xterm';
 
 /**
  * CellData - represents a single Cell in the terminal buffer.
@@ -91,4 +92,61 @@ export class CellData extends AttributeData implements ICellData {
   public getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
+
+  public attributesEquals(other: IBufferCellApi): boolean {
+    if (this.getFgColorMode() !== other.getFgColorMode() || this.getFgColor() !== other.getFgColor()) {
+      return false;
+    }
+    if (this.getBgColorMode() !== other.getBgColorMode() || this.getBgColor() !== other.getBgColor()) {
+      return false;
+    }
+    if (this.isInverse() !== other.isInverse()) {
+      return false;
+    }
+    if (this.isBold() !== other.isBold()) {
+      return false;
+    }
+    if (this.isUnderline() !== other.isUnderline()) {
+      return false;
+    }
+    if (this.isUnderline()) {
+      const otherData = other as unknown as IAttributeData;
+      if (this.getUnderlineStyle() !== otherData.getUnderlineStyle()) {
+        return false;
+      }
+      const thisDefault = this.isUnderlineColorDefault();
+      const otherDefault = otherData.isUnderlineColorDefault();
+      if (!(thisDefault && otherDefault)) {
+        if (thisDefault !== otherDefault) {
+          return false;
+        }
+        if (this.getUnderlineColor() !== otherData.getUnderlineColor()) {
+          return false;
+        }
+        if (this.getUnderlineColorMode() !== otherData.getUnderlineColorMode()) {
+          return false;
+        }
+      }
+    }
+    if (this.isOverline() !== other.isOverline()) {
+      return false;
+    }
+    if (this.isBlink() !== other.isBlink()) {
+      return false;
+    }
+    if (this.isInvisible() !== other.isInvisible()) {
+      return false;
+    }
+    if (this.isItalic() !== other.isItalic()) {
+      return false;
+    }
+    if (this.isDim() !== other.isDim()) {
+      return false;
+    }
+    if (this.isStrikethrough() !== other.isStrikethrough()) {
+      return false;
+    }
+    return true;
+  }
+
 }

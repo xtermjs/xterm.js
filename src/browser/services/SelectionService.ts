@@ -11,7 +11,7 @@ import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 
 import { ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
-import { IBufferLine, IDisposable } from 'common/Types';
+import { IBufferLine, ICellData, IDisposable } from 'common/Types';
 import { getRangeLength } from 'common/buffer/BufferRange';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
@@ -1021,7 +1021,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * word logic.
    * @param cell The cell to check.
    */
-  private _isCharWordSeparator(cell: CellData): boolean {
+  private _isCharWordSeparator(cell: ICellData): boolean {
     // Zero width characters are never separators as they are always to the
     // right of wide characters
     if (cell.getWidth() === 0) {
