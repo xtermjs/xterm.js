@@ -644,8 +644,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   ] },
 
   // Diagonal fill characters (1FB98-1FB99)
-  '\u{1FB98}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,0 L1,1 M0,.25 L.75,1 M0,.5 L.5,1 M0,.75 L.25,1 M.25,0 L1,.75 M.5,0 L1,.5 M.75,0 L1,.25', strokeWidth: 1 }, // UPPER LEFT TO LOWER RIGHT FILL
-  '\u{1FB99}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M0,.25 L.25,0 M0,.5 L.5,0 M0,.75 L.75,0 M0,1 L1,0 M.25,1 L1,.25 M.5,1 L1,.5 M.75,1 L1,.75', strokeWidth: 1 }, // UPPER RIGHT TO LOWER LEFT FILL
+  '\u{1FB98}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M-0.25,-0.25 L1.25,1.25 M-0.25,0 L1,1.25 M-0.25,0.25 L0.75,1.25 M-0.25,0.5 L0.5,1.25 M0,-0.25 L1.25,1 M0.25,-0.25 L1.25,0.75 M0.5,-0.25 L1.25,0.5 M-0.25,0.75 L0.25,1.25 M0.75,-0.25 L1.25,0.25', strokeWidth: 1 }, // UPPER LEFT TO LOWER RIGHT FILL
+  '\u{1FB99}': { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: 'M-0.25,0.5 L0.5,-0.25 M-0.25,0.75 L0.75,-0.25 M-0.25,1 L1,-0.25 M-0.25,1.25 L1.25,-0.25 M0,1.25 L1.25,0 M0.25,1.25 L1.25,0.25 M0.5,1.25 L1.25,0.5 M-0.25,0.25 L0.25,-0.25 M0.75,1.25 L1.25,0.75', strokeWidth: 1 }, // UPPER RIGHT TO LOWER LEFT FILL
 
   // Smooth mosaic terminal graphic characters (1FB9A-1FB9B)
   '\u{1FB9A}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L.5,.5 L0,1 L1,1 L.5,.5 L1,0', type: CustomGlyphVectorType.FILL } }, // UPPER AND LOWER TRIANGULAR HALF BLOCK
