@@ -203,6 +203,46 @@ test.describe('SerializeAddon', () => {
     strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), lines.join('\r\n'));
   });
 
+  test('buffer cell attributesEquals compares underline style and color', async () => {
+    await ctx.proxy.write(`${sgr(UNDERLINE_DOUBLE, UNDERLINE_COLOR_RED)}A${sgr(UNDERLINE_DOUBLE, UNDERLINE_COLOR_RED)}B${sgr(NORMAL)}`);
+    const sameAttributes = await ctx.page.evaluate(`(() => {
+      const line = window.term.buffer.active.getLine(0);
+      const cellA = line?.getCell(0);
+      const cellB = line?.getCell(1);
+      if (!cellA || !cellB) {
+        return undefined;
+      }
+      return cellA.attributesEquals(cellB);
+    })()`);
+    strictEqual(sameAttributes, true);
+
+    await ctx.page.evaluate(`window.term.reset()`);
+    await ctx.proxy.write(`${sgr(UNDERLINE_DOUBLE, UNDERLINE_COLOR_RED)}A${sgr(UNDERLINE_DOUBLE, UNDERLINE_COLOR_GREEN)}B${sgr(NORMAL)}`);
+    const differentColor = await ctx.page.evaluate(`(() => {
+      const line = window.term.buffer.active.getLine(0);
+      const cellA = line?.getCell(0);
+      const cellB = line?.getCell(1);
+      if (!cellA || !cellB) {
+        return undefined;
+      }
+      return cellA.attributesEquals(cellB);
+    })()`);
+    strictEqual(differentColor, false);
+
+    await ctx.page.evaluate(`window.term.reset()`);
+    await ctx.proxy.write(`${sgr(UNDERLINE_DOUBLE, UNDERLINE_COLOR_RED)}A${sgr(UNDERLINED, UNDERLINE_COLOR_RED)}B${sgr(NORMAL)}`);
+    const differentStyle = await ctx.page.evaluate(`(() => {
+      const line = window.term.buffer.active.getLine(0);
+      const cellA = line?.getCell(0);
+      const cellB = line?.getCell(1);
+      if (!cellA || !cellB) {
+        return undefined;
+      }
+      return cellA.attributesEquals(cellB);
+    })()`);
+    strictEqual(differentStyle, false);
+  });
+
   test('serialize all rows of content with color256', async function(): Promise<any> {
     const rows = 32;
     const cols = 10;
@@ -602,6 +642,9 @@ const BOLD = '1';
 const DIM = '2';
 const ITALIC = '3';
 const UNDERLINED = '4';
+const UNDERLINE_DOUBLE = '4:2';
+const UNDERLINE_COLOR_RED = '58;5;196';
+const UNDERLINE_COLOR_GREEN = '58;5;46';
 const BLINK = '5';
 const INVERSE = '7';
 const INVISIBLE = '8';

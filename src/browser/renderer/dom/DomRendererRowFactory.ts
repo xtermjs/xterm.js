@@ -124,7 +124,7 @@ export class DomRendererRowFactory {
       // Process any joined character ranges as needed. Because of how the
       // ranges are produced, we know that they are valid for the characters
       // and attributes of our input.
-      let cell = this._workCell;
+      let cell: ICellData = this._workCell;
       if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
         const range = joinedRanges.shift()!;
         // If the ligature's selection state is not consistent, don't join it. This helps the
