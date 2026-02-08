@@ -65,7 +65,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private _pendingTransmissions: Map<number, IPendingTransmission> = new Map();
   private _nextImageId = 1;
   private _images: Map<number, IKittyImageData> = new Map();
-  private _decodedImages: Map<number, ImageBitmap> = new Map();
 
   constructor(
     private readonly _opts: IImageAddonOptions,
@@ -89,10 +88,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       this._activeDecoder = null;
     }
     this._images.clear();
-    for (const bitmap of this._decodedImages.values()) {
-      bitmap.close();
-    }
-    this._decodedImages.clear();
   }
 
   public start(): void {
@@ -410,17 +405,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     if (id !== undefined) {
       this._images.delete(id);
-      const bitmap = this._decodedImages.get(id);
-      if (bitmap) {
-        bitmap.close();
-        this._decodedImages.delete(id);
-      }
     } else {
       this._images.clear();
-      for (const bitmap of this._decodedImages.values()) {
-        bitmap.close();
-      }
-      this._decodedImages.clear();
     }
     return true;
   }
@@ -443,12 +429,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   }
 
   private async _decodeAndDisplay(image: IKittyImageData, columns?: number, rows?: number): Promise<void> {
-    let bitmap = this._decodedImages.get(image.id);
-
-    if (!bitmap) {
-      bitmap = await this._createBitmap(image);
-      this._decodedImages.set(image.id, bitmap);
-    }
+    const bitmap = await this._createBitmap(image);
 
     let w = bitmap.width;
     let h = bitmap.height;
