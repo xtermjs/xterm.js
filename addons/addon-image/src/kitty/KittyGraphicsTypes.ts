@@ -116,8 +116,8 @@ export interface IPendingTransmission {
  */
 export interface IKittyImageData {
   id: number;
-  /** Decoded image bytes (already decoded from base64) */
-  data: Uint8Array;
+  /** Decoded image data stored as Blob (off JS heap) to avoid 2GB heap limit */
+  data: Blob;
   width: number;
   height: number;
   format: 24 | 32 | 100;

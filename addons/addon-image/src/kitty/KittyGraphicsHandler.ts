@@ -303,9 +303,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     switch (action) {
       case KittyAction.TRANSMIT:
-        return this._handleTransmit(cmd, new Uint8Array(bytes), decodeError);
+        return this._handleTransmit(cmd, bytes, decodeError);
       case KittyAction.TRANSMIT_DISPLAY:
-        return this._handleTransmitDisplay(cmd, new Uint8Array(bytes), decodeError);
+        return this._handleTransmitDisplay(cmd, bytes, decodeError);
       case KittyAction.QUERY:
         return this._handleQuery(cmd, bytes, decodeError);
       default:
@@ -329,7 +329,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const id = cmd.id ?? this._nextImageId++;
     const image: IKittyImageData = {
       id,
-      data: bytes,
+      data: new Blob([bytes as BlobPart]),
       width: cmd.width ?? 0,
       height: cmd.height ?? 0,
       format: (cmd.format ?? KittyFormat.PNG) as 24 | 32 | 100,
@@ -475,8 +475,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
    * Create ImageBitmap from already-decoded image data.
    */
   private async _createBitmap(image: IKittyImageData): Promise<ImageBitmap> {
-    let bytes = image.data;
-
+    let bytes: Uint8Array = new Uint8Array(await image.data.arrayBuffer());
 
     if (image.compression === KittyCompression.ZLIB) {
       bytes = await this._decompressZlib(bytes);

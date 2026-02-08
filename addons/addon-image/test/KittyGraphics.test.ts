@@ -156,7 +156,11 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=99;${part2}\x1b\\`);
       await timeout(100);
 
-      const storedData = await ctx.page.evaluate(`Array.from(window.imageAddon._handlers.get('kitty').images.get(99).data)`);
+      const storedData = await ctx.page.evaluate(async () => {
+        const blob = (window as any).imageAddon._handlers.get('kitty').images.get(99).data;
+        const buffer = await blob.arrayBuffer();
+        return Array.from(new Uint8Array(buffer));
+      });
       deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
     });
 
