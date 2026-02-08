@@ -259,11 +259,17 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
         decodeError = true;
       }
       imageBytes = decoder.data8;
-      decoder.release();
     }
     this._activeDecoder = null;
 
-    return this._handleCommandWithBytesAndCmd(finalCmd, imageBytes, decodeError);
+    // Handle command first — handlers create Blob/ImageData from imageBytes,
+    // which copies the data. Only then is it safe to release the decoder's
+    // wasm memory that imageBytes points into.
+    const result = this._handleCommandWithBytesAndCmd(finalCmd, imageBytes, decodeError);
+    if (decoder) {
+      decoder.release();
+    }
+    return result;
   }
 
   // Command handling
