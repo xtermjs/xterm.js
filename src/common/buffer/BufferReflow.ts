@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { BufferLine } from 'common/buffer/BufferLine';
-import { CircularList } from 'common/CircularList';
-import { IBufferLine, ICellData } from 'common/Types';
+import { CellData } from 'common/buffer/CellData';
+import { ICircularList, IBufferLine, ICellData } from 'common/Types';
 
 export interface INewLayoutResult {
   layout: number[];
@@ -22,7 +21,7 @@ export interface INewLayoutResult {
  * @param nullCell The cell data to use when filling in empty cells.
  * @param reflowCursorLine Whether to reflow the line containing the cursor.
  */
-export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData, reflowCursorLine: boolean): number[] {
+export function reflowLargerGetLinesToRemove(lines: ICircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData, reflowCursorLine: boolean): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
   const toRemove: number[] = [];
@@ -30,16 +29,16 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
   for (let y = 0; y < lines.length - 1; y++) {
     // Check if this row is wrapped
     let i = y;
-    let nextLine = lines.get(++i) as BufferLine;
+    let nextLine = lines.get(++i) as IBufferLine;
     if (!nextLine.isWrapped) {
       continue;
     }
 
     // Check how many lines it's wrapped for
-    const wrappedLines: BufferLine[] = [lines.get(y) as BufferLine];
+    const wrappedLines: IBufferLine[] = [lines.get(y) as IBufferLine];
     while (i < lines.length && nextLine.isWrapped) {
       wrappedLines.push(nextLine);
-      nextLine = lines.get(++i) as BufferLine;
+      nextLine = lines.get(++i) as IBufferLine;
     }
 
     if (!reflowCursorLine) {
@@ -62,7 +61,7 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
       const destRemainingCells = newCols - destCol;
       const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
 
-      wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy, false);
+      copyCells(wrappedLines[srcLineIndex], wrappedLines[destLineIndex], srcCol, destCol, cellsToCopy);
 
       destCol += cellsToCopy;
       if (destCol === newCols) {
@@ -78,7 +77,7 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
       // Make sure the last cell isn't wide, if it is copy it to the current dest
       if (destCol === 0 && destLineIndex !== 0) {
         if (wrappedLines[destLineIndex - 1].getWidth(newCols - 1) === 2) {
-          wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[destLineIndex - 1], newCols - 1, destCol++, 1, false);
+          copyCells(wrappedLines[destLineIndex - 1], wrappedLines[destLineIndex], newCols - 1, destCol++, 1);
           // Null out the end of the last row
           wrappedLines[destLineIndex - 1].setCell(newCols - 1, nullCell);
         }
@@ -113,7 +112,7 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
  * @param lines The buffer lines.
  * @param toRemove The indexes to remove.
  */
-export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, toRemove: number[]): INewLayoutResult {
+export function reflowLargerCreateNewLayout(lines: ICircularList<IBufferLine>, toRemove: number[]): INewLayoutResult {
   const layout: number[] = [];
   // First iterate through the list and get the actual indexes to use for rows
   let nextToRemoveIndex = 0;
@@ -148,11 +147,11 @@ export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, to
  * @param lines The buffer lines.
  * @param newLayout The new layout to apply.
  */
-export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, newLayout: number[]): void {
+export function reflowLargerApplyNewLayout(lines: ICircularList<IBufferLine>, newLayout: number[]): void {
   // Record original lines so they don't get overridden when we rearrange the list
-  const newLayoutLines: BufferLine[] = [];
+  const newLayoutLines: IBufferLine[] = [];
   for (let i = 0; i < newLayout.length; i++) {
-    newLayoutLines.push(lines.get(newLayout[i]) as BufferLine);
+    newLayoutLines.push((lines.get(newLayout[i]) as IBufferLine).clone());
   }
 
   // Rearrange the list
@@ -176,7 +175,7 @@ export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, new
  * @param oldCols The columns before resize.
  * @param newCols The columns after resize.
  */
-export function reflowSmallerGetNewLineLengths(wrappedLines: BufferLine[], oldCols: number, newCols: number): number[] {
+export function reflowSmallerGetNewLineLengths(wrappedLines: IBufferLine[], oldCols: number, newCols: number): number[] {
   const newLineLengths: number[] = [];
   const cellsNeeded = wrappedLines.map((l, i) => getWrappedLineTrimmedLength(wrappedLines, i, oldCols)).reduce((p, c) => p + c);
 
@@ -209,7 +208,7 @@ export function reflowSmallerGetNewLineLengths(wrappedLines: BufferLine[], oldCo
   return newLineLengths;
 }
 
-export function getWrappedLineTrimmedLength(lines: BufferLine[], i: number, cols: number): number {
+export function getWrappedLineTrimmedLength(lines: IBufferLine[], i: number, cols: number): number {
   // If this is the last row in the wrapped line, get the actual trimmed length
   if (i === lines.length - 1) {
     return lines[i].getTrimmedLength();
@@ -223,4 +222,18 @@ export function getWrappedLineTrimmedLength(lines: BufferLine[], i: number, cols
     return cols - 1;
   }
   return cols;
+}
+
+const workCell = new CellData();
+
+function copyCells(src: IBufferLine, dest: IBufferLine, srcCol: number, destCol: number, length: number): void {
+  if (src === dest && destCol > srcCol) {
+    for (let i = length - 1; i >= 0; i--) {
+      dest.setCell(destCol + i, src.loadCell(srcCol + i, workCell));
+    }
+    return;
+  }
+  for (let i = 0; i < length; i++) {
+    dest.setCell(destCol + i, src.loadCell(srcCol + i, workCell));
+  }
 }

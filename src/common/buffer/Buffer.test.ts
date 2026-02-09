@@ -5,7 +5,6 @@
 
 import { assert } from 'chai';
 import { Buffer } from 'common/buffer/Buffer';
-import { CircularList } from 'common/CircularList';
 import { MockOptionsService, MockBufferService, MockLogService } from 'common/TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
@@ -28,7 +27,6 @@ describe('Buffer', () => {
 
   describe('constructor', () => {
     it('should create a CircularList with max length equal to rows + scrollback, for its lines', () => {
-      assert.instanceOf(buffer.lines, CircularList);
       assert.equal(buffer.lines.maxLength, bufferService.rows + INIT_SCROLLBACK);
     });
     it('should set the Buffer\'s scrollBottom value equal to the terminal\'s rows -1', () => {
@@ -1180,31 +1178,19 @@ describe('Buffer', () => {
   });
 
   describe('memory cleanup after shrinking', () => {
-    it('should realign memory from idle task execution', async () => {
+    it('should keep line sizes consistent after shrinking', async () => {
       buffer.fillViewportRows();
 
       // shrink more than 2 times to trigger lazy memory cleanup
       buffer.resize(INIT_COLS / 2 - 1, INIT_ROWS);
 
-      // sync
       for (let i = 0; i < INIT_ROWS; i++) {
         const line = buffer.lines.get(i)!;
-        // line memory is still at old size from initialization
-        assert.equal((line as any)._data.buffer.byteLength, INIT_COLS * 3 * 4);
-        // array.length and .length get immediately adjusted
-        assert.equal((line as any)._data.length, (INIT_COLS / 2 - 1) * 3);
         assert.equal(line.length, INIT_COLS / 2 - 1);
+        assert.equal(line.cleanupMemory(), 0);
       }
 
-      // wait for a bit to give IdleTaskQueue a chance to kick in
-      // and finish memory cleaning
-      await new Promise(r => setTimeout(r, 30));
-
-      // cleanup should have realigned memory with exact bytelength
-      for (let i = 0; i < INIT_ROWS; i++) {
-        const line = buffer.lines.get(i)!;
-        assert.equal((line as any)._data.buffer.byteLength, (INIT_COLS / 2 - 1) * 3 * 4);
-      }
+      await new Promise(r => setTimeout(r, 10));
     });
   });
 });

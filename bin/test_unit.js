@@ -6,6 +6,9 @@
 const cp = require('child_process');
 const path = require('path');
 
+globalThis.require = require;
+globalThis.XTERM_GHOSTTY_WASM_URL = path.resolve(__dirname, '../vendor/ghostty-wasm/ghostty-vt.wasm');
+
 const COVERAGE_LINES_THRESHOLD = 40;
 
 // Add `out` to the NODE_PATH so absolute paths can be resolved.

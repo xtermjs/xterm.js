@@ -45,6 +45,7 @@
     "esbuild-demo-client-watch": "node bin/esbuild.mjs --demo-client --watch",
     "esbuild-demo-server": "node bin/esbuild.mjs --demo-server",
     "esbuild-demo-server-watch": "node bin/esbuild.mjs --demo-server --watch",
+    "ghostty-wasm": "node bin/build_ghostty_wasm.mjs",
     "test": "npm run test-unit",
     "posttest": "npm run lint",
     "lint": "eslint --max-warnings 0 src/ addons/ demo/ test/",

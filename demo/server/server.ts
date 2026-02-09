@@ -46,6 +46,7 @@ function startServer(): void {
   });
 
   app.use('/fonts', express.static(demoRoot + '/fonts'));
+  app.use('/vendor/ghostty-wasm', express.static(demoRoot + '/../vendor/ghostty-wasm'));
 
   app.use('/dist', express.static(demoRoot + '/dist'));
   app.use('/src', express.static(demoRoot + '/src'));

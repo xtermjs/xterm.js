@@ -64,6 +64,9 @@ export class SearchEngine {
       throw new Error(`Invalid col: ${startCol} to search in terminal of ${this._terminal.cols} cols`);
     }
 
+    startRow = Math.max(0, startRow);
+    startCol = Math.max(0, startCol);
+
     this._lineCache.initLinesCache();
 
     const searchPosition: ISearchPosition = {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CircularList, IInsertEvent } from 'common/CircularList';
+import { IInsertEvent } from 'common/CircularList';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
@@ -13,10 +13,15 @@ import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
 import { Marker } from 'common/buffer/Marker';
 import { IBuffer } from 'common/buffer/Types';
+import { GhosttyCircularList } from 'common/buffer/GhosttyCircularList';
+import { GhosttyWasmBuffer } from 'common/buffer/GhosttyWasmBuffer';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
+
+// Work variable to avoid garbage collection during reflow
+const $workCell = new CellData();
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -26,7 +31,7 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines: CircularList<IBufferLine>;
+  public lines: GhosttyCircularList;
   public ydisp: number = 0;
   public ybase: number = 0;
   public y: number = 0;
@@ -50,6 +55,7 @@ export class Buffer implements IBuffer {
   private _isClearing: boolean = false;
   private _memoryCleanupQueue: InstanceType<typeof IdleTaskQueue>;
   private _memoryCleanupPosition = 0;
+  private _ghosttyBuffer: GhosttyWasmBuffer;
 
   constructor(
     private _hasScrollback: boolean,
@@ -59,7 +65,9 @@ export class Buffer implements IBuffer {
   ) {
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
-    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
+    const maxLength = this._getCorrectBufferLength(this._rows);
+    this._ghosttyBuffer = new GhosttyWasmBuffer(this._cols, this._rows, maxLength);
+    this.lines = new GhosttyCircularList(this._ghosttyBuffer, maxLength);
     this.scrollTop = 0;
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();
@@ -142,7 +150,10 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
+    const maxLength = this._getCorrectBufferLength(this._rows);
+    this._ghosttyBuffer.dispose();
+    this._ghosttyBuffer = new GhosttyWasmBuffer(this._cols, this._rows, maxLength);
+    this.lines = new GhosttyCircularList(this._ghosttyBuffer, maxLength);
     this.scrollTop = 0;
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();
@@ -156,6 +167,8 @@ export class Buffer implements IBuffer {
   public resize(newCols: number, newRows: number): void {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
+    const oldCols = this._cols;
+    const oldMaxLength = this.lines.maxLength;
 
     // count bufferlines with overly big memory to be cleaned afterwards
     let dirtyMemoryLines = 0;
@@ -163,6 +176,14 @@ export class Buffer implements IBuffer {
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
+    const shouldDelayColResize = this._isReflowEnabled && newCols < oldCols;
+    const shouldDelayRowResize = newRows < this._rows;
+    const canDelayResize = newMaxLength <= oldMaxLength;
+    const shouldDelayResize = canDelayResize && (shouldDelayColResize || shouldDelayRowResize);
+    const initialCols = shouldDelayColResize ? oldCols : newCols;
+    const initialRows = shouldDelayRowResize ? this._rows : newRows;
+    const initialMaxLength = shouldDelayResize ? oldMaxLength : newMaxLength;
+    this._ghosttyBuffer.resize(initialCols, initialRows, initialMaxLength);
     if (newMaxLength > this.lines.maxLength) {
       this.lines.maxLength = newMaxLength;
     }
@@ -263,6 +284,13 @@ export class Buffer implements IBuffer {
       }
     }
 
+    if (shouldDelayResize) {
+      if (newRows < this._rows || newMaxLength < oldMaxLength) {
+        this.lines.normalize();
+      }
+      this._ghosttyBuffer.resize(newCols, newRows, newMaxLength);
+    }
+
     this._cols = newCols;
     this._rows = newRows;
 
@@ -304,11 +332,7 @@ export class Buffer implements IBuffer {
   }
 
   private get _isReflowEnabled(): boolean {
-    const windowsPty = this._optionsService.rawOptions.windowsPty;
-    if (windowsPty && windowsPty.buildNumber) {
-      return this._hasScrollback && windowsPty.backend === 'conpty' && windowsPty.buildNumber >= 21376;
-    }
-    return this._hasScrollback;
+    return true;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -432,7 +456,19 @@ export class Buffer implements IBuffer {
           // which would stop the reflow from happening if an exception would throw.
           break;
         }
-        wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
+        const destStart = destCol - cellsToCopy;
+        const srcStart = srcCol - cellsToCopy;
+        const sameLine = wrappedLines[destLineIndex] === wrappedLines[srcLineIndex];
+        const overlaps = sameLine && destStart < srcStart + cellsToCopy && srcStart < destStart + cellsToCopy;
+        if (overlaps && destStart > srcStart) {
+          for (let cell = cellsToCopy - 1; cell >= 0; cell--) {
+            wrappedLines[destLineIndex].setCell(destStart + cell, wrappedLines[srcLineIndex].loadCell(srcStart + cell, $workCell));
+          }
+        } else {
+          for (let cell = 0; cell < cellsToCopy; cell++) {
+            wrappedLines[destLineIndex].setCell(destStart + cell, wrappedLines[srcLineIndex].loadCell(srcStart + cell, $workCell));
+          }
+        }
         destCol -= cellsToCopy;
         if (destCol === 0) {
           destLineIndex--;
@@ -488,7 +524,10 @@ export class Buffer implements IBuffer {
       // Record original lines so they don't get overridden when we rearrange the list
       const originalLines: BufferLine[] = [];
       for (let i = 0; i < this.lines.length; i++) {
-        originalLines.push(this.lines.get(i) as BufferLine);
+        const line = this.lines.get(i);
+        if (line) {
+          originalLines.push(line.clone() as BufferLine);
+        }
       }
       const originalLinesLength = this.lines.length;
 

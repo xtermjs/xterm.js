@@ -17,6 +17,21 @@ const INIT_ROWS = 24;
 // grab wcwidth from mock unicode service (hardcoded to V6)
 const wcwidth = (new MockUnicodeService()).wcwidth;
 
+function assertLineEqual(actual: any, expected: any): void {
+  assert.isOk(actual);
+  assert.isOk(expected);
+  assert.equal(actual.length, expected.length);
+  assert.equal(actual.isWrapped, expected.isWrapped);
+  const actualCell = new CellData();
+  const expectedCell = new CellData();
+  for (let i = 0; i < actual.length; i++) {
+    assert.deepEqual(
+      actual.loadCell(i, actualCell).getAsCharData(),
+      expected.loadCell(i, expectedCell).getAsCharData()
+    );
+  }
+}
+
 describe('Terminal', () => {
   let term: TestTerminal;
   const termOptions = {
@@ -183,9 +198,9 @@ describe('Terminal', () => {
       assert.equal(term.buffer.ybase, 0);
       assert.equal(term.buffer.ydisp, 0);
       assert.equal(term.buffer.lines.length, term.rows);
-      assert.deepEqual(term.buffer.lines.get(0), promptLine);
+      assertLineEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+        assertLineEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
       }
     });
     it('should clear a buffer larger than rows', async () => {
@@ -198,9 +213,9 @@ describe('Terminal', () => {
       assert.equal(term.buffer.ybase, 0);
       assert.equal(term.buffer.ydisp, 0);
       assert.equal(term.buffer.lines.length, term.rows);
-      assert.deepEqual(term.buffer.lines.get(0), promptLine);
+      assertLineEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+        assertLineEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
       }
     });
     it('should not break the prompt when cleared twice', () => {
@@ -211,9 +226,9 @@ describe('Terminal', () => {
       assert.equal(term.buffer.ybase, 0);
       assert.equal(term.buffer.ydisp, 0);
       assert.equal(term.buffer.lines.length, term.rows);
-      assert.deepEqual(term.buffer.lines.get(0), promptLine);
+      assertLineEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+        assertLineEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
       }
     });
   });

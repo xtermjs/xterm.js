@@ -7,13 +7,13 @@
 import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
+import { GhosttyWasmParser } from 'common/parser/GhosttyWasmParser';
 import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { CellData } from 'common/buffer/CellData';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ICoreService, IBufferService, IOptionsService, ILogService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
@@ -109,6 +109,7 @@ const SLOW_ASYNC_LIMIT = 5000;
 
 // Work variables to avoid garbage collection
 let $temp = 0;
+const $workCell = new CellData();
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -180,7 +181,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _oscLinkService: IOscLinkService,
     private readonly _coreMouseService: ICoreMouseService,
     private readonly _unicodeService: IUnicodeService,
-    private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
+    private readonly _parser: IEscapeSequenceParser = new GhosttyWasmParser()
   ) {
     super();
     this._register(this._parser);
@@ -616,11 +617,12 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (!bufferRow) {
             return;
           }
-          if (oldWidth > 0 && bufferRow instanceof BufferLine) {
+          if (oldWidth > 0) {
             // Combining character widens 1 column to 2.
             // Move old character to next line.
-            bufferRow.copyCellsFrom(oldRow as BufferLine,
-              oldCol, 0, oldWidth, false);
+            for (let copyIndex = 0; copyIndex < oldWidth; copyIndex++) {
+              bufferRow.setCell(copyIndex, oldRow.loadCell(oldCol + copyIndex, $workCell));
+            }
           }
           // clear left over cells to the right
           while (oldCol < cols) {
