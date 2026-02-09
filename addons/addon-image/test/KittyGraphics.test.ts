@@ -43,6 +43,33 @@ const KITTY_BLACK_1X1_BASE64 = readFileSync('./addons/addon-image/fixture/kitty/
 const KITTY_BLACK_1X1_BYTES = Array.from(readFileSync('./addons/addon-image/fixture/kitty/black-1x1.png'));
 const KITTY_RGB_3X1_BASE64 = readFileSync('./addons/addon-image/fixture/kitty/rgb-3x1.png').toString('base64');
 
+// Raw RGB pixel data (f=24): 3 bytes per pixel, no header — requires s= and v=
+const RAW_RGB_1X1_BLACK = Buffer.from([0, 0, 0]).toString('base64');
+const RAW_RGB_1X1_RED = Buffer.from([255, 0, 0]).toString('base64');
+const RAW_RGB_3X1 = Buffer.from([
+  255, 0, 0,
+  0, 255, 0,
+  0, 0, 255
+]).toString('base64');
+const RAW_RGB_2X2 = Buffer.from([
+  255, 0, 0,    0, 255, 0,
+  0, 0, 255,    255, 255, 0
+]).toString('base64');
+
+// Raw RGBA pixel data (f=32): 4 bytes per pixel, no header — requires s= and v=
+const RAW_RGBA_1X1_WHITE = Buffer.from([255, 255, 255, 255]).toString('base64');
+const RAW_RGBA_1X1_RED = Buffer.from([255, 0, 0, 255]).toString('base64');
+const RAW_RGBA_1X1_TRANSPARENT = Buffer.from([0, 0, 0, 0]).toString('base64');
+const RAW_RGBA_3X1 = Buffer.from([
+  255, 0, 0, 255,
+  0, 255, 0, 255,
+  0, 0, 255, 255
+]).toString('base64');
+const RAW_RGBA_2X2 = Buffer.from([
+  255, 0, 0, 255,    0, 255, 0, 255,
+  0, 0, 255, 255,    255, 255, 0, 255
+]).toString('base64');
+
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
@@ -52,7 +79,6 @@ test.afterAll(async () => await ctx.page.close());
 
 test.describe('Kitty Graphics Protocol', () => {
   // TODO: Add tests for larger images with various dimensions
-  // TODO: Add tests for different compression formats (f=24, f=32)
   // TODO: Add tests for image placement keys (x, y, w, h, X, Y, c, r)
   // TODO: Add tests for virtual placement (U=1)
   // TODO: Add tests for animation frames
@@ -492,15 +518,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(seq);
       await timeout(100);
 
-      const pixel = await ctx.page.evaluate(() => {
-        const canvas = (window as any).imageAddon.getImageAtBufferCell(0, 0);
-        if (!canvas) return null;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
-        return Array.from(ctx.getImageData(0, 0, 1, 1).data);
-      });
-
-      deepStrictEqual(pixel, [0, 0, 0, 255]);
+      deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 255]);
     });
 
     test('renders 3x1 RGB PNG (red, green, blue pixels)', async () => {
@@ -508,22 +526,238 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(seq);
       await timeout(100);
 
-      const pixels = await ctx.page.evaluate(() => {
-        const canvas = (window as any).imageAddon.getImageAtBufferCell(0, 0);
-        if (!canvas) return null;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
-        const imageData = ctx.getImageData(0, 0, 3, 1).data;
-        return {
-          red: Array.from(imageData.slice(0, 4)),
-          green: Array.from(imageData.slice(4, 8)),
-          blue: Array.from(imageData.slice(8, 12))
-        };
+      const pixels = await getPixels(0, 0, 0, 0, 3, 1);
+
+      deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);
+      deepStrictEqual(pixels?.slice(4, 8), [0, 255, 0, 255]);
+      deepStrictEqual(pixels?.slice(8, 12), [0, 0, 255, 255]);
+    });
+  });
+
+  test.describe('Raw RGB pixel format (f=24)', () => {
+    test.describe('Pixel verification', () => {
+      test('renders 1x1 black pixel with alpha set to 255', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=1,v=1;${RAW_RGB_1X1_BLACK}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 255]);
       });
 
-      deepStrictEqual(pixels?.red, [255, 0, 0, 255]);
-      deepStrictEqual(pixels?.green, [0, 255, 0, 255]);
-      deepStrictEqual(pixels?.blue, [0, 0, 255, 255]);
+      test('renders 1x1 red pixel with alpha set to 255', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=1,v=1;${RAW_RGB_1X1_RED}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+      });
+
+      test('renders 3x1 strip (red, green, blue)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=3,v=1;${RAW_RGB_3X1}\x1b\\`);
+        await timeout(100);
+
+        const pixels = await getPixels(0, 0, 0, 0, 3, 1);
+        deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);
+        deepStrictEqual(pixels?.slice(4, 8), [0, 255, 0, 255]);
+        deepStrictEqual(pixels?.slice(8, 12), [0, 0, 255, 255]);
+      });
+
+      test('renders 2x2 grid with correct pixel layout', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=2,v=2;${RAW_RGB_2X2}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 0), [0, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 0, 1), [0, 0, 255, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 1), [255, 255, 0, 255]);
+      });
+    });
+
+    test.describe('Storage and dimensions', () => {
+      test('stores image with correct original dimensions (3x1)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=3,v=1;${RAW_RGB_3X1}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [3, 1]);
+      });
+
+      test('stores image with correct original dimensions (2x2)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=2,v=2;${RAW_RGB_2X2}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [2, 2]);
+      });
+    });
+
+    test.describe('Validation', () => {
+      test('does not render without width (s=)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,v=1;${RAW_RGB_1X1_BLACK}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('does not render without height (v=)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=1;${RAW_RGB_1X1_BLACK}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('does not render without either dimension', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24;${RAW_RGB_1X1_BLACK}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('does not render with insufficient byte count', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=2,v=2;${RAW_RGB_1X1_BLACK}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('query returns EINVAL without dimensions', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).kittyResponse = '';
+          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        });
+        await ctx.proxy.write(`\x1b_Gi=200,a=q,f=24;${RAW_RGB_1X1_BLACK}\x1b\\`);
+        await timeout(100);
+        const response = await ctx.page.evaluate('window.kittyResponse');
+        strictEqual(response, '\x1b_Gi=200;EINVAL:width and height required for raw pixel data\x1b\\');
+      });
+
+      test('query returns EINVAL for insufficient pixel data', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).kittyResponse = '';
+          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        });
+        await ctx.proxy.write(`\x1b_Gi=201,a=q,f=24,s=2,v=2;${RAW_RGB_1X1_BLACK}\x1b\\`);
+        await timeout(100);
+        const response = await ctx.page.evaluate('window.kittyResponse');
+        strictEqual(response, '\x1b_Gi=201;EINVAL:insufficient pixel data\x1b\\');
+      });
+
+      test('query returns OK for valid RGB data with correct dimensions', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).kittyResponse = '';
+          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        });
+        await ctx.proxy.write(`\x1b_Gi=202,a=q,f=24,s=1,v=1;${RAW_RGB_1X1_RED}\x1b\\`);
+        await timeout(100);
+        const response = await ctx.page.evaluate('window.kittyResponse');
+        strictEqual(response, '\x1b_Gi=202;OK\x1b\\');
+      });
+    });
+  });
+
+  test.describe('Raw RGBA pixel format (f=32)', () => {
+    test.describe('Pixel verification', () => {
+      test('renders 1x1 opaque white pixel', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=1,v=1;${RAW_RGBA_1X1_WHITE}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 255, 255, 255]);
+      });
+
+      test('renders 1x1 opaque red pixel', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=1,v=1;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+      });
+
+      test('preserves full transparency (alpha=0)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=1,v=1;${RAW_RGBA_1X1_TRANSPARENT}\x1b\\`);
+        await timeout(100);
+        const pixel = await getPixel(0, 0, 0, 0);
+        strictEqual(pixel?.[3], 0);
+      });
+
+      test('renders 3x1 strip (red, green, blue opaque)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=3,v=1;${RAW_RGBA_3X1}\x1b\\`);
+        await timeout(100);
+
+        const pixels = await getPixels(0, 0, 0, 0, 3, 1);
+        deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);
+        deepStrictEqual(pixels?.slice(4, 8), [0, 255, 0, 255]);
+        deepStrictEqual(pixels?.slice(8, 12), [0, 0, 255, 255]);
+      });
+
+      test('renders 2x2 grid with correct pixel layout', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=2,v=2;${RAW_RGBA_2X2}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 0), [0, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 0, 1), [0, 0, 255, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 1), [255, 255, 0, 255]);
+      });
+    });
+
+    test.describe('Storage and dimensions', () => {
+      test('stores image with correct original dimensions (3x1)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=3,v=1;${RAW_RGBA_3X1}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [3, 1]);
+      });
+
+      test('stores image with correct original dimensions (2x2)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=2,v=2;${RAW_RGBA_2X2}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [2, 2]);
+      });
+    });
+
+    test.describe('Validation', () => {
+      test('does not render without width (s=)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,v=1;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('does not render without height (v=)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=1;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('does not render without either dimension', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('does not render with insufficient byte count', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=2,v=2;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('query returns EINVAL without dimensions', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).kittyResponse = '';
+          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        });
+        await ctx.proxy.write(`\x1b_Gi=300,a=q,f=32;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        const response = await ctx.page.evaluate('window.kittyResponse');
+        strictEqual(response, '\x1b_Gi=300;EINVAL:width and height required for raw pixel data\x1b\\');
+      });
+
+      test('query returns EINVAL for insufficient pixel data', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).kittyResponse = '';
+          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        });
+        await ctx.proxy.write(`\x1b_Gi=301,a=q,f=32,s=2,v=2;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        const response = await ctx.page.evaluate('window.kittyResponse');
+        strictEqual(response, '\x1b_Gi=301;EINVAL:insufficient pixel data\x1b\\');
+      });
+
+      test('query returns OK for valid RGBA data with correct dimensions', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).kittyResponse = '';
+          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        });
+        await ctx.proxy.write(`\x1b_Gi=302,a=q,f=32,s=1,v=1;${RAW_RGBA_1X1_RED}\x1b\\`);
+        await timeout(100);
+        const response = await ctx.page.evaluate('window.kittyResponse');
+        strictEqual(response, '\x1b_Gi=302;OK\x1b\\');
+      });
     });
   });
 });
@@ -554,4 +788,24 @@ async function getOrigSize(id: number): Promise<[number, number]> {
     window.imageAddon._storage._images.get(${id}).orig.width,
     window.imageAddon._storage._images.get(${id}).orig.height
   ]`);
+}
+
+async function getPixel(col: number, row: number, x: number, y: number): Promise<number[] | null> {
+  return ctx.page.evaluate(([col, row, x, y]: number[]) => {
+    const canvas = (window as any).imageAddon.getImageAtBufferCell(col, row);
+    if (!canvas) return null;
+    const ctx2d = canvas.getContext('2d');
+    if (!ctx2d) return null;
+    return Array.from(ctx2d.getImageData(x, y, 1, 1).data);
+  }, [col, row, x, y]);
+}
+
+async function getPixels(col: number, row: number, x: number, y: number, w: number, h: number): Promise<number[] | null> {
+  return ctx.page.evaluate(([col, row, x, y, w, h]: number[]) => {
+    const canvas = (window as any).imageAddon.getImageAtBufferCell(col, row);
+    if (!canvas) return null;
+    const ctx2d = canvas.getContext('2d');
+    if (!ctx2d) return null;
+    return Array.from(ctx2d.getImageData(x, y, w, h).data);
+  }, [col, row, x, y, w, h]);
 }
