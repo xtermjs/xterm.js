@@ -317,8 +317,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const action = cmd.action ?? 't';
 
     switch (action) {
-      case KittyAction.TRANSMIT:
-        return this._handleTransmit(cmd, bytes, decodeError);
+      case KittyAction.TRANSMIT: {
+        const result = this._handleTransmit(cmd, bytes, decodeError);
+        if (cmd.id !== undefined && !decodeError && bytes.length > 0) {
+          this._sendResponse(cmd.id, 'OK', cmd.quiet ?? 0);
+        }
+        return result;
+      }
       case KittyAction.TRANSMIT_DISPLAY:
         return this._handleTransmitDisplay(cmd, bytes, decodeError);
       case KittyAction.QUERY:
@@ -368,7 +373,14 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const id = cmd.id ?? this._nextImageId - 1;
     const image = this._images.get(id);
     if (image) {
-      return this._displayImage(image, cmd.columns, cmd.rows);
+      const result = this._displayImage(image, cmd.columns, cmd.rows);
+      if (cmd.id !== undefined) {
+        return (result as Promise<boolean>).then(r => {
+          this._sendResponse(id, 'OK', cmd.quiet ?? 0);
+          return r;
+        });
+      }
+      return result;
     }
     return true;
   }
