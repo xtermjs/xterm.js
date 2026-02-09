@@ -437,19 +437,18 @@ test.describe('Kitty Graphics Protocol', () => {
 
   test.describe('Cursor positioning', () => {
     // NOTE: Current tests document ACTUAL behavior (MVP - cursor doesn't move)
-    // Kitty spec says cursor SHOULD move by cols/rows unless C=1 is specified
-    // See skipped tests below for spec-compliant behavior
+    // Per Kitty spec: cursor placed at first column after last image column,
+    // on the last row of the image. C=1 means don't move cursor.
 
-    test('cursor remains at origin after transmit and display (a=T) - CURRENT MVP BEHAVIOR', async () => {
-      // TODO: This test documents current incomplete behavior
-      // Per Kitty spec, cursor should move, but MVP implementation doesn't move it
+    test('cursor advances past 1x1 image', async () => {
       const cursorBefore = await getCursor();
       const seq = `\x1b_Ga=T,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`;
       await ctx.proxy.write(seq);
       await timeout(100);
       const cursorAfter = await getCursor();
       deepStrictEqual(cursorBefore, [0, 0]);
-      deepStrictEqual(cursorAfter, [0, 0]);
+      // 1x1 pixel image occupies 1 column, cursor advances past it
+      deepStrictEqual(cursorAfter, [1, 0]);
     });
 
     test('cursor advances with text before image', async () => {
@@ -459,121 +458,89 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      // Cursor should remain at position after "Hello"
-      deepStrictEqual(await getCursor(), [5, 0]);
+      // Cursor advances 1 column past the image
+      deepStrictEqual(await getCursor(), [6, 0]);
     });
 
     test('cursor advances with text after image', async () => {
       await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
-      deepStrictEqual(await getCursor(), [0, 0]);
+      // Cursor at column 1 (past 1-col image)
+      deepStrictEqual(await getCursor(), [1, 0]);
 
       await ctx.proxy.write('World');
-      deepStrictEqual(await getCursor(), [5, 0]);
+      deepStrictEqual(await getCursor(), [6, 0]);
     });
 
     test('cursor position with multiple images on same line', async () => {
       await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(50);
-      deepStrictEqual(await getCursor(), [0, 0]);
+      deepStrictEqual(await getCursor(), [1, 0]);
 
       await ctx.proxy.write('###');
-      deepStrictEqual(await getCursor(), [3, 0]);
+      deepStrictEqual(await getCursor(), [4, 0]);
 
+      // 3x1 pixel image: ceil(3/cellWidth)=1 column
       await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_RGB_3X1_BASE64}\x1b\\`);
       await timeout(50);
-      deepStrictEqual(await getCursor(), [3, 0]);
+      deepStrictEqual(await getCursor(), [5, 0]);
     });
 
     test('cursor advances on newline after image', async () => {
       await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
-      deepStrictEqual(await getCursor(), [0, 0]);
+      deepStrictEqual(await getCursor(), [1, 0]);
 
       await ctx.proxy.write('\n');
-      deepStrictEqual(await getCursor(), [0, 1]);
+      deepStrictEqual(await getCursor(), [1, 1]);
     });
 
-    test('cursor with placement at specific column (C key)', async () => {
-      // Move cursor to column 10
-      await ctx.proxy.write('\x1b[11G'); // CHA - move to column 10 (1-indexed)
-      deepStrictEqual(await getCursor(), [10, 0]);
-
-      // Place image with column specification
-      await ctx.proxy.write(`\x1b_Ga=T,f=100,C=5;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
-      await timeout(100);
-
-      // Cursor should still be at column 10 (Kitty protocol doesn't move cursor)
-      deepStrictEqual(await getCursor(), [10, 0]);
-    });
-
-    // ============================================================================
-    // SPEC-COMPLIANT CURSOR MOVEMENT TESTS (Currently failing - to be implemented)
-    // ============================================================================
-    // Per Kitty spec: "After placing an image on the screen the cursor must be
-    // moved to the right by the number of cols in the image placement rectangle
-    // and down by the number of rows in the image placement rectangle."
-
-    test.skip('cursor should move right by cols when image placed (SPEC BEHAVIOR)', async () => {
-      // TODO: Implement cursor movement per Kitty spec
-      // When c=5 (5 columns), cursor should move right by 5
-      const dim = await getDimensions();
+    test('cursor should move right by cols when c specified', async () => {
+      // c=5: image displayed over 5 columns, r auto = ceil(1/cellHeight) = 1
       await ctx.proxy.write(`\x1b_Ga=T,f=100,c=5;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      // Cursor should move right by 5 columns
       deepStrictEqual(await getCursor(), [5, 0]);
     });
 
-    test.skip('cursor should move down by rows when image placed (SPEC BEHAVIOR)', async () => {
-      // TODO: Implement cursor movement per Kitty spec
-      // When r=3 (3 rows), cursor should move down by 3
-      const dim = await getDimensions();
+    test('cursor should move down by rows when r specified', async () => {
+      // r=3: image displayed over 3 rows, c auto = ceil(1/cellWidth) = 1
       await ctx.proxy.write(`\x1b_Ga=T,f=100,r=3;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      // Cursor should move down by 3 rows
-      deepStrictEqual(await getCursor(), [0, 3]);
+      // Cursor at first column after image (col 1), on last row (row 2)
+      deepStrictEqual(await getCursor(), [1, 2]);
     });
 
-    test.skip('cursor should move by cols AND rows when both specified (SPEC BEHAVIOR)', async () => {
-      // TODO: Implement cursor movement per Kitty spec
+    test('cursor should move by cols AND rows when both specified', async () => {
       await ctx.proxy.write(`\x1b_Ga=T,f=100,c=4,r=2;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      // Cursor should move right by 4 cols and down by 2 rows
-      deepStrictEqual(await getCursor(), [4, 2]);
+      // cursor at (4, 1): past 4 columns, on last row (row 1)
+      deepStrictEqual(await getCursor(), [4, 1]);
     });
 
-    test.skip('cursor should NOT move when C=1 is specified (SPEC BEHAVIOR)', async () => {
-      // TODO: Implement cursor movement per Kitty spec
-      // C=1 means "no cursor movement"
+    test('cursor should NOT move when C=1 is specified', async () => {
       await ctx.proxy.write(`\x1b_Ga=T,f=100,c=5,r=3,C=1;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      // With C=1, cursor should stay at origin even though c=5,r=3
+      // C=1: cursor stays at origin
       deepStrictEqual(await getCursor(), [0, 0]);
     });
 
-    test.skip('cursor should calculate cols/rows from image size when not specified (SPEC BEHAVIOR)', async () => {
-      // TODO: Implement cursor movement per Kitty spec
-      // When c and r are not specified, they should be calculated from image size
+    test('cursor should calculate cols/rows from image size when not specified', async () => {
       const dim = await getDimensions();
 
-      // 3x1 image at default cell size should occupy certain columns
+      // 3x1 pixel image: cols = ceil(3/cellWidth), rows = ceil(1/cellHeight)
       await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_RGB_3X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      // Cursor should move based on image pixel size / cell size
-      // For 3x1 pixel image, this would be Math.ceil(3/cellWidth) cols and Math.ceil(1/cellHeight) rows
       const expectedCols = Math.ceil(3 / dim.cellWidth);
-      const expectedRows = Math.ceil(1 / dim.cellHeight);
       const cursor = await getCursor();
 
-      // For a 3x1 pixel image, cursor should move at least 1 column and row
-      // Exact values depend on cell dimensions
-      strictEqual(cursor[0] >= 1, true, 'cursor should move at least 1 column');
-      strictEqual(cursor[1] >= 1, true, 'cursor should move at least 1 row');
+      // Cursor advances past image columns, stays on row 0 (single row image)
+      strictEqual(cursor[0], expectedCols, 'cursor should advance by image columns');
+      strictEqual(cursor[1], 0, 'cursor should stay on row 0 for single-row image');
     });
   });
 

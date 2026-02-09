@@ -373,7 +373,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const id = cmd.id ?? this._nextImageId - 1;
     const image = this._images.get(id);
     if (image) {
-      const result = this._displayImage(image, cmd.columns, cmd.rows);
+      const result = this._displayImage(image, cmd);
       if (cmd.id !== undefined) {
         return (result as Promise<boolean>).then(r => {
           this._sendResponse(id, 'OK', cmd.quiet ?? 0);
@@ -471,30 +471,38 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
   // Image display
 
-  private _displayImage(image: IKittyImageData, columns?: number, rows?: number): boolean | Promise<boolean> {
-    return this._decodeAndDisplay(image, columns, rows)
+  private _displayImage(image: IKittyImageData, cmd: IKittyCommand): boolean | Promise<boolean> {
+    return this._decodeAndDisplay(image, cmd)
       .then(() => true)
       .catch(() => true);
   }
 
-  private async _decodeAndDisplay(image: IKittyImageData, columns?: number, rows?: number): Promise<void> {
+  private async _decodeAndDisplay(image: IKittyImageData, cmd: IKittyCommand): Promise<void> {
     const bitmap = await this._createBitmap(image);
+
+    const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
+    const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
+
+    // Per spec: c/r default to image's natural cell dimensions
+    const imgCols = cmd.columns ?? Math.ceil(bitmap.width / cw);
+    const imgRows = cmd.rows ?? Math.ceil(bitmap.height / ch);
 
     let w = bitmap.width;
     let h = bitmap.height;
 
-    if (columns || rows) {
-      const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
-      const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
-
-      if (columns) w = columns * cw;
-      if (rows) h = rows * ch;
-
-      if (columns && !rows) h = Math.round(w * (bitmap.height / bitmap.width));
-      else if (rows && !columns) w = Math.round(h * (bitmap.width / bitmap.height));
+    // Scale bitmap to fit placement rectangle when c/r are specified
+    if (cmd.columns !== undefined || cmd.rows !== undefined) {
+      w = Math.round(imgCols * cw);
+      h = Math.round(imgRows * ch);
     }
 
     if (w * h > this._opts.pixelLimit) return;
+
+    // Save cursor position before addImage modifies it
+    const buffer = this._coreTerminal._core.buffer;
+    const savedX = buffer.x;
+    const savedY = buffer.y;
+    const savedYbase = buffer.ybase;
 
     let storageId: number;
     if (w !== bitmap.width || h !== bitmap.height) {
@@ -505,21 +513,19 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     }
     this._kittyIdToStorageId.set(image.id, storageId);
 
-    // TODO: Implement cursor movement per Kitty graphics protocol spec
-    // Per spec: "After placing an image on the screen the cursor must be moved to the
-    // right by the number of cols in the image placement rectangle and down by the
-    // number of rows in the image placement rectangle."
-    //
-    // Default behavior (C=0 or unspecified): Move cursor by cols/rows
-    // With C=1: Don't move cursor at all
-    //
-    // Implementation would need:
-    // 1. Get placement.C value (cursor movement policy)
-    // 2. Calculate cols = placement.columns || Math.ceil(w / cellWidth)
-    // 3. Calculate rows = placement.rows || Math.ceil(h / cellHeight)
-    // 4. If C !== 1: Move cursor right by cols and down by rows
-    //    this._bufferService.buffer.x += cols;
-    //    this._bufferService.buffer.y += rows;
+    // Kitty cursor movement
+    // Per spec: cursor placed at first column after last image column,
+    // on the last row of the image. C=1 means don't move cursor.
+    if (cmd.cursorMovement === 1) {
+      // C=1: restore cursor to position before image was placed
+      const scrolled = buffer.ybase - savedYbase;
+      buffer.x = savedX;
+      buffer.y = Math.max(savedY - scrolled, 0);
+    } else {
+      // Default (C=0): advance cursor horizontally past the image
+      // addImage already positioned cursor on the last row via lineFeeds
+      buffer.x = Math.min(savedX + imgCols, this._coreTerminal.cols);
+    }
   }
 
   /**

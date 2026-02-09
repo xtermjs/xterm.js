@@ -68,7 +68,9 @@ export const enum KittyKey {
   // Compression type (z=zlib). This is essential for chunking larger images.
   COMPRESSION = 'o',
   // Quiet mode (1=suppress OK responses, 2=suppress error responses)
-  QUIET = 'q'
+  QUIET = 'q',
+  // Cursor movement policy (0=move cursor after image, 1=don't move cursor)
+  CURSOR_MOVEMENT = 'C'
 }
 
 // Pixel format constants
@@ -92,6 +94,7 @@ export interface IKittyCommand {
   rows?: number;
   more?: number;
   quiet?: number;
+  cursorMovement?: number;
   compression?: string;
   payload?: string;
 }
@@ -160,6 +163,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
       case KittyKey.ROWS: cmd.rows = numValue; break;
       case KittyKey.MORE: cmd.more = numValue; break;
       case KittyKey.QUIET: cmd.quiet = numValue; break;
+      case KittyKey.CURSOR_MOVEMENT: cmd.cursorMovement = numValue; break;
     }
   }
 

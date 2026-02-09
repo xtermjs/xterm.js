@@ -64,6 +64,16 @@ describe('KittyGraphicsTypes', () => {
       assert.strictEqual(cmd.compression, 'z');
     });
 
+    it('should parse cursor movement key', () => {
+      const cmd = parseKittyCommand('a=T,f=100,C=1');
+      assert.strictEqual(cmd.cursorMovement, 1);
+    });
+
+    it('should parse cursor movement key C=0', () => {
+      const cmd = parseKittyCommand('a=T,f=100,C=0');
+      assert.strictEqual(cmd.cursorMovement, 0);
+    });
+
     it('should parse x and y offset', () => {
       const cmd = parseKittyCommand('a=T,x=10,y=20');
       assert.strictEqual(cmd.x, 10);
