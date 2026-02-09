@@ -64,6 +64,14 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
   private _pendingTransmissions: Map<number, IPendingTransmission> = new Map();
   private _nextImageId = 1;
+  /** Maps Kitty protocol image ID → ImageStorage internal ID for deletion/lookup. */
+  private _kittyIdToStorageId: Map<number, number> = new Map();
+  // TODO: Eliminate double storage — raw image data lives here (as Blob) AND rendered
+  // ImageBitmaps live in ImageStorage. Currently we only use ImageStorage.addImage(bitmap)
+  // for tiling + cursor movement + marker-based eviction.
+  //
+
+  // See: https://github.com/xtermjs/xterm.js/pull/5619#issuecomment-3853678815
   private _images: Map<number, IKittyImageData> = new Map();
 
   constructor(
@@ -88,6 +96,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       this._activeDecoder = null;
     }
     this._images.clear();
+    this._kittyIdToStorageId.clear();
   }
 
   public start(): void {
@@ -411,8 +420,17 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     if (id !== undefined) {
       this._images.delete(id);
+      const storageId = this._kittyIdToStorageId.get(id);
+      if (storageId !== undefined) {
+        this._storage.deleteImage(storageId);
+        this._kittyIdToStorageId.delete(id);
+      }
     } else {
       this._images.clear();
+      for (const storageId of this._kittyIdToStorageId.values()) {
+        this._storage.deleteImage(storageId);
+      }
+      this._kittyIdToStorageId.clear();
     }
     return true;
   }
@@ -453,12 +471,14 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     if (w * h > this._opts.pixelLimit) return;
 
+    let storageId: number;
     if (w !== bitmap.width || h !== bitmap.height) {
       const resized = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
-      this._storage.addImage(resized);
+      storageId = this._storage.addImage(resized);
     } else {
-      this._storage.addImage(bitmap);
+      storageId = this._storage.addImage(bitmap);
     }
+    this._kittyIdToStorageId.set(image.id, storageId);
 
     // TODO: Implement cursor movement per Kitty graphics protocol spec
     // Per spec: "After placing an image on the screen the cursor must be moved to the

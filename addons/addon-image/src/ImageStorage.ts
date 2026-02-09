@@ -235,9 +235,22 @@ export class ImageStorage implements IDisposable {
   }
 
   /**
-   * Method to add an image to the storage.
+   * Delete an image by its internal storage ID.
+   * Used by protocols that support explicit deletion (e.g. Kitty a=d).
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap): void {
+  public deleteImage(id: number): void {
+    const spec = this._images.get(id);
+    if (spec) {
+      spec.marker?.dispose();
+      this._delImg(id);
+    }
+  }
+
+  /**
+   * Method to add an image to the storage.
+   * Returns the internal image ID assigned to the stored image.
+   */
+  public addImage(img: HTMLCanvasElement | ImageBitmap): number {
     // never allow storage to exceed memory limit
     this._evictOldest(img.width * img.height);
 
@@ -331,6 +344,7 @@ export class ImageStorage implements IDisposable {
 
     // finally add the image
     this._images.set(imageId, imgSpec);
+    return imageId;
   }
 
 
