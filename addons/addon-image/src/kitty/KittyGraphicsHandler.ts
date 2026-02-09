@@ -352,7 +352,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       data: new Blob([bytes as BlobPart]),
       width: cmd.width ?? 0,
       height: cmd.height ?? 0,
-      format: (cmd.format ?? KittyFormat.PNG) as 24 | 32 | 100,
+      format: (cmd.format ?? KittyFormat.RGBA) as 24 | 32 | 100,
       compression: cmd.compression ?? ''
     };
     this._images.set(id, image);
