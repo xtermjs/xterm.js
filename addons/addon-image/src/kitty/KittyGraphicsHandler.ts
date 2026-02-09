@@ -431,6 +431,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const id = cmd.id;
 
     if (id !== undefined) {
+      // Abort in-flight chunked upload for this specific image
+      const pending = this._pendingTransmissions.get(id);
+      if (pending) {
+        pending.decoder.release();
+        this._pendingTransmissions.delete(id);
+      }
+
       this._images.delete(id);
       const storageId = this._kittyIdToStorageId.get(id);
       if (storageId !== undefined) {
@@ -438,6 +445,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
         this._kittyIdToStorageId.delete(id);
       }
     } else {
+      // Abort all in-flight chunked uploads
+      for (const pending of this._pendingTransmissions.values()) {
+        pending.decoder.release();
+      }
+      this._pendingTransmissions.clear();
+
       this._images.clear();
       for (const storageId of this._kittyIdToStorageId.values()) {
         this._storage.deleteImage(storageId);
@@ -606,5 +619,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
   public get images(): ReadonlyMap<number, IKittyImageData> {
     return this._images;
+  }
+
+  public get pendingTransmissions(): ReadonlyMap<number, IPendingTransmission> {
+    return this._pendingTransmissions;
   }
 }

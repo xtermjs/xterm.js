@@ -6,7 +6,7 @@
 import test from '@playwright/test';
 import { readFileSync } from 'fs';
 import { ITestContext, createTestContext, openTerminal, timeout } from '../../../test/playwright/TestUtils';
-import { deepStrictEqual, strictEqual } from 'assert';
+import { deepStrictEqual, ok, strictEqual } from 'assert';
 
 /**
  * Plugin ctor options.
@@ -244,6 +244,71 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(`\x1b_Ga=d\x1b\\`);
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 0);
+    });
+
+    test('delete by id aborts in-flight chunked upload', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=50,m=1;${part1}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 1);
+
+      await ctx.proxy.write(`\x1b_Ga=d,i=50\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 0);
+    });
+
+    test('delete by id only aborts targeted upload, not others', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=55,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=56,m=1;${part1}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 2);
+
+      await ctx.proxy.write(`\x1b_Ga=d,i=55\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 1);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.has(56)`), true);
+    });
+
+    test('delete all aborts in-flight chunked upload', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=60,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=61,m=1;${part1}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 2);
+
+      await ctx.proxy.write(`\x1b_Ga=d\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 0);
+    });
+
+    test('chunks sent after delete are not assembled with previous data', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=70,m=1;${part1}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 1);
+
+      await ctx.proxy.write(`\x1b_Ga=d\x1b\\`);
+      await timeout(50);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=70;${part2}\x1b\\`);
+      await timeout(100);
+
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(70)`), true);
+      const storedSize: number = await ctx.page.evaluate(async () => {
+        const blob = (window as any).imageAddon._handlers.get('kitty').images.get(70).data;
+        return blob.size;
+      });
+      ok(storedSize < KITTY_BLACK_1X1_BYTES.length, 'stored data should be smaller than full image (only second half)');
     });
   });
 
