@@ -520,6 +520,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       // C=1: restore cursor to position before image was placed
       const scrolled = buffer.ybase - savedYbase;
       buffer.x = savedX;
+      // Can't restore cursor to scrollback?
       buffer.y = Math.max(savedY - scrolled, 0);
     } else {
       // Default (C=0): advance cursor horizontally past the image
