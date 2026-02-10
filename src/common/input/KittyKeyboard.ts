@@ -418,7 +418,7 @@ export class KittyKeyboard {
       return result;
     }
 
-    if (isMod && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES) && !reportEventTypes) {
+    if (isMod && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
       return result;
     }
 
