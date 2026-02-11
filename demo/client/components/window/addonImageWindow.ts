@@ -51,14 +51,30 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     container.appendChild(document.createElement('br'));
     container.appendChild(document.createElement('br'));
 
-    const dl = document.createElement('dl');
-    const dt = document.createElement('dt');
-    dt.textContent = 'Image Test';
-    dl.appendChild(dt);
-    this._addDdWithButton(dl, 'image-demo1', 'snake (sixel)');
-    this._addDdWithButton(dl, 'image-demo2', 'oranges (sixel)');
-    this._addDdWithButton(dl, 'image-demo3', 'palette (iip)');
-    container.appendChild(dl);
+    // Sixel demos
+    const dlSixel = document.createElement('dl');
+    const dtSixel = document.createElement('dt');
+    dtSixel.textContent = 'Sixel';
+    dlSixel.appendChild(dtSixel);
+    this._addDdWithButton(dlSixel, 'image-demo1', 'snake');
+    this._addDdWithButton(dlSixel, 'image-demo2', 'oranges');
+    container.appendChild(dlSixel);
+
+    // IIP demos
+    const dlIip = document.createElement('dl');
+    const dtIip = document.createElement('dt');
+    dtIip.textContent = 'IIP (iTerm)';
+    dlIip.appendChild(dtIip);
+    this._addDdWithButton(dlIip, 'image-demo3', 'palette');
+    container.appendChild(dlIip);
+
+    // Kitty demos
+    const dlKitty = document.createElement('dl');
+    const dtKitty = document.createElement('dt');
+    dtKitty.textContent = 'Kitty';
+    dlKitty.appendChild(dtKitty);
+    this._addDdWithButton(dlKitty, 'image-demo-kitty1', 'palette');
+    container.appendChild(dlKitty);
 
     this._initImageAddonExposed();
   }
@@ -125,12 +141,25 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
         this._terminal.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
       });
 
+    const kittyDemo = (url: string) => () => fetch(url)
+      .then(resp => resp.arrayBuffer())
+      .then(buffer => {
+        const data = new Uint8Array(buffer);
+        let sdata = '';
+        for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+        const payload = btoa(sdata);
+        this._terminal.write('\r\n');
+        this._terminal.write(`\x1b_Ga=T,f=100;${payload}\x1b\\`);
+      });
+
     document.getElementById('image-demo1')!.addEventListener('click',
       sixelDemo('https://raw.githubusercontent.com/saitoha/libsixel/master/images/snake.six'));
     document.getElementById('image-demo2')!.addEventListener('click',
       sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
     document.getElementById('image-demo3')!.addEventListener('click',
       iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+    document.getElementById('image-demo-kitty1')!.addEventListener('click',
+      kittyDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
 
     // demo for image retrieval API
     this._terminal.element!.addEventListener('click', (ev: MouseEvent) => {
