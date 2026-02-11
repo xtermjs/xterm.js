@@ -5,7 +5,7 @@
 
 import { IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ITerminalExt, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize, ExtFlags, Attributes, UnderlineStyle } from './Types';
+import { ITerminalExt, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize, ExtFlags, Attributes, UnderlineStyle, ImageLayer } from './Types';
 
 
 // fallback default cell size
@@ -250,7 +250,7 @@ export class ImageStorage implements IDisposable {
    * Method to add an image to the storage.
    * Returns the internal image ID assigned to the stored image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap): number {
+  public addImage(img: HTMLCanvasElement | ImageBitmap, layer: ImageLayer = 'top'): number {
     // never allow storage to exceed memory limit
     this._evictOldest(img.width * img.height);
 
@@ -339,7 +339,8 @@ export class ImageStorage implements IDisposable {
       actualCellSize: { ...cellSize },  // clone needed, since later modified
       marker: endMarker || undefined,
       tileCount,
-      bufferType: this._terminal.buffer.active.type
+      bufferType: this._terminal.buffer.active.type,
+      layer
     };
 
     // finally add the image
@@ -354,16 +355,30 @@ export class ImageStorage implements IDisposable {
    */
   // TODO: Should we move this to the ImageRenderer?
   public render(range: { start: number, end: number }): void {
-    // setup image canvas in case we have none yet, but have images in store
-    if (!this._renderer.canvas && this._images.size) {
-      this._renderer.insertLayerToDom();
-      // safety measure - in case we cannot spawn a canvas at all, just exit
-      if (!this._renderer.canvas) {
-        return;
+    // Determine which layers have images
+    let hasTopImages = false;
+    let hasBottomImages = false;
+    for (const spec of this._images.values()) {
+      if (spec.layer === 'bottom') {
+        hasBottomImages = true;
+      } else {
+        hasTopImages = true;
       }
+      if (hasTopImages && hasBottomImages) break;
     }
+
+    // Lazily insert layers that are needed
+    if (hasTopImages && !this._renderer.hasLayer('top')) {
+      this._renderer.insertLayerToDom('top');
+      if (!this._renderer.hasLayer('top')) return;
+    }
+    if (hasBottomImages && !this._renderer.hasLayer('bottom')) {
+      this._renderer.insertLayerToDom('bottom');
+    }
+
     // rescale if needed
     this._renderer.rescaleCanvas();
+
     // exit early if we dont have any images to test for
     if (!this._images.size) {
       if (!this._fullyCleared) {
@@ -371,10 +386,23 @@ export class ImageStorage implements IDisposable {
         this._fullyCleared = true;
         this._needsFullClear = false;
       }
-      if (this._renderer.canvas) {
-        this._renderer.removeLayerFromDom();
+      if (this._renderer.hasLayer('top')) {
+        this._renderer.removeLayerFromDom('top');
+      }
+      if (this._renderer.hasLayer('bottom')) {
+        this._renderer.removeLayerFromDom('bottom');
       }
       return;
+    }
+
+    // Remove layers no longer needed
+    if (!hasTopImages && this._renderer.hasLayer('top')) {
+      this._renderer.clearAll('top');
+      this._renderer.removeLayerFromDom('top');
+    }
+    if (!hasBottomImages && this._renderer.hasLayer('bottom')) {
+      this._renderer.clearAll('bottom');
+      this._renderer.removeLayerFromDom('bottom');
     }
 
     // buffer switches force a full clear

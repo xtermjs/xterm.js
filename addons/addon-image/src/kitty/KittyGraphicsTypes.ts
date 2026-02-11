@@ -70,7 +70,9 @@ export const enum KittyKey {
   // Quiet mode (1=suppress OK responses, 2=suppress error responses)
   QUIET = 'q',
   // Cursor movement policy (0=move cursor after image, 1=don't move cursor)
-  CURSOR_MOVEMENT = 'C'
+  CURSOR_MOVEMENT = 'C',
+  // Z-index for image layering (negative = behind text, 0+ = on top)
+  Z_INDEX = 'z'
 }
 
 // Pixel format constants
@@ -95,6 +97,7 @@ export interface IKittyCommand {
   more?: number;
   quiet?: number;
   cursorMovement?: number;
+  zIndex?: number;
   compression?: string;
   payload?: string;
 }
@@ -164,6 +167,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
       case KittyKey.MORE: cmd.more = numValue; break;
       case KittyKey.QUIET: cmd.quiet = numValue; break;
       case KittyKey.CURSOR_MOVEMENT: cmd.cursorMovement = numValue; break;
+      case KittyKey.Z_INDEX: cmd.zIndex = numValue; break;
     }
   }
 

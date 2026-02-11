@@ -99,6 +99,8 @@ export interface ICellSize {
   height: number;
 }
 
+export type ImageLayer = 'top' | 'bottom';
+
 export interface IImageSpec {
   orig: HTMLCanvasElement | ImageBitmap | undefined;
   origCellSize: ICellSize;
@@ -107,4 +109,5 @@ export interface IImageSpec {
   marker: IMarker | undefined;
   tileCount: number;
   bufferType: 'alternate' | 'normal';
+  layer: ImageLayer;
 }

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IApcHandler, IImageAddonOptions, IResetHandler, ITerminalExt } from '../Types';
+import { IApcHandler, IImageAddonOptions, IResetHandler, ITerminalExt, ImageLayer } from '../Types';
 import { ImageRenderer } from '../ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from '../ImageStorage';
 import Base64Decoder, { type DecodeStatus } from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
@@ -504,12 +504,18 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const savedY = buffer.y;
     const savedYbase = buffer.ybase;
 
+    // Determine layer based on z-index: negative = behind text, 0+ = on top.
+    // Bottom layer only works when allowTransparency is enabled (otherwise text
+    // canvas background is opaque and hides the bottom canvas). Fall back to top.
+    const wantsBottom = cmd.zIndex !== undefined && cmd.zIndex < 0;
+    const layer: ImageLayer = (wantsBottom && this._coreTerminal.options.allowTransparency) ? 'bottom' : 'top';
+
     let storageId: number;
     if (w !== bitmap.width || h !== bitmap.height) {
       const resized = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
-      storageId = this._storage.addImage(resized);
+      storageId = this._storage.addImage(resized, layer);
     } else {
-      storageId = this._storage.addImage(bitmap);
+      storageId = this._storage.addImage(bitmap, layer);
     }
     this._kittyIdToStorageId.set(image.id, storageId);
 

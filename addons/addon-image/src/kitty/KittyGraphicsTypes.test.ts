@@ -86,5 +86,25 @@ describe('KittyGraphicsTypes', () => {
       assert.ok(isNaN(cmd.format!));
       assert.strictEqual(cmd.id, 5);
     });
+
+    it('should parse z-index key with positive value', () => {
+      const cmd = parseKittyCommand('a=T,f=100,z=10');
+      assert.strictEqual(cmd.zIndex, 10);
+    });
+
+    it('should parse z-index key with zero', () => {
+      const cmd = parseKittyCommand('a=T,f=100,z=0');
+      assert.strictEqual(cmd.zIndex, 0);
+    });
+
+    it('should parse z-index key with negative value', () => {
+      const cmd = parseKittyCommand('a=T,f=100,z=-1');
+      assert.strictEqual(cmd.zIndex, -1);
+    });
+
+    it('should leave zIndex undefined when not specified', () => {
+      const cmd = parseKittyCommand('a=T,f=100');
+      assert.strictEqual(cmd.zIndex, undefined);
+    });
   });
 });
