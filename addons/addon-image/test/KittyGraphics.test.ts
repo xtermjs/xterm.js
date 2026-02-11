@@ -42,6 +42,8 @@ interface IDimensions {
 const KITTY_BLACK_1X1_BASE64 = readFileSync('./addons/addon-image/fixture/kitty/black-1x1.png').toString('base64');
 const KITTY_BLACK_1X1_BYTES = Array.from(readFileSync('./addons/addon-image/fixture/kitty/black-1x1.png'));
 const KITTY_RGB_3X1_BASE64 = readFileSync('./addons/addon-image/fixture/kitty/rgb-3x1.png').toString('base64');
+const KITTY_MULTICOLOR_200X100_BASE64 = readFileSync('./addons/addon-image/fixture/kitty/multicolor-200x100.png').toString('base64');
+const KITTY_MULTICOLOR_200X100_BYTES = Array.from(readFileSync('./addons/addon-image/fixture/kitty/multicolor-200x100.png'));
 
 // Raw RGB pixel data (f=24): 3 bytes per pixel, no header — requires s= and v=
 const RAW_RGB_1X1_BLACK = Buffer.from([0, 0, 0]).toString('base64');
@@ -563,6 +565,225 @@ test.describe('Kitty Graphics Protocol', () => {
       deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);
       deepStrictEqual(pixels?.slice(4, 8), [0, 255, 0, 255]);
       deepStrictEqual(pixels?.slice(8, 12), [0, 0, 255, 255]);
+    });
+  });
+
+  test.describe('Larger image (200x100 multicolor PNG)', () => {
+    test.describe('Basic transmission and storage', () => {
+      test('stores 200x100 PNG with a=T', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [200, 100]);
+      });
+
+      test('transmit only (a=t) stores 200x100 image without display', async () => {
+        await ctx.proxy.write(`\x1b_Ga=t,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
+      });
+
+      test('stores with specified image ID', async () => {
+        await ctx.proxy.write(`\x1b_Ga=t,f=100,i=400;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(400)`), true);
+      });
+    });
+
+    test.describe('Chunked transmission', () => {
+      test('handles 2-chunk transmission', async () => {
+        const half = Math.floor(KITTY_MULTICOLOR_200X100_BASE64.length / 2);
+        const part1 = KITTY_MULTICOLOR_200X100_BASE64.substring(0, half);
+        const part2 = KITTY_MULTICOLOR_200X100_BASE64.substring(half);
+
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,i=500,m=1;${part1}\x1b\\`);
+        await timeout(50);
+        strictEqual(await getImageStorageLength(), 0);
+
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,i=500;${part2}\x1b\\`);
+        await timeout(200);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [200, 100]);
+      });
+
+      test('handles 3-chunk transmission', async () => {
+        const third = Math.floor(KITTY_MULTICOLOR_200X100_BASE64.length / 3);
+        const p1 = KITTY_MULTICOLOR_200X100_BASE64.substring(0, third);
+        const p2 = KITTY_MULTICOLOR_200X100_BASE64.substring(third, third * 2);
+        const p3 = KITTY_MULTICOLOR_200X100_BASE64.substring(third * 2);
+
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,i=501,m=1;${p1}\x1b\\`);
+        await timeout(50);
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,i=501,m=1;${p2}\x1b\\`);
+        await timeout(50);
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,i=501;${p3}\x1b\\`);
+        await timeout(200);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [200, 100]);
+      });
+
+      test('verifies chunked data assembles correctly', async () => {
+        const half = Math.floor(KITTY_MULTICOLOR_200X100_BASE64.length / 2);
+        const part1 = KITTY_MULTICOLOR_200X100_BASE64.substring(0, half);
+        const part2 = KITTY_MULTICOLOR_200X100_BASE64.substring(half);
+
+        await ctx.proxy.write(`\x1b_Ga=t,f=100,i=502,m=1;${part1}\x1b\\`);
+        await ctx.proxy.write(`\x1b_Ga=t,f=100,i=502;${part2}\x1b\\`);
+        await timeout(200);
+
+        const storedData = await ctx.page.evaluate(async () => {
+          const blob = (window as any).imageAddon._handlers.get('kitty').images.get(502).data;
+          const buffer = await blob.arrayBuffer();
+          return Array.from(new Uint8Array(buffer));
+        });
+        deepStrictEqual(storedData, KITTY_MULTICOLOR_200X100_BYTES);
+      });
+    });
+
+    test.describe('Cursor positioning', () => {
+      test('cursor advances past multi-cell image', async () => {
+        const dim = await getDimensions();
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        const expectedCols = Math.ceil(200 / dim.cellWidth);
+        const expectedRows = Math.ceil(100 / dim.cellHeight) - 1;
+        const cursor = await getCursor();
+        strictEqual(cursor[0], expectedCols, 'cursor should advance by image columns');
+        strictEqual(cursor[1], expectedRows, 'cursor should be on last row of image');
+      });
+
+      test('cursor does not move with C=1', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,C=1;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        deepStrictEqual(await getCursor(), [0, 0]);
+      });
+
+      test('cursor uses explicit c and r over image dimensions', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,c=10,r=5;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        deepStrictEqual(await getCursor(), [10, 4]);
+      });
+    });
+
+    test.describe('Pixel verification', () => {
+      // The 200x100 image has 20 colored rectangles in a 10x2 grid.
+      // Each rectangle is 20px wide x 50px tall.
+      // Top row (y=0..49):  Red, Orange, Yellow, Lime, Green, Cyan, SkyBlue, Blue, Purple, Magenta
+      // Bottom row (y=50..99): Pink, Brown, Maroon, Olive, Teal, Navy, Gray, DarkGray, LightGray, White
+
+      test('renders red rectangle at top-left origin (0,0)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        // Pixel (0,0) is in the first rectangle: Red
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+      });
+
+      test('renders top row colors at rectangle centers', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        // Sample center of each top-row rectangle (y=25, x=10,30,50,...,190)
+        // All within the first cell row, so we read from the canvas at cell (0,0)
+        // Red at x=10
+        deepStrictEqual(await getPixel(0, 0, 10, 25), [255, 0, 0, 255]);
+        // Orange at x=30
+        deepStrictEqual(await getPixel(0, 0, 30, 25), [255, 128, 0, 255]);
+        // Yellow at x=50
+        deepStrictEqual(await getPixel(0, 0, 50, 25), [255, 255, 0, 255]);
+        // Lime at x=70
+        deepStrictEqual(await getPixel(0, 0, 70, 25), [0, 255, 0, 255]);
+        // Green at x=90
+        deepStrictEqual(await getPixel(0, 0, 90, 25), [0, 128, 0, 255]);
+      });
+
+      test('renders bottom row colors at rectangle centers', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        // Bottom row starts at y=50. Center at y=75.
+        // Pink at x=10
+        deepStrictEqual(await getPixel(0, 0, 10, 75), [255, 192, 203, 255]);
+        // Brown at x=30
+        deepStrictEqual(await getPixel(0, 0, 30, 75), [165, 42, 42, 255]);
+        // Maroon at x=50
+        deepStrictEqual(await getPixel(0, 0, 50, 75), [128, 0, 0, 255]);
+        // Olive at x=70
+        deepStrictEqual(await getPixel(0, 0, 70, 75), [128, 128, 0, 255]);
+        // Teal at x=90
+        deepStrictEqual(await getPixel(0, 0, 90, 75), [0, 128, 128, 255]);
+      });
+
+      test('renders correct colors at rectangle boundaries', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        // Last pixel of first rectangle (x=19, y=0): still Red
+        deepStrictEqual(await getPixel(0, 0, 19, 0), [255, 0, 0, 255]);
+        // First pixel of second rectangle (x=20, y=0): Orange
+        deepStrictEqual(await getPixel(0, 0, 20, 0), [255, 128, 0, 255]);
+        // Last pixel of top row (x=199, y=49): Magenta
+        deepStrictEqual(await getPixel(0, 0, 199, 49), [255, 0, 255, 255]);
+        // First pixel of bottom row (x=0, y=50): Pink
+        deepStrictEqual(await getPixel(0, 0, 0, 50), [255, 192, 203, 255]);
+      });
+
+      test('renders correct color at bottom-right corner', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        // Bottom-right corner (x=199, y=99): White
+        deepStrictEqual(await getPixel(0, 0, 199, 99), [255, 255, 255, 255]);
+      });
+
+      test('renders a strip of top-row pixels via getPixels', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        // Read 3 pixels starting at x=18 y=0, spanning the Red/Orange boundary
+        const pixels = await getPixels(0, 0, 18, 0, 3, 1);
+        // x=18,19 -> Red; x=20 -> Orange
+        deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);     // x=18: Red
+        deepStrictEqual(pixels?.slice(4, 8), [255, 0, 0, 255]);     // x=19: Red
+        deepStrictEqual(pixels?.slice(8, 12), [255, 128, 0, 255]);  // x=20: Orange
+      });
+    });
+
+    test.describe('Query support', () => {
+      test('responds with OK for valid 200x100 PNG query', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).kittyResponse = '';
+          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        });
+
+        await ctx.proxy.write(`\x1b_Gi=600,a=q,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        const response = await ctx.page.evaluate('window.kittyResponse');
+        strictEqual(response, '\x1b_Gi=600;OK\x1b\\');
+      });
+
+      test('query does not store the 200x100 image', async () => {
+        await ctx.page.evaluate(() => {
+          (window as any).term.onData(() => { /* consume response */ });
+        });
+
+        await ctx.proxy.write(`\x1b_Gi=601,a=q,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(601)`), false);
+      });
+    });
+
+    test.describe('Delete commands', () => {
+      test('delete removes 200x100 image by id', async () => {
+        await ctx.proxy.write(`\x1b_Ga=t,f=100,i=700;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+        strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(700)`), true);
+
+        await ctx.proxy.write(`\x1b_Ga=d,i=700\x1b\\`);
+        await timeout(50);
+        strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(700)`), false);
+      });
     });
   });
 
