@@ -25,6 +25,6 @@
   },
   "devDependencies": {
     "sixel": "^0.16.0",
-    "xterm-wasm-parts": "^0.1.0"
+    "xterm-wasm-parts": "^0.3.0"
   }
 }
