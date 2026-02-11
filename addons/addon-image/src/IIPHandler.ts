@@ -5,16 +5,19 @@
 import { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
-import Base64Decoder, { type DecodeStatus } from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
+import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
-// limit hold memory in base64 decoder (encoded bytes)
-const KEEP_DATA = 4194304;
-const INITIAL_DATA = 1048576;
-
-// Local mirror of const enum (esbuild can't inline const enums from external packages)
-const DECODER_OK: DecodeStatus.OK = 0;
+// Local const enum mirror - esbuild can't inline const enums from external packages
+const enum DecoderConst {
+  // Limit held memory in base64 decoder (encoded bytes).
+  KEEP_DATA = 4194304,
+  // Initial buffer allocation for the decoder.
+  INITIAL_DATA = 1048576,
+  // Local mirror of const enum (esbuild can't inline const enums from external packages)
+  OK = 0
+}
 
 // default IIP header values
 const DEFAULT_HEADER: IHeaderFields = {
@@ -41,8 +44,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     private readonly _coreTerminal: ITerminalExt
   ) {
     const maxEncodedBytes = Math.ceil(this._opts.iipSizeLimit * 4 / 3);
-    const initialBytes = Math.min(INITIAL_DATA, maxEncodedBytes);
-    this._dec = new Base64Decoder(KEEP_DATA, maxEncodedBytes, initialBytes);
+    const initialBytes = Math.min(DecoderConst.INITIAL_DATA, maxEncodedBytes);
+    this._dec = new Base64Decoder(DecoderConst.KEEP_DATA, maxEncodedBytes, initialBytes);
   }
 
   public reset(): void {}
@@ -58,7 +61,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     if (this._aborted) return;
 
     if (this._hp.state === HeaderState.END) {
-      if (this._dec.put(data.subarray(start, end)) !== DECODER_OK) {
+      if ((this._dec.put(data.subarray(start, end)) as number) !== DecoderConst.OK) {
         this._dec.release();
         this._aborted = true;
       }
@@ -75,7 +78,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
           return;
         }
         this._dec.init();
-        if (this._dec.put(data.subarray(dataPos, end)) !== DECODER_OK) {
+        if ((this._dec.put(data.subarray(dataPos, end)) as number) !== DecoderConst.OK) {
           this._dec.release();
           this._aborted = true;
         }
