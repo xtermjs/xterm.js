@@ -9,6 +9,8 @@ import { IIPHandler } from './IIPHandler';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { SixelHandler } from './SixelHandler';
+import { SixelImageStorage } from './SixelImageStorage';
+import { IIPImageStorage } from './IIPImageStorage';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
 
 // default values of addon ctor options
@@ -129,7 +131,8 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
 
     // SIXEL handler
     if (this._opts.sixelSupport) {
-      const sixelHandler = new SixelHandler(this._opts, this._storage!, terminal);
+      const sixelStorage = new SixelImageStorage(this._storage!, this._opts, this._renderer!, terminal);
+      const sixelHandler = new SixelHandler(this._opts, sixelStorage, terminal);
       this._handlers.set('sixel', sixelHandler);
       this._disposeLater(
         terminal._core._inputHandler._parser.registerDcsHandler({ final: 'q' }, sixelHandler)
@@ -138,7 +141,8 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
 
     // iTerm IIP handler
     if (this._opts.iipSupport) {
-      const iipHandler = new IIPHandler(this._opts, this._renderer!, this._storage!, terminal);
+      const iipStorage = new IIPImageStorage(this._storage!);
+      const iipHandler = new IIPHandler(this._opts, this._renderer!, iipStorage, terminal);
       this._handlers.set('iip', iipHandler);
       this._disposeLater(
         terminal._core._inputHandler._parser.registerOscHandler(1337, iipHandler)
