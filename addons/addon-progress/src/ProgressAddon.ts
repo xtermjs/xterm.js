@@ -5,7 +5,7 @@
 
 import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgressState } from '@xterm/addon-progress';
-import type { Emitter, Event } from 'vs/base/common/event';
+import type { Emitter, IEvent } from 'common/Event';
 
 
 const enum ProgressType {
@@ -39,7 +39,7 @@ export class ProgressAddon implements ITerminalAddon, IProgressApi {
   private _pr = 0;
   // HACK: This uses ! to align with the API, this should be fixed when 5283 is resolved
   private _onChange!: Emitter<IProgressState>;
-  public onChange!: Event<IProgressState>;
+  public onChange!: IEvent<IProgressState>;
 
   public dispose(): void {
     this._seqHandler?.dispose();

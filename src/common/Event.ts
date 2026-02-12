@@ -109,8 +109,10 @@ export namespace EventUtils {
     };
   }
 
-  export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T | undefined) => void): IDisposable {
-    handler(undefined);
+  export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T) => void, initial: T): IDisposable;
+  export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T | undefined) => void): IDisposable;
+  export function runAndSubscribe<T>(event: IEvent<T>, handler: (e: T | undefined) => void, initial?: T): IDisposable {
+    handler(initial);
     return event(e => handler(e));
   }
 }

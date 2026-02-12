@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { getWindow } from 'vs/base/browser/dom';
+import { getWindow } from 'browser/Dom';
 import { ICharSizeService, IRenderService, IMouseService } from './Services';
 import { getCoords, getCoordsRelativeToElement } from 'browser/input/Mouse';
 

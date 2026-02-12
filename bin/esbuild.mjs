@@ -127,6 +127,7 @@ if (config.addon) {
 } else if (config.isDemoClient) {
   bundleConfig = {
     ...bundleConfig,
+    sourcemap: false,
     entryPoints: [`demo/client/client.ts`],
     outfile: 'demo/dist/client-bundle.js',
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
@@ -190,9 +191,7 @@ if (config.addon) {
     entryPoints: [
       'src/browser/**/*.ts',
       'src/common/**/*.ts',
-      'src/headless/**/*.ts',
-      'src/vs/base/**/*.ts',
-      'src/vs/patches/**/*.ts'
+      'src/headless/**/*.ts'
     ],
     outdir: 'out-esbuild/'
   };

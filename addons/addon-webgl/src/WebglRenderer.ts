@@ -13,7 +13,8 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeS
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -23,13 +24,14 @@ import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { Emitter, EventUtils } from 'common/Event';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { addDisposableListener } from 'browser/Dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
+  private _textBlinkStateManager: TextBlinkStateManager;
   private _charAtlasDisposable = this._register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
@@ -37,8 +39,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _observerDisposable = this._register(new MutableDisposable());
 
   private _model: RenderModel = new RenderModel();
+  private _rowHasBlinkingCells: boolean[] = [];
+  private _rowHasBlinkingCellsCount: number = 0;
   private _workCell: ICellData = new CellData();
-  private _workCell2: ICellData = new CellData();
   private _cellColorResolver: CellColorResolver;
 
   private _canvas: HTMLCanvasElement;
@@ -105,6 +108,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._updateCursorBlink();
     this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
+      () => this._requestRedrawViewport(),
+      this._coreBrowserService,
+      this._optionsService
+    ));
+    this._resetBlinkingRowState();
 
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
@@ -178,6 +187,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
 
     this._model.resize(this._terminal.cols, this._terminal.rows);
+    this._resetBlinkingRowState();
 
     // Resize all render layers
     for (const l of this._renderLayers) {
@@ -229,6 +239,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._cursorBlinkStateManager.value?.resume();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
+  }
+
+  public handleViewportVisibilityChange(isVisible: boolean): void {
+    this._textBlinkStateManager.setViewportVisible(isVisible);
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
@@ -322,6 +336,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.reset(this._terminal);
     }
+
+    this._resetBlinkingRowState();
+    this._textBlinkStateManager.setNeedsBlinkInViewport(false);
 
     this._cursorBlinkStateManager.value?.restartBlinkAnimation();
     this._updateCursorBlink();
@@ -420,6 +437,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
       line = terminal.buffer.lines.get(row)!;
+      let rowHasBlinkingCells = false;
       this._model.lineLengths[y] = 0;
       isCursorRow = cursorY === row;
       skipJoinedCheckUntilX = 0;
@@ -477,6 +495,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
         code = cell.getCode();
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
+        if (!rowHasBlinkingCells && cell.isBlink()) {
+          rowHasBlinkingCells = true;
+        }
+
         // Load colors/resolve overrides into work colors
         this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
 
@@ -504,6 +526,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
             this._cellColorResolver.result.bg =
               Attributes.CM_RGB | (this._themeService.colors.cursor.rgba >> 8 & Attributes.RGB_MASK);
           }
+        }
+
+        if (this._textBlinkStateManager.isEnabled && !this._textBlinkStateManager.isBlinkOn && cell.isBlink()) {
+          this._cellColorResolver.result.fg |= FgFlags.INVISIBLE;
         }
 
         if (code !== NULL_CELL_CODE) {
@@ -552,11 +578,31 @@ export class WebglRenderer extends Disposable implements IRenderer {
           x--; // Go back to the previous update cell for next iteration
         }
       }
+      this._setRowBlinkState(y, rowHasBlinkingCells);
     }
     if (modelUpdated) {
       this._rectangleRenderer.value!.updateBackgrounds(this._model);
     }
     this._rectangleRenderer.value!.updateCursor(this._model);
+    this._updateTextBlinkState();
+  }
+
+  private _resetBlinkingRowState(): void {
+    this._rowHasBlinkingCells = new Array(this._terminal.rows).fill(false);
+    this._rowHasBlinkingCellsCount = 0;
+  }
+
+  private _setRowBlinkState(row: number, hasBlinkingCells: boolean): void {
+    const previous = this._rowHasBlinkingCells[row];
+    if (previous === hasBlinkingCells) {
+      return;
+    }
+    this._rowHasBlinkingCells[row] = hasBlinkingCells;
+    this._rowHasBlinkingCellsCount += hasBlinkingCells ? 1 : -1;
+  }
+
+  private _updateTextBlinkState(): void {
+    this._textBlinkStateManager.setNeedsBlinkInViewport(this._rowHasBlinkingCellsCount > 0);
   }
 
   /**

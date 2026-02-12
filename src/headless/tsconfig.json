@@ -12,8 +12,7 @@
     ],
     "baseUrl": "../",
     "paths": {
-      "common/*": [ "./common/*" ],
-      "vs/*": [ "./vs/*" ]
+      "common/*": [ "./common/*" ]
     }
   },
   "include": [
@@ -22,7 +21,6 @@
     "../../typings/xterm-headless.d.ts"
   ],
   "references": [
-    { "path": "../common" },
-    { "path": "../vs" }
+    { "path": "../common" }
   ]
 }

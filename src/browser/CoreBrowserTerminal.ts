@@ -56,7 +56,7 @@ import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
 import { Emitter, EventUtils, type IEvent } from 'common/Event';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { addDisposableListener } from 'browser/Dom';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {

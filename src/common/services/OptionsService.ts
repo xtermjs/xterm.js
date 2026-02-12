@@ -14,6 +14,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   rows: 24,
   showCursorImmediately: false,
   cursorBlink: false,
+  blinkIntervalDuration: 0,
   cursorStyle: 'block',
   cursorWidth: 1,
   cursorInactiveStyle: 'outline',
@@ -31,6 +32,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   logLevel: 'info',
   logger: null,
   scrollback: 1000,
+  scrollbar: {},
   scrollOnEraseInDisplay: false,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
@@ -167,6 +169,12 @@ export class OptionsService extends Disposable implements IOptionsService {
           break;
         }
         value = FONT_WEIGHT_OPTIONS.includes(value) ? value : DEFAULT_OPTIONS[key];
+        break;
+      case 'blinkIntervalDuration':
+        value = Math.floor(value);
+        if (value < 0) {
+          throw new Error(`${key} cannot be less than 0, value: ${value}`);
+        }
         break;
       case 'cursorWidth':
         value = Math.floor(value);

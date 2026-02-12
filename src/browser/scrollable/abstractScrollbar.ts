@@ -1,0 +1,299 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+import * as dom from '../Dom';
+import { FastDomNode } from './fastDomNode';
+import { GlobalPointerMoveMonitor } from './globalPointerMoveMonitor';
+import { StandardWheelEvent } from './mouseEvent';
+import { ScrollbarArrow, IScrollbarArrowOptions } from './scrollbarArrow';
+import { ScrollbarState } from './scrollbarState';
+import { ScrollbarVisibilityController } from './scrollbarVisibilityController';
+import { Widget } from './widget';
+import * as platform from 'common/Platform';
+import { INewScrollPosition, Scrollable, ScrollbarVisibility } from './scrollable';
+
+/**
+ * The orthogonal distance to the slider at which dragging "resets". This implements "snapping"
+ */
+const POINTER_DRAG_RESET_DISTANCE = 140;
+
+export interface ISimplifiedPointerEvent {
+  buttons: number;
+  pageX: number;
+  pageY: number;
+}
+
+export interface IScrollbarHost {
+  handleMouseWheel(mouseWheelEvent: StandardWheelEvent): void;
+  handleDragStart(): void;
+  handleDragEnd(): void;
+}
+
+interface IAbstractScrollbarOptions {
+  lazyRender: boolean;
+  host: IScrollbarHost;
+  scrollbarState: ScrollbarState;
+  visibility: ScrollbarVisibility;
+  extraScrollbarClassName: string;
+  scrollable: Scrollable;
+  scrollByPage: boolean;
+}
+
+export abstract class AbstractScrollbar extends Widget {
+
+  protected _host: IScrollbarHost;
+  protected _scrollable: Scrollable;
+  protected _scrollByPage: boolean;
+  private _lazyRender: boolean;
+  protected _scrollbarState: ScrollbarState;
+  protected _visibilityController: ScrollbarVisibilityController;
+  private _pointerMoveMonitor: GlobalPointerMoveMonitor;
+
+  public domNode: FastDomNode<HTMLElement>;
+  public slider!: FastDomNode<HTMLElement>;
+
+  protected _shouldRender: boolean;
+
+  constructor(opts: IAbstractScrollbarOptions) {
+    super();
+    this._lazyRender = opts.lazyRender;
+    this._host = opts.host;
+    this._scrollable = opts.scrollable;
+    this._scrollByPage = opts.scrollByPage;
+    this._scrollbarState = opts.scrollbarState;
+    this._visibilityController = this._register(new ScrollbarVisibilityController(opts.visibility, 'xterm-visible xterm-scrollbar ' + opts.extraScrollbarClassName, 'xterm-invisible xterm-scrollbar ' + opts.extraScrollbarClassName));
+    this._visibilityController.setIsNeeded(this._scrollbarState.isNeeded());
+    this._pointerMoveMonitor = this._register(new GlobalPointerMoveMonitor());
+    this._shouldRender = true;
+    this.domNode = new FastDomNode(document.createElement('div'));
+    this.domNode.setAttribute('role', 'presentation');
+    this.domNode.setAttribute('aria-hidden', 'true');
+
+    this._visibilityController.setDomNode(this.domNode);
+    this.domNode.setPosition('absolute');
+
+    this._register(dom.addDisposableListener(this.domNode.domNode, dom.eventType.POINTER_DOWN, (e: PointerEvent) => this._domNodePointerDown(e)));
+  }
+
+  // ----------------- creation
+
+  /**
+   * Creates the dom node for an arrow & adds it to the container
+   */
+  protected _createArrow(opts: IScrollbarArrowOptions): void {
+    const arrow = this._register(new ScrollbarArrow(opts));
+    this.domNode.domNode.appendChild(arrow.bgDomNode);
+    this.domNode.domNode.appendChild(arrow.domNode);
+  }
+
+  /**
+   * Creates the slider dom node, adds it to the container & hooks up the events
+   */
+  protected _createSlider(top: number, left: number, width: number | undefined, height: number | undefined): void {
+    this.slider = new FastDomNode(document.createElement('div'));
+    this.slider.setClassName('xterm-slider');
+    this.slider.setPosition('absolute');
+    this.slider.setTop(top);
+    this.slider.setLeft(left);
+    if (typeof width === 'number') {
+      this.slider.setWidth(width);
+    }
+    if (typeof height === 'number') {
+      this.slider.setHeight(height);
+    }
+    this.slider.setLayerHinting(true);
+    this.slider.setContain('strict');
+
+    this.domNode.domNode.appendChild(this.slider.domNode);
+
+    this._register(dom.addDisposableListener(
+      this.slider.domNode,
+      dom.eventType.POINTER_DOWN,
+      (e: PointerEvent) => {
+        if (e.button === 0) {
+          e.preventDefault();
+          this._sliderPointerDown(e);
+        }
+      }
+    ));
+
+    this._onclick(this.slider.domNode, e => {
+      if (e.leftButton) {
+        e.stopPropagation();
+      }
+    });
+  }
+
+  // ----------------- Update state
+
+  protected _handleElementSize(visibleSize: number): boolean {
+    if (this._scrollbarState.setVisibleSize(visibleSize)) {
+      this._visibilityController.setIsNeeded(this._scrollbarState.isNeeded());
+      this._shouldRender = true;
+      if (!this._lazyRender) {
+        this.render();
+      }
+    }
+    return this._shouldRender;
+  }
+
+  protected _handleElementScrollSize(elementScrollSize: number): boolean {
+    if (this._scrollbarState.setScrollSize(elementScrollSize)) {
+      this._visibilityController.setIsNeeded(this._scrollbarState.isNeeded());
+      this._shouldRender = true;
+      if (!this._lazyRender) {
+        this.render();
+      }
+    }
+    return this._shouldRender;
+  }
+
+  protected _handleElementScrollPosition(elementScrollPosition: number): boolean {
+    if (this._scrollbarState.setScrollPosition(elementScrollPosition)) {
+      this._visibilityController.setIsNeeded(this._scrollbarState.isNeeded());
+      this._shouldRender = true;
+      if (!this._lazyRender) {
+        this.render();
+      }
+    }
+    return this._shouldRender;
+  }
+
+  // ----------------- rendering
+
+  public beginReveal(): void {
+    this._visibilityController.setShouldBeVisible(true);
+  }
+
+  public beginHide(): void {
+    this._visibilityController.setShouldBeVisible(false);
+  }
+
+  public render(): void {
+    if (!this._shouldRender) {
+      return;
+    }
+    this._shouldRender = false;
+
+    this._renderDomNode(this._scrollbarState.getRectangleLargeSize(), this._scrollbarState.getRectangleSmallSize());
+    this._updateSlider(this._scrollbarState.getSliderSize(), this._scrollbarState.getArrowSize() + this._scrollbarState.getSliderPosition());
+  }
+  // ----------------- DOM events
+
+  private _domNodePointerDown(e: PointerEvent): void {
+    if (e.target !== this.domNode.domNode) {
+      return;
+    }
+    this._handlePointerDown(e);
+  }
+
+  public delegatePointerDown(e: PointerEvent): void {
+    const domTop = this.domNode.domNode.getClientRects()[0].top;
+    const sliderStart = domTop + this._scrollbarState.getSliderPosition();
+    const sliderStop = domTop + this._scrollbarState.getSliderPosition() + this._scrollbarState.getSliderSize();
+    const pointerPos = this._sliderPointerPosition(e);
+    if (sliderStart <= pointerPos && pointerPos <= sliderStop) {
+      if (e.button === 0) {
+        e.preventDefault();
+        this._sliderPointerDown(e);
+      }
+    } else {
+      this._handlePointerDown(e);
+    }
+  }
+
+  private _handlePointerDown(e: PointerEvent): void {
+    let offsetX: number;
+    let offsetY: number;
+    if (e.target === this.domNode.domNode && typeof e.offsetX === 'number' && typeof e.offsetY === 'number') {
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+    } else {
+      const domNodePosition = dom.getDomNodePagePosition(this.domNode.domNode);
+      offsetX = e.pageX - domNodePosition.left;
+      offsetY = e.pageY - domNodePosition.top;
+    }
+
+    const offset = this._pointerDownRelativePosition(offsetX, offsetY);
+    this._setDesiredScrollPositionNow(
+      this._scrollByPage
+        ? this._scrollbarState.getDesiredScrollPositionFromOffsetPaged(offset)
+        : this._scrollbarState.getDesiredScrollPositionFromOffset(offset)
+    );
+
+    if (e.button === 0) {
+      e.preventDefault();
+      this._sliderPointerDown(e);
+    }
+  }
+
+  private _sliderPointerDown(e: PointerEvent): void {
+    if (!e.target || !(e.target instanceof Element)) {
+      return;
+    }
+    const initialPointerPosition = this._sliderPointerPosition(e);
+    const initialPointerOrthogonalPosition = this._sliderOrthogonalPointerPosition(e);
+    const initialScrollbarState = this._scrollbarState.clone();
+    this.slider.toggleClassName('xterm-active', true);
+
+    this._pointerMoveMonitor.startMonitoring(
+      e.target,
+      e.pointerId,
+      e.buttons,
+      (pointerMoveData: PointerEvent) => {
+        const pointerOrthogonalPosition = this._sliderOrthogonalPointerPosition(pointerMoveData);
+        const pointerOrthogonalDelta = Math.abs(pointerOrthogonalPosition - initialPointerOrthogonalPosition);
+
+        if (platform.isWindows && pointerOrthogonalDelta > POINTER_DRAG_RESET_DISTANCE) {
+          this._setDesiredScrollPositionNow(initialScrollbarState.getScrollPosition());
+          return;
+        }
+
+        const pointerPosition = this._sliderPointerPosition(pointerMoveData);
+        const pointerDelta = pointerPosition - initialPointerPosition;
+        this._setDesiredScrollPositionNow(initialScrollbarState.getDesiredScrollPositionFromDelta(pointerDelta));
+      },
+      () => {
+        this.slider.toggleClassName('xterm-active', false);
+        this._host.handleDragEnd();
+      }
+    );
+
+    this._host.handleDragStart();
+  }
+
+  private _setDesiredScrollPositionNow(_desiredScrollPosition: number): void {
+
+    const desiredScrollPosition: INewScrollPosition = {};
+    this.writeScrollPosition(desiredScrollPosition, _desiredScrollPosition);
+
+    this._scrollable.setScrollPositionNow(desiredScrollPosition);
+  }
+
+  public updateScrollbarSize(scrollbarSize: number): void {
+    this._updateScrollbarSize(scrollbarSize);
+    this._scrollbarState.setScrollbarSize(scrollbarSize);
+    this._shouldRender = true;
+    if (!this._lazyRender) {
+      this.render();
+    }
+  }
+
+  public isNeeded(): boolean {
+    return this._scrollbarState.isNeeded();
+  }
+
+  // ----------------- Overwrite these
+
+  protected abstract _renderDomNode(largeSize: number, smallSize: number): void;
+  protected abstract _updateSlider(sliderSize: number, sliderPosition: number): void;
+
+  protected abstract _pointerDownRelativePosition(offsetX: number, offsetY: number): number;
+  protected abstract _sliderPointerPosition(e: ISimplifiedPointerEvent): number;
+  protected abstract _sliderOrthogonalPointerPosition(e: ISimplifiedPointerEvent): number;
+  protected abstract _updateScrollbarSize(size: number): void;
+
+  public abstract writeScrollPosition(target: INewScrollPosition, scrollPosition: number): void;
+}

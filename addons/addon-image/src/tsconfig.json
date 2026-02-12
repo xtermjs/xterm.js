@@ -15,7 +15,6 @@
     "paths": {
       "browser/*": [ "../../../src/browser/*" ],
       "common/*": [ "../../../src/common/*" ],
-      "vs/*": [ "../../../src/vs/*" ],
       "@xterm/addon-image": [ "../typings/addon-image.d.ts" ]
     }
   },
@@ -25,7 +24,6 @@
   ],
   "references": [
     { "path": "../../../src/browser" },
-    { "path": "../../../src/common" },
-    { "path": "../../../src/vs" }
+    { "path": "../../../src/common" }
   ]
 }

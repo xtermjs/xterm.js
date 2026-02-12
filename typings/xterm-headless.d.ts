@@ -56,6 +56,13 @@ declare module '@xterm/headless' {
     cursorBlink?: boolean;
 
     /**
+     * The interval in milliseconds for the blink attribute. This is the amount
+     * of time text remains visible or hidden before toggling. Set to 0 to
+     * disable blinking. The default is 0.
+     */
+    blinkIntervalDuration?: number;
+
+    /**
      * The style of the cursor.
      */
     cursorStyle?: 'block' | 'underline' | 'bar';

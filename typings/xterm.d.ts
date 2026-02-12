@@ -65,6 +65,13 @@ declare module '@xterm/xterm' {
     cursorBlink?: boolean;
 
     /**
+     * The interval in milliseconds for the blink attribute. This is the amount
+     * of time text remains visible or hidden before toggling. Set to 0 to
+     * disable blinking. The default is 0.
+     */
+    blinkIntervalDuration?: number;
+
+    /**
      * The style of the cursor when the terminal is focused.
      */
     cursorStyle?: 'block' | 'underline' | 'bar';
@@ -273,6 +280,11 @@ declare module '@xterm/xterm' {
      * The scrolling speed multiplier used for adjusting normal scrolling speed.
      */
     scrollSensitivity?: number;
+
+    /**
+     * Options for configuring the scrollbar.
+     */
+    scrollbar?: IScrollbarOptions;
 
     /**
      * The duration to smoothly scroll between the origin and the target in
@@ -720,6 +732,17 @@ declare module '@xterm/xterm' {
      * {@link ITheme.overviewRulerBorder} color.
      */
     showBottomBorder?: boolean;
+  }
+
+  /**
+   * Options for configuring the scrollbar.
+   */
+  export interface IScrollbarOptions {
+    /**
+     * Whether to show arrows at the top and bottom of the scrollbar. Defaults
+     * to false.
+     */
+    showArrows?: boolean;
   }
 
   /**

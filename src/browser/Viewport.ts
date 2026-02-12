@@ -8,12 +8,12 @@ import { ViewportConstants } from 'browser/shared/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
-import { addDisposableListener, scheduleAtNextAnimationFrame } from 'vs/base/browser/dom';
-import { SmoothScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
-import type { ScrollableElementChangeOptions } from 'vs/base/browser/ui/scrollbar/scrollableElementOptions';
+import { addDisposableListener, scheduleAtNextAnimationFrame } from 'browser/Dom';
+import { SmoothScrollableElement } from 'browser/scrollable/scrollableElement';
+import type { IScrollableElementChangeOptions } from 'browser/scrollable/scrollableElementOptions';
 import { Emitter, EventUtils } from 'common/Event';
-import { Scrollable, ScrollbarVisibility, type ScrollEvent } from 'vs/base/common/scrollable';
-import { Gesture, EventType as GestureEventType, type GestureEvent } from 'vs/base/browser/touch';
+import { Scrollable, ScrollbarVisibility, type IScrollEvent } from 'browser/scrollable/scrollable';
+import { Gesture, EventType as GestureEventType, type IGestureEvent } from 'browser/scrollable/touch';
 
 export class Viewport extends Disposable {
 
@@ -52,10 +52,11 @@ export class Viewport extends Disposable {
     }));
 
     this._scrollableElement = this._register(new SmoothScrollableElement(screenElement, {
-      vertical: ScrollbarVisibility.Auto,
-      horizontal: ScrollbarVisibility.Hidden,
+      vertical: ScrollbarVisibility.AUTO,
+      horizontal: ScrollbarVisibility.HIDDEN,
       useShadows: false,
       mouseWheelSmoothScroll: true,
+      verticalHasArrows: this._optionsService.rawOptions.scrollbar?.showArrows ?? false,
       ...this._getChangeOptions()
     }, scrollable));
     this._register(this._optionsService.onMultipleOptionChange([
@@ -83,13 +84,13 @@ export class Viewport extends Disposable {
     this._register(toDisposable(() => this._styleElement.remove()));
     this._register(EventUtils.runAndSubscribe(themeService.onChangeColors, () => {
       this._styleElement.textContent = [
-        `.xterm .xterm-scrollable-element > .scrollbar > .slider {`,
+        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider {`,
         `  background: ${themeService.colors.scrollbarSliderBackground.css};`,
         `}`,
-        `.xterm .xterm-scrollable-element > .scrollbar > .slider:hover {`,
+        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider:hover {`,
         `  background: ${themeService.colors.scrollbarSliderHoverBackground.css};`,
         `}`,
-        `.xterm .xterm-scrollable-element > .scrollbar > .slider.active {`,
+        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider.xterm-active {`,
         `  background: ${themeService.colors.scrollbarSliderActiveBackground.css};`,
         `}`
       ].join('\n');
@@ -108,7 +109,7 @@ export class Viewport extends Disposable {
 
     // Touch/gesture scrolling support
     this._register(Gesture.addTarget(screenElement));
-    this._register(addDisposableListener(screenElement, GestureEventType.Change, (e: GestureEvent) => this._handleGestureChange(e)));
+    this._register(addDisposableListener(screenElement, GestureEventType.CHANGE, (e: IGestureEvent) => this._handleGestureChange(e)));
   }
 
   public scrollLines(disp: number): void {
@@ -129,7 +130,7 @@ export class Viewport extends Disposable {
     });
   }
 
-  private _getChangeOptions(): ScrollableElementChangeOptions {
+  private _getChangeOptions(): IScrollableElementChangeOptions {
     return {
       mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
       fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
@@ -179,7 +180,7 @@ export class Viewport extends Disposable {
     this._isSyncing = false;
   }
 
-  private _handleScroll(e: ScrollEvent): void {
+  private _handleScroll(e: IScrollEvent): void {
     if (!this._renderService) {
       return;
     }
@@ -196,7 +197,7 @@ export class Viewport extends Disposable {
     this._isHandlingScroll = false;
   }
 
-  private _handleGestureChange(e: GestureEvent): void {
+  private _handleGestureChange(e: IGestureEvent): void {
     e.preventDefault();
     e.stopPropagation();
     const pos = this._scrollableElement.getScrollPosition();

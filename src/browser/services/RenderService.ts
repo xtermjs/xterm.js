@@ -131,6 +131,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _handleIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.isIntersecting === undefined ? (entry.intersectionRatio === 0) : !entry.isIntersecting;
+    this._renderer.value?.handleViewportVisibilityChange?.(!this._isPaused);
 
     // Terminal was hidden on open
     if (!this._isPaused && !this._charSizeService.hasValidSize) {
