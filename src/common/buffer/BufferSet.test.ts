@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { Buffer } from 'common/buffer/Buffer';
-import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
+import { MockOptionsService, MockBufferService, MockLogService } from 'common/TestUtils.test';
 
 describe('BufferSet', () => {
   let bufferSet: BufferSet;
@@ -14,7 +14,8 @@ describe('BufferSet', () => {
   beforeEach(() => {
     bufferSet = new BufferSet(
       new MockOptionsService({ scrollback: 1000 }),
-      new MockBufferService(80, 24)
+      new MockBufferService(80, 24),
+      new MockLogService()
     );
   });
 

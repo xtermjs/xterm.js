@@ -14,7 +14,7 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
-import { IUnicodeService } from 'common/services/Services';
+import { ILogService, IUnicodeService } from 'common/services/Services';
 import { Emitter } from 'common/Event';
 
 /**
@@ -88,7 +88,8 @@ export class TextureAtlas implements ITextureAtlas {
   constructor(
     private readonly _document: Document,
     private readonly _config: ICharAtlasConfig,
-    private readonly _unicodeService: IUnicodeService
+    private readonly _unicodeService: IUnicodeService,
+    private readonly _logService: ILogService
   ) {
     this._createNewPage();
     this._tmpCanvas = createCanvas(
@@ -119,7 +120,7 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126, this is not urgent and done in idle callbacks
-    const queue = new IdleTaskQueue();
+    const queue = new IdleTaskQueue(this._logService);
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
         if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
@@ -525,7 +526,8 @@ export class TextureAtlas implements ITextureAtlas {
     // Draw custom characters if applicable
     let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.deviceCharWidth, this._config.deviceCharHeight, this._config.fontSize, this._config.devicePixelRatio, backgroundColor.css);
+      const variantOffset = this._workAttributeData.getUnderlineVariantOffset();
+      customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.deviceCharWidth, this._config.deviceCharHeight, this._config.fontSize, this._config.devicePixelRatio, backgroundColor.css, variantOffset);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the

@@ -474,8 +474,22 @@ describe('KittyKeyboard', () => {
       });
 
       it('modifier key release includes its own bit cleared', () => {
-        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags, KittyKeyboardEventType.RELEASE);
+        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags | KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, '\x1b[57441;1:3u');
+      });
+    });
+
+    describe('modifier-only reporting', () => {
+      const flags = KittyKeyboardFlags.REPORT_EVENT_TYPES;
+
+      it('does not report modifier press without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: true }), flags);
+        assert.strictEqual(result.key, undefined);
+      });
+
+      it('does not report modifier release without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
       });
     });
 

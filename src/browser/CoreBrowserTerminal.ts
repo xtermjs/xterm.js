@@ -616,11 +616,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
     this._register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
 
-    if (this.options.overviewRuler.width) {
+    const showScrollbar = this.options.scrollbar?.showScrollbar ?? true;
+    const overviewRulerWidth = this.options.scrollbar?.width;
+    if (showScrollbar && overviewRulerWidth) {
       this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
     }
-    this.optionsService.onSpecificOptionChange('overviewRuler', value => {
-      if (!this._overviewRulerRenderer && value && this._viewportElement && this.screenElement) {
+    this.optionsService.onSpecificOptionChange('scrollbar', value => {
+      const shouldShow = (value?.showScrollbar ?? true) && !!value?.width;
+      if (!this._overviewRulerRenderer && shouldShow && this._viewportElement && this.screenElement) {
         this._overviewRulerRenderer = this._register(this._instantiationService.createInstance(OverviewRulerRenderer, this._viewportElement, this.screenElement));
       }
     });

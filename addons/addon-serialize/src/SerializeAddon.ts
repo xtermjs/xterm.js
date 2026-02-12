@@ -89,11 +89,19 @@ function equalUnderline(cell1: IBufferCell | IAttributeData, cell2: IBufferCell)
   if (!cell1.isUnderline() && !cell2.isUnderline()) {
     return true;
   }
-  const cell1Data = cell1 as unknown as IAttributeData;
-  const cell2Data = cell2 as unknown as IAttributeData;
-  return cell1Data.getUnderlineStyle() === cell2Data.getUnderlineStyle()
-    && cell1Data.getUnderlineColor() === cell2Data.getUnderlineColor()
-    && cell1Data.getUnderlineColorMode() === cell2Data.getUnderlineColorMode();
+  if (cell1.getUnderlineStyle() !== cell2.getUnderlineStyle()) {
+    return false;
+  }
+  const cell1Default = cell1.isUnderlineColorDefault();
+  const cell2Default = cell2.isUnderlineColorDefault();
+  if (cell1Default && cell2Default) {
+    return true;
+  }
+  if (cell1Default !== cell2Default) {
+    return false;
+  }
+  return cell1.getUnderlineColor() === cell2.getUnderlineColor()
+    && cell1.getUnderlineColorMode() === cell2.getUnderlineColorMode();
 }
 
 function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
@@ -107,6 +115,16 @@ function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): bo
     && cell1.isItalic() === cell2.isItalic()
     && cell1.isDim() === cell2.isDim()
     && cell1.isStrikethrough() === cell2.isStrikethrough();
+}
+
+function attributesEquals(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
+  const cell1AsBufferCell = cell1 as IBufferCell;
+  if (typeof cell1AsBufferCell.attributesEquals === 'function') {
+    return cell1AsBufferCell.attributesEquals(cell2);
+  }
+  return equalFg(cell1, cell2)
+    && equalBg(cell1, cell2)
+    && equalFlags(cell1, cell2);
 }
 
 class StringSerializeHandler extends BaseSerializeHandler {
@@ -258,6 +276,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
   private _diffStyle(cell: IBufferCell | IAttributeData, oldCell: IBufferCell): number[] {
     const sgrSeq: number[] = [];
+    if (attributesEquals(cell, oldCell)) {
+      return sgrSeq;
+    }
     const fgChanged = !equalFg(cell, oldCell);
     const bgChanged = !equalBg(cell, oldCell);
     const flagsChanged = !equalFlags(cell, oldCell);
@@ -290,17 +311,18 @@ class StringSerializeHandler extends BaseSerializeHandler {
           if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
           if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
           if (!equalUnderline(cell, oldCell)) {
-            const cellData = cell as unknown as IAttributeData;
-            const style = cellData.getUnderlineStyle();
+            const style = cell.getUnderlineStyle();
             if (style === UnderlineStyle.NONE) {
               sgrSeq.push(24);
+            } else if (style === UnderlineStyle.SINGLE && cell.isUnderlineColorDefault()) {
+              sgrSeq.push(4);
             } else {
               // Use SGR 4:X format for underline styles
               sgrSeq.push('4:' + style as unknown as number);
               // Handle underline color
-              if (!cellData.isUnderlineColorDefault()) {
-                const color = cellData.getUnderlineColor();
-                if (cellData.isUnderlineColorRGB()) {
+              if (!cell.isUnderlineColorDefault()) {
+                const color = cell.getUnderlineColor();
+                if (cell.isUnderlineColorRGB()) {
                   sgrSeq.push('58:2::' + ((color >>> 16) & 0xFF) + ':' + ((color >>> 8) & 0xFF) + ':' + (color & 0xFF) as unknown as number);
                 } else {
                   sgrSeq.push('58:5:' + color as unknown as number);
@@ -675,12 +697,11 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   }
 
   private _getUnderlineColor(cell: IBufferCell): string | undefined {
-    const cellData = cell as unknown as IAttributeData;
-    if (cellData.isUnderlineColorDefault()) {
+    if (cell.isUnderlineColorDefault()) {
       return undefined;
     }
-    const color = cellData.getUnderlineColor();
-    if (cellData.isUnderlineColorRGB()) {
+    const color = cell.getUnderlineColor();
+    if (cell.isUnderlineColorRGB()) {
       const rgb = [
         (color >> 16) & 255,
         (color >>  8) & 255,
@@ -693,8 +714,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   }
 
   private _getUnderlineStyle(cell: IBufferCell): string {
-    const cellData = cell as unknown as IAttributeData;
-    switch (cellData.getUnderlineStyle()) {
+    switch (cell.getUnderlineStyle()) {
       case UnderlineStyle.SINGLE:
         return 'underline';
       case UnderlineStyle.DOUBLE:
@@ -712,6 +732,10 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
   private _diffStyle(cell: IBufferCell, oldCell: IBufferCell): string[] | undefined {
     const content: string[] = [];
+
+    if (attributesEquals(cell, oldCell)) {
+      return undefined;
+    }
 
     const fgChanged = !equalFg(cell, oldCell);
     const bgChanged = !equalBg(cell, oldCell);

@@ -82,10 +82,11 @@ export abstract class AbstractScrollbar extends Widget {
   /**
    * Creates the dom node for an arrow & adds it to the container
    */
-  protected _createArrow(opts: IScrollbarArrowOptions): void {
+  protected _createArrow(opts: IScrollbarArrowOptions): ScrollbarArrow {
     const arrow = this._register(new ScrollbarArrow(opts));
     this.domNode.domNode.appendChild(arrow.bgDomNode);
     this.domNode.domNode.appendChild(arrow.domNode);
+    return arrow;
   }
 
   /**

@@ -32,7 +32,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   logLevel: 'info',
   logger: null,
   scrollback: 1000,
-  scrollbar: {},
+  scrollbar: { showScrollbar: true },
   scrollOnEraseInDisplay: false,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
@@ -55,7 +55,6 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
-  overviewRuler: {},
   quirks: {},
   vtExtensions: {}
 };

@@ -18,10 +18,10 @@ export class BufferLineApiView implements IBufferLineApi {
     }
 
     if (cell) {
-      this._line.loadCell(x, cell as ICellData);
+      this._line.loadCell(x, cell as unknown as ICellData);
       return cell;
     }
-    return this._line.loadCell(x, new CellData());
+    return this._line.loadCell(x, new CellData()) as unknown as IBufferCellApi;
   }
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
