@@ -233,5 +233,31 @@ describe('CompositionHelper', () => {
         }, 0);
       }, 0);
     });
+
+    it('Should insert middle composition and subsequent input without appending existing trailing text', (done) => {
+      textarea.value = '一二';
+      // screenReaderMode keeps textarea content/selection for assistive technologies (eg. screen
+      // readers), so the caret can be moved within the textarea (eg. via arrow keys) before
+      // starting composition.
+      textarea.selectionStart = 1;
+      textarea.selectionEnd = 1;
+
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '一' });
+      textarea.value = '一一二';
+      // After the composed text is inserted, the caret typically moves to after it.
+      textarea.selectionStart = 2;
+      textarea.selectionEnd = 2;
+
+      setTimeout(() => { // wait for any textarea updates
+        compositionHelper.compositionend();
+        // Second character '1' (a non-composition character)
+        textarea.value = '一一1二';
+        setTimeout(() => { // wait for any textarea updates
+          assert.equal(handledText, '一1');
+          done();
+        }, 0);
+      }, 0);
+    });
   });
 });
