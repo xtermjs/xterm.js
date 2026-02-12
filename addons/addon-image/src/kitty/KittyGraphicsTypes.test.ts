@@ -106,5 +106,44 @@ describe('KittyGraphicsTypes', () => {
       const cmd = parseKittyCommand('a=T,f=100');
       assert.strictEqual(cmd.zIndex, undefined);
     });
+
+    it('should parse delete selector key', () => {
+      const cmd = parseKittyCommand('a=d,d=i,i=5');
+      assert.strictEqual(cmd.action, 'd');
+      assert.strictEqual(cmd.deleteSelector, 'i');
+      assert.strictEqual(cmd.id, 5);
+    });
+
+    it('should parse uppercase delete selector', () => {
+      const cmd = parseKittyCommand('a=d,d=A');
+      assert.strictEqual(cmd.deleteSelector, 'A');
+    });
+
+    it('should parse delete selector d=a (all)', () => {
+      const cmd = parseKittyCommand('a=d,d=a');
+      assert.strictEqual(cmd.deleteSelector, 'a');
+    });
+
+    it('should leave deleteSelector undefined when not specified', () => {
+      const cmd = parseKittyCommand('a=d,i=5');
+      assert.strictEqual(cmd.deleteSelector, undefined);
+    });
+
+    it('should parse placement id key', () => {
+      const cmd = parseKittyCommand('a=d,d=i,i=5,p=3');
+      assert.strictEqual(cmd.placementId, 3);
+      assert.strictEqual(cmd.deleteSelector, 'i');
+      assert.strictEqual(cmd.id, 5);
+    });
+
+    it('should leave placementId undefined when not specified', () => {
+      const cmd = parseKittyCommand('a=d,d=i,i=5');
+      assert.strictEqual(cmd.placementId, undefined);
+    });
+
+    it('should parse image number key', () => {
+      const cmd = parseKittyCommand('a=t,f=100,I=42');
+      assert.strictEqual(cmd.imageNumber, 42);
+    });
   });
 });

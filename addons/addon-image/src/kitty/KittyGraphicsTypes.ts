@@ -72,7 +72,11 @@ export const enum KittyKey {
   // Cursor movement policy (0=move cursor after image, 1=don't move cursor)
   CURSOR_MOVEMENT = 'C',
   // Z-index for image layering (negative = behind text, 0+ = on top)
-  Z_INDEX = 'z'
+  Z_INDEX = 'z',
+  // Delete selector (a/A=all, i/I=by id, c/C=at cursor, etc.) — only used when a=d
+  DELETE_SELECTOR = 'd',
+  // Placement ID for targeting specific placements
+  PLACEMENT_ID = 'p'
 }
 
 // Pixel format constants
@@ -98,6 +102,8 @@ export interface IKittyCommand {
   quiet?: number;
   cursorMovement?: number;
   zIndex?: number;
+  deleteSelector?: string;
+  placementId?: number;
   compression?: string;
   payload?: string;
 }
@@ -153,6 +159,10 @@ export function parseKittyCommand(data: string): IKittyCommand {
       cmd.compression = value;
       continue;
     }
+    if (key === KittyKey.DELETE_SELECTOR) {
+      cmd.deleteSelector = value;
+      continue;
+    }
     const numValue = parseInt(value);
     switch (key) {
       case KittyKey.FORMAT: cmd.format = numValue; break;
@@ -168,6 +178,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
       case KittyKey.QUIET: cmd.quiet = numValue; break;
       case KittyKey.CURSOR_MOVEMENT: cmd.cursorMovement = numValue; break;
       case KittyKey.Z_INDEX: cmd.zIndex = numValue; break;
+      case KittyKey.PLACEMENT_ID: cmd.placementId = numValue; break;
     }
   }
 

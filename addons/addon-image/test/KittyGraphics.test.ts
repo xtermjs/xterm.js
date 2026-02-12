@@ -86,6 +86,7 @@ test.describe('Kitty Graphics Protocol', () => {
   // TODO: Add tests for animation frames
   // TODO: Add performance tests for streaming large images
   // TODO: Implement cursor movement per Kitty spec - cursor should move by cols/rows after placement (unless C=1)
+  // TODO: Distinguish lowercase delete selectors (placement only) from uppercase (placement + free data)
 
   test.beforeEach(async ({}, testInfo) => {
     // DEBT: This test never worked on webkit
@@ -227,12 +228,12 @@ test.describe('Kitty Graphics Protocol', () => {
   });
 
   test.describe('Delete commands', () => {
-    test('delete command (a=d) removes specific image by id', async () => {
+    test('delete command (a=d,d=i) removes specific image by id', async () => {
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=10;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
 
-      await ctx.proxy.write(`\x1b_Ga=d,i=10\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=d,d=i,i=10\x1b\\`);
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 0);
     });
@@ -256,7 +257,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 1);
 
-      await ctx.proxy.write(`\x1b_Ga=d,i=50\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=d,d=i,i=50\x1b\\`);
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 0);
     });
@@ -270,7 +271,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 2);
 
-      await ctx.proxy.write(`\x1b_Ga=d,i=55\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=d,d=i,i=55\x1b\\`);
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 1);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.has(56)`), true);
@@ -288,6 +289,112 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(`\x1b_Ga=d\x1b\\`);
       await timeout(50);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 0);
+    });
+
+    test('d=i selector deletes specific image by id', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=80;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=81;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=i,i=80\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(81)`), true);
+    });
+
+    test('d=I selector deletes specific image by id (uppercase)', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=82;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=83;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=I,i=82\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(83)`), true);
+    });
+
+    test('d=a selector deletes all images', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=84;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=85;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=a\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 0);
+    });
+
+    test('d=A selector deletes all images (uppercase)', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=86;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=87;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=A\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 0);
+    });
+
+    test('d=a selector also removes displayed images from storage', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=88;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=a\x1b\\`);
+      await timeout(50);
+      strictEqual(await getImageStorageLength(), 0);
+    });
+
+    test('d=i selector also removes displayed image from storage', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=89;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=i,i=89\x1b\\`);
+      await timeout(50);
+      strictEqual(await getImageStorageLength(), 0);
+    });
+
+    test('d=i without id does nothing', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=90;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=i\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
+    });
+
+    test('d=i selector clears pixels from canvas', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=92,q=1;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 255]);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=i,i=92\x1b\\`);
+      await timeout(100);
+      strictEqual(await getPixel(0, 0, 0, 0), null);
+    });
+
+    test('d=a selector clears all pixels from canvas', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=93,q=1;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 255]);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=a\x1b\\`);
+      await timeout(100);
+      strictEqual(await getPixel(0, 0, 0, 0), null);
+    });
+
+    test('unsupported delete selector is ignored', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=91;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
+
+      await ctx.proxy.write(`\x1b_Ga=d,d=c\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
     });
 
     test('chunks sent after delete are not assembled with previous data', async () => {
@@ -865,7 +972,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await timeout(200);
         strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(700)`), true);
 
-        await ctx.proxy.write(`\x1b_Ga=d,i=700\x1b\\`);
+        await ctx.proxy.write(`\x1b_Ga=d,d=i,i=700\x1b\\`);
         await timeout(50);
         strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(700)`), false);
       });

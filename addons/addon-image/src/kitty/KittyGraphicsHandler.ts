@@ -428,36 +428,56 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   }
 
   private _handleDelete(cmd: IKittyCommand): boolean {
-    const id = cmd.id;
+    // Per spec: default delete selector is 'a' (delete all visible placements)
+    const selector = cmd.deleteSelector ?? 'a';
 
-    if (id !== undefined) {
-      // Abort in-flight chunked upload for this specific image
-      const pending = this._pendingTransmissions.get(id);
-      if (pending) {
-        pending.decoder.release();
-        this._pendingTransmissions.delete(id);
-      }
-
-      this._images.delete(id);
-      const storageId = this._kittyIdToStorageId.get(id);
-      if (storageId !== undefined) {
-        this._storage.deleteImage(storageId);
-        this._kittyIdToStorageId.delete(id);
-      }
-    } else {
-      // Abort all in-flight chunked uploads
-      for (const pending of this._pendingTransmissions.values()) {
-        pending.decoder.release();
-      }
-      this._pendingTransmissions.clear();
-
-      this._images.clear();
-      for (const storageId of this._kittyIdToStorageId.values()) {
-        this._storage.deleteImage(storageId);
-      }
-      this._kittyIdToStorageId.clear();
+    // TODO: Distinguish lowercase (delete placements only) from uppercase
+    // (delete placements + free stored image data). Currently both variants
+    // free everything since we don't separate stored data from placements.
+    switch (selector) {
+      case 'a':
+      case 'A':
+        // Delete all — also abort all in-flight uploads
+        for (const pending of this._pendingTransmissions.values()) {
+          pending.decoder.release();
+        }
+        this._pendingTransmissions.clear();
+        this._deleteAll();
+        break;
+      case 'i':
+      case 'I':
+        // Delete by image ID — only abort the targeted upload
+        if (cmd.id !== undefined) {
+          const pending = this._pendingTransmissions.get(cmd.id);
+          if (pending) {
+            pending.decoder.release();
+            this._pendingTransmissions.delete(cmd.id);
+          }
+          this._deleteById(cmd.id);
+        }
+        break;
+      default:
+        // Unsupported selectors (c, n, p, q, r, x, y, z, f) — ignore for now
+        break;
     }
     return true;
+  }
+
+  private _deleteById(id: number): void {
+    this._images.delete(id);
+    const storageId = this._kittyIdToStorageId.get(id);
+    if (storageId !== undefined) {
+      this._storage.deleteImage(storageId);
+      this._kittyIdToStorageId.delete(id);
+    }
+  }
+
+  private _deleteAll(): void {
+    this._images.clear();
+    for (const storageId of this._kittyIdToStorageId.values()) {
+      this._storage.deleteImage(storageId);
+    }
+    this._kittyIdToStorageId.clear();
   }
 
   private _sendResponse(id: number, message: string, quiet: number): void {
