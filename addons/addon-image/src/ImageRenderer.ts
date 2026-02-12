@@ -18,12 +18,9 @@ const PLACEHOLDER_HEIGHT = 24;
  * - draw image tiles onRender
  */
 export class ImageRenderer extends Disposable implements IDisposable {
-  /** @deprecated Use canvasTop instead. Kept for backward compat — points to canvasTop. */
-  public get canvas(): HTMLCanvasElement | undefined { return this._canvasTop; }
-  private _canvasTop: HTMLCanvasElement | undefined;
-  private _canvasBottom: HTMLCanvasElement | undefined;
-  private _ctxTop: CanvasRenderingContext2D | null | undefined;
-  private _ctxBottom: CanvasRenderingContext2D | null | undefined;
+  /** @deprecated Kept for backward compat — points to top layer canvas. */
+  public get canvas(): HTMLCanvasElement | undefined { return this._layers.get('top')?.canvas; }
+  private _layers = new Map<ImageLayer, CanvasRenderingContext2D>();
   private _placeholder: HTMLCanvasElement | undefined;
   private _placeholderBitmap: ImageBitmap | undefined;
   private _optionsRefresh = this._register(new MutableDisposable());
@@ -100,10 +97,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
         this._oldSetRenderer = undefined;
       }
       this._renderService = undefined;
-      this._canvasTop = undefined;
-      this._canvasBottom = undefined;
-      this._ctxTop = undefined;
-      this._ctxBottom = undefined;
+      this._layers.clear();
       this._placeholderBitmap?.close();
       this._placeholderBitmap = undefined;
       this._placeholder = undefined;
@@ -152,10 +146,10 @@ export class ImageRenderer extends Disposable implements IDisposable {
     const w = this.dimensions?.css.canvas.width || 0;
     const h = (++end - start) * (this.dimensions?.css.cell.height || 0);
     if (!layer || layer === 'top') {
-      this._ctxTop?.clearRect(0, y, w, h);
+      this._layers.get('top')?.clearRect(0, y, w, h);
     }
     if (!layer || layer === 'bottom') {
-      this._ctxBottom?.clearRect(0, y, w, h);
+      this._layers.get('bottom')?.clearRect(0, y, w, h);
     }
   }
 
@@ -164,10 +158,12 @@ export class ImageRenderer extends Disposable implements IDisposable {
    */
   public clearAll(layer?: ImageLayer): void {
     if (!layer || layer === 'top') {
-      this._ctxTop?.clearRect(0, 0, this._canvasTop?.width || 0, this._canvasTop?.height || 0);
+      const ctx = this._layers.get('top');
+      ctx?.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
     if (!layer || layer === 'bottom') {
-      this._ctxBottom?.clearRect(0, 0, this._canvasBottom?.width || 0, this._canvasBottom?.height || 0);
+      const ctx = this._layers.get('bottom');
+      ctx?.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
   }
 
@@ -175,7 +171,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Draw neighboring tiles on the image layer canvas.
    */
   public draw(imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number = 1): void {
-    const ctx = imgSpec.layer === 'bottom' ? this._ctxBottom : this._ctxTop;
+    const ctx = this._layers.get(imgSpec.layer);
     if (!ctx) {
       return;
     }
@@ -243,7 +239,8 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Draw a line with placeholder on the image layer canvas.
    */
   public drawPlaceholder(col: number, row: number, count: number = 1): void {
-    if (this._ctxTop) {
+    const ctx = this._layers.get('top');
+    if (ctx) {
       const { width, height } = this.cellSize;
 
       // Don't try to draw anything, if we cannot get valid renderer metrics.
@@ -257,7 +254,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
         this._createPlaceHolder(height + 1);
       }
       if (!this._placeholder) return;
-      this._ctxTop.drawImage(
+      ctx.drawImage(
         this._placeholderBitmap ?? this._placeholder!,
         col * width,
         (row * height) % 2 ? 0 : 1,  // needs %2 offset correction
@@ -278,13 +275,11 @@ export class ImageRenderer extends Disposable implements IDisposable {
   public rescaleCanvas(): void {
     const w = this.dimensions?.css.canvas.width || 0;
     const h = this.dimensions?.css.canvas.height || 0;
-    if (this._canvasTop && (this._canvasTop.width !== w || this._canvasTop.height !== h)) {
-      this._canvasTop.width = w;
-      this._canvasTop.height = h;
-    }
-    if (this._canvasBottom && (this._canvasBottom.width !== w || this._canvasBottom.height !== h)) {
-      this._canvasBottom.width = w;
-      this._canvasBottom.height = h;
+    for (const ctx of this._layers.values()) {
+      if (ctx.canvas.width !== w || ctx.canvas.height !== h) {
+        ctx.canvas.width = w;
+        ctx.canvas.height = h;
+      }
     }
   }
 
@@ -323,61 +318,57 @@ export class ImageRenderer extends Disposable implements IDisposable {
     this._renderService = this._terminal._core._renderService;
     this._oldSetRenderer = this._renderService.setRenderer.bind(this._renderService);
     this._renderService.setRenderer = (renderer: any) => {
-      this.removeLayerFromDom();
-      this.removeLayerFromDom('bottom');
+      for (const key of [...this._layers.keys()]) {
+        this.removeLayerFromDom(key);
+      }
       this._oldSetRenderer?.call(this._renderService, renderer);
     };
   }
 
   public insertLayerToDom(layer: ImageLayer = 'top'): void {
     // make sure that the terminal is attached to a document and to DOM
-    if (this.document && this._terminal._core.screenElement) {
-      if (layer === 'top' && !this._canvasTop) {
-        this._canvasTop = ImageRenderer.createCanvas(
-          this.document, this.dimensions?.css.canvas.width || 0,
-          this.dimensions?.css.canvas.height || 0
-        );
-        this._canvasTop.classList.add('xterm-image-layer-top');
-        this._terminal._core.screenElement.appendChild(this._canvasTop);
-        this._ctxTop = this._canvasTop.getContext('2d', { alpha: true, desynchronized: true });
-        this.clearAll('top');
-      }
-      if (layer === 'bottom' && !this._canvasBottom) {
-        this._canvasBottom = ImageRenderer.createCanvas(
-          this.document, this.dimensions?.css.canvas.width || 0,
-          this.dimensions?.css.canvas.height || 0
-        );
-        this._canvasBottom.classList.add('xterm-image-layer-bottom');
-        // Use z-index:-1 so it paints behind non-positioned text elements.
-        // The screen element needs to be a stacking context to contain the
-        // negative z-index, otherwise it would go behind the entire terminal.
-        this._canvasBottom.style.zIndex = '-1';
-        const screenElement = this._terminal._core.screenElement;
-        screenElement.style.zIndex = '0';
-        screenElement.insertBefore(this._canvasBottom, screenElement.firstChild);
-        this._ctxBottom = this._canvasBottom.getContext('2d', { alpha: true, desynchronized: true });
-        this.clearAll('bottom');
-      }
-    } else {
+    if (!this.document || !this._terminal._core.screenElement) {
       console.warn('image addon: cannot insert output canvas to DOM, missing document or screenElement');
+      return;
     }
+    if (this._layers.has(layer)) {
+      return;
+    }
+    const canvas = ImageRenderer.createCanvas(
+      this.document, this.dimensions?.css.canvas.width || 0,
+      this.dimensions?.css.canvas.height || 0
+    );
+    canvas.classList.add(`xterm-image-layer-${layer}`);
+    const screenElement = this._terminal._core.screenElement;
+    if (layer === 'bottom') {
+      // Use z-index:-1 so it paints behind non-positioned text elements.
+      // The screen element needs to be a stacking context to contain the
+      // negative z-index, otherwise it would go behind the entire terminal.
+      canvas.style.zIndex = '-1';
+      screenElement.style.zIndex = '0';
+      screenElement.insertBefore(canvas, screenElement.firstChild);
+    } else {
+      screenElement.appendChild(canvas);
+    }
+    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+    if (!ctx) {
+      canvas.remove();
+      return;
+    }
+    this._layers.set(layer, ctx);
+    this.clearAll(layer);
   }
 
   public removeLayerFromDom(layer: ImageLayer = 'top'): void {
-    if (layer === 'top' && this._canvasTop) {
-      this._ctxTop = undefined;
-      this._canvasTop.remove();
-      this._canvasTop = undefined;
-    }
-    if (layer === 'bottom' && this._canvasBottom) {
-      this._ctxBottom = undefined;
-      this._canvasBottom.remove();
-      this._canvasBottom = undefined;
+    const ctx = this._layers.get(layer);
+    if (ctx) {
+      ctx.canvas.remove();
+      this._layers.delete(layer);
     }
   }
 
   public hasLayer(layer: ImageLayer): boolean {
-    return layer === 'top' ? !!this._canvasTop : !!this._canvasBottom;
+    return this._layers.has(layer);
   }
 
   private _createPlaceHolder(height: number = PLACEHOLDER_HEIGHT): void {
