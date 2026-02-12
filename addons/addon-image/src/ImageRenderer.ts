@@ -183,14 +183,12 @@ export class ImageRenderer extends Disposable implements IDisposable {
     const finalWidth = count * width + sx > img.width ? img.width - sx : count * width;
     const finalHeight = sy + height > img.height ? img.height - sy : height;
 
-    // Floor all pixel offsets to get stable tile mapping without any overflows.
-    // Note: For not pixel perfect aligned cells like in the DOM renderer
-    // this will move a tile slightly to the top/left (subpixel range, thus ignore it).
-    // FIX #34: avoid striping on displays with pixelDeviceRatio != 1 by ceiling height and width
+    // Let the canvas handle sub-pixel coordinates natively to avoid
+    // inconsistent rounding that causes tile gaps/overlaps during resize.
     this._ctx.drawImage(
       img,
-      Math.floor(sx), Math.floor(sy), Math.ceil(finalWidth), Math.ceil(finalHeight),
-      Math.floor(dx), Math.floor(dy), Math.ceil(finalWidth), Math.ceil(finalHeight)
+      sx, sy, finalWidth, finalHeight,
+      dx, dy, finalWidth, finalHeight
     );
   }
 
@@ -216,8 +214,8 @@ export class ImageRenderer extends Disposable implements IDisposable {
     if (ctx) {
       ctx.drawImage(
         img,
-        Math.floor(sx), Math.floor(sy), Math.floor(finalWidth), Math.floor(finalHeight),
-        0, 0, Math.floor(finalWidth), Math.floor(finalHeight)
+        sx, sy, finalWidth, finalHeight,
+        0, 0, canvas.width, canvas.height
       );
       return canvas;
     }
