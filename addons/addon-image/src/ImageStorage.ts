@@ -250,7 +250,7 @@ export class ImageStorage implements IDisposable {
    * Method to add an image to the storage.
    * Returns the internal image ID assigned to the stored image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap, layer: ImageLayer = 'top'): number {
+  public addImage(img: HTMLCanvasElement | ImageBitmap, layer: ImageLayer = 'top', zIndex: number = 0): number {
     // never allow storage to exceed memory limit
     this._evictOldest(img.width * img.height);
 
@@ -340,7 +340,8 @@ export class ImageStorage implements IDisposable {
       marker: endMarker || undefined,
       tileCount,
       bufferType: this._terminal.buffer.active.type,
-      layer
+      layer,
+      zIndex
     };
 
     // finally add the image
@@ -419,7 +420,11 @@ export class ImageStorage implements IDisposable {
     // clear drawing area
     this._renderer.clearLines(start, end);
 
-    // walk all cells in viewport and draw tiles found
+    // Collect draw calls so we can sort by z-index (lower z drawn first).
+    const drawCalls: { imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number }[] = [];
+    const placeholderCalls: { col: number, row: number, count: number }[] = [];
+
+    // walk all cells in viewport and collect tiles found
     for (let row = start; row <= end; ++row) {
       const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
       if (!line) return;
@@ -453,15 +458,28 @@ export class ImageStorage implements IDisposable {
             col--;
             if (imgSpec) {
               if (imgSpec.actual) {
-                this._renderer.draw(imgSpec, startTile, startCol, row, count);
+                drawCalls.push({ imgSpec, tileId: startTile, col: startCol, row, count });
               }
             } else if (this._opts.showPlaceholder) {
-              this._renderer.drawPlaceholder(startCol, row, count);
+              placeholderCalls.push({ col: startCol, row, count });
             }
             this._fullyCleared = false;
           }
         }
       }
+    }
+
+    // Sort by z-index so lower z draws first (higher z renders on top)
+    drawCalls.sort((a, b) => a.imgSpec.zIndex - b.imgSpec.zIndex);
+
+    // Draw placeholders first (lowest priority)
+    for (const call of placeholderCalls) {
+      this._renderer.drawPlaceholder(call.col, call.row, call.count);
+    }
+
+    // Draw images in z-index order
+    for (const call of drawCalls) {
+      this._renderer.draw(call.imgSpec, call.tileId, call.col, call.row, call.count);
     }
   }
 

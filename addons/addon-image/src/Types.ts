@@ -110,4 +110,5 @@ export interface IImageSpec {
   tileCount: number;
   bufferType: 'alternate' | 'normal';
   layer: ImageLayer;
+  zIndex: number;
 }

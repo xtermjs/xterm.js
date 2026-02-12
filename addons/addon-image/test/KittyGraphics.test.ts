@@ -552,6 +552,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'top');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), 0);
     });
 
     test('z=0 stores image on top layer', async () => {
@@ -559,6 +560,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'top');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), 0);
     });
 
     test('z=1 (positive) stores image on top layer', async () => {
@@ -566,6 +568,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'top');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), 1);
     });
 
     test('z=-1 falls back to top layer when allowTransparency is disabled', async () => {
@@ -574,6 +577,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'top');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), -1);
     });
 
     test('z=-1 (negative) stores image on bottom layer when allowTransparency is enabled', async () => {
@@ -582,6 +586,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'bottom');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), -1);
     });
 
     test('z=-100 (large negative) stores image on bottom layer when allowTransparency is enabled', async () => {
@@ -590,6 +595,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'bottom');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), -100);
     });
 
     test('top layer canvas has correct CSS class', async () => {

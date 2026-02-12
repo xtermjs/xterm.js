@@ -510,12 +510,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const wantsBottom = cmd.zIndex !== undefined && cmd.zIndex < 0;
     const layer: ImageLayer = (wantsBottom && this._coreTerminal.options.allowTransparency) ? 'bottom' : 'top';
 
+    const zIndex = cmd.zIndex ?? 0;
     let storageId: number;
     if (w !== bitmap.width || h !== bitmap.height) {
       const resized = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
-      storageId = this._storage.addImage(resized, layer);
+      storageId = this._storage.addImage(resized, layer, zIndex);
     } else {
-      storageId = this._storage.addImage(bitmap, layer);
+      storageId = this._storage.addImage(bitmap, layer, zIndex);
     }
     this._kittyIdToStorageId.set(image.id, storageId);
 
