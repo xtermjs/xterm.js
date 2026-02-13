@@ -63,6 +63,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   // Storage related states
 
   private _pendingTransmissions: Map<number, IPendingTransmission> = new Map();
+  /**
+   * Tracks the pending key of the most recently started chunked upload.
+   * Per spec, subsequent chunks only need m= (and optionally q=), without i=.
+   * When a chunk arrives with no i=, this key is used to find the pending upload.
+   */
+  private _lastPendingKey: number | undefined;
   private _nextImageId = 1;
   /** Maps Kitty protocol image ID → ImageStorage internal ID for deletion/lookup. */
   private _kittyIdToStorageId: Map<number, number> = new Map();
@@ -91,6 +97,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       pending.decoder.release();
     }
     this._pendingTransmissions.clear();
+    this._lastPendingKey = undefined;
     if (this._activeDecoder) {
       this._activeDecoder.release();
       this._activeDecoder = null;
@@ -168,8 +175,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     if (this._aborted) return;
 
     // Check size limit (compare encoded bytes against pre-calculated limit)
-    // Include cumulative size from pending transmission for multi-chunk images
-    const pendingKey = this._parsedCommand?.id ?? 0;
+    // Include cumulative size from pending transmission for multi-chunk images.
+    // Per spec, subsequent chunks may omit i=, so fall back to _lastPendingKey.
+    const pendingKey = this._parsedCommand?.id ?? this._lastPendingKey ?? 0;
     const pending = this._pendingTransmissions.get(pendingKey);
     const previousEncodedSize = pending?.totalEncodedSize ?? 0;
     this._totalEncodedSize += end - start;
@@ -182,6 +190,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       this._activeDecoder = null;
       if (pending) {
         this._pendingTransmissions.delete(pendingKey);
+        if (this._lastPendingKey === pendingKey) {
+          this._lastPendingKey = undefined;
+        }
       }
       this._aborted = true;
       return;
@@ -203,6 +214,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       this._decodeError = true;
       if (pending) {
         this._pendingTransmissions.delete(pendingKey);
+        if (this._lastPendingKey === pendingKey) {
+          this._lastPendingKey = undefined;
+        }
       }
     }
   }
@@ -229,7 +243,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       return this._handleDelete(cmd);
     }
 
-    const pendingKey = cmd.id ?? 0;
+    // Per spec, subsequent chunks may omit i=, so fall back to _lastPendingKey.
+    const pendingKey = cmd.id ?? this._lastPendingKey ?? 0;
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
 
@@ -246,9 +261,15 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
             decodeError: this._decodeError
           });
         }
+        this._lastPendingKey = pendingKey;
         this._activeDecoder = null;
       }
       return true;
+    }
+
+    // Final chunk received — clear the last pending key
+    if (pending) {
+      this._lastPendingKey = undefined;
     }
 
     let decodeError = this._decodeError;
@@ -486,6 +507,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
           pending.decoder.release();
         }
         this._pendingTransmissions.clear();
+        this._lastPendingKey = undefined;
         this._deleteAll();
         break;
       case 'i':
@@ -496,6 +518,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
           if (pending) {
             pending.decoder.release();
             this._pendingTransmissions.delete(cmd.id);
+            if (this._lastPendingKey === cmd.id) {
+              this._lastPendingKey = undefined;
+            }
           }
           this._deleteById(cmd.id);
         }

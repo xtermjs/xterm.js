@@ -225,6 +225,107 @@ test.describe('Kitty Graphics Protocol', () => {
         (window as any).smallLimitAddon.dispose();
       });
     });
+
+    test('chunked a=T works when subsequent chunks omit i= (spec pattern)', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=400,m=1;${part1}\x1b\\`);
+      await timeout(50);
+      strictEqual(await getImageStorageLength(), 0);
+
+      await ctx.proxy.write(`\x1b_Gm=0;${part2}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+    });
+
+    test('chunked a=t works when subsequent chunks omit i= (spec pattern)', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=401,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Gm=0;${part2}\x1b\\`);
+      await timeout(100);
+
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(401)`), true);
+    });
+
+    test('chunked data without i= on subsequent chunks is assembled correctly', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=402,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Gm=0;${part2}\x1b\\`);
+      await timeout(100);
+
+      const storedData = await ctx.page.evaluate(async () => {
+        const blob = (window as any).imageAddon._handlers.get('kitty').images.get(402).data;
+        const buffer = await blob.arrayBuffer();
+        return Array.from(new Uint8Array(buffer));
+      });
+      deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
+    });
+
+    test('three-chunk transfer with only m= on middle and last chunks', async () => {
+      const third = Math.floor(KITTY_BLACK_1X1_BASE64.length / 3);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, third);
+      const part2End = third + Math.floor((KITTY_BLACK_1X1_BASE64.length - third) / 2);
+      const alignedPart2End = part2End - (part2End - third) % 4 + third;
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(third, alignedPart2End);
+      const part3 = KITTY_BLACK_1X1_BASE64.substring(alignedPart2End);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=403,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Gm=1;${part2}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Gm=0;${part3}\x1b\\`);
+      await timeout(100);
+
+      const storedData = await ctx.page.evaluate(async () => {
+        const blob = (window as any).imageAddon._handlers.get('kitty').images.get(403).data;
+        const buffer = await blob.arrayBuffer();
+        return Array.from(new Uint8Array(buffer));
+      });
+      deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
+    });
+
+    test('chunked a=T without i= on any chunk works (no response)', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,m=1;${part1}\x1b\\`);
+      await timeout(50);
+      strictEqual(await getImageStorageLength(), 0);
+
+      await ctx.proxy.write(`\x1b_Gm=0;${part2}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+    });
+
+    test('chunked transfer responds OK on final chunk when i= on first only', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=405,m=1;${part1}\x1b\\`);
+      await timeout(50);
+
+      let response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '');
+
+      await ctx.proxy.write(`\x1b_Gm=0;${part2}\x1b\\`);
+      await timeout(100);
+
+      response = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '\x1b_Gi=405;OK\x1b\\');
+    });
   });
 
   test.describe('Delete commands', () => {
@@ -749,8 +850,6 @@ test.describe('Kitty Graphics Protocol', () => {
       strictEqual(response, '\x1b_Gi=204;OK\x1b\\');
     });
 
-    // TODO: When file-based transmission mediums (t=f, t=t, t=s) are supported,
-    // update these tests to verify successful transmission instead of EINVAL.
     test('transmit rejects t=f with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
@@ -803,8 +902,6 @@ test.describe('Kitty Graphics Protocol', () => {
       strictEqual(response, '');
     });
 
-    // TODO: When file-based transmission mediums (t=f, t=t, t=s) are supported,
-    // update these tests to verify successful transmit+display instead of EINVAL.
     test('transmit+display rejects t=f with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
