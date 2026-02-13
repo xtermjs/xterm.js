@@ -309,6 +309,14 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
         this._sendResponse(cmd.id ?? 0, 'OK', cmd.quiet ?? 0);
         return true;
       default:
+        // TODO: Implement remaining actions when needed:
+        // - a=p (placement): place a previously transmitted image
+        // - a=f (frame): animation frame operations
+        // - a=a (animation): animation control
+        // - a=c (compose): compose images
+        if (cmd.id !== undefined) {
+          this._sendResponse(cmd.id, 'EINVAL:unsupported action', cmd.quiet ?? 0);
+        }
         return true;
     }
   }
@@ -319,8 +327,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     switch (action) {
       case KittyAction.TRANSMIT: {
         const result = this._handleTransmit(cmd, bytes, decodeError);
-        if (cmd.id !== undefined && !decodeError && bytes.length > 0) {
-          this._sendResponse(cmd.id, 'OK', cmd.quiet ?? 0);
+        if (cmd.id !== undefined) {
+          if (decodeError) {
+            this._sendResponse(cmd.id, 'EINVAL:invalid base64 data', cmd.quiet ?? 0);
+          } else if (bytes.length > 0) {
+            this._sendResponse(cmd.id, 'OK', cmd.quiet ?? 0);
+          }
         }
         return result;
       }
@@ -329,6 +341,14 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       case KittyAction.QUERY:
         return this._handleQuery(cmd, bytes, decodeError);
       default:
+        // TODO: Implement remaining actions when needed:
+        // - a=p (placement): place a previously transmitted image
+        // - a=f (frame): animation frame operations
+        // - a=a (animation): animation control
+        // - a=c (compose): compose images
+        if (cmd.id !== undefined) {
+          this._sendResponse(cmd.id, 'EINVAL:unsupported action', cmd.quiet ?? 0);
+        }
         return true;
     }
   }
@@ -338,11 +358,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     // Currently only supports direct transmission (t=d, the default).
     // - t=f (file): Payload is base64-encoded file path. Terminal reads image from that path.
     // - t=t (temp file): Payload is base64-encoded path in temp directory. Terminal reads, deletes.
-    // - t=s Payload is base64-encoded POSIX shm name. Terminal reads from shared memory.
+    // - t=s: Payload is base64-encoded POSIX shm name. Terminal reads from shared memory.
     // These modes require filesystem/IPC access not available in browsers. For Node.js/Electron:
     // 1. Check cmd.transmission (t key) before treating bytes as image data
     // 2. For t=f/t/s: decode bytes as UTF-8 string (the path/name), then read file contents
     // 3. For t=d: treat bytes as image data (current behavior)
+    // When implementing, also update _handleQuery to accept these transmission mediums.
 
     if (decodeError || bytes.length === 0) return true;
 
@@ -360,7 +381,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   }
 
   private _handleTransmitDisplay(cmd: IKittyCommand, bytes: Uint8Array, decodeError: boolean): boolean | Promise<boolean> {
-    if (decodeError) return true;
+    if (decodeError) {
+      if (cmd.id !== undefined) {
+        this._sendResponse(cmd.id, 'EINVAL:invalid base64 data', cmd.quiet ?? 0);
+      }
+      return true;
+    }
 
     const pendingKey = cmd.id ?? 0;
 
@@ -375,12 +401,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     if (image) {
       const result = this._displayImage(image, cmd);
       if (cmd.id !== undefined) {
-        return (result as Promise<boolean>).then(r => {
-          this._sendResponse(id, 'OK', cmd.quiet ?? 0);
-          return r;
+        return result.then(success => {
+          this._sendResponse(id, success ? 'OK' : 'EINVAL:image rendering failed', cmd.quiet ?? 0);
+          return true;
         });
       }
-      return result;
+      return result.then(() => true);
     }
     return true;
   }
@@ -388,6 +414,15 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   private _handleQuery(cmd: IKittyCommand, bytes: Uint8Array, decodeError: boolean): boolean {
     const id = cmd.id ?? 0;
     const quiet = cmd.quiet ?? 0;
+
+    // Per spec: reject unsupported transmission mediums (only t=d is supported atm)
+    // TODO: When filesystem support is added (Node.js/Electron), update this to accept
+    // t=f (file), t=t (temp file), and t=s (shared memory) and respond OK for queries.
+    const transmission = cmd.transmission ?? 'd';
+    if (transmission !== 'd') {
+      this._sendResponse(id, 'EINVAL:unsupported transmission medium', quiet);
+      return true;
+    }
 
     // Check decode error first (invalid base64)
     if (decodeError) {
@@ -491,10 +526,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
   // Image display
 
-  private _displayImage(image: IKittyImageData, cmd: IKittyCommand): boolean | Promise<boolean> {
+  private _displayImage(image: IKittyImageData, cmd: IKittyCommand): Promise<boolean> {
     return this._decodeAndDisplay(image, cmd)
       .then(() => true)
-      .catch(() => true);
+      .catch(() => false);
   }
 
   private async _decodeAndDisplay(image: IKittyImageData, cmd: IKittyCommand): Promise<void> {
@@ -516,7 +551,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       h = Math.round(imgRows * ch);
     }
 
-    if (w * h > this._opts.pixelLimit) return;
+    if (w * h > this._opts.pixelLimit) {
+      throw new Error('image exceeds pixel limit');
+    }
 
     // Save cursor position before addImage modifies it
     const buffer = this._coreTerminal._core.buffer;

@@ -73,6 +73,8 @@ export const enum KittyKey {
   CURSOR_MOVEMENT = 'C',
   // Z-index for image layering (negative = behind text, 0+ = on top)
   Z_INDEX = 'z',
+  // Transmission medium (d=direct, f=file, t=temp file, s=shared memory)
+  TRANSMISSION = 't',
   // Delete selector (a/A=all, i/I=by id, c/C=at cursor, etc.) — only used when a=d
   DELETE_SELECTOR = 'd',
   // Placement ID for targeting specific placements
@@ -102,6 +104,7 @@ export interface IKittyCommand {
   quiet?: number;
   cursorMovement?: number;
   zIndex?: number;
+  transmission?: string;
   deleteSelector?: string;
   placementId?: number;
   compression?: string;
@@ -157,6 +160,10 @@ export function parseKittyCommand(data: string): IKittyCommand {
     }
     if (key === KittyKey.COMPRESSION) {
       cmd.compression = value;
+      continue;
+    }
+    if (key === KittyKey.TRANSMISSION) {
+      cmd.transmission = value;
       continue;
     }
     if (key === KittyKey.DELETE_SELECTOR) {
