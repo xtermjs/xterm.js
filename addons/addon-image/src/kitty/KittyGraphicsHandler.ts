@@ -327,7 +327,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     switch (action) {
       case KittyAction.TRANSMIT: {
         const result = this._handleTransmit(cmd, bytes, decodeError);
-        if (cmd.id !== undefined) {
+        // Only send response when _handleTransmit didn't already respond
+        // (it handles unsupported transmission medium responses internally)
+        if ((cmd.transmission ?? 'd') === 'd' && cmd.id !== undefined) {
           if (decodeError) {
             this._sendResponse(cmd.id, 'EINVAL:invalid base64 data', cmd.quiet ?? 0);
           } else if (bytes.length > 0) {
@@ -364,6 +366,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     // 2. For t=f/t/s: decode bytes as UTF-8 string (the path/name), then read file contents
     // 3. For t=d: treat bytes as image data (current behavior)
     // When implementing, also update _handleQuery to accept these transmission mediums.
+    const transmission = cmd.transmission ?? 'd';
+    if (transmission !== 'd') {
+      if (cmd.id !== undefined) {
+        this._sendResponse(cmd.id, 'EINVAL:unsupported transmission medium', cmd.quiet ?? 0);
+      }
+      return true;
+    }
 
     if (decodeError || bytes.length === 0) return true;
 

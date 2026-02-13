@@ -748,6 +748,114 @@ test.describe('Kitty Graphics Protocol', () => {
       const response = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response, '\x1b_Gi=204;OK\x1b\\');
     });
+
+    // TODO: When file-based transmission mediums (t=f, t=t, t=s) are supported,
+    // update these tests to verify successful transmission instead of EINVAL.
+    test('transmit rejects t=f with id (EINVAL response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Gi=300,a=t,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response.startsWith('\x1b_Gi=300;EINVAL:'), true);
+    });
+
+    test('transmit rejects t=s with id (EINVAL response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Gi=301,a=t,t=s,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response.startsWith('\x1b_Gi=301;EINVAL:'), true);
+    });
+
+    test('transmit rejects t=t with id (EINVAL response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Gi=302,a=t,t=t,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response.startsWith('\x1b_Gi=302;EINVAL:'), true);
+    });
+
+    test('transmit rejects t=f without id (no response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Ga=t,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '');
+    });
+
+    // TODO: When file-based transmission mediums (t=f, t=t, t=s) are supported,
+    // update these tests to verify successful transmit+display instead of EINVAL.
+    test('transmit+display rejects t=f with id (EINVAL response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Gi=310,a=T,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response.startsWith('\x1b_Gi=310;EINVAL:'), true);
+    });
+
+    test('transmit+display rejects t=s with id (EINVAL response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Gi=311,a=T,t=s,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response.startsWith('\x1b_Gi=311;EINVAL:'), true);
+    });
+
+    test('transmit+display rejects t=t with id (EINVAL response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Gi=312,a=T,t=t,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response.startsWith('\x1b_Gi=312;EINVAL:'), true);
+    });
+
+    test('transmit+display rejects t=f without id (no response)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Ga=T,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '');
+    });
   });
 
   test.describe('Unimplemented action responses', () => {
