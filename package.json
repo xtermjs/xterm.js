@@ -72,7 +72,8 @@
     "prepackage-headless": "npm run esbuild-package-headless-only",
     "package-headless": "webpack --config ./webpack.config.headless.js",
     "postpackage-headless": "node ./bin/package_headless.js",
-    "prepublishOnly": "npm run package"
+    "prepublishOnly": "npm run package",
+    "agent:session-start": "node bin/agent/setup-repo.mjs"
   },
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
