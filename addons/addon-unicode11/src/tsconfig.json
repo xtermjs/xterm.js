@@ -11,13 +11,15 @@
     "sourceMap": true,
     "removeComments": true,
     "strict": true,
-    "baseUrl": ".",
     "paths": {
       "common/*": [
         "../../../src/common/*"
       ],
       "@xterm/addon-unicode11": [
         "../typings/addon-unicode11.d.ts"
+      ],
+      "*": [
+        "./*"
       ]
     },
     "types": [
