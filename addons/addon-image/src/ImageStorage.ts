@@ -217,27 +217,13 @@ export class ImageStorage implements IDisposable {
   }
 
   /**
-   * Only advance text cursor.
-   * This is an edge case from empty sixels carrying only a height but no pixels.
-   * Partially fixes https://github.com/jerch/xterm-addon-image/issues/37.
-   */
-  public advanceCursor(height: number): void {
-    if (this._opts.sixelScrolling) {
-      let cellSize = this._renderer.cellSize;
-      if (cellSize.width === -1 || cellSize.height === -1) {
-        cellSize = CELL_SIZE_DEFAULT;
-      }
-      const rows = Math.ceil(height / cellSize.height);
-      for (let i = 1; i < rows; ++i) {
-        this._terminal._core._inputHandler.lineFeed();
-      }
-    }
-  }
-
-  /**
    * Method to add an image to the storage.
+   * @param img - The image to add (canvas or bitmap).
+   * @param scrolling - When true, cursor advances with the image (lineFeed per row).
+   *   When false, image is placed at (0,0) and cursor is restored (DECSET 80 / sixel origin mode).
+   * @returns The internal image ID assigned to the stored image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap): void {
+  public addImage(img: HTMLCanvasElement | ImageBitmap, scrolling: boolean): number {
     // never allow storage to exceed memory limit
     this._evictOldest(img.width * img.height);
 
@@ -259,7 +245,7 @@ export class ImageStorage implements IDisposable {
     let offset = originX;
     let tileCount = 0;
 
-    if (!this._opts.sixelScrolling) {
+    if (!scrolling) {
       buffer.x = 0;
       buffer.y = 0;
       offset = 0;
@@ -273,7 +259,7 @@ export class ImageStorage implements IDisposable {
         this._writeToCell(line as IBufferLineExt, offset + col, imageId, row * cols + col);
         tileCount++;
       }
-      if (this._opts.sixelScrolling) {
+      if (scrolling) {
         if (row < rows - 1) this._terminal._core._inputHandler.lineFeed();
       } else {
         if (++buffer.y >= termRows) break;
@@ -283,7 +269,7 @@ export class ImageStorage implements IDisposable {
     this._terminal._core._inputHandler._dirtyRowTracker.markDirty(buffer.y);
 
     // cursor positioning modes
-    if (this._opts.sixelScrolling) {
+    if (scrolling) {
       buffer.x = offset;
     } else {
       buffer.x = originX;
@@ -331,6 +317,7 @@ export class ImageStorage implements IDisposable {
 
     // finally add the image
     this._images.set(imageId, imgSpec);
+    return imageId;
   }
 
 

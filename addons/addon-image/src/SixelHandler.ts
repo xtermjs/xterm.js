@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ImageStorage } from './ImageStorage';
+import { SixelImageStorage } from './SixelImageStorage';
 import { IDcsHandler, IParams, IImageAddonOptions, ITerminalExt, AttributeData, IResetHandler, ReadonlyColorSet } from './Types';
 import { toRGBA8888, BIG_ENDIAN, PALETTE_ANSI_256, PALETTE_VT340_COLOR } from 'sixel/lib/Colors';
 import { RGBA8888 } from 'sixel/lib/Types';
@@ -26,7 +26,7 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
 
   constructor(
     private readonly _opts: IImageAddonOptions,
-    private readonly _storage: ImageStorage,
+    private readonly _storage: SixelImageStorage,
     private readonly _coreTerminal: ITerminalExt
   ) {
     DecoderAsync({
