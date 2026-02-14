@@ -230,8 +230,9 @@ export class CompositionHelper {
       const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
 
       const cellHeight = this._renderService.dimensions.css.cell.height;
-      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.css.cell.height;
-      const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
+      const cellWidth = this._renderService.dimensions.css.cell.width;
+      const cursorTop = this._bufferService.buffer.y * cellHeight;
+      const cursorLeft = cursorX * cellWidth;
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';
@@ -239,15 +240,32 @@ export class CompositionHelper {
       this._compositionView.style.lineHeight = cellHeight + 'px';
       this._compositionView.style.fontFamily = this._optionsService.rawOptions.fontFamily;
       this._compositionView.style.fontSize = this._optionsService.rawOptions.fontSize + 'px';
+
       // Sync the textarea to the exact position of the composition view so the IME knows where the
-      // text is.
+      // text is, and ensure the composition view does not overflow the terminal's right edge.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
-      this._textarea.style.left = cursorLeft + 'px';
-      this._textarea.style.top = cursorTop + 'px';
+      const MARGIN = 20;
+      const containerRight = this._bufferService.cols * cellWidth;
+      let adjustedLeft = cursorLeft;
+      let adjustedTop = cursorTop;
+
+      const right = cursorLeft + compositionViewBounds.width;
+      if (right > containerRight - MARGIN) {
+        adjustedLeft = Math.max(0, containerRight - compositionViewBounds.width - MARGIN);
+        adjustedTop = cursorTop + cellHeight;
+      }
+
+      this._textarea.style.left = adjustedLeft + 'px';
+      this._textarea.style.top = adjustedTop + 'px';
       // Ensure the text area is at least 1x1, otherwise certain IMEs may break
-      this._textarea.style.width = Math.max(compositionViewBounds.width, 1) + 'px';
-      this._textarea.style.height = Math.max(compositionViewBounds.height, 1) + 'px';
-      this._textarea.style.lineHeight = compositionViewBounds.height + 'px';
+      const adjustedWidth = Math.max(compositionViewBounds.width, 1);
+      const adjustedHeight = Math.max(compositionViewBounds.height, 1);
+      this._textarea.style.width = adjustedWidth + 'px';
+      this._textarea.style.height = adjustedHeight + 'px';
+      this._textarea.style.lineHeight = adjustedHeight + 'px';
+
+      this._compositionView.style.left = adjustedLeft + 'px';
+      this._compositionView.style.top = adjustedTop + 'px';
     }
 
     if (!dontRecurse) {
