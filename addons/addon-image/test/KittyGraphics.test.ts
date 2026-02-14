@@ -5,7 +5,7 @@
 
 import test from '@playwright/test';
 import { readFileSync } from 'fs';
-import { ITestContext, createTestContext, openTerminal, timeout } from '../../../test/playwright/TestUtils';
+import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../test/playwright/TestUtils';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
 
 /**
@@ -1641,6 +1641,95 @@ test.describe('Kitty Graphics Protocol', () => {
         const response = await ctx.page.evaluate('window.kittyResponse');
         strictEqual(response, '\x1b_Gi=302;OK\x1b\\');
       });
+    });
+  });
+
+  test.describe('Eviction and memory leak prevention', () => {
+    test('re-transmit with same i= cleans up old storage entry', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=50;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(50)`), true);
+      const oldStorageId = await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty')._kittyIdToStorageId.get(50)`);
+      ok(oldStorageId !== undefined);
+
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=50;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(50)`), true);
+      const newStorageId = await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty')._kittyIdToStorageId.get(50)`);
+      ok(newStorageId !== undefined);
+      ok(newStorageId !== oldStorageId);
+    });
+
+    test('memory limit eviction cleans Kitty handler maps', async () => {
+      // Resize terminal to fit 7 non-overlapping 200x100 images without scrolling.
+      // Each image ≈ 29 cols × 8 rows at default cell size.
+      await ctx.page.evaluate(`
+        window.term.reset();
+        window.imageAddon?.dispose();
+        window.term.resize(80, 48);
+        window.imageAddon = new ImageAddon({ storageLimit: 0.5 });
+        window.term.loadAddon(window.imageAddon);
+      `);
+
+      // storageLimit 0.5 MB = 125,000 pixels. Each 200x100 image = 20,000 pixels.
+      // 6 images = 120K pixels (under limit). 7th triggers eviction (140K > 125K).
+      // Place non-overlapping so tile-count eviction doesn't interfere.
+      const positions = [[1, 1], [30, 1], [1, 9], [30, 9], [1, 17], [30, 17]];
+      for (let n = 0; n < 6; n++) {
+        const [c, r] = positions[n];
+        const id = 60 + n;
+        await ctx.proxy.write(`\x1b[${r};${c}H\x1b_Ga=T,f=100,i=${id},C=1;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      }
+      await pollFor(ctx.page, 'window.imageAddon._storage._images.size', 6);
+
+      // 7th image pushes total past 125K pixels — oldest evicted
+      await ctx.proxy.write(`\x1b[25;1H\x1b_Ga=T,f=100,i=66,C=1;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      await pollFor(ctx.page, `window.imageAddon._handlers.get('kitty').images.has(60)`, false);
+
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty')._kittyIdToStorageId.has(60)`), false);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(66)`), true);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty')._kittyIdToStorageId.has(66)`), true);
+
+      // Restore terminal size
+      await ctx.page.evaluate('window.term.resize(80, 24)');
+    });
+
+    test('scrollback eviction cleans Kitty handler maps', async () => {
+      await ctx.page.evaluate(`
+        window.term.reset();
+        window.imageAddon?.dispose();
+        window.imageAddon = new ImageAddon();
+        window.term.loadAddon(window.imageAddon);
+      `);
+
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=70;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(70)`), true);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty')._kittyIdToStorageId.has(70)`), true);
+
+      // Scroll past scrollback + viewport to push image's marker off the buffer
+      await ctx.page.evaluate(() => new Promise<void>(res => {
+        const term = (window as any).term;
+        const amount: number = (term.options.scrollback as number) + (term.rows as number) + 10;
+        term.write('\n'.repeat(amount), res);
+      }));
+
+      await pollFor(ctx.page, `window.imageAddon._handlers.get('kitty').images.has(70)`, false);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty')._kittyIdToStorageId.has(70)`), false);
+    });
+
+    test('re-transmit with a=t then a=T cleans old storage before display', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=80;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+      const oldStorageId = await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty')._kittyIdToStorageId.get(80)`);
+      ok(oldStorageId !== undefined);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=80;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.has(${oldStorageId})`), false);
     });
   });
 });

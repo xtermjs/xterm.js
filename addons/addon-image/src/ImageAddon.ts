@@ -9,6 +9,7 @@ import { IIPHandler } from './IIPHandler';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
 import { KittyGraphicsHandler } from './kitty/KittyGraphicsHandler';
+import { KittyImageStorage } from './kitty/KittyImageStorage';
 import { SixelHandler } from './SixelHandler';
 import { SixelImageStorage } from './SixelImageStorage';
 import { IIPImageStorage } from './IIPImageStorage';
@@ -154,9 +155,12 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
 
     // Kitty graphics handler
     if (this._opts.kittySupport) {
-      const kittyHandler = new KittyGraphicsHandler(this._opts, this._renderer!, this._storage!, terminal);
+      const kittyStorage = new KittyImageStorage(this._storage!);
+      const kittyHandler = new KittyGraphicsHandler(this._opts, this._renderer!, kittyStorage, terminal);
       this._handlers.set('kitty', kittyHandler);
       this._disposeLater(
+        kittyStorage,
+        kittyHandler,
         terminal._core._inputHandler._parser.registerApcHandler(0x47, kittyHandler)
       );
     }

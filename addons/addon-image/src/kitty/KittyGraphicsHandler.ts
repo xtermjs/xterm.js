@@ -3,9 +3,11 @@
  * @license MIT
  */
 
+import { IDisposable } from '@xterm/xterm';
 import { IApcHandler, IImageAddonOptions, IResetHandler, ITerminalExt, ImageLayer } from '../Types';
 import { ImageRenderer } from '../ImageRenderer';
-import { ImageStorage, CELL_SIZE_DEFAULT } from '../ImageStorage';
+import { CELL_SIZE_DEFAULT } from '../ImageStorage';
+import { KittyImageStorage } from './KittyImageStorage';
 import Base64Decoder, { type DecodeStatus } from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import {
   KittyAction,
@@ -36,7 +38,7 @@ const SEMICOLON = 0x3B;
 /**
  * Kitty graphics protocol handler with streaming base64 decoding.
  */
-export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
+export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDisposable {
   private _aborted = false;
   private _decodeError = false;
 
@@ -69,21 +71,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
    * When a chunk arrives with no i=, this key is used to find the pending upload.
    */
   private _lastPendingKey: number | undefined;
-  private _nextImageId = 1;
-  /** Maps Kitty protocol image ID → ImageStorage internal ID for deletion/lookup. */
-  private _kittyIdToStorageId: Map<number, number> = new Map();
-  // TODO: Eliminate double storage — raw image data lives here (as Blob) AND rendered
-  // ImageBitmaps live in ImageStorage. Currently we only use ImageStorage.addImage(bitmap)
-  // for tiling + cursor movement + marker-based eviction.
-  //
-
-  // See: https://github.com/xtermjs/xterm.js/pull/5619#issuecomment-3853678815
-  private _images: Map<number, IKittyImageData> = new Map();
 
   constructor(
     private readonly _opts: IImageAddonOptions,
     private readonly _renderer: ImageRenderer,
-    private readonly _storage: ImageStorage,
+    private readonly _kittyStorage: KittyImageStorage,
     private readonly _coreTerminal: ITerminalExt
   ) {
     // Convert decoded size limit -> max encoded bytes.
@@ -102,8 +94,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
       this._activeDecoder.release();
       this._activeDecoder = null;
     }
-    this._images.clear();
-    this._kittyIdToStorageId.clear();
+    this._kittyStorage.reset();
+  }
+
+  public dispose(): void {
+    this.reset();
   }
 
   public start(): void {
@@ -397,16 +392,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
 
     if (decodeError || bytes.length === 0) return true;
 
-    const id = cmd.id ?? this._nextImageId++;
-    const image: IKittyImageData = {
-      id,
+    this._kittyStorage.storeImage(cmd.id, {
       data: new Blob([bytes as BlobPart]),
       width: cmd.width ?? 0,
       height: cmd.height ?? 0,
       format: (cmd.format ?? KittyFormat.RGBA) as 24 | 32 | 100,
       compression: cmd.compression ?? ''
-    };
-    this._images.set(id, image);
+    });
     return true;
   }
 
@@ -426,8 +418,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     if (this._pendingTransmissions.has(pendingKey)) return true;
 
     // Display the completed image
-    const id = cmd.id ?? this._nextImageId - 1;
-    const image = this._images.get(id);
+    const id = cmd.id ?? this._kittyStorage.lastImageId;
+    const image = this._kittyStorage.getImage(id);
     if (image) {
       const result = this._displayImage(image, cmd);
       if (cmd.id !== undefined) {
@@ -508,7 +500,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
         }
         this._pendingTransmissions.clear();
         this._lastPendingKey = undefined;
-        this._deleteAll();
+        this._kittyStorage.deleteAll();
         break;
       case 'i':
       case 'I':
@@ -522,7 +514,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
               this._lastPendingKey = undefined;
             }
           }
-          this._deleteById(cmd.id);
+          this._kittyStorage.deleteById(cmd.id);
         }
         break;
       default:
@@ -530,23 +522,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
         break;
     }
     return true;
-  }
-
-  private _deleteById(id: number): void {
-    this._images.delete(id);
-    const storageId = this._kittyIdToStorageId.get(id);
-    if (storageId !== undefined) {
-      this._storage.deleteImage(storageId);
-      this._kittyIdToStorageId.delete(id);
-    }
-  }
-
-  private _deleteAll(): void {
-    this._images.clear();
-    for (const storageId of this._kittyIdToStorageId.values()) {
-      this._storage.deleteImage(storageId);
-    }
-    this._kittyIdToStorageId.clear();
   }
 
   private _sendResponse(id: number, message: string, quiet: number): void {
@@ -602,14 +577,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     const layer: ImageLayer = (wantsBottom && this._coreTerminal.options.allowTransparency) ? 'bottom' : 'top';
 
     const zIndex = cmd.zIndex ?? 0;
-    let storageId: number;
     if (w !== bitmap.width || h !== bitmap.height) {
       const resized = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
-      storageId = this._storage.addImage(resized, true, layer, zIndex);
+      this._kittyStorage.addImage(image.id, resized, true, layer, zIndex);
     } else {
-      storageId = this._storage.addImage(bitmap, true, layer, zIndex);
+      this._kittyStorage.addImage(image.id, bitmap, true, layer, zIndex);
     }
-    this._kittyIdToStorageId.set(image.id, storageId);
 
     // Kitty cursor movement
     // Per spec: cursor placed at first column after last image column,
@@ -723,7 +696,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
   }
 
   public get images(): ReadonlyMap<number, IKittyImageData> {
-    return this._images;
+    return this._kittyStorage.images;
+  }
+
+  public get _kittyIdToStorageId(): ReadonlyMap<number, number> {
+    return this._kittyStorage.kittyIdToStorageId;
   }
 
   public get pendingTransmissions(): ReadonlyMap<number, IPendingTransmission> {

@@ -124,6 +124,7 @@ export class ImageStorage implements IDisposable {
   private _pixelLimit: number = 2500000;
 
   private _viewportMetrics: { cols: number, rows: number };
+  public onImageDeleted: ((storageId: number) => void) | undefined;
 
   constructor(
     private _terminal: ITerminalExt,
@@ -189,11 +190,13 @@ export class ImageStorage implements IDisposable {
 
   private _delImg(id: number): void {
     const spec = this._images.get(id);
+    if (!spec) return;
     this._images.delete(id);
     // FIXME: really ugly workaround to get bitmaps deallocated :(
-    if (spec && window.ImageBitmap && spec.orig instanceof ImageBitmap) {
+    if (window.ImageBitmap && spec.orig instanceof ImageBitmap) {
       spec.orig.close();
     }
+    this.onImageDeleted?.(id);
   }
 
   /**
