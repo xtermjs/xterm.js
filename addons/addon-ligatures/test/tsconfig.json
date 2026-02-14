@@ -9,8 +9,12 @@
     "outDir": "../out-esbuild-test",
     "sourceMap": true,
     "removeComments": true,
-    "baseUrl": ".",
     "strict": true,
+    "paths": {
+      "*": [
+        "./*"
+      ]
+    },
     "types": [
       "../../../node_modules/@types/mocha",
       "../../../node_modules/@types/node"

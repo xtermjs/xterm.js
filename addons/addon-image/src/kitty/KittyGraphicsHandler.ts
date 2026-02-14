@@ -605,9 +605,9 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler {
     let storageId: number;
     if (w !== bitmap.width || h !== bitmap.height) {
       const resized = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
-      storageId = this._storage.addImage(resized, layer, zIndex);
+      storageId = this._storage.addImage(resized, true, layer, zIndex);
     } else {
-      storageId = this._storage.addImage(bitmap, layer, zIndex);
+      storageId = this._storage.addImage(bitmap, true, layer, zIndex);
     }
     this._kittyIdToStorageId.set(image.id, storageId);
 

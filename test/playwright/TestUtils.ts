@@ -9,8 +9,9 @@ import type { IRenderDimensions as IRenderDimensionsInternal } from 'browser/ren
 import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IDisposable, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
-import { PageFunction } from 'playwright-core/types/structs';
 import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, IRenderDimensions, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
+
+type PageFunction<Arg, R> = (arg: Arg) => R | Promise<R>;
 
 export interface ITestContext {
   browser: Browser;
@@ -106,7 +107,7 @@ type PlaywrightApiProxy<TBaseInterface, TAsyncPropOverrides extends keyof TBaseI
 );
 
 interface ITerminalProxyCustomMethods {
-  evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T>;
+  evaluate<T>(pageFunction: PageFunction<Terminal[], T>): Promise<T>;
   write(data: string | Uint8Array): Promise<void>;
 }
 
@@ -288,11 +289,11 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public async clearTextureAtlas(): Promise<void> { return this.evaluate(([term]) => term.clearTextureAtlas()); }
   // #endregion
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<Terminal[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this.getHandle()]);
   }
 
-  public async evaluateHandle<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<JSHandle<T>> {
+  public async evaluateHandle<T>(pageFunction: PageFunction<Terminal[], T>): Promise<JSHandle<T>> {
     return this._page.evaluateHandle(pageFunction, [await this.getHandle()]);
   }
 
@@ -342,7 +343,7 @@ class TerminalBufferProxy /* implements EnsureAsyncProperties<IBuffer>*/ {
     return undefined;
   }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBuffer>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<IBuffer[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this._handle]);
   }
 }
@@ -373,7 +374,7 @@ class TerminalBufferLine {
     return undefined;
   }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferLine>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<IBufferLine[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
   }
 }
@@ -414,7 +415,7 @@ class TerminalBufferCell {
 
   public isAttributeDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isAttributeDefault()); }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferCell>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<IBufferCell[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
   }
 }
@@ -438,7 +439,7 @@ class TerminalCoreProxy {
     return this._proxy.evaluateHandle(([term]) => (term as any)._core as ICoreTerminal);
   }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<ICoreTerminal>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<ICoreTerminal[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this._getCoreHandle()]);
   }
 }
