@@ -1116,12 +1116,12 @@ test.describe('Kitty Graphics Protocol', () => {
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), 1);
     });
 
-    test('z=-1 falls back to top layer when allowTransparency is disabled', async () => {
+    test('z=-1 uses bottom layer even when allowTransparency is disabled', async () => {
       await ctx.page.evaluate(`window.term.options.allowTransparency = false`);
       await ctx.proxy.write(`\x1b_Ga=T,f=100,z=-1;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'top');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'bottom');
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), -1);
     });
 

@@ -348,6 +348,11 @@ export class ImageRenderer extends Disposable implements IDisposable {
       screenElement.style.zIndex = '0';
       screenElement.insertBefore(canvas, screenElement.firstChild);
     } else {
+      // Explicit z-index ensures the image canvas reliably stacks above
+      // the text layer (DOM renderer rows). z-index: 0 is below the
+      // selection overlay (z-index: 1).
+      canvas.style.zIndex = '0';
+      screenElement.style.zIndex = '0';
       screenElement.appendChild(canvas);
     }
     const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });

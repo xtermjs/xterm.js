@@ -571,10 +571,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const savedYbase = buffer.ybase;
 
     // Determine layer based on z-index: negative = behind text, 0+ = on top.
-    // Bottom layer only works when allowTransparency is enabled (otherwise text
-    // canvas background is opaque and hides the bottom canvas). Fall back to top.
+    // When z<0 we always use the bottom layer even without allowTransparency —
+    // the image will simply be hidden behind the opaque text background, which
+    // is the correct behavior (client asked for "behind text").
     const wantsBottom = cmd.zIndex !== undefined && cmd.zIndex < 0;
-    const layer: ImageLayer = (wantsBottom && this._coreTerminal.options.allowTransparency) ? 'bottom' : 'top';
+    const layer: ImageLayer = wantsBottom ? 'bottom' : 'top';
 
     const zIndex = cmd.zIndex ?? 0;
     if (w !== bitmap.width || h !== bitmap.height) {
