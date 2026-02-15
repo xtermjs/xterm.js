@@ -24,8 +24,5 @@
       "*": ["./*"]
     }
   },
-  "include": [
-    "./**/*",
-    "../../typings/xterm.d.ts"
-  ]
+  "include": ["./**/*", "../../typings/xterm.d.ts"]
 }
