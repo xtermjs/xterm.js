@@ -35,9 +35,7 @@ const MAX_CONTROL_DATA_SIZE = 512;
 // Semicolon codepoint
 const SEMICOLON = 0x3B;
 
-/**
- * Kitty graphics protocol handler with streaming base64 decoding.
- */
+// Kitty graphics protocol handler with streaming base64 decoding.
 export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDisposable {
   private _aborted = false;
   private _decodeError = false;
@@ -48,28 +46,26 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
 
   // Streaming related states
 
-  /** True while receiving control data (before semicolon). */
+  // True while receiving control data (before semicolon).
   private _inControlData = true;
 
-  /** Buffer for control data. */
+  // Buffer for control data.
   private _controlData = new Uint32Array(MAX_CONTROL_DATA_SIZE);
   private _controlLength = 0;
 
-  /** Pre-calculated encoded size limit */
+  // Pre-calculated encoded size limit
   private _encodedSizeLimit = 0;
   private _totalEncodedSize = 0;
 
-  /** Parsed command. These are the control data before semicolon. */
+  // Parsed command. These are the control data before semicolon.
   private _parsedCommand: IKittyCommand | null = null;
 
   // Storage related states
 
   private _pendingTransmissions: Map<number, IPendingTransmission> = new Map();
-  /**
-   * Tracks the pending key of the most recently started chunked upload.
-   * Per spec, subsequent chunks only need m= (and optionally q=), without i=.
-   * When a chunk arrives with no i=, this key is used to find the pending upload.
-   */
+  // Tracks the pending key of the most recently started chunked upload.
+  // Per spec, subsequent chunks only need m= (and optionally q=), without i=.
+  // When a chunk arrives with no i=, this key is used to find the pending upload.
   private _lastPendingKey: number | undefined;
 
   constructor(
@@ -163,9 +159,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     }
   }
 
-  /**
-   * Stream payload bytes into the base64 decoder.
-   */
+  // Stream payload bytes into the base64 decoder.
   private _streamPayload(data: Uint32Array, start: number, end: number): void {
     if (this._aborted) return;
 
@@ -601,9 +595,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     }
   }
 
-  /**
-   * Create ImageBitmap from already-decoded image data.
-   */
+  // Create ImageBitmap from already-decoded image data.
   private async _createBitmap(image: IKittyImageData): Promise<ImageBitmap> {
     let bytes: Uint8Array = new Uint8Array(await image.data.arrayBuffer());
 

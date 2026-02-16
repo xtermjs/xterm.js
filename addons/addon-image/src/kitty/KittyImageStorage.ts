@@ -8,15 +8,13 @@ import { ImageStorage } from '../ImageStorage';
 import { ImageLayer } from '../Types';
 import { IKittyImageData } from './KittyGraphicsTypes';
 
-/**
- * Kitty-specific image storage controller.
- *
- * Wraps shared ImageStorage with kitty protocol semantics:
- * - tracks transmitted image payloads by kitty image id
- * - tracks kitty image id -> shared ImageStorage id mapping for displayed images
- * - mirrors shared-storage evictions into kitty maps
- * - applies protocol-level undisplayed-image eviction policy
- */
+// Kitty-specific image storage controller.
+//
+// Wraps shared ImageStorage with kitty protocol semantics:
+// - tracks transmitted image payloads by kitty image id
+// - tracks kitty image id -> shared ImageStorage id mapping for displayed images
+// - mirrors shared-storage evictions into kitty maps
+// - applies protocol-level undisplayed-image eviction policy
 export class KittyImageStorage implements IDisposable {
   private static readonly _maxStoredImages = 256;
 

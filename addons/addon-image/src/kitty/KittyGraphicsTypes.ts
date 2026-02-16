@@ -7,10 +7,8 @@
 
 import type Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 
-/**
- * Kitty graphics protocol action types.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'a'.
- */
+// Kitty graphics protocol action types.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'a'.
 export const enum KittyAction {
   TRANSMIT = 't',
   TRANSMIT_DISPLAY = 'T',
@@ -19,29 +17,23 @@ export const enum KittyAction {
   DELETE = 'd'
 }
 
-/**
- * Kitty graphics protocol format types.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
- */
+// Kitty graphics protocol format types.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
 export const enum KittyFormat {
   RGB = 24,
   RGBA = 32,
   PNG = 100
 }
 
-/**
- * Kitty graphics protocol compression types.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'o'.
- */
+// Kitty graphics protocol compression types.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'o'.
 export const enum KittyCompression {
   NONE = '',
   ZLIB = 'z'
 }
 
-/**
- * Kitty graphics protocol control data keys.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
- */
+// Kitty graphics protocol control data keys.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
 export const enum KittyKey {
   // Action to perform (t=transmit, T=transmit+display, q=query, p=placement, d=delete)
   ACTION = 'a',
@@ -86,9 +78,7 @@ export const BYTES_PER_PIXEL_RGB = 3;
 export const BYTES_PER_PIXEL_RGBA = 4;
 export const ALPHA_OPAQUE = 255;
 
-/**
- * Parsed Kitty graphics command.
- */
+// Parsed Kitty graphics command.
 export interface IKittyCommand {
   action?: string;
   format?: number;
@@ -111,27 +101,23 @@ export interface IKittyCommand {
   payload?: string;
 }
 
-/**
- * Pending chunked transmission state.
- * Stores metadata from the first chunk while accumulating decoded payload data.
- */
+// Pending chunked transmission state.
+// Stores metadata from the first chunk while accumulating decoded payload data.
 export interface IPendingTransmission {
-  /** The parsed command from the first chunk (contains action, format, dimensions, etc.) */
+  // The parsed command from the first chunk (contains action, format, dimensions, etc.)
   cmd: IKittyCommand;
-  /** Decoder used across chunked payloads */
+  // Decoder used across chunked payloads
   decoder: Base64Decoder;
-  /** Total encoded (base64) bytes received across all chunks - for size limit enforcement */
+  // Total encoded (base64) bytes received across all chunks - for size limit enforcement
   totalEncodedSize: number;
-  /** Whether any chunk has failed to decode */
+  // Whether any chunk has failed to decode
   decodeError: boolean;
 }
 
-/**
- * Stored Kitty image data.
- */
+// Stored Kitty image data.
 export interface IKittyImageData {
   id: number;
-  /** Decoded image data stored as Blob (off JS heap) to avoid 2GB heap limit */
+  // Decoded image data stored as Blob (off JS heap) to avoid 2GB heap limit
   data: Blob;
   width: number;
   height: number;
@@ -139,9 +125,7 @@ export interface IKittyImageData {
   compression?: string;
 }
 
-/**
- * Parses Kitty graphics control data into a command object.
- */
+// Parses Kitty graphics control data into a command object.
 export function parseKittyCommand(data: string): IKittyCommand {
   const cmd: IKittyCommand = {};
   const parts = data.split(',');
