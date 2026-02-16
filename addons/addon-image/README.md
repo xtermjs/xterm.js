@@ -30,7 +30,9 @@ const customSettings: IImageAddonOptions = {
   storageLimit: 128,          // FIFO storage limit in MB
   showPlaceholder: true,      // whether to show a placeholder for evicted images
   iipSupport: true,           // enable iTerm IIP support
-  iipSizeLimit: 20000000      // size limit of a single IIP sequence
+  iipSizeLimit: 20000000,     // size limit of a single IIP sequence
+  kittySupport: true,         // enable Kitty graphics support
+  kittySizeLimit: 20000000    // size limit of a single Kitty sequence
 }
 
 // initialization

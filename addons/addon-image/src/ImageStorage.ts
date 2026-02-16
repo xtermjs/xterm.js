@@ -5,7 +5,7 @@
 
 import { IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ITerminalExt, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize, ExtFlags, Attributes, UnderlineStyle } from './Types';
+import { ITerminalExt, IExtendedAttrsImage, IImageAddonOptions, IImageSpec, IBufferLineExt, BgFlags, Cell, Content, ICellSize, ExtFlags, Attributes, UnderlineStyle, ImageLayer } from './Types';
 
 
 // fallback default cell size
@@ -124,6 +124,7 @@ export class ImageStorage implements IDisposable {
   private _pixelLimit: number = 2500000;
 
   private _viewportMetrics: { cols: number, rows: number };
+  public onImageDeleted: ((storageId: number) => void) | undefined;
 
   constructor(
     private _terminal: ITerminalExt,
@@ -189,11 +190,13 @@ export class ImageStorage implements IDisposable {
 
   private _delImg(id: number): void {
     const spec = this._images.get(id);
+    if (!spec) return;
     this._images.delete(id);
     // FIXME: really ugly workaround to get bitmaps deallocated :(
-    if (spec && window.ImageBitmap && spec.orig instanceof ImageBitmap) {
+    if (window.ImageBitmap && spec.orig instanceof ImageBitmap) {
       spec.orig.close();
     }
+    this.onImageDeleted?.(id);
   }
 
   /**
@@ -217,13 +220,27 @@ export class ImageStorage implements IDisposable {
   }
 
   /**
+   * Delete an image by its internal storage ID.
+   * Used by protocols that support explicit deletion (e.g. Kitty a=d).
+   */
+  public deleteImage(id: number): void {
+    const spec = this._images.get(id);
+    if (spec) {
+      spec.marker?.dispose();
+      this._delImg(id);
+    }
+  }
+
+  /**
    * Method to add an image to the storage.
    * @param img - The image to add (canvas or bitmap).
    * @param scrolling - When true, cursor advances with the image (lineFeed per row).
    *   When false, image is placed at (0,0) and cursor is restored (DECSET 80 / sixel origin mode).
+   * @param layer - Which canvas layer to render on ('top' or 'bottom').
+   * @param zIndex - Z-index for image layering within the same layer.
    * @returns The internal image ID assigned to the stored image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap, scrolling: boolean): number {
+  public addImage(img: HTMLCanvasElement | ImageBitmap, scrolling: boolean, layer: ImageLayer = 'top', zIndex: number = 0): number {
     // never allow storage to exceed memory limit
     this._evictOldest(img.width * img.height);
 
@@ -312,7 +329,9 @@ export class ImageStorage implements IDisposable {
       actualCellSize: { ...cellSize },  // clone needed, since later modified
       marker: endMarker || undefined,
       tileCount,
-      bufferType: this._terminal.buffer.active.type
+      bufferType: this._terminal.buffer.active.type,
+      layer,
+      zIndex
     };
 
     // finally add the image
@@ -327,16 +346,30 @@ export class ImageStorage implements IDisposable {
    */
   // TODO: Should we move this to the ImageRenderer?
   public render(range: { start: number, end: number }): void {
-    // setup image canvas in case we have none yet, but have images in store
-    if (!this._renderer.canvas && this._images.size) {
-      this._renderer.insertLayerToDom();
-      // safety measure - in case we cannot spawn a canvas at all, just exit
-      if (!this._renderer.canvas) {
-        return;
+    // Determine which layers have images
+    let hasTopImages = false;
+    let hasBottomImages = false;
+    for (const spec of this._images.values()) {
+      if (spec.layer === 'bottom') {
+        hasBottomImages = true;
+      } else {
+        hasTopImages = true;
       }
+      if (hasTopImages && hasBottomImages) break;
     }
+
+    // Lazily insert layers that are needed
+    if (hasTopImages && !this._renderer.hasLayer('top')) {
+      this._renderer.insertLayerToDom('top');
+      if (!this._renderer.hasLayer('top')) return;
+    }
+    if (hasBottomImages && !this._renderer.hasLayer('bottom')) {
+      this._renderer.insertLayerToDom('bottom');
+    }
+
     // rescale if needed
     this._renderer.rescaleCanvas();
+
     // exit early if we dont have any images to test for
     if (!this._images.size) {
       if (!this._fullyCleared) {
@@ -344,10 +377,23 @@ export class ImageStorage implements IDisposable {
         this._fullyCleared = true;
         this._needsFullClear = false;
       }
-      if (this._renderer.canvas) {
-        this._renderer.removeLayerFromDom();
+      if (this._renderer.hasLayer('top')) {
+        this._renderer.removeLayerFromDom('top');
+      }
+      if (this._renderer.hasLayer('bottom')) {
+        this._renderer.removeLayerFromDom('bottom');
       }
       return;
+    }
+
+    // Remove layers no longer needed
+    if (!hasTopImages && this._renderer.hasLayer('top')) {
+      this._renderer.clearAll('top');
+      this._renderer.removeLayerFromDom('top');
+    }
+    if (!hasBottomImages && this._renderer.hasLayer('bottom')) {
+      this._renderer.clearAll('bottom');
+      this._renderer.removeLayerFromDom('bottom');
     }
 
     // buffer switches force a full clear
@@ -364,49 +410,76 @@ export class ImageStorage implements IDisposable {
     // clear drawing area
     this._renderer.clearLines(start, end);
 
-    // walk all cells in viewport and draw tiles found
+    // Collect draw calls so we can sort by z-index (lower z drawn first).
+    const drawCalls: { imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number }[] = [];
+    const placeholderCalls: { col: number, row: number, count: number }[] = [];
+
+    // walk all cells in viewport and collect tiles found
+    // Note: We check _extendedAttrs directly (not just HAS_EXTENDED flag)
+    // because text writes clear the BG flag but leave image tile data intact.
+    // This lets top-layer images survive text overwrites (kitty C=1 behavior).
     for (let row = start; row <= end; ++row) {
       const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
       if (!line) return;
       for (let col = 0; col < cols; ++col) {
+        let e: IExtendedAttrsImage;
         if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
-          let e: IExtendedAttrsImage = line._extendedAttrs[col] ?? EMPTY_ATTRS;
-          const imageId = e.imageId;
-          if (imageId === undefined || imageId === -1) {
+          e = line._extendedAttrs[col] ?? EMPTY_ATTRS;
+        } else {
+          const maybeImg = line._extendedAttrs[col] as IExtendedAttrsImage | undefined;
+          if (!maybeImg || maybeImg.imageId === undefined || maybeImg.imageId === -1) {
             continue;
           }
-          const imgSpec = this._images.get(imageId);
-          if (e.tileId !== -1) {
-            const startTile = e.tileId;
-            const startCol = col;
-            let count = 1;
-            /**
-             * merge tiles to the right into a single draw call, if:
-             * - not at end of line
-             * - cell has same image id
-             * - cell has consecutive tile id
-             */
-            while (
-              ++col < cols
-              && (line.getBg(col) & BgFlags.HAS_EXTENDED)
-              && (e = line._extendedAttrs[col] ?? EMPTY_ATTRS)
-              && (e.imageId === imageId)
-              && (e.tileId === startTile + count)
-            ) {
-              count++;
+          e = maybeImg;
+        }
+        const imageId = e.imageId;
+        if (imageId === undefined || imageId === -1) {
+          continue;
+        }
+        const imgSpec = this._images.get(imageId);
+        if (e.tileId !== -1) {
+          const startTile = e.tileId;
+          const startCol = col;
+          let count = 1;
+          /**
+           * merge tiles to the right into a single draw call, if:
+           * - not at end of line
+           * - cell has same image id
+           * - cell has consecutive tile id
+           * Also check _extendedAttrs directly for cells where text cleared HAS_EXTENDED.
+           */
+          while (++col < cols) {
+            const nextE = line._extendedAttrs[col] as IExtendedAttrsImage | undefined;
+            if (!nextE || nextE.imageId !== imageId || nextE.tileId !== startTile + count) {
+              break;
             }
-            col--;
-            if (imgSpec) {
-              if (imgSpec.actual) {
-                this._renderer.draw(imgSpec, startTile, startCol, row, count);
-              }
-            } else if (this._opts.showPlaceholder) {
-              this._renderer.drawPlaceholder(startCol, row, count);
-            }
-            this._fullyCleared = false;
+            e = nextE;
+            count++;
           }
+          col--;
+          if (imgSpec) {
+            if (imgSpec.actual) {
+              drawCalls.push({ imgSpec, tileId: startTile, col: startCol, row, count });
+            }
+          } else if (this._opts.showPlaceholder) {
+            placeholderCalls.push({ col: startCol, row, count });
+          }
+          this._fullyCleared = false;
         }
       }
+    }
+
+    // Sort by z-index so lower z draws first (higher z renders on top)
+    drawCalls.sort((a, b) => a.imgSpec.zIndex - b.imgSpec.zIndex);
+
+    // Draw placeholders first (lowest priority)
+    for (const call of placeholderCalls) {
+      this._renderer.drawPlaceholder(call.col, call.row, call.count);
+    }
+
+    // Draw images in z-index order
+    for (const call of drawCalls) {
+      this._renderer.draw(call.imgSpec, call.tileId, call.col, call.row, call.count);
     }
   }
 

@@ -5,7 +5,7 @@
 
 import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from '@xterm/xterm';
-import { ICellSize, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
+import { ICellSize, ImageLayer, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 const PLACEHOLDER_LENGTH = 4096;
@@ -18,8 +18,9 @@ const PLACEHOLDER_HEIGHT = 24;
  * - draw image tiles onRender
  */
 export class ImageRenderer extends Disposable implements IDisposable {
-  public canvas: HTMLCanvasElement | undefined;
-  private _ctx: CanvasRenderingContext2D | null | undefined;
+  /** @deprecated Kept for backward compat — points to top layer canvas. */
+  public get canvas(): HTMLCanvasElement | undefined { return this._layers.get('top')?.canvas; }
+  private _layers = new Map<ImageLayer, CanvasRenderingContext2D>();
   private _placeholder: HTMLCanvasElement | undefined;
   private _placeholderBitmap: ImageBitmap | undefined;
   private _optionsRefresh = this._register(new MutableDisposable());
@@ -86,6 +87,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
     });
     this._register(toDisposable(() => {
       this.removeLayerFromDom();
+      this.removeLayerFromDom('bottom');
       if (this._terminal._core && this._oldOpen) {
         this._terminal._core.open = this._oldOpen;
         this._oldOpen = undefined;
@@ -95,8 +97,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
         this._oldSetRenderer = undefined;
       }
       this._renderService = undefined;
-      this.canvas = undefined;
-      this._ctx = undefined;
+      this._layers.clear();
       this._placeholderBitmap?.close();
       this._placeholderBitmap = undefined;
       this._placeholder = undefined;
@@ -140,27 +141,38 @@ export class ImageRenderer extends Disposable implements IDisposable {
   /**
    * Clear a region of the image layer canvas.
    */
-  public clearLines(start: number, end: number): void {
-    this._ctx?.clearRect(
-      0,
-      start * (this.dimensions?.css.cell.height || 0),
-      this.dimensions?.css.canvas.width || 0,
-      (++end - start) * (this.dimensions?.css.cell.height || 0)
-    );
+  public clearLines(start: number, end: number, layer?: ImageLayer): void {
+    const y = start * (this.dimensions?.css.cell.height || 0);
+    const w = this.dimensions?.css.canvas.width || 0;
+    const h = (++end - start) * (this.dimensions?.css.cell.height || 0);
+    if (!layer || layer === 'top') {
+      this._layers.get('top')?.clearRect(0, y, w, h);
+    }
+    if (!layer || layer === 'bottom') {
+      this._layers.get('bottom')?.clearRect(0, y, w, h);
+    }
   }
 
   /**
    * Clear whole image canvas.
    */
-  public clearAll(): void {
-    this._ctx?.clearRect(0, 0, this.canvas?.width || 0, this.canvas?.height || 0);
+  public clearAll(layer?: ImageLayer): void {
+    if (!layer || layer === 'top') {
+      const ctx = this._layers.get('top');
+      ctx?.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+    if (!layer || layer === 'bottom') {
+      const ctx = this._layers.get('bottom');
+      ctx?.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
   }
 
   /**
    * Draw neighboring tiles on the image layer canvas.
    */
   public draw(imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number = 1): void {
-    if (!this._ctx) {
+    const ctx = this._layers.get(imgSpec.layer);
+    if (!ctx) {
       return;
     }
     const { width, height } = this.cellSize;
@@ -187,7 +199,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
     // Note: For not pixel perfect aligned cells like in the DOM renderer
     // this will move a tile slightly to the top/left (subpixel range, thus ignore it).
     // FIX #34: avoid striping on displays with pixelDeviceRatio != 1 by ceiling height and width
-    this._ctx.drawImage(
+    ctx.drawImage(
       img,
       Math.floor(sx), Math.floor(sy), Math.ceil(finalWidth), Math.ceil(finalHeight),
       Math.floor(dx), Math.floor(dy), Math.ceil(finalWidth), Math.ceil(finalHeight)
@@ -227,7 +239,8 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Draw a line with placeholder on the image layer canvas.
    */
   public drawPlaceholder(col: number, row: number, count: number = 1): void {
-    if (this._ctx) {
+    const ctx = this._layers.get('top');
+    if (ctx) {
       const { width, height } = this.cellSize;
 
       // Don't try to draw anything, if we cannot get valid renderer metrics.
@@ -241,7 +254,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
         this._createPlaceHolder(height + 1);
       }
       if (!this._placeholder) return;
-      this._ctx.drawImage(
+      ctx.drawImage(
         this._placeholderBitmap ?? this._placeholder!,
         col * width,
         (row * height) % 2 ? 0 : 1,  // needs %2 offset correction
@@ -260,12 +273,13 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Checked once from `ImageStorage.render`.
    */
   public rescaleCanvas(): void {
-    if (!this.canvas) {
-      return;
-    }
-    if (this.canvas.width !== this.dimensions!.css.canvas.width || this.canvas.height !== this.dimensions!.css.canvas.height) {
-      this.canvas.width = this.dimensions!.css.canvas.width || 0;
-      this.canvas.height = this.dimensions!.css.canvas.height || 0;
+    const w = this.dimensions?.css.canvas.width || 0;
+    const h = this.dimensions?.css.canvas.height || 0;
+    for (const ctx of this._layers.values()) {
+      if (ctx.canvas.width !== w || ctx.canvas.height !== h) {
+        ctx.canvas.width = w;
+        ctx.canvas.height = h;
+      }
     }
   }
 
@@ -304,35 +318,62 @@ export class ImageRenderer extends Disposable implements IDisposable {
     this._renderService = this._terminal._core._renderService;
     this._oldSetRenderer = this._renderService.setRenderer.bind(this._renderService);
     this._renderService.setRenderer = (renderer: any) => {
-      this.removeLayerFromDom();
+      for (const key of [...this._layers.keys()]) {
+        this.removeLayerFromDom(key);
+      }
       this._oldSetRenderer?.call(this._renderService, renderer);
     };
   }
 
-  public insertLayerToDom(): void {
+  public insertLayerToDom(layer: ImageLayer = 'top'): void {
     // make sure that the terminal is attached to a document and to DOM
-    if (this.document && this._terminal._core.screenElement) {
-      if (!this.canvas) {
-        this.canvas = ImageRenderer.createCanvas(
-          this.document, this.dimensions?.css.canvas.width || 0,
-          this.dimensions?.css.canvas.height || 0
-        );
-        this.canvas.classList.add('xterm-image-layer');
-        this._terminal._core.screenElement.appendChild(this.canvas);
-        this._ctx = this.canvas.getContext('2d', { alpha: true, desynchronized: true });
-        this.clearAll();
-      }
-    } else {
+    if (!this.document || !this._terminal._core.screenElement) {
       console.warn('image addon: cannot insert output canvas to DOM, missing document or screenElement');
+      return;
+    }
+    if (this._layers.has(layer)) {
+      return;
+    }
+    const canvas = ImageRenderer.createCanvas(
+      this.document, this.dimensions?.css.canvas.width || 0,
+      this.dimensions?.css.canvas.height || 0
+    );
+    canvas.classList.add(`xterm-image-layer-${layer}`);
+    const screenElement = this._terminal._core.screenElement;
+    if (layer === 'bottom') {
+      // Use z-index:-1 so it paints behind non-positioned text elements.
+      // The screen element needs to be a stacking context to contain the
+      // negative z-index, otherwise it would go behind the entire terminal.
+      canvas.style.zIndex = '-1';
+      screenElement.style.zIndex = '0';
+      screenElement.insertBefore(canvas, screenElement.firstChild);
+    } else {
+      // Explicit z-index ensures the image canvas reliably stacks above
+      // the text layer (DOM renderer rows). z-index: 0 is below the
+      // selection overlay (z-index: 1).
+      canvas.style.zIndex = '0';
+      screenElement.style.zIndex = '0';
+      screenElement.appendChild(canvas);
+    }
+    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+    if (!ctx) {
+      canvas.remove();
+      return;
+    }
+    this._layers.set(layer, ctx);
+    this.clearAll(layer);
+  }
+
+  public removeLayerFromDom(layer: ImageLayer = 'top'): void {
+    const ctx = this._layers.get(layer);
+    if (ctx) {
+      ctx.canvas.remove();
+      this._layers.delete(layer);
     }
   }
 
-  public removeLayerFromDom(): void {
-    if (this.canvas) {
-      this._ctx = undefined;
-      this.canvas.remove();
-      this.canvas = undefined;
-    }
+  public hasLayer(layer: ImageLayer): boolean {
+    return this._layers.has(layer);
   }
 
   private _createPlaceHolder(height: number = PLACEHOLDER_HEIGHT): void {

@@ -23,6 +23,8 @@ export interface IImageAddonOptions {
   sixelSizeLimit: number;
   iipSupport: boolean;
   iipSizeLimit: number;
+  kittySupport: boolean;
+  kittySizeLimit: number;
 }
 
 // eslint-disable-next-line
@@ -134,7 +136,9 @@ test.describe('ImageAddon', () => {
         storageLimit: 128,
         showPlaceholder: true,
         iipSupport: true,
-        iipSizeLimit: 20000000
+        iipSizeLimit: 20000000,
+        kittySupport: true,
+        kittySizeLimit: 20000000
       };
       deepStrictEqual(await ctx.page.evaluate(`window.imageAddon._opts`), DEFAULT_OPTIONS);
     });
@@ -149,7 +153,9 @@ test.describe('ImageAddon', () => {
         storageLimit: 10,
         showPlaceholder: false,
         iipSupport: false,
-        iipSizeLimit: 1000
+        iipSizeLimit: 1000,
+        kittySupport: false,
+        kittySizeLimit: 1000
       };
       await ctx.page.evaluate(opts => {
         (window as any).imageAddonCustom = new ImageAddon(opts.opts);
