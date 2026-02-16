@@ -81,11 +81,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
   }
 
   public reset(): void {
-    for (const pending of this._pendingTransmissions.values()) {
-      pending.decoder.release();
-    }
-    this._pendingTransmissions.clear();
-    this._lastPendingKey = undefined;
+    this._cleanupAllPending();
     if (this._activeDecoder) {
       this._activeDecoder.release();
       this._activeDecoder = null;
@@ -95,6 +91,21 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
 
   public dispose(): void {
     this.reset();
+  }
+
+  private _removePendingEntry(key: number): void {
+    this._pendingTransmissions.delete(key);
+    if (this._lastPendingKey === key) {
+      this._lastPendingKey = undefined;
+    }
+  }
+
+  private _cleanupAllPending(): void {
+    for (const pending of this._pendingTransmissions.values()) {
+      pending.decoder.release();
+    }
+    this._pendingTransmissions.clear();
+    this._lastPendingKey = undefined;
   }
 
   public start(): void {
@@ -178,10 +189,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       }
       this._activeDecoder = null;
       if (pending) {
-        this._pendingTransmissions.delete(pendingKey);
-        if (this._lastPendingKey === pendingKey) {
-          this._lastPendingKey = undefined;
-        }
+        this._removePendingEntry(pendingKey);
       }
       this._aborted = true;
       return;
@@ -202,10 +210,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       this._activeDecoder = null;
       this._decodeError = true;
       if (pending) {
-        this._pendingTransmissions.delete(pendingKey);
-        if (this._lastPendingKey === pendingKey) {
-          this._lastPendingKey = undefined;
-        }
+        this._removePendingEntry(pendingKey);
       }
     }
   }
@@ -404,14 +409,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       return true;
     }
 
-    const pendingKey = cmd.id ?? 0;
-
     this._handleTransmit(cmd, bytes, decodeError);
 
-    // If still accumulating chunks, don't display yet
-    if (this._pendingTransmissions.has(pendingKey)) return true;
-
-    // Display the completed image
     const id = cmd.id ?? this._kittyStorage.lastImageId;
     const image = this._kittyStorage.getImage(id);
     if (image) {
@@ -488,26 +487,17 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     switch (selector) {
       case 'a':
       case 'A':
-        // Delete all — also abort all in-flight uploads
-        for (const pending of this._pendingTransmissions.values()) {
-          pending.decoder.release();
-        }
-        this._pendingTransmissions.clear();
-        this._lastPendingKey = undefined;
+        this._cleanupAllPending();
         this._kittyStorage.deleteAll();
         break;
       case 'i':
       case 'I':
-        // Delete by image ID — only abort the targeted upload
         if (cmd.id !== undefined) {
           const pending = this._pendingTransmissions.get(cmd.id);
           if (pending) {
             pending.decoder.release();
-            this._pendingTransmissions.delete(cmd.id);
-            if (this._lastPendingKey === cmd.id) {
-              this._lastPendingKey = undefined;
-            }
           }
+          this._removePendingEntry(cmd.id);
           this._kittyStorage.deleteById(cmd.id);
         }
         break;
@@ -574,6 +564,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const zIndex = cmd.zIndex ?? 0;
     if (w !== bitmap.width || h !== bitmap.height) {
       const resized = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
+      bitmap.close();
       this._kittyStorage.addImage(image.id, resized, true, layer, zIndex);
     } else {
       this._kittyStorage.addImage(image.id, bitmap, true, layer, zIndex);
@@ -615,7 +606,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
             canvas.getContext('2d')?.drawImage(img, 0, 0);
             createImageBitmap(canvas).then(resolve).catch(reject);
           });
-          img.addEventListener('error', reject);
+          img.addEventListener('error', () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load image'));
+          });
           img.src = url;
         });
       }

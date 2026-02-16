@@ -21,16 +21,16 @@ export class KittyImageStorage implements IDisposable {
   private _nextImageId = 1;
   private readonly _images: Map<number, IKittyImageData> = new Map();
   private readonly _kittyIdToStorageId: Map<number, number> = new Map();
+  private readonly _storageIdToKittyId: Map<number, number> = new Map();
 
   private readonly _previousOnImageDeleted: ((storageId: number) => void) | undefined;
   private readonly _wrappedOnImageDeleted: (storageId: number) => void;
   private readonly _handleStorageImageDeleted = (storageId: number): void => {
-    for (const [kittyId, mappedStorageId] of this._kittyIdToStorageId) {
-      if (mappedStorageId === storageId) {
-        this._kittyIdToStorageId.delete(kittyId);
-        this._images.delete(kittyId);
-        break;
-      }
+    const kittyId = this._storageIdToKittyId.get(storageId);
+    if (kittyId !== undefined) {
+      this._kittyIdToStorageId.delete(kittyId);
+      this._storageIdToKittyId.delete(storageId);
+      this._images.delete(kittyId);
     }
   };
 
@@ -49,6 +49,7 @@ export class KittyImageStorage implements IDisposable {
     this._nextImageId = 1;
     this._images.clear();
     this._kittyIdToStorageId.clear();
+    this._storageIdToKittyId.clear();
   }
 
   public dispose(): void {
@@ -65,6 +66,7 @@ export class KittyImageStorage implements IDisposable {
     if (oldStorageId !== undefined) {
       this._storage.deleteImage(oldStorageId);
       this._kittyIdToStorageId.delete(imageId);
+      this._storageIdToKittyId.delete(oldStorageId);
     }
 
     if (!this._images.has(imageId) && this._images.size >= KittyImageStorage._maxStoredImages) {
@@ -81,6 +83,7 @@ export class KittyImageStorage implements IDisposable {
   public addImage(kittyId: number, image: HTMLCanvasElement | ImageBitmap, scrolling: boolean, layer: ImageLayer, zIndex: number): void {
     const storageId = this._storage.addImage(image, scrolling, layer, zIndex);
     this._kittyIdToStorageId.set(kittyId, storageId);
+    this._storageIdToKittyId.set(storageId, kittyId);
   }
 
   public getImage(kittyId: number): IKittyImageData | undefined {
@@ -93,6 +96,7 @@ export class KittyImageStorage implements IDisposable {
     if (storageId !== undefined) {
       this._storage.deleteImage(storageId);
       this._kittyIdToStorageId.delete(kittyId);
+      this._storageIdToKittyId.delete(storageId);
     }
   }
 
@@ -102,6 +106,7 @@ export class KittyImageStorage implements IDisposable {
       this._storage.deleteImage(storageId);
     }
     this._kittyIdToStorageId.clear();
+    this._storageIdToKittyId.clear();
   }
 
   public get images(): ReadonlyMap<number, IKittyImageData> {
