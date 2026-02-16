@@ -57,6 +57,19 @@ const RAW_RGB_2X2 = Buffer.from([
   255, 0, 0,    0, 255, 0,
   0, 0, 255,    255, 255, 0
 ]).toString('base64');
+// 5 pixels (1 uint32 block + 1 remainder) — tests block+tail boundary
+const RAW_RGB_5X1 = Buffer.from([
+  255, 0, 0,
+  0, 255, 0,
+  0, 0, 255,
+  255, 255, 0,
+  255, 0, 255
+]).toString('base64');
+// 8 pixels (2 full uint32 blocks, 0 remainder) — tests multi-block path
+const RAW_RGB_4X2 = Buffer.from([
+  255, 0, 0,    0, 255, 0,    0, 0, 255,    255, 255, 0,
+  255, 0, 255,  0, 255, 255,  128, 128, 128, 255, 255, 255
+]).toString('base64');
 
 // Raw RGBA pixel data (f=32): 4 bytes per pixel, no header — requires s= and v=
 const RAW_RGBA_1X1_WHITE = Buffer.from([255, 255, 255, 255]).toString('base64');
@@ -70,6 +83,14 @@ const RAW_RGBA_3X1 = Buffer.from([
 const RAW_RGBA_2X2 = Buffer.from([
   255, 0, 0, 255,    0, 255, 0, 255,
   0, 0, 255, 255,    255, 255, 0, 255
+]).toString('base64');
+// 5 pixels — tests RGBA zero-copy with non-power-of-2 count
+const RAW_RGBA_5X1 = Buffer.from([
+  255, 0, 0, 255,
+  0, 255, 0, 255,
+  0, 0, 255, 255,
+  255, 255, 0, 255,
+  255, 0, 255, 255
 ]).toString('base64');
 
 let ctx: ITestContext;
@@ -1449,6 +1470,29 @@ test.describe('Kitty Graphics Protocol', () => {
         deepStrictEqual(await getPixel(0, 0, 0, 1), [0, 0, 255, 255]);
         deepStrictEqual(await getPixel(0, 0, 1, 1), [255, 255, 0, 255]);
       });
+
+      test('renders 5x1 row with block+remainder pixel layout', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=5,v=1;${RAW_RGB_5X1}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 0), [0, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 2, 0), [0, 0, 255, 255]);
+        deepStrictEqual(await getPixel(0, 0, 3, 0), [255, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 4, 0), [255, 0, 255, 255]);
+      });
+
+      test('renders 4x2 grid with multi-block pixel layout', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=4,v=2;${RAW_RGB_4X2}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 0), [0, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 2, 0), [0, 0, 255, 255]);
+        deepStrictEqual(await getPixel(0, 0, 3, 0), [255, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 0, 1), [255, 0, 255, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 1), [0, 255, 255, 255]);
+        deepStrictEqual(await getPixel(0, 0, 2, 1), [128, 128, 128, 255]);
+        deepStrictEqual(await getPixel(0, 0, 3, 1), [255, 255, 255, 255]);
+      });
     });
 
     test.describe('Storage and dimensions', () => {
@@ -1464,6 +1508,20 @@ test.describe('Kitty Graphics Protocol', () => {
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
         deepStrictEqual(await getOrigSize(1), [2, 2]);
+      });
+
+      test('stores image with correct original dimensions (5x1)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=5,v=1;${RAW_RGB_5X1}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [5, 1]);
+      });
+
+      test('stores image with correct original dimensions (4x2)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=24,s=4,v=2;${RAW_RGB_4X2}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [4, 2]);
       });
     });
 
@@ -1566,6 +1624,16 @@ test.describe('Kitty Graphics Protocol', () => {
         deepStrictEqual(await getPixel(0, 0, 0, 1), [0, 0, 255, 255]);
         deepStrictEqual(await getPixel(0, 0, 1, 1), [255, 255, 0, 255]);
       });
+
+      test('renders 5x1 row with zero-copy pixel layout', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=5,v=1;${RAW_RGBA_5X1}\x1b\\`);
+        await timeout(100);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 1, 0), [0, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 2, 0), [0, 0, 255, 255]);
+        deepStrictEqual(await getPixel(0, 0, 3, 0), [255, 255, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 4, 0), [255, 0, 255, 255]);
+      });
     });
 
     test.describe('Storage and dimensions', () => {
@@ -1581,6 +1649,13 @@ test.describe('Kitty Graphics Protocol', () => {
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
         deepStrictEqual(await getOrigSize(1), [2, 2]);
+      });
+
+      test('stores image with correct original dimensions (5x1)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=32,s=5,v=1;${RAW_RGBA_5X1}\x1b\\`);
+        await timeout(100);
+        strictEqual(await getImageStorageLength(), 1);
+        deepStrictEqual(await getOrigSize(1), [5, 1]);
       });
     });
 
