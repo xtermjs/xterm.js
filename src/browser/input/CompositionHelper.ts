@@ -26,6 +26,12 @@ export class CompositionHelper {
   public get isComposing(): boolean { return this._isComposing; }
 
   /**
+   * WKWebView IME workaround: set by CoreBrowserTerminal to suppress
+   * _handleAnyTextareaChanges during synthetic WK composition.
+   */
+  public wkImeComposing: boolean = false;
+
+  /**
    * The position within the input textarea's value of the current composition.
    */
   private _compositionPosition: IPosition;
@@ -110,7 +116,10 @@ export class CompositionHelper {
     if (ev.keyCode === 229) {
       // If the "composition character" is used but gets to this point it means a non-composition
       // character (eg. numbers and punctuation) was pressed when the IME was active.
-      this._handleAnyTextareaChanges();
+      // Skip if WKWebView synthetic composition is active (handled by CoreBrowserTerminal).
+      if (!this.wkImeComposing) {
+        this._handleAnyTextareaChanges();
+      }
       return false;
     }
 
