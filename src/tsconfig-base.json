@@ -9,6 +9,7 @@
     "pretty": true,
 
     "incremental": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false
   }
 }
