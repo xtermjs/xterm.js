@@ -13,7 +13,7 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
 
   private _isFocused = false;
   private _cachedIsFocused: boolean | undefined = undefined;
-  private _screenDprMonitor!: ScreenDprMonitor;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   private readonly _onDprChange = this._register(new Emitter<number>());
   public readonly onDprChange = this._onDprChange.event;
