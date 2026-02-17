@@ -13,7 +13,7 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
 
   private _isFocused = false;
   private _cachedIsFocused: boolean | undefined = undefined;
-  private _screenDprMonitor = this._register(new ScreenDprMonitor(this._window));
+  private _screenDprMonitor!: ScreenDprMonitor;
 
   private readonly _onDprChange = this._register(new Emitter<number>());
   public readonly onDprChange = this._onDprChange.event;
@@ -26,6 +26,8 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
     public readonly mainDocument: Document
   ) {
     super();
+
+    this._screenDprMonitor = this._register(new ScreenDprMonitor(this._window));
 
     // Monitor device pixel ratio
     this._register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
