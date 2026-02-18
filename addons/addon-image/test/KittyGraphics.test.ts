@@ -1431,6 +1431,55 @@ test.describe('Kitty Graphics Protocol', () => {
         deepStrictEqual(await getPixel(0, 0, 4, 2), [0, 0, 0, 0]);
         deepStrictEqual(await getPixel(0, 0, 5, 3), [0, 0, 0, 255]);
       });
+
+      test('w=0 is treated as unset (displays full width)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,w=0;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 199, 99), [255, 255, 255, 255]);
+      });
+
+      test('h=0 is treated as unset (displays full height)', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,h=0;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 0, 50), [255, 192, 203, 255]);
+      });
+
+      test('x exceeding image width produces no display', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,x=999;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        strictEqual(await getImageStorageLength(), 0);
+      });
+
+      test('negative x/y values are clamped to 0', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,x=-10,y=-10;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
+      });
+
+      test('combined crop and sub-cell offset', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,x=20,y=0,w=20,h=50,X=5,Y=3;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 0]);
+        deepStrictEqual(await getPixel(0, 0, 4, 2), [0, 0, 0, 0]);
+        deepStrictEqual(await getPixel(0, 0, 5, 3), [255, 128, 0, 255]);
+      });
+
+      test('sub-cell offset with explicit c/r advances cursor correctly', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,X=5,Y=3,c=4,r=2;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+        await timeout(100);
+
+        deepStrictEqual(await getCursor(), [4, 1]);
+      });
     });
 
     test.describe('Query support', () => {

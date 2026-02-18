@@ -530,8 +530,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
 
     const cropX = Math.max(0, cmd.x ?? 0);
     const cropY = Math.max(0, cmd.y ?? 0);
-    const cropW = cmd.sourceWidth ?? (bitmap.width - cropX);
-    const cropH = cmd.sourceHeight ?? (bitmap.height - cropY);
+    const cropW = cmd.sourceWidth || (bitmap.width - cropX);
+    const cropH = cmd.sourceHeight || (bitmap.height - cropY);
 
     const maxCropW = Math.max(0, bitmap.width - cropX);
     const maxCropH = Math.max(0, bitmap.height - cropY);
