@@ -102,7 +102,6 @@ test.afterAll(async () => await ctx.page.close());
 
 test.describe('Kitty Graphics Protocol', () => {
   // TODO: Add tests for larger images with various dimensions
-  // TODO: Add tests for image placement keys (x, y, w, h, X, Y, c, r)
   // TODO: Add tests for virtual placement (U=1)
   // TODO: Add tests for animation frames
   // TODO: Add performance tests for streaming large images
@@ -1397,6 +1396,40 @@ test.describe('Kitty Graphics Protocol', () => {
         deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);     // x=18: Red
         deepStrictEqual(pixels?.slice(4, 8), [255, 0, 0, 255]);     // x=19: Red
         deepStrictEqual(pixels?.slice(8, 12), [255, 128, 0, 255]);  // x=20: Orange
+      });
+
+      test('applies source crop via x/y/w/h before display', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,x=20,y=0,w=20,h=50;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+        await timeout(200);
+
+        deepStrictEqual(await getOrigSize(1), [20, 50]);
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 128, 0, 255]);
+        deepStrictEqual(await getPixel(0, 0, 19, 49), [255, 128, 0, 255]);
+      });
+
+      test('scales cropped source region to c/r placement rectangle', async () => {
+        // Firefox's createImageBitmap uses different resize sampling, producing
+        // slightly off pixel values compared to Chromium, so skip on Firefox.
+        if (ctx.browser.browserType().name() === 'firefox') {
+          test.skip();
+        }
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,x=1,y=0,w=1,h=1,c=4,r=2;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+        await timeout(200);
+
+        deepStrictEqual(await getCursor(), [4, 1]);
+        const left = await getPixel(0, 0, 2, 10);
+        const right = await getPixel(0, 0, 25, 10);
+        deepStrictEqual(left, [0, 255, 0, 255]);
+        deepStrictEqual(right, [0, 255, 0, 255]);
+      });
+
+      test('applies sub-cell offset via X/Y within first cell', async () => {
+        await ctx.proxy.write(`\x1b_Ga=T,f=100,X=5,Y=3;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+        await timeout(100);
+
+        deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 0]);
+        deepStrictEqual(await getPixel(0, 0, 4, 2), [0, 0, 0, 0]);
+        deepStrictEqual(await getPixel(0, 0, 5, 3), [0, 0, 0, 255]);
       });
     });
 

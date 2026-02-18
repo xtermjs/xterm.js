@@ -51,6 +51,14 @@ export const enum KittyKey {
   X_OFFSET = 'x',
   // The top edge (in pixels) of the image area to display
   Y_OFFSET = 'y',
+  // Width (in pixels) of the source rectangle to display
+  SOURCE_WIDTH = 'w',
+  // Height (in pixels) of the source rectangle to display
+  SOURCE_HEIGHT = 'h',
+  // Horizontal offset (in pixels) within the first cell
+  X_PLACEMENT_OFFSET = 'X',
+  // Vertical offset (in pixels) within the first cell
+  Y_PLACEMENT_OFFSET = 'Y',
   // Number of terminal columns to display the image over
   COLUMNS = 'c',
   // Number of terminal rows to display the image over
@@ -88,6 +96,10 @@ export interface IKittyCommand {
   height?: number;
   x?: number;
   y?: number;
+  sourceWidth?: number;
+  sourceHeight?: number;
+  xOffset?: number;
+  yOffset?: number;
   columns?: number;
   rows?: number;
   more?: number;
@@ -163,6 +175,10 @@ export function parseKittyCommand(data: string): IKittyCommand {
       case KittyKey.HEIGHT: cmd.height = numValue; break;
       case KittyKey.X_OFFSET: cmd.x = numValue; break;
       case KittyKey.Y_OFFSET: cmd.y = numValue; break;
+      case KittyKey.SOURCE_WIDTH: cmd.sourceWidth = numValue; break;
+      case KittyKey.SOURCE_HEIGHT: cmd.sourceHeight = numValue; break;
+      case KittyKey.X_PLACEMENT_OFFSET: cmd.xOffset = numValue; break;
+      case KittyKey.Y_PLACEMENT_OFFSET: cmd.yOffset = numValue; break;
       case KittyKey.COLUMNS: cmd.columns = numValue; break;
       case KittyKey.ROWS: cmd.rows = numValue; break;
       case KittyKey.MORE: cmd.more = numValue; break;
