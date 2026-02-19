@@ -526,14 +526,35 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
   }
 
   private async _decodeAndDisplay(image: IKittyImageData, cmd: IKittyCommand): Promise<void> {
-    const bitmap = await this._createBitmap(image);
+    let bitmap = await this._createBitmap(image);
+
+    const cropX = Math.max(0, cmd.x ?? 0);
+    const cropY = Math.max(0, cmd.y ?? 0);
+    const cropW = cmd.sourceWidth || (bitmap.width - cropX);
+    const cropH = cmd.sourceHeight || (bitmap.height - cropY);
+
+    const maxCropW = Math.max(0, bitmap.width - cropX);
+    const maxCropH = Math.max(0, bitmap.height - cropY);
+    const finalCropW = Math.max(0, Math.min(cropW, maxCropW));
+    const finalCropH = Math.max(0, Math.min(cropH, maxCropH));
+
+    if (finalCropW === 0 || finalCropH === 0) {
+      bitmap.close();
+      throw new Error('invalid source rectangle');
+    }
+
+    if (cropX !== 0 || cropY !== 0 || finalCropW !== bitmap.width || finalCropH !== bitmap.height) {
+      const cropped = await createImageBitmap(bitmap, cropX, cropY, finalCropW, finalCropH);
+      bitmap.close();
+      bitmap = cropped;
+    }
 
     const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
     const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
 
     // Per spec: c/r default to image's natural cell dimensions
-    const imgCols = cmd.columns ?? Math.ceil(bitmap.width / cw);
-    const imgRows = cmd.rows ?? Math.ceil(bitmap.height / ch);
+    let imgCols = cmd.columns ?? Math.ceil(bitmap.width / cw);
+    let imgRows = cmd.rows ?? Math.ceil(bitmap.height / ch);
 
     let w = bitmap.width;
     let h = bitmap.height;
@@ -545,6 +566,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     }
 
     if (w * h > this._opts.pixelLimit) {
+      bitmap.close();
       throw new Error('image exceeds pixel limit');
     }
 
@@ -561,14 +583,44 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const wantsBottom = cmd.zIndex !== undefined && cmd.zIndex < 0;
     const layer: ImageLayer = wantsBottom ? 'bottom' : 'top';
 
-    const zIndex = cmd.zIndex ?? 0;
+    let finalBitmap = bitmap;
     if (w !== bitmap.width || h !== bitmap.height) {
-      const resized = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
+      finalBitmap = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
       bitmap.close();
-      this._kittyStorage.addImage(image.id, resized, true, layer, zIndex);
-    } else {
-      this._kittyStorage.addImage(image.id, bitmap, true, layer, zIndex);
     }
+
+    // Per spec: X/Y are pixel offsets within the first cell, so clamp to cell dimensions
+    const xOffset = Math.min(Math.max(0, cmd.xOffset ?? 0), cw - 1);
+    const yOffset = Math.min(Math.max(0, cmd.yOffset ?? 0), ch - 1);
+    if (xOffset !== 0 || yOffset !== 0) {
+      const offsetCanvas = ImageRenderer.createCanvas(window.document, finalBitmap.width + xOffset, finalBitmap.height + yOffset);
+      const offsetCtx = offsetCanvas.getContext('2d');
+      if (!offsetCtx) {
+        finalBitmap.close();
+        throw new Error('Failed to create offset canvas context');
+      }
+      offsetCtx.drawImage(finalBitmap, xOffset, yOffset);
+
+      const offsetBitmap = await createImageBitmap(offsetCanvas);
+      offsetCanvas.width = offsetCanvas.height = 0;
+      finalBitmap.close();
+      finalBitmap = offsetBitmap;
+      w = finalBitmap.width;
+      h = finalBitmap.height;
+      if (w * h > this._opts.pixelLimit) {
+        finalBitmap.close();
+        throw new Error('image exceeds pixel limit');
+      }
+      if (cmd.columns === undefined) {
+        imgCols = Math.ceil(finalBitmap.width / cw);
+      }
+      if (cmd.rows === undefined) {
+        imgRows = Math.ceil(finalBitmap.height / ch);
+      }
+    }
+
+    const zIndex = cmd.zIndex ?? 0;
+    this._kittyStorage.addImage(image.id, finalBitmap, true, layer, zIndex);
 
     // Kitty cursor movement
     // Per spec: cursor placed at first column after last image column,
