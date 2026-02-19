@@ -81,6 +81,14 @@ export class KittyImageStorage implements IDisposable {
   }
 
   public addImage(kittyId: number, image: HTMLCanvasElement | ImageBitmap, scrolling: boolean, layer: ImageLayer, zIndex: number): void {
+    // Clean up stale reverse-mapping from a previous placement of the same
+    // kitty image.  The old shared-storage entry is kept (it may still be
+    // visible on screen) but its reverse mapping is removed so that eviction
+    // of the old entry won't incorrectly delete the kitty image data.
+    const oldStorageId = this._kittyIdToStorageId.get(kittyId);
+    if (oldStorageId !== undefined) {
+      this._storageIdToKittyId.delete(oldStorageId);
+    }
     const storageId = this._storage.addImage(image, scrolling, layer, zIndex);
     this._kittyIdToStorageId.set(kittyId, storageId);
     this._storageIdToKittyId.set(storageId, kittyId);

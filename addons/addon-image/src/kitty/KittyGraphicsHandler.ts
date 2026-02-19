@@ -323,9 +323,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       case KittyAction.QUERY:
         this._sendResponse(cmd.id ?? 0, 'OK', cmd.quiet ?? 0);
         return true;
+      case KittyAction.PLACEMENT:
+        return this._handlePlacement(cmd);
       default:
         // TODO: Implement remaining actions when needed:
-        // - a=p (placement): place a previously transmitted image
         // - a=f (frame): animation frame operations
         // - a=a (animation): animation control
         // - a=c (compose): compose images
@@ -357,9 +358,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         return this._handleTransmitDisplay(cmd, bytes, decodeError);
       case KittyAction.QUERY:
         return this._handleQuery(cmd, bytes, decodeError);
+      case KittyAction.PLACEMENT:
+        // a=p ignores any payload — image data was already transmitted
+        return this._handlePlacement(cmd);
       default:
         // TODO: Implement remaining actions when needed:
-        // - a=p (placement): place a previously transmitted image
         // - a=f (frame): animation frame operations
         // - a=a (animation): animation control
         // - a=c (compose): compose images
@@ -368,6 +371,22 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         }
         return true;
     }
+  }
+
+  private _handlePlacement(cmd: IKittyCommand): boolean | Promise<boolean> {
+    if (cmd.id === undefined) {
+      return true;
+    }
+    const image = this._kittyStorage.getImage(cmd.id);
+    if (!image) {
+      this._sendResponse(cmd.id, 'ENOENT:image not found', cmd.quiet ?? 0, cmd.placementId);
+      return true;
+    }
+    const result = this._displayImage(image, cmd);
+    return result.then(success => {
+      this._sendResponse(cmd.id!, success ? 'OK' : 'EINVAL:image rendering failed', cmd.quiet ?? 0, cmd.placementId);
+      return true;
+    });
   }
 
   private _handleTransmit(cmd: IKittyCommand, bytes: Uint8Array, decodeError: boolean): boolean {
@@ -508,12 +527,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     return true;
   }
 
-  private _sendResponse(id: number, message: string, quiet: number): void {
+  private _sendResponse(id: number, message: string, quiet: number, placementId?: number): void {
     const isOk = message === 'OK';
     if (isOk && quiet === 1) return;
     if (!isOk && quiet === 2) return;
 
-    const response = `\x1b_Gi=${id};${message}\x1b\\`;
+    const pPart = placementId ? `,p=${placementId}` : '';
+    const response = `\x1b_Gi=${id}${pPart};${message}\x1b\\`;
     this._coreTerminal._core.coreService.triggerDataEvent(response);
   }
 
@@ -552,9 +572,23 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
     const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
 
-    // Per spec: c/r default to image's natural cell dimensions
-    let imgCols = cmd.columns ?? Math.ceil(bitmap.width / cw);
-    let imgRows = cmd.rows ?? Math.ceil(bitmap.height / ch);
+    // Per spec: c/r default to image's natural cell dimensions.
+    // If only one of c/r is specified, compute the other from image aspect ratio.
+    let imgCols: number;
+    let imgRows: number;
+    if (cmd.columns !== undefined && cmd.rows !== undefined) {
+      imgCols = cmd.columns;
+      imgRows = cmd.rows;
+    } else if (cmd.columns !== undefined) {
+      imgCols = cmd.columns;
+      imgRows = Math.max(1, Math.ceil((bitmap.height / bitmap.width) * (imgCols * cw) / ch));
+    } else if (cmd.rows !== undefined) {
+      imgRows = cmd.rows;
+      imgCols = Math.max(1, Math.ceil((bitmap.width / bitmap.height) * (imgRows * ch) / cw));
+    } else {
+      imgCols = Math.ceil(bitmap.width / cw);
+      imgRows = Math.ceil(bitmap.height / ch);
+    }
 
     let w = bitmap.width;
     let h = bitmap.height;
@@ -593,7 +627,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const xOffset = Math.min(Math.max(0, cmd.xOffset ?? 0), cw - 1);
     const yOffset = Math.min(Math.max(0, cmd.yOffset ?? 0), ch - 1);
     if (xOffset !== 0 || yOffset !== 0) {
-      const offsetCanvas = ImageRenderer.createCanvas(window.document, finalBitmap.width + xOffset, finalBitmap.height + yOffset);
+      // Per spec: X/Y is not added to c/r area. When c/r are explicit, the
+      // total placement area remains c*cw × r*ch pixels and the offset image
+      // is clipped to fit. When c/r are unset, the padded canvas determines
+      // the natural cell dimensions.
+      const canvasW = (cmd.columns !== undefined) ? Math.round(imgCols * cw) : finalBitmap.width + xOffset;
+      const canvasH = (cmd.rows !== undefined) ? Math.round(imgRows * ch) : finalBitmap.height + yOffset;
+      const offsetCanvas = ImageRenderer.createCanvas(window.document, canvasW, canvasH);
       const offsetCtx = offsetCanvas.getContext('2d');
       if (!offsetCtx) {
         finalBitmap.close();
