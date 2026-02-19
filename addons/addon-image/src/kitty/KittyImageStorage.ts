@@ -20,6 +20,15 @@ export class KittyImageStorage implements IDisposable {
 
   private _nextImageId = 1;
   private readonly _images: Map<number, IKittyImageData> = new Map();
+  // TODO: Support multiple placements per image. The kitty spec identifies
+  // placements by an (image id, placement id) pair — same i + different p
+  // values should coexist, and same i + same p should replace the prior
+  // placement. Currently we track only one storage entry per kitty image id,
+  // so multiple placements of the same image overwrite each other. Fixing
+  // this requires changing these maps to Map<number, Map<number, number>>
+  // (kittyId → placementId → storageId) and updating addImage/deleteById
+  // accordingly. The underlying shared ImageStorage would also need to
+  // support multiple entries per logical image.
   private readonly _kittyIdToStorageId: Map<number, number> = new Map();
   private readonly _storageIdToKittyId: Map<number, number> = new Map();
 

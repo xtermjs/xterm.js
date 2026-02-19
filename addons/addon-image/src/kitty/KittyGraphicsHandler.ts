@@ -377,14 +377,15 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     if (cmd.id === undefined) {
       return true;
     }
-    const image = this._kittyStorage.getImage(cmd.id);
+    const id = cmd.id;
+    const image = this._kittyStorage.getImage(id);
     if (!image) {
-      this._sendResponse(cmd.id, 'ENOENT:image not found', cmd.quiet ?? 0, cmd.placementId);
+      this._sendResponse(id, 'ENOENT:image not found', cmd.quiet ?? 0, cmd.placementId);
       return true;
     }
     const result = this._displayImage(image, cmd);
     return result.then(success => {
-      this._sendResponse(cmd.id!, success ? 'OK' : 'EINVAL:image rendering failed', cmd.quiet ?? 0, cmd.placementId);
+      this._sendResponse(id, success ? 'OK' : 'EINVAL:image rendering failed', cmd.quiet ?? 0, cmd.placementId);
       return true;
     });
   }
@@ -511,6 +512,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         break;
       case 'i':
       case 'I':
+        // TODO: When placement id tracking is implemented (see TODO in
+        // KittyImageStorage), d=i with p=<pid> should delete only that
+        // specific placement, while d=i without p should delete all
+        // placements for the image.
         if (cmd.id !== undefined) {
           const pending = this._pendingTransmissions.get(cmd.id);
           if (pending) {
@@ -546,135 +551,137 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
   }
 
   private async _decodeAndDisplay(image: IKittyImageData, cmd: IKittyCommand): Promise<void> {
-    let bitmap = await this._createBitmap(image);
+    let bitmap: ImageBitmap | undefined = await this._createBitmap(image);
 
-    const cropX = Math.max(0, cmd.x ?? 0);
-    const cropY = Math.max(0, cmd.y ?? 0);
-    const cropW = cmd.sourceWidth || (bitmap.width - cropX);
-    const cropH = cmd.sourceHeight || (bitmap.height - cropY);
+    try {
+      const cropX = Math.max(0, cmd.x ?? 0);
+      const cropY = Math.max(0, cmd.y ?? 0);
+      const cropW = cmd.sourceWidth || (bitmap.width - cropX);
+      const cropH = cmd.sourceHeight || (bitmap.height - cropY);
 
-    const maxCropW = Math.max(0, bitmap.width - cropX);
-    const maxCropH = Math.max(0, bitmap.height - cropY);
-    const finalCropW = Math.max(0, Math.min(cropW, maxCropW));
-    const finalCropH = Math.max(0, Math.min(cropH, maxCropH));
+      const maxCropW = Math.max(0, bitmap.width - cropX);
+      const maxCropH = Math.max(0, bitmap.height - cropY);
+      const finalCropW = Math.max(0, Math.min(cropW, maxCropW));
+      const finalCropH = Math.max(0, Math.min(cropH, maxCropH));
 
-    if (finalCropW === 0 || finalCropH === 0) {
-      bitmap.close();
-      throw new Error('invalid source rectangle');
-    }
-
-    if (cropX !== 0 || cropY !== 0 || finalCropW !== bitmap.width || finalCropH !== bitmap.height) {
-      const cropped = await createImageBitmap(bitmap, cropX, cropY, finalCropW, finalCropH);
-      bitmap.close();
-      bitmap = cropped;
-    }
-
-    const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
-    const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
-
-    // Per spec: c/r default to image's natural cell dimensions.
-    // If only one of c/r is specified, compute the other from image aspect ratio.
-    let imgCols: number;
-    let imgRows: number;
-    if (cmd.columns !== undefined && cmd.rows !== undefined) {
-      imgCols = cmd.columns;
-      imgRows = cmd.rows;
-    } else if (cmd.columns !== undefined) {
-      imgCols = cmd.columns;
-      imgRows = Math.max(1, Math.ceil((bitmap.height / bitmap.width) * (imgCols * cw) / ch));
-    } else if (cmd.rows !== undefined) {
-      imgRows = cmd.rows;
-      imgCols = Math.max(1, Math.ceil((bitmap.width / bitmap.height) * (imgRows * ch) / cw));
-    } else {
-      imgCols = Math.ceil(bitmap.width / cw);
-      imgRows = Math.ceil(bitmap.height / ch);
-    }
-
-    let w = bitmap.width;
-    let h = bitmap.height;
-
-    // Scale bitmap to fit placement rectangle when c/r are specified
-    if (cmd.columns !== undefined || cmd.rows !== undefined) {
-      w = Math.round(imgCols * cw);
-      h = Math.round(imgRows * ch);
-    }
-
-    if (w * h > this._opts.pixelLimit) {
-      bitmap.close();
-      throw new Error('image exceeds pixel limit');
-    }
-
-    // Save cursor position before addImage modifies it
-    const buffer = this._coreTerminal._core.buffer;
-    const savedX = buffer.x;
-    const savedY = buffer.y;
-    const savedYbase = buffer.ybase;
-
-    // Determine layer based on z-index: negative = behind text, 0+ = on top.
-    // When z<0 we always use the bottom layer even without allowTransparency —
-    // the image will simply be hidden behind the opaque text background, which
-    // is the correct behavior (client asked for "behind text").
-    const wantsBottom = cmd.zIndex !== undefined && cmd.zIndex < 0;
-    const layer: ImageLayer = wantsBottom ? 'bottom' : 'top';
-
-    let finalBitmap = bitmap;
-    if (w !== bitmap.width || h !== bitmap.height) {
-      finalBitmap = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
-      bitmap.close();
-    }
-
-    // Per spec: X/Y are pixel offsets within the first cell, so clamp to cell dimensions
-    const xOffset = Math.min(Math.max(0, cmd.xOffset ?? 0), cw - 1);
-    const yOffset = Math.min(Math.max(0, cmd.yOffset ?? 0), ch - 1);
-    if (xOffset !== 0 || yOffset !== 0) {
-      // Per spec: X/Y is not added to c/r area. When c/r are explicit, the
-      // total placement area remains c*cw × r*ch pixels and the offset image
-      // is clipped to fit. When c/r are unset, the padded canvas determines
-      // the natural cell dimensions.
-      const canvasW = (cmd.columns !== undefined) ? Math.round(imgCols * cw) : finalBitmap.width + xOffset;
-      const canvasH = (cmd.rows !== undefined) ? Math.round(imgRows * ch) : finalBitmap.height + yOffset;
-      const offsetCanvas = ImageRenderer.createCanvas(window.document, canvasW, canvasH);
-      const offsetCtx = offsetCanvas.getContext('2d');
-      if (!offsetCtx) {
-        finalBitmap.close();
-        throw new Error('Failed to create offset canvas context');
+      if (finalCropW === 0 || finalCropH === 0) {
+        throw new Error('invalid source rectangle');
       }
-      offsetCtx.drawImage(finalBitmap, xOffset, yOffset);
 
-      const offsetBitmap = await createImageBitmap(offsetCanvas);
-      offsetCanvas.width = offsetCanvas.height = 0;
-      finalBitmap.close();
-      finalBitmap = offsetBitmap;
-      w = finalBitmap.width;
-      h = finalBitmap.height;
+      if (cropX !== 0 || cropY !== 0 || finalCropW !== bitmap.width || finalCropH !== bitmap.height) {
+        const cropped = await createImageBitmap(bitmap, cropX, cropY, finalCropW, finalCropH);
+        bitmap.close();
+        bitmap = cropped;
+      }
+
+      const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
+      const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
+
+      // Per spec: c/r default to image's natural cell dimensions.
+      // If only one of c/r is specified, compute the other from image aspect ratio.
+      let imgCols: number;
+      let imgRows: number;
+      if (cmd.columns !== undefined && cmd.rows !== undefined) {
+        imgCols = cmd.columns;
+        imgRows = cmd.rows;
+      } else if (cmd.columns !== undefined) {
+        imgCols = cmd.columns;
+        imgRows = Math.max(1, Math.ceil((bitmap.height / bitmap.width) * (imgCols * cw) / ch));
+      } else if (cmd.rows !== undefined) {
+        imgRows = cmd.rows;
+        imgCols = Math.max(1, Math.ceil((bitmap.width / bitmap.height) * (imgRows * ch) / cw));
+      } else {
+        imgCols = Math.ceil(bitmap.width / cw);
+        imgRows = Math.ceil(bitmap.height / ch);
+      }
+
+      let w = bitmap.width;
+      let h = bitmap.height;
+
+      // Scale bitmap to fit placement rectangle when c/r are specified
+      if (cmd.columns !== undefined || cmd.rows !== undefined) {
+        w = Math.round(imgCols * cw);
+        h = Math.round(imgRows * ch);
+      }
+
       if (w * h > this._opts.pixelLimit) {
-        finalBitmap.close();
         throw new Error('image exceeds pixel limit');
       }
-      if (cmd.columns === undefined) {
-        imgCols = Math.ceil(finalBitmap.width / cw);
-      }
-      if (cmd.rows === undefined) {
-        imgRows = Math.ceil(finalBitmap.height / ch);
-      }
-    }
 
-    const zIndex = cmd.zIndex ?? 0;
-    this._kittyStorage.addImage(image.id, finalBitmap, true, layer, zIndex);
+      // Save cursor position before addImage modifies it
+      const buffer = this._coreTerminal._core.buffer;
+      const savedX = buffer.x;
+      const savedY = buffer.y;
+      const savedYbase = buffer.ybase;
 
-    // Kitty cursor movement
-    // Per spec: cursor placed at first column after last image column,
-    // on the last row of the image. C=1 means don't move cursor.
-    if (cmd.cursorMovement === 1) {
-      // C=1: restore cursor to position before image was placed
-      const scrolled = buffer.ybase - savedYbase;
-      buffer.x = savedX;
-      // Can't restore cursor to scrollback?
-      buffer.y = Math.max(savedY - scrolled, 0);
-    } else {
-      // Default (C=0): advance cursor horizontally past the image
-      // addImage already positioned cursor on the last row via lineFeeds
-      buffer.x = Math.min(savedX + imgCols, this._coreTerminal.cols);
+      // Determine layer based on z-index: negative = behind text, 0+ = on top.
+      // When z<0 we always use the bottom layer even without allowTransparency —
+      // the image will simply be hidden behind the opaque text background, which
+      // is the correct behavior (client asked for "behind text").
+      const wantsBottom = cmd.zIndex !== undefined && cmd.zIndex < 0;
+      const layer: ImageLayer = wantsBottom ? 'bottom' : 'top';
+
+      if (w !== bitmap.width || h !== bitmap.height) {
+        const scaled = await createImageBitmap(bitmap, { resizeWidth: w, resizeHeight: h });
+        bitmap.close();
+        bitmap = scaled;
+      }
+
+      // Per spec: X/Y are pixel offsets within the first cell, so clamp to cell dimensions
+      const xOffset = Math.min(Math.max(0, cmd.xOffset ?? 0), cw - 1);
+      const yOffset = Math.min(Math.max(0, cmd.yOffset ?? 0), ch - 1);
+      if (xOffset !== 0 || yOffset !== 0) {
+        // Per spec: X/Y is not added to c/r area. When c/r are explicit, the
+        // total placement area remains c*cw × r*ch pixels and the offset image
+        // is clipped to fit. When c/r are unset, the padded canvas determines
+        // the natural cell dimensions.
+        const canvasW = (cmd.columns !== undefined) ? Math.round(imgCols * cw) : bitmap.width + xOffset;
+        const canvasH = (cmd.rows !== undefined) ? Math.round(imgRows * ch) : bitmap.height + yOffset;
+        const offsetCanvas = ImageRenderer.createCanvas(window.document, canvasW, canvasH);
+        const offsetCtx = offsetCanvas.getContext('2d');
+        if (!offsetCtx) {
+          throw new Error('Failed to create offset canvas context');
+        }
+        offsetCtx.drawImage(bitmap, xOffset, yOffset);
+
+        const offsetBitmap = await createImageBitmap(offsetCanvas);
+        offsetCanvas.width = offsetCanvas.height = 0;
+        bitmap.close();
+        bitmap = offsetBitmap;
+        w = bitmap.width;
+        h = bitmap.height;
+        if (w * h > this._opts.pixelLimit) {
+          throw new Error('image exceeds pixel limit');
+        }
+        if (cmd.columns === undefined) {
+          imgCols = Math.ceil(bitmap.width / cw);
+        }
+        if (cmd.rows === undefined) {
+          imgRows = Math.ceil(bitmap.height / ch);
+        }
+      }
+
+      const zIndex = cmd.zIndex ?? 0;
+      this._kittyStorage.addImage(image.id, bitmap, true, layer, zIndex);
+      bitmap = undefined;  // ownership transferred to storage
+
+      // Kitty cursor movement
+      // Per spec: cursor placed at first column after last image column,
+      // on the last row of the image. C=1 means don't move cursor.
+      if (cmd.cursorMovement === 1) {
+        // C=1: restore cursor to position before image was placed
+        const scrolled = buffer.ybase - savedYbase;
+        buffer.x = savedX;
+        // Can't restore cursor to scrollback?
+        buffer.y = Math.max(savedY - scrolled, 0);
+      } else {
+        // Default (C=0): advance cursor horizontally past the image
+        // addImage already positioned cursor on the last row via lineFeeds
+        buffer.x = Math.min(savedX + imgCols, this._coreTerminal.cols);
+      }
+    } catch (e) {
+      bitmap?.close();
+      throw e;
     }
   }
 
