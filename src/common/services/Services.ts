@@ -247,6 +247,7 @@ export interface ITerminalOptions {
   linkHandler?: ILinkHandler | null;
   logLevel?: LogLevel;
   logger?: ILogger | null;
+  macOptionIsEscape?: boolean;
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
