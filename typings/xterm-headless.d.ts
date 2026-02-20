@@ -93,6 +93,11 @@ declare module '@xterm/headless' {
     lineHeight?: number;
 
     /**
+     * Controls the font anti-aliasing mode used when rendering text.
+     */
+    fontAliasing?: 'default' | 'none' | 'antialiased' | 'auto';
+
+    /**
      * What log level to use, this will log for all levels below and including
      * what is set:
      *

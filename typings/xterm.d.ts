@@ -123,6 +123,11 @@ declare module '@xterm/xterm' {
     fontFamily?: string;
 
     /**
+     * Controls the font anti-aliasing mode used when rendering text.
+     */
+    fontAliasing?: 'default' | 'none' | 'antialiased' | 'auto';
+
+    /**
      * The font weight used to render non-bold text.
      */
     fontWeight?: FontWeight;

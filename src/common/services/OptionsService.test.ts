@@ -71,6 +71,13 @@ describe('OptionsService', () => {
       service.options.fontWeight = 'bold700' as any;
       assert.equal(service.options.fontWeight, DEFAULT_OPTIONS.fontWeight, 'Wrong string literals should be reset to default');
     });
+    it('normalizes invalid fontAliasing option values', () => {
+      service.options.fontAliasing = 'none';
+      assert.equal(service.options.fontAliasing, 'none');
+
+      service.options.fontAliasing = 'invalid' as any;
+      assert.equal(service.options.fontAliasing, DEFAULT_OPTIONS.fontAliasing);
+    });
   });
   describe('onOptionChange', () => {
     let service: OptionsService;

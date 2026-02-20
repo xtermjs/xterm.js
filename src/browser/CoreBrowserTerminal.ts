@@ -51,7 +51,7 @@ import { IBuffer } from 'common/buffer/Types';
 import { C0, C1ESCAPED } from 'common/data/EscapeSequences';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
-import { IDecorationService } from 'common/services/Services';
+import { IDecorationService, type FontAliasing } from 'common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
@@ -455,6 +455,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.element.classList.add('xterm');
     this.element.classList.toggle('allow-transparency', this.options.allowTransparency);
     this._register(this.optionsService.onSpecificOptionChange('allowTransparency', value => this.element!.classList.toggle('allow-transparency', value)));
+    this._updateFontAliasing(this.options.fontAliasing);
+    this._register(this.optionsService.onSpecificOptionChange('fontAliasing', value => this._updateFontAliasing(value)));
     parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
@@ -1195,6 +1197,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
     return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
+  }
+
+  private _updateFontAliasing(fontAliasing: FontAliasing): void {
+    if (!this.element) {
+      return;
+    }
+
+    this.element.style.setProperty('-webkit-font-smoothing', fontAliasing === 'default' ? '' : fontAliasing);
   }
 
   protected _keyUp(ev: KeyboardEvent): void {
