@@ -1199,6 +1199,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
   }
 
+  /**
+   * Updates the `-webkit-font-smoothing` CSS property on the terminal element.
+   * Note: This only affects the DOM renderer. Canvas and WebGL renderers
+   * handle font rendering through their own pipelines and are not affected
+   * by CSS font smoothing properties.
+   */
   private _updateFontAliasing(fontAliasing: FontAliasing): void {
     if (!this.element) {
       return;
