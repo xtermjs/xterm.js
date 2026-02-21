@@ -22,6 +22,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   documentOverride: null,
   fastScrollSensitivity: 5,
   fontFamily: 'monospace',
+  fontAliasing: 'default',
   fontSize: 15,
   fontWeight: 'normal',
   fontWeightBold: 'bold',
@@ -168,6 +169,11 @@ export class OptionsService extends Disposable implements IOptionsService {
           break;
         }
         value = FONT_WEIGHT_OPTIONS.includes(value) ? value : DEFAULT_OPTIONS[key];
+        break;
+      case 'fontAliasing':
+        if (value !== 'default' && value !== 'none' && value !== 'antialiased' && value !== 'auto') {
+          value = DEFAULT_OPTIONS[key];
+        }
         break;
       case 'blinkIntervalDuration':
         value = Math.floor(value);

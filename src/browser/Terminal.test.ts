@@ -1224,5 +1224,24 @@ describe('Terminal', () => {
       term.options.rows = 20;
       assert.equal(term.options.rows, 20);
     });
+
+    it('applies fontAliasing to webkit font smoothing', () => {
+      const styles = new Map<string, string>();
+      (term as any).element = {
+        classList: {
+          toggle: () => { },
+          remove: () => { }
+        },
+        style: {
+          setProperty: (name: string, value: string) => styles.set(name, value)
+        }
+      };
+
+      (term as any)._updateFontAliasing('none');
+      assert.equal(styles.get('-webkit-font-smoothing'), 'none');
+
+      (term as any)._updateFontAliasing('default');
+      assert.equal(styles.get('-webkit-font-smoothing'), '');
+    });
   });
 });
