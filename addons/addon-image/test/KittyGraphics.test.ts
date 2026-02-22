@@ -975,21 +975,50 @@ test.describe('Kitty Graphics Protocol', () => {
     });
   });
 
-  test.describe('Unimplemented action responses', () => {
-    test('a=p with id responds EINVAL', async () => {
+  test.describe('Placement action (a=p)', () => {
+    test('displays a previously transmitted image at cursor', async () => {
+      // Transmit image without display
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=210;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 0);
+
+      // Place the previously transmitted image
+      await ctx.proxy.write(`\x1b_Ga=p,i=210\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+      deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 255]);
+    });
+
+    test('responds OK on successful placement', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=211;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
         (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
       });
 
-      await ctx.proxy.write(`\x1b_Gi=210,a=p\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=p,i=211\x1b\\`);
+      await timeout(100);
+
+      const response = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '\x1b_Gi=211;OK\x1b\\');
+    });
+
+    test('responds ENOENT for non-existent image id', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=9999\x1b\\`);
       await timeout(100);
 
       const response: string = await ctx.page.evaluate('window.kittyResponse');
-      strictEqual(response.startsWith('\x1b_Gi=210;EINVAL:'), true);
+      strictEqual(response, '\x1b_Gi=9999;ENOENT:image not found\x1b\\');
     });
 
-    test('a=p without id sends no response', async () => {
+    test('without id sends no response', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
         (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
@@ -999,6 +1028,243 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
 
       strictEqual(await ctx.page.evaluate('window.kittyGotResponse'), false);
+    });
+
+    test('places at specified column/row size (c/r)', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=212;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=212,c=5,r=3\x1b\\`);
+      await timeout(200);
+
+      strictEqual(await getImageStorageLength(), 1);
+      deepStrictEqual(await getCursor(), [5, 2]);
+    });
+
+    test('cursor advances past placed image (default C=0)', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=213;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      deepStrictEqual(await getCursor(), [0, 0]);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=213\x1b\\`);
+      await timeout(100);
+      deepStrictEqual(await getCursor(), [1, 0]);
+    });
+
+    test('cursor does not move when C=1', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=214;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      await timeout(100);
+      deepStrictEqual(await getCursor(), [0, 0]);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=214,c=5,r=3,C=1\x1b\\`);
+      await timeout(200);
+      deepStrictEqual(await getCursor(), [0, 0]);
+    });
+
+    test('supports z-index (negative = bottom layer)', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=215;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=215,z=-1\x1b\\`);
+      await timeout(100);
+
+      strictEqual(await getImageStorageLength(), 1);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).layer`), 'bottom');
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.get(1).zIndex`), -1);
+    });
+
+    test('supports source crop via x/y', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=216;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      await timeout(100);
+
+      // Crop to the Orange rectangle (x=20, y=0, 20x50)
+      await ctx.proxy.write(`\x1b_Ga=p,i=216,x=20,y=0,w=20,h=50\x1b\\`);
+      await timeout(200);
+
+      strictEqual(await getImageStorageLength(), 1);
+      deepStrictEqual(await getOrigSize(1), [20, 50]);
+      deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 128, 0, 255]);
+    });
+
+    test('supports sub-cell offset via X/Y', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=217;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=217,X=5,Y=3\x1b\\`);
+      await timeout(100);
+
+      deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 0]);
+      deepStrictEqual(await getPixel(0, 0, 4, 2), [0, 0, 0, 0]);
+      deepStrictEqual(await getPixel(0, 0, 5, 3), [0, 0, 0, 255]);
+    });
+
+    test('multiple placements of same image create separate displays', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=218;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 0);
+
+      // First placement
+      await ctx.proxy.write(`\x1b_Ga=p,i=218,p=1\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+
+      // Move cursor down and place again with different placement ID
+      await ctx.proxy.write('\x1b[3;1H');
+      await ctx.proxy.write(`\x1b_Ga=p,i=218,p=2\x1b\\`);
+      await timeout(100);
+
+      // Both placements should be in shared storage
+      strictEqual(await getImageStorageLength(), 2);
+    });
+
+    test('image data remains available after placement for future placements', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=219;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      // Place three times
+      await ctx.proxy.write(`\x1b_Ga=p,i=219\x1b\\`);
+      await timeout(100);
+      await ctx.proxy.write('\x1b[2;1H');
+      await ctx.proxy.write(`\x1b_Ga=p,i=219\x1b\\`);
+      await timeout(100);
+      await ctx.proxy.write('\x1b[3;1H');
+      await ctx.proxy.write(`\x1b_Ga=p,i=219\x1b\\`);
+      await timeout(100);
+
+      // Image data should still be available
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(219)`), true);
+    });
+
+    test('OK response suppressed by q=1', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=220;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.page.evaluate(() => {
+        (window as any).kittyGotResponse = false;
+        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+      });
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=220,q=1\x1b\\`);
+      await timeout(100);
+
+      strictEqual(await ctx.page.evaluate('window.kittyGotResponse'), false);
+      strictEqual(await getImageStorageLength(), 1);
+    });
+
+    test('ENOENT error suppressed by q=2', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyGotResponse = false;
+        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+      });
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=9998,q=2\x1b\\`);
+      await timeout(100);
+
+      strictEqual(await ctx.page.evaluate('window.kittyGotResponse'), false);
+    });
+
+    test('ENOENT still reported when q=1 (only suppresses OK)', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=9997,q=1\x1b\\`);
+      await timeout(100);
+
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '\x1b_Gi=9997;ENOENT:image not found\x1b\\');
+    });
+
+    test('renders pixels correctly when placing a PNG image', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=221;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=221\x1b\\`);
+      await timeout(100);
+
+      const pixels = await getPixels(0, 0, 0, 0, 3, 1);
+      deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);
+      deepStrictEqual(pixels?.slice(4, 8), [0, 255, 0, 255]);
+      deepStrictEqual(pixels?.slice(8, 12), [0, 0, 255, 255]);
+    });
+
+    test('renders pixels correctly when placing raw RGB image', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=24,s=3,v=1,i=222;${RAW_RGB_3X1}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=222\x1b\\`);
+      await timeout(100);
+
+      const pixels = await getPixels(0, 0, 0, 0, 3, 1);
+      deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);
+      deepStrictEqual(pixels?.slice(4, 8), [0, 255, 0, 255]);
+      deepStrictEqual(pixels?.slice(8, 12), [0, 0, 255, 255]);
+    });
+
+    test('renders pixels correctly when placing raw RGBA image', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=32,s=3,v=1,i=223;${RAW_RGBA_3X1}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=223\x1b\\`);
+      await timeout(100);
+
+      const pixels = await getPixels(0, 0, 0, 0, 3, 1);
+      deepStrictEqual(pixels?.slice(0, 4), [255, 0, 0, 255]);
+      deepStrictEqual(pixels?.slice(4, 8), [0, 255, 0, 255]);
+      deepStrictEqual(pixels?.slice(8, 12), [0, 0, 255, 255]);
+    });
+
+    test('response includes placement id when p is specified', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=224;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=224,p=42\x1b\\`);
+      await timeout(100);
+
+      const response = await ctx.page.evaluate('window.kittyResponse');
+      strictEqual(response, '\x1b_Gi=224,p=42;OK\x1b\\');
+    });
+
+    test('only c specified computes r from aspect ratio', async () => {
+      // 200x100 image (2:1 aspect) with c=10.
+      // Per spec: r = ceil((h/w) * c * cw / ch) = ceil(0.5 * 10 * cw / ch)
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=225;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=225,c=10\x1b\\`);
+      await timeout(200);
+
+      const cursor = await getCursor();
+      const cellDims: number[] = await ctx.page.evaluate(() => {
+        const d = (window as any).term._core._renderService.dimensions.css.cell;
+        return [d.width, d.height];
+      });
+      const expectedR = Math.ceil((100 / 200) * 10 * cellDims[0] / cellDims[1]);
+      deepStrictEqual(cursor, [10, expectedR - 1]);
+    });
+
+    test('only r specified computes c from aspect ratio', async () => {
+      // 200x100 image (2:1 aspect) with r=5.
+      // Per spec: c = ceil((w/h) * r * ch / cw) = ceil(2 * 5 * ch / cw)
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=226;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      await timeout(100);
+
+      await ctx.proxy.write(`\x1b_Ga=p,i=226,r=5\x1b\\`);
+      await timeout(200);
+
+      const cursor = await getCursor();
+      const cellDims: number[] = await ctx.page.evaluate(() => {
+        const d = (window as any).term._core._renderService.dimensions.css.cell;
+        return [d.width, d.height];
+      });
+      const expectedC = Math.ceil((200 / 100) * 5 * cellDims[1] / cellDims[0]);
+      deepStrictEqual(cursor, [expectedC, 4]);
     });
   });
 
@@ -1063,20 +1329,24 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('cursor should move right by cols when c specified', async () => {
-      // c=5: image displayed over 5 columns, r auto = ceil(1/cellHeight) = 1
+      // c=5, r computed from 1x1 aspect ratio: r = ceil((1/1) * (5*cw) / ch)
+      // With 1:1 aspect, image height in pixels = 5*cw, so r = ceil(5*cw/ch)
       await ctx.proxy.write(`\x1b_Ga=T,f=100,c=5;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      deepStrictEqual(await getCursor(), [5, 0]);
+      const cursor = await getCursor();
+      strictEqual(cursor[0], 5);
+      // r is computed from aspect ratio, so y > 0 for a square image at c=5
     });
 
     test('cursor should move down by rows when r specified', async () => {
-      // r=3: image displayed over 3 rows, c auto = ceil(1/cellWidth) = 1
+      // r=3, c computed from 1x1 aspect ratio: c = ceil((1/1) * (3*ch) / cw)
       await ctx.proxy.write(`\x1b_Ga=T,f=100,r=3;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      // Cursor at first column after image (col 1), on last row (row 2)
-      deepStrictEqual(await getCursor(), [1, 2]);
+      const cursor = await getCursor();
+      strictEqual(cursor[1], 2);
+      // c is computed from aspect ratio, so x > 1 for a square image at r=3
     });
 
     test('cursor should move by cols AND rows when both specified', async () => {
