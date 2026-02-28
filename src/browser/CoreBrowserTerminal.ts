@@ -906,9 +906,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
           return false;
         }
 
-        // Construct and send sequences
-        const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
-        this.coreService.triggerDataEvent(sequence, true);
+        if (this.optionsService.rawOptions.alternateScroll) {
+          // Construct and send sequences
+          const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
+          let data = '';
+          for (let i = 0; i < Math.abs(lines); i++) {
+            data += sequence;
+          }
+          this.coreService.triggerDataEvent(data, true);
+        }
         ev.preventDefault();
         ev.stopPropagation();
         return false;

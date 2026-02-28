@@ -44,6 +44,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   disableStdin: false,
   allowProposedApi: false,
   allowTransparency: false,
+  alternateScroll: true,
   tabStopWidth: 8,
   theme: {},
   reflowCursorLine: false,
