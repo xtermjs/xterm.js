@@ -2159,6 +2159,19 @@ test.describe('Kitty Graphics Protocol', () => {
       strictEqual(await ctx.page.evaluate(`window.imageAddon._storage._images.has(${oldStorageId})`), false);
     });
   });
+
+  test.describe('onImageAdded callback', () => {
+    test('onImageAdded fires for each kitty image', async () => {
+      await ctx.page.evaluate(`
+        window._imageAddedCount = 0;
+        window.imageAddon.onImageAdded(() => { window._imageAddedCount++; });
+      `);
+      await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await pollFor(ctx.page, 'window._imageAddedCount', 1);
+      await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await pollFor(ctx.page, 'window._imageAddedCount', 2);
+    });
+  });
 });
 
 /**
