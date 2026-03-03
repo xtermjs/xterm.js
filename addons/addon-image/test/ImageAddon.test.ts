@@ -196,6 +196,18 @@ test.describe('ImageAddon', () => {
   });
 
   test.describe('image lifecycle & eviction', () => {
+    test('onImageAdded fires for each image', async () => {
+      await ctx.page.evaluate(`
+        window._imageAddedCount = 0;
+        window.imageAddon.onImageAdded(() => { window._imageAddedCount++; });
+      `);
+      await ctx.proxy.write(SIXEL_SEQ_0);
+      await pollFor(ctx.page, 'window._imageAddedCount', 1);
+      await ctx.proxy.write(SIXEL_SEQ_0);
+      await pollFor(ctx.page, 'window._imageAddedCount', 2);
+      await ctx.proxy.write(SIXEL_SEQ_0);
+      await pollFor(ctx.page, 'window._imageAddedCount', 3);
+    });
     test('delete image once scrolled off', async () => {
       await ctx.proxy.write(SIXEL_SEQ_0);
       pollFor(ctx.page, 'window.imageAddon._storage._images.size', 1);

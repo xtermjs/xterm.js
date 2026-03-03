@@ -5,6 +5,7 @@
 
 import type { ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { ImageAddon as IImageApi } from '@xterm/addon-image';
+import { Emitter, type IEvent } from 'common/Event';
 import { IIPHandler } from './IIPHandler';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
@@ -62,6 +63,8 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
   private _disposables: IDisposable[] = [];
   private _terminal: ITerminalExt | undefined;
   private _handlers: Map<String, IResetHandler> = new Map();
+  private readonly _onImageAdded = new Emitter<void>();
+  public readonly onImageAdded: IEvent<void> = this._onImageAdded.event;
 
   constructor(opts?: Partial<IImageAddonOptions>) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
@@ -74,6 +77,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
     }
     this._disposables.length = 0;
     this._handlers.clear();
+    this._onImageAdded.dispose();
   }
 
   private _disposeLater(...args: IDisposable[]): void {
@@ -88,6 +92,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
     // internal data structures
     this._renderer = new ImageRenderer(terminal);
     this._storage = new ImageStorage(terminal, this._renderer, this._opts);
+    this._storage.onImageAdded = () => this._onImageAdded.fire();
 
     // enable size reports
     if (this._opts.enableSizeReports) {
