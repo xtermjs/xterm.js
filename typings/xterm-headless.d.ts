@@ -33,6 +33,12 @@ declare module '@xterm/headless' {
     allowTransparency?: boolean;
 
     /**
+     * If enabled, the alternate buffer will scroll up and down when the mouse
+     * wheel is scrolled. The default is true.
+     */
+    alternateScroll?: boolean;
+
+    /**
      * If enabled, alt + click will move the prompt cursor to position
      * underneath the mouse. The default is true.
      */

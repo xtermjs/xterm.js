@@ -225,6 +225,7 @@ export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 export interface ITerminalOptions {
   allowProposedApi?: boolean;
   allowTransparency?: boolean;
+  alternateScroll?: boolean;
   altClickMovesCursor?: boolean;
   cols?: number;
   convertEol?: boolean;
