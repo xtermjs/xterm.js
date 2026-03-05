@@ -616,6 +616,21 @@ describe('Terminal', () => {
       });
     });
 
+    describe('with macOptionIsEscape', () => {
+      beforeEach(() => {
+        term.options.macOptionIsEscape = true;
+      });
+
+      it('should interfere with the alt key on keyDown', () => {
+        evKeyDown.altKey = true;
+        evKeyDown.keyCode = 81;
+        assert.equal(term.keyDown(evKeyDown), false);
+        evKeyDown.altKey = true;
+        evKeyDown.keyCode = 192;
+        assert.equal(term.keyDown(evKeyDown), false);
+      });
+    });
+
     describe('On Mac OS', () => {
       let originalBrowser: IBrowser;
       beforeEach(() => {

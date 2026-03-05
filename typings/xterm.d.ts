@@ -181,6 +181,11 @@ declare module '@xterm/xterm' {
     logger?: ILogger | null;
 
     /**
+     * Whether to treat option as a key that sends escape sequences.
+     */
+    macOptionIsEscape?: boolean;
+
+    /**
      * Whether to treat option as the meta key.
      */
     macOptionIsMeta?: boolean;
