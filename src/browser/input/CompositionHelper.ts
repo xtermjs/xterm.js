@@ -32,9 +32,11 @@ export class CompositionHelper {
 
   /**
    * Whether a composition is in the process of being sent, setting this to false will cancel any
-   * in-progress composition.
+   * in-progress composition. This is true between compositionend and when the setTimeout callback
+   * fires to actually send the data.
    */
   private _isSendingComposition: boolean;
+  public get isSendingComposition(): boolean { return this._isSendingComposition; }
 
   /**
    * Data already sent due to keydown event.
