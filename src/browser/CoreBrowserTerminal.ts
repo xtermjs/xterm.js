@@ -120,6 +120,64 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
+  /**
+   * WKWebView IME workaround: holds the latest composed text from
+   * insertReplacementText events, flushed on next insertText or non-IME keydown.
+   */
+  private _wkImeComposing: boolean = false;
+  private _wkImePending: string = '';
+
+  private static _isHangul(text: string): boolean {
+    const cp = text.codePointAt(0)!;
+    return (cp >= 0x1100 && cp <= 0x11FF) ||
+           (cp >= 0x3130 && cp <= 0x318F) ||
+           (cp >= 0xAC00 && cp <= 0xD7AF) ||
+           (cp >= 0xA960 && cp <= 0xA97F) ||
+           (cp >= 0xD7B0 && cp <= 0xD7FF);
+  }
+
+  private _wkShowComposition(text: string): void {
+    if (!this._compositionView || !this._renderService) return;
+    this._compositionView.textContent = text;
+    this._compositionView.classList.add('active');
+
+    const cursorX = Math.min(this.buffer.x, this.cols - 1);
+    const cellHeight = this._renderService.dimensions.css.cell.height;
+    const cursorTop = this.buffer.y * cellHeight;
+    const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
+
+    this._compositionView.style.left = cursorLeft + 'px';
+    this._compositionView.style.top = cursorTop + 'px';
+    this._compositionView.style.height = cellHeight + 'px';
+    this._compositionView.style.lineHeight = cellHeight + 'px';
+    this._compositionView.style.fontFamily = this.optionsService.rawOptions.fontFamily ?? '';
+    this._compositionView.style.fontSize = this.optionsService.rawOptions.fontSize + 'px';
+  }
+
+  private _wkHideComposition(): void {
+    if (!this._compositionView) return;
+    this._compositionView.textContent = '';
+    this._compositionView.classList.remove('active');
+  }
+
+  private _wkSetComposing(value: boolean): void {
+    this._wkImeComposing = value;
+    if (this._compositionHelper) {
+      this._compositionHelper.wkImeComposing = value;
+    }
+  }
+
+  private _wkFlush(): void {
+    if (!this._wkImeComposing) return;
+    const text = this._wkImePending;
+    this._wkSetComposing(false);
+    this._wkImePending = '';
+    this._wkHideComposition();
+    if (text) {
+      this.coreService.triggerDataEvent(text, true);
+    }
+  }
+
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this._register(new MutableDisposable());
 
@@ -1096,6 +1154,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._keyDownHandled = false;
     this._keyDownSeen = true;
 
+    // Flush pending WKWebView IME composition on non-IME keydown (keyCode 229 = IME processing)
+    if (this._wkImeComposing && event.keyCode !== 229) {
+      this._wkFlush();
+    }
+
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
     }
@@ -1276,6 +1339,33 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
+    // WKWebView/Safari fires insertReplacementText instead of composition events
+    // for Korean (and other CJK) IME input. Buffer the latest value and show preview.
+    if (ev.data && ev.inputType === 'insertReplacementText' && !this.optionsService.rawOptions.screenReaderMode) {
+      this._wkSetComposing(true);
+      this._wkImePending = ev.data;
+      this._wkShowComposition(ev.data);
+      this.cancel(ev);
+      return true;
+    }
+
+    // WKWebView IME: Hangul insertText starts a new composition.
+    // This check must be before the composed/keyDownSeen guard because WKWebView
+    // may fire insertText for composed Hangul syllables with composed=true.
+    if (ev.data && ev.inputType === 'insertText' && CoreBrowserTerminal._isHangul(ev.data) && !this.optionsService.rawOptions.screenReaderMode) {
+      const hadPending = this._wkImeComposing;
+      this._wkFlush();
+      this._wkSetComposing(true);
+      this._wkImePending = ev.data;
+      // Show preview immediately only if there was no prior flush
+      // (avoids stale cursor position after flush + PTY echo delay)
+      if (!hadPending) {
+        this._wkShowComposition(ev.data);
+      }
+      this.cancel(ev);
+      return true;
+    }
+
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
@@ -1283,6 +1373,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       if (this._keyPressHandled) {
         return false;
       }
+
+      // Non-Hangul: flush any pending WKWebView composition first
+      this._wkFlush();
 
       // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
       // keys could be ignored
