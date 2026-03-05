@@ -8,6 +8,7 @@ import type { IBrowser } from 'browser/Types';
 import { assert } from 'chai';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
+import { C0 } from 'common/data/EscapeSequences';
 import { MockUnicodeService } from 'common/TestUtils.test';
 import { IMarker } from 'common/Types';
 
@@ -172,6 +173,179 @@ describe('Terminal', () => {
       term.reset();
       assert.equal(term.keyDown(evKeyDown), false);
       assert.equal(term.keyPress(evKeyPress), false);
+    });
+  });
+
+  describe('input event pairing', () => {
+    function createInputEvent(overrides: Partial<InputEvent> = {}): InputEvent {
+      return {
+        preventDefault: () => { },
+        stopPropagation: () => { },
+        inputType: 'insertText',
+        data: '',
+        composed: true,
+        isComposing: false,
+        ...overrides
+      } as InputEvent;
+    }
+
+    beforeEach(() => {
+      (term as any).textarea = {
+        value: '',
+        selectionStart: 0,
+        selectionEnd: 0
+      };
+    });
+
+    it('should send delete and insert when tail replacement matches', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      (term as any).textarea.value = '你好';
+      (term as any).textarea.selectionStart = 0;
+      (term as any).textarea.selectionEnd = 2;
+      term.beforeInput(createInputEvent({ data: '你好世界' }));
+
+      (term as any).textarea.value = '你好世界';
+      const handled = term.input(createInputEvent({ data: '你好世界' }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, [`${C0.DEL.repeat(2)}你好世界`]);
+    });
+
+    it('should not emit DEL/data from pairing when keypress already handled input', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+
+      const evKeyPress = {
+        preventDefault: () => { },
+        stopPropagation: () => { },
+        type: 'keypress',
+        charCode: 97,
+        keyCode: 65
+      } as KeyboardEvent;
+      assert.equal(term.keyPress(evKeyPress), true);
+
+      (term as any).textarea.value = 'selected';
+      (term as any).textarea.selectionStart = 0;
+      (term as any).textarea.selectionEnd = 8;
+      term.beforeInput(createInputEvent({ data: 'a' }));
+
+      (term as any).textarea.value = 'a';
+      const handled = term.input(createInputEvent({ data: 'a' }));
+
+      assert.equal(handled, false);
+      assert.deepEqual(calls, ['a']);
+    });
+
+    it('should count surrogate pairs as a single delete', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      (term as any).textarea.value = 'A😀';
+      (term as any).textarea.selectionStart = 1;
+      (term as any).textarea.selectionEnd = 3;
+      term.beforeInput(createInputEvent({ data: 'B' }));
+
+      (term as any).textarea.value = 'AB';
+      const handled = term.input(createInputEvent({ data: 'B' }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, [`${C0.DEL}B`]);
+    });
+
+    it('should count a ZWJ emoji sequence by code point', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      const familyEmoji = '👨‍👩‍👧‍👦';
+      (term as any).textarea.value = `A${familyEmoji}`;
+      (term as any).textarea.selectionStart = 1;
+      (term as any).textarea.selectionEnd = (term as any).textarea.value.length;
+      term.beforeInput(createInputEvent({ data: 'B' }));
+
+      (term as any).textarea.value = 'AB';
+      const handled = term.input(createInputEvent({ data: 'B' }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, [`${C0.DEL.repeat(7)}B`]);
+    });
+
+    it('should only send inserted text when selection is empty at the end', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      (term as any).textarea.value = '你好';
+      (term as any).textarea.selectionStart = 2;
+      (term as any).textarea.selectionEnd = 2;
+      term.beforeInput(createInputEvent({ data: '世界' }));
+
+      (term as any).textarea.value = '你好世界';
+      const handled = term.input(createInputEvent({ data: '世界' }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, ['世界']);
+    });
+
+    it('should fallback to legacy input logic when beforeinput is not tail replacement', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      (term as any).textarea.value = 'abc';
+      (term as any).textarea.selectionStart = 1;
+      (term as any).textarea.selectionEnd = 2;
+      term.beforeInput(createInputEvent({ data: 'z' }));
+
+      (term as any).textarea.value = 'azc';
+      const handled = term.input(createInputEvent({ data: 'z' }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, ['z']);
+    });
+
+    it('should fallback to legacy input logic when structure check fails', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      (term as any).textarea.value = '你好';
+      (term as any).textarea.selectionStart = 0;
+      (term as any).textarea.selectionEnd = 2;
+      term.beforeInput(createInputEvent({ data: '你好世界' }));
+
+      (term as any).textarea.value = '错误';
+      const handled = term.input(createInputEvent({ data: '你好世界' }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, ['你好世界']);
+    });
+
+    it('should require composed=true and isComposing=false for the new path', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      (term as any).textarea.value = '你';
+      (term as any).textarea.selectionStart = 0;
+      (term as any).textarea.selectionEnd = 1;
+      term.beforeInput(createInputEvent({ data: '你好', composed: false }));
+
+      (term as any).textarea.value = '你好';
+      const handled = term.input(createInputEvent({ data: '你好', isComposing: true }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, ['你好']);
+    });
+
+    it('should use latest beforeinput snapshot only', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      (term as any).textarea.value = '你';
+      (term as any).textarea.selectionStart = 0;
+      (term as any).textarea.selectionEnd = 1;
+      term.beforeInput(createInputEvent({ data: '你好' }));
+
+      (term as any).textarea.value = '你好';
+      (term as any).textarea.selectionStart = 0;
+      (term as any).textarea.selectionEnd = 2;
+      term.beforeInput(createInputEvent({ data: '你好世界' }));
+
+      (term as any).textarea.value = '你好世界';
+      const handled = term.input(createInputEvent({ data: '你好世界' }));
+
+      assert.equal(handled, true);
+      assert.deepEqual(calls, [`${C0.DEL.repeat(2)}你好世界`]);
     });
   });
 
