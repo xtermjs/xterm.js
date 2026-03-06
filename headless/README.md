@@ -2,7 +2,7 @@
 
 ⚠ This package is experimental
 
-`@xterm/headless` is a headless terminal that can be run in node.js. This is useful in combination with the frontend [`xterm`](https://www.npmjs.com/package/xterm) for example to keep track of a terminal's state on a remote server where the process is hosted.
+`@xterm/headless` is a headless terminal that can be run in node.js. This is useful in combination with the frontend [`xterm`](https://www.npmjs.com/package/@xterm/xterm) for example to keep track of a terminal's state on a remote server where the process is hosted.
 
 ## Getting Started
 
