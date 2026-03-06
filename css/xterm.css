@@ -41,6 +41,7 @@
     user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
+    overflow: hidden;
 }
 
 .xterm.focus,
@@ -107,6 +108,7 @@
 
 .xterm .xterm-screen {
     position: relative;
+    overflow: hidden;
 }
 
 .xterm .xterm-screen canvas {
