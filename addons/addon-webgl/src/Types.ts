@@ -40,7 +40,7 @@ export interface ICharAtlasConfig {
   devicePixelRatio: number;
   deviceMaxTextureSize: number;
   letterSpacing: number;
-  lineHeight: number;
+  lineHeight: number | string;
   fontSize: number;
   fontFamily: string;
   fontWeight: FontWeight;
