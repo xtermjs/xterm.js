@@ -57,6 +57,7 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
 import { Emitter, EventUtils, type IEvent } from 'common/Event';
 import { addDisposableListener } from 'browser/Dom';
+import { Gesture, EventType as GestureEventType, type IGestureEvent } from 'browser/scrollable/touch';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
@@ -78,6 +79,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
   private _customWheelEventHandler: CustomWheelEventHandler | undefined;
+  private _touchScrollAccumulator: number = 0;
 
   // Browser services
   private readonly _decorationService: DecorationService;
@@ -914,8 +916,79 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
         return false;
       }
     }, { passive: false }));
+
+    // Touch/gesture scrolling support
+    this._register(Gesture.addTarget(this.screenElement!));
+    this._register(addDisposableListener(this.screenElement!, GestureEventType.START, () => {
+      this._touchScrollAccumulator = 0;
+    }));
+    this._register(addDisposableListener(this.screenElement!, GestureEventType.CHANGE, (e: IGestureEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // When mouse protocol has wheel events active, send as mouse wheel events
+      if (requestedEvents.wheel) {
+        this._handleTouchScrollAsWheel(e, sendEvent);
+        return;
+      }
+
+      // When in alt buffer (no scrollback), send up/down key sequences
+      if (!this.buffer.hasScrollback) {
+        this._handleTouchScrollAsKeys(e);
+        return;
+      }
+
+      // Normal scrollback: delegate to viewport
+      this._viewport?.handleTouchScroll(e.translationY);
+    }));
   }
 
+
+  private _handleTouchScrollAsKeys(e: IGestureEvent): void {
+    const cellHeight = this._renderService?.dimensions.css.cell.height;
+    if (!cellHeight) return;
+
+    this._touchScrollAccumulator -= e.translationY;
+    const lines = Math.trunc(this._touchScrollAccumulator / cellHeight);
+    if (lines === 0) return;
+
+    this._touchScrollAccumulator -= lines * cellHeight;
+    const sequence = C0.ESC
+      + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[')
+      + (lines < 0 ? 'A' : 'B');
+    for (let i = 0; i < Math.abs(lines); i++) {
+      this.coreService.triggerDataEvent(sequence, true);
+    }
+  }
+
+  private _handleTouchScrollAsWheel(e: IGestureEvent, sendEvent: (ev: MouseEvent | WheelEvent) => boolean): void {
+    const cellHeight = this._renderService?.dimensions.css.cell.height;
+    if (!cellHeight) return;
+
+    this._touchScrollAccumulator -= e.translationY;
+    const lines = Math.trunc(this._touchScrollAccumulator / cellHeight);
+    if (lines === 0) return;
+
+    this._touchScrollAccumulator -= lines * cellHeight;
+
+    // Get coordinates from gesture event
+    const pos = this._mouseService?.getMouseReportCoords(e, this.screenElement!);
+    if (!pos) return;
+
+    for (let i = 0; i < Math.abs(lines); i++) {
+      this.coreMouseService.triggerMouseEvent({
+        col: pos.col,
+        row: pos.row,
+        x: pos.x,
+        y: pos.y,
+        button: CoreMouseButton.WHEEL,
+        action: lines < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN,
+        ctrl: false,
+        alt: false,
+        shift: false
+      });
+    }
+  }
 
   /**
    * Tells the renderer to refresh terminal content between two rows (inclusive) at the next
