@@ -123,6 +123,14 @@ declare module '@xterm/xterm' {
     fontFamily?: string;
 
     /**
+     * Controls the font anti-aliasing mode used when rendering text. This
+     * option only applies to the DOM renderer as it uses the CSS
+     * `-webkit-font-smoothing` property. It has no effect on the canvas or
+     * WebGL renderers. The default is `'default'`.
+     */
+    fontAliasing?: 'default' | 'none' | 'antialiased' | 'auto';
+
+    /**
      * The font weight used to render non-bold text.
      */
     fontWeight?: FontWeight;
