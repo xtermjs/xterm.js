@@ -59,6 +59,13 @@ import { Emitter, EventUtils, type IEvent } from 'common/Event';
 import { addDisposableListener } from 'browser/Dom';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 
+interface ITailReplacementPairingState {
+  oldValue: string;
+  start: number;
+  end: number;
+  data: string;
+}
+
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
   public element: HTMLElement | undefined;
@@ -120,6 +127,18 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
+  /**
+   * Snapshot used to pair `beforeinput` with the next `input` for tail replacement.
+   *
+   * Some voice IMEs (for example on iOS) update text by selecting the current tail candidate
+   * and replacing that selection with a longer committed phrase via `insertText`.
+   * Typical sequence:
+   * - `beforeinput`: selection is `[0, tailLength]`, `data` is the full new phrase
+   * - `input`: value becomes the new phrase and caret moves to the end
+   *
+   * For terminal semantics we need to emit DELs for the replaced tail, then emit the new text.
+   */
+  private _tailReplacementPairingState: ITailReplacementPairingState | undefined;
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this._register(new MutableDisposable());
 
@@ -416,6 +435,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
     this._register(addDisposableListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
     this._register(addDisposableListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
+    this._register(addDisposableListener(this.textarea!, 'beforeinput', (ev: InputEvent) => this._beforeInputEvent(ev), true));
     this._register(addDisposableListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this._register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
   }
@@ -1270,12 +1290,89 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   /**
+   * Handle a beforeinput event.
+   * Key Resources:
+   *   - https://developer.mozilla.org/en-US/docs/Web/API/Element/beforeinput_event
+   * @param ev The beforeinput event to be handled.
+   */
+  protected _beforeInputEvent(ev: InputEvent): void {
+    // Keep only the latest candidate; the next input event consumes and clears it.
+    this._tailReplacementPairingState = undefined;
+
+    const textarea = this.textarea;
+    if (!textarea || ev.inputType !== 'insertText' || ev.isComposing || typeof ev.data !== 'string') {
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const oldValue = textarea.value;
+    // Pairing only supports replacing a non-empty selection at the tail of the textarea value.
+    if (start === null || end === null || end - start <= 0 || end !== oldValue.length) {
+      return;
+    }
+
+    this._tailReplacementPairingState = {
+      oldValue,
+      start,
+      end,
+      data: ev.data
+    };
+  }
+
+  private _handleTailReplacementPairingState(ev: InputEvent): boolean {
+    // Skip pairing when keypress already emitted input, otherwise this path can emit extra DEL/data.
+    if (this.optionsService.rawOptions.screenReaderMode || this._keyDownSeen || this._keyPressHandled) {
+      this._tailReplacementPairingState = undefined;
+      return false;
+    }
+
+    // Pair input with the most recent valid beforeinput snapshot.
+    const pairingState = this._tailReplacementPairingState;
+    this._tailReplacementPairingState = undefined;
+    if (!pairingState) {
+      return false;
+    }
+    if (!this.textarea || ev.inputType !== 'insertText' || ev.isComposing || ev.data !== pairingState.data) {
+      return false;
+    }
+
+    const newValue = this.textarea.value;
+    if (newValue !== `${pairingState.oldValue.slice(0, pairingState.start)}${pairingState.data}`) {
+      return false;
+    }
+
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored
+    this._unprocessedDeadKey = false;
+
+    // For tail replacement, emit deletes for the replaced suffix then insert new text.
+    const deleteCount = this._countDeleteCharacters(pairingState.oldValue.slice(pairingState.start, pairingState.end));
+    const payload = `${C0.DEL.repeat(deleteCount)}${pairingState.data}`;
+    this.coreService.triggerDataEvent(payload, true);
+
+    ev.preventDefault();
+    ev.stopPropagation();
+    return true;
+  }
+
+  private _countDeleteCharacters(text: string): number {
+    // `Array.from` iterates UTF-16 strings by Unicode code point.
+    return Array.from(text).length;
+  }
+
+  /**
    * Handle an input event.
    * Key Resources:
    *   - https://developer.mozilla.org/en-US/docs/Web/API/InputEvent
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
+    // Prefer beforeinput/input pairing when possible; otherwise fall back to legacy behavior.
+    if (this._handleTailReplacementPairingState(ev)) {
+      return true;
+    }
+
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
