@@ -1,7 +1,7 @@
 {
  "name": "@xterm/headless",
  "description": "A headless terminal component that runs in Node.js",
- "version": "5.5.0",
+ "version": "6.0.0",
  "main": "lib-headless/xterm-headless.js",
  "module": "lib-headless/xterm-headless.mjs",
  "types": "typings/xterm-headless.d.ts",

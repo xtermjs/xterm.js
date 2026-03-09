@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { evaluateKeyboardEventWin32, Win32ControlKeyState } from 'common/input/Win32InputMode';
+import { Win32InputMode, Win32ControlKeyState } from 'common/input/Win32InputMode';
 import { IKeyboardEvent, KeyboardResultType } from 'common/Types';
 
 type EventOpts = Partial<IKeyboardEvent>;
@@ -18,18 +18,20 @@ const parse = (seq: string) => {
   return m ? { vk: +m[1], sc: +m[2], uc: +m[3], kd: +m[4], cs: +m[5], rc: +m[6] } : null;
 };
 
+const win32 = new Win32InputMode();
+
 const test = (opts: EventOpts, isDown: boolean, check: (p: ReturnType<typeof parse>) => void) => {
-  const result = evaluateKeyboardEventWin32(ev(opts), isDown);
+  const result = win32.evaluateKeyboardEvent(ev(opts), isDown);
   const parsed = parse(result.key!);
   assert.ok(parsed);
   check(parsed);
 };
 
 describe('Win32InputMode', () => {
-  describe('evaluateKeyboardEventWin32', () => {
+  describe('evaluateKeyboardEvent', () => {
     describe('basic key encoding', () => {
       it('letter key press', () => {
-        const result = evaluateKeyboardEventWin32(ev({ code: 'KeyA', key: 'a', keyCode: 65 }), true);
+        const result = win32.evaluateKeyboardEvent(ev({ code: 'KeyA', key: 'a', keyCode: 65 }), true);
         assert.strictEqual(result.type, KeyboardResultType.SEND_KEY);
         assert.strictEqual(result.cancel, true);
         const p = parse(result.key!);
@@ -135,7 +137,7 @@ describe('Win32InputMode', () => {
 
     describe('sequence format', () => {
       it('valid CSI format', () => {
-        const result = evaluateKeyboardEventWin32(ev({ code: 'KeyA', key: 'a', keyCode: 65 }), true);
+        const result = win32.evaluateKeyboardEvent(ev({ code: 'KeyA', key: 'a', keyCode: 65 }), true);
         assert.ok(result.key?.startsWith('\x1b[') && result.key.endsWith('_'));
         assert.strictEqual(result.key?.slice(2, -1).split(';').length, 6);
       });

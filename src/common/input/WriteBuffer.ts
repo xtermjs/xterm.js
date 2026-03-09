@@ -4,8 +4,8 @@
  * @license MIT
  */
 
-import { Disposable } from 'vs/base/common/lifecycle';
-import { Emitter } from 'vs/base/common/event';
+import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'common/Event';
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 

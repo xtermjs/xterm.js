@@ -94,7 +94,7 @@ Since xterm.js is typically implemented as a developer tool, generally only mode
 
 ### Node.js Support
 
-We also publish [`xterm-headless`](https://www.npmjs.com/package/xterm-headless) which is a stripped down version of xterm.js that runs headless in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the [serialize addon](https://www.npmjs.com/package/@xterm/addon-serialize) so it can get all state restored upon reconnection.
+We also publish [`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless) which is a stripped down version of xterm.js that runs headless in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the [serialize addon](https://www.npmjs.com/package/@xterm/addon-serialize) so it can get all state restored upon reconnection.
 
 ## API
 
@@ -229,6 +229,8 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**ecmaOS**](https://ecmaos.sh): A kernel and suite of applications tying modern web technologies into a browser-based operating system.
 - [**LabEx**](https://labex.io): Interactive learning platform with hands-on labs and xterm.js-based online terminals, focused on learn-by-doing approach.
 - [**EmuDevz**](https://afska.github.io/emudevz): A free coding game where players learn how to build an emulator from scratch.
+- [**SSH Connection Manager**](https://github.com/Amtrend/ssh-manager): Modern web-based SSH terminal and SFTP manager with AES-256 encryption, PWA support, and session management.
+- [**WooTTY**](https://github.com/icoretech/wootty): Flawless browser terminal for real operators.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Please add any new contributions to the end of the list.

@@ -4,6 +4,7 @@
  */
 
 import { IdleTaskQueue } from 'common/TaskQueue';
+import type { ILogService } from 'common/services/Services';
 
 // Work variables to avoid garbage collection.
 let i = 0;
@@ -18,16 +19,19 @@ export class SortedList<T> {
   private _array: T[] = [];
 
   private readonly _insertedValues: T[] = [];
-  private readonly _flushInsertedTask = new IdleTaskQueue();
+  private readonly _flushInsertedTask: InstanceType<typeof IdleTaskQueue>;
   private _isFlushingInserted = false;
 
   private readonly _deletedIndices: number[] = [];
-  private readonly _flushDeletedTask = new IdleTaskQueue();
+  private readonly _flushDeletedTask: InstanceType<typeof IdleTaskQueue>;
   private _isFlushingDeleted = false;
 
   constructor(
-    private readonly _getKey: (value: T) => number
+    private readonly _getKey: (value: T) => number,
+    logService: ILogService
   ) {
+    this._flushInsertedTask = new IdleTaskQueue(logService);
+    this._flushDeletedTask = new IdleTaskQueue(logService);
   }
 
   public clear(): void {

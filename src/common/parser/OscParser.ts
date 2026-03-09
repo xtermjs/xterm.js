@@ -4,7 +4,7 @@
  */
 
 import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, ISubParserStackState } from 'common/parser/Types';
-import { OscState, PAYLOAD_LIMIT } from 'common/parser/Constants';
+import { OscState, ParserConstants } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 
@@ -23,9 +23,7 @@ export class OscParser implements IOscParser {
   };
 
   public registerHandler(ident: number, handler: IOscHandler): IDisposable {
-    if (this._handlers[ident] === undefined) {
-      this._handlers[ident] = [];
-    }
+    this._handlers[ident] ??= [];
     const handlerList = this._handlers[ident];
     handlerList.push(handler);
     return {
@@ -194,6 +192,8 @@ export class OscParser implements IOscParser {
  * as OSC handlers.
  */
 export class OscHandler implements IOscHandler {
+  private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
+
   private _data = '';
   private _hitLimit: boolean = false;
 
@@ -209,7 +209,7 @@ export class OscHandler implements IOscHandler {
       return;
     }
     this._data += utf32ToString(data, start, end);
-    if (this._data.length > PAYLOAD_LIMIT) {
+    if (this._data.length > OscHandler._payloadLimit) {
       this._data = '';
       this._hitLimit = true;
     }

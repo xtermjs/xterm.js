@@ -198,9 +198,7 @@ export class SearchEngine {
       }
     }
 
-    if (!result) {
-      result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
-    }
+    result ??= this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
 
     // Search from startRow - 1 to top
     if (!result) {

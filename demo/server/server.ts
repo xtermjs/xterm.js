@@ -65,6 +65,8 @@ function startServer(): void {
     }
     const cols = parseInt(req.query.cols);
     const rows = parseInt(req.query.rows);
+    const pixelWidth = typeof req.query.pixelWidth === 'string' ? parseInt(req.query.pixelWidth) : 0;
+    const pixelHeight = typeof req.query.pixelHeight === 'string' ? parseInt(req.query.pixelHeight) : 0;
     const isWindows = process.platform === 'win32';
     const term = pty.spawn(isWindows ? 'powershell.exe' : 'bash', [], {
       name: 'xterm-256color',
@@ -77,7 +79,13 @@ function startServer(): void {
       useConptyDll: isWindows,
     });
 
-    console.log('Created terminal with PID: ' + term.pid);
+    // Set pixel dimensions immediately after spawn (pty.spawn doesn't support them)
+    if (pixelWidth > 0 && pixelHeight > 0) {
+      term.resize(cols, rows, { width: pixelWidth, height: pixelHeight });
+      console.log('Created terminal with PID: ' + term.pid + ' (' + cols + 'x' + rows + ', ' + pixelWidth + 'px x ' + pixelHeight + 'px)');
+    } else {
+      console.log('Created terminal with PID: ' + term.pid);
+    }
     terminals[term.pid] = term;
     unsentOutput[term.pid] = '';
     temporaryDisposable[term.pid] = term.onData(function(data) {
@@ -95,10 +103,17 @@ function startServer(): void {
     const pid = parseInt(req.params.pid);
     const cols = parseInt(req.query.cols);
     const rows = parseInt(req.query.rows);
+    const pixelWidth = typeof req.query.pixelWidth === 'string' ? parseInt(req.query.pixelWidth) : 0;
+    const pixelHeight = typeof req.query.pixelHeight === 'string' ? parseInt(req.query.pixelHeight) : 0;
     const term = terminals[pid];
 
-    term.resize(cols, rows);
-    console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
+    if (pixelWidth > 0 && pixelHeight > 0) {
+      term.resize(cols, rows, { width: pixelWidth, height: pixelHeight });
+      console.log('Resized terminal ' + pid + ' to ' + cols + ' cols, ' + rows + ' rows, ' + pixelWidth + 'px x ' + pixelHeight + 'px');
+    } else {
+      term.resize(cols, rows);
+      console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
+    }
     res.end();
   });
 

@@ -56,6 +56,13 @@ declare module '@xterm/headless' {
     cursorBlink?: boolean;
 
     /**
+     * The interval in milliseconds for the blink attribute. This is the amount
+     * of time text remains visible or hidden before toggling. Set to 0 to
+     * disable blinking. The default is 0.
+     */
+    blinkIntervalDuration?: number;
+
+    /**
      * The style of the cursor.
      */
     cursorStyle?: 'block' | 'underline' | 'bar';
@@ -233,7 +240,7 @@ declare module '@xterm/headless' {
     windowOptions?: IWindowOptions;
 
     /**
-     * Enable various VT extensions. All extensions are disabled by default.
+     * Enable various VT extensions.
      */
     vtExtensions?: IVtExtensions;
   }
@@ -356,6 +363,18 @@ declare module '@xterm/headless' {
      * [0]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md
      */
     win32InputMode?: boolean;
+
+    /**
+     * Whether [color scheme query and notification][0] (`CSI ? 996 n` and
+     * `DECSET 2031`) is enabled. When enabled, the terminal will respond to
+     * color scheme queries with `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n`
+     * (light) based on the relative luminance of the background and foreground
+     * theme colors. Programs can enable unsolicited notifications via
+     * `CSI ? 2031 h`. The default is true.
+     *
+     * [0]: https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
+     */
+    colorSchemeQuery?: boolean;
   }
 
   /**
@@ -1199,6 +1218,26 @@ declare module '@xterm/headless' {
 
     /** Whether the cell has the default attribute (no color or style). */
     isAttributeDefault(): boolean;
+
+    /** Gets the underline style. */
+    getUnderlineStyle(): number;
+    /** Gets the underline color number. */
+    getUnderlineColor(): number;
+    /** Gets the underline color mode. */
+    getUnderlineColorMode(): number;
+    /** Whether the cell is using the RGB underline color mode. */
+    isUnderlineColorRGB(): boolean;
+    /** Whether the cell is using the palette underline color mode. */
+    isUnderlineColorPalette(): boolean;
+    /** Whether the cell is using the default underline color mode. */
+    isUnderlineColorDefault(): boolean;
+
+    /**
+     * Compares the cell's attributes (colors and styles) with another cell.
+     * This does not compare the cell's content and excludes URL ids and
+     * underline variant offsets.
+     */
+    attributesEquals(other: IBufferCell): boolean;
   }
 
   /**

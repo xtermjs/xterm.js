@@ -65,6 +65,13 @@ declare module '@xterm/xterm' {
     cursorBlink?: boolean;
 
     /**
+     * The interval in milliseconds for the blink attribute. This is the amount
+     * of time text remains visible or hidden before toggling. Set to 0 to
+     * disable blinking. The default is 0.
+     */
+    blinkIntervalDuration?: number;
+
+    /**
      * The style of the cursor when the terminal is focused.
      */
     cursorStyle?: 'block' | 'underline' | 'bar';
@@ -200,12 +207,6 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
-     * Controls the visibility and style of the overview ruler which visualizes
-     * decorations underneath the scroll bar.
-     */
-    overviewRuler?: IOverviewRulerOptions;
-
-    /**
      * Control various quirks features that are either non-standard or standard
      * in but generally rejected in modern terminals.
      */
@@ -275,6 +276,11 @@ declare module '@xterm/xterm' {
     scrollSensitivity?: number;
 
     /**
+     * Options for configuring the scrollbar.
+     */
+    scrollbar?: IScrollbarOptions;
+
+    /**
      * The duration to smoothly scroll between the origin and the target in
      * milliseconds. Set to 0 to disable smooth scrolling and scroll instantly.
      */
@@ -291,7 +297,7 @@ declare module '@xterm/xterm' {
     theme?: ITheme;
 
     /**
-     * Enable various VT extensions. All extensions are disabled by default.
+     * Enable various VT extensions.
      */
     vtExtensions?: IVtExtensions;
 
@@ -387,8 +393,8 @@ declare module '@xterm/xterm' {
     scrollbarSliderActiveBackground?: string;
     /**
      * The border color of the overview ruler. This visually separates the
-     * terminal from the scroll bar when {@link IOverviewRulerOptions.width} is
-     * set. When this is not set it defaults to black (`#000000`).
+     * terminal from the scroll bar when {@link IScrollbarOptions.width} is set.
+     * When this is not set it defaults to black (`#000000`).
      */
     overviewRulerBorder?: string;
     /** ANSI black (eg. `\x1b[30m`) */
@@ -473,6 +479,18 @@ declare module '@xterm/xterm' {
      * [0]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md
      */
     win32InputMode?: boolean;
+
+    /**
+     * Whether [color scheme query and notification][0] (`CSI ? 996 n` and
+     * `DECSET 2031`) is enabled. When enabled, the terminal will respond to
+     * color scheme queries with `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n`
+     * (light) based on the relative luminance of the background and foreground
+     * theme colors. Programs can enable unsolicited notifications via
+     * `CSI ? 2031 h`. The default is true.
+     *
+     * [0]: https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
+     */
+    colorSchemeQuery?: boolean;
   }
 
   /**
@@ -664,8 +682,8 @@ declare module '@xterm/xterm' {
 
     /**
      * When defined, renders the decoration in the overview ruler to the right
-     * of the terminal. {@link IOverviewRulerOptions.width} must be set in order
-     * to see the overview ruler.
+     * of the terminal. {@link IScrollbarOptions.width} must be set in order to
+     * see the overview ruler.
      * @param color The color of the decoration.
      * @param position The position of the decoration.
      */
@@ -688,15 +706,10 @@ declare module '@xterm/xterm' {
     tooMuchOutput: string;
   }
 
+  /**
+   * Options for configuring the overview ruler rendered beside the scrollbar.
+   */
   export interface IOverviewRulerOptions {
-    /**
-     * When defined, renders decorations in the overview ruler to the right of
-     * the terminal. This must be set in order to see the overview ruler.
-     * @param color The color of the decoration.
-     * @param position The position of the decoration.
-     */
-    width?: number;
-
     /**
      * Whether to show the top border of the overview ruler, which uses the
      * {@link ITheme.overviewRulerBorder} color.
@@ -708,6 +721,34 @@ declare module '@xterm/xterm' {
      * {@link ITheme.overviewRulerBorder} color.
      */
     showBottomBorder?: boolean;
+  }
+
+  /**
+   * Options for configuring the scrollbar.
+   */
+  export interface IScrollbarOptions {
+    /**
+     * Whether to show the scrollbar. When false, this supersedes
+     * {@link IScrollbarOptions.width}. Defaults to true.
+     */
+    showScrollbar?: boolean;
+    /**
+     * Whether to show arrows at the top and bottom of the scrollbar. Defaults
+     * to false.
+     */
+    showArrows?: boolean;
+
+    /**
+     * The width of the scrollbar and overview ruler in CSS pixels. When set,
+     * this enables the overview ruler.
+     */
+    width?: number;
+
+    /**
+     * Controls the visibility and style of the overview ruler which visualizes
+     * decorations underneath the scroll bar.
+     */
+    overviewRuler?: IOverviewRulerOptions;
   }
 
   /**
@@ -875,6 +916,12 @@ declare module '@xterm/xterm' {
      * The element containing the terminal.
      */
     readonly element: HTMLElement | undefined;
+
+    /**
+     * The screen element containing the terminal's canvas rendering layers and
+     * decorations, excluding the viewport and the scrollbar.
+     */
+    readonly screenElement: HTMLElement | undefined;
 
     /**
      * The textarea that accepts input for the terminal.
@@ -1806,6 +1853,26 @@ declare module '@xterm/xterm' {
 
     /** Whether the cell has the default attribute (no color or style). */
     isAttributeDefault(): boolean;
+
+    /** Gets the underline style. */
+    getUnderlineStyle(): number;
+    /** Gets the underline color number. */
+    getUnderlineColor(): number;
+    /** Gets the underline color mode. */
+    getUnderlineColorMode(): number;
+    /** Whether the cell is using the RGB underline color mode. */
+    isUnderlineColorRGB(): boolean;
+    /** Whether the cell is using the palette underline color mode. */
+    isUnderlineColorPalette(): boolean;
+    /** Whether the cell is using the default underline color mode. */
+    isUnderlineColorDefault(): boolean;
+
+    /**
+     * Compares the cell's attributes (colors and styles) with another cell.
+     * This does not compare the cell's content and excludes URL ids and
+     * underline variant offsets.
+     */
+    attributesEquals(other: IBufferCell): boolean;
   }
 
   /**

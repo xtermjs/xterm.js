@@ -12,7 +12,6 @@
     "strict": false,
     "target": "es2021",
     "module": "commonjs",
-    "baseUrl": ".",
     "paths": {
       "common/*": [ "../../src/common/*" ],
       "browser/*": [ "../../src/browser/*" ],

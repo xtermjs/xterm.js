@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "lib": ["dom", "es6"],
+    "rootDir": "..",
     "outDir": "../out-benchmark",
     "types": ["../../../node_modules/@types/node"],
     "moduleResolution": "node",
     "strict": false,
     "target": "es2015",
     "module": "commonjs",
-    "baseUrl": ".",
     "paths": {
       "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],

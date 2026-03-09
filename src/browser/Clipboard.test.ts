@@ -29,4 +29,14 @@ describe('evaluatePastedTextProcessing', () => {
     assert.equal(unbracketedText, 'foo bar');
     assert.equal(bracketedText, '\x1b[200~foo bar\x1b[201~');
   });
+
+  it('should escape embedded escape sequences in pasted text only when bracketed', () => {
+    const ESC_SYMBOL = '\u241b';
+    const pastedText = '\x1b[201~foo\x1b[200~bar';
+    const unbracketedText = Clipboard.bracketTextForPaste(pastedText, false);
+    const bracketedText = Clipboard.bracketTextForPaste(pastedText, true);
+
+    assert.equal(unbracketedText, pastedText, 'non bracketed paste should remain unchanged');
+    assert.equal(bracketedText, `\x1b[200~${ESC_SYMBOL}[201~foo${ESC_SYMBOL}[200~bar\x1b[201~`);
+  });
 });

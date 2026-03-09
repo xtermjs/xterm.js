@@ -7,7 +7,7 @@ import { ReadonlyColorSet } from 'browser/Types';
 import { acquireTextureAtlas } from '../CharAtlasCache';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { CellData } from 'common/buffer/CellData';
 import { IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';

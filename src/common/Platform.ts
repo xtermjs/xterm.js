@@ -22,8 +22,17 @@ const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
 export const isFirefox = userAgent.includes('Firefox');
+export const isChrome = userAgent.includes('Chrome');
 export const isLegacyEdge = userAgent.includes('Edge');
 export const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+
+interface IZoomWindow {
+  devicePixelRatio?: number;
+}
+
+export function getZoomFactor(_targetWindow: IZoomWindow): number {
+  return 1;
+}
 export function getSafariVersion(): number {
   if (!isSafari) {
     return 0;
@@ -39,8 +48,6 @@ export function getSafariVersion(): number {
 // and ISO third level shifts.
 // http://stackoverflow.com/q/19877924/577598
 export const isMac = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'].includes(platform);
-export const isIpad = platform === 'iPad';
-export const isIphone = platform === 'iPhone';
 export const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].includes(platform);
 export const isLinux = platform.indexOf('Linux') >= 0;
 // Note that when this is true, isLinux will also be true.

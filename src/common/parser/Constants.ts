@@ -71,4 +71,6 @@ export const enum ApcState {
 }
 
 // payload limit for OSC and DCS
-export const PAYLOAD_LIMIT = 10000000;
+export const enum ParserConstants {
+  PAYLOAD_LIMIT = 10000000
+}

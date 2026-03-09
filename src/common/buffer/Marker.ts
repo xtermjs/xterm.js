@@ -4,8 +4,8 @@
  */
 
 import { IDisposable, IMarker } from 'common/Types';
-import { Emitter } from 'vs/base/common/event';
-import { dispose } from 'vs/base/common/lifecycle';
+import { Emitter } from 'common/Event';
+import { dispose } from 'common/Lifecycle';
 
 export class Marker implements IMarker {
   private static _nextId = 1;

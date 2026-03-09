@@ -169,7 +169,7 @@ it('wcwidth should match all values from the old implementation', function(): vo
       if (num < 127) {
         return 1;
       }
-      const t = table || initTable();
+      const t = table ?? initTable();
       if (num < 65536) {
         return t[num >> 4] >> ((num & 15) << 1) & 3;
       }
