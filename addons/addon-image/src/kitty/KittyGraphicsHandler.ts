@@ -752,10 +752,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       const b1 = src32[srcOffset++];
       const b2 = src32[srcOffset++];
       // Little-endian: pixel bytes are [R,G,B] → uint32 ABGR layout
-      dst32[dstOffset++] = b0 | 0xFF000000;
-      dst32[dstOffset++] = ((b0 >>> 24) | (b1 << 8)) | 0xFF000000;
-      dst32[dstOffset++] = ((b1 >>> 16) | (b2 << 16)) | 0xFF000000;
-      dst32[dstOffset++] = (b2 >>> 8) | 0xFF000000;
+      dst32[dstOffset++] = 0xFF000000 | b0;
+      dst32[dstOffset++] = 0xFF000000 | (b0 >>> 24) | (b1 << 8);
+      dst32[dstOffset++] = 0xFF000000 | (b1 >>> 16) | (b2 << 16);
+      dst32[dstOffset++] = 0xFF000000 | (b2 >>> 8);
     }
 
     // Handle remaining 1–3 pixels
