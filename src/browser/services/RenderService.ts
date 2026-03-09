@@ -52,7 +52,11 @@ export class RenderService extends Disposable implements IRenderService {
   private readonly _onRefreshRequest = this._register(new Emitter<{ start: number, end: number }>());
   public readonly onRefreshRequest = this._onRefreshRequest.event;
 
-  public get dimensions(): IRenderDimensions { return this._renderer.value!.dimensions; }
+  private static readonly _defaultDimensions: IRenderDimensions = {
+    css: { canvas: { width: 0, height: 0 }, cell: { width: 0, height: 0 } },
+    device: { canvas: { width: 0, height: 0 }, cell: { width: 0, height: 0 }, char: { width: 0, height: 0, top: 0, left: 0 } }
+  };
+  public get dimensions(): IRenderDimensions { return this._renderer.value?.dimensions ?? RenderService._defaultDimensions; }
 
   constructor(
     private _rowCount: number,
