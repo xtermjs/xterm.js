@@ -124,6 +124,7 @@ export class ImageStorage implements IDisposable {
   private _pixelLimit: number = 2500000;
 
   private _viewportMetrics: { cols: number, rows: number };
+  public onImageAdded: (() => void) | undefined;
   public onImageDeleted: ((storageId: number) => void) | undefined;
 
   constructor(
@@ -336,6 +337,7 @@ export class ImageStorage implements IDisposable {
 
     // finally add the image
     this._images.set(imageId, imgSpec);
+    this.onImageAdded?.();
     return imageId;
   }
 

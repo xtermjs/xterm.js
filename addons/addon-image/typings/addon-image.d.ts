@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IEvent } from '@xterm/xterm';
 
 declare module '@xterm/addon-image' {
   export interface IImageAddonOptions {
@@ -115,6 +115,11 @@ declare module '@xterm/addon-image' {
      * Getter/Setter whether the placeholder should be shown.
      */
     public showPlaceholder: boolean;
+
+    /**
+     * Event fired whenever a new image is added to storage.
+     */
+    public readonly onImageAdded: IEvent<void>;
 
     /**
      * Get original image canvas at buffer position.

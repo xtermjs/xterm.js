@@ -3570,7 +3570,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       return true;
     }
     const flags = params.params[0] || 0;
-    const mode = params.params[1] || 1;
+    const mode = params.length > 1 ? (params.params[1] || 1) : 1;
     const state = this._coreService.kittyKeyboard;
 
     switch (mode) {
