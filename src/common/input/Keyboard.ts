@@ -99,8 +99,9 @@ export function evaluateKeyboardEvent(
       break;
     case 13:
       // return/enter
-      if (ev.key == 'c' && ev.ctrlKey) {
-        // Safari on iPad, iOS, AppleVisionPro sends key 13 when typing ctrl-c on hardware keyboard
+      if (ev.key === 'c' && ev.ctrlKey) {
+        // HACK: Safari on iPad, iOS, AppleVisionPro sends key 13 when typing ctrl-c on hardware
+        // keyboard
         result.key = C0.ETX;
       } else {
         result.key = ev.altKey ? C0.ESC + C0.CR : C0.CR;
