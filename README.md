@@ -94,7 +94,7 @@ Since xterm.js is typically implemented as a developer tool, generally only mode
 
 ### Node.js Support
 
-We also publish [`xterm-headless`](https://www.npmjs.com/package/xterm-headless) which is a stripped down version of xterm.js that runs headless in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the [serialize addon](https://www.npmjs.com/package/@xterm/addon-serialize) so it can get all state restored upon reconnection.
+We also publish [`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless) which is a stripped down version of xterm.js that runs headless in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the [serialize addon](https://www.npmjs.com/package/@xterm/addon-serialize) so it can get all state restored upon reconnection.
 
 ## API
 
