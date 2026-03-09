@@ -42,6 +42,11 @@ export class CompositionHelper {
   private _dataAlreadySent: string;
 
   /**
+   * Trailing textarea content that existed before the current composition started.
+   */
+  private _initialCompositionSuffix: string;
+
+  /**
    * The pending textarea change timer, if any.
    */
   private _textareaChangeTimer?: number;
@@ -58,6 +63,11 @@ export class CompositionHelper {
     this._isSendingComposition = false;
     this._compositionPosition = { start: 0, end: 0 };
     this._dataAlreadySent = '';
+    this._initialCompositionSuffix = '';
+  }
+
+  private _getTextareaCursorIndex(): number {
+    return this._textarea.selectionStart ?? this._textarea.value.length;
   }
 
   /**
@@ -65,7 +75,9 @@ export class CompositionHelper {
    */
   public compositionstart(): void {
     this._isComposing = true;
-    this._compositionPosition.start = this._textarea.value.length;
+    this._compositionPosition.start = this._getTextareaCursorIndex();
+    this._compositionPosition.end = this._compositionPosition.start;
+    this._initialCompositionSuffix = this._textarea.value.substring(this._compositionPosition.start);
     this._compositionView.textContent = '';
     this._dataAlreadySent = '';
     this._compositionView.classList.add('active');
@@ -79,7 +91,7 @@ export class CompositionHelper {
     this._compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
-      this._compositionPosition.end = this._textarea.value.length;
+      this._compositionPosition.end = this._getTextareaCursorIndex();
     }, 0);
   }
 
@@ -173,6 +185,16 @@ export class CompositionHelper {
             // composition has finished, for example when typing a non-composition character
             // (eg. 2) after a composition character.
             input = this._textarea.value.substring(currentCompositionPosition.start);
+
+            // If there was pre-existing trailing content in the textarea (eg. ghost text shown
+            // by an embedder), strip that preserved suffix so only newly composed/typed text is
+            // forwarded.
+            if (this._initialCompositionSuffix) {
+              const suffixIndex = input.indexOf(this._initialCompositionSuffix);
+              if (suffixIndex !== -1) {
+                input = input.slice(0, suffixIndex) + input.slice(suffixIndex + this._initialCompositionSuffix.length);
+              }
+            }
           }
           if (input.length > 0) {
             this._coreService.triggerDataEvent(input, true);

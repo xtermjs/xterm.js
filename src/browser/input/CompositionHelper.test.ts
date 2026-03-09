@@ -31,6 +31,8 @@ describe('CompositionHelper', () => {
     } as any;
     textarea = {
       value: '',
+      selectionStart: 0,
+      selectionEnd: 0,
       style: {
         left: 0,
         top: 0
@@ -229,6 +231,26 @@ describe('CompositionHelper', () => {
         textarea.value = 'ㅇ1';
         setTimeout(() => { // wait for any textarea updates
           assert.equal(handledText, 'ㅇ1');
+          done();
+        }, 0);
+      }, 0);
+    });
+
+    it('Should use textarea selection start to anchor composition at the actual cursor position', (done) => {
+      textarea.value = "Try 'fix lint errors'";
+      textarea.selectionStart = 0;
+      textarea.selectionEnd = 0;
+
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '你' });
+      textarea.value = "你Try 'fix lint errors'";
+      textarea.selectionStart = 1;
+      textarea.selectionEnd = 1;
+
+      setTimeout(() => {
+        compositionHelper.compositionend();
+        setTimeout(() => {
+          assert.equal(handledText, '你');
           done();
         }, 0);
       }, 0);
