@@ -229,6 +229,7 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**ecmaOS**](https://ecmaos.sh): A kernel and suite of applications tying modern web technologies into a browser-based operating system.
 - [**LabEx**](https://labex.io): Interactive learning platform with hands-on labs and xterm.js-based online terminals, focused on learn-by-doing approach.
 - [**EmuDevz**](https://afska.github.io/emudevz): A free coding game where players learn how to build an emulator from scratch.
+- [**SSH Connection Manager**](https://github.com/Amtrend/ssh-manager): Modern web-based SSH terminal and SFTP manager with AES-256 encryption, PWA support, and session management.
 - [**WooTTY**](https://github.com/icoretech/wootty): Flawless browser terminal for real operators.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
