@@ -101,7 +101,7 @@ export interface ICharset {
   [key: string]: string | undefined;
 }
 
-export type CharData = [attrIndex: number, charIndex: string, width: number, code: number];
+export type CharData = [attr: number, char: string, width: number, code: number];
 
 export interface IColor {
   readonly css: string;
