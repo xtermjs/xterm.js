@@ -43,6 +43,7 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
     deviceCharHeight: deviceCharHeight,
     fontFamily: options.fontFamily,
     fontSize: options.fontSize,
+    fontSmoothing: options.fontSmoothing,
     fontWeight: options.fontWeight,
     fontWeightBold: options.fontWeightBold,
     allowTransparency: options.allowTransparency,
@@ -64,6 +65,7 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.letterSpacing === b.letterSpacing &&
       a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
+      a.fontSmoothing === b.fontSmoothing &&
       a.fontWeight === b.fontWeight &&
       a.fontWeightBold === b.fontWeightBold &&
       a.allowTransparency === b.allowTransparency &&

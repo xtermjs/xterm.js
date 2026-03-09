@@ -220,6 +220,7 @@ export interface IOptionsService {
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
+export type FontSmoothing = 'auto' | 'none' | 'antialiased' | 'subpixel-antialiased';
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 
 export interface ITerminalOptions {
@@ -239,6 +240,7 @@ export interface ITerminalOptions {
   fastScrollSensitivity?: number;
   fontSize?: number;
   fontFamily?: string;
+  fontSmoothing?: FontSmoothing;
   fontWeight?: FontWeight;
   fontWeightBold?: FontWeight;
   ignoreBracketedPasteMode?: boolean;

@@ -101,6 +101,11 @@ export class TextureAtlas implements ITextureAtlas {
       alpha: this._config.allowTransparency,
       willReadFrequently: true
     }));
+
+    // Apply font smoothing to the canvas used for glyph rasterization
+    if (this._config.fontSmoothing !== 'auto') {
+      (this._tmpCanvas.style as any).webkitFontSmoothing = this._config.fontSmoothing;
+    }
   }
 
   public dispose(): void {

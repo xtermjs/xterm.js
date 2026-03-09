@@ -16,6 +16,11 @@ declare module '@xterm/xterm' {
   export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 
   /**
+   * A string representing font smoothing mode.
+   */
+  export type FontSmoothing = 'auto' | 'none' | 'antialiased' | 'subpixel-antialiased';
+
+  /**
    * A string representing log level.
    */
   export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
@@ -121,6 +126,18 @@ declare module '@xterm/xterm' {
      * The font family used to render text.
      */
     fontFamily?: string;
+
+    /**
+     * The font smoothing mode used to render text. This controls the
+     * `-webkit-font-smoothing` CSS property of the terminal.
+     *
+     * - `'auto'` - Use the browser's default font smoothing (default).
+     * - `'none'` - No font smoothing is applied.
+     * - `'antialiased'` - Smooth the font on the level of the pixel, as
+     *   opposed to the subpixel.
+     * - `'subpixel-antialiased'` - Use subpixel antialiasing.
+     */
+    fontSmoothing?: FontSmoothing;
 
     /**
      * The font weight used to render non-bold text.

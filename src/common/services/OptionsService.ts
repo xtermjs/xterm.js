@@ -6,7 +6,7 @@
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
-import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
+import { FontSmoothing, FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
 import { Emitter } from 'common/Event';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
@@ -23,6 +23,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   fastScrollSensitivity: 5,
   fontFamily: 'monospace',
   fontSize: 15,
+  fontSmoothing: 'auto',
   fontWeight: 'normal',
   fontWeightBold: 'bold',
   ignoreBracketedPasteMode: false,
@@ -60,6 +61,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+const FONT_SMOOTHING_OPTIONS: FontSmoothing[] = ['auto', 'none', 'antialiased', 'subpixel-antialiased'];
 
 export class OptionsService extends Disposable implements IOptionsService {
   public serviceBrand: any;
@@ -159,6 +161,11 @@ export class OptionsService extends Disposable implements IOptionsService {
       case 'wordSeparator':
         if (!value) {
           value = DEFAULT_OPTIONS[key];
+        }
+        break;
+      case 'fontSmoothing':
+        if (!FONT_SMOOTHING_OPTIONS.includes(value)) {
+          throw new Error(`"${value}" is not a valid value for ${key}`);
         }
         break;
       case 'fontWeight':

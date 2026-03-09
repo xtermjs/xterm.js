@@ -187,6 +187,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
       ` font-kerning: none;` +
+      ` -webkit-font-smoothing: ${this._optionsService.rawOptions.fontSmoothing};` +
       ` white-space: pre` +
       `}`;
     styles +=

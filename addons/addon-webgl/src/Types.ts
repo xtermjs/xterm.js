@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { FontWeight } from '@xterm/xterm';
+import { FontSmoothing, FontWeight } from '@xterm/xterm';
 import { IColorSet } from 'browser/Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { CursorInactiveStyle, CursorStyle, type IDisposable } from 'common/Types';
@@ -43,6 +43,7 @@ export interface ICharAtlasConfig {
   lineHeight: number;
   fontSize: number;
   fontFamily: string;
+  fontSmoothing: FontSmoothing;
   fontWeight: FontWeight;
   fontWeightBold: FontWeight;
   deviceCellWidth: number;
