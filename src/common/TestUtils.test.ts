@@ -13,6 +13,14 @@ import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { Emitter, type IEvent } from 'common/Event';
+import { CellData } from 'common/buffer/CellData';
+import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from 'common/buffer/Constants';
+
+export function createCellData(attr: number, char: string, width: number): CellData {
+  return CellData.fromCharData([attr, char, width, char.length === 0 ? 0 : char.charCodeAt(0)]);
+}
+
+export const NULL_CELL_DATA = Object.freeze(createCellData(DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH));
 
 export class MockBufferService implements IBufferService {
   public serviceBrand: any;

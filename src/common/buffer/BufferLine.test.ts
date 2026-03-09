@@ -8,6 +8,7 @@ import { CellData } from 'common/buffer/CellData';
 import { CharData, IBufferLine } from '../Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { createCellData, NULL_CELL_DATA } from 'common/TestUtils.test';
 
 
 class TestBufferLine extends BufferLine {
@@ -23,12 +24,6 @@ class TestBufferLine extends BufferLine {
     return result;
   }
 }
-
-function createCellData(attr: number, char: string, width: number): CellData {
-  return CellData.fromCharData([attr, char, width, char.length === 0 ? 0 : char.charCodeAt(0)]);
-}
-
-const NULL_CELL_DATA = Object.freeze(createCellData(DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH));
 
 describe('AttributeData', () => {
   describe('extended attributes', () => {
