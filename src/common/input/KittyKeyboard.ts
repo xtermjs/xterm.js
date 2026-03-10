@@ -458,7 +458,7 @@ export class KittyKeyboard {
       useCsiU = true;
     } else if (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES) {
       // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy
-      // mode" and Space is a text-generating key, so these skip the isFunc fast-path
+      // mode" and consider space to be a text-generating key, so these skip the isFunc fast-path
       // and only get CSI u when modifiers are present (handled below).
       const isDisambiguateLegacy = keyCode === 13 || keyCode === 9 || keyCode === 127;
       if (isFunc && !isDisambiguateLegacy) {
