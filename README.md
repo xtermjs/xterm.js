@@ -24,7 +24,36 @@ First, you need to install the module. We ship exclusively through [npm](https:/
 npm install --save @xterm/xterm
 ```
 
-To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your HTML page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself. Finally, instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
+The recommended way to load xterm.js with the ES module syntax, either using TypeScript or a modern JS tooling. Note that both CommonJS and ES module files are shipped with the npm package.
+
+```javascript
+import { Terminal } from '@xterm/xterm';
+```
+
+Then instantiate a `Terminal` object, open it on an element and write to it:
+
+```javascript
+const term = new Terminal();
+term.open(document.getElementById('terminal'));
+term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
+```
+
+Most use cases will hook up input and output to a pseudoterminal API such as [node-pty](https://www.npmjs.com/package/node-pty) which will drive the terminal.
+
+```javascript
+pty.onData(data => term.write(data));
+term.onData(data => pty.write(data));
+```
+
+Then make sure to also include the `css/xterm.css` file, for example in HTML:
+
+```html
+<link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css" />
+```
+
+### Standalone example
+
+Here is a complete standalone example in a HTML file:
 
 ```html
 <!doctype html>
@@ -36,20 +65,12 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
     <body>
       <div id="terminal"></div>
       <script>
-        var term = new Terminal();
+        const term = new Terminal();
         term.open(document.getElementById('terminal'));
         term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
       </script>
     </body>
   </html>
-```
-
-### Importing
-
-The recommended way to load xterm.js is via the ES6 module syntax:
-
-```javascript
-import { Terminal } from '@xterm/xterm';
 ```
 
 ### Addons
