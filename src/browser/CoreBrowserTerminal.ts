@@ -1345,7 +1345,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._wkSetComposing(true);
       this._wkImePending = ev.data;
       this._wkShowComposition(ev.data);
-      this.cancel(ev);
+      ev.preventDefault();
+      ev.stopPropagation();
       return true;
     }
 
@@ -1362,7 +1363,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       if (!hadPending) {
         this._wkShowComposition(ev.data);
       }
-      this.cancel(ev);
+      ev.preventDefault();
+      ev.stopPropagation();
       return true;
     }
 
