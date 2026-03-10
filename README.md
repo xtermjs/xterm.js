@@ -24,14 +24,11 @@ First, you need to install the module. We ship exclusively through [npm](https:/
 npm install --save @xterm/xterm
 ```
 
-The recommended way to load xterm.js with the ES module syntax, either using TypeScript or a modern JS tooling.
+The recommended way to load xterm.js with the ES module syntax, either using TypeScript or a modern JS tooling. Note that both CommonJS and ES module files are shipped with the npm package.
 
 ```javascript
 import { Terminal } from '@xterm/xterm';
 ```
-
-> ![TIP]
-> xterm.js ships both a CommonJS (`main` in package.json) and ES module files (`module` in package.json).
 
 Then instantiate a `Terminal` object, open it on an element and write to it:
 
