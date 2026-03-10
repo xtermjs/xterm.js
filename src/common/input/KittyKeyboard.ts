@@ -457,9 +457,11 @@ export class KittyKeyboard {
     } else if (reportEventTypes) {
       useCsiU = true;
     } else if (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES) {
-      if (keyCode === 27 || keyCode === 127 || keyCode === 13 || keyCode === 9 || keyCode === 32) {
-        useCsiU = true;
-      } else if (isFunc) {
+      // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy
+      // mode" and consider space to be a text-generating key, so these skip the isFunc fast-path
+      // and only get CSI u when modifiers are present (handled below).
+      const isDisambiguateLegacy = keyCode === 13 || keyCode === 9 || keyCode === 127;
+      if (isFunc && !isDisambiguateLegacy) {
         useCsiU = true;
       } else if (modifiers > 0) {
         if (ev.shiftKey && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.key.length === 1) {
@@ -474,7 +476,10 @@ export class KittyKeyboard {
       result.key = this._buildCsiUSequence(ev, keyCode, modifiers, eventType, flags, isFunc, isMod);
       result.cancel = true;
     } else {
-      if (ev.key.length === 1 && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+      const legacyByte = keyCode === 13 ? '\r' : keyCode === 9 ? '\t' : keyCode === 127 ? '\x7f' : undefined;
+      if (legacyByte) {
+        result.key = legacyByte;
+      } else if (ev.key.length === 1 && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
         result.key = ev.key;
       }
     }
