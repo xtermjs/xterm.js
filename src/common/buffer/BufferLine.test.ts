@@ -5,7 +5,7 @@
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
 import { BufferLine } from 'common/buffer//BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { CharData, IBufferLine } from '../Types';
+import { CharData, IBufferLine, IExtendedAttrs } from '../Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { createCellData, NULL_CELL_DATA } from 'common/TestUtils.test';
@@ -23,6 +23,12 @@ class TestBufferLine extends BufferLine {
     }
     return result;
   }
+}
+
+function extendedAttributes(line: IBufferLine, index: number): IExtendedAttrs | undefined {
+  const cell = new CellData();
+  line.loadCell(index, cell);
+  return cell.hasExtendedAttrs() !== 0 ? cell.extended : undefined;
 }
 
 describe('AttributeData', () => {
@@ -632,15 +638,15 @@ describe('BufferLine', function(): void {
         [1, 'A', 1, 'A'.charCodeAt(0)],
         [1, 'A', 1, 'A'.charCodeAt(0)]
       ]);
-      assert.equal((line as any)._extendedAttrs[0], undefined);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[4], undefined);
+      assert.equal(extendedAttributes(line, 0), undefined);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, undefined);
       // should be ref to the same object
-      assert.equal((line as any)._extendedAttrs[1], (line as any)._extendedAttrs[2]);
+      assert.equal(extendedAttributes(line, 1), extendedAttributes(line, 2));
       // should be a different obj
-      assert.notEqual((line as any)._extendedAttrs[1], (line as any)._extendedAttrs[3]);
+      assert.notEqual(extendedAttributes(line, 1), extendedAttributes(line, 3));
     });
     it('loadCell', () => {
       const line = new TestBufferLine(5);
@@ -691,9 +697,9 @@ describe('BufferLine', function(): void {
       cell.extended.underlineStyle = UnderlineStyle.CURLY;
       cell.bg |= BgFlags.HAS_EXTENDED;
       line.fill(cell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('insertCells', () => {
       const line = new TestBufferLine(5);
@@ -701,17 +707,17 @@ describe('BufferLine', function(): void {
       cell.extended.underlineStyle = UnderlineStyle.CURLY;
       cell.bg |= BgFlags.HAS_EXTENDED;
       line.insertCells(1, 3, cell);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[4], undefined);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 4), undefined);
       cell.extended = cell.extended.clone();
       cell.extended.underlineStyle = UnderlineStyle.DOTTED;
       line.insertCells(2, 2, cell);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('deleteCells', () => {
       const line = new TestBufferLine(5);
@@ -722,11 +728,11 @@ describe('BufferLine', function(): void {
       fillCell.extended = fillCell.extended.clone();
       fillCell.extended.underlineStyle = UnderlineStyle.DOUBLE;
       line.deleteCells(1, 3, fillCell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.DOUBLE);
     });
     it('replaceCells', () => {
       const line = new TestBufferLine(5);
@@ -737,11 +743,11 @@ describe('BufferLine', function(): void {
       fillCell.extended = fillCell.extended.clone();
       fillCell.extended.underlineStyle = UnderlineStyle.DOUBLE;
       line.replaceCells(1, 3, fillCell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('clone', () => {
       const line = new TestBufferLine(5);
@@ -768,11 +774,11 @@ describe('BufferLine', function(): void {
       line.setCell(4, cell);
 
       const nLine = line.clone();
-      assert.equal((nLine as any)._extendedAttrs[0], (line as any)._extendedAttrs[0]);
-      assert.equal((nLine as any)._extendedAttrs[1], (line as any)._extendedAttrs[1]);
-      assert.equal((nLine as any)._extendedAttrs[2], (line as any)._extendedAttrs[2]);
-      assert.equal((nLine as any)._extendedAttrs[3], (line as any)._extendedAttrs[3]);
-      assert.equal((nLine as any)._extendedAttrs[4], (line as any)._extendedAttrs[4]);
+      assert.equal(extendedAttributes(nLine, 0), extendedAttributes(line, 0));
+      assert.equal(extendedAttributes(nLine, 1), extendedAttributes(line, 1));
+      assert.equal(extendedAttributes(nLine, 2), extendedAttributes(line, 2));
+      assert.equal(extendedAttributes(nLine, 3), extendedAttributes(line, 3));
+      assert.equal(extendedAttributes(nLine, 4), extendedAttributes(line, 4));
     });
     it('copyFrom', () => {
       const initial = new TestBufferLine(5);
@@ -801,11 +807,11 @@ describe('BufferLine', function(): void {
       const line = new TestBufferLine(5);
       line.fill(createCellData(1, 'b', 1));
       line.copyFrom(initial);
-      assert.equal((line as any)._extendedAttrs[0], (initial as any)._extendedAttrs[0]);
-      assert.equal((line as any)._extendedAttrs[1], (initial as any)._extendedAttrs[1]);
-      assert.equal((line as any)._extendedAttrs[2], (initial as any)._extendedAttrs[2]);
-      assert.equal((line as any)._extendedAttrs[3], (initial as any)._extendedAttrs[3]);
-      assert.equal((line as any)._extendedAttrs[4], (initial as any)._extendedAttrs[4]);
+      assert.equal(extendedAttributes(line, 0), extendedAttributes(initial, 0));
+      assert.equal(extendedAttributes(line, 1), extendedAttributes(initial, 1));
+      assert.equal(extendedAttributes(line, 2), extendedAttributes(initial, 2));
+      assert.equal(extendedAttributes(line, 3), extendedAttributes(initial, 3));
+      assert.equal(extendedAttributes(line, 4), extendedAttributes(initial, 4));
     });
   });
 });
