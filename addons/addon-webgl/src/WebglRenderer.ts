@@ -13,7 +13,8 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeS
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -22,14 +23,15 @@ import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET
 import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { Emitter, Event } from 'vs/base/common/event';
-import { addDisposableListener } from 'vs/base/browser/dom';
-import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Emitter, EventUtils } from 'common/Event';
+import { addDisposableListener } from 'browser/Dom';
+import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
+  private _textBlinkStateManager: TextBlinkStateManager;
   private _charAtlasDisposable = this._register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
   private _devicePixelRatio: number;
@@ -37,8 +39,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _observerDisposable = this._register(new MutableDisposable());
 
   private _model: RenderModel = new RenderModel();
+  private _rowHasBlinkingCells: boolean[] = [];
+  private _rowHasBlinkingCellsCount: number = 0;
   private _workCell: ICellData = new CellData();
-  private _workCell2: ICellData = new CellData();
   private _cellColorResolver: CellColorResolver;
 
   private _canvas: HTMLCanvasElement;
@@ -72,6 +75,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _decorationService: IDecorationService,
     private readonly _optionsService: IOptionsService,
     private readonly _themeService: IThemeService,
+    private readonly _customGlyphs: boolean = true,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -104,6 +108,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._updateCursorBlink();
     this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
+      () => this._requestRedrawViewport(),
+      this._coreBrowserService,
+      this._optionsService
+    ));
+    this._resetBlinkingRowState();
 
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
@@ -134,6 +144,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._register(this._coreBrowserService.onWindowChange(w => {
       this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
     }));
+
+    this._register(addDisposableListener(this._coreBrowserService.mainDocument, 'mousedown', () => this._cursorBlinkStateManager.value?.restartBlinkAnimation()));
 
     this._core.screenElement!.appendChild(this._canvas);
 
@@ -175,6 +187,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
 
     this._model.resize(this._terminal.cols, this._terminal.rows);
+    this._resetBlinkingRowState();
 
     // Resize all render layers
     for (const l of this._renderLayers) {
@@ -201,6 +214,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Force a full refresh. Resizing `_glyphRenderer` should clear it already,
     // so there is no need to clear it again here.
     this._clearModel(false);
+
+    // Render synchronously to avoid flicker when the canvas is cleared
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1, sync: true });
   }
 
   public handleCharSizeChanged(): void {
@@ -223,6 +239,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._cursorBlinkStateManager.value?.resume();
     // Request a redraw for active/inactive selection background
     this._requestRedrawViewport();
+  }
+
+  public handleViewportVisibilityChange(isVisible: boolean): void {
+    this._textBlinkStateManager.setViewportVisible(isVisible);
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
@@ -278,13 +298,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this.dimensions.device.char.width,
       this.dimensions.device.char.height,
       this._coreBrowserService.dpr,
-      this._deviceMaxTextureSize
+      this._deviceMaxTextureSize,
+      this._customGlyphs
     );
     if (this._charAtlas !== atlas) {
       this._onChangeTextureAtlas.fire(atlas.pages[0].canvas);
       this._charAtlasDisposable.value = combinedDisposable(
-        Event.forward(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
-        Event.forward(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
+        EventUtils.forward(atlas.onAddTextureAtlasCanvas, this._onAddTextureAtlasCanvas),
+        EventUtils.forward(atlas.onRemoveTextureAtlasCanvas, this._onRemoveTextureAtlasCanvas)
       );
     }
     this._charAtlas = atlas;
@@ -315,6 +336,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (const l of this._renderLayers) {
       l.reset(this._terminal);
     }
+
+    this._resetBlinkingRowState();
+    this._textBlinkStateManager.setNeedsBlinkInViewport(false);
 
     this._cursorBlinkStateManager.value?.restartBlinkAnimation();
     this._updateCursorBlink();
@@ -413,6 +437,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
       line = terminal.buffer.lines.get(row)!;
+      let rowHasBlinkingCells = false;
       this._model.lineLengths[y] = 0;
       isCursorRow = cursorY === row;
       skipJoinedCheckUntilX = 0;
@@ -470,8 +495,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
         code = cell.getCode();
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
+        if (!rowHasBlinkingCells && cell.isBlink()) {
+          rowHasBlinkingCells = true;
+        }
+
         // Load colors/resolve overrides into work colors
-        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
+        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width, this.dimensions.device.cell.height);
 
         // Override colors for cursor cell
         if (isCursorVisible && row === cursorY) {
@@ -497,6 +526,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
             this._cellColorResolver.result.bg =
               Attributes.CM_RGB | (this._themeService.colors.cursor.rgba >> 8 & Attributes.RGB_MASK);
           }
+        }
+
+        if (this._textBlinkStateManager.isEnabled && !this._textBlinkStateManager.isBlinkOn && cell.isBlink()) {
+          this._cellColorResolver.result.fg |= FgFlags.INVISIBLE;
         }
 
         if (code !== NULL_CELL_CODE) {
@@ -545,11 +578,31 @@ export class WebglRenderer extends Disposable implements IRenderer {
           x--; // Go back to the previous update cell for next iteration
         }
       }
+      this._setRowBlinkState(y, rowHasBlinkingCells);
     }
     if (modelUpdated) {
       this._rectangleRenderer.value!.updateBackgrounds(this._model);
     }
     this._rectangleRenderer.value!.updateCursor(this._model);
+    this._updateTextBlinkState();
+  }
+
+  private _resetBlinkingRowState(): void {
+    this._rowHasBlinkingCells = new Array(this._terminal.rows).fill(false);
+    this._rowHasBlinkingCellsCount = 0;
+  }
+
+  private _setRowBlinkState(row: number, hasBlinkingCells: boolean): void {
+    const previous = this._rowHasBlinkingCells[row];
+    if (previous === hasBlinkingCells) {
+      return;
+    }
+    this._rowHasBlinkingCells[row] = hasBlinkingCells;
+    this._rowHasBlinkingCellsCount += hasBlinkingCells ? 1 : -1;
+  }
+
+  private _updateTextBlinkState(): void {
+    this._textBlinkStateManager.setNeedsBlinkInViewport(this._rowHasBlinkingCellsCount > 0);
   }
 
   /**
@@ -615,7 +668,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;
-    this._requestRedrawViewport();
+    // Render synchronously to avoid flicker when the canvas is cleared
+    this._onRequestRedraw.fire({ start: 0, end: this._terminal.rows - 1, sync: true });
   }
 
   private _requestRedrawViewport(): void {

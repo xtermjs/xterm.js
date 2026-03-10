@@ -14,7 +14,7 @@ import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, 
 import { Marker } from 'common/buffer/Marker';
 import { IBuffer } from 'common/buffer/Types';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
-import { IBufferService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -38,17 +38,24 @@ export class Buffer implements IBuffer {
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
+  public savedCharsets: (ICharset | undefined)[] = [];
+  public savedGlevel: number = 0;
+  public savedOriginMode: boolean = false;
+  public savedWraparoundMode: boolean = true;
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
   private _rows: number;
   private _isClearing: boolean = false;
+  private _memoryCleanupQueue: InstanceType<typeof IdleTaskQueue>;
+  private _memoryCleanupPosition = 0;
 
   constructor(
     private _hasScrollback: boolean,
     private _optionsService: IOptionsService,
-    private _bufferService: IBufferService
+    private _bufferService: IBufferService,
+    private readonly _logService: ILogService
   ) {
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
@@ -56,6 +63,7 @@ export class Buffer implements IBuffer {
     this.scrollTop = 0;
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();
+    this._memoryCleanupQueue = new IdleTaskQueue(this._logService);
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -118,9 +126,7 @@ export class Buffer implements IBuffer {
    */
   public fillViewportRows(fillAttr?: IAttributeData): void {
     if (this.lines.length === 0) {
-      if (fillAttr === undefined) {
-        fillAttr = DEFAULT_ATTR_DATA;
-      }
+      fillAttr ??= DEFAULT_ATTR_DATA;
       let i = this._rows;
       while (i--) {
         this.lines.push(this.getBlankLine(fillAttr));
@@ -181,7 +187,7 @@ export class Buffer implements IBuffer {
       if (this._rows < newRows) {
         for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
-            if (this._optionsService.rawOptions.windowsMode || this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
+            if (this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
               this.lines.push(new BufferLine(newCols, nullCell));
@@ -260,6 +266,13 @@ export class Buffer implements IBuffer {
     this._cols = newCols;
     this._rows = newRows;
 
+    // Ensure the cursor position invariant: ybase + y must be within buffer bounds
+    // This can be violated during reflow or when shrinking rows
+    if (this.lines.length > 0) {
+      const maxY = Math.max(0, this.lines.length - this.ybase - 1);
+      this.y = Math.min(this.y, maxY);
+    }
+
     this._memoryCleanupQueue.clear();
     // schedule memory cleanup only, if more than 10% of the lines are affected
     if (dirtyMemoryLines > 0.1 * this.lines.length) {
@@ -267,9 +280,6 @@ export class Buffer implements IBuffer {
       this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
     }
   }
-
-  private _memoryCleanupQueue = new IdleTaskQueue();
-  private _memoryCleanupPosition = 0;
 
   private _batchedMemoryCleanup(): boolean {
     let normalRun = true;
@@ -298,7 +308,7 @@ export class Buffer implements IBuffer {
     if (windowsPty && windowsPty.buildNumber) {
       return this._hasScrollback && windowsPty.backend === 'conpty' && windowsPty.buildNumber >= 21376;
     }
-    return this._hasScrollback && !this._optionsService.rawOptions.windowsMode;
+    return this._hasScrollback;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -578,9 +588,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor to the previous tab stop.
    */
   public prevStop(x?: number): number {
-    if (x === null || x === undefined) {
-      x = this.x;
-    }
+    x ??= this.x;
     while (!this.tabs[--x] && x > 0);
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }
@@ -590,9 +598,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor one tab stop forward.
    */
   public nextStop(x?: number): number {
-    if (x === null || x === undefined) {
-      x = this.x;
-    }
+    x ??= this.x;
     while (!this.tabs[++x] && x < this._cols);
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }

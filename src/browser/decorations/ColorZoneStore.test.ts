@@ -9,7 +9,7 @@ import { ColorZoneStore } from 'browser/decorations/ColorZoneStore';
 const optionsRedFull = {
   overviewRulerOptions: {
     color: 'red',
-    position: 'full' as 'full'
+    position: 'full' as const
   }
 };
 

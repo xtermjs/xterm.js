@@ -6,7 +6,7 @@
 import { Terminal } from '@xterm/xterm';
 import { ITerminal } from 'browser/Types';
 import { IDisposable } from 'common/Types';
-import type { Event } from 'vs/base/common/event';
+import type { IEvent } from 'common/Event';
 
 export interface IDimensions {
   width: number;
@@ -39,6 +39,11 @@ export interface IRenderDimensions {
 export interface IRequestRedrawEvent {
   start: number;
   end: number;
+  /**
+   * Whether the redraw should happen synchronously. This is used to avoid
+   * flicker when the canvas is resized.
+   */
+  sync?: boolean;
 }
 
 /**
@@ -52,7 +57,7 @@ export interface IRenderer extends IDisposable {
    * Fires when the renderer is requesting to be redrawn on the next animation
    * frame but is _not_ a result of content changing (eg. selection changes).
    */
-  readonly onRequestRedraw: Event<IRequestRedrawEvent>;
+  readonly onRequestRedraw: IEvent<IRequestRedrawEvent>;
 
   dispose(): void;
   handleDevicePixelRatioChange(): void;
@@ -60,6 +65,7 @@ export interface IRenderer extends IDisposable {
   handleCharSizeChanged(): void;
   handleBlur(): void;
   handleFocus(): void;
+  handleViewportVisibilityChange?(isVisible: boolean): void;
   handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   handleCursorMove(): void;
   clear(): void;

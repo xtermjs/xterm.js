@@ -11,12 +11,11 @@
     "types": [
       "../../../node_modules/@types/mocha"
     ],
-    "baseUrl": ".",
     "paths": {
       "browser/*": [ "../../../src/browser/*" ],
       "common/*": [ "../../../src/common/*" ],
-      "vs/*": [ "../../../src/vs/*" ],
-      "@xterm/addon-image": [ "../typings/addon-image.d.ts" ]
+      "@xterm/addon-image": [ "../typings/addon-image.d.ts" ],
+      "*": [ "./*" ]
     }
   },
   "include": [
@@ -25,7 +24,6 @@
   ],
   "references": [
     { "path": "../../../src/browser" },
-    { "path": "../../../src/common" },
-    { "path": "../../../src/vs" }
+    { "path": "../../../src/common" }
   ]
 }

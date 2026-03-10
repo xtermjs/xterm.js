@@ -6,11 +6,11 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from 'browser/Types';
 import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IInstantiationService } from 'common/services/Services';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { addDisposableListener } from 'browser/Dom';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -151,7 +151,7 @@ export class AccessibilityManager extends Disposable {
       if (char === '\n') {
         this._liveRegionLineCount++;
         if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
-          this._liveRegion.textContent += Strings.tooMuchOutput.get();
+          this._liveRegion.textContent = Strings.tooMuchOutput.get();
         }
       }
     }
@@ -202,6 +202,9 @@ export class AccessibilityManager extends Disposable {
   private _announceCharacters(): void {
     if (this._charsToAnnounce.length === 0) {
       return;
+    }
+    if (this._liveRegion.textContent === Strings.tooMuchOutput.get()) {
+      this._clearLiveRegion();
     }
     this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';

@@ -4,8 +4,8 @@
  */
 import { IBufferService, ICoreService, ICoreMouseService, IOptionsService } from 'common/services/Services';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
-import { Disposable } from 'vs/base/common/lifecycle';
-import { Emitter } from 'vs/base/common/event';
+import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'common/Event';
 
 /**
  * Supported default protocols.

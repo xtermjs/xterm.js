@@ -25,7 +25,7 @@ test.describe('API Integration Tests', () => {
     await openTerminal(ctx, { allowProposedApi: false }, { loadUnicodeGraphemesAddon: false });
     await ctx.page.evaluate(`
       try {
-        window.term.markers;
+        window.term.unicode;
       } catch (e) {
         window.throwMessage = e.message;
       }
@@ -35,12 +35,10 @@ test.describe('API Integration Tests', () => {
 
   test('write', async () => {
     await openTerminal(ctx);
-    await ctx.page.evaluate(`
-      window.term.write('foo');
-      window.term.write('bar');
-      window.term.write('文');
-    `);
-    await pollFor(ctx.page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foobar文');
+    await ctx.proxy.write('foo');
+    await ctx.proxy.write('bar');
+    await ctx.proxy.write('文');
+    strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), 'foobar文');
   });
 
   test('write with callback', async () => {
@@ -77,14 +75,12 @@ test.describe('API Integration Tests', () => {
 
   test('writeln', async () => {
     await openTerminal(ctx);
-    await ctx.page.evaluate(`
-      window.term.writeln('foo');
-      window.term.writeln('bar');
-      window.term.writeln('文');
-    `);
-    await pollFor(ctx.page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'foo');
-    await pollFor(ctx.page, `window.term.buffer.active.getLine(1).translateToString(true)`, 'bar');
-    await pollFor(ctx.page, `window.term.buffer.active.getLine(2).translateToString(true)`, '文');
+    await ctx.proxy.writeln('foo');
+    await ctx.proxy.writeln('bar');
+    await ctx.proxy.writeln('文');
+    strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), 'foo');
+    strictEqual(await (await ctx.proxy.buffer.active.getLine(1))!.translateToString(true), 'bar');
+    strictEqual(await (await ctx.proxy.buffer.active.getLine(2))!.translateToString(true), '文');
   });
 
   test('writeln with callback', async () => {
@@ -120,7 +116,7 @@ test.describe('API Integration Tests', () => {
     await ctx.proxy.paste('\r\nfoo\nbar\r');
     await ctx.proxy.write('\x1b[?2004h');
     await ctx.proxy.paste('foo');
-    await ctx.page.evaluate(`window.term.options.ignoreBracketedPasteMode = true;`);
+    await ctx.proxy.setOption('ignoreBracketedPasteMode', true);
     await ctx.proxy.paste('check_mode');
     deepStrictEqual(calls, ['foo', '\rfoo\rbar\r', '\x1b[200~foo\x1b[201~', 'check_mode']);
   });
@@ -365,17 +361,72 @@ test.describe('API Integration Tests', () => {
       await pollFor(ctx.page, `window.calls`, [1, 2]);
     });
 
-    test('onSelectionChange', async () => {
-      await openTerminal(ctx);
-      await ctx.page.evaluate(`
-        window.callCount = 0;
-        window.term.onSelectionChange(() => window.callCount++);
-      `);
-      await pollFor(ctx.page, `window.callCount`, 0);
-      await ctx.page.evaluate(`window.term.selectAll()`);
-      await pollFor(ctx.page, `window.callCount`, 1);
-      await ctx.page.evaluate(`window.term.clearSelection()`);
-      await pollFor(ctx.page, `window.callCount`, 2);
+    test.describe('onSelectionChange', () => {
+      let callCount: number;
+
+      test.beforeEach(async () => {
+        await openTerminal(ctx);
+        callCount = 0;
+        ctx.proxy.onSelectionChange(() => callCount++);
+      });
+
+      test('should fire for programmatic selection changes', async () => {
+        strictEqual(callCount, 0);
+        await ctx.proxy.selectAll();
+        strictEqual(callCount, 1);
+        await ctx.proxy.clearSelection();
+        strictEqual(callCount, 2);
+      });
+
+      test('should fire on mousedown when clearing selection', async () => {
+        await ctx.proxy.write('foo bar baz');
+        await ctx.proxy.selectAll();
+        strictEqual(callCount, 1);
+
+        const dims = (await ctx.proxy.dimensions)!;
+        const termRect: any = await ctx.page.evaluate(`window.term.element.getBoundingClientRect()`);
+        const x = termRect.left + dims.css.cell.width * 5;
+        const y = termRect.top + dims.css.cell.height * 0.5;
+        await ctx.page.mouse.click(x, y);
+
+        await pollFor(ctx.page, () => callCount, 2);
+      });
+
+      test('should not fire on mousedown when no prior selection', async () => {
+        await ctx.proxy.write('foo bar baz');
+        strictEqual(callCount, 0);
+
+        const dims = (await ctx.proxy.dimensions)!;
+        const termRect: any = await ctx.page.evaluate(`window.term.element.getBoundingClientRect()`);
+        const x = termRect.left + dims.css.cell.width * 5;
+        const y = termRect.top + dims.css.cell.height * 0.5;
+        await ctx.page.mouse.click(x, y);
+        await timeout(20);
+
+        strictEqual(callCount, 0);
+      });
+
+      test('should fire once on mousedown to clear, and again on mouseup after drag', async () => {
+        await ctx.proxy.write('foo bar baz');
+        await ctx.proxy.selectAll();
+        strictEqual(callCount, 1);
+
+        const dims = (await ctx.proxy.dimensions)!;
+        const termRect: any = await ctx.page.evaluate(`window.term.element.getBoundingClientRect()`);
+        const startX = termRect.left + dims.css.cell.width * 0.5;
+        const endX = termRect.left + dims.css.cell.width * 5;
+        const y = termRect.top + dims.css.cell.height * 0.5;
+
+        await ctx.page.mouse.move(startX, y);
+        await ctx.page.mouse.down();
+        await pollFor(ctx.page, () => callCount, 2);
+
+        await ctx.page.mouse.move(endX, y);
+        strictEqual(callCount, 2);
+
+        await ctx.page.mouse.up();
+        await pollFor(ctx.page, () => callCount, 3);
+      });
     });
 
     test('onRender', async () => {
@@ -406,6 +457,16 @@ test.describe('API Integration Tests', () => {
       await pollFor(ctx.page, `window.calls`, [[10, 5], [20, 15]]);
     });
 
+    test('resize during write should not throw', async () => {
+      await openTerminal(ctx, { rows: 50, cols: 80 });
+      const largeData = 'x'.repeat(10000);
+      await ctx.proxy.write(largeData);
+      await ctx.proxy.resize(80, 10);
+      await ctx.proxy.write(largeData);
+      await ctx.proxy.resize(80, 5);
+      await ctx.proxy.write(largeData);
+    });
+
     test('onTitleChange', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
@@ -431,113 +492,113 @@ test.describe('API Integration Tests', () => {
   test.describe('buffer', () => {
     test('cursorX, cursorY', async () => {
       await openTerminal(ctx, { rows: 5, cols: 5 });
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorX`), 0);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorY`), 0);
+      strictEqual(await ctx.proxy.buffer.active.cursorX, 0);
+      strictEqual(await ctx.proxy.buffer.active.cursorY, 0);
       await ctx.proxy.write('foo');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorX`), 3);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorY`), 0);
+      strictEqual(await ctx.proxy.buffer.active.cursorX, 3);
+      strictEqual(await ctx.proxy.buffer.active.cursorY, 0);
       await ctx.proxy.write('\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorX`), 3);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorY`), 1);
+      strictEqual(await ctx.proxy.buffer.active.cursorX, 3);
+      strictEqual(await ctx.proxy.buffer.active.cursorY, 1);
       await ctx.proxy.write('\r');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorX`), 0);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorY`), 1);
+      strictEqual(await ctx.proxy.buffer.active.cursorX, 0);
+      strictEqual(await ctx.proxy.buffer.active.cursorY, 1);
       await ctx.proxy.write('abcde');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorX`), 5);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorY`), 1);
+      strictEqual(await ctx.proxy.buffer.active.cursorX, 5);
+      strictEqual(await ctx.proxy.buffer.active.cursorY, 1);
       await ctx.proxy.write('\n\r\n\n\n\n\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorX`), 0);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.cursorY`), 4);
+      strictEqual(await ctx.proxy.buffer.active.cursorX, 0);
+      strictEqual(await ctx.proxy.buffer.active.cursorY, 4);
     });
 
     test('viewportY', async () => {
       await openTerminal(ctx, { rows: 5 });
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.viewportY`), 0);
+      strictEqual(await ctx.proxy.buffer.active.viewportY, 0);
       await ctx.proxy.write('\n\n\n\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.viewportY`), 0);
+      strictEqual(await ctx.proxy.buffer.active.viewportY, 0);
       await ctx.proxy.write('\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.viewportY`), 1);
+      strictEqual(await ctx.proxy.buffer.active.viewportY, 1);
       await ctx.proxy.write('\n\n\n\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.viewportY`), 5);
-      await ctx.page.evaluate(`window.term.scrollLines(-1)`);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.viewportY`), 4);
-      await ctx.page.evaluate(`window.term.scrollToTop()`);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.viewportY`), 0);
+      strictEqual(await ctx.proxy.buffer.active.viewportY, 5);
+      await ctx.proxy.scrollLines(-1);
+      strictEqual(await ctx.proxy.buffer.active.viewportY, 4);
+      await ctx.proxy.scrollToTop();
+      strictEqual(await ctx.proxy.buffer.active.viewportY, 0);
     });
 
     test('baseY', async () => {
       await openTerminal(ctx, { rows: 5 });
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.baseY`), 0);
+      strictEqual(await ctx.proxy.buffer.active.baseY, 0);
       await ctx.proxy.write('\n\n\n\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.baseY`), 0);
+      strictEqual(await ctx.proxy.buffer.active.baseY, 0);
       await ctx.proxy.write('\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.baseY`), 1);
+      strictEqual(await ctx.proxy.buffer.active.baseY, 1);
       await ctx.proxy.write('\n\n\n\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.baseY`), 5);
-      await ctx.page.evaluate(`window.term.scrollLines(-1)`);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.baseY`), 5);
-      await ctx.page.evaluate(`window.term.scrollToTop()`);
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.baseY`), 5);
+      strictEqual(await ctx.proxy.buffer.active.baseY, 5);
+      await ctx.proxy.scrollLines(-1);
+      strictEqual(await ctx.proxy.buffer.active.baseY, 5);
+      await ctx.proxy.scrollToTop();
+      strictEqual(await ctx.proxy.buffer.active.baseY, 5);
     });
 
     test('length', async () => {
       await openTerminal(ctx, { rows: 5 });
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.length`), 5);
+      strictEqual(await ctx.proxy.buffer.active.length, 5);
       await ctx.proxy.write('\n\n\n\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.length`), 5);
+      strictEqual(await ctx.proxy.buffer.active.length, 5);
       await ctx.proxy.write('\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.length`), 6);
+      strictEqual(await ctx.proxy.buffer.active.length, 6);
       await ctx.proxy.write('\n\n\n\n');
-      strictEqual(await ctx.page.evaluate(`window.term.buffer.active.length`), 10);
+      strictEqual(await ctx.proxy.buffer.active.length, 10);
     });
 
     test.describe('getLine', () => {
       test('invalid index', async () => {
         await openTerminal(ctx, { rows: 5 });
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(-1)`), undefined);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(5)`), undefined);
+        strictEqual(await ctx.proxy.buffer.active.getLine(-1), undefined);
+        strictEqual(await ctx.proxy.buffer.active.getLine(5), undefined);
       });
 
       test('isWrapped', async () => {
         await openTerminal(ctx, { cols: 5 });
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), false);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.isWrapped, false);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(1))!.isWrapped, false);
         await ctx.proxy.write('abcde');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), false);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.isWrapped, false);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(1))!.isWrapped, false);
         await ctx.proxy.write('f');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).isWrapped`), false);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(1).isWrapped`), true);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.isWrapped, false);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(1))!.isWrapped, true);
       });
 
       test('translateToString', async () => {
         await openTerminal(ctx, { cols: 5 });
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), '     ');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), '');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(), '     ');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), '');
         await ctx.proxy.write('foo');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'foo  ');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), 'foo');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(), 'foo  ');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), 'foo');
         await ctx.proxy.write('bar');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString()`), 'fooba');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString(true)`), 'fooba');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(1).translateToString(true)`), 'r');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString(false, 1)`), 'ooba');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).translateToString(false, 1, 3)`), 'oo');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(), 'fooba');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(true), 'fooba');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(1))!.translateToString(true), 'r');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(false, 1), 'ooba');
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.translateToString(false, 1, 3), 'oo');
       });
 
       test('getCell', async () => {
         await openTerminal(ctx, { cols: 5 });
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(-1)`), undefined);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(5)`), undefined);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getChars()`), '');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getWidth()`), 1);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.getCell(-1), undefined);
+        strictEqual(await (await ctx.proxy.buffer.active.getLine(0))!.getCell(5), undefined);
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0))!.getChars(), '');
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0))!.getWidth(), 1);
         await ctx.proxy.write('a文');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getChars()`), 'a');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(0).getWidth()`), 1);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(1).getChars()`), '文');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(1).getWidth()`), 2);
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getChars()`), '');
-        strictEqual(await ctx.page.evaluate(`window.term.buffer.active.getLine(0).getCell(2).getWidth()`), 0);
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0))!.getChars(), 'a');
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(0))!.getWidth(), 1);
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1))!.getChars(), '文');
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(1))!.getWidth(), 2);
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(2))!.getChars(), '');
+        strictEqual(await (await (await ctx.proxy.buffer.active.getLine(0))!.getCell(2))!.getWidth(), 0);
       });
 
       test('clearMarkers', async () => {
@@ -600,7 +661,7 @@ test.describe('API Integration Tests', () => {
   test.describe('modes', () => {
     test.beforeEach(() => openTerminal(ctx));
     test('defaults', async () => {
-      deepStrictEqual(await ctx.page.evaluate(`window.term.modes`), {
+      deepStrictEqual(await ctx.proxy.modes, {
         applicationCursorKeysMode: false,
         applicationKeypadMode: false,
         bracketedPasteMode: false,
@@ -609,75 +670,77 @@ test.describe('API Integration Tests', () => {
         originMode: false,
         reverseWraparoundMode: false,
         sendFocusMode: false,
+        showCursor: true,
         synchronizedOutputMode: false,
+        win32InputMode: false,
         wraparoundMode: true
       });
     });
     test('applicationCursorKeysMode', async () => {
       await ctx.proxy.write('\x1b[?1h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.applicationCursorKeysMode`), true);
+      strictEqual((await ctx.proxy.modes).applicationCursorKeysMode, true);
       await ctx.proxy.write('\x1b[?1l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.applicationCursorKeysMode`), false);
+      strictEqual((await ctx.proxy.modes).applicationCursorKeysMode, false);
     });
     test('applicationKeypadMode', async () => {
       await ctx.proxy.write('\x1b[?66h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.applicationKeypadMode`), true);
+      strictEqual((await ctx.proxy.modes).applicationKeypadMode, true);
       await ctx.proxy.write('\x1b[?66l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.applicationKeypadMode`), false);
+      strictEqual((await ctx.proxy.modes).applicationKeypadMode, false);
     });
     test('bracketedPasteMode', async () => {
       await ctx.proxy.write('\x1b[?2004h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.bracketedPasteMode`), true);
+      strictEqual((await ctx.proxy.modes).bracketedPasteMode, true);
       await ctx.proxy.write('\x1b[?2004l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.bracketedPasteMode`), false);
+      strictEqual((await ctx.proxy.modes).bracketedPasteMode, false);
     });
     test('insertMode', async () => {
       await ctx.proxy.write('\x1b[4h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.insertMode`), true);
+      strictEqual((await ctx.proxy.modes).insertMode, true);
       await ctx.proxy.write('\x1b[4l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.insertMode`), false);
+      strictEqual((await ctx.proxy.modes).insertMode, false);
     });
     test('mouseTrackingMode', async () => {
       await ctx.proxy.write('\x1b[?9h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'x10');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'x10');
       await ctx.proxy.write('\x1b[?9l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
       await ctx.proxy.write('\x1b[?1000h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'vt200');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'vt200');
       await ctx.proxy.write('\x1b[?1000l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
       await ctx.proxy.write('\x1b[?1002h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'drag');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'drag');
       await ctx.proxy.write('\x1b[?1002l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
       await ctx.proxy.write('\x1b[?1003h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'any');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'any');
       await ctx.proxy.write('\x1b[?1003l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.mouseTrackingMode`), 'none');
+      strictEqual((await ctx.proxy.modes).mouseTrackingMode, 'none');
     });
     test('originMode', async () => {
       await ctx.proxy.write('\x1b[?6h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.originMode`), true);
+      strictEqual((await ctx.proxy.modes).originMode, true);
       await ctx.proxy.write('\x1b[?6l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.originMode`), false);
+      strictEqual((await ctx.proxy.modes).originMode, false);
     });
     test('reverseWraparoundMode', async () => {
       await ctx.proxy.write('\x1b[?45h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.reverseWraparoundMode`), true);
+      strictEqual((await ctx.proxy.modes).reverseWraparoundMode, true);
       await ctx.proxy.write('\x1b[?45l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.reverseWraparoundMode`), false);
+      strictEqual((await ctx.proxy.modes).reverseWraparoundMode, false);
     });
     test('sendFocusMode', async () => {
       await ctx.proxy.write('\x1b[?1004h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.sendFocusMode`), true);
+      strictEqual((await ctx.proxy.modes).sendFocusMode, true);
       await ctx.proxy.write('\x1b[?1004l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.sendFocusMode`), false);
+      strictEqual((await ctx.proxy.modes).sendFocusMode, false);
     });
     test('wraparoundMode', async () => {
       await ctx.proxy.write('\x1b[?7h');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.wraparoundMode`), true);
+      strictEqual((await ctx.proxy.modes).wraparoundMode, true);
       await ctx.proxy.write('\x1b[?7l');
-      strictEqual(await ctx.page.evaluate(`window.term.modes.wraparoundMode`), false);
+      strictEqual((await ctx.proxy.modes).wraparoundMode, false);
     });
   });
 
@@ -719,7 +782,7 @@ test.describe('API Integration Tests', () => {
     await ctx.page.evaluate(`window.term = new Terminal()`);
     await ctx.page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
     await ctx.page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
-    await pollFor(ctx.page, `window.term._core._renderService.dimensions.css.cell.width > 0`, true);
+    await pollFor(ctx.page, `window.term.dimensions.css.cell.width > 0`, true);
   });
 
   test.describe('registerDecoration', () => {
@@ -753,7 +816,7 @@ test.describe('API Integration Tests', () => {
     });
     test.describe('overviewRulerDecorations', () => {
       test('should not add an overview ruler when width is not set', async () => {
-        await openTerminal(ctx);
+        await openTerminal(ctx, { scrollbar: { overviewRuler: {} } });
         await ctx.page.evaluate(`window.marker1 = window.term.registerMarker(1)`);
         await ctx.page.evaluate(`window.marker2 = window.term.registerMarker(2)`);
         await ctx.page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
@@ -761,7 +824,7 @@ test.describe('API Integration Tests', () => {
         await pollFor(ctx.page, `document.querySelectorAll('.xterm-decoration-overview-ruler').length`, 0);
       });
       test('should add an overview ruler when width is set', async () => {
-        await openTerminal(ctx, { overviewRuler: { width: 15 } });
+        await openTerminal(ctx, { scrollbar: { width: 15, overviewRuler: {} } });
         await ctx.page.evaluate(`window.marker1 = window.term.registerMarker(1)`);
         await ctx.page.evaluate(`window.marker2 = window.term.registerMarker(2)`);
         await ctx.page.evaluate(`window.term.registerDecoration({ marker: window.marker1, overviewRulerOptions: { color: 'red', position: 'full' } })`);
@@ -1035,7 +1098,7 @@ async function getDimensions(): Promise<IDimensions> {
       return {
         top: rect.top,
         left: rect.left,
-        renderDimensions: window.term._core._renderService.dimensions
+        renderDimensions: window.term.dimensions
       };
     })();
   `);

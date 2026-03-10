@@ -4,9 +4,19 @@
  */
 
 import * as assert from 'assert';
-import { WidthCache, WidthCacheSettings } from 'browser/renderer/dom/WidthCache';
-import jsdom = require('jsdom');
+import { IWidthCacheFontVariantCanvas, WidthCache, WidthCacheSettings } from 'browser/renderer/dom/WidthCache';
 
+
+class MockWidthCacheFontVariantCanvas implements IWidthCacheFontVariantCanvas {
+  public widths: { [key: string]: number } = {};
+
+  public setFont(_fontFamily: string, _fontSize: number, _fontWeight: unknown, _italic: boolean): void {
+  }
+
+  public measure(c: string): number {
+    return this.widths[c] ?? 5;
+  }
+}
 
 export class TestWidthCache extends WidthCache {
   public get flat(): Float32Array {
@@ -15,13 +25,18 @@ export class TestWidthCache extends WidthCache {
   public get holey(): Map<string, number> | undefined {
     return (this as any)._holey;
   }
+  public get canvasElements(): MockWidthCacheFontVariantCanvas[] {
+    return (this as any)._canvasElements;
+  }
 
-  public widths: {[key: string]: [number, number, number, number]} = {};
-  protected _measure(c: string, variant: number): number {
-    if (this.widths[c] !== undefined) {
-      return this.widths[c][variant];
+  constructor() {
+    super(() => new MockWidthCacheFontVariantCanvas());
+  }
+
+  public setWidths(widths: { [key: string]: number }): void {
+    for (const canvas of this.canvasElements) {
+      canvas.widths = widths;
     }
-    return 5;  // 5 is default width in tests in DomRendererRowFactory.test.ts
   }
 }
 
@@ -36,8 +51,7 @@ function castf32(v: number): number {
 describe('WidthCache', () => {
   let wc: TestWidthCache;
   beforeEach(() => {
-    const dom = new jsdom.JSDOM('');
-    wc = new TestWidthCache(dom.window.document, dom.window.document.createElement('div'));
+    wc = new TestWidthCache();
     wc.setFont('monospace', 15, 'normal', 'bold');
   });
   describe('cache invalidation', () => {

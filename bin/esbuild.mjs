@@ -12,6 +12,7 @@ const config = {
   isProd: argv.includes('--prod'),
   isWatch: argv.includes('--watch'),
   isDemoClient: argv.includes('--demo-client'),
+  isDemoServer: argv.includes('--demo-server'),
   isHeadless: argv.includes('--headless'),
   addon: argv.find(e => e.startsWith('--addon='))?.replace(/^--addon=/, ''),
 };
@@ -25,7 +26,7 @@ const commonOptions = {
   target: 'es2021',
   sourcemap: true,
   treeShaking: true,
-  logLevel: 'debug',
+  logLevel: 'warning',
 };
 
 /** @type {esbuild.BuildOptions} */
@@ -126,7 +127,8 @@ if (config.addon) {
 } else if (config.isDemoClient) {
   bundleConfig = {
     ...bundleConfig,
-    entryPoints: [`demo/client.ts`],
+    sourcemap: false,
+    entryPoints: [`demo/client/client.ts`],
     outfile: 'demo/dist/client-bundle.js',
     external: ['util', 'os', 'fs', 'path', 'stream', 'Terminal'],
     alias: {
@@ -139,6 +141,7 @@ if (config.addon) {
       "@xterm/addon-progress": "./addons/addon-progress/lib/addon-progress.mjs",
       "@xterm/addon-search": "./addons/addon-search/lib/addon-search.mjs",
       "@xterm/addon-serialize": "./addons/addon-serialize/lib/addon-serialize.mjs",
+      "@xterm/addon-web-fonts": "./addons/addon-web-fonts/lib/addon-web-fonts.mjs",
       "@xterm/addon-web-links": "./addons/addon-web-links/lib/addon-web-links.mjs",
       "@xterm/addon-webgl": "./addons/addon-webgl/lib/addon-webgl.mjs",
       "@xterm/addon-unicode11": "./addons/addon-unicode11/lib/addon-unicode11.mjs",
@@ -152,6 +155,19 @@ if (config.addon) {
       "@xterm/addon-ligatures": "./addons/addon-ligatures/out-esbuild/LigaturesAddon",
     }
   }
+  skipOut = true;
+  skipOutTest = true;
+} else if (config.isDemoServer) {
+  bundleConfig = {
+    ...bundleConfig,
+    entryPoints: [`demo/server/server.ts`],
+    outfile: 'demo/dist/server-bundle.js',
+    format: 'cjs',
+    platform: 'node',
+    external: ['node-pty'],
+  }
+  skipOut = true;
+  skipOutTest = true;
 } else if (config.isHeadless) {
   bundleConfig = {
     ...bundleConfig,
@@ -175,9 +191,7 @@ if (config.addon) {
     entryPoints: [
       'src/browser/**/*.ts',
       'src/common/**/*.ts',
-      'src/headless/**/*.ts',
-      'src/vs/base/**/*.ts',
-      'src/vs/patches/**/*.ts'
+      'src/headless/**/*.ts'
     ],
     outdir: 'out-esbuild/'
   };

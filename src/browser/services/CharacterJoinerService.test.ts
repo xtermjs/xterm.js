@@ -9,7 +9,7 @@ import { CharacterJoinerService } from 'browser/services/CharacterJoinerService'
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-import { MockBufferService } from 'common/TestUtils.test';
+import { MockBufferService, createCellData } from 'common/TestUtils.test';
 
 describe('CharacterJoinerService', () => {
   let service: ICharacterJoinerService;
@@ -25,17 +25,17 @@ describe('CharacterJoinerService', () => {
     lines.set(4, new BufferLine(0));
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
-    line6.resize(line6.length + 1, CellData.fromCharData([0, '￥', 2, '￥'.charCodeAt(0)]));
-    line6.resize(line6.length + 1, CellData.fromCharData([0, '', 0, 0]));
+    line6.resize(line6.length + 1, createCellData(0, '￥', 2));
+    line6.resize(line6.length + 1, createCellData(0, '', 0));
     let sub = lineData([['deemo']]);
     let oldSize = line6.length;
-    line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
+    line6.resize(oldSize + sub.length, createCellData(0, '', 0));
     for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, sub.loadCell(i, new CellData()));
     line6.resize(line6.length + 1, CellData.fromCharData([0, '\xf0\x9f\x98\x81', 1, 128513]));
-    line6.resize(line6.length + 1, CellData.fromCharData([0, ' ', 1, ' '.charCodeAt(0)]));
+    line6.resize(line6.length + 1, createCellData(0, ' ', 1));
     sub = lineData([['jiabc']]);
     oldSize = line6.length;
-    line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
+    line6.resize(oldSize + sub.length, createCellData(0, '', 0));
     for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, sub.loadCell(i, new CellData()));
     lines.set(6, line6);
 
@@ -272,8 +272,8 @@ function lineData(data: IPartialLineData[]): IBufferLine {
     const line = data[i][0];
     const attr = (data[i][1] || 0) as number;
     const offset = tline.length;
-    tline.resize(tline.length + line.split('').length, CellData.fromCharData([0, '', 0, 0]));
-    line.split('').map((char, idx) => tline.setCell(idx + offset, CellData.fromCharData([attr, char, 1, char.charCodeAt(0)])));
+    tline.resize(tline.length + line.split('').length, createCellData(0, '', 0));
+    line.split('').map((char, idx) => tline.setCell(idx + offset, createCellData(attr, char, 1)));
   }
   return tline;
 }

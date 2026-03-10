@@ -7,10 +7,10 @@ import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { DebouncedIdleTask } from 'common/TaskQueue';
-import { IBufferService, ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { IBufferService, ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
+import { Emitter } from 'common/Event';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -27,7 +27,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _renderer: MutableDisposable<IRenderer> = this._register(new MutableDisposable());
   private _renderDebouncer: IRenderDebouncerWithCallback;
-  private _pausedResizeTask = new DebouncedIdleTask();
+  private _pausedResizeTask: DebouncedIdleTask;
   private _observerDisposable = this._register(new MutableDisposable());
 
   private _isPaused: boolean = false;
@@ -58,6 +58,7 @@ export class RenderService extends Disposable implements IRenderService {
     private _rowCount: number,
     screenElement: HTMLElement,
     @IOptionsService private readonly _optionsService: IOptionsService,
+    @ILogService private readonly _logService: ILogService,
     @ICharSizeService private readonly _charSizeService: ICharSizeService,
     @ICoreService private readonly _coreService: ICoreService,
     @IDecorationService decorationService: IDecorationService,
@@ -66,6 +67,8 @@ export class RenderService extends Disposable implements IRenderService {
     @IThemeService themeService: IThemeService
   ) {
     super();
+
+    this._pausedResizeTask = new DebouncedIdleTask(this._logService);
 
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), this._coreBrowserService);
     this._register(this._renderDebouncer);
@@ -92,7 +95,6 @@ export class RenderService extends Disposable implements IRenderService {
 
     // Clear the renderer when the a change that could affect glyphs occurs
     this._register(this._optionsService.onMultipleOptionChange([
-      'customGlyphs',
       'drawBoldTextInBrightColors',
       'letterSpacing',
       'lineHeight',
@@ -112,7 +114,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._register(this._optionsService.onMultipleOptionChange([
       'cursorBlink',
       'cursorStyle'
-    ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, true)));
+    ], () => this.refreshRows(bufferService.buffer.y, bufferService.buffer.y, undefined, true)));
 
     this._register(themeService.onChangeColors(() => this._fullRefresh()));
 
@@ -132,6 +134,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _handleIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.isIntersecting === undefined ? (entry.intersectionRatio === 0) : !entry.isIntersecting;
+    this._renderer.value?.handleViewportVisibilityChange?.(!this._isPaused);
 
     // Terminal was hidden on open
     if (!this._isPaused && !this._charSizeService.hasValidSize) {
@@ -145,7 +148,7 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public refreshRows(start: number, end: number, isRedrawOnly: boolean = false): void {
+  public refreshRows(start: number, end: number, sync: boolean = false, isRedrawOnly: boolean = false): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
       return;
@@ -165,7 +168,12 @@ export class RenderService extends Disposable implements IRenderService {
     if (!isRedrawOnly) {
       this._isNextRenderRedrawOnly = false;
     }
-    this._renderDebouncer.refresh(start, end, this._rowCount);
+
+    if (sync) {
+      this._renderRows(start, end);
+    } else {
+      this._renderDebouncer.refresh(start, end, this._rowCount);
+    }
   }
 
   private _renderRows(start: number, end: number): void {
@@ -235,7 +243,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.value = renderer;
     // If the value was not set, the terminal is being disposed so ignore it
     if (this._renderer.value) {
-      this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, true));
+      this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, e.sync, true));
 
       // Force a refresh
       this._needsSelectionRefresh = true;
@@ -343,13 +351,11 @@ class SynchronizedOutputHandler {
       this._end = Math.max(this._end, end);
     }
 
-    if (this._timeout === undefined) {
-      this._timeout = this._coreBrowserService.window.setTimeout(() => {
-        this._timeout = undefined;
-        this._coreService.decPrivateModes.synchronizedOutput = false;
-        this._onTimeout();
-      }, Constants.SYNCHRONIZED_OUTPUT_TIMEOUT_MS);
-    }
+    this._timeout ??= this._coreBrowserService.window.setTimeout(() => {
+      this._timeout = undefined;
+      this._coreService.decPrivateModes.synchronizedOutput = false;
+      this._onTimeout();
+    }, Constants.SYNCHRONIZED_OUTPUT_TIMEOUT_MS);
   }
 
   public flush(): { start: number, end: number } | undefined {

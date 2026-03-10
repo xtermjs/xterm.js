@@ -4,16 +4,16 @@
  */
 
 import { ICoreBrowserService } from './Services';
-import { Emitter, Event } from 'vs/base/common/event';
-import { addDisposableListener } from 'vs/base/browser/dom';
-import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Emitter, EventUtils } from 'common/Event';
+import { addDisposableListener } from 'browser/Dom';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 export class CoreBrowserService extends Disposable implements ICoreBrowserService {
   public serviceBrand: undefined;
 
   private _isFocused = false;
   private _cachedIsFocused: boolean | undefined = undefined;
-  private _screenDprMonitor = this._register(new ScreenDprMonitor(this._window));
+  private _screenDprMonitor: ScreenDprMonitor;
 
   private readonly _onDprChange = this._register(new Emitter<number>());
   public readonly onDprChange = this._onDprChange.event;
@@ -27,9 +27,11 @@ export class CoreBrowserService extends Disposable implements ICoreBrowserServic
   ) {
     super();
 
+    this._screenDprMonitor = this._register(new ScreenDprMonitor(this._window));
+
     // Monitor device pixel ratio
     this._register(this.onWindowChange(w => this._screenDprMonitor.setWindow(w)));
-    this._register(Event.forward(this._screenDprMonitor.onDprChange, this._onDprChange));
+    this._register(EventUtils.forward(this._screenDprMonitor.onDprChange, this._onDprChange));
 
     this._register(addDisposableListener(this._textarea, 'focus', () => this._isFocused = true));
     this._register(addDisposableListener(this._textarea, 'blur', () => this._isFocused = false));

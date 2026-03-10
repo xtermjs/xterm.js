@@ -62,6 +62,9 @@ jobs:
           ./addons/addon-web-links/lib/* \
           ./addons/addon-web-links/out/* \
           ./addons/addon-web-links/out-*/* \
+          ./addons/addon-web-fonts/lib/* \
+          ./addons/addon-web-fonts/out/* \
+          ./addons/addon-web-fonts/out-*/* \
           ./addons/addon-webgl/lib/* \
           ./addons/addon-webgl/out/* \
           ./addons/addon-webgl/out-*st/*
@@ -199,8 +202,10 @@ jobs:
           unzip -o compressed-build.zip
         fi
         ls -R
-    - name: Build demo
-      run: npm run esbuild-demo
+    - name: Build demo client
+      run: npm run esbuild-demo-client
+    - name: Build demo server
+      run: npm run esbuild-demo-server
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-attach)
@@ -221,6 +226,8 @@ jobs:
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
     - name: Integration tests (addon-unicode11)
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
+    - name: Integration tests (addon-web-fonts)
+      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-fonts
     - name: Integration tests (addon-web-links)
       run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
     - name: Integration tests (addon-webgl)

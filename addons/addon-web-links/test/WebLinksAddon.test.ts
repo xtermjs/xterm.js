@@ -180,7 +180,7 @@ async function cellPos(col: number, row: number): Promise<[number, number]> {
   const coords: any = await ctx.page.evaluate(`
     (function() {
       const rect = window.term.element.getBoundingClientRect();
-      const dim = term._core._renderService.dimensions;
+      const dim = window.term.dimensions;
       return {left: rect.left, top: rect.top, bottom: rect.bottom, right: rect.right, width: dim.css.cell.width, height: dim.css.cell.height};
     })();
   `);

@@ -385,6 +385,34 @@ test.describe('Search Tests', () => {
     });
   });
 
+  test.describe('onBeforeSearch and onAfterSearch', () => {
+    test.beforeEach(async () => {
+      await ctx.page.evaluate(`
+        window.events = [];
+        window.search.onBeforeSearch(() => window.events.push('before'));
+        window.search.onAfterSearch(() => window.events.push('after'));
+      `);
+    });
+    test('should fire before and after findNext', async () => {
+      await ctx.proxy.write('abc');
+      await ctx.page.evaluate(`window.search.findNext('a')`);
+      deepStrictEqual(await ctx.page.evaluate('window.events'), ['before', 'after']);
+    });
+
+    test('should fire before and after findPrevious', async () => {
+      await ctx.proxy.write('abc');
+      await ctx.page.evaluate(`window.search.findPrevious('a')`);
+      deepStrictEqual(await ctx.page.evaluate('window.events'), ['before', 'after']);
+    });
+
+    test('should fire for each search call', async () => {
+      await ctx.proxy.write('abc abc');
+      await ctx.page.evaluate(`window.search.findNext('abc')`);
+      await ctx.page.evaluate(`window.search.findNext('abc')`);
+      deepStrictEqual(await ctx.page.evaluate('window.events'), ['before', 'after', 'before', 'after']);
+    });
+  });
+
   test.describe('Regression tests', () => {
     test.describe('#2444 wrapped line content not being found', () => {
       let fixture: string;

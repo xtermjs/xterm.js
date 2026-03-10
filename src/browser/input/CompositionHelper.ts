@@ -47,6 +47,11 @@ export class CompositionHelper {
    */
   private _dataAlreadySent: string;
 
+  /**
+   * The pending textarea change timer, if any.
+   */
+  private _textareaChangeTimer?: number;
+
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
@@ -193,8 +198,12 @@ export class CompositionHelper {
    * IME is active.
    */
   private _handleAnyTextareaChanges(): void {
+    if (this._textareaChangeTimer) {
+      return;
+    }
     const oldValue = this._textarea.value;
-    setTimeout(() => {
+    this._textareaChangeTimer = window.setTimeout(() => {
+      this._textareaChangeTimer = undefined;
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;
@@ -239,6 +248,12 @@ export class CompositionHelper {
       this._compositionView.style.lineHeight = cellHeight + 'px';
       this._compositionView.style.fontFamily = this._optionsService.rawOptions.fontFamily;
       this._compositionView.style.fontSize = this._optionsService.rawOptions.fontSize + 'px';
+      // Limit the composition view width to the space between the cursor and
+      // the terminal's right edge, preventing it from overflowing the terminal.
+      const maxWidth = this._bufferService.cols * this._renderService.dimensions.css.cell.width - cursorLeft;
+      this._compositionView.style.maxWidth = maxWidth + 'px';
+      this._compositionView.style.overflow = 'hidden';
+      this._compositionView.style.direction = 'rtl';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();

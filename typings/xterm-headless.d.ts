@@ -49,9 +49,18 @@ declare module '@xterm/headless' {
     convertEol?: boolean;
 
     /**
-     * Whether the cursor blinks.
+     * Whether the cursor blinks. The blinking will stop after 5 minutes of idle
+     * time (refreshed by clicking, focusing or the cursor moving). The default
+     * is false.
      */
     cursorBlink?: boolean;
+
+    /**
+     * The interval in milliseconds for the blink attribute. This is the amount
+     * of time text remains visible or hidden before toggling. Set to 0 to
+     * disable blinking. The default is 0.
+     */
+    blinkIntervalDuration?: number;
 
     /**
      * The style of the cursor.
@@ -64,14 +73,6 @@ declare module '@xterm/headless' {
     cursorWidth?: number;
 
     /**
-     * Whether to draw custom glyphs for block element and box drawing
-     * characters instead of using the font. This should typically result in
-     * better rendering with continuous lines, even when line height and letter
-     * spacing is used. Note that this doesn't work with the DOM renderer which
-     * renders all characters using the font. The default is true.
-     */
-    customGlyphs?: boolean;
-    /**
      * Whether input should be disabled.
      */
     disableStdin?: boolean;
@@ -80,13 +81,6 @@ declare module '@xterm/headless' {
      * Whether to draw bold text in bright colors. The default is true.
      */
     drawBoldTextInBrightColors?: boolean;
-
-    /**
-     * The modifier key hold to multiply scroll speed.
-     * @deprecated This option is no longer available and will always use alt.
-     * Setting this will be ignored.
-     */
-    fastScrollModifier?: 'none' | 'alt' | 'ctrl' | 'shift';
 
     /**
      * The spacing in whole pixels between characters.
@@ -145,7 +139,8 @@ declare module '@xterm/headless' {
     /**
      * Whether to reflow the line containing the cursor when the terminal is
      * resized. Defaults to false, because shells usually handle this
-     * themselves.
+     * themselves. Note that this will not move the cursor position, only the
+     * line contents.
      */
     reflowCursorLine?: boolean;
 
@@ -215,25 +210,6 @@ declare module '@xterm/headless' {
     theme?: ITheme;
 
     /**
-     * Whether "Windows mode" is enabled. Because Windows backends winpty and
-     * conpty operate by doing line wrapping on their side, xterm.js does not
-     * have access to wrapped lines. When Windows mode is enabled the following
-     * changes will be in effect:
-     *
-     * - Reflow is disabled.
-     * - Lines are assumed to be wrapped if the last character of the line is
-     *   not whitespace.
-     *
-     * When using conpty on Windows 11 version >= 21376, it is recommended to
-     * disable this because native text wrapping sequences are output correctly
-     * thanks to https://github.com/microsoft/terminal/issues/405
-     *
-     * @deprecated Use {@link windowsPty}. This value will be ignored if
-     * windowsPty is set.
-     */
-    windowsMode?: boolean;
-
-    /**
      * Compatibility information when the pty is known to be hosted on Windows.
      * Setting this will turn on certain heuristics/workarounds depending on the
      * values:
@@ -262,6 +238,11 @@ declare module '@xterm/headless' {
      * All features are disabled by default for security reasons.
      */
     windowOptions?: IWindowOptions;
+
+    /**
+     * Enable various VT extensions.
+     */
+    vtExtensions?: IVtExtensions;
   }
 
   /**
@@ -278,6 +259,13 @@ declare module '@xterm/headless' {
      * The number of rows in the terminal.
      */
     rows?: number;
+
+    /**
+     * Whether to show the cursor immediately when the terminal is created.
+     * When false (default), the cursor will not be visible until the terminal
+     * is focused for the first time.
+     */
+    showCursorImmediately?: boolean;
   }
 
   /**
@@ -342,6 +330,51 @@ declare module '@xterm/headless' {
      * The Windows build version (eg. 19045)
      */
     buildNumber?: number;
+  }
+
+  /**
+   * Enable VT extensions that are not part of the core VT specification.
+   */
+  export interface IVtExtensions {
+    /**
+     * Whether the [kitty keyboard protocol][0] (`CSI =|?|>|< u`) is enabled.
+     * When enabled, the terminal will respond to keyboard protocol queries and
+     * allow programs to enable enhanced keyboard reporting. The default is
+     * false.
+     *
+     * [0]: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+     */
+    kittyKeyboard?: boolean;
+
+    /**
+     * Whether [SGR 221 (not bold) and SGR 222 (not faint) are enabled][0].
+     * These are kitty extensions that allow resetting bold and faint
+     * independently. The default is true.
+     *
+     * [0]: https://sw.kovidgoyal.net/kitty/misc-protocol/
+     */
+    kittySgrBoldFaintControl?: boolean;
+
+    /**
+     * Whether [win32-input-mode][0] (`DECSET 9001`) is enabled. When enabled,
+     * the terminal will allow programs to enable win32 INPUT_RECORD  keyboard
+     * reporting via `CSI ? 9001 h`. The default is false.
+     *
+     * [0]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md
+     */
+    win32InputMode?: boolean;
+
+    /**
+     * Whether [color scheme query and notification][0] (`CSI ? 996 n` and
+     * `DECSET 2031`) is enabled. When enabled, the terminal will respond to
+     * color scheme queries with `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n`
+     * (light) based on the relative luminance of the background and foreground
+     * theme colors. Programs can enable unsolicited notifications via
+     * `CSI ? 2031 h`. The default is true.
+     *
+     * [0]: https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
+     */
+    colorSchemeQuery?: boolean;
   }
 
   /**
@@ -615,21 +648,18 @@ declare module '@xterm/headless' {
     readonly cols: number;
 
     /**
-     * (EXPERIMENTAL) The terminal's current buffer, this might be either the
-     * normal buffer or the alt buffer depending on what's running in the
-     * terminal.
+     * Access to the terminal's normal and alt buffer.
      */
     readonly buffer: IBufferNamespace;
 
     /**
-     * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
-     * buffer is active this will always return [].
+     * Get all markers registered against the buffer. If the alt buffer is
+     * active this will always return [].
      */
     readonly markers: ReadonlyArray<IMarker>;
 
     /**
-     * (EXPERIMENTAL) Get the parser interface to register
-     * custom escape sequence handlers.
+     * Get the parser interface to register custom escape sequence handlers.
      */
     readonly parser: IParser;
 
@@ -729,6 +759,17 @@ declare module '@xterm/headless' {
      * @returns an `IDisposable` to stop listening.
      */
     onLineFeed: IEvent<void>;
+
+    /**
+     * Adds an event listener for when rows are _requested_ to be rendered. The
+     * event value contains the start row and end rows of the rendered area
+     * (ranges from `0` to `Terminal.rows - 1`). This differs from the regular
+     * xterm.js in that it doesn't actually do any rendering but requests
+     * rendering from the outside. This is useful for implementing a custom
+     * renderer on top of xterm-headless.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onRender: IEvent<{ start: number, end: number }>;
 
     /**
      * Adds an event listener for when data has been parsed by the terminal,
@@ -1177,6 +1218,26 @@ declare module '@xterm/headless' {
 
     /** Whether the cell has the default attribute (no color or style). */
     isAttributeDefault(): boolean;
+
+    /** Gets the underline style. */
+    getUnderlineStyle(): number;
+    /** Gets the underline color number. */
+    getUnderlineColor(): number;
+    /** Gets the underline color mode. */
+    getUnderlineColorMode(): number;
+    /** Whether the cell is using the RGB underline color mode. */
+    isUnderlineColorRGB(): boolean;
+    /** Whether the cell is using the palette underline color mode. */
+    isUnderlineColorPalette(): boolean;
+    /** Whether the cell is using the default underline color mode. */
+    isUnderlineColorDefault(): boolean;
+
+    /**
+     * Compares the cell's attributes (colors and styles) with another cell.
+     * This does not compare the cell's content and excludes URL ids and
+     * underline variant offsets.
+     */
+    attributesEquals(other: IBufferCell): boolean;
   }
 
   /**
@@ -1265,7 +1326,7 @@ declare module '@xterm/headless' {
      * @param id Specifies the function identifier under which the callback
      * gets registered, e.g. {intermediates: '%' final: 'G'} for
      * default charset selection.
-     * @param callback The function to handle the sequence.
+     * @param handler The function to handle the sequence.
      * Return true if the sequence was handled; false if we should try
      * a previous handler (set by addEscHandler or setEscHandler).
      * The most recently added handler is tried first.
@@ -1290,6 +1351,24 @@ declare module '@xterm/headless' {
      * @returns An IDisposable you can call to remove this handler.
      */
     registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
+    /**
+     * Adds a handler for APC escape sequences.
+     * @param ident The identifier (first character) of the sequence as a
+     * character code, e.g. 71 for 'G' (Kitty graphics protocol).
+     * @param callback The function to handle the sequence. Note that the
+     * function will only be called once if the sequence finished successfully.
+     * There is currently no way to intercept smaller data chunks, data chunks
+     * will be stored up until the sequence is finished. Since APC sequences are
+     * not limited by the amount of data this might impose a problem for big
+     * payloads. Currently xterm.js limits APC payload to 10 MB which should
+     * give enough room for most use cases. The callback is called with APC data
+     * string (excluding the identifier character). Return true if the sequence
+     * was handled; false if we should try a previous handler. The most recently
+     * added handler is tried first.
+     * @returns An IDisposable you can call to remove this handler.
+     */
+    registerApcHandler(ident: number, callback: (data: string) => boolean): IDisposable;
   }
 
   /**
@@ -1371,12 +1450,23 @@ declare module '@xterm/headless' {
      */
     readonly sendFocusMode: boolean;
     /**
+     * Show Cursor (DECTCEM): `CSI ? 2 5 h`
+     */
+    readonly showCursor: boolean;
+    /**
      * Synchronized Output Mode: `CSI ? 2 0 2 6 h`
      *
      * When enabled, output is buffered and only rendered when the mode is
      * disabled, allowing for atomic screen updates without tearing.
      */
     readonly synchronizedOutputMode: boolean;
+    /**
+     * Win32 Input Mode: `CSI ? 9 0 0 1 h`
+     *
+     * When enabled, keyboard input is sent as Win32 INPUT_RECORD format:
+     * `CSI Vk ; Sc ; Uc ; Kd ; Cs ; Rc _`
+     */
+    readonly win32InputMode: boolean;
     /**
      * Auto-Wrap Mode (DECAWM): `CSI ? 7 h`
      */

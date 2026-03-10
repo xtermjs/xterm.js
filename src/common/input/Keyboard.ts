@@ -99,7 +99,13 @@ export function evaluateKeyboardEvent(
       break;
     case 13:
       // return/enter
-      result.key = ev.altKey ? C0.ESC + C0.CR : C0.CR;
+      if (ev.key === 'c' && ev.ctrlKey) {
+        // HACK: Safari on iPad, iOS, AppleVisionPro sends key 13 when typing ctrl-c on hardware
+        // keyboard
+        result.key = C0.ETX;
+      } else {
+        result.key = ev.altKey ? C0.ESC + C0.CR : C0.CR;
+      }
       result.cancel = true;
       break;
     case 27:
@@ -315,6 +321,8 @@ export function evaluateKeyboardEvent(
           result.key = String.fromCharCode(ev.keyCode - 51 + 27);
         } else if (ev.keyCode === 56) {
           result.key = C0.DEL;
+        } else if (ev.key === '/') {
+          result.key = C0.US; // https://github.com/xtermjs/xterm.js/issues/5457
         } else if (ev.keyCode === 219) {
           result.key = C0.ESC;
         } else if (ev.keyCode === 220) {
@@ -358,12 +366,11 @@ export function evaluateKeyboardEvent(
         // Include only keys that that result in a _single_ character; don't include num lock,
         // volume up, etc.
         result.key = ev.key;
-      } else if (ev.key && ev.ctrlKey) {
-        if (ev.key === '_') { // ^_
-          result.key = C0.US;
-        }
-        if (ev.key === '@') { // ^ + shift + 2 = ^ + @
-          result.key = C0.NUL;
+      } else if (ev.key && ev.ctrlKey && ev.shiftKey) {
+        switch (ev.code) {
+          case 'Minus':  result.key = C0.US;  break; // ^_ (Ctrl+Shift+-_
+          case 'Digit2': result.key = C0.NUL; break; // ^@ (Ctrl+Shift+2)
+          case 'Digit6': result.key = C0.RS;  break; // ^^ (Ctrl+Shift+6)
         }
       }
       break;

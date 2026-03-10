@@ -26,7 +26,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
     ctrlKey: partialEvent.ctrlKey || false,
     shiftKey: partialEvent.shiftKey || false,
     metaKey: partialEvent.metaKey || false,
-    keyCode: partialEvent.keyCode !== undefined ? partialEvent.keyCode : 0,
+    keyCode: partialEvent.keyCode ?? 0,
     code: partialEvent.code || '',
     key: partialEvent.key || '',
     type: partialEvent.type || ''
@@ -350,7 +350,15 @@ describe('Keyboard', () => {
     });
 
     it('should return proper sequence for ctrl+@', () => {
-      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 50, key: '@' }).key, '\x00');
+      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 50, code: 'Digit2', key: '@' }).key, '\x00');
+    });
+
+    it('should return proper sequence for ctrl+^', () => {
+      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 54, code: 'Digit6', key: '^' }).key, '\x1e');
+    });
+
+    it('should return proper sequence for ctrl+_', () => {
+      assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 189, code: 'Minus', key: '_' }).key, '\x1f');
     });
 
   });

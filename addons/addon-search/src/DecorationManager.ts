@@ -5,7 +5,7 @@
 
 import type { Terminal, IDisposable, IDecoration } from '@xterm/xterm';
 import type { ISearchDecorationOptions } from '@xterm/addon-search';
-import { dispose, Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { dispose, Disposable, toDisposable } from 'common/Lifecycle';
 import type { ISearchResult } from './SearchEngine';
 
 /**
@@ -135,6 +135,7 @@ export class DecorationManager extends Disposable {
         marker,
         x: range[1],
         width: range[2],
+        layer: isActiveResult ? 'top' : 'bottom',
         backgroundColor: isActiveResult ? options.activeMatchBackground : options.matchBackground,
         overviewRulerOptions: this._highlightedLines.has(marker.line) ? undefined : {
           color: isActiveResult ? options.activeMatchColorOverviewRuler : options.matchOverviewRuler,

@@ -5,10 +5,15 @@
 
 import type { ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { ImageAddon as IImageApi } from '@xterm/addon-image';
+import { Emitter, type IEvent } from 'common/Event';
 import { IIPHandler } from './IIPHandler';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
+import { KittyGraphicsHandler } from './kitty/KittyGraphicsHandler';
+import { KittyImageStorage } from './kitty/KittyImageStorage';
 import { SixelHandler } from './SixelHandler';
+import { SixelImageStorage } from './SixelImageStorage';
+import { IIPImageStorage } from './IIPImageStorage';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
 
 // default values of addon ctor options
@@ -22,7 +27,9 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   storageLimit: 128,
   showPlaceholder: true,
   iipSupport: true,
-  iipSizeLimit: 20000000
+  iipSizeLimit: 20000000,
+  kittySupport: true,
+  kittySizeLimit: 20000000
 };
 
 // max palette size supported by the sixel lib (compile time setting)
@@ -48,7 +55,7 @@ const enum GaStatus {
 }
 
 
-export class ImageAddon implements ITerminalAddon , IImageApi {
+export class ImageAddon implements ITerminalAddon, IImageApi {
   private _opts: IImageAddonOptions;
   private _defaultOpts: IImageAddonOptions;
   private _storage: ImageStorage | undefined;
@@ -56,6 +63,8 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
   private _disposables: IDisposable[] = [];
   private _terminal: ITerminalExt | undefined;
   private _handlers: Map<String, IResetHandler> = new Map();
+  private readonly _onImageAdded = new Emitter<void>();
+  public readonly onImageAdded: IEvent<void> = this._onImageAdded.event;
 
   constructor(opts?: Partial<IImageAddonOptions>) {
     this._opts = Object.assign({}, DEFAULT_OPTIONS, opts);
@@ -68,6 +77,7 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
     }
     this._disposables.length = 0;
     this._handlers.clear();
+    this._onImageAdded.dispose();
   }
 
   private _disposeLater(...args: IDisposable[]): void {
@@ -82,6 +92,7 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
     // internal data structures
     this._renderer = new ImageRenderer(terminal);
     this._storage = new ImageStorage(terminal, this._renderer, this._opts);
+    this._storage.onImageAdded = () => this._onImageAdded.fire();
 
     // enable size reports
     if (this._opts.enableSizeReports) {
@@ -90,7 +101,7 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
       // windowOptions.getCellSizePixels = true;
       // windowOptions.getWinSizeChars = true;
       // terminal.setOption('windowOptions', windowOptions);
-      const windowOps = terminal.options.windowOptions || {};
+      const windowOps = terminal.options.windowOptions ?? {};
       windowOps.getWinSizePixels = true;
       windowOps.getCellSizePixels = true;
       windowOps.getWinSizeChars = true;
@@ -129,7 +140,8 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
 
     // SIXEL handler
     if (this._opts.sixelSupport) {
-      const sixelHandler = new SixelHandler(this._opts, this._storage!, terminal);
+      const sixelStorage = new SixelImageStorage(this._storage!, this._opts, this._renderer!, terminal);
+      const sixelHandler = new SixelHandler(this._opts, sixelStorage, terminal);
       this._handlers.set('sixel', sixelHandler);
       this._disposeLater(
         terminal._core._inputHandler._parser.registerDcsHandler({ final: 'q' }, sixelHandler)
@@ -138,10 +150,23 @@ export class ImageAddon implements ITerminalAddon , IImageApi {
 
     // iTerm IIP handler
     if (this._opts.iipSupport) {
-      const iipHandler = new IIPHandler(this._opts, this._renderer!, this._storage!, terminal);
+      const iipStorage = new IIPImageStorage(this._storage!);
+      const iipHandler = new IIPHandler(this._opts, this._renderer!, iipStorage, terminal);
       this._handlers.set('iip', iipHandler);
       this._disposeLater(
         terminal._core._inputHandler._parser.registerOscHandler(1337, iipHandler)
+      );
+    }
+
+    // Kitty graphics handler
+    if (this._opts.kittySupport) {
+      const kittyStorage = new KittyImageStorage(this._storage!);
+      const kittyHandler = new KittyGraphicsHandler(this._opts, this._renderer!, kittyStorage, terminal);
+      this._handlers.set('kitty', kittyHandler);
+      this._disposeLater(
+        kittyStorage,
+        kittyHandler,
+        terminal._core._inputHandler._parser.registerApcHandler(0x47, kittyHandler)
       );
     }
   }

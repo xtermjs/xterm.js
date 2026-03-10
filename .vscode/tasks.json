@@ -10,12 +10,21 @@
   "tasks": [
     // Compound tasks
     {
-      "label": "Development",
-      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo"],
+      "label": "dev",
+      "detail": "Runs all tasks required to run the demo in a single terminal using concurrently. This does not support problem matching.",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
       "group": {
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "dev (separate terminals)",
+      "detail": "Runs all tasks required to run the demo in separate terminals. This does support problem matching.",
+      "dependsOn": ["demo-server", "tsc", "esbuild", "esbuild-demo-client", "esbuild-demo-server"],
+      "group": "build"
     },
 
     // Demo
@@ -55,9 +64,21 @@
       }
     },
     {
-      "label": "esbuild-demo",
+      "label": "esbuild-demo-client",
       "type": "npm",
-      "script": "esbuild-demo-watch",
+      "script": "esbuild-demo-client-watch",
+      "dependsOn": ["esbuild", "tsc"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$esbuild-watch",
+      "presentation": {
+        "group": "xterm-demo"
+      }
+    },
+    {
+      "label": "esbuild-demo-server",
+      "type": "npm",
+      "script": "esbuild-demo-server-watch",
       "dependsOn": ["esbuild", "tsc"],
       "group": "build",
       "isBackground": true,

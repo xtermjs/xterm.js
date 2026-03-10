@@ -5,12 +5,13 @@
 
 import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
-import type { IRenderDimensions } from 'browser/renderer/shared/Types';
+import type { IRenderDimensions as IRenderDimensionsInternal } from 'browser/renderer/shared/Types';
 import type { IRenderService } from 'browser/services/Services';
 import type { ICoreTerminal, IDisposable, IMarker } from 'common/Types';
 import * as playwright from '@playwright/test';
-import { PageFunction } from 'playwright-core/types/structs';
-import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
+import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, IRenderDimensions, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';
+
+type PageFunction<Arg, R> = (arg: Arg) => R | Promise<R>;
 
 export interface ITestContext {
   browser: Browser;
@@ -46,19 +47,17 @@ class EventEmitter<T, U = void> {
   private _disposed: boolean = false;
 
   public get event(): IEvent<T, U> {
-    if (!this._event) {
-      this._event = (listener: (arg1: T, arg2: U) => any) => {
-        this._listeners.add(listener);
-        const disposable = {
-          dispose: () => {
-            if (!this._disposed) {
-              this._listeners.delete(listener);
-            }
+    this._event ??= (listener: (arg1: T, arg2: U) => any) => {
+      this._listeners.add(listener);
+      const disposable = {
+        dispose: () => {
+          if (!this._disposed) {
+            this._listeners.delete(listener);
           }
-        };
-        return disposable;
+        }
       };
-    }
+      return disposable;
+    };
     return this._event;
   }
 
@@ -108,15 +107,16 @@ type PlaywrightApiProxy<TBaseInterface, TAsyncPropOverrides extends keyof TBaseI
 );
 
 interface ITerminalProxyCustomMethods {
-  evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T>;
+  evaluate<T>(pageFunction: PageFunction<Terminal[], T>): Promise<T>;
   write(data: string | Uint8Array): Promise<void>;
 }
 
 type TerminalProxyAsyncPropOverrides = 'cols' | 'rows' | 'modes';
 type TerminalProxyAsyncMethodOverrides = 'hasSelection' | 'getSelection' | 'getSelectionPosition' | 'registerMarker' | 'registerDecoration';
-type TerminalProxyCustomOverrides = 'buffer' | (
+type TerminalProxyCustomOverrides = 'buffer' | 'dimensions' | (
   // The below are not implemented yet
   'element' |
+  'screenElement' |
   'textarea' |
   'markers' |
   'unicode' |
@@ -150,6 +150,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this._page.exposeFunction('onSelectionChange', () => this._onSelectionChange.fire());
     await this._page.exposeFunction('onTitleChange', (e: string) => this._onTitleChange.fire(e));
     await this._page.exposeFunction('onWriteParsed', () => this._onWriteParsed.fire());
+    await this._page.exposeFunction('onDimensionsChange', (e: IRenderDimensions) => this._onDimensionsChange.fire(e));
   }
 
   /**
@@ -168,6 +169,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     this._onSelectionChange.dispose();
     this._onTitleChange.dispose();
     this._onWriteParsed.dispose();
+    this._onDimensionsChange.dispose();
 
     this._onBell = new EventEmitter();
     this._onBinary = new EventEmitter();
@@ -181,6 +183,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     this._onSelectionChange = new EventEmitter();
     this._onTitleChange = new EventEmitter();
     this._onWriteParsed = new EventEmitter();
+    this._onDimensionsChange = new EventEmitter();
 
     await this.evaluate(([term]) => term.onBell((window as any).onBell));
     await this.evaluate(([term]) => term.onBinary((window as any).onBinary));
@@ -194,6 +197,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
     await this.evaluate(([term]) => term.onSelectionChange((window as any).onSelectionChange));
     await this.evaluate(([term]) => term.onTitleChange((window as any).onTitleChange));
     await this.evaluate(([term]) => term.onWriteParsed((window as any).onWriteParsed));
+    await this.evaluate(([term]) => term.onDimensionsChange((window as any).onDimensionsChange));
   }
 
   // #region Events
@@ -215,6 +219,8 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
+  public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
   private _onSelectionChange = new EventEmitter<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
@@ -227,6 +233,7 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
   public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
   public get modes(): Promise<IModes> { return this.evaluate(([term]) => term.modes); }
+  public get dimensions(): Promise<IRenderDimensions | undefined> { return this.evaluate(([term]) => term.dimensions); }
   // #endregion
 
   // #region Complex properties
@@ -282,11 +289,11 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
   public async clearTextureAtlas(): Promise<void> { return this.evaluate(([term]) => term.clearTextureAtlas()); }
   // #endregion
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<Terminal[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this.getHandle()]);
   }
 
-  public async evaluateHandle<T>(pageFunction: PageFunction<JSHandle<Terminal>[], T>): Promise<JSHandle<T>> {
+  public async evaluateHandle<T>(pageFunction: PageFunction<Terminal[], T>): Promise<JSHandle<T>> {
     return this._page.evaluateHandle(pageFunction, [await this.getHandle()]);
   }
 
@@ -336,7 +343,7 @@ class TerminalBufferProxy /* implements EnsureAsyncProperties<IBuffer>*/ {
     return undefined;
   }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBuffer>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<IBuffer[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this._handle]);
   }
 }
@@ -367,7 +374,7 @@ class TerminalBufferLine {
     return undefined;
   }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferLine>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<IBufferLine[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
   }
 }
@@ -380,10 +387,35 @@ class TerminalBufferCell {
   ) {
   }
 
-  public getWidth(): Promise<number> { return this.evaluate(([line]) => line.getWidth()); }
-  public getChars(): Promise<string> { return this.evaluate(([line]) => line.getChars()); }
+  public getWidth(): Promise<number> { return this.evaluate(([cell]) => cell.getWidth()); }
+  public getChars(): Promise<string> { return this.evaluate(([cell]) => cell.getChars()); }
+  public getCode(): Promise<number> { return this.evaluate(([cell]) => cell.getCode()); }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<IBufferCell>[], T>): Promise<T> {
+  public getFgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColorMode()); }
+  public getBgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColorMode()); }
+  public getFgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColor()); }
+  public getBgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColor()); }
+
+  public isBold(): Promise<number> { return this.evaluate(([cell]) => cell.isBold()); }
+  public isItalic(): Promise<number> { return this.evaluate(([cell]) => cell.isItalic()); }
+  public isDim(): Promise<number> { return this.evaluate(([cell]) => cell.isDim()); }
+  public isUnderline(): Promise<number> { return this.evaluate(([cell]) => cell.isUnderline()); }
+  public isBlink(): Promise<number> { return this.evaluate(([cell]) => cell.isBlink()); }
+  public isInverse(): Promise<number> { return this.evaluate(([cell]) => cell.isInverse()); }
+  public isInvisible(): Promise<number> { return this.evaluate(([cell]) => cell.isInvisible()); }
+  public isStrikethrough(): Promise<number> { return this.evaluate(([cell]) => cell.isStrikethrough()); }
+  public isOverline(): Promise<number> { return this.evaluate(([cell]) => cell.isOverline()); }
+
+  public isFgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgRGB()); }
+  public isBgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgRGB()); }
+  public isFgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgPalette()); }
+  public isBgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgPalette()); }
+  public isFgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgDefault()); }
+  public isBgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgDefault()); }
+
+  public isAttributeDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isAttributeDefault()); }
+
+  public async evaluate<T>(pageFunction: PageFunction<IBufferCell[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
   }
 }
@@ -396,7 +428,7 @@ class TerminalCoreProxy {
   }
 
   public get isDisposed(): Promise<boolean> { return this.evaluate(([core]) => (core as any)._isDisposed); }
-  public get renderDimensions(): Promise<IRenderDimensions> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
+  public get renderDimensions(): Promise<IRenderDimensionsInternal> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
 
   public async triggerBinaryEvent(data: string): Promise<void> {
     return this._page.evaluate(([core, data]) => core.coreService.triggerBinaryEvent(data), [await this._getCoreHandle(), data] as const);
@@ -407,7 +439,7 @@ class TerminalCoreProxy {
     return this._proxy.evaluateHandle(([term]) => (term as any)._core as ICoreTerminal);
   }
 
-  public async evaluate<T>(pageFunction: PageFunction<JSHandle<ICoreTerminal>[], T>): Promise<T> {
+  public async evaluate<T>(pageFunction: PageFunction<ICoreTerminal[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [await this._getCoreHandle()]);
   }
 }
@@ -493,9 +525,7 @@ interface IPollForOptions<T> {
 }
 
 export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() => MaybeAsync<T>), val: T, preFn?: () => Promise<void>, options?: IPollForOptions<T>): Promise<void> {
-  if (!options) {
-    options = {};
-  }
+  options ??= {};
   options.stack ??= new Error().stack;
   if (preFn) {
     await preFn();
@@ -513,15 +543,13 @@ export async function pollFor<T>(page: playwright.Page, evalOrFn: string | (() =
     equalityCheck = true;
     try {
       deepStrictEqual(result, val);
-    } catch (e) {
+    } catch {
       equalityCheck = false;
     }
   }
 
   if (!equalityCheck) {
-    if (options.maxDuration === undefined) {
-      options.maxDuration = 2000;
-    }
+    options.maxDuration ??= 2000;
     if (options.maxDuration <= 0) {
       deepStrictEqual(result, val, ([
         `pollFor max duration exceeded.`,

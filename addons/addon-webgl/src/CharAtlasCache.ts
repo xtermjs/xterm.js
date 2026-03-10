@@ -8,6 +8,7 @@ import { ITerminalOptions, Terminal } from '@xterm/xterm';
 import { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { ICharAtlasConfig, ITextureAtlas } from './Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
+import type { ILogService } from 'common/services/Services';
 
 interface ITextureAtlasCacheEntry {
   atlas: ITextureAtlas;
@@ -32,9 +33,10 @@ export function acquireTextureAtlas(
   deviceCharWidth: number,
   deviceCharHeight: number,
   devicePixelRatio: number,
-  deviceMaxTextureSize: number
+  deviceMaxTextureSize: number,
+  customGlyphs: boolean = true
 ): ITextureAtlas {
-  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, options, colors, devicePixelRatio, deviceMaxTextureSize);
+  const newConfig = generateConfig(deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, options, colors, devicePixelRatio, deviceMaxTextureSize, customGlyphs);
 
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {
@@ -66,8 +68,9 @@ export function acquireTextureAtlas(
   }
 
   const core: ITerminal = (terminal as any)._core;
+  const logService = (core as any)._logService as ILogService;
   const newEntry: ITextureAtlasCacheEntry = {
-    atlas: new TextureAtlas(document, newConfig, core.unicodeService),
+    atlas: new TextureAtlas(document, newConfig, core.unicodeService, logService),
     config: newConfig,
     ownedBy: [terminal]
   };

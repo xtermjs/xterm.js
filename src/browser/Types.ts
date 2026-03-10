@@ -5,9 +5,9 @@
 
 import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
-import { IDisposable, Terminal as ITerminalApi } from '@xterm/xterm';
+import { IDisposable, IRenderDimensions as IRenderDimensionsApi, Terminal as ITerminalApi } from '@xterm/xterm';
 import { channels, css } from 'common/Color';
-import type { Event } from 'vs/base/common/event';
+import type { IEvent } from 'common/Event';
 
 /**
  * A portion of the public API that are implemented identially internally and simply passed through.
@@ -21,13 +21,14 @@ export interface ITerminal extends InternalPassthroughApis, ICoreTerminal {
   linkifier: ILinkifier2 | undefined;
   options: Required<ITerminalOptions>;
 
-  onBlur: Event<void>;
-  onFocus: Event<void>;
-  onA11yChar: Event<string>;
-  onA11yTab: Event<number>;
-  onWillOpen: Event<HTMLElement>;
+  readonly dimensions: IRenderDimensionsApi | undefined;
 
-  cancel(ev: MouseEvent | WheelEvent | KeyboardEvent | InputEvent, force?: boolean): boolean | void;
+  onBlur: IEvent<void>;
+  onFocus: IEvent<void>;
+  onDimensionsChange: IEvent<IRenderDimensionsApi>;
+  onA11yChar: IEvent<string>;
+  onA11yTab: IEvent<number>;
+  onWillOpen: IEvent<HTMLElement>;
 }
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
@@ -99,7 +100,7 @@ export interface IPartialColorSet {
 
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
-  readonly onRequestScrollLines: Event<{ amount: number, suppressScrollEvent: boolean }>;
+  readonly onRequestScrollLines: IEvent<{ amount: number, suppressScrollEvent: boolean }>;
   syncScrollArea(immediate?: boolean, force?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   getBufferElements(startLine: number, endLine?: number): { bufferElements: HTMLElement[], cursorElement?: HTMLElement };
@@ -129,8 +130,8 @@ export interface ILinkWithState {
 }
 
 export interface ILinkifier2 extends IDisposable {
-  onShowLinkUnderline: Event<ILinkifierEvent>;
-  onHideLinkUnderline: Event<ILinkifierEvent>;
+  onShowLinkUnderline: IEvent<ILinkifierEvent>;
+  onHideLinkUnderline: IEvent<ILinkifierEvent>;
   readonly currentLink: ILinkWithState | undefined;
 }
 

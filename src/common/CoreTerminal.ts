@@ -37,8 +37,8 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
-import { Emitter, Event } from 'vs/base/common/event';
-import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Emitter, EventUtils, type IEvent } from 'common/Event';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -65,6 +65,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   public readonly onData = this._onData.event;
   protected _onLineFeed = this._register(new Emitter<void>());
   public readonly onLineFeed = this._onLineFeed.event;
+  protected readonly _onRender = this._register(new Emitter<{ start: number, end: number }>());
+  public readonly onRender = this._onRender.event;
   private readonly _onResize = this._register(new Emitter<{ cols: number, rows: number }>());
   public readonly onResize = this._onResize.event;
   protected readonly _onWriteParsed = this._register(new Emitter<void>());
@@ -76,7 +78,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    */
   protected _onScrollApi?: Emitter<number>;
   protected _onScroll = this._register(new Emitter<IScrollEvent>());
-  public get onScroll(): Event<number> {
+  public get onScroll(): IEvent<number> {
     if (!this._onScrollApi) {
       this._onScrollApi = this._register(new Emitter<number>());
       this._onScroll.event(ev => {
@@ -105,10 +107,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService = new InstantiationService();
     this.optionsService = this._register(new OptionsService(options));
     this._instantiationService.setService(IOptionsService, this.optionsService);
-    this._bufferService = this._register(this._instantiationService.createInstance(BufferService));
-    this._instantiationService.setService(IBufferService, this._bufferService);
     this._logService = this._register(this._instantiationService.createInstance(LogService));
     this._instantiationService.setService(ILogService, this._logService);
+    this._bufferService = this._register(this._instantiationService.createInstance(BufferService));
+    this._instantiationService.setService(IBufferService, this._bufferService);
     this.coreService = this._register(this._instantiationService.createInstance(CoreService));
     this._instantiationService.setService(ICoreService, this.coreService);
     this.coreMouseService = this._register(this._instantiationService.createInstance(CoreMouseService));
@@ -123,23 +125,22 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Register input handler and handle/forward events
     this._inputHandler = this._register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));
-    this._register(Event.forward(this._inputHandler.onLineFeed, this._onLineFeed));
-    this._register(this._inputHandler);
+    this._register(EventUtils.forward(this._inputHandler.onLineFeed, this._onLineFeed));
 
     // Setup listeners
-    this._register(Event.forward(this._bufferService.onResize, this._onResize));
-    this._register(Event.forward(this.coreService.onData, this._onData));
-    this._register(Event.forward(this.coreService.onBinary, this._onBinary));
+    this._register(EventUtils.forward(this._bufferService.onResize, this._onResize));
+    this._register(EventUtils.forward(this.coreService.onData, this._onData));
+    this._register(EventUtils.forward(this.coreService.onBinary, this._onBinary));
     this._register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom(true)));
     this._register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
-    this._register(this.optionsService.onMultipleOptionChange(['windowsMode', 'windowsPty'], () => this._handleWindowsPtyOptionChange()));
+    this._register(this.optionsService.onMultipleOptionChange(['windowsPty'], () => this._handleWindowsPtyOptionChange()));
     this._register(this._bufferService.onScroll(() => {
       this._onScroll.fire({ position: this._bufferService.buffer.ydisp });
       this._inputHandler.markRangeDirty(this._bufferService.buffer.scrollTop, this._bufferService.buffer.scrollBottom);
     }));
     // Setup WriteBuffer
     this._writeBuffer = this._register(new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult)));
-    this._register(Event.forward(this._writeBuffer.onWriteParsed, this._onWriteParsed));
+    this._register(EventUtils.forward(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
@@ -174,6 +175,10 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     x = Math.max(x, MINIMUM_COLS);
     y = Math.max(y, MINIMUM_ROWS);
+
+    // Flush pending writes before resize to avoid race conditions where async
+    // writes are processed with incorrect dimensions
+    this._writeBuffer.flushSync();
 
     this._bufferService.resize(x, y);
   }
@@ -237,6 +242,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     return this._inputHandler.registerOscHandler(ident, callback);
   }
 
+  /** Add handler for APC escape sequence. See xterm.d.ts for details. */
+  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerApcHandler(ident, callback);
+  }
+
   protected _setup(): void {
     this._handleWindowsPtyOptionChange();
   }
@@ -255,8 +265,6 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     const windowsPty = this.optionsService.rawOptions.windowsPty;
     if (windowsPty && windowsPty.buildNumber !== undefined && windowsPty.buildNumber !== undefined) {
       value = !!(windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
-    } else if (this.optionsService.rawOptions.windowsMode) {
-      value = true;
     }
     if (value) {
       this._enableWindowsWrappingHeuristics();

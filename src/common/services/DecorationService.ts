@@ -4,16 +4,18 @@
  */
 
 import { css } from 'common/Color';
-import { Disposable, DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
-import { IDecorationService, IInternalDecoration } from 'common/services/Services';
+import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
+import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 // Work variables to avoid garbage collection
 let $xmin = 0;
 let $xmax = 0;
+let $ymin = 0;
+let $ymax = 0;
 
 export class DecorationService extends Disposable implements IDecorationService {
   public serviceBrand: any;
@@ -23,7 +25,7 @@ export class DecorationService extends Disposable implements IDecorationService 
    * while marker line values do change, they should all change by the same amount so this should
    * never become out of order.
    */
-  private readonly _decorations: SortedList<IInternalDecoration> = new SortedList(e => e?.marker.line);
+  private readonly _decorations: SortedList<IInternalDecoration>;
 
   private readonly _onDecorationRegistered = this._register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRegistered = this._onDecorationRegistered.event;
@@ -32,8 +34,10 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
 
-  constructor() {
+  constructor(@ILogService private readonly _logService: ILogService) {
     super();
+
+    this._decorations = new SortedList(e => e?.marker.line, this._logService);
 
     this._register(toDisposable(() => this.reset()));
   }
@@ -70,7 +74,14 @@ export class DecorationService extends Disposable implements IDecorationService 
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;
     let xmax = 0;
-    for (const d of this._decorations.getKeyIterator(line)) {
+    let ymin = 0;
+    let ymax = 0;
+    for (const d of this._decorations.values()) {
+      ymin = d.marker.line;
+      ymax = ymin + (d.options.height ?? 1);
+      if (line < ymin || line >= ymax) {
+        continue;
+      }
       xmin = d.options.x ?? 0;
       xmax = xmin + (d.options.width ?? 1);
       if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
@@ -80,13 +91,18 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
-    this._decorations.forEachByKey(line, d => {
+    for (const d of this._decorations.values()) {
+      $ymin = d.marker.line;
+      $ymax = $ymin + (d.options.height ?? 1);
+      if (line < $ymin || line >= $ymax) {
+        continue;
+      }
       $xmin = d.options.x ?? 0;
       $xmax = $xmin + (d.options.width ?? 1);
       if (x >= $xmin && x < $xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
         callback(d);
       }
-    });
+    }
   }
 }
 

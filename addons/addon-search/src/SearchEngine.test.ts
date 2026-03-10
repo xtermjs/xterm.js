@@ -7,7 +7,7 @@ import { SearchEngine } from './SearchEngine';
 import { SearchLineCache } from './SearchLineCache';
 import { Terminal } from 'browser/public/Terminal';
 import type { ISearchOptions } from '@xterm/addon-search';
-import { DisposableStore } from 'vs/base/common/lifecycle';
+import { DisposableStore } from 'common/Lifecycle';
 
 function writeP(terminal: Terminal, data: string): Promise<void> {
   return new Promise(r => terminal.write(data, r));

@@ -65,7 +65,7 @@ describe('InputHandler', () => {
 
   beforeEach(() => {
     optionsService = new MockOptionsService();
-    bufferService = new BufferService(optionsService);
+    bufferService = new BufferService(optionsService, new MockLogService());
     bufferService.resize(80, 30);
     coreService = new CoreService(bufferService, new MockLogService(), optionsService);
     oscLinkService = new OscLinkService(bufferService);
@@ -199,6 +199,28 @@ describe('InputHandler', () => {
     assert.equal(bufferService.buffer.y, 2);
     assert.equal(inputHandler.curAttrData.fg, 3);
   });
+  describe('DECSC/DECRC - save and restore cursor', () => {
+    it('should save and restore origin mode', async () => {
+      assert.equal(coreService.decPrivateModes.origin, false);
+      await inputHandler.parseP('\x1b[?6h');
+      assert.equal(coreService.decPrivateModes.origin, true);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x1b[?6l');
+      assert.equal(coreService.decPrivateModes.origin, false);
+      await inputHandler.parseP('\x1b8');
+      assert.equal(coreService.decPrivateModes.origin, true);
+    });
+    it('should save and restore wraparound mode', async () => {
+      assert.equal(coreService.decPrivateModes.wraparound, true);
+      await inputHandler.parseP('\x1b[?7l');
+      assert.equal(coreService.decPrivateModes.wraparound, false);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x1b[?7h');
+      assert.equal(coreService.decPrivateModes.wraparound, true);
+      await inputHandler.parseP('\x1b8');
+      assert.equal(coreService.decPrivateModes.wraparound, false);
+    });
+  });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
@@ -246,6 +268,26 @@ describe('InputHandler', () => {
       // Reset bracketed paste mode
       inputHandler.resetModePrivate(Params.fromArray([2004]));
       assert.equal(coreService.decPrivateModes.bracketedPasteMode, false);
+    });
+    it('should toggle colorSchemeUpdates (DECSET 2031)', () => {
+      const coreService = new MockCoreService();
+      const optionsService = new MockOptionsService();
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      // Set color scheme updates mode (default colorSchemeQuery=true)
+      inputHandler.setModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, true);
+      // Reset color scheme updates mode
+      inputHandler.resetModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, false);
+    });
+    it('should not toggle colorSchemeUpdates when colorSchemeQuery is disabled', () => {
+      const coreService = new MockCoreService();
+      const optionsService = new MockOptionsService();
+      optionsService.rawOptions.vtExtensions = { colorSchemeQuery: false };
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      // Attempt to set color scheme updates mode
+      inputHandler.setModePrivate(Params.fromArray([2031]));
+      assert.equal(coreService.decPrivateModes.colorSchemeUpdates, false);
     });
   });
   describe('regression tests', function (): void {
@@ -619,6 +661,11 @@ describe('InputHandler', () => {
       await inputHandler.parseP('￥￥￥');
       assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
     });
+    it('should strip soft hyphens (U+00AD)', async () => {
+      await inputHandler.parseP('Soft\xadhy\xadphen');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'Softhyphen');
+      assert.strictEqual(bufferService.buffer.x, 10);
+    });
   });
 
   describe('alt screen', () => {
@@ -687,6 +734,22 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[2m');
       assert.equal(!!inputHandler.curAttrData.isDim(), true);
       await inputHandler.parseP('\x1b[22m');
+      assert.equal(!!inputHandler.curAttrData.isDim(), false);
+    });
+    it('SGR 221 resets bold only (kitty)', async () => {
+      await inputHandler.parseP('\x1b[1;2m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), true);
+      assert.equal(!!inputHandler.curAttrData.isDim(), true);
+      await inputHandler.parseP('\x1b[221m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), false);
+      assert.equal(!!inputHandler.curAttrData.isDim(), true);
+    });
+    it('SGR 222 resets faint only (kitty)', async () => {
+      await inputHandler.parseP('\x1b[1;2m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), true);
+      assert.equal(!!inputHandler.curAttrData.isDim(), true);
+      await inputHandler.parseP('\x1b[222m');
+      assert.equal(!!inputHandler.curAttrData.isBold(), true);
       assert.equal(!!inputHandler.curAttrData.isDim(), false);
     });
     it('italic', async () => {
@@ -1582,6 +1645,28 @@ describe('InputHandler', () => {
       assert.equal(bufferService.cols, 132);
     });
   });
+  describe('XTVERSION (CSI > q, CSI > 0 q)', () => {
+    it('should report xterm.js version', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>q');
+      assert.strictEqual(stack.length, 1);
+      assert.ok(stack[0].match(/^\x1bP>\|xterm\.js\(\d+\.\d+\.\d+(-beta\.\d+)?\)\x1b\\/));
+    });
+    it('should report xterm.js version for CSI > 0 q', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>0q');
+      assert.strictEqual(stack.length, 1);
+      assert.ok(stack[0].match(/^\x1bP>\|xterm\.js\(\d+\.\d+\.\d+(-beta\.\d+)?\)\x1b\\/));
+    });
+    it('should not report for CSI > 1 q', async () => {
+      const stack: string[] = [];
+      coreService.onData(data => stack.push(data));
+      await inputHandler.parseP('\x1b[>1q');
+      assert.strictEqual(stack.length, 0);
+    });
+  });
   describe('should correctly reset cells taken by wide chars', () => {
     beforeEach(async () => {
       bufferService.resize(10, 5);
@@ -2314,7 +2399,7 @@ describe('InputHandler', () => {
     });
     it('DEC privates with set/reset semantic', async () => {
       // initially reset
-      const reset = [1, 6, 9, 12, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004, 2026];
+      const reset = [1, 6, 9, 45, 66, 1000, 1002, 1003, 1004, 1006, 1016, 47, 1047, 1049, 2004, 2026];
       for (const mode of reset) {
         await inputHandler.parseP(`\x1b[?${mode}$p`);
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // initial reset
@@ -2338,6 +2423,23 @@ describe('InputHandler', () => {
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};1$y`);   // again set
       }
     });
+    it('DEC privates quirks', async () => {
+      // Cursor blink
+      const mode = 12;
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`); // initial reset
+      await inputHandler.parseP(`\x1b[?${mode}h`);
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`); // still reset
+
+      optionsService.options.quirks.allowSetCursorBlink = true;
+      await inputHandler.parseP(`\x1b[?${mode}h`);
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};1$y`); // now active
+      await inputHandler.parseP(`\x1b[?${mode}l`);
+      await inputHandler.parseP(`\x1b[?${mode}$p`);
+      assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // now inactive
+    });
     it('DEC privates perma modes', async () => {
       // [mode number, state value]
       const perma = [[3, 0], [8, 3], [67, 4], [1005, 4], [1015, 4], [1048, 1]];
@@ -2347,62 +2449,111 @@ describe('InputHandler', () => {
       }
     });
   });
-});
 
+  describe('InputHandler - kitty keyboard', () => {
+    let bufferService: IBufferService;
+    let coreService: ICoreService;
+    let optionsService: MockOptionsService;
+    let inputHandler: TestInputHandler;
 
-describe('InputHandler - async handlers', () => {
-  let bufferService: IBufferService;
-  let coreService: ICoreService;
-  let optionsService: MockOptionsService;
-  let inputHandler: TestInputHandler;
+    beforeEach(() => {
+      optionsService = new MockOptionsService({ vtExtensions: { kittyKeyboard: true } });
+      bufferService = new BufferService(optionsService, new MockLogService());
+      bufferService.resize(80, 30);
+      coreService = new CoreService(bufferService, new MockLogService(), optionsService);
+      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+    });
 
-  beforeEach(() => {
-    optionsService = new MockOptionsService();
-    bufferService = new BufferService(optionsService);
-    bufferService.resize(80, 30);
-    coreService = new CoreService(bufferService, new MockLogService(), optionsService);
-    coreService.onData(data => { console.log(data); });
+    describe('stack limit', () => {
+      it('should evict oldest entry when stack exceeds 16 entries', async () => {
+        for (let i = 1; i <= 20; i++) {
+          await inputHandler.parseP(`\x1b[>${i}u`);
+        }
+        assert.strictEqual(coreService.kittyKeyboard.mainStack.length, 16);
+        assert.strictEqual(coreService.kittyKeyboard.mainStack[0], 4);
+      });
+    });
 
-    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+    describe('buffer switch', () => {
+      it('should maintain separate flags for main and alt screens', async () => {
+        await inputHandler.parseP('\x1b[>5u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 5);
+        await inputHandler.parseP('\x1b[?1049h');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 0);
+        assert.strictEqual(coreService.kittyKeyboard.mainFlags, 5);
+        await inputHandler.parseP('\x1b[>7u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 7);
+        await inputHandler.parseP('\x1b[?1049l');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 5);
+        assert.strictEqual(coreService.kittyKeyboard.altFlags, 7);
+      });
+    });
+
+    describe('pop reset', () => {
+      it('should reset flags to 0 when stack is emptied', async () => {
+        await inputHandler.parseP('\x1b[>5u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 5);
+        await inputHandler.parseP('\x1b[<10u');
+        assert.strictEqual(coreService.kittyKeyboard.flags, 0);
+      });
+    });
   });
 
-  it('async CUP with CPR check', async () => {
-    const cup: number[][] = [];
-    const cpr: number[][] = [];
-    inputHandler.registerCsiHandler({ final: 'H' }, async params => {
-      cup.push(params.toArray() as number[]);
-      await new Promise(res => setTimeout(res, 50));
-      // late call of real repositioning
-      return inputHandler.cursorPosition(params);
+
+  describe('InputHandler - async handlers', () => {
+    let bufferService: IBufferService;
+    let coreService: ICoreService;
+    let optionsService: MockOptionsService;
+    let inputHandler: TestInputHandler;
+
+    beforeEach(() => {
+      optionsService = new MockOptionsService();
+      bufferService = new BufferService(optionsService, new MockLogService());
+      bufferService.resize(80, 30);
+      coreService = new CoreService(bufferService, new MockLogService(), optionsService);
+      coreService.onData(data => { console.log(data); });
+
+      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
     });
-    coreService.onData(data => {
-      const m = data.match(/\x1b\[(.*?);(.*?)R/);
-      if (m) {
-        cpr.push([parseInt(m[1]), parseInt(m[2])]);
-      }
+
+    it('async CUP with CPR check', async () => {
+      const cup: number[][] = [];
+      const cpr: number[][] = [];
+      inputHandler.registerCsiHandler({ final: 'H' }, async params => {
+        cup.push(params.toArray() as number[]);
+        await Promise.resolve();
+        // late call of real repositioning
+        return inputHandler.cursorPosition(params);
+      });
+      coreService.onData(data => {
+        const m = data.match(/\x1b\[(.*?);(.*?)R/);
+        if (m) {
+          cpr.push([parseInt(m[1]), parseInt(m[2])]);
+        }
+      });
+      await inputHandler.parseP('aaa\x1b[3;4H\x1b[6nbbb\x1b[6;8H\x1b[6n');
+      assert.deepEqual(cup, cpr);
     });
-    await inputHandler.parseP('aaa\x1b[3;4H\x1b[6nbbb\x1b[6;8H\x1b[6n');
-    assert.deepEqual(cup, cpr);
-  });
-  it('async OSC between', async () => {
-    inputHandler.registerOscHandler(1000, async data => {
-      await new Promise(res => setTimeout(res, 50));
-      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
-      assert.equal(data, 'some data');
-      return true;
+    it('async OSC between', async () => {
+      inputHandler.registerOscHandler(1000, async data => {
+        await Promise.resolve();
+        assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+        assert.equal(data, 'some data');
+        return true;
+      });
+      await inputHandler.parseP('hello world!\r\n\x1b]1000;some data\x07second line');
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
     });
-    await inputHandler.parseP('hello world!\r\n\x1b]1000;some data\x07second line');
-    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
-  });
-  it('async DCS between', async () => {
-    inputHandler.registerDcsHandler({ final: 'a' }, async (data, params) => {
-      await new Promise(res => setTimeout(res, 50));
-      assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
-      assert.equal(data, 'some data');
-      assert.deepEqual(params.toArray(), [1, 2]);
-      return true;
+    it('async DCS between', async () => {
+      inputHandler.registerDcsHandler({ final: 'a' }, async (data, params) => {
+        await Promise.resolve();
+        assert.deepEqual(getLines(bufferService, 2), ['hello world!', '']);
+        assert.equal(data, 'some data');
+        assert.deepEqual(params.toArray(), [1, 2]);
+        return true;
+      });
+      await inputHandler.parseP('hello world!\r\n\x1bP1;2asome data\x1b\\second line');
+      assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
     });
-    await inputHandler.parseP('hello world!\r\n\x1bP1;2asome data\x1b\\second line');
-    assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
   });
 });

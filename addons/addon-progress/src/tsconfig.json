@@ -15,11 +15,11 @@
       "../../../node_modules/@types/mocha"
     ],
     "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
       "browser/*": [
         "../../../src/browser/*"
-      ],
-      "vs/*": [
-        "../../../src/vs/*"
       ],
       "@xterm/addon-progress": [
         "../typings/addon-progress.d.ts"
@@ -35,7 +35,7 @@
       "path": "../../../src/browser"
     },
     {
-      "path": "../../../src/vs"
+      "path": "../../../src/common"
     }
   ]
 }

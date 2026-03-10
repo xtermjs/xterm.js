@@ -4,17 +4,21 @@
  */
 import { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
 import { ImageRenderer } from './ImageRenderer';
-import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
+import { IIPImageStorage } from './IIPImageStorage';
+import { CELL_SIZE_DEFAULT } from './ImageStorage';
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
-
-// eslint-disable-next-line
-declare const Buffer: any;
-
-// limit hold memory in base64 decoder
-const KEEP_DATA = 4194304;
+// Local const enum mirror - esbuild can't inline const enums from external packages
+const enum DecoderConst {
+  // Limit held memory in base64 decoder (encoded bytes).
+  KEEP_DATA = 4194304,
+  // Initial buffer allocation for the decoder.
+  INITIAL_DATA = 1048576,
+  // Local mirror of const enum (esbuild can't inline const enums from external packages)
+  OK = 0
+}
 
 // default IIP header values
 const DEFAULT_HEADER: IHeaderFields = {
@@ -31,15 +35,19 @@ export class IIPHandler implements IOscHandler, IResetHandler {
   private _aborted = false;
   private _hp = new HeaderParser();
   private _header: IHeaderFields = DEFAULT_HEADER;
-  private _dec = new Base64Decoder(KEEP_DATA);
+  private _dec: Base64Decoder;
   private _metrics = UNSUPPORTED_TYPE;
 
   constructor(
     private readonly _opts: IImageAddonOptions,
     private readonly _renderer: ImageRenderer,
-    private readonly _storage: ImageStorage,
+    private readonly _storage: IIPImageStorage,
     private readonly _coreTerminal: ITerminalExt
-  ) {}
+  ) {
+    const maxEncodedBytes = Math.ceil(this._opts.iipSizeLimit * 4 / 3);
+    const initialBytes = Math.min(DecoderConst.INITIAL_DATA, maxEncodedBytes);
+    this._dec = new Base64Decoder(DecoderConst.KEEP_DATA, maxEncodedBytes, initialBytes);
+  }
 
   public reset(): void {}
 
@@ -54,7 +62,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     if (this._aborted) return;
 
     if (this._hp.state === HeaderState.END) {
-      if (this._dec.put(data, start, end)) {
+      if ((this._dec.put(data.subarray(start, end)) as number) !== DecoderConst.OK) {
         this._dec.release();
         this._aborted = true;
       }
@@ -70,8 +78,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
           this._aborted = true;
           return;
         }
-        this._dec.init(this._header.size);
-        if (this._dec.put(data, dataPos, end)) {
+        this._dec.init();
+        if ((this._dec.put(data.subarray(dataPos, end)) as number) !== DecoderConst.OK) {
           this._dec.release();
           this._aborted = true;
         }
@@ -89,13 +97,15 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     let cond: number | boolean = true;
     if (cond = success) {
       if (cond = !this._dec.end()) {
-        this._metrics = imageType(this._dec.data8);
-        if (cond = this._metrics.mime !== 'unsupported') {
-          w = this._metrics.width;
-          h = this._metrics.height;
-          if (cond = w && h && w * h < this._opts.pixelLimit) {
-            [w, h] = this._resize(w, h).map(Math.floor);
-            cond = w && h && w * h < this._opts.pixelLimit;
+        if (cond = this._dec.data8.length === this._header.size) {
+          this._metrics = imageType(this._dec.data8);
+          if (cond = this._metrics.mime !== 'unsupported') {
+            w = this._metrics.width;
+            h = this._metrics.height;
+            if (cond = w && h && w * h < this._opts.pixelLimit) {
+              [w, h] = this._resize(w, h).map(Math.floor);
+              cond = w && h && w * h < this._opts.pixelLimit;
+            }
           }
         }
       }
@@ -105,7 +115,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       return true;
     }
 
-    const blob = new Blob([this._dec.data8], { type: this._metrics.mime });
+    // HACK: The types on Blob are too restrictive, this is a Uint8Array so the browser accepts it
+    const blob = new Blob([this._dec.data8 as Uint8Array<ArrayBuffer>], { type: this._metrics.mime });
     this._dec.release();
 
     if (!window.createImageBitmap) {

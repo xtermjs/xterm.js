@@ -4,8 +4,8 @@
  * @license MIT
  */
 
-import { Disposable } from 'vs/base/common/lifecycle';
-import { Emitter } from 'vs/base/common/event';
+import { Disposable } from 'common/Lifecycle';
+import { Emitter } from 'common/Event';
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
@@ -52,6 +52,38 @@ export class WriteBuffer extends Disposable {
 
   public handleUserInput(): void {
     this._didUserInput = true;
+  }
+
+  /**
+   * Flushes all pending writes synchronously. This is useful when you need to
+   * ensure all queued data is processed before performing an operation that
+   * depends upon everything being parsed like resize.
+   *
+   * Note: This is unreliable with async parser handlers as it does not wait for
+   * promises to resolve.
+   */
+  public flushSync(): void {
+    // exit early if another sync write loop is active
+    if (this._isSyncWriting) {
+      return;
+    }
+    this._isSyncWriting = true;
+
+    // Process all pending chunks synchronously
+    let chunk: string | Uint8Array | undefined;
+    while (chunk = this._writeBuffer.shift()) {
+      this._action(chunk);
+      const cb = this._callbacks.shift();
+      if (cb) cb();
+    }
+
+    // Reset buffer state
+    this._pendingData = 0;
+    this._bufferOffset = 0x7FFFFFFF;
+    this._writeBuffer.length = 0;
+    this._callbacks.length = 0;
+
+    this._isSyncWriting = false;
   }
 
   /**

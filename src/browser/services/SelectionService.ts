@@ -9,14 +9,14 @@ import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
-import { IBufferLine, IDisposable } from 'common/Types';
+import { IBufferLine, ICellData, IDisposable } from 'common/Types';
 import { getRangeLength } from 'common/buffer/BufferRange';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -532,6 +532,9 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   private _handleSingleClick(event: MouseEvent): void {
+    // Track if there was a selection before clearing
+    const hadSelection = this.hasSelection;
+
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
     this._activeSelectionMode = this.shouldColumnSelect(event) ? SelectionMode.COLUMN : SelectionMode.NORMAL;
@@ -542,6 +545,11 @@ export class SelectionService extends Disposable implements ISelectionService {
       return;
     }
     this._model.selectionEnd = undefined;
+
+    // Fire selection change event if a selection was cleared
+    if (hadSelection) {
+      this._fireOnSelectionChange(this._model.finalSelectionStart, this._model.finalSelectionEnd, false);
+    }
 
     // Ensure the line exists
     const line = this._bufferService.buffer.lines.get(this._model.selectionStart[1]);
@@ -1013,7 +1021,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * word logic.
    * @param cell The cell to check.
    */
-  private _isCharWordSeparator(cell: CellData): boolean {
+  private _isCharWordSeparator(cell: ICellData): boolean {
     // Zero width characters are never separators as they are always to the
     // right of wide characters
     if (cell.getWidth() === 0) {

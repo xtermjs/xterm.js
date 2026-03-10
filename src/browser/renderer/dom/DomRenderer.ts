@@ -5,16 +5,18 @@
 
 import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererRowFactory';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
+import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shared/Constants';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
 import { color } from 'common/Color';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
+import { addDisposableListener } from 'browser/Dom';
 
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -23,6 +25,7 @@ const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
+const CURSOR_BLINK_IDLE_CLASS = 'xterm-cursor-blink-idle';
 
 let nextTerminalId = 1;
 
@@ -42,10 +45,15 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
   private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
+  private _cursorBlinkStateManager: CursorBlinkStateManager;
+  private _textBlinkStateManager: TextBlinkStateManager;
+  private _rowHasBlinkingCells: boolean[] = [];
+  private _rowHasBlinkingCellsCount: number = 0;
 
   public dimensions: IRenderDimensions;
 
-  public readonly onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>()).event;
+  private readonly _onRequestRedraw = this._register(new Emitter<IRequestRedrawEvent>());
+  public readonly onRequestRedraw = this._onRequestRedraw.event;
 
   constructor(
     private readonly _terminal: ITerminal,
@@ -89,6 +97,15 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._register(this._linkifier2.onShowLinkUnderline(e => this._handleLinkHover(e)));
     this._register(this._linkifier2.onHideLinkUnderline(e => this._handleLinkLeave(e)));
 
+    this._cursorBlinkStateManager = new CursorBlinkStateManager(this._rowContainer, this._coreBrowserService);
+    this._register(addDisposableListener(this._document, 'mousedown', () => this._cursorBlinkStateManager.restartBlinkAnimation()));
+    this._register(toDisposable(() => this._cursorBlinkStateManager.dispose()));
+    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
+      () => this._onRequestRedraw.fire({ start: 0, end: this._bufferService.rows - 1 }),
+      this._coreBrowserService,
+      this._optionsService
+    ));
+
     this._register(toDisposable(() => {
       this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
 
@@ -101,7 +118,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._dimensionsStyleElement.remove();
     }));
 
-    this._widthCache = new WidthCache(this._document, this._helperContainer);
+    this._widthCache = new WidthCache();
     this._widthCache.setFont(
       this._optionsService.rawOptions.fontFamily,
       this._optionsService.rawOptions.fontSize,
@@ -186,6 +203,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} span.${RowCss.ITALIC_CLASS} {` +
       ` font-style: italic;` +
+      `}` +
+      `${this._terminalSelector} span.${RowCss.BLINK_HIDDEN_CLASS} {` +
+      ` visibility: hidden;` +
       `}`;
     // Blink animation
     const blinkAnimationUnderlineId = `blink_underline_${this._terminalClass}`;
@@ -224,6 +244,10 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}` +
       `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` animation: ${blinkAnimationBlockId} 1s step-end infinite;` +
+      `}` +
+      // Disable cursor blinking when idle
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${CURSOR_BLINK_IDLE_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS} {` +
+      ` animation: none !important;` +
       `}` +
       // !important helps fix an issue where the cursor will not render on top of the selection,
       // however it's very hard to fix this issue and retain the blink animation without the use of
@@ -307,10 +331,14 @@ export class DomRenderer extends Disposable implements IRenderer {
       const row = this._document.createElement('div');
       this._rowContainer.appendChild(row);
       this._rowElements.push(row);
+      this._rowHasBlinkingCells.push(false);
     }
     // Remove excess elements
     while (this._rowElements.length > rows) {
       this._rowContainer.removeChild(this._rowElements.pop()!);
+      if (this._rowHasBlinkingCells.pop()) {
+        this._rowHasBlinkingCellsCount--;
+      }
     }
   }
 
@@ -328,12 +356,18 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public handleBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
+    this._cursorBlinkStateManager.pause();
     this.renderRows(0, this._bufferService.rows - 1);
   }
 
   public handleFocus(): void {
     this._rowContainer.classList.add(FOCUS_CLASS);
+    this._cursorBlinkStateManager.resume();
     this.renderRows(this._bufferService.buffer.y, this._bufferService.buffer.y);
+  }
+
+  public handleViewportVisibilityChange(isVisible: boolean): void {
+    this._textBlinkStateManager.setViewportVisible(isVisible);
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
@@ -406,7 +440,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public handleCursorMove(): void {
-    // No-op, the cursor is drawn when rows are drawn
+    // Reset idle timer on cursor movement (which happens on input)
+    this._cursorBlinkStateManager.restartBlinkAnimation();
   }
 
   private _handleOptionsChanged(): void {
@@ -436,6 +471,11 @@ export class DomRenderer extends Disposable implements IRenderer {
        */
       e.replaceChildren();
     }
+    if (this._rowHasBlinkingCellsCount > 0) {
+      this._rowHasBlinkingCells.fill(false);
+      this._rowHasBlinkingCellsCount = 0;
+      this._textBlinkStateManager.setNeedsBlinkInViewport(false);
+    }
   }
 
   public renderRows(start: number, end: number): void {
@@ -445,6 +485,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorBlink = this._coreService.decPrivateModes.cursorBlink ?? this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._coreService.decPrivateModes.cursorStyle ?? this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
+    const rowInfo = { hasBlinkingCells: false };
 
     for (let y = start; y <= end; y++) {
       const row = y + buffer.ydisp;
@@ -462,13 +503,17 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorInactiveStyle,
           cursorX,
           cursorBlink,
+          this._textBlinkStateManager.isBlinkOn,
           this.dimensions.css.cell.width,
           this._widthCache,
           -1,
-          -1
+          -1,
+          rowInfo
         )
       );
+      this._setRowBlinkState(y, rowInfo.hasBlinkingCells);
     }
+    this._updateTextBlinkState();
   }
 
   private get _terminalSelector(): string {
@@ -513,6 +558,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     const cursorBlink = this._optionsService.rawOptions.cursorBlink;
     const cursorStyle = this._optionsService.rawOptions.cursorStyle;
     const cursorInactiveStyle = this._optionsService.rawOptions.cursorInactiveStyle;
+    const rowInfo = { hasBlinkingCells: false };
 
     // refresh rows within link range
     for (let i = y; i <= y2; ++i) {
@@ -531,12 +577,86 @@ export class DomRenderer extends Disposable implements IRenderer {
           cursorInactiveStyle,
           cursorX,
           cursorBlink,
+          this._textBlinkStateManager.isBlinkOn,
           this.dimensions.css.cell.width,
           this._widthCache,
           enabled ? (i === y ? x : 0) : -1,
-          enabled ? ((i === y2 ? x2 : cols) - 1) : -1
+          enabled ? ((i === y2 ? x2 : cols) - 1) : -1,
+          rowInfo
         )
       );
+      this._setRowBlinkState(i, rowInfo.hasBlinkingCells);
     }
+    this._updateTextBlinkState();
+  }
+
+  private _setRowBlinkState(row: number, hasBlinkingCells: boolean): void {
+    const previous = this._rowHasBlinkingCells[row];
+    if (previous === hasBlinkingCells) {
+      return;
+    }
+    this._rowHasBlinkingCells[row] = hasBlinkingCells;
+    this._rowHasBlinkingCellsCount += hasBlinkingCells ? 1 : -1;
+  }
+
+  private _updateTextBlinkState(): void {
+    this._textBlinkStateManager.setNeedsBlinkInViewport(this._rowHasBlinkingCellsCount > 0);
+  }
+}
+
+class CursorBlinkStateManager {
+  private _idleTimeout: number | undefined;
+  private _isIdlePaused: boolean = false;
+
+  constructor(
+    private readonly _rowContainer: HTMLElement,
+    private readonly _coreBrowserService: ICoreBrowserService
+  ) {
+    if (this._coreBrowserService.isFocused) {
+      this._resetIdleTimer();
+    }
+  }
+
+  public dispose(): void {
+    this._clearIdleTimer();
+  }
+
+  public restartBlinkAnimation(): void {
+    if (this._isIdlePaused) {
+      this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+    }
+    this._resetIdleTimer();
+  }
+
+  public pause(): void {
+    this._isIdlePaused = false;
+    this._clearIdleTimer();
+  }
+
+  public resume(): void {
+    this._isIdlePaused = false;
+    this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+    this._resetIdleTimer();
+  }
+
+  private _resetIdleTimer(): void {
+    this._isIdlePaused = false;
+    this._clearIdleTimer();
+    this._idleTimeout = this._coreBrowserService.window.setTimeout(() => {
+      this._stopBlinkingDueToIdle();
+    }, RendererConstants.CURSOR_BLINK_IDLE_TIMEOUT);
+  }
+
+  private _clearIdleTimer(): void {
+    if (this._idleTimeout) {
+      this._coreBrowserService.window.clearTimeout(this._idleTimeout);
+      this._idleTimeout = undefined;
+    }
+  }
+
+  private _stopBlinkingDueToIdle(): void {
+    this._rowContainer.classList.add(CURSOR_BLINK_IDLE_CLASS);
+    this._isIdlePaused = true;
+    this._idleTimeout = undefined;
   }
 }

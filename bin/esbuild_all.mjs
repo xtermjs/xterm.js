@@ -4,14 +4,14 @@ import { spawn } from "child_process";
 import { readdir } from "fs/promises";
 import { argv } from "process";
 
-/** @type {{cp: import("child_process").ChildProcessByStdio, name: string}[]} */
+/** @type {{cp: import("child_process").ChildProcessByStdio<any, any, any>, name: string}[]} */
 const jobs = [];
 
 // Core job
 jobs.push(createJob('xterm', []));
 
 // Addon jobs
-const addons = (await readdir('addons')).map(e => e.replace('addon-', ''));
+const addons = (await readdir('addons')).filter(e => e.startsWith('addon-')).map(e => e.replace('addon-', ''));
 for (const addon of addons) {
   jobs.push(createJob(`xterm-addon-${addon}`, [`--addon=${addon}`]));
 }
