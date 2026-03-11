@@ -4,11 +4,10 @@
  */
 
 import { addDisposableListener } from 'browser/Dom';
-import { IBufferService, ICoreMouseService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
-import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, IDisposable } from 'common/Types';
+import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
+import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 import { toDisposable } from 'common/Lifecycle';
-import { CustomWheelEventHandler } from 'browser/Types';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
 
 type RequestedMouseEvents = Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener | null>;
@@ -22,12 +21,13 @@ interface IMouseBindContext {
 export class MouseService implements IMouseService {
   public serviceBrand: undefined;
 
-  private _customWheelEventHandler: CustomWheelEventHandler | undefined;
+  private _lastEvent: ICoreMouseEvent | null = null;
+  private _wheelPartialScroll: number = 0;
 
   constructor(
     @IRenderService private readonly _renderService: IRenderService,
     @IMouseCoordsService private readonly _mouseCoordsService: IMouseCoordsService,
-    @ICoreMouseService private readonly _coreMouseService: ICoreMouseService,
+    @IMouseStateService private readonly _mouseStateService: IMouseStateService,
     @ICoreService private readonly _coreService: ICoreService,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
@@ -42,7 +42,7 @@ export class MouseService implements IMouseService {
 
     /**
      * Event listener state handling.
-     * We listen to the onProtocolChange event of CoreMouseService and put
+     * We listen to the onProtocolChange event of MouseStateService and put
      * requested listeners in `requestedEvents`. With this the listeners
      * have all bits to do the event listener juggling.
      * Note: 'mousedown' currently is "always on" and not managed
@@ -61,11 +61,11 @@ export class MouseService implements IMouseService {
       mousedrag: (ev: Event) => this._handleMouseDrag(ctx, ev as MouseEvent),
       mousemove: (ev: Event) => this._handleMouseMove(ctx, ev as MouseEvent)
     };
-    register(this._coreMouseService.onProtocolChange(events => {
+    register(this._mouseStateService.onProtocolChange(events => {
       this._handleProtocolChange(ctx, eventListeners, events);
     }));
     // force initial onProtocolChange so we dont miss early mouse requests
-    this._coreMouseService.activeProtocol = this._coreMouseService.activeProtocol;
+    this._mouseStateService.activeProtocol = this._mouseStateService.activeProtocol;
 
     // Ensure document-level listeners are removed on dispose
     register(toDisposable(() => {
@@ -119,14 +119,14 @@ export class MouseService implements IMouseService {
         but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
         break;
       case 'wheel':
-        if (this._customWheelEventHandler && this._customWheelEventHandler(ev as WheelEvent) === false) {
+        if (!this._mouseStateService.allowCustomWheelEvent(ev as WheelEvent)) {
           return false;
         }
         const deltaY = (ev as WheelEvent).deltaY;
         if (deltaY === 0) {
           return false;
         }
-        const lines = this._coreMouseService.consumeWheelEvent(
+        const lines = this._consumeWheelEvent(
           ev as WheelEvent,
           this._renderService?.dimensions?.device?.cell?.height,
           this._coreBrowserService?.dpr
@@ -148,7 +148,7 @@ export class MouseService implements IMouseService {
       return false;
     }
 
-    return this._coreMouseService.triggerMouseEvent({
+    return this._triggerMouseEvent({
       col: pos.col,
       row: pos.row,
       x: pos.x,
@@ -202,7 +202,7 @@ export class MouseService implements IMouseService {
     // Don't send the mouse button to the pty if mouse events are disabled or
     // if the selection manager is having selection forced (ie. a modifier is
     // held).
-    if (!this._coreMouseService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
+    if (!this._mouseStateService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
       return;
     }
 
@@ -226,7 +226,7 @@ export class MouseService implements IMouseService {
       return;
     }
 
-    if (this._customWheelEventHandler && this._customWheelEventHandler(ev) === false) {
+    if (!this._mouseStateService.allowCustomWheelEvent(ev)) {
       return false;
     }
 
@@ -244,7 +244,7 @@ export class MouseService implements IMouseService {
         return false;
       }
 
-      const lines = this._coreMouseService.consumeWheelEvent(
+      const lines = this._consumeWheelEvent(
         ev,
         this._renderService?.dimensions?.device?.cell?.height,
         this._coreBrowserService?.dpr
@@ -264,13 +264,18 @@ export class MouseService implements IMouseService {
     }
   }
 
+  public reset(): void {
+    this._lastEvent = null;
+    this._wheelPartialScroll = 0;
+  }
+
   private _handleProtocolChange(ctx: IMouseBindContext, eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener>, events: CoreMouseEventType): void {
     const { element, document } = ctx.target;
     const { requestedEvents } = ctx;
     // apply global changes on events
     if (events) {
       if (this._optionsService.rawOptions.logLevel === 'debug') {
-        this._logService.debug('Binding to mouse events:', this._coreMouseService.explainEvents(events));
+        this._logService.debug('Binding to mouse events:', this._explainEvents(events));
       }
       element.classList.add('enable-mouse-events');
       this._selectionService.disable();
@@ -320,7 +325,131 @@ export class MouseService implements IMouseService {
     }
   }
 
-  public setCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler | undefined): void {
-    this._customWheelEventHandler = customWheelEventHandler;
+  private _applyScrollModifier(amount: number, ev: WheelEvent): number {
+    // Multiply the scroll speed when the modifier key is pressed
+    if (ev.altKey || ev.ctrlKey || ev.shiftKey) {
+      return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
+    }
+    return amount * this._optionsService.rawOptions.scrollSensitivity;
   }
+
+  /**
+   * Processes a wheel event, accounting for partial scrolls for trackpad, mouse scrolls.
+   * This prevents hyper-sensitive scrolling in alt buffer.
+   */
+  private _consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0 || ev.shiftKey) {
+      return 0;
+    }
+
+    if (cellHeight === undefined || dpr === undefined) {
+      return 0;
+    }
+
+    const targetWheelEventPixels = cellHeight / dpr;
+    let amount = this._applyScrollModifier(ev.deltaY, ev);
+
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
+      amount /= (targetWheelEventPixels + 0.0); // Prevent integer division
+
+      const isLikelyTrackpad = Math.abs(ev.deltaY) < 50;
+      if (isLikelyTrackpad) {
+        amount *= 0.3;
+      }
+
+      this._wheelPartialScroll += amount;
+      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
+      this._wheelPartialScroll %= 1;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._bufferService.rows;
+    }
+    return amount;
+  }
+
+  /**
+   * Triggers a mouse event to be sent.
+   *
+   * Returns true if the event passed all protocol restrictions and a report
+   * was sent, otherwise false. The return value may be used to decide whether
+   * the default event action in the browser component should be omitted.
+   *
+   * Note: The method will change values of the given event object
+   * to fulfill protocol and encoding restrictions.
+   */
+  private _triggerMouseEvent(e: ICoreMouseEvent): boolean {
+    // range check for col/row
+    if (e.col < 0 || e.col >= this._bufferService.cols
+      || e.row < 0 || e.row >= this._bufferService.rows) {
+      return false;
+    }
+
+    // filter nonsense combinations of button + action
+    if (e.button === CoreMouseButton.WHEEL && e.action === CoreMouseAction.MOVE) {
+      return false;
+    }
+    if (e.button === CoreMouseButton.NONE && e.action !== CoreMouseAction.MOVE) {
+      return false;
+    }
+    if (e.button !== CoreMouseButton.WHEEL && (e.action === CoreMouseAction.LEFT || e.action === CoreMouseAction.RIGHT)) {
+      return false;
+    }
+
+    // report 1-based coords
+    e.col++;
+    e.row++;
+
+    // debounce move events at grid or pixel level
+    if (e.action === CoreMouseAction.MOVE
+      && this._lastEvent
+      && this._equalEvents(this._lastEvent, e, this._mouseStateService.isPixelEncoding)
+    ) {
+      return false;
+    }
+
+    // apply protocol restrictions
+    if (!this._mouseStateService.restrictMouseEvent(e)) {
+      return false;
+    }
+
+    // encode report and send
+    const report = this._mouseStateService.encodeMouseEvent(e);
+    if (report) {
+      if (this._mouseStateService.isDefaultEncoding) {
+        this._coreService.triggerBinaryEvent(report);
+      } else {
+        this._coreService.triggerDataEvent(report, true);
+      }
+    }
+
+    this._lastEvent = e;
+    return true;
+  }
+
+  private _explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
+    return {
+      down: !!(events & CoreMouseEventType.DOWN),
+      up: !!(events & CoreMouseEventType.UP),
+      drag: !!(events & CoreMouseEventType.DRAG),
+      move: !!(events & CoreMouseEventType.MOVE),
+      wheel: !!(events & CoreMouseEventType.WHEEL)
+    };
+  }
+
+  private _equalEvents(e1: ICoreMouseEvent, e2: ICoreMouseEvent, pixels: boolean): boolean {
+    if (pixels) {
+      if (e1.x !== e2.x) return false;
+      if (e1.y !== e2.y) return false;
+    } else {
+      if (e1.col !== e2.col) return false;
+      if (e1.row !== e2.row) return false;
+    }
+    if (e1.button !== e2.button) return false;
+    if (e1.action !== e2.action) return false;
+    if (e1.ctrl !== e2.ctrl) return false;
+    if (e1.alt !== e2.alt) return false;
+    if (e1.shift !== e2.shift) return false;
+    return true;
+  }
+
 }

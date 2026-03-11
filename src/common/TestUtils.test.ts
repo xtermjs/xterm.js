@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -66,22 +66,21 @@ export class MockBufferService implements IBufferService {
   public reset(): void { }
 }
 
-export class MockCoreMouseService implements ICoreMouseService {
+export class MockMouseStateService implements IMouseStateService {
   public serviceBrand: any;
   public areMouseEventsActive: boolean = false;
   public activeEncoding: string = '';
   public activeProtocol: string = '';
+  public isDefaultEncoding: boolean = true;
+  public isPixelEncoding: boolean = false;
   public addEncoding(name: string): void { }
   public addProtocol(name: string): void { }
   public reset(): void { }
-  public triggerMouseEvent(event: ICoreMouseEvent): boolean { return false; }
   public onProtocolChange: IEvent<CoreMouseEventType> = new Emitter<CoreMouseEventType>().event;
-  public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
-    throw new Error('Method not implemented.');
-  }
-  public consumeWheelEvent(ev: WheelEvent, cellHeight: number, dpr: number): number {
-    return 1;
-  }
+  public restrictMouseEvent(event: ICoreMouseEvent): boolean { return true; }
+  public encodeMouseEvent(event: ICoreMouseEvent): string { return ''; }
+  public setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void { }
+  public allowCustomWheelEvent(ev: WheelEvent): boolean { return true; }
 }
 
 export class MockCharsetService implements ICharsetService {

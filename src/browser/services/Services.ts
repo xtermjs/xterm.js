@@ -4,7 +4,7 @@
  */
 
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
-import { CustomWheelEventHandler, IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
+import { IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { AllColorIndex, IDisposable, IKeyboardResult } from 'common/Types';
@@ -61,8 +61,8 @@ export const IMouseService = createDecorator<IMouseService>('MouseService');
 export interface IMouseService {
   serviceBrand: undefined;
 
-  setCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler | undefined): void;
   bindMouse(target: IMouseServiceTarget, register: (disposable: IDisposable) => void, focus: () => void): void;
+  reset(): void;
 }
 export interface IMouseServiceTarget {
   element: HTMLElement;

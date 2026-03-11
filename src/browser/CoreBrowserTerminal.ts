@@ -78,7 +78,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public browser: IBrowser = Browser as any;
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
-  private _customWheelEventHandler: CustomWheelEventHandler | undefined;
 
   // Browser services
   private readonly _decorationService: DecorationService;
@@ -582,7 +581,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this._mouseService = this._instantiationService.createInstance(MouseService);
-    this._mouseService.setCustomWheelEventHandler(this._customWheelEventHandler);
     this._instantiationService.setService(IMouseService, this._mouseService);
     this._register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
     this._register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
@@ -607,7 +605,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
-    if (this.coreMouseService.areMouseEventsActive) {
+    if (this.mouseStateService.areMouseEventsActive) {
       this._selectionService.disable();
       this.element.classList.add('enable-mouse-events');
     } else {
@@ -727,8 +725,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   public attachCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler): void {
-    this._customWheelEventHandler = customWheelEventHandler;
-    this._mouseService?.setCustomWheelEventHandler(customWheelEventHandler);
+    this.mouseStateService.setCustomWheelEventHandler(customWheelEventHandler);
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
@@ -1098,6 +1095,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._setup();
     super.reset();
+    this._mouseService?.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
 

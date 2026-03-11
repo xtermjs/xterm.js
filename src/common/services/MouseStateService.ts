@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IBufferService, ICoreService, ICoreMouseService, IOptionsService } from 'common/services/Services';
+import { IMouseStateService } from 'common/services/Services';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
@@ -151,7 +151,7 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
 };
 
 /**
- * CoreMouseService
+ * MouseStateService
  *
  * Provides mouse tracking reports with different protocols and encodings.
  *  - protocols: NONE (default), X10, VT200, DRAG, ANY
@@ -166,25 +166,21 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
  * a tracking report to the backend based on protocol and encoding limitations.
  * To send a mouse event call `triggerMouseEvent`.
  */
-export class CoreMouseService extends Disposable implements ICoreMouseService {
+export class MouseStateService extends Disposable implements IMouseStateService {
   public serviceBrand: any;
 
   private _protocols: { [name: string]: ICoreMouseProtocol } = {};
   private _encodings: { [name: string]: CoreMouseEncoding } = {};
   private _activeProtocol: string = '';
   private _activeEncoding: string = '';
-  private _lastEvent: ICoreMouseEvent | null = null;
-  private _wheelPartialScroll: number = 0;
+  private _customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined;
 
   private readonly _onProtocolChange = this._register(new Emitter<CoreMouseEventType>());
   public readonly onProtocolChange = this._onProtocolChange.event;
 
-  constructor(
-    @IBufferService private readonly _bufferService: IBufferService,
-    @ICoreService private readonly _coreService: ICoreService,
-    @IOptionsService private readonly _optionsService: IOptionsService
-  ) {
+  constructor() {
     super();
+
     // register default protocols and encodings
     for (const name of Object.keys(DEFAULT_PROTOCOLS)) this.addProtocol(name, DEFAULT_PROTOCOLS[name]);
     for (const name of Object.keys(DEFAULT_ENCODINGS)) this.addEncoding(name, DEFAULT_ENCODINGS[name]);
@@ -230,136 +226,29 @@ export class CoreMouseService extends Disposable implements ICoreMouseService {
   public reset(): void {
     this.activeProtocol = 'NONE';
     this.activeEncoding = 'DEFAULT';
-    this._lastEvent = null;
-    this._wheelPartialScroll = 0;
   }
 
-  /**
-   * Processes a wheel event, accounting for partial scrolls for trackpad, mouse scrolls.
-   * This prevents hyper-sensitive scrolling in alt buffer.
-   */
-  public consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
-    // Do nothing if it's not a vertical scroll event
-    if (ev.deltaY === 0 || ev.shiftKey) {
-      return 0;
-    }
-
-    if (cellHeight === undefined || dpr === undefined) {
-      return 0;
-    }
-
-    const targetWheelEventPixels = cellHeight / dpr;
-    let amount = this._applyScrollModifier(ev.deltaY, ev);
-
-    if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
-      amount /= (targetWheelEventPixels + 0.0); // Prevent integer division
-
-      const isLikelyTrackpad = Math.abs(ev.deltaY) < 50;
-      if (isLikelyTrackpad) {
-        amount *= 0.3;
-      }
-
-      this._wheelPartialScroll += amount;
-      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
-      this._wheelPartialScroll %= 1;
-    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      amount *= this._bufferService.rows;
-    }
-    return amount;
+  public setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void {
+    this._customWheelEventHandler = customWheelEventHandler;
   }
 
-  private _applyScrollModifier(amount: number, ev: WheelEvent): number {
-    // Multiply the scroll speed when the modifier key is pressed
-    if (ev.altKey || ev.ctrlKey || ev.shiftKey) {
-      return amount * this._optionsService.rawOptions.fastScrollSensitivity * this._optionsService.rawOptions.scrollSensitivity;
-    }
-    return amount * this._optionsService.rawOptions.scrollSensitivity;
+  public allowCustomWheelEvent(ev: WheelEvent): boolean {
+    return this._customWheelEventHandler ? this._customWheelEventHandler(ev) !== false : true;
   }
 
-  /**
-   * Triggers a mouse event to be sent.
-   *
-   * Returns true if the event passed all protocol restrictions and a report
-   * was sent, otherwise false. The return value may be used to decide whether
-   * the default event action in the bowser component should be omitted.
-   *
-   * Note: The method will change values of the given event object
-   * to fullfill protocol and encoding restrictions.
-   */
-  public triggerMouseEvent(e: ICoreMouseEvent): boolean {
-    // range check for col/row
-    if (e.col < 0 || e.col >= this._bufferService.cols
-      || e.row < 0 || e.row >= this._bufferService.rows) {
-      return false;
-    }
-
-    // filter nonsense combinations of button + action
-    if (e.button === CoreMouseButton.WHEEL && e.action === CoreMouseAction.MOVE) {
-      return false;
-    }
-    if (e.button === CoreMouseButton.NONE && e.action !== CoreMouseAction.MOVE) {
-      return false;
-    }
-    if (e.button !== CoreMouseButton.WHEEL && (e.action === CoreMouseAction.LEFT || e.action === CoreMouseAction.RIGHT)) {
-      return false;
-    }
-
-    // report 1-based coords
-    e.col++;
-    e.row++;
-
-    // debounce move events at grid or pixel level
-    if (e.action === CoreMouseAction.MOVE
-      && this._lastEvent
-      && this._equalEvents(this._lastEvent, e, this._activeEncoding === 'SGR_PIXELS')
-    ) {
-      return false;
-    }
-
-    // apply protocol restrictions
-    if (!this._protocols[this._activeProtocol].restrict(e)) {
-      return false;
-    }
-
-    // encode report and send
-    const report = this._encodings[this._activeEncoding](e);
-    if (report) {
-      // always send DEFAULT as binary data
-      if (this._activeEncoding === 'DEFAULT') {
-        this._coreService.triggerBinaryEvent(report);
-      } else {
-        this._coreService.triggerDataEvent(report, true);
-      }
-    }
-
-    this._lastEvent = e;
-
-    return true;
+  public restrictMouseEvent(e: ICoreMouseEvent): boolean {
+    return this._protocols[this._activeProtocol].restrict(e);
   }
 
-  public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
-    return {
-      down: !!(events & CoreMouseEventType.DOWN),
-      up: !!(events & CoreMouseEventType.UP),
-      drag: !!(events & CoreMouseEventType.DRAG),
-      move: !!(events & CoreMouseEventType.MOVE),
-      wheel: !!(events & CoreMouseEventType.WHEEL)
-    };
+  public encodeMouseEvent(e: ICoreMouseEvent): string {
+    return this._encodings[this._activeEncoding](e);
   }
 
-  private _equalEvents(e1: ICoreMouseEvent, e2: ICoreMouseEvent, pixels: boolean): boolean {
-    if (pixels) {
-      if (e1.x !== e2.x) return false;
-      if (e1.y !== e2.y) return false;
-    } else {
-      if (e1.col !== e2.col) return false;
-      if (e1.row !== e2.row) return false;
-    }
-    if (e1.button !== e2.button) return false;
-    if (e1.action !== e2.action) return false;
-    if (e1.ctrl !== e2.ctrl) return false;
-    if (e1.alt !== e2.alt) return false;
-    if (e1.shift !== e2.shift) return false;
-    return true;
+  public get isDefaultEncoding(): boolean {
+    return this._activeEncoding === 'DEFAULT';
+  }
+
+  public get isPixelEncoding(): boolean {
+    return this._activeEncoding === 'SGR_PIXELS';
   }
 }
