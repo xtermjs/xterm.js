@@ -20,8 +20,6 @@ import type { IEvent } from 'common/Event';
  */
 const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
-let $value = 0;
-
 export class Terminal extends Disposable implements ITerminalApi {
   private _core: ITerminal;
   private _addonManager: AddonManager;
@@ -255,16 +253,16 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
 
   private _verifyIntegers(...values: number[]): void {
-    for ($value of values) {
-      if ($value === Infinity || isNaN($value) || $value % 1 !== 0) {
+    for (const value of values) {
+      if (value === Infinity || isNaN(value) || value % 1 !== 0) {
         throw new Error('This API only accepts integers');
       }
     }
   }
 
   private _verifyPositiveIntegers(...values: number[]): void {
-    for ($value of values) {
-      if ($value && ($value === Infinity || isNaN($value) || $value % 1 !== 0 || $value < 0)) {
+    for (const value of values) {
+      if (value && (value === Infinity || isNaN(value) || value % 1 !== 0 || value < 0)) {
         throw new Error('This API only accepts positive integers');
       }
     }
