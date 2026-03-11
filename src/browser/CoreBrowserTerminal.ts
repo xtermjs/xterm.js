@@ -414,7 +414,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.textarea!, 'keyup', (ev: KeyboardEvent) => this._keyUp(ev), true));
     this._register(addDisposableListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
     this._register(addDisposableListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
-    this._register(addDisposableListener(this.textarea!, 'compositionstart', () => this._compositionHelper!.compositionstart()));
+    this._register(addDisposableListener(this.textarea!, 'compositionstart', () => {
+      // Ensure the textarea is synced to the latest cursor location before composition begins.
+      // Some prompt UIs briefly draw helper text and then restore the cursor without triggering a
+      // new key event, which can leave IME anchoring stale until the first render tick.
+      this._syncTextArea();
+      this._compositionHelper!.compositionstart();
+      this._compositionHelper!.updateCompositionElements();
+    }));
     this._register(addDisposableListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
     this._register(addDisposableListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
     this._register(addDisposableListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
