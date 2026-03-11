@@ -83,6 +83,6 @@ describe('MouseStateService', () => {
     cms.activeProtocol = 'ANY';
     cms.activeEncoding = 'DEFAULT';
     assert.equal(cms.restrictMouseEvent(event), true);
-    assert.deepEqual(toBytes(cms.encodeMouseEvent(event)), [0x1b, 0x5b, 0x4d, 0x21, 0x21, 0x21]);
+    assert.deepEqual(toBytes(cms.encodeMouseEvent(event)), [0x1b, 0x5b, 0x4d, 0x20, 0x21, 0x21]);
   });
 });
