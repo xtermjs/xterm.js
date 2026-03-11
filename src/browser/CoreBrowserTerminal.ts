@@ -1095,6 +1095,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._setup();
     super.reset();
+    this._mouseService?.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
 

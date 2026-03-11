@@ -62,6 +62,7 @@ export interface IMouseService {
   serviceBrand: undefined;
 
   bindMouse(target: IMouseServiceTarget, register: (disposable: IDisposable) => void, focus: () => void): void;
+  reset(): void;
 }
 export interface IMouseServiceTarget {
   element: HTMLElement;
