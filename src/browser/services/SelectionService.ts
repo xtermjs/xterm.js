@@ -8,7 +8,7 @@ import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
-import { ICoreBrowserService, IMouseService, IRenderService, ISelectionService } from 'browser/services/Services';
+import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { IBufferLine, ICellData, IDisposable } from 'common/Types';
@@ -126,7 +126,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     private readonly _linkifier: ILinkifier2,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreService private readonly _coreService: ICoreService,
-    @IMouseService private readonly _mouseService: IMouseService,
+    @IMouseCoordsService private readonly _mouseCoordsService: IMouseCoordsService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IRenderService private readonly _renderService: IRenderService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
@@ -395,7 +395,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] | undefined {
-    const coords = this._mouseService.getCoords(event, this._screenElement, this._bufferService.cols, this._bufferService.rows, true);
+    const coords = this._mouseCoordsService.getCoords(event, this._screenElement, this._bufferService.cols, this._bufferService.rows, true);
     if (!coords) {
       return undefined;
     }
@@ -715,7 +715,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey && this._optionsService.rawOptions.altClickMovesCursor) {
       if (this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
-        const coordinates = this._mouseService.getCoords(
+        const coordinates = this._mouseCoordsService.getCoords(
           event,
           this._element,
           this._bufferService.cols,

@@ -36,10 +36,11 @@ import { CharSizeService } from 'browser/services/CharSizeService';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
+import { MouseCoordsService } from 'browser/services/MouseCoordsService';
 import { MouseService } from 'browser/services/MouseService';
 import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseCoordsService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
 import { KeyboardService } from 'browser/services/KeyboardService';
 import { channels, color, rgb } from 'common/Color';
@@ -87,6 +88,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   // Optional browser services
   private _charSizeService: ICharSizeService | undefined;
   private _coreBrowserService: ICoreBrowserService | undefined;
+  private _mouseCoordsService: IMouseCoordsService | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
   private _themeService: IThemeService | undefined;
@@ -542,6 +544,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._compositionView.classList.add('composition-view');
     this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
     this._helperContainer.appendChild(this._compositionView);
+
+    this._mouseCoordsService = this._instantiationService.createInstance(MouseCoordsService);
+    this._instantiationService.setService(IMouseCoordsService, this._mouseCoordsService);
 
     const linkifier = this._linkifier.value = this._register(this._instantiationService.createInstance(Linkifier, this.screenElement));
 

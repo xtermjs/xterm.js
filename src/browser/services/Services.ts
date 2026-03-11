@@ -49,19 +49,25 @@ export interface ICoreBrowserService {
   readonly dpr: number;
 }
 
-export const IMouseService = createDecorator<IMouseService>('MouseService');
-export interface IMouseServiceTarget {
-  element: HTMLElement;
-  screenElement: HTMLElement;
-  document: Document;
-}
-export interface IMouseService {
+export const IMouseCoordsService = createDecorator<IMouseCoordsService>('MouseCoordsService');
+export interface IMouseCoordsService {
   serviceBrand: undefined;
 
   getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
   getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined;
+}
+
+export const IMouseService = createDecorator<IMouseService>('MouseService');
+export interface IMouseService {
+  serviceBrand: undefined;
+
   setCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler | undefined): void;
   bindMouse(target: IMouseServiceTarget, register: (disposable: IDisposable) => void, focus: () => void): void;
+}
+export interface IMouseServiceTarget {
+  element: HTMLElement;
+  screenElement: HTMLElement;
+  document: Document;
 }
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');

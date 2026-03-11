@@ -393,6 +393,10 @@ export class MockMouseService implements IMouseService {
     throw new Error('Not implemented');
   }
 
+  public setCustomWheelEventHandler(): void {
+    throw new Error('Not implemented');
+  }
+
   public bindMouse(): void {
     throw new Error('Not implemented');
   }

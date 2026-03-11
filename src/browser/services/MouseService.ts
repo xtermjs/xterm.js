@@ -3,14 +3,13 @@
  * @license MIT
  */
 
-import { addDisposableListener, getWindow } from 'browser/Dom';
-import { getCoords, getCoordsRelativeToElement } from 'browser/input/Mouse';
+import { addDisposableListener } from 'browser/Dom';
 import { IBufferService, ICoreMouseService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
 import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, IDisposable } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 import { toDisposable } from 'common/Lifecycle';
 import { CustomWheelEventHandler } from 'browser/Types';
-import { ICharSizeService, ICoreBrowserService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
+import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
 
 type RequestedMouseEvents = Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener | null>;
 
@@ -27,7 +26,7 @@ export class MouseService implements IMouseService {
 
   constructor(
     @IRenderService private readonly _renderService: IRenderService,
-    @ICharSizeService private readonly _charSizeService: ICharSizeService,
+    @IMouseCoordsService private readonly _mouseCoordsService: IMouseCoordsService,
     @ICoreMouseService private readonly _coreMouseService: ICoreMouseService,
     @ICoreService private readonly _coreService: ICoreService,
     @IBufferService private readonly _bufferService: IBufferService,
@@ -87,7 +86,7 @@ export class MouseService implements IMouseService {
 
   private _sendEvent(ctx: IMouseBindContext, ev: MouseEvent | WheelEvent): boolean {
     // Get mouse coordinates
-    const pos = this.getMouseReportCoords(ev as MouseEvent, ctx.target.screenElement);
+    const pos = this._mouseCoordsService.getMouseReportCoords(ev as MouseEvent, ctx.target.screenElement);
     if (!pos) {
       return false;
     }
@@ -323,33 +322,5 @@ export class MouseService implements IMouseService {
 
   public setCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler | undefined): void {
     this._customWheelEventHandler = customWheelEventHandler;
-  }
-  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
-    return getCoords(
-      window,
-      event,
-      element,
-      colCount,
-      rowCount,
-      this._charSizeService.hasValidSize,
-      this._renderService.dimensions.css.cell.width,
-      this._renderService.dimensions.css.cell.height,
-      isSelection
-    );
-  }
-
-  public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
-    const coords = getCoordsRelativeToElement(getWindow(element), event, element);
-    if (!this._charSizeService.hasValidSize) {
-      return undefined;
-    }
-    coords[0] = Math.min(Math.max(coords[0], 0), this._renderService.dimensions.css.canvas.width - 1);
-    coords[1] = Math.min(Math.max(coords[1], 0), this._renderService.dimensions.css.canvas.height - 1);
-    return {
-      col: Math.floor(coords[0] / this._renderService.dimensions.css.cell.width),
-      row: Math.floor(coords[1] / this._renderService.dimensions.css.cell.height),
-      x: Math.floor(coords[0]),
-      y: Math.floor(coords[1])
-    };
   }
 }
