@@ -10,13 +10,15 @@
     "outDir": "../out-test",
     "sourceMap": true,
     "removeComments": true,
-    "baseUrl": ".",
     "paths": {
       "common/*": [
         "../../../src/common/*"
       ],
       "browser/*": [
         "../../../src/browser/*"
+      ],
+      "*": [
+        "./*"
       ]
     },
     "strict": true,

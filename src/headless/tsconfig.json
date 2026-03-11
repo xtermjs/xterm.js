@@ -10,9 +10,9 @@
       "../../node_modules/@types/mocha",
       "../../node_modules/@types/node"
     ],
-    "baseUrl": "../",
     "paths": {
-      "common/*": [ "./common/*" ]
+      "common/*": [ "./../common/*" ],
+      "*": [ "./../*" ]
     }
   },
   "include": [

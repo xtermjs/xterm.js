@@ -4,7 +4,8 @@
  */
 import { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
 import { ImageRenderer } from './ImageRenderer';
-import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
+import { IIPImageStorage } from './IIPImageStorage';
+import { CELL_SIZE_DEFAULT } from './ImageStorage';
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
@@ -40,7 +41,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
   constructor(
     private readonly _opts: IImageAddonOptions,
     private readonly _renderer: ImageRenderer,
-    private readonly _storage: ImageStorage,
+    private readonly _storage: IIPImageStorage,
     private readonly _coreTerminal: ITerminalExt
   ) {
     const maxEncodedBytes = Math.ceil(this._opts.iipSizeLimit * 4 / 3);

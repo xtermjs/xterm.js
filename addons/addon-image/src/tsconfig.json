@@ -11,11 +11,11 @@
     "types": [
       "../../../node_modules/@types/mocha"
     ],
-    "baseUrl": ".",
     "paths": {
       "browser/*": [ "../../../src/browser/*" ],
       "common/*": [ "../../../src/common/*" ],
-      "@xterm/addon-image": [ "../typings/addon-image.d.ts" ]
+      "@xterm/addon-image": [ "../typings/addon-image.d.ts" ],
+      "*": [ "./*" ]
     }
   },
   "include": [

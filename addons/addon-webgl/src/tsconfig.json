@@ -10,7 +10,6 @@
     "outDir": "../out",
     "sourceMap": true,
     "removeComments": true,
-    "baseUrl": ".",
     "paths": {
       "common/*": [
         "../../../src/common/*"
@@ -20,6 +19,9 @@
       ],
       "@xterm/addon-webgl": [
         "../typings/addon-webgl.d.ts"
+      ],
+      "*": [
+        "./*"
       ]
     },
     "strict": true,

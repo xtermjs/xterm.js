@@ -9,9 +9,10 @@
     "types": [
       "../../node_modules/@types/mocha"
     ],
-    "baseUrl": "..",
+    "skipLibCheck": true,
     "paths": {
-      "common/*": [ "./common/*" ]
+      "common/*": [ "./../common/*" ],
+      "*": [ "./../*" ]
     }
   },
   "include": [

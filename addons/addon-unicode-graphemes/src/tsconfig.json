@@ -11,7 +11,6 @@
     "sourceMap": true,
     "removeComments": true,
     "strict": true,
-    "baseUrl": ".",
     "paths": {
       "common/*": [
         "../../../src/common/*"

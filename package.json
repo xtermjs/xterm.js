@@ -34,8 +34,8 @@
     "dev": "concurrently -k -p [{name}] -n tsc,esbuild,esbuild-demo-client,esbuild-demo-server,server -c blue,yellow,cyan,green,magenta \"npm:tsc-watch\" \"npm:esbuild-watch\" \"npm:esbuild-demo-client-watch\" \"npm:esbuild-demo-server-watch\" \"npm:start\"",
     "build": "npm run tsc",
     "watch": "npm run tsc-watch",
-    "tsc": "tsc -b ./tsconfig.all.json",
-    "tsc-watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
+    "tsc": "tsgo -b ./tsconfig.all.json",
+    "tsc-watch": "tsgo -b -w ./tsconfig.all.json --preserveWatchOutput",
     "esbuild": "node bin/esbuild_all.mjs",
     "esbuild-watch": "node bin/esbuild_all.mjs --watch",
     "esbuild-package": "node bin/esbuild_all.mjs --prod",
@@ -72,7 +72,8 @@
     "prepackage-headless": "npm run esbuild-package-headless-only",
     "package-headless": "webpack --config ./webpack.config.headless.js",
     "postpackage-headless": "node ./bin/package_headless.js",
-    "prepublishOnly": "npm run package"
+    "prepublishOnly": "npm run package",
+    "agent:setup-repo": "node bin/agent/setup-repo.mjs"
   },
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
@@ -92,6 +93,7 @@
     "@types/ws": "^8.2.0",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260213.1",
     "chai": "^4.3.4",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ITerminalAddon } from '@xterm/xterm';
+import { Terminal, ITerminalAddon, IEvent } from '@xterm/xterm';
 
 declare module '@xterm/addon-image' {
   export interface IImageAddonOptions {
@@ -76,6 +76,15 @@ declare module '@xterm/addon-image' {
     iipSupport?: boolean;
     /** IIP sequence size limit (default 20000000 bytes). */
     iipSizeLimit?: number;
+
+    /**
+     * Kitty graphics protocol settings
+     */
+
+    /** Whether Kitty graphics protocol is enabled (default is true). */
+    kittySupport?: boolean;
+    /** Kitty image size limit in bytes (default 20000000 bytes). */
+    kittySizeLimit?: number;
   }
 
   export class ImageAddon implements ITerminalAddon {
@@ -106,6 +115,11 @@ declare module '@xterm/addon-image' {
      * Getter/Setter whether the placeholder should be shown.
      */
     public showPlaceholder: boolean;
+
+    /**
+     * Event fired whenever a new image is added to storage.
+     */
+    public readonly onImageAdded: IEvent<void>;
 
     /**
      * Get original image canvas at buffer position.

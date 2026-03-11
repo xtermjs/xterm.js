@@ -87,7 +87,9 @@ export class CompositionHelper {
    * @param ev The event.
    */
   public compositionupdate(ev: Pick<CompositionEvent, 'data'>): void {
-    this._compositionView.textContent = ev.data;
+    // Mark text as LTR, direction=rtl is used in CSS so the end of the text is followed for long
+    // compositions
+    this._compositionView.textContent = `\u200E${ev.data}\u200E`;
     this.updateCompositionElements();
     setTimeout(() => {
       const end = this._textarea.selectionEnd ?? this._textarea.value.length;
@@ -256,6 +258,12 @@ export class CompositionHelper {
       this._compositionView.style.lineHeight = cellHeight + 'px';
       this._compositionView.style.fontFamily = this._optionsService.rawOptions.fontFamily;
       this._compositionView.style.fontSize = this._optionsService.rawOptions.fontSize + 'px';
+      // Limit the composition view width to the space between the cursor and
+      // the terminal's right edge, preventing it from overflowing the terminal.
+      const maxWidth = this._bufferService.cols * this._renderService.dimensions.css.cell.width - cursorLeft;
+      this._compositionView.style.maxWidth = maxWidth + 'px';
+      this._compositionView.style.overflow = 'hidden';
+      this._compositionView.style.direction = 'rtl';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
