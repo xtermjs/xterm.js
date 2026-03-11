@@ -358,7 +358,8 @@ export class ImageRenderer extends Disposable implements IDisposable {
       canvas.style.zIndex = '0';
       screenElement.appendChild(canvas);
     }
-    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+    // Keep rendering synchronized with resize to avoid blank-frame jitter on some platforms.
+    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: false });
     if (!ctx) {
       canvas.remove();
       return;
