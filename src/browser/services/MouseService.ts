@@ -9,6 +9,7 @@ import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, 
 import { C0 } from 'common/data/EscapeSequences';
 import { toDisposable } from 'common/Lifecycle';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
+import { Gesture, EventType as GestureEventType, IGestureEvent } from 'browser/scrollable/touch';
 
 type RequestedMouseEvents = Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener | null>;
 
@@ -23,6 +24,7 @@ export class MouseService implements IMouseService {
 
   private _lastEvent: ICoreMouseEvent | null = null;
   private _wheelPartialScroll: number = 0;
+  private _touchScrollAccumulator: number = 0;
 
   constructor(
     @IRenderService private readonly _renderService: IRenderService,
@@ -82,6 +84,9 @@ export class MouseService implements IMouseService {
      */
     register(addDisposableListener(element, 'mousedown', (ev: MouseEvent) => this._handleMouseDown(ctx, ev)));
     register(addDisposableListener(element, 'wheel', (ev: WheelEvent) => this._handlePassiveWheel(ctx, ev), { passive: false }));
+    register(Gesture.addTarget(target.screenElement));
+    register(addDisposableListener(target.screenElement, GestureEventType.START, () => this._handleTouchStart()));
+    register(addDisposableListener(target.screenElement, GestureEventType.CHANGE, (e: IGestureEvent) => this._handleTouchChange(ctx, e)));
   }
 
   private _sendEvent(ctx: IMouseBindContext, ev: MouseEvent | WheelEvent): boolean {
@@ -264,9 +269,88 @@ export class MouseService implements IMouseService {
     }
   }
 
+  private _handleTouchStart(): void {
+    this._touchScrollAccumulator = 0;
+  }
+
+  private _handleTouchChange(ctx: IMouseBindContext, e: IGestureEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // When mouse protocol has wheel events active, send as mouse wheel events.
+    if (ctx.requestedEvents.wheel) {
+      this._handleTouchScrollAsWheel(ctx, e);
+      return;
+    }
+
+    // When in alt buffer (no scrollback), send up/down key sequences.
+    if (!this._bufferService.buffer.hasScrollback) {
+      this._handleTouchScrollAsKeys(e);
+      return;
+    }
+
+    // Normal scrollback: delegate to viewport scrolling when available.
+    ctx.target.handleTouchScroll?.(e.translationY);
+  }
+
+  private _handleTouchScrollAsKeys(e: IGestureEvent): void {
+    const cellHeight = this._renderService?.dimensions.css.cell.height;
+    if (!cellHeight) {
+      return;
+    }
+
+    this._touchScrollAccumulator -= e.translationY;
+    const lines = Math.trunc(this._touchScrollAccumulator / cellHeight);
+    if (lines === 0) {
+      return;
+    }
+
+    this._touchScrollAccumulator -= lines * cellHeight;
+    const sequence = C0.ESC
+      + (this._coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[')
+      + (lines < 0 ? 'A' : 'B');
+    for (let i = 0; i < Math.abs(lines); i++) {
+      this._coreService.triggerDataEvent(sequence, true);
+    }
+  }
+
+  private _handleTouchScrollAsWheel(ctx: IMouseBindContext, e: IGestureEvent): void {
+    const cellHeight = this._renderService?.dimensions.css.cell.height;
+    if (!cellHeight) {
+      return;
+    }
+
+    this._touchScrollAccumulator -= e.translationY;
+    const lines = Math.trunc(this._touchScrollAccumulator / cellHeight);
+    if (lines === 0) {
+      return;
+    }
+
+    this._touchScrollAccumulator -= lines * cellHeight;
+    const pos = this._mouseCoordsService.getMouseReportCoords(e, ctx.target.screenElement);
+    if (!pos) {
+      return;
+    }
+
+    for (let i = 0; i < Math.abs(lines); i++) {
+      this._triggerMouseEvent({
+        col: pos.col,
+        row: pos.row,
+        x: pos.x,
+        y: pos.y,
+        button: CoreMouseButton.WHEEL,
+        action: lines < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN,
+        ctrl: false,
+        alt: false,
+        shift: false
+      });
+    }
+  }
+
   public reset(): void {
     this._lastEvent = null;
     this._wheelPartialScroll = 0;
+    this._touchScrollAccumulator = 0;
   }
 
   private _handleProtocolChange(ctx: IMouseBindContext, eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener>, events: CoreMouseEventType): void {

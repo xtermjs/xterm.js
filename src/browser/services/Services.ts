@@ -68,6 +68,7 @@ export interface IMouseServiceTarget {
   element: HTMLElement;
   screenElement: HTMLElement;
   document: Document;
+  handleTouchScroll?(amount: number): void;
 }
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');

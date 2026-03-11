@@ -653,7 +653,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._mouseService.bindMouse({
       element: this.element!,
       screenElement: this.screenElement!,
-      document: this._document!
+      document: this._document!,
+      handleTouchScroll: amount => this._viewport?.handleTouchScroll(amount)
     }, disposable => this._register(disposable), () => this.focus());
   }
 
