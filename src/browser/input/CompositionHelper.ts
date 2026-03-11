@@ -72,6 +72,8 @@ export class CompositionHelper {
    */
   public compositionstart(): void {
     this._isComposing = true;
+    // It's important to use the selection here instead of textarea length to avoid conflicts with
+    // screen reader mode
     const start = this._textarea.selectionStart ?? this._textarea.value.length;
     const end = this._textarea.selectionEnd ?? start;
     this._compositionPosition.start = Math.min(start, end);
