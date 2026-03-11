@@ -392,6 +392,14 @@ export class MockMouseService implements IMouseService {
   public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
     throw new Error('Not implemented');
   }
+
+  public setCustomWheelEventHandler(): void {
+    throw new Error('Not implemented');
+  }
+
+  public bindMouse(): void {
+    throw new Error('Not implemented');
+  }
 }
 
 export class MockRenderService implements IRenderService {
