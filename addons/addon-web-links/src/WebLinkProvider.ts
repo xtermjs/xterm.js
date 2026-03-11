@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkProvider, ILink, Terminal, IViewportRange, IBufferLine } from '@xterm/xterm';
+import { ILinkProvider, ILink, Terminal, IViewportRange } from '@xterm/xterm';
 
 export interface ILinkProviderOptions {
   hover?(event: MouseEvent, text: string, location: IViewportRange): void;
@@ -108,47 +108,89 @@ export class LinkComputer {
    * NOTE: We pull line strings with trimRight=true on purpose to make sure
    * to correctly match urls with early wrapped wide chars. This corrupts the string index
    * for 1:1 backmapping to buffer positions, thus needs an additional correction in _mapStrIdx.
+   *
+   * In addition to `isWrapped`, include a conservative fallback for lines that look like
+   * URL continuations. This handles resize/reflow edge cases where wrap markers are stale.
    */
   private static _getWindowedLineStrings(lineIndex: number, terminal: Terminal): [string[], number] {
-    let line: IBufferLine | undefined;
+    const line = terminal.buffer.active.getLine(lineIndex);
+    if (!line) {
+      return [[], lineIndex];
+    }
+
     let topIdx = lineIndex;
     let bottomIdx = lineIndex;
-    let length = 0;
-    let content = '';
-    const lines: string[] = [];
+    const lines = [line.translateToString(true)];
+    let hasProtocolContext = LinkComputer._containsProtocol(lines[0]);
 
-    if ((line = terminal.buffer.active.getLine(lineIndex))) {
-      const currentContent = line.translateToString(true);
-
-      // expand top, stop on whitespaces or length > 2048
-      if (line.isWrapped && currentContent[0] !== ' ') {
-        length = 0;
-        while ((line = terminal.buffer.active.getLine(--topIdx)) && length < 2048) {
-          content = line.translateToString(true);
-          length += content.length;
-          lines.push(content);
-          if (!line.isWrapped || content.indexOf(' ') !== -1) {
-            break;
-          }
-        }
-        lines.reverse();
+    // expand top, stop on whitespaces or length > 2048
+    let topLength = 0;
+    let currentTopLine = line;
+    while (topLength < 2048) {
+      const previousLine = terminal.buffer.active.getLine(topIdx - 1);
+      if (!previousLine) {
+        break;
       }
-
-      // append current line
-      lines.push(currentContent);
-
-      // expand bottom, stop on whitespaces or length > 2048
-      length = 0;
-      while ((line = terminal.buffer.active.getLine(++bottomIdx)) && line.isWrapped && length < 2048) {
-        content = line.translateToString(true);
-        length += content.length;
-        lines.push(content);
-        if (content.indexOf(' ') !== -1) {
-          break;
-        }
+      const previousContent = previousLine.translateToString(true);
+      const currentTopContent = lines[0];
+      const shouldExpandByWrap = currentTopLine.isWrapped && currentTopContent[0] !== ' ' && previousContent.indexOf(' ') === -1;
+      const shouldExpandByContinuation = LinkComputer._isLikelyReflowUrlContinuation(previousContent, currentTopContent, hasProtocolContext);
+      if (!shouldExpandByWrap && !shouldExpandByContinuation) {
+        break;
       }
+      topIdx--;
+      topLength += previousContent.length;
+      lines.unshift(previousContent);
+      hasProtocolContext = hasProtocolContext || LinkComputer._containsProtocol(previousContent);
+      currentTopLine = previousLine;
     }
+
+    // expand bottom, stop on whitespaces or length > 2048
+    let bottomLength = 0;
+    let currentBottomContent = lines[lines.length - 1];
+    while (bottomLength < 2048) {
+      const nextLine = terminal.buffer.active.getLine(bottomIdx + 1);
+      if (!nextLine) {
+        break;
+      }
+      const nextContent = nextLine.translateToString(true);
+      const shouldExpandByWrap = nextLine.isWrapped && nextContent.indexOf(' ') === -1;
+      const shouldExpandByContinuation = LinkComputer._isLikelyReflowUrlContinuation(currentBottomContent, nextContent, hasProtocolContext);
+      if (!shouldExpandByWrap && !shouldExpandByContinuation) {
+        break;
+      }
+      bottomIdx++;
+      bottomLength += nextContent.length;
+      lines.push(nextContent);
+      hasProtocolContext = hasProtocolContext || LinkComputer._containsProtocol(nextContent);
+      currentBottomContent = nextContent;
+    }
+
     return [lines, topIdx];
+  }
+
+  private static _containsProtocol(content: string): boolean {
+    return /https?:\/\//i.test(content);
+  }
+
+  private static _isLikelyReflowUrlContinuation(left: string, right: string, hasProtocolContext: boolean): boolean {
+    if (!left || !right) {
+      return false;
+    }
+    if (left.indexOf(' ') !== -1 || right.indexOf(' ') !== -1) {
+      return false;
+    }
+    if (!(hasProtocolContext || LinkComputer._containsProtocol(left) || LinkComputer._containsProtocol(right))) {
+      return false;
+    }
+    return LinkComputer._isUrlBoundaryChar(left[left.length - 1]) && LinkComputer._isUrlBoundaryChar(right[0]);
+  }
+
+  private static _isUrlBoundaryChar(char: string | undefined): boolean {
+    if (!char) {
+      return false;
+    }
+    return /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/.test(char);
   }
 
   /**

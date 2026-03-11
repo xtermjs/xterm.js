@@ -117,6 +117,37 @@ test.describe('WebLinksAddon', () => {
       await resetAndHover(5, 1);
       await evalLinkStateData('http://test:password@example.com/some_path?param=1%202%3', { start: { x: 12, y: 1 }, end: { x: 27, y: 2 } });
     });
+
+    // issue #5412
+    test('still detects URL when wrapped markers are lost after resize/reflow', async () => {
+      const uri = 'https://auth.openai.com/oauth/authorize?response_type=code&client_id=aljsdhfjkahsdkjfhakjsdjkfa&redirect_uri=http%3A%2F%2Flocalhost%3A1455%2Fauth%2Fcallback&scope=openid%20profile%20email%20offline_access&state=xfkjsadjkghsjkafhgksjhdfgjkfaskjdfhajshdfkjhaskd';
+      await ctx.proxy.write(uri);
+
+      const wrappedRows: number[] = await ctx.page.evaluate(() => {
+        const rows: number[] = [];
+        for (let y = 0; y < window.term.rows; y++) {
+          const line = window.term.buffer.active.getLine(y);
+          if (line?.isWrapped) {
+            rows.push(y);
+          }
+        }
+        return rows;
+      });
+      strictEqual(wrappedRows.length > 0, true);
+
+      await ctx.page.evaluate(rows => {
+        for (const row of rows) {
+          const line = window.term.buffer.active.getLine(row) as any;
+          if (line) {
+            line.isWrapped = false;
+          }
+        }
+      }, wrappedRows);
+
+      await resetAndHover(1, wrappedRows[0]);
+      const data: ILinkStateData = await ctx.page.evaluate(`window._linkStateData`);
+      strictEqual(data.uri, uri);
+    });
   });
 
   // issue #4964
