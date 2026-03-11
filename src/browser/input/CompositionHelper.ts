@@ -76,7 +76,9 @@ export class CompositionHelper {
    * @param ev The event.
    */
   public compositionupdate(ev: Pick<CompositionEvent, 'data'>): void {
-    this._compositionView.textContent = ev.data;
+    // Mark text as LTR, direction=rtl is used in CSS so the end of the text is followed for long
+    // compositions
+    this._compositionView.textContent = `\u200E${ev.data}\u200E`;
     this.updateCompositionElements();
     setTimeout(() => {
       this._compositionPosition.end = this._textarea.value.length;
