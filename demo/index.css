@@ -33,6 +33,7 @@ body {
     padding: 4px 10px;
     cursor: pointer;
     font-size: 12px;
+    outline-offset: -1px;
 }
 .banner-tabs button:hover {
     background: rgba(255,255,255,0.1);

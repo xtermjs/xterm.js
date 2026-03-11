@@ -8,20 +8,21 @@ import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { ApcHandler } from 'common/parser/ApcParser';
 import { IBuffer } from 'common/buffer/Types';
 import { parseColor } from 'common/input/XParseColor';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 import { XTERM_VERSION } from 'common/Version';
 
 /**
@@ -159,6 +160,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public readonly onTitleChange = this._onTitleChange.event;
   private readonly _onColor = this._register(new Emitter<IColorEvent>());
   public readonly onColor = this._onColor.event;
+  private readonly _onRequestColorSchemeQuery = this._register(new Emitter<void>());
+  public readonly onRequestColorSchemeQuery = this._onRequestColorSchemeQuery.event;
 
   private _parseStack: IParseStack = {
     paused: false,
@@ -175,7 +178,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
     private readonly _oscLinkService: IOscLinkService,
-    private readonly _coreMouseService: ICoreMouseService,
+    private readonly _mouseStateService: IMouseStateService,
     private readonly _unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
@@ -404,8 +407,19 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _logSlowResolvingAsync(p: Promise<boolean>): void {
     // log a limited warning about an async handler taking too long
     if (this._logService.logLevel <= LogLevelEnum.WARN) {
-      Promise.race([p, new Promise((res, rej) => setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT))])
-        .catch(err => {
+      let slowTimeout: ReturnType<typeof setTimeout> | undefined;
+      const slowPromise = new Promise<never>((_res, rej) => {
+        slowTimeout = setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT);
+      });
+      Promise.race([p, slowPromise])
+        .then(() => {
+          if (slowTimeout !== undefined) {
+            clearTimeout(slowTimeout);
+          }
+        }, err => {
+          if (slowTimeout !== undefined) {
+            clearTimeout(slowTimeout);
+          }
           if (err !== '#SLOW_TIMEOUT') {
             throw err;
           }
@@ -710,6 +724,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerOscHandler(ident, new OscHandler(callback));
+  }
+
+  /**
+   * Forward registerApcHandler from parser.
+   */
+  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._parser.registerApcHandler(ident, new ApcHandler(callback));
   }
 
   /**
@@ -1772,7 +1793,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param term The terminal name to evaluate
    */
   private _is(term: string): boolean {
-    return (this._optionsService.rawOptions.termName + '').indexOf(term) === 0;
+    return (this._optionsService.rawOptions.termName + '').startsWith(term);
   }
 
   /**
@@ -1966,19 +1987,19 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
-          this._coreMouseService.activeProtocol = 'X10';
+          this._mouseStateService.activeProtocol = 'X10';
           break;
         case 1000: // vt200 mouse
           // no motion.
-          this._coreMouseService.activeProtocol = 'VT200';
+          this._mouseStateService.activeProtocol = 'VT200';
           break;
         case 1002: // button event mouse
-          this._coreMouseService.activeProtocol = 'DRAG';
+          this._mouseStateService.activeProtocol = 'DRAG';
           break;
         case 1003: // any event mouse
           // any event - sends motion events,
           // even if there is no button held down.
-          this._coreMouseService.activeProtocol = 'ANY';
+          this._mouseStateService.activeProtocol = 'ANY';
           break;
         case 1004: // send focusin/focusout events
           // focusin: ^[[I
@@ -1990,13 +2011,13 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._logService.debug('DECSET 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
-          this._coreMouseService.activeEncoding = 'SGR';
+          this._mouseStateService.activeEncoding = 'SGR';
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
         case 1016: // sgr pixels mode mouse
-          this._coreMouseService.activeEncoding = 'SGR_PIXELS';
+          this._mouseStateService.activeEncoding = 'SGR_PIXELS';
           break;
         case 25: // show cursor
           this._coreService.isCursorHidden = false;
@@ -2025,6 +2046,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
           this._coreService.decPrivateModes.synchronizedOutput = true;
+          break;
+        case 2031: // color scheme updates (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+          if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+            this._coreService.decPrivateModes.colorSchemeUpdates = true;
+          }
           break;
         case 9001: // win32-input-mode (https://github.com/microsoft/terminal/blob/main/doc/specs/%234999%20-%20Improved%20keyboard%20handling%20in%20Conpty.md)
           if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
@@ -2222,7 +2248,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1000: // vt200 mouse
         case 1002: // button event mouse
         case 1003: // any event mouse
-          this._coreMouseService.activeProtocol = 'NONE';
+          this._mouseStateService.activeProtocol = 'NONE';
           break;
         case 1004: // send focusin/focusout events
           this._coreService.decPrivateModes.sendFocus = false;
@@ -2231,13 +2257,13 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._logService.debug('DECRST 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
-          this._coreMouseService.activeEncoding = 'DEFAULT';
+          this._mouseStateService.activeEncoding = 'DEFAULT';
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
         case 1016: // sgr pixels mode mouse
-          this._coreMouseService.activeEncoding = 'DEFAULT';
+          this._mouseStateService.activeEncoding = 'DEFAULT';
           break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;
@@ -2270,6 +2296,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 2026: // synchronized output (https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md)
           this._coreService.decPrivateModes.synchronizedOutput = false;
           this._onRequestRefreshRows.fire(undefined);
+          break;
+        case 2031: // color scheme updates (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+          if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+            this._coreService.decPrivateModes.colorSchemeUpdates = false;
+          }
           break;
         case 9001: // win32-input-mode
           if (this._optionsService.rawOptions.vtExtensions?.win32InputMode) {
@@ -2326,7 +2357,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // access helpers
     const dm = this._coreService.decPrivateModes;
-    const { activeProtocol: mouseProtocol, activeEncoding: mouseEncoding } = this._coreMouseService;
+    const { activeProtocol: mouseProtocol, activeEncoding: mouseEncoding } = this._mouseStateService;
     const cs = this._coreService;
     const { buffers, cols } = this._bufferService;
     const { active, alt } = buffers;
@@ -2693,12 +2724,6 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.extended = attr.extended.clone();
         attr.extended.underlineColor = -1;
         attr.updateExtended();
-      } else if (p === 100) { // FIXME: dead branch, p=100 already handled above!
-        // reset fg/bg
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else {
         this._logService.debug('Unknown SGR attribute: %d.', p);
       }
@@ -2773,6 +2798,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 53:
         // no dec locator/mouse
         // this.handler(C0.ESC + '[?50n');
+        break;
+      case 996:
+        // color scheme query (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
+        if (this._optionsService.rawOptions.vtExtensions?.colorSchemeQuery ?? true) {
+          this._onRequestColorSchemeQuery.fire();
+        }
         break;
     }
     return true;
@@ -3335,7 +3366,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (collectAndFlag[0] === '/') {
       return true;  // TODO: Is this supported?
     }
-    this._charsetService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+    this._charsetService.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] ?? DEFAULT_CHARSET);
     return true;
   }
 
@@ -3539,7 +3570,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       return true;
     }
     const flags = params.params[0] || 0;
-    const mode = params.params[1] || 1;
+    const mode = params.length > 1 ? (params.params[1] || 1) : 1;
     const state = this._coreService.kittyKeyboard;
 
     switch (mode) {

@@ -4,12 +4,12 @@
  */
 
 import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
-import { Disposable, dispose, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, dispose, toDisposable } from 'common/Lifecycle';
 import { IDisposable } from 'common/Types';
 import { IBufferService } from 'common/services/Services';
-import { ILinkProviderService, IMouseService, IRenderService } from './services/Services';
-import { Emitter } from 'vs/base/common/event';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { ILinkProviderService, IMouseCoordsService, IRenderService } from './services/Services';
+import { Emitter } from 'common/Event';
+import { addDisposableListener } from 'browser/Dom';
 
 export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
@@ -30,7 +30,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
 
   constructor(
     private readonly _element: HTMLElement,
-    @IMouseService private readonly _mouseService: IMouseService,
+    @IMouseCoordsService private readonly _mouseCoordsService: IMouseCoordsService,
     @IRenderService private readonly _renderService: IRenderService,
     @IBufferService private readonly _bufferService: IBufferService,
     @ILinkProviderService private readonly _linkProviderService: ILinkProviderService
@@ -60,7 +60,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   private _handleMouseMove(event: MouseEvent): void {
     this._lastMouseEvent = event;
 
-    const position = this._positionFromMouseEvent(event, this._element, this._mouseService);
+    const position = this._positionFromMouseEvent(event, this._element);
     if (!position) {
       return;
     }
@@ -222,7 +222,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
       return;
     }
 
-    const position = this._positionFromMouseEvent(event, this._element, this._mouseService);
+    const position = this._positionFromMouseEvent(event, this._element);
     if (!position) {
       return;
     }
@@ -251,7 +251,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
       return;
     }
 
-    const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element, this._mouseService);
+    const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element);
 
     if (!position) {
       return;
@@ -312,7 +312,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
           this._clearCurrentLink(start, end);
           if (this._lastMouseEvent) {
             // re-eval previously active link after changes
-            const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element, this._mouseService!);
+            const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element);
             if (position) {
               this._askForLink(position, false);
             }
@@ -378,8 +378,8 @@ export class Linkifier extends Disposable implements ILinkifier2 {
    * Get the buffer position from a mouse event
    * @param event
    */
-  private _positionFromMouseEvent(event: MouseEvent, element: HTMLElement, mouseService: IMouseService): IBufferCellPosition | undefined {
-    const coords = mouseService.getCoords(event, element, this._bufferService.cols, this._bufferService.rows);
+  private _positionFromMouseEvent(event: MouseEvent, element: HTMLElement): IBufferCellPosition | undefined {
+    const coords = this._mouseCoordsService.getCoords(event, element, this._bufferService.cols, this._bufferService.rows);
     if (!coords) {
       return;
     }

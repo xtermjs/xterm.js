@@ -54,9 +54,6 @@ export function getIndividualSubstitutionGlyph(table: SubstitutionTable, glyphId
       return (glyphId + table.deltaGlyphId) % (2 ** 16);
     // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#12-single-substitution-format-2
     case 2:
-      // eslint-disable-next-line eqeqeq
-      return table.substitute[coverageIndex] != null
-        ? table.substitute[coverageIndex]
-        : null;
+      return table.substitute[coverageIndex] ?? null;
   }
 }

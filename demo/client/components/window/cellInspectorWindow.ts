@@ -30,14 +30,14 @@ export class CellInspectorWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'cell-inspector';
   public readonly label = 'Cell Inspector';
 
-  private _container: HTMLElement;
-  private _positionEl: HTMLElement;
-  private _charEl: HTMLElement;
-  private _codeEl: HTMLElement;
-  private _widthEl: HTMLElement;
-  private _fgEl: HTMLElement;
-  private _bgEl: HTMLElement;
-  private _attrsEl: HTMLElement;
+  private _container!: HTMLElement;
+  private _positionEl!: HTMLElement;
+  private _charEl!: HTMLElement;
+  private _codeEl!: HTMLElement;
+  private _widthEl!: HTMLElement;
+  private _fgEl!: HTMLElement;
+  private _bgEl!: HTMLElement;
+  private _attrsEl!: HTMLElement;
 
   public build(container: HTMLElement): void {
     this._container = container;
@@ -85,7 +85,7 @@ export class CellInspectorWindow extends BaseWindow implements IControlWindow {
 
     terminal.element.addEventListener('mousemove', (e: MouseEvent) => {
       const core = (terminal as any)._core;
-      const coords = core._mouseService?.getCoords(e, core.screenElement, terminal.cols, terminal.rows);
+      const coords = core._mouseCoordsService?.getCoords(e, core.screenElement, terminal.cols, terminal.rows);
       if (!coords) {
         this._clearDisplay();
         return;

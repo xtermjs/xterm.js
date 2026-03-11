@@ -21,14 +21,14 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
-import { CoreMouseService } from 'common/services/CoreMouseService';
+import { MouseStateService } from 'common/services/MouseStateService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
 import { updateWindowsModeWrappedState } from 'common/WindowsMode';
@@ -37,8 +37,8 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
-import { Emitter, Event } from 'vs/base/common/event';
-import { Disposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Emitter, EventUtils, type IEvent } from 'common/Event';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -50,7 +50,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _charsetService: ICharsetService;
   protected readonly _oscLinkService: IOscLinkService;
 
-  public readonly coreMouseService: ICoreMouseService;
+  public readonly mouseStateService: IMouseStateService;
   public readonly coreService: ICoreService;
   public readonly unicodeService: IUnicodeService;
   public readonly optionsService: IOptionsService;
@@ -78,7 +78,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
    */
   protected _onScrollApi?: Emitter<number>;
   protected _onScroll = this._register(new Emitter<IScrollEvent>());
-  public get onScroll(): Event<number> {
+  public get onScroll(): IEvent<number> {
     if (!this._onScrollApi) {
       this._onScrollApi = this._register(new Emitter<number>());
       this._onScroll.event(ev => {
@@ -107,14 +107,14 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService = new InstantiationService();
     this.optionsService = this._register(new OptionsService(options));
     this._instantiationService.setService(IOptionsService, this.optionsService);
-    this._bufferService = this._register(this._instantiationService.createInstance(BufferService));
-    this._instantiationService.setService(IBufferService, this._bufferService);
     this._logService = this._register(this._instantiationService.createInstance(LogService));
     this._instantiationService.setService(ILogService, this._logService);
+    this._bufferService = this._register(this._instantiationService.createInstance(BufferService));
+    this._instantiationService.setService(IBufferService, this._bufferService);
     this.coreService = this._register(this._instantiationService.createInstance(CoreService));
     this._instantiationService.setService(ICoreService, this.coreService);
-    this.coreMouseService = this._register(this._instantiationService.createInstance(CoreMouseService));
-    this._instantiationService.setService(ICoreMouseService, this.coreMouseService);
+    this.mouseStateService = this._register(this._instantiationService.createInstance(MouseStateService));
+    this._instantiationService.setService(IMouseStateService, this.mouseStateService);
     this.unicodeService = this._register(this._instantiationService.createInstance(UnicodeService));
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
@@ -124,13 +124,13 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
 
     // Register input handler and handle/forward events
-    this._inputHandler = this._register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));
-    this._register(Event.forward(this._inputHandler.onLineFeed, this._onLineFeed));
+    this._inputHandler = this._register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.mouseStateService, this.unicodeService));
+    this._register(EventUtils.forward(this._inputHandler.onLineFeed, this._onLineFeed));
 
     // Setup listeners
-    this._register(Event.forward(this._bufferService.onResize, this._onResize));
-    this._register(Event.forward(this.coreService.onData, this._onData));
-    this._register(Event.forward(this.coreService.onBinary, this._onBinary));
+    this._register(EventUtils.forward(this._bufferService.onResize, this._onResize));
+    this._register(EventUtils.forward(this.coreService.onData, this._onData));
+    this._register(EventUtils.forward(this.coreService.onBinary, this._onBinary));
     this._register(this.coreService.onRequestScrollToBottom(() => this.scrollToBottom(true)));
     this._register(this.coreService.onUserInput(() =>  this._writeBuffer.handleUserInput()));
     this._register(this.optionsService.onMultipleOptionChange(['windowsPty'], () => this._handleWindowsPtyOptionChange()));
@@ -140,7 +140,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     }));
     // Setup WriteBuffer
     this._writeBuffer = this._register(new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult)));
-    this._register(Event.forward(this._writeBuffer.onWriteParsed, this._onWriteParsed));
+    this._register(EventUtils.forward(this._writeBuffer.onWriteParsed, this._onWriteParsed));
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
@@ -242,6 +242,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     return this._inputHandler.registerOscHandler(ident, callback);
   }
 
+  /** Add handler for APC escape sequence. See xterm.d.ts for details. */
+  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerApcHandler(ident, callback);
+  }
+
   protected _setup(): void {
     this._handleWindowsPtyOptionChange();
   }
@@ -251,7 +256,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._bufferService.reset();
     this._charsetService.reset();
     this.coreService.reset();
-    this.coreMouseService.reset();
+    this.mouseStateService.reset();
   }
 
 

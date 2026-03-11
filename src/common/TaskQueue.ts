@@ -4,6 +4,7 @@
  */
 
 import { isNode } from 'common/Platform';
+import type { ILogService } from 'common/services/Services';
 
 interface ITaskQueue {
   /**
@@ -34,6 +35,11 @@ abstract class TaskQueue implements ITaskQueue {
   private _tasks: (() => boolean | void)[] = [];
   private _idleCallback?: number;
   private _i = 0;
+  protected readonly _logService: ILogService;
+
+  constructor(logService: ILogService) {
+    this._logService = logService;
+  }
 
   protected abstract _requestCallback(callback: CallbackWithDeadline): number;
   protected abstract _cancelCallback(identifier: number): void;
@@ -90,7 +96,7 @@ abstract class TaskQueue implements ITaskQueue {
         // Warn when the time exceeding the deadline is over 20ms, if this happens in practice the
         // task should be split into sub-tasks to ensure the UI remains responsive.
         if (lastDeadlineRemaining - taskDuration < -20) {
-          console.warn(`task queue exceeded allotted deadline by ${Math.abs(Math.round(lastDeadlineRemaining - taskDuration))}ms`);
+          this._logService.warn(`task queue exceeded allotted deadline by ${Math.abs(Math.round(lastDeadlineRemaining - taskDuration))}ms`);
         }
         this._start();
         return;
@@ -151,8 +157,8 @@ export const IdleTaskQueue = (!isNode && 'requestIdleCallback' in window) ? Idle
 export class DebouncedIdleTask {
   private _queue: ITaskQueue;
 
-  constructor() {
-    this._queue = new IdleTaskQueue();
+  constructor(logService: ILogService) {
+    this._queue = new IdleTaskQueue(logService);
   }
 
   public set(task: () => boolean | void): void {

@@ -30,7 +30,7 @@ export function enableLigatures(term: Terminal, fallbackLigatures: string[] = []
   let currentFontName: string | undefined = undefined;
   let font: Font | undefined = undefined;
   let loadingState: LoadingState = LoadingState.UNLOADED;
-  let loadError: any | undefined = undefined;
+  let loadError: unknown = undefined;
 
   return term.registerCharacterJoiner((text: string): [number, number][] => {
     // If the font hasn't been loaded yet, load it and return an empty result

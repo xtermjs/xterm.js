@@ -3,17 +3,18 @@
  * @license MIT
  */
 
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { Emitter } from 'common/Event';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,
   rows: 24,
   showCursorImmediately: false,
   cursorBlink: false,
+  blinkIntervalDuration: 0,
   cursorStyle: 'block',
   cursorWidth: 1,
   cursorInactiveStyle: 'outline',
@@ -31,6 +32,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   logLevel: 'info',
   logger: null,
   scrollback: 1000,
+  scrollbar: { showScrollbar: true },
   scrollOnEraseInDisplay: false,
   scrollOnUserInput: true,
   scrollSensitivity: 1,
@@ -53,8 +55,6 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
-  cancelEvents: false,
-  overviewRuler: {},
   quirks: {},
   vtExtensions: {}
 };
@@ -168,6 +168,12 @@ export class OptionsService extends Disposable implements IOptionsService {
           break;
         }
         value = FONT_WEIGHT_OPTIONS.includes(value) ? value : DEFAULT_OPTIONS[key];
+        break;
+      case 'blinkIntervalDuration':
+        value = Math.floor(value);
+        if (value < 0) {
+          throw new Error(`${key} cannot be less than 0, value: ${value}`);
+        }
         break;
       case 'cursorWidth':
         value = Math.floor(value);

@@ -18,13 +18,13 @@
     "xterm.js"
   ],
   "scripts": {
-    "prepackage": "../../node_modules/.bin/tsc -p .",
+    "prepackage": "../../node_modules/.bin/tsgo -p .",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
     "start": "node ../../demo/start"
   },
   "devDependencies": {
     "sixel": "^0.16.0",
-    "xterm-wasm-parts": "^0.1.0"
+    "xterm-wasm-parts": "^0.3.0"
   }
 }

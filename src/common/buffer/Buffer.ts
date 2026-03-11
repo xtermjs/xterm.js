@@ -14,7 +14,7 @@ import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, 
 import { Marker } from 'common/buffer/Marker';
 import { IBuffer } from 'common/buffer/Types';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
-import { IBufferService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -48,11 +48,14 @@ export class Buffer implements IBuffer {
   private _cols: number;
   private _rows: number;
   private _isClearing: boolean = false;
+  private _memoryCleanupQueue: InstanceType<typeof IdleTaskQueue>;
+  private _memoryCleanupPosition = 0;
 
   constructor(
     private _hasScrollback: boolean,
     private _optionsService: IOptionsService,
-    private _bufferService: IBufferService
+    private _bufferService: IBufferService,
+    private readonly _logService: ILogService
   ) {
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
@@ -60,6 +63,7 @@ export class Buffer implements IBuffer {
     this.scrollTop = 0;
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();
+    this._memoryCleanupQueue = new IdleTaskQueue(this._logService);
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -122,9 +126,7 @@ export class Buffer implements IBuffer {
    */
   public fillViewportRows(fillAttr?: IAttributeData): void {
     if (this.lines.length === 0) {
-      if (fillAttr === undefined) {
-        fillAttr = DEFAULT_ATTR_DATA;
-      }
+      fillAttr ??= DEFAULT_ATTR_DATA;
       let i = this._rows;
       while (i--) {
         this.lines.push(this.getBlankLine(fillAttr));
@@ -278,9 +280,6 @@ export class Buffer implements IBuffer {
       this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
     }
   }
-
-  private _memoryCleanupQueue = new IdleTaskQueue();
-  private _memoryCleanupPosition = 0;
 
   private _batchedMemoryCleanup(): boolean {
     let normalRun = true;
@@ -589,9 +588,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor to the previous tab stop.
    */
   public prevStop(x?: number): number {
-    if (x === null || x === undefined) {
-      x = this.x;
-    }
+    x ??= this.x;
     while (!this.tabs[--x] && x > 0);
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }
@@ -601,9 +598,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor one tab stop forward.
    */
   public nextStop(x?: number): number {
-    if (x === null || x === undefined) {
-      x = this.x;
-    }
+    x ??= this.x;
     while (!this.tabs[++x] && x < this._cols);
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }

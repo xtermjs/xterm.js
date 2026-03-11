@@ -10,10 +10,10 @@ export class AddonSerializeWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addon-serialize';
   public readonly label = 'serialize';
 
-  private _serializeOutputPre: HTMLPreElement;
-  private _htmlSerializeOutputPre: HTMLPreElement;
-  private _htmlSerializeOutputResult: HTMLElement;
-  private _writeToTerminalCheckbox: HTMLInputElement;
+  private _serializeOutputPre!: HTMLPreElement;
+  private _htmlSerializeOutputPre!: HTMLPreElement;
+  private _htmlSerializeOutputResult!: HTMLElement;
+  private _writeToTerminalCheckbox!: HTMLInputElement;
 
   public build(container: HTMLElement): void {
     const wrapper = document.createElement('div');
@@ -64,7 +64,7 @@ export class AddonSerializeWindow extends BaseWindow implements IControlWindow {
   }
 
   private _serializeButtonHandler(): void {
-    const output = this._addons.serialize.instance.serialize();
+    const output = this._addons.serialize.instance!.serialize();
     const outputString = JSON.stringify(output);
 
     this._serializeOutputPre.innerText = outputString;
@@ -75,7 +75,7 @@ export class AddonSerializeWindow extends BaseWindow implements IControlWindow {
   }
 
   private _htmlSerializeButtonHandler(): void {
-    const output = this._addons.serialize.instance.serializeAsHTML();
+    const output = this._addons.serialize.instance!.serializeAsHTML();
     this._htmlSerializeOutputPre.innerText = output;
 
     // Deprecated, but the most supported for now.

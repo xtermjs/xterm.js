@@ -14,8 +14,8 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IColor } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
-import { IUnicodeService } from 'common/services/Services';
-import { Emitter } from 'vs/base/common/event';
+import { ILogService, IUnicodeService } from 'common/services/Services';
+import { Emitter } from 'common/Event';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.
@@ -88,7 +88,8 @@ export class TextureAtlas implements ITextureAtlas {
   constructor(
     private readonly _document: Document,
     private readonly _config: ICharAtlasConfig,
-    private readonly _unicodeService: IUnicodeService
+    private readonly _unicodeService: IUnicodeService,
+    private readonly _logService: ILogService
   ) {
     this._createNewPage();
     this._tmpCanvas = createCanvas(
@@ -119,7 +120,7 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126, this is not urgent and done in idle callbacks
-    const queue = new IdleTaskQueue();
+    const queue = new IdleTaskQueue(this._logService);
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
         if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
@@ -176,6 +177,17 @@ export class TextureAtlas implements ITextureAtlas {
 
       // Gather details of the merge
       const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
+
+      // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
+      // effectively reduce page count and merging would cause issues.
+      if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
+        const newPage = new AtlasPage(this._document, this._textureSize);
+        this._pages.push(newPage);
+        this._activePages.push(newPage);
+        this._onAddTextureAtlasCanvas.fire(newPage.canvas);
+        return newPage;
+      }
+
       const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
       const mergedPageIndex = this.pages.length - mergingPages.length;
 
@@ -399,7 +411,7 @@ export class TextureAtlas implements ITextureAtlas {
     const cache = this._getContrastCache(dim);
     const adjustedColor = cache.getColor(bg, fg);
     if (adjustedColor !== undefined) {
-      return adjustedColor || undefined;
+      return adjustedColor ?? undefined;
     }
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
@@ -514,7 +526,8 @@ export class TextureAtlas implements ITextureAtlas {
     // Draw custom characters if applicable
     let customGlyph = false;
     if (this._config.customGlyphs !== false) {
-      customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.deviceCharWidth, this._config.deviceCharHeight, this._config.fontSize, this._config.devicePixelRatio, backgroundColor.css);
+      const variantOffset = this._workAttributeData.getUnderlineVariantOffset();
+      customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.deviceCharWidth, this._config.deviceCharHeight, this._config.fontSize, this._config.devicePixelRatio, backgroundColor.css, variantOffset);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the

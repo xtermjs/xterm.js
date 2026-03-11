@@ -5,7 +5,8 @@
     "outDir": "../out-demo/server",
     "rootDir": ".",
     "sourceMap": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": [
     "./**/*",

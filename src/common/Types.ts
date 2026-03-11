@@ -7,12 +7,12 @@ import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { UnderlineStyle } from 'common/buffer/Constants';
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
-import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
-import type { Emitter, Event } from 'vs/base/common/event';
+import type { Emitter, IEvent } from 'common/Event';
 
 export interface ICoreTerminal {
-  coreMouseService: ICoreMouseService;
+  mouseStateService: IMouseStateService;
   coreService: ICoreService;
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
@@ -22,6 +22,7 @@ export interface ICoreTerminal {
   registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
   registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
   registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+  registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 }
 
 export interface IDisposable {
@@ -31,7 +32,6 @@ export interface IDisposable {
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
   [key: string]: any;
-  cancelEvents?: boolean;
   convertEol?: boolean;
   termName?: string;
 }
@@ -68,11 +68,11 @@ export interface ICircularList<T> {
   isFull: boolean;
 
   onDeleteEmitter: Emitter<IDeleteEvent>;
-  onDelete: Event<IDeleteEvent>;
+  onDelete: IEvent<IDeleteEvent>;
   onInsertEmitter: Emitter<IInsertEvent>;
-  onInsert: Event<IInsertEvent>;
+  onInsert: IEvent<IInsertEvent>;
   onTrimEmitter: Emitter<number>;
-  onTrim: Event<number>;
+  onTrim: IEvent<number>;
 
   get(index: number): T | undefined;
   set(index: number, value: T): void;
@@ -101,13 +101,13 @@ export interface ICharset {
   [key: string]: string | undefined;
 }
 
-export type CharData = [number, string, number, number];
+export type CharData = [attr: number, char: string, width: number, code: number];
 
 export interface IColor {
   readonly css: string;
   readonly rgba: number; // 32-bit int with rgba in each byte
 }
-export type IColorRGB = [number, number, number];
+export type IColorRGB = [red: number, green: number, blue: number];
 
 export interface IExtendedAttrs {
   ext: number;
@@ -258,7 +258,7 @@ export interface IMarker extends IDisposable {
   readonly id: number;
   readonly isDisposed: boolean;
   readonly line: number;
-  onDispose: Event<void>;
+  onDispose: IEvent<void>;
 }
 export interface IModes {
   insertMode: boolean;
@@ -268,6 +268,7 @@ export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
   applicationKeypad: boolean;
   bracketedPasteMode: boolean;
+  colorSchemeUpdates: boolean;
   cursorBlink: boolean | undefined;
   cursorStyle: CursorStyle | undefined;
   origin: boolean;
@@ -342,7 +343,7 @@ export interface ICoreMouseEvent {
    * it is not possible to report multiple buttons at once.
    * Wheel is treated as a button.
    * There are invalid combinations of buttons and actions possible
-   * (like move + wheel), those are silently ignored by the CoreMouseService.
+   * (like move + wheel), those are silently ignored by the MouseStateService.
    */
   button: CoreMouseButton;
   action: CoreMouseAction;
@@ -359,7 +360,7 @@ export interface ICoreMouseEvent {
  * CoreMouseEventType
  * To be reported to the browser component which events a mouse
  * protocol wants to be catched and forwarded as an ICoreMouseEvent
- * to CoreMouseService.
+ * to MouseStateService.
  */
 export const enum CoreMouseEventType {
   NONE = 0,
@@ -377,7 +378,7 @@ export const enum CoreMouseEventType {
 
 /**
  * Mouse protocol interface.
- * A mouse protocol can be registered and activated at the CoreMouseService.
+ * A mouse protocol can be registered and activated at the MouseStateService.
  * `events` should contain a list of needed events as a hint for the browser component
  * to install/remove the appropriate event handlers.
  * `restrict` applies further protocol specific restrictions like not allowed
@@ -390,7 +391,7 @@ export interface ICoreMouseProtocol {
 
 /**
  * CoreMouseEncoding
- * The tracking encoding can be registered and activated at the CoreMouseService.
+ * The tracking encoding can be registered and activated at the MouseStateService.
  * If a ICoreMouseEvent passes all procotol restrictions it will be encoded
  * with the active encoding and sent out.
  * Note: Returning an empty string will supress sending a mouse report,
@@ -467,7 +468,7 @@ export type IColorEvent = (IColorReportRequest | IColorSetRequest | IColorRestor
  * Calls the parser and handles actions generated by the parser.
  */
 export interface IInputHandler {
-  onTitleChange: Event<string>;
+  onTitleChange: IEvent<string>;
 
   parse(data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean>;
   print(data: Uint32Array, start: number, end: number): void;
@@ -475,6 +476,7 @@ export interface IInputHandler {
   registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
   registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
   registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+  registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 
   /** C0 BEL */ bell(): boolean;
   /** C0 LF */ lineFeed(): boolean;

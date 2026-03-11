@@ -21,9 +21,6 @@
       "browser/*": [
         "../../../src/browser/*"
       ],
-      "vs/*": [
-        "../../../src/vs/*"
-      ],
       "@xterm/addon-search" : [
         "../typings/addon-search.d.ts"
       ]
@@ -39,9 +36,6 @@
     },
     {
       "path": "../../../src/browser"
-    },
-    {
-      "path": "../../../src/vs"
     }
   ]
 }

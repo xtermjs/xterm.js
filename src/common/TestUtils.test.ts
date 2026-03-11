@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -12,14 +12,22 @@ import { BufferSet } from 'common/buffer/BufferSet';
 import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
-import { Emitter, type Event } from 'vs/base/common/event';
+import { Emitter, type IEvent } from 'common/Event';
+import { CellData } from 'common/buffer/CellData';
+import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from 'common/buffer/Constants';
+
+export function createCellData(attr: number, char: string, width: number): CellData {
+  return CellData.fromCharData([attr, char, width, char.length === 0 ? 0 : char.charCodeAt(0)]);
+}
+
+export const NULL_CELL_DATA = Object.freeze(createCellData(DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH));
 
 export class MockBufferService implements IBufferService {
   public serviceBrand: any;
   public get buffer(): IBuffer { return this.buffers.active; }
   public buffers: IBufferSet = {} as any;
-  public onResize: Event<IBufferResizeEvent> = new Emitter<IBufferResizeEvent>().event;
-  public onScroll: Event<number> = new Emitter<number>().event;
+  public onResize: IEvent<IBufferResizeEvent> = new Emitter<IBufferResizeEvent>().event;
+  public onScroll: IEvent<number> = new Emitter<number>().event;
   private readonly _onScroll = new Emitter<number>();
   public isUserScrolling: boolean = false;
   constructor(
@@ -27,7 +35,7 @@ export class MockBufferService implements IBufferService {
     public rows: number,
     optionsService: IOptionsService = new MockOptionsService()
   ) {
-    this.buffers = new BufferSet(optionsService, this);
+    this.buffers = new BufferSet(optionsService, this, new MockLogService());
     // Listen to buffer activation events and automatically fire scroll events
     this.buffers.onBufferActivate(e => {
       this._onScroll.fire(e.activeBuffer.ydisp);
@@ -58,22 +66,21 @@ export class MockBufferService implements IBufferService {
   public reset(): void { }
 }
 
-export class MockCoreMouseService implements ICoreMouseService {
+export class MockMouseStateService implements IMouseStateService {
   public serviceBrand: any;
   public areMouseEventsActive: boolean = false;
   public activeEncoding: string = '';
   public activeProtocol: string = '';
+  public isDefaultEncoding: boolean = true;
+  public isPixelEncoding: boolean = false;
   public addEncoding(name: string): void { }
   public addProtocol(name: string): void { }
   public reset(): void { }
-  public triggerMouseEvent(event: ICoreMouseEvent): boolean { return false; }
-  public onProtocolChange: Event<CoreMouseEventType> = new Emitter<CoreMouseEventType>().event;
-  public explainEvents(events: CoreMouseEventType): { [event: string]: boolean } {
-    throw new Error('Method not implemented.');
-  }
-  public consumeWheelEvent(ev: WheelEvent, cellHeight: number, dpr: number): number {
-    return 1;
-  }
+  public onProtocolChange: IEvent<CoreMouseEventType> = new Emitter<CoreMouseEventType>().event;
+  public restrictMouseEvent(event: ICoreMouseEvent): boolean { return true; }
+  public encodeMouseEvent(event: ICoreMouseEvent): string { return ''; }
+  public setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void { }
+  public allowCustomWheelEvent(ev: WheelEvent): boolean { return true; }
 }
 
 export class MockCharsetService implements ICharsetService {
@@ -106,6 +113,7 @@ export class MockCoreService implements ICoreService {
     applicationCursorKeys: false,
     applicationKeypad: false,
     bracketedPasteMode: false,
+    colorSchemeUpdates: false,
     cursorBlink: undefined,
     cursorStyle: undefined,
     origin: false,
@@ -122,10 +130,10 @@ export class MockCoreService implements ICoreService {
     mainStack: [] as number[],
     altStack: [] as number[]
   };
-  public onData: Event<string> = new Emitter<string>().event;
-  public onUserInput: Event<void> = new Emitter<void>().event;
-  public onBinary: Event<string> = new Emitter<string>().event;
-  public onRequestScrollToBottom: Event<void> = new Emitter<void>().event;
+  public onData: IEvent<string> = new Emitter<string>().event;
+  public onUserInput: IEvent<void> = new Emitter<void>().event;
+  public onBinary: IEvent<string> = new Emitter<string>().event;
+  public onRequestScrollToBottom: IEvent<void> = new Emitter<void>().event;
   public reset(): void { }
   public triggerDataEvent(data: string, wasUserInput?: boolean): void { }
   public triggerBinaryEvent(data: string): void { }
@@ -145,7 +153,7 @@ export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
   public readonly rawOptions: Required<ITerminalOptions> = clone(DEFAULT_OPTIONS);
   public options: Required<ITerminalOptions> = this.rawOptions;
-  public onOptionChange: Event<keyof ITerminalOptions> = new Emitter<keyof ITerminalOptions>().event;
+  public onOptionChange: IEvent<keyof ITerminalOptions> = new Emitter<keyof ITerminalOptions>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
     if (testOptions) {
       for (const key of Object.keys(testOptions)) {
@@ -197,7 +205,7 @@ export class MockUnicodeService implements IUnicodeService {
   }
   public versions: string[] = [];
   public activeVersion: string = '';
-  public onChange: Event<string> = new Emitter<string>().event;
+  public onChange: IEvent<string> = new Emitter<string>().event;
   public wcwidth = (codepoint: number): UnicodeCharWidth => this._provider.wcwidth(codepoint);
   public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     let width = this.wcwidth(codepoint);

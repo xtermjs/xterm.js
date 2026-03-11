@@ -10,7 +10,7 @@ export class WebglWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addon-webgl';
   public readonly label = 'webgl';
 
-  private _textureAtlasContainer: HTMLElement;
+  private _textureAtlasContainer!: HTMLElement;
 
   public build(container: HTMLElement): void {
     const zoomCheckbox = document.createElement('input');

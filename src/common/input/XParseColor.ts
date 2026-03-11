@@ -24,7 +24,7 @@ export function parseColor(data: string): [number, number, number] | undefined {
   if (!data) return;
   // also handle uppercases
   let low = data.toLowerCase();
-  if (low.indexOf('rgb:') === 0) {
+  if (low.startsWith('rgb:')) {
     // 'rgb:' specifier
     low = low.slice(4);
     const m = RGB_REX.exec(low);
@@ -36,7 +36,7 @@ export function parseColor(data: string): [number, number, number] | undefined {
         Math.round(parseInt(m[3] || m[6] || m[9] || m[12], 16) / base * 255)
       ];
     }
-  } else if (low.indexOf('#') === 0) {
+  } else if (low.startsWith('#')) {
     // '#' specifier
     low = low.slice(1);
     if (HASH_REX.exec(low) && [3, 6, 9, 12].includes(low.length)) {

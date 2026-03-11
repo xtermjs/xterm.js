@@ -10,7 +10,7 @@ export class AddonsWindow extends BaseWindow implements IControlWindow {
   public readonly id = 'addons';
   public readonly label = 'Addons';
 
-  private _addonsContainer: HTMLElement;
+  private _addonsContainer!: HTMLElement;
 
   public build(container: HTMLElement): void {
     // Description
