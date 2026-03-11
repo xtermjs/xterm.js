@@ -175,6 +175,7 @@ export class MouseStateService extends Disposable implements IMouseStateService 
   private _activeEncoding: string = '';
   private _lastEvent: ICoreMouseEvent | null = null;
   private _wheelPartialScroll: number = 0;
+  private _customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined;
 
   private readonly _onProtocolChange = this._register(new Emitter<CoreMouseEventType>());
   public readonly onProtocolChange = this._onProtocolChange.event;
@@ -266,6 +267,14 @@ export class MouseStateService extends Disposable implements IMouseStateService 
       amount *= this._bufferService.rows;
     }
     return amount;
+  }
+
+  public setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void {
+    this._customWheelEventHandler = customWheelEventHandler;
+  }
+
+  public allowCustomWheelEvent(ev: WheelEvent): boolean {
+    return this._customWheelEventHandler ? this._customWheelEventHandler(ev) !== false : true;
   }
 
   private _applyScrollModifier(amount: number, ev: WheelEvent): number {

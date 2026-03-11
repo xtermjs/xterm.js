@@ -70,6 +70,16 @@ export interface IMouseStateService {
    * Process wheel event taking partial scroll into account.
    */
   consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number;
+
+  /**
+   * Sets a custom wheel event handler that can veto wheel processing.
+   */
+  setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void;
+
+  /**
+   * Checks whether a wheel event should be processed.
+   */
+  allowCustomWheelEvent(ev: WheelEvent): boolean;
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');

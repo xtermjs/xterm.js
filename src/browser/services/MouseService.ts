@@ -8,7 +8,6 @@ import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptions
 import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, IDisposable } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 import { toDisposable } from 'common/Lifecycle';
-import { CustomWheelEventHandler } from 'browser/Types';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
 
 type RequestedMouseEvents = Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener | null>;
@@ -21,8 +20,6 @@ interface IMouseBindContext {
 
 export class MouseService implements IMouseService {
   public serviceBrand: undefined;
-
-  private _customWheelEventHandler: CustomWheelEventHandler | undefined;
 
   constructor(
     @IRenderService private readonly _renderService: IRenderService,
@@ -119,7 +116,7 @@ export class MouseService implements IMouseService {
         but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
         break;
       case 'wheel':
-        if (this._customWheelEventHandler && this._customWheelEventHandler(ev as WheelEvent) === false) {
+        if (!this._mouseStateService.allowCustomWheelEvent(ev as WheelEvent)) {
           return false;
         }
         const deltaY = (ev as WheelEvent).deltaY;
@@ -226,7 +223,7 @@ export class MouseService implements IMouseService {
       return;
     }
 
-    if (this._customWheelEventHandler && this._customWheelEventHandler(ev) === false) {
+    if (!this._mouseStateService.allowCustomWheelEvent(ev)) {
       return false;
     }
 
@@ -320,7 +317,4 @@ export class MouseService implements IMouseService {
     }
   }
 
-  public setCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler | undefined): void {
-    this._customWheelEventHandler = customWheelEventHandler;
-  }
 }

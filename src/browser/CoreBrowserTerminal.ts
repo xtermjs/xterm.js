@@ -78,7 +78,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public browser: IBrowser = Browser as any;
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
-  private _customWheelEventHandler: CustomWheelEventHandler | undefined;
 
   // Browser services
   private readonly _decorationService: DecorationService;
@@ -582,7 +581,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
     this._mouseService = this._instantiationService.createInstance(MouseService);
-    this._mouseService.setCustomWheelEventHandler(this._customWheelEventHandler);
     this._instantiationService.setService(IMouseService, this._mouseService);
     this._register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
     this._register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
@@ -727,8 +725,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   public attachCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler): void {
-    this._customWheelEventHandler = customWheelEventHandler;
-    this._mouseService?.setCustomWheelEventHandler(customWheelEventHandler);
+    this.mouseStateService.setCustomWheelEventHandler(customWheelEventHandler);
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {

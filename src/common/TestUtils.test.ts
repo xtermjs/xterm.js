@@ -82,6 +82,8 @@ export class MockMouseStateService implements IMouseStateService {
   public consumeWheelEvent(ev: WheelEvent, cellHeight: number, dpr: number): number {
     return 1;
   }
+  public setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void { }
+  public allowCustomWheelEvent(ev: WheelEvent): boolean { return true; }
 }
 
 export class MockCharsetService implements ICharsetService {
