@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IBufferService, ICoreService, ICoreMouseService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from 'common/services/Services';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
@@ -151,7 +151,7 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
 };
 
 /**
- * CoreMouseService
+ * MouseStateService
  *
  * Provides mouse tracking reports with different protocols and encodings.
  *  - protocols: NONE (default), X10, VT200, DRAG, ANY
@@ -166,7 +166,7 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
  * a tracking report to the backend based on protocol and encoding limitations.
  * To send a mouse event call `triggerMouseEvent`.
  */
-export class CoreMouseService extends Disposable implements ICoreMouseService {
+export class MouseStateService extends Disposable implements IMouseStateService {
   public serviceBrand: any;
 
   private _protocols: { [name: string]: ICoreMouseProtocol } = {};

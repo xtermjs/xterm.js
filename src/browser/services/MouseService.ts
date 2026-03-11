@@ -4,7 +4,7 @@
  */
 
 import { addDisposableListener } from 'browser/Dom';
-import { IBufferService, ICoreMouseService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
 import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, IDisposable } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 import { toDisposable } from 'common/Lifecycle';
@@ -27,7 +27,7 @@ export class MouseService implements IMouseService {
   constructor(
     @IRenderService private readonly _renderService: IRenderService,
     @IMouseCoordsService private readonly _mouseCoordsService: IMouseCoordsService,
-    @ICoreMouseService private readonly _coreMouseService: ICoreMouseService,
+    @IMouseStateService private readonly _mouseStateService: IMouseStateService,
     @ICoreService private readonly _coreService: ICoreService,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
@@ -42,7 +42,7 @@ export class MouseService implements IMouseService {
 
     /**
      * Event listener state handling.
-     * We listen to the onProtocolChange event of CoreMouseService and put
+     * We listen to the onProtocolChange event of MouseStateService and put
      * requested listeners in `requestedEvents`. With this the listeners
      * have all bits to do the event listener juggling.
      * Note: 'mousedown' currently is "always on" and not managed
@@ -61,11 +61,11 @@ export class MouseService implements IMouseService {
       mousedrag: (ev: Event) => this._handleMouseDrag(ctx, ev as MouseEvent),
       mousemove: (ev: Event) => this._handleMouseMove(ctx, ev as MouseEvent)
     };
-    register(this._coreMouseService.onProtocolChange(events => {
+    register(this._mouseStateService.onProtocolChange(events => {
       this._handleProtocolChange(ctx, eventListeners, events);
     }));
     // force initial onProtocolChange so we dont miss early mouse requests
-    this._coreMouseService.activeProtocol = this._coreMouseService.activeProtocol;
+    this._mouseStateService.activeProtocol = this._mouseStateService.activeProtocol;
 
     // Ensure document-level listeners are removed on dispose
     register(toDisposable(() => {
@@ -126,7 +126,7 @@ export class MouseService implements IMouseService {
         if (deltaY === 0) {
           return false;
         }
-        const lines = this._coreMouseService.consumeWheelEvent(
+        const lines = this._mouseStateService.consumeWheelEvent(
           ev as WheelEvent,
           this._renderService?.dimensions?.device?.cell?.height,
           this._coreBrowserService?.dpr
@@ -148,7 +148,7 @@ export class MouseService implements IMouseService {
       return false;
     }
 
-    return this._coreMouseService.triggerMouseEvent({
+    return this._mouseStateService.triggerMouseEvent({
       col: pos.col,
       row: pos.row,
       x: pos.x,
@@ -202,7 +202,7 @@ export class MouseService implements IMouseService {
     // Don't send the mouse button to the pty if mouse events are disabled or
     // if the selection manager is having selection forced (ie. a modifier is
     // held).
-    if (!this._coreMouseService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
+    if (!this._mouseStateService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
       return;
     }
 
@@ -244,7 +244,7 @@ export class MouseService implements IMouseService {
         return false;
       }
 
-      const lines = this._coreMouseService.consumeWheelEvent(
+      const lines = this._mouseStateService.consumeWheelEvent(
         ev,
         this._renderService?.dimensions?.device?.cell?.height,
         this._coreBrowserService?.dpr
@@ -270,7 +270,7 @@ export class MouseService implements IMouseService {
     // apply global changes on events
     if (events) {
       if (this._optionsService.rawOptions.logLevel === 'debug') {
-        this._logService.debug('Binding to mouse events:', this._coreMouseService.explainEvents(events));
+        this._logService.debug('Binding to mouse events:', this._mouseStateService.explainEvents(events));
       }
       element.classList.add('enable-mouse-events');
       this._selectionService.disable();

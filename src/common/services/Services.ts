@@ -33,8 +33,8 @@ export interface IBufferResizeEvent {
   rowsChanged: boolean;
 }
 
-export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
-export interface ICoreMouseService {
+export const IMouseStateService = createDecorator<IMouseStateService>('MouseStateService');
+export interface IMouseStateService {
   serviceBrand: undefined;
 
   activeProtocol: string;

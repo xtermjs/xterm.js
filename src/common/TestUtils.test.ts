@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, ICoreMouseService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
@@ -66,7 +66,7 @@ export class MockBufferService implements IBufferService {
   public reset(): void { }
 }
 
-export class MockCoreMouseService implements ICoreMouseService {
+export class MockMouseStateService implements IMouseStateService {
   public serviceBrand: any;
   public areMouseEventsActive: boolean = false;
   public activeEncoding: string = '';

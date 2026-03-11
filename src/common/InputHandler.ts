@@ -15,7 +15,7 @@ import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } fr
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, ICoreMouseService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';
@@ -178,7 +178,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
     private readonly _oscLinkService: IOscLinkService,
-    private readonly _coreMouseService: ICoreMouseService,
+    private readonly _mouseStateService: IMouseStateService,
     private readonly _unicodeService: IUnicodeService,
     private readonly _parser: IEscapeSequenceParser = new EscapeSequenceParser()
   ) {
@@ -1987,19 +1987,19 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
-          this._coreMouseService.activeProtocol = 'X10';
+          this._mouseStateService.activeProtocol = 'X10';
           break;
         case 1000: // vt200 mouse
           // no motion.
-          this._coreMouseService.activeProtocol = 'VT200';
+          this._mouseStateService.activeProtocol = 'VT200';
           break;
         case 1002: // button event mouse
-          this._coreMouseService.activeProtocol = 'DRAG';
+          this._mouseStateService.activeProtocol = 'DRAG';
           break;
         case 1003: // any event mouse
           // any event - sends motion events,
           // even if there is no button held down.
-          this._coreMouseService.activeProtocol = 'ANY';
+          this._mouseStateService.activeProtocol = 'ANY';
           break;
         case 1004: // send focusin/focusout events
           // focusin: ^[[I
@@ -2011,13 +2011,13 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._logService.debug('DECSET 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
-          this._coreMouseService.activeEncoding = 'SGR';
+          this._mouseStateService.activeEncoding = 'SGR';
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECSET 1015 not supported (see #2507)');
           break;
         case 1016: // sgr pixels mode mouse
-          this._coreMouseService.activeEncoding = 'SGR_PIXELS';
+          this._mouseStateService.activeEncoding = 'SGR_PIXELS';
           break;
         case 25: // show cursor
           this._coreService.isCursorHidden = false;
@@ -2248,7 +2248,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 1000: // vt200 mouse
         case 1002: // button event mouse
         case 1003: // any event mouse
-          this._coreMouseService.activeProtocol = 'NONE';
+          this._mouseStateService.activeProtocol = 'NONE';
           break;
         case 1004: // send focusin/focusout events
           this._coreService.decPrivateModes.sendFocus = false;
@@ -2257,13 +2257,13 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._logService.debug('DECRST 1005 not supported (see #2507)');
           break;
         case 1006: // sgr ext mode mouse
-          this._coreMouseService.activeEncoding = 'DEFAULT';
+          this._mouseStateService.activeEncoding = 'DEFAULT';
           break;
         case 1015: // urxvt ext mode mouse - removed in #2507
           this._logService.debug('DECRST 1015 not supported (see #2507)');
           break;
         case 1016: // sgr pixels mode mouse
-          this._coreMouseService.activeEncoding = 'DEFAULT';
+          this._mouseStateService.activeEncoding = 'DEFAULT';
           break;
         case 25: // hide cursor
           this._coreService.isCursorHidden = true;
@@ -2357,7 +2357,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // access helpers
     const dm = this._coreService.decPrivateModes;
-    const { activeProtocol: mouseProtocol, activeEncoding: mouseEncoding } = this._coreMouseService;
+    const { activeProtocol: mouseProtocol, activeEncoding: mouseEncoding } = this._mouseStateService;
     const cs = this._coreService;
     const { buffers, cols } = this._bufferService;
     const { active, alt } = buffers;

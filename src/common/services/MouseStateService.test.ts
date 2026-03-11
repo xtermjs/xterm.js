@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { CoreMouseService } from 'common/services/CoreMouseService';
+import { MouseStateService } from 'common/services/MouseStateService';
 import { MockCoreService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
 import { assert } from 'chai';
 import { ICoreMouseEvent, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
@@ -23,22 +23,22 @@ function toBytes(s: string | undefined): number[] {
   return res;
 }
 
-describe('CoreMouseService', () => {
+describe('MouseStateService', () => {
   it('init', () => {
-    const cms = new CoreMouseService(bufferService, coreService, optionsService);
+    const cms = new MouseStateService(bufferService, coreService, optionsService);
     assert.equal(cms.activeEncoding, 'DEFAULT');
     assert.equal(cms.activeProtocol, 'NONE');
   });
   it('default protocols - NONE, X10, VT200, DRAG, ANY', () => {
-    const cms = new CoreMouseService(bufferService, coreService, optionsService);
+    const cms = new MouseStateService(bufferService, coreService, optionsService);
     assert.deepEqual(Object.keys((cms as any)._protocols), ['NONE', 'X10', 'VT200', 'DRAG', 'ANY']);
   });
   it('default encodings - DEFAULT, SGR', () => {
-    const cms = new CoreMouseService(bufferService, coreService, optionsService);
+    const cms = new MouseStateService(bufferService, coreService, optionsService);
     assert.deepEqual(Object.keys((cms as any)._encodings), ['DEFAULT', 'SGR', 'SGR_PIXELS']);
   });
   it('protocol/encoding setter, reset', () => {
-    const cms = new CoreMouseService(bufferService, coreService, optionsService);
+    const cms = new MouseStateService(bufferService, coreService, optionsService);
     cms.activeEncoding = 'SGR';
     cms.activeProtocol = 'ANY';
     assert.equal(cms.activeEncoding, 'SGR');
@@ -50,19 +50,19 @@ describe('CoreMouseService', () => {
     assert.throws(() => { cms.activeProtocol = 'xyz'; }, 'unknown protocol "xyz"');
   });
   it('addEncoding', () => {
-    const cms = new CoreMouseService(bufferService, coreService, optionsService);
+    const cms = new MouseStateService(bufferService, coreService, optionsService);
     cms.addEncoding('XYZ', (e: ICoreMouseEvent) => '');
     cms.activeEncoding = 'XYZ';
     assert.equal(cms.activeEncoding, 'XYZ');
   });
   it('addProtocol', () => {
-    const cms = new CoreMouseService(bufferService, coreService, optionsService);
+    const cms = new MouseStateService(bufferService, coreService, optionsService);
     cms.addProtocol('XYZ', { events: CoreMouseEventType.NONE, restrict: (e: ICoreMouseEvent) => false });
     cms.activeProtocol = 'XYZ';
     assert.equal(cms.activeProtocol, 'XYZ');
   });
   it('onProtocolChange', () => {
-    const cms = new CoreMouseService(bufferService, coreService, optionsService);
+    const cms = new MouseStateService(bufferService, coreService, optionsService);
     const wantedEvents: CoreMouseEventType[] = [];
     cms.onProtocolChange(events => wantedEvents.push(events));
     cms.activeProtocol = 'NONE';
@@ -74,10 +74,10 @@ describe('CoreMouseService', () => {
     ]);
   });
   describe('triggerMouseEvent', () => {
-    let cms: CoreMouseService;
+    let cms: MouseStateService;
     let reports: string[];
     beforeEach(() => {
-      cms = new CoreMouseService(bufferService, coreService, optionsService);
+      cms = new MouseStateService(bufferService, coreService, optionsService);
       reports = [];
       coreService.triggerDataEvent = (data: string, userInput?: boolean) => reports.push(data);
       coreService.triggerBinaryEvent = (data: string) => reports.push(data);
