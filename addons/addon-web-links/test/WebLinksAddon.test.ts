@@ -124,9 +124,10 @@ test.describe('WebLinksAddon', () => {
       await ctx.proxy.write(uri);
 
       const wrappedRows: number[] = await ctx.page.evaluate(() => {
+        const term = (window as any).term;
         const rows: number[] = [];
-        for (let y = 0; y < window.term.rows; y++) {
-          const line = window.term.buffer.active.getLine(y);
+        for (let y = 0; y < term.rows; y++) {
+          const line = term.buffer.active.getLine(y);
           if (line?.isWrapped) {
             rows.push(y);
           }
@@ -136,8 +137,9 @@ test.describe('WebLinksAddon', () => {
       strictEqual(wrappedRows.length > 0, true);
 
       await ctx.page.evaluate(rows => {
+        const term = (window as any).term;
         for (const row of rows) {
-          const line = window.term.buffer.active.getLine(row) as any;
+          const line = term.buffer.active.getLine(row) as any;
           if (line) {
             line.isWrapped = false;
           }
