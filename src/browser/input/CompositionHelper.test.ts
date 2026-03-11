@@ -45,6 +45,14 @@ describe('CompositionHelper', () => {
     compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, new MockRenderService());
   });
 
+  describe('Layout', () => {
+    it('should keep composition text direction left-to-right', () => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'nihao' });
+      assert.equal((compositionView.style as any).direction, 'ltr');
+    });
+  });
+
   describe('Input', () => {
     it('Should insert simple characters', (done) => {
       // First character 'ㅇ'

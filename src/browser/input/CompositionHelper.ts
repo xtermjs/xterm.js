@@ -244,7 +244,8 @@ export class CompositionHelper {
       const maxWidth = this._bufferService.cols * this._renderService.dimensions.css.cell.width - cursorLeft;
       this._compositionView.style.maxWidth = maxWidth + 'px';
       this._compositionView.style.overflow = 'hidden';
-      this._compositionView.style.direction = 'rtl';
+      // Keep composition text order natural for IMEs (eg. pinyin) while still clipping overflow.
+      this._compositionView.style.direction = 'ltr';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
