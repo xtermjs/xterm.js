@@ -643,7 +643,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
-    this._mouseService!.bindMouse({
+    this._mouseService.bindMouse({
       element: this.element!,
       screenElement: this.screenElement!,
       document: this._document!
