@@ -4,7 +4,7 @@
  */
 
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
-import { IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
+import { CustomWheelEventHandler, IColorSet, ILink, ReadonlyColorSet } from 'browser/Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { AllColorIndex, IDisposable, IKeyboardResult } from 'common/Types';
@@ -50,11 +50,18 @@ export interface ICoreBrowserService {
 }
 
 export const IMouseService = createDecorator<IMouseService>('MouseService');
+export interface IMouseServiceTarget {
+  element: HTMLElement;
+  screenElement: HTMLElement;
+  document: Document;
+}
 export interface IMouseService {
   serviceBrand: undefined;
 
   getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
   getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined;
+  setCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler | undefined): void;
+  bindMouse(target: IMouseServiceTarget, register: (disposable: IDisposable) => void, focus: () => void): void;
 }
 
 export const IRenderService = createDecorator<IRenderService>('RenderService');
