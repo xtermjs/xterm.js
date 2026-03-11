@@ -85,7 +85,7 @@ export class CellInspectorWindow extends BaseWindow implements IControlWindow {
 
     terminal.element.addEventListener('mousemove', (e: MouseEvent) => {
       const core = (terminal as any)._core;
-      const coords = core._mouseService?.getCoords(e, core.screenElement, terminal.cols, terminal.rows);
+      const coords = core._mouseCoordsService?.getCoords(e, core.screenElement, terminal.cols, terminal.rows);
       if (!coords) {
         this._clearDisplay();
         return;

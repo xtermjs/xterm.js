@@ -6,7 +6,7 @@
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ViewportConstants } from 'browser/shared/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, ICoreMouseService, IOptionsService } from 'common/services/Services';
+import { IBufferService, IMouseStateService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { scheduleAtNextAnimationFrame } from 'browser/Dom';
 import { SmoothScrollableElement } from 'browser/scrollable/scrollableElement';
@@ -33,7 +33,7 @@ export class Viewport extends Disposable {
     screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreBrowserService coreBrowserService: ICoreBrowserService,
-    @ICoreMouseService coreMouseService: ICoreMouseService,
+    @IMouseStateService mouseStateService: IMouseStateService,
     @IThemeService themeService: IThemeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @IRenderService private readonly _renderService: IRenderService
@@ -64,7 +64,7 @@ export class Viewport extends Disposable {
       'scrollbar'
     ], () => this._scrollableElement.updateOptions(this._getChangeOptions())));
     // Don't handle mouse wheel if wheel events are supported by the current mouse prototcol
-    this._register(coreMouseService.onProtocolChange(type => {
+    this._register(mouseStateService.onProtocolChange(type => {
       this._scrollableElement.updateOptions({
         handleMouseWheel: !(type & CoreMouseEventType.WHEEL)
       });

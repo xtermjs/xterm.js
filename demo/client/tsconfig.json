@@ -5,8 +5,8 @@
     "outDir": "../out-demo/client",
     "rootDir": ".",
     "sourceMap": true,
-    "baseUrl": ".",
     "strict": true,
+    "skipLibCheck": true,
     "paths": {
       "@xterm/addon-attach": ["../../addons/addon-attach"],
       "@xterm/addon-clipboard": ["../../addons/addon-clipboard"],
@@ -20,7 +20,8 @@
       "@xterm/addon-webgl": ["../../addons/addon-webgl"],
       "@xterm/addon-unicode11": ["../../addons/addon-unicode11"],
       "@xterm/addon-unicode-graphemes": ["../../addons/addon-unicode-graphemes"],
-      "@xterm/addon-ligatures": ["../../addons/addon-ligatures"]
+      "@xterm/addon-ligatures": ["../../addons/addon-ligatures"],
+      "*": ["./*"]
     }
   },
   "include": [

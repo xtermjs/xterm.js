@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { SelectionService, SelectionMode } from './SelectionService';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { IBufferLine } from 'common/Types';
-import { MockBufferService, MockOptionsService, MockCoreService } from 'common/TestUtils.test';
+import { MockBufferService, MockOptionsService, MockCoreService, createCellData } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { MockCoreBrowserService, MockMouseService, MockRenderService } from 'browser/TestUtils.test';
@@ -57,14 +57,14 @@ describe('SelectionService', () => {
   function stringToRow(text: string): IBufferLine {
     const result = new BufferLine(text.length);
     for (let i = 0; i < text.length; i++) {
-      result.setCell(i, CellData.fromCharData([0, text.charAt(i), 1, text.charCodeAt(i)]));
+      result.setCell(i, createCellData(0, text.charAt(i), 1));
     }
     return result;
   }
 
   function stringArrayToRow(chars: string[]): IBufferLine {
     const line = new BufferLine(chars.length);
-    chars.map((c, idx) => line.setCell(idx, CellData.fromCharData([0, c, 1, c.charCodeAt(0)])));
+    chars.map((c, idx) => line.setCell(idx, createCellData(0, c, 1)));
     return line;
   }
 

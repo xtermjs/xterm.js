@@ -36,16 +36,17 @@ import { CharSizeService } from 'browser/services/CharSizeService';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
+import { MouseCoordsService } from 'browser/services/MouseCoordsService';
 import { MouseService } from 'browser/services/MouseService';
 import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseCoordsService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
 import { KeyboardService } from 'browser/services/KeyboardService';
 import { channels, color, rgb } from 'common/Color';
 import { CoreTerminal } from 'common/CoreTerminal';
 import * as Browser from 'common/Platform';
-import { ColorRequestType, CoreMouseAction, CoreMouseButton, CoreMouseEventType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
+import { ColorRequestType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { C0, C1ESCAPED } from 'common/data/EscapeSequences';
@@ -57,7 +58,6 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
 import { Emitter, EventUtils, type IEvent } from 'common/Event';
 import { addDisposableListener } from 'browser/Dom';
-import { Gesture, EventType as GestureEventType, type IGestureEvent } from 'browser/scrollable/touch';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
@@ -78,8 +78,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public browser: IBrowser = Browser as any;
 
   private _customKeyEventHandler: CustomKeyEventHandler | undefined;
-  private _customWheelEventHandler: CustomWheelEventHandler | undefined;
-  private _touchScrollAccumulator: number = 0;
 
   // Browser services
   private readonly _decorationService: DecorationService;
@@ -89,6 +87,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   // Optional browser services
   private _charSizeService: ICharSizeService | undefined;
   private _coreBrowserService: ICoreBrowserService | undefined;
+  private _mouseCoordsService: IMouseCoordsService | undefined;
   private _mouseService: IMouseService | undefined;
   private _renderService: IRenderService | undefined;
   private _themeService: IThemeService | undefined;
@@ -545,8 +544,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._compositionHelper = this._instantiationService.createInstance(CompositionHelper, this.textarea, this._compositionView);
     this._helperContainer.appendChild(this._compositionView);
 
-    this._mouseService = this._instantiationService.createInstance(MouseService);
-    this._instantiationService.setService(IMouseService, this._mouseService);
+    this._mouseCoordsService = this._instantiationService.createInstance(MouseCoordsService);
+    this._instantiationService.setService(IMouseCoordsService, this._mouseCoordsService);
 
     const linkifier = this._linkifier.value = this._register(this._instantiationService.createInstance(Linkifier, this.screenElement));
 
@@ -581,6 +580,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       linkifier
     ));
     this._instantiationService.setService(ISelectionService, this._selectionService);
+    this._mouseService = this._instantiationService.createInstance(MouseService);
+    this._instantiationService.setService(IMouseService, this._mouseService);
     this._register(this._selectionService.onRequestScrollLines(e => this.scrollLines(e.amount, e.suppressScrollEvent)));
     this._register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
     this._register(this._selectionService.onRequestRedraw(e => this._renderService!.handleSelectionChanged(e.start, e.end, e.columnSelectMode)));
@@ -604,7 +605,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
-    if (this.coreMouseService.areMouseEventsActive) {
+    if (this.mouseStateService.areMouseEventsActive) {
       this._selectionService.disable();
       this.element.classList.add('enable-mouse-events');
     } else {
@@ -640,354 +641,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
-    this.bindMouse();
+    this._mouseService.bindMouse({
+      element: this.element!,
+      screenElement: this.screenElement!,
+      document: this._document!,
+      handleTouchScroll: amount => this._viewport?.handleTouchScroll(amount)
+    }, disposable => this._register(disposable), () => this.focus());
   }
 
   private _createRenderer(): IRenderer {
     return this._instantiationService.createInstance(DomRenderer, this, this._document!, this.element!, this.screenElement!, this._viewportElement!, this._helperContainer!, this.linkifier!);
-  }
-
-  /**
-   * Bind certain mouse events to the terminal.
-   * By default only 3 button + wheel up/down is ativated. For higher buttons
-   * no mouse report will be created. Typically the standard actions will be active.
-   *
-   * There are several reasons not to enable support for higher buttons/wheel:
-   * - Button 4 and 5 are typically used for history back and forward navigation,
-   *   there is no straight forward way to supress/intercept those standard actions.
-   * - Support for higher buttons does not work in some platform/browser combinations.
-   * - Left/right wheel was not tested.
-   * - Emulators vary in mouse button support, typically only 3 buttons and
-   *   wheel up/down work reliable.
-   *
-   * TODO: Move mouse event code into its own file.
-   */
-  public bindMouse(): void {
-    const self = this;
-    const el = this.element!;
-
-    // send event to CoreMouseService
-    function sendEvent(ev: MouseEvent | WheelEvent): boolean {
-      // Get mouse coordinates
-      const pos = self._mouseService?.getMouseReportCoords(ev, self.screenElement!);
-      if (!pos) {
-        return false;
-      }
-
-      let but: CoreMouseButton;
-      let action: CoreMouseAction | undefined;
-      switch ((ev as any).overrideType || ev.type) {
-        case 'mousemove':
-          action = CoreMouseAction.MOVE;
-          if (ev.buttons === undefined) {
-            // buttons is not supported on macOS, try to get a value from button instead
-            but = CoreMouseButton.NONE;
-            if (ev.button !== undefined) {
-              but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
-            }
-          } else {
-            // according to MDN buttons only reports up to button 5 (AUX2)
-            but = ev.buttons & 1 ? CoreMouseButton.LEFT :
-              ev.buttons & 4 ? CoreMouseButton.MIDDLE :
-                ev.buttons & 2 ? CoreMouseButton.RIGHT :
-                  CoreMouseButton.NONE; // fallback to NONE
-          }
-          break;
-        case 'mouseup':
-          action = CoreMouseAction.UP;
-          but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
-          break;
-        case 'mousedown':
-          action = CoreMouseAction.DOWN;
-          but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
-          break;
-        case 'wheel':
-          if (self._customWheelEventHandler && self._customWheelEventHandler(ev as WheelEvent) === false) {
-            return false;
-          }
-          const deltaY = (ev as WheelEvent).deltaY;
-          if (deltaY === 0) {
-            return false;
-          }
-          const lines = self.coreMouseService.consumeWheelEvent(
-            ev as WheelEvent,
-            self._renderService?.dimensions?.device?.cell?.height,
-            self._coreBrowserService?.dpr
-          );
-          if (lines === 0) {
-            return false;
-          }
-          action = deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
-          but = CoreMouseButton.WHEEL;
-          break;
-        default:
-          // dont handle other event types by accident
-          return false;
-      }
-
-      // exit if we cannot determine valid button/action values
-      // do nothing for higher buttons than wheel
-      if (action === undefined || but === undefined || but > CoreMouseButton.WHEEL) {
-        return false;
-      }
-
-      return self.coreMouseService.triggerMouseEvent({
-        col: pos.col,
-        row: pos.row,
-        x: pos.x,
-        y: pos.y,
-        button: but,
-        action,
-        ctrl: ev.ctrlKey,
-        alt: ev.altKey,
-        shift: ev.shiftKey
-      });
-    }
-
-    /**
-     * Event listener state handling.
-     * We listen to the onProtocolChange event of CoreMouseService and put
-     * requested listeners in `requestedEvents`. With this the listeners
-     * have all bits to do the event listener juggling.
-     * Note: 'mousedown' currently is "always on" and not managed
-     * by onProtocolChange.
-     */
-    const requestedEvents: { [key: string]: ((ev: MouseEvent | WheelEvent) => void) | null } = {
-      mouseup: null,
-      wheel: null,
-      mousedrag: null,
-      mousemove: null
-    };
-    const eventListeners: { [key: string]: (ev: any) => void | boolean } = {
-      mouseup: (ev: MouseEvent) => {
-        sendEvent(ev);
-        if (!ev.buttons) {
-          // if no other button is held remove global handlers
-          this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
-          if (requestedEvents.mousedrag) {
-            this._document!.removeEventListener('mousemove', requestedEvents.mousedrag);
-          }
-        }
-      },
-      wheel: (ev: WheelEvent) => {
-        sendEvent(ev);
-        ev.preventDefault();
-        ev.stopPropagation();
-        return false;
-      },
-      mousedrag: (ev: MouseEvent) => {
-        // deal only with move while a button is held
-        if (ev.buttons) {
-          sendEvent(ev);
-        }
-      },
-      mousemove: (ev: MouseEvent) => {
-        // deal only with move without any button
-        if (!ev.buttons) {
-          sendEvent(ev);
-        }
-      }
-    };
-    this._register(this.coreMouseService.onProtocolChange(events => {
-      // apply global changes on events
-      if (events) {
-        if (this.optionsService.rawOptions.logLevel === 'debug') {
-          this._logService.debug('Binding to mouse events:', this.coreMouseService.explainEvents(events));
-        }
-        this.element!.classList.add('enable-mouse-events');
-        this._selectionService!.disable();
-      } else {
-        this._logService.debug('Unbinding from mouse events.');
-        this.element!.classList.remove('enable-mouse-events');
-        this._selectionService!.enable();
-      }
-
-      // add/remove handlers from requestedEvents
-
-      if (!(events & CoreMouseEventType.MOVE)) {
-        el.removeEventListener('mousemove', requestedEvents.mousemove!);
-        requestedEvents.mousemove = null;
-      } else if (!requestedEvents.mousemove) {
-        el.addEventListener('mousemove', eventListeners.mousemove);
-        requestedEvents.mousemove = eventListeners.mousemove;
-      }
-
-      if (!(events & CoreMouseEventType.WHEEL)) {
-        el.removeEventListener('wheel', requestedEvents.wheel!);
-        requestedEvents.wheel = null;
-      } else if (!requestedEvents.wheel) {
-        el.addEventListener('wheel', eventListeners.wheel, { passive: false });
-        requestedEvents.wheel = eventListeners.wheel;
-      }
-
-      if (!(events & CoreMouseEventType.UP)) {
-        this._document!.removeEventListener('mouseup', requestedEvents.mouseup!);
-        requestedEvents.mouseup = null;
-      } else {
-        requestedEvents.mouseup ??= eventListeners.mouseup;
-      }
-
-      if (!(events & CoreMouseEventType.DRAG)) {
-        this._document!.removeEventListener('mousemove', requestedEvents.mousedrag!);
-        requestedEvents.mousedrag = null;
-      } else {
-        requestedEvents.mousedrag ??= eventListeners.mousedrag;
-      }
-    }));
-    // force initial onProtocolChange so we dont miss early mouse requests
-    this.coreMouseService.activeProtocol = this.coreMouseService.activeProtocol;
-
-    // Ensure document-level listeners are removed on dispose
-    this._register(toDisposable(() => {
-      if (requestedEvents.mouseup) {
-        this._document!.removeEventListener('mouseup', requestedEvents.mouseup);
-      }
-      if (requestedEvents.mousedrag) {
-        this._document!.removeEventListener('mousemove', requestedEvents.mousedrag);
-      }
-    }));
-
-    /**
-     * "Always on" event listeners.
-     */
-    this._register(addDisposableListener(el, 'mousedown', (ev: MouseEvent) => {
-      ev.preventDefault();
-      this.focus();
-
-      // Don't send the mouse button to the pty if mouse events are disabled or
-      // if the selection manager is having selection forced (ie. a modifier is
-      // held).
-      if (!this.coreMouseService.areMouseEventsActive || this._selectionService!.shouldForceSelection(ev)) {
-        return;
-      }
-
-      sendEvent(ev);
-
-      // Register additional global handlers which should keep reporting outside
-      // of the terminal element.
-      // Note: Other emulators also do this for 'mousedown' while a button
-      // is held, we currently limit 'mousedown' to the terminal only.
-      if (requestedEvents.mouseup) {
-        this._document!.addEventListener('mouseup', requestedEvents.mouseup);
-      }
-      if (requestedEvents.mousedrag) {
-        this._document!.addEventListener('mousemove', requestedEvents.mousedrag);
-      }
-    }));
-
-    this._register(addDisposableListener(el, 'wheel', (ev: WheelEvent) => {
-      // do nothing, if app side handles wheel itself
-      if (requestedEvents.wheel) return;
-
-      if (this._customWheelEventHandler && this._customWheelEventHandler(ev) === false) {
-        return false;
-      }
-
-      if (!this.buffer.hasScrollback) {
-        // Convert wheel events into up/down events when the buffer does not have scrollback, this
-        // enables scrolling in apps hosted in the alt buffer such as vim or tmux even when mouse
-        // events are not enabled.
-        // This used implementation used get the actual lines/partial lines scrolled from the
-        // viewport but since moving to the new viewport implementation has been simplified to
-        // simply send a single up or down sequence.
-
-        // Do nothing if there's no vertical scroll
-        const deltaY = (ev as WheelEvent).deltaY;
-        if (deltaY === 0) {
-          return false;
-        }
-
-        const lines = self.coreMouseService.consumeWheelEvent(
-          ev as WheelEvent,
-          self._renderService?.dimensions?.device?.cell?.height,
-          self._coreBrowserService?.dpr
-        );
-        if (lines === 0) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          return false;
-        }
-
-        // Construct and send sequences
-        const sequence = C0.ESC + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
-        this.coreService.triggerDataEvent(sequence, true);
-        ev.preventDefault();
-        ev.stopPropagation();
-        return false;
-      }
-    }, { passive: false }));
-
-    // Touch/gesture scrolling support
-    this._register(Gesture.addTarget(this.screenElement!));
-    this._register(addDisposableListener(this.screenElement!, GestureEventType.START, () => {
-      this._touchScrollAccumulator = 0;
-    }));
-    this._register(addDisposableListener(this.screenElement!, GestureEventType.CHANGE, (e: IGestureEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // When mouse protocol has wheel events active, send as mouse wheel events
-      if (requestedEvents.wheel) {
-        this._handleTouchScrollAsWheel(e, sendEvent);
-        return;
-      }
-
-      // When in alt buffer (no scrollback), send up/down key sequences
-      if (!this.buffer.hasScrollback) {
-        this._handleTouchScrollAsKeys(e);
-        return;
-      }
-
-      // Normal scrollback: delegate to viewport
-      this._viewport?.handleTouchScroll(e.translationY);
-    }));
-  }
-
-
-  private _handleTouchScrollAsKeys(e: IGestureEvent): void {
-    const cellHeight = this._renderService?.dimensions.css.cell.height;
-    if (!cellHeight) return;
-
-    this._touchScrollAccumulator -= e.translationY;
-    const lines = Math.trunc(this._touchScrollAccumulator / cellHeight);
-    if (lines === 0) return;
-
-    this._touchScrollAccumulator -= lines * cellHeight;
-    const sequence = C0.ESC
-      + (this.coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[')
-      + (lines < 0 ? 'A' : 'B');
-    for (let i = 0; i < Math.abs(lines); i++) {
-      this.coreService.triggerDataEvent(sequence, true);
-    }
-  }
-
-  private _handleTouchScrollAsWheel(e: IGestureEvent, sendEvent: (ev: MouseEvent | WheelEvent) => boolean): void {
-    const cellHeight = this._renderService?.dimensions.css.cell.height;
-    if (!cellHeight) return;
-
-    this._touchScrollAccumulator -= e.translationY;
-    const lines = Math.trunc(this._touchScrollAccumulator / cellHeight);
-    if (lines === 0) return;
-
-    this._touchScrollAccumulator -= lines * cellHeight;
-
-    // Get coordinates from gesture event
-    const pos = this._mouseService?.getMouseReportCoords(e, this.screenElement!);
-    if (!pos) return;
-
-    for (let i = 0; i < Math.abs(lines); i++) {
-      this.coreMouseService.triggerMouseEvent({
-        col: pos.col,
-        row: pos.row,
-        x: pos.x,
-        y: pos.y,
-        button: CoreMouseButton.WHEEL,
-        action: lines < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN,
-        ctrl: false,
-        alt: false,
-        shift: false
-      });
-    }
   }
 
   /**
@@ -1063,7 +726,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   public attachCustomWheelEventHandler(customWheelEventHandler: CustomWheelEventHandler): void {
-    this._customWheelEventHandler = customWheelEventHandler;
+    this.mouseStateService.setCustomWheelEventHandler(customWheelEventHandler);
   }
 
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
@@ -1433,6 +1096,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._setup();
     super.reset();
+    this._mouseService?.reset();
     this._selectionService?.reset();
     this._decorationService.reset();
 

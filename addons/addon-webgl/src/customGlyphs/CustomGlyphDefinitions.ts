@@ -7,6 +7,35 @@ import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType,
 
 /* eslint-disable max-len */
 
+const enum Shapes {
+  /** │ */ TOP_TO_BOTTOM = 'M.5,0 L.5,1',
+  /** ─ */ LEFT_TO_RIGHT = 'M0,.5 L1,.5',
+
+  /** └ */ TOP_TO_RIGHT = 'M.5,0 L.5,.5 L1,.5',
+  /** ┘ */ TOP_TO_LEFT = 'M.5,0 L.5,.5 L0,.5',
+  /** ┐ */ LEFT_TO_BOTTOM = 'M0,.5 L.5,.5 L.5,1',
+  /** ┌ */ RIGHT_TO_BOTTOM = 'M0.5,1 L.5,.5 L1,.5',
+
+  /** ╵ */ MIDDLE_TO_TOP = 'M.5,.5 L.5,0',
+  /** ╴ */ MIDDLE_TO_LEFT = 'M.5,.5 L0,.5',
+  /** ╶ */ MIDDLE_TO_RIGHT = 'M.5,.5 L1,.5',
+  /** ╷ */ MIDDLE_TO_BOTTOM = 'M.5,.5 L.5,1',
+
+  /** ┴ */ T_TOP = 'M0,.5 L1,.5 M.5,.5 L.5,0',
+  /** ┤ */ T_LEFT = 'M.5,0 L.5,1 M.5,.5 L0,.5',
+  /** ├ */ T_RIGHT = 'M.5,0 L.5,1 M.5,.5 L1,.5',
+  /** ┬ */ T_BOTTOM = 'M0,.5 L1,.5 M.5,.5 L.5,1',
+
+  /** ┼ */ CROSS = 'M0,.5 L1,.5 M.5,0 L.5,1',
+
+  /** ╌ */ TWO_DASHES_HORIZONTAL = 'M.1,.5 L.4,.5 M.6,.5 L.9,.5', // .2 empty, .3 filled
+  /** ┄ */ THREE_DASHES_HORIZONTAL = 'M.0667,.5 L.2667,.5 M.4,.5 L.6,.5 M.7333,.5 L.9333,.5', // .1333 empty, .2 filled
+  /** ┉ */ FOUR_DASHES_HORIZONTAL = 'M.05,.5 L.2,.5 M.3,.5 L.45,.5 M.55,.5 L.7,.5 M.8,.5 L.95,.5', // .1 empty, .15 filled
+  /** ╎ */ TWO_DASHES_VERTICAL = 'M.5,.1 L.5,.4 M.5,.6 L.5,.9',
+  /** ┆ */ THREE_DASHES_VERTICAL = 'M.5,.0667 L.5,.2667 M.5,.4 L.5,.6 M.5,.7333 L.5,.9333',
+  /** ┊ */ FOUR_DASHES_VERTICAL = 'M.5,.05 L.5,.2 M.5,.3 L.5,.45 L.5,.55 M.5,.7 L.5,.95',
+}
+
 namespace GitBranchSymbolsParts {
   // Lines
   export const LINE_H: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: Shapes.LEFT_TO_RIGHT, strokeWidth: 1 });
@@ -988,31 +1017,3 @@ function segmentedDigit(pattern: number): string {
   return paths.join(' ');
 }
 
-const enum Shapes {
-  /** │ */ TOP_TO_BOTTOM = 'M.5,0 L.5,1',
-  /** ─ */ LEFT_TO_RIGHT = 'M0,.5 L1,.5',
-
-  /** └ */ TOP_TO_RIGHT = 'M.5,0 L.5,.5 L1,.5',
-  /** ┘ */ TOP_TO_LEFT = 'M.5,0 L.5,.5 L0,.5',
-  /** ┐ */ LEFT_TO_BOTTOM = 'M0,.5 L.5,.5 L.5,1',
-  /** ┌ */ RIGHT_TO_BOTTOM = 'M0.5,1 L.5,.5 L1,.5',
-
-  /** ╵ */ MIDDLE_TO_TOP = 'M.5,.5 L.5,0',
-  /** ╴ */ MIDDLE_TO_LEFT = 'M.5,.5 L0,.5',
-  /** ╶ */ MIDDLE_TO_RIGHT = 'M.5,.5 L1,.5',
-  /** ╷ */ MIDDLE_TO_BOTTOM = 'M.5,.5 L.5,1',
-
-  /** ┴ */ T_TOP = 'M0,.5 L1,.5 M.5,.5 L.5,0',
-  /** ┤ */ T_LEFT = 'M.5,0 L.5,1 M.5,.5 L0,.5',
-  /** ├ */ T_RIGHT = 'M.5,0 L.5,1 M.5,.5 L1,.5',
-  /** ┬ */ T_BOTTOM = 'M0,.5 L1,.5 M.5,.5 L.5,1',
-
-  /** ┼ */ CROSS = 'M0,.5 L1,.5 M.5,0 L.5,1',
-
-  /** ╌ */ TWO_DASHES_HORIZONTAL = 'M.1,.5 L.4,.5 M.6,.5 L.9,.5', // .2 empty, .3 filled
-  /** ┄ */ THREE_DASHES_HORIZONTAL = 'M.0667,.5 L.2667,.5 M.4,.5 L.6,.5 M.7333,.5 L.9333,.5', // .1333 empty, .2 filled
-  /** ┉ */ FOUR_DASHES_HORIZONTAL = 'M.05,.5 L.2,.5 M.3,.5 L.45,.5 M.55,.5 L.7,.5 M.8,.5 L.95,.5', // .1 empty, .15 filled
-  /** ╎ */ TWO_DASHES_VERTICAL = 'M.5,.1 L.5,.4 M.5,.6 L.5,.9',
-  /** ┆ */ THREE_DASHES_VERTICAL = 'M.5,.0667 L.5,.2667 M.5,.4 L.5,.6 M.5,.7333 L.5,.9333',
-  /** ┊ */ FOUR_DASHES_VERTICAL = 'M.5,.05 L.5,.2 M.5,.3 L.5,.45 L.5,.55 M.5,.7 L.5,.95',
-}

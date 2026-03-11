@@ -14,8 +14,8 @@
     "node": ">8.0.0"
   },
   "scripts": {
-    "build": "tsc -p src",
-    "watch": "tsc -w -p src",
+    "build": "tsgo -p src",
+    "watch": "tsgo -w -p src",
     "prepackage": "npm run build",
     "package": "webpack",
     "pretest": "npm run build",

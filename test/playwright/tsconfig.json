@@ -14,8 +14,9 @@
     "removeComments": true,
     "pretty": true,
     "strict": true,
+    "noImplicitAny": false,
     "declaration": true,
-    "baseUrl": ".",
+    "moduleResolution": "node",
     "paths": {
       "browser/*": [
         "../../src/browser/*"

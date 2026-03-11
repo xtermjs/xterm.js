@@ -51,8 +51,6 @@ export class OverviewRulerRenderer extends Disposable {
   private _shouldUpdateAnchor: boolean | undefined = true;
   private _lastKnownBufferLength: number = 0;
 
-  private _containerHeight: number | undefined;
-
   constructor(
     private readonly _viewportElement: HTMLElement,
     private readonly _screenElement: HTMLElement,
@@ -91,13 +89,7 @@ export class OverviewRulerRenderer extends Disposable {
       }
     }));
 
-    // Container height changed
-    this._register(this._renderService.onRender((): void => {
-      if (!this._containerHeight || this._containerHeight !== this._screenElement.clientHeight) {
-        this._queueRefresh(true);
-        this._containerHeight = this._screenElement.clientHeight;
-      }
-    }));
+    this._register(this._renderService.onDimensionsChange(() => this._queueRefresh(true)));
 
     this._register(this._coreBrowserService.onDprChange(() => this._queueRefresh(true)));
     this._register(this._optionsService.onSpecificOptionChange('scrollbar', () => this._queueRefresh(true)));
@@ -144,10 +136,12 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshCanvasDimensions(): void {
+    const cssCanvasHeight = this._renderService.dimensions.css.canvas.height;
+    const deviceCanvasHeight = this._renderService.dimensions.device.canvas.height;
     this._canvas.style.width = `${this._width}px`;
     this._canvas.width = Math.round(this._width * this._coreBrowserService.dpr);
-    this._canvas.style.height = `${this._screenElement.clientHeight}px`;
-    this._canvas.height = Math.round(this._screenElement.clientHeight * this._coreBrowserService.dpr);
+    this._canvas.style.height = `${cssCanvasHeight}px`;
+    this._canvas.height = deviceCanvasHeight;
     this._refreshDrawConstants();
     this._refreshColorZonePadding();
   }

@@ -21,14 +21,14 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
-import { CoreMouseService } from 'common/services/CoreMouseService';
+import { MouseStateService } from 'common/services/MouseStateService';
 import { UnicodeService } from 'common/services/UnicodeService';
 import { CharsetService } from 'common/services/CharsetService';
 import { updateWindowsModeWrappedState } from 'common/WindowsMode';
@@ -50,7 +50,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _charsetService: ICharsetService;
   protected readonly _oscLinkService: IOscLinkService;
 
-  public readonly coreMouseService: ICoreMouseService;
+  public readonly mouseStateService: IMouseStateService;
   public readonly coreService: ICoreService;
   public readonly unicodeService: IUnicodeService;
   public readonly optionsService: IOptionsService;
@@ -113,8 +113,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(IBufferService, this._bufferService);
     this.coreService = this._register(this._instantiationService.createInstance(CoreService));
     this._instantiationService.setService(ICoreService, this.coreService);
-    this.coreMouseService = this._register(this._instantiationService.createInstance(CoreMouseService));
-    this._instantiationService.setService(ICoreMouseService, this.coreMouseService);
+    this.mouseStateService = this._register(this._instantiationService.createInstance(MouseStateService));
+    this._instantiationService.setService(IMouseStateService, this.mouseStateService);
     this.unicodeService = this._register(this._instantiationService.createInstance(UnicodeService));
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
@@ -124,7 +124,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
 
     // Register input handler and handle/forward events
-    this._inputHandler = this._register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));
+    this._inputHandler = this._register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.mouseStateService, this.unicodeService));
     this._register(EventUtils.forward(this._inputHandler.onLineFeed, this._onLineFeed));
 
     // Setup listeners
@@ -256,7 +256,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._bufferService.reset();
     this._charsetService.reset();
     this.coreService.reset();
-    this.coreMouseService.reset();
+    this.mouseStateService.reset();
   }
 
 

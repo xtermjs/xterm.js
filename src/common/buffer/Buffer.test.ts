@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { Buffer } from 'common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
-import { MockOptionsService, MockBufferService, MockLogService } from 'common/TestUtils.test';
+import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
@@ -1105,10 +1105,10 @@ describe('Buffer', () => {
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
       const line = new BufferLine(4);
-      line.setCell(0, CellData.fromCharData([ 0, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(1, CellData.fromCharData([ 0, 'b', 1, 'b'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([ 0, 'c', 1, 'c'.charCodeAt(0)]));
-      line.setCell(3, CellData.fromCharData([ 0, 'd', 1, 'd'.charCodeAt(0)]));
+      line.setCell(0, createCellData(0, 'a', 1));
+      line.setCell(1, createCellData(0, 'b', 1));
+      line.setCell(2, createCellData(0, 'c', 1));
+      line.setCell(3, createCellData(0, 'd', 1));
       buffer.lines.set(0, line);
 
       const str = buffer.translateBufferLineToString(0, true, 0, 2);
@@ -1117,9 +1117,9 @@ describe('Buffer', () => {
 
     it('should handle a cut-off double width character by including it', () => {
       const line = new BufferLine(3);
-      line.setCell(0, CellData.fromCharData([ 0, '語', 2, 35486 ]));
-      line.setCell(1, CellData.fromCharData([ 0, '', 0, 0]));
-      line.setCell(2, CellData.fromCharData([ 0, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(0, createCellData(0, '語', 2));
+      line.setCell(1, createCellData(0, '', 0));
+      line.setCell(2, createCellData(0, 'a', 1));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1128,9 +1128,9 @@ describe('Buffer', () => {
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
       const line = new BufferLine(3);
-      line.setCell(0, CellData.fromCharData([ 0, '語', 2, '語'.charCodeAt(0) ]));
-      line.setCell(1, CellData.fromCharData([ 0, '', 0, 0]));
-      line.setCell(2, CellData.fromCharData([ 0, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(0, createCellData(0, '語', 2));
+      line.setCell(1, createCellData(0, '', 0));
+      line.setCell(2, createCellData(0, 'a', 1));
       buffer.lines.set(0, line);
 
       const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1145,8 +1145,8 @@ describe('Buffer', () => {
 
     it('should handle single width emojis', () => {
       const line = new BufferLine(2);
-      line.setCell(0, CellData.fromCharData([ 0, '😁', 1, '😁'.charCodeAt(0) ]));
-      line.setCell(1, CellData.fromCharData([ 0, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(0, createCellData(0, '😁', 1));
+      line.setCell(1, createCellData(0, 'a', 1));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1158,8 +1158,8 @@ describe('Buffer', () => {
 
     it('should handle double width emojis', () => {
       const line = new BufferLine(2);
-      line.setCell(0, CellData.fromCharData([ 0, '😁', 2, '😁'.charCodeAt(0) ]));
-      line.setCell(1, CellData.fromCharData([ 0, '', 0, 0]));
+      line.setCell(0, createCellData(0, '😁', 2));
+      line.setCell(1, createCellData(0, '', 0));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1169,9 +1169,9 @@ describe('Buffer', () => {
       assert.equal(str2, '😁');
 
       const line2 = new BufferLine(3);
-      line2.setCell(0, CellData.fromCharData([ 0, '😁', 2, '😁'.charCodeAt(0) ]));
-      line2.setCell(1, CellData.fromCharData([ 0, '', 0, 0]));
-      line2.setCell(2, CellData.fromCharData([ 0, 'a', 1, 'a'.charCodeAt(0)]));
+      line2.setCell(0, createCellData(0, '😁', 2));
+      line2.setCell(1, createCellData(0, '', 0));
+      line2.setCell(2, createCellData(0, 'a', 1));
       buffer.lines.set(0, line2);
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
