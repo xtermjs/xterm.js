@@ -573,7 +573,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._renderService!.handleCursorMove();
       this._syncTextArea();
     }));
-    this._register(this.onResize(() => this._renderService!.handleResize(this.cols, this.rows)));
+    this._register(this.onResize(() => {
+      this._renderService!.handleResize(this.cols, this.rows);
+      this._syncTextArea();
+    }));
     this._register(this.onBlur(() => this._renderService!.handleBlur()));
     this._register(this.onFocus(() => this._renderService!.handleFocus()));
 
