@@ -96,8 +96,8 @@ export interface IGPUVertexState {
 export interface IGPUColorTargetState {
   format: IGPUTextureFormat;
   blend?: {
-    color?: { srcFactor: string; dstFactor: string; operation: string };
-    alpha?: { srcFactor: string; dstFactor: string; operation: string };
+    color?: { srcFactor: string, dstFactor: string, operation: string };
+    alpha?: { srcFactor: string, dstFactor: string, operation: string };
   };
   writeMask?: number;
 }
@@ -142,9 +142,9 @@ export interface IGPUPipelineLayout {
 export interface IGPUBindGroupLayoutEntry {
   binding: number;
   visibility: IGPUShaderStage;
-  buffer?: { type?: 'uniform' | 'storage' | 'read-only-storage'; hasDynamicOffset?: boolean; minBindingSize?: number };
+  buffer?: { type?: 'uniform' | 'storage' | 'read-only-storage', hasDynamicOffset?: boolean, minBindingSize?: number };
   sampler?: { type?: 'filtering' | 'non-filtering' };
-  texture?: { sampleType?: 'float' | 'unfilterable-float'; viewDimension?: '2d'; multisampled?: boolean };
+  texture?: { sampleType?: 'float' | 'unfilterable-float', viewDimension?: '2d', multisampled?: boolean };
   count?: number;
 }
 
@@ -154,7 +154,7 @@ export interface IGPUBindGroupLayoutDescriptor {
 
 export interface IGPUBindGroupEntry {
   binding: number;
-  resource: IGPUBufferBinding | IGPUSampler | IGPUTextureView | Array<IGPUTextureView>;
+  resource: IGPUBufferBinding | IGPUSampler | IGPUTextureView | IGPUTextureView[];
 }
 
 export interface IGPUBindGroupDescriptor {
@@ -239,7 +239,7 @@ export interface IGPUCommandEncoder {
 export interface IGPUDevice {
   queue: IGPUQueue;
   lost: Promise<unknown>;
-  limits?: { maxSampledTexturesPerShaderStage?: number; maxTextureDimension2D?: number };
+  limits?: { maxSampledTexturesPerShaderStage?: number, maxTextureDimension2D?: number };
   createCommandEncoder(): IGPUCommandEncoder;
   createBuffer(descriptor: IGPUBufferDescriptor): IGPUBuffer;
   createTexture(descriptor: IGPUTextureDescriptor): IGPUTexture;

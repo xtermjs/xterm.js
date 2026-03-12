@@ -40,7 +40,7 @@ export interface IDemoAddon<T extends AddonType> {
                           T extends 'unicodeGraphemes' ? typeof UnicodeGraphemesAddon :
                             T extends 'webgl' ? typeof WebglAddon :
                               T extends 'webgpu' ? typeof WebgpuAddon :
-                              never
+                                never
   );
   instance?: (
     T extends 'attach' ? AttachAddon :
@@ -57,7 +57,7 @@ export interface IDemoAddon<T extends AddonType> {
                           T extends 'unicodeGraphemes' ? UnicodeGraphemesAddon :
                             T extends 'webgl' ? WebglAddon :
                               T extends 'webgpu' ? WebgpuAddon :
-                              never
+                                never
   );
 }
 
