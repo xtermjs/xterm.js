@@ -24,7 +24,36 @@ First, you need to install the module. We ship exclusively through [npm](https:/
 npm install --save @xterm/xterm
 ```
 
-To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your HTML page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself. Finally, instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
+The recommended way to load xterm.js with the ES module syntax, either using TypeScript or a modern JS tooling. Note that both CommonJS and ES module files are shipped with the npm package.
+
+```javascript
+import { Terminal } from '@xterm/xterm';
+```
+
+Then instantiate a `Terminal` object, open it on an element and write to it:
+
+```javascript
+const term = new Terminal();
+term.open(document.getElementById('terminal'));
+term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
+```
+
+Most use cases will hook up input and output to a pseudoterminal API such as [node-pty](https://www.npmjs.com/package/node-pty) which will drive the terminal.
+
+```javascript
+pty.onData(data => term.write(data));
+term.onData(data => pty.write(data));
+```
+
+Then make sure to also include the `css/xterm.css` file, for example in HTML:
+
+```html
+<link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css" />
+```
+
+### Standalone example
+
+Here is a complete standalone example in a HTML file:
 
 ```html
 <!doctype html>
@@ -36,20 +65,12 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
     <body>
       <div id="terminal"></div>
       <script>
-        var term = new Terminal();
+        const term = new Terminal();
         term.open(document.getElementById('terminal'));
         term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
       </script>
     </body>
   </html>
-```
-
-### Importing
-
-The recommended way to load xterm.js is via the ES6 module syntax:
-
-```javascript
-import { Terminal } from '@xterm/xterm';
 ```
 
 ### Addons
@@ -95,7 +116,7 @@ Since xterm.js is typically implemented as a developer tool, generally only mode
 
 ### Node.js Support
 
-We also publish [`xterm-headless`](https://www.npmjs.com/package/xterm-headless) which is a stripped down version of xterm.js that runs headless in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the [serialize addon](https://www.npmjs.com/package/@xterm/addon-serialize) so it can get all state restored upon reconnection.
+We also publish [`@xterm/headless`](https://www.npmjs.com/package/@xterm/headless) which is a stripped down version of xterm.js that runs headless in Node.js. An example use case for this is to keep track of a terminal's state where the process is running and using the [serialize addon](https://www.npmjs.com/package/@xterm/addon-serialize) so it can get all state restored upon reconnection.
 
 ## API
 
@@ -230,6 +251,8 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**ecmaOS**](https://ecmaos.sh): A kernel and suite of applications tying modern web technologies into a browser-based operating system.
 - [**LabEx**](https://labex.io): Interactive learning platform with hands-on labs and xterm.js-based online terminals, focused on learn-by-doing approach.
 - [**EmuDevz**](https://afska.github.io/emudevz): A free coding game where players learn how to build an emulator from scratch.
+- [**SSH Connection Manager**](https://github.com/Amtrend/ssh-manager): Modern web-based SSH terminal and SFTP manager with AES-256 encryption, PWA support, and session management.
+- [**WooTTY**](https://github.com/icoretech/wootty): Flawless browser terminal for real operators.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Please add any new contributions to the end of the list.

@@ -7,7 +7,7 @@ import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IBufferService, IOptionsService, type IBufferResizeEvent } from 'common/services/Services';
+import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from 'common/services/Services';
 import { Emitter } from 'common/Event';
 
 export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
@@ -32,11 +32,14 @@ export class BufferService extends Disposable implements IBufferService {
   /** An IBufferline to clone/copy from for new blank lines */
   private _cachedBlankLine: IBufferLine | undefined;
 
-  constructor(@IOptionsService optionsService: IOptionsService) {
+  constructor(
+    @IOptionsService optionsService: IOptionsService,
+    @ILogService logService: ILogService
+  ) {
     super();
     this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
     this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
-    this.buffers = this._register(new BufferSet(optionsService, this));
+    this.buffers = this._register(new BufferSet(optionsService, this, logService));
     this._register(this.buffers.onBufferActivate(e => {
       this._onScroll.fire(e.activeBuffer.ydisp);
     }));

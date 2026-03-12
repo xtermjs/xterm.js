@@ -100,24 +100,24 @@ describe('KittyKeyboard', () => {
         assert.strictEqual(result.key, '\x1b[27u');
       });
 
-      it('Enter → CSI 13 u', () => {
+      it('Enter → legacy \\r', () => {
         const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags);
-        assert.strictEqual(result.key, '\x1b[13u');
+        assert.strictEqual(result.key, '\r');
       });
 
-      it('Tab → CSI 9 u', () => {
+      it('Tab → legacy \\t', () => {
         const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags);
-        assert.strictEqual(result.key, '\x1b[9u');
+        assert.strictEqual(result.key, '\t');
       });
 
-      it('Backspace → CSI 127 u', () => {
+      it('Backspace → legacy \\x7f', () => {
         const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags);
-        assert.strictEqual(result.key, '\x1b[127u');
+        assert.strictEqual(result.key, '\x7f');
       });
 
-      it('Space → CSI 32 u', () => {
+      it('Space → plain space (text-generating key)', () => {
         const result = kitty.evaluate(createEvent({ key: ' ' }), flags);
-        assert.strictEqual(result.key, '\x1b[32u');
+        assert.strictEqual(result.key, ' ');
       });
 
       it('Shift+Tab → CSI 9;2 u', () => {
@@ -133,6 +133,21 @@ describe('KittyKeyboard', () => {
       it('Alt+Escape → CSI 27;3 u', () => {
         const result = kitty.evaluate(createEvent({ key: 'Escape', altKey: true }), flags);
         assert.strictEqual(result.key, '\x1b[27;3u');
+      });
+
+      it('Ctrl+Backspace → CSI 127;5 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace', ctrlKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[127;5u');
+      });
+
+      it('Ctrl+Space → CSI 32;5 u', () => {
+        const result = kitty.evaluate(createEvent({ key: ' ', ctrlKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[32;5u');
+      });
+
+      it('Alt+Space → CSI 32;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: ' ', altKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[32;3u');
       });
     });
 
@@ -474,8 +489,22 @@ describe('KittyKeyboard', () => {
       });
 
       it('modifier key release includes its own bit cleared', () => {
-        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags, KittyKeyboardEventType.RELEASE);
+        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags | KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, '\x1b[57441;1:3u');
+      });
+    });
+
+    describe('modifier-only reporting', () => {
+      const flags = KittyKeyboardFlags.REPORT_EVENT_TYPES;
+
+      it('does not report modifier press without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: true }), flags);
+        assert.strictEqual(result.key, undefined);
+      });
+
+      it('does not report modifier release without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
       });
     });
 

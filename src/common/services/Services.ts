@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, type IOverviewRulerOptions } from '@xterm/xterm';
+import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
 import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
@@ -33,8 +33,8 @@ export interface IBufferResizeEvent {
   rowsChanged: boolean;
 }
 
-export const ICoreMouseService = createDecorator<ICoreMouseService>('CoreMouseService');
-export interface ICoreMouseService {
+export const IMouseStateService = createDecorator<IMouseStateService>('MouseStateService');
+export interface IMouseStateService {
   serviceBrand: undefined;
 
   activeProtocol: string;
@@ -43,33 +43,17 @@ export interface ICoreMouseService {
   addProtocol(name: string, protocol: ICoreMouseProtocol): void;
   addEncoding(name: string, encoding: CoreMouseEncoding): void;
   reset(): void;
-
-  /**
-   * Triggers a mouse event to be sent.
-   *
-   * Returns true if the event passed all protocol restrictions and a report
-   * was sent, otherwise false. The return value may be used to decide whether
-   * the default event action in the bowser component should be omitted.
-   *
-   * Note: The method will change values of the given event object
-   * to fullfill protocol and encoding restrictions.
-   */
-  triggerMouseEvent(event: ICoreMouseEvent): boolean;
+  setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void;
+  allowCustomWheelEvent(ev: WheelEvent): boolean;
 
   /**
    * Event to announce changes in mouse tracking.
    */
   onProtocolChange: IEvent<CoreMouseEventType>;
-
-  /**
-   * Human readable version of mouse events.
-   */
-  explainEvents(events: CoreMouseEventType): { [event: string]: boolean };
-
-  /**
-   * Process wheel event taking partial scroll into account.
-   */
-  consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number;
+  restrictMouseEvent(event: ICoreMouseEvent): boolean;
+  encodeMouseEvent(event: ICoreMouseEvent): string;
+  readonly isDefaultEncoding: boolean;
+  readonly isPixelEncoding: boolean;
 }
 
 export const ICoreService = createDecorator<ICoreService>('CoreService');
@@ -229,6 +213,7 @@ export interface ITerminalOptions {
   cols?: number;
   convertEol?: boolean;
   cursorBlink?: boolean;
+  blinkIntervalDuration?: number;
   cursorStyle?: CursorStyle;
   cursorWidth?: number;
   cursorInactiveStyle?: CursorInactiveStyle;
@@ -264,8 +249,8 @@ export interface ITerminalOptions {
   windowsPty?: IWindowsPty;
   windowOptions?: IWindowOptions;
   wordSeparator?: string;
-  overviewRuler?: IOverviewRulerOptions;
   quirks?: ITerminalQuirks;
+  scrollbar?: IScrollbarOptions;
   scrollOnEraseInDisplay?: boolean;
   vtExtensions?: IVtExtensions;
 
@@ -306,6 +291,13 @@ export interface ITheme {
 
 export interface ITerminalQuirks {
   allowSetCursorBlink?: boolean;
+}
+
+export interface IScrollbarOptions {
+  showScrollbar?: boolean;
+  showArrows?: boolean;
+  width?: number;
+  overviewRuler?: IOverviewRulerOptions;
 }
 
 export interface IVtExtensions {

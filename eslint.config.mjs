@@ -10,7 +10,6 @@ export default tseslint.config(
   {
     ignores: [
       'addons/*/src/third-party/*.ts',
-      'src/vs/*',
       '**/out/*',
       '**/out-test/*',
       '**/out-esbuild/*',

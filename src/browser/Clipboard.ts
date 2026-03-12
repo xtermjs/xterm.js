@@ -19,10 +19,13 @@ export function prepareTextForTerminal(text: string): string {
  * @param text The pasted text to bracket
  */
 export function bracketTextForPaste(text: string, bracketedPasteMode: boolean): string {
-  if (bracketedPasteMode) {
-    return '\x1b[200~' + text + '\x1b[201~';
+  if (!bracketedPasteMode) {
+    return text;
   }
-  return text;
+  // Sanitize pasted text to prevent injected escape sequences (e.g. exiting bracketed paste)
+  // by replacing ESC (\x1b) with its visible representation U+241B (␛).
+  const sanitizedText = text.replace(/\x1b/g, '\u241b');
+  return `\x1b[200~${sanitizedText}\x1b[201~`;
 }
 
 /**

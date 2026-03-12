@@ -584,13 +584,13 @@ test.describe('InputHandler Integration Tests', () => {
       });
       test('Ps = 1 0 0 5 - Enable UTF-8 Mouse Mode, xterm', async () => {
         await ctx.proxy.write('\x1b[?1006h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
         await ctx.proxy.write('\x1b[?1005h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 0 6 - Enable SGR Mouse Mode, xterm', async () => {
         await ctx.proxy.write('\x1b[?1006h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 0 7 - Enable Alternate Scroll Mode, xterm', async () => {
         await assertNoModeChange('\x1b[?1007h');
@@ -603,13 +603,13 @@ test.describe('InputHandler Integration Tests', () => {
       });
       test('Ps = 1 0 1 5 - Enable urxvt Mouse Mode', async () => {
         await ctx.proxy.write('\x1b[?1006h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
         await ctx.proxy.write('\x1b[?1015h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 1 6 - Enable SGR Mouse PixelMode, xterm', async () => {
         await ctx.proxy.write('\x1b[?1016h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR_PIXELS');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR_PIXELS');
       });
       test('Ps = 1 0 3 4 - Interpret "meta" key, xterm', async () => {
         await assertNoModeChange('\x1b[?1034h');
@@ -916,15 +916,15 @@ test.describe('InputHandler Integration Tests', () => {
       });
       test('Ps = 1 0 0 5 - Disable UTF-8 Mouse Mode, xterm.', async () => {
         await ctx.proxy.write('\x1b[?1006h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
         await ctx.proxy.write('\x1b[?1005l');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 0 6 - Disable SGR Mouse Mode, xterm.', async () => {
         await ctx.proxy.write('\x1b[?1006h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
         await ctx.proxy.write('\x1b[?1006l');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'DEFAULT');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'DEFAULT');
       });
       test('Ps = 1 0 0 7 - Disable Alternate Scroll Mode, xterm.  This corresponds to the alternateScroll resource.', async () => {
         await assertNoModeChange('\x1b[?1007l');
@@ -937,15 +937,15 @@ test.describe('InputHandler Integration Tests', () => {
       });
       test('Ps = 1 0 1 5 - Disable urxvt Mouse Mode.', async () => {
         await ctx.proxy.write('\x1b[?1006h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
         await ctx.proxy.write('\x1b[?1015l');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR');
       });
       test('Ps = 1 0 1 6 - Disable SGR Mouse Pixel-Mode, xterm.', async () => {
         await ctx.proxy.write('\x1b[?1016h');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'SGR_PIXELS');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'SGR_PIXELS');
         await ctx.proxy.write('\x1b[?1016l');
-        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding), 'DEFAULT');
+        await pollFor(ctx.page, async () => await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding), 'DEFAULT');
       });
       test('Ps = 1 0 3 4 - Don\'t interpret "meta" key, xterm.  This disables the eightBitInput resource.', async () => {
         await assertNoModeChange('\x1b[?1034l');
@@ -1849,8 +1849,8 @@ async function getModeSnapshot(): Promise<any> {
     cols: await ctx.proxy.cols,
     rows: await ctx.proxy.rows,
     bufferType: await ctx.proxy.buffer.active.type,
-    mouseProtocol: await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeProtocol),
-    mouseEncoding: await ctx.proxy.core.evaluate(([core]) => core.coreMouseService.activeEncoding)
+    mouseProtocol: await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeProtocol),
+    mouseEncoding: await ctx.proxy.core.evaluate(([core]) => core.mouseStateService.activeEncoding)
   };
 }
 

@@ -5,6 +5,7 @@
 
 import { assert } from 'chai';
 import { SortedList } from 'common/SortedList';
+import { MockLogService } from 'common/TestUtils.test';
 
 const deepStrictEqual = assert.deepStrictEqual;
 
@@ -15,7 +16,7 @@ describe('SortedList', () => {
   }
 
   beforeEach(() => {
-    list = new SortedList<number>(e => e);
+    list = new SortedList<number>(e => e, new MockLogService());
   });
 
   describe('insert', () => {
@@ -90,7 +91,7 @@ describe('SortedList', () => {
     assertList([]);
   });
   it('custom key', () => {
-    const customList = new SortedList<{ key: number }>(e => e.key);
+    const customList = new SortedList<{ key: number }>(e => e.key, new MockLogService());
     customList.insert({ key: 5 });
     customList.insert({ key: 2 });
     customList.insert({ key: 10 });

@@ -8,6 +8,7 @@ import { DecorationService } from './DecorationService';
 import { IMarker } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
+import { MockLogService } from 'common/TestUtils.test';
 
 function createFakeMarker(line: number): IMarker {
   return Object.freeze(new class extends Disposable {
@@ -22,7 +23,7 @@ const fakeMarker: IMarker = createFakeMarker(1);
 
 describe('DecorationService', () => {
   it('should set isDisposed to true after dispose', () => {
-    const service = new DecorationService();
+    const service = new DecorationService(new MockLogService());
     const decoration = service.registerDecoration({
       marker: fakeMarker
     });
@@ -34,7 +35,7 @@ describe('DecorationService', () => {
 
   describe('forEachDecorationAtCell', () => {
     it('should find decoration at its marker line', () => {
-      const service = new DecorationService();
+      const service = new DecorationService(new MockLogService());
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         width: 10
@@ -47,7 +48,7 @@ describe('DecorationService', () => {
     });
 
     it('should find decoration with height > 1 on subsequent lines', () => {
-      const service = new DecorationService();
+      const service = new DecorationService(new MockLogService());
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         width: 10,
@@ -73,7 +74,7 @@ describe('DecorationService', () => {
     });
 
     it('should not find decoration outside its x range', () => {
-      const service = new DecorationService();
+      const service = new DecorationService(new MockLogService());
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         x: 5,
@@ -102,7 +103,7 @@ describe('DecorationService', () => {
 
   describe('getDecorationsAtCell', () => {
     it('should find decoration with height > 1 on subsequent lines', () => {
-      const service = new DecorationService();
+      const service = new DecorationService(new MockLogService());
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         width: 10,

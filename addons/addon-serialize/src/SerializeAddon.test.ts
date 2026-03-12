@@ -116,7 +116,7 @@ describe('SerializeAddon', () => {
     describe('underline styles', () => {
       it('should serialize single underline with style', async () => {
         await writeP(terminal, sgr('4:1') + 'test' + sgr('24'));
-        assert.equal(serializeAddon.serialize(), '\u001b[4:1mtest\u001b[0m');
+        assert.equal(serializeAddon.serialize(), '\u001b[4mtest\u001b[0m');
       });
 
       it('should serialize double underline', async () => {

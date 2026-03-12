@@ -83,6 +83,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._core.onDimensionsChange; }
 
   public get element(): HTMLElement | undefined { return this._core.element; }
+  public get screenElement(): HTMLElement | undefined { return this._core.screenElement; }
   public get parser(): IParser {
     return this._parser ??= new ParserApi(this._core);
   }
@@ -102,7 +103,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public get modes(): IModes {
     const m = this._core.coreService.decPrivateModes;
     let mouseTrackingMode: 'none' | 'x10' | 'vt200' | 'drag' | 'any' = 'none';
-    switch (this._core.coreMouseService.activeProtocol) {
+    switch (this._core.mouseStateService.activeProtocol) {
       case 'X10': mouseTrackingMode = 'x10'; break;
       case 'VT200': mouseTrackingMode = 'vt200'; break;
       case 'DRAG': mouseTrackingMode = 'drag'; break;

@@ -5,9 +5,10 @@
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
 import { BufferLine } from 'common/buffer//BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { CharData, IBufferLine } from '../Types';
+import { CharData, IBufferLine, IExtendedAttrs } from '../Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { createCellData, NULL_CELL_DATA } from 'common/TestUtils.test';
 
 
 class TestBufferLine extends BufferLine {
@@ -22,6 +23,12 @@ class TestBufferLine extends BufferLine {
     }
     return result;
   }
+}
+
+function extendedAttributes(line: IBufferLine, index: number): IExtendedAttrs | undefined {
+  const cell = new CellData();
+  line.loadCell(index, cell);
+  return cell.hasExtendedAttrs() !== 0 ? cell.extended : undefined;
 }
 
 describe('AttributeData', () => {
@@ -173,78 +180,78 @@ describe('BufferLine', function(): void {
     assert.equal(line.length, 10);
     assert.deepEqual(line.loadCell(0, new CellData()).getAsCharData(), [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     assert.equal(line.isWrapped, true);
-    line = new TestBufferLine(10, CellData.fromCharData([123, 'a', 456, 'a'.charCodeAt(0)]), true);
+    line = new TestBufferLine(10, createCellData(123, 'a', 456), true);
     assert.equal(line.length, 10);
     assert.deepEqual(line.loadCell(0, new CellData()).getAsCharData(), [123, 'a', 456, 'a'.charCodeAt(0)]);
     assert.equal(line.isWrapped, true);
   });
   it('insertCells', function(): void {
     const line = new TestBufferLine(3);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.insertCells(1, 3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
+    line.setCell(0, createCellData(1, 'a', 1));
+    line.setCell(1, createCellData(2, 'b', 1));
+    line.setCell(2, createCellData(3, 'c', 1));
+    line.insertCells(1, 3, createCellData(4, 'd', 1));
     assert.deepEqual(line.toArray(), [
-      [1, 'a', 0, 'a'.charCodeAt(0)],
-      [4, 'd', 0, 'd'.charCodeAt(0)],
-      [4, 'd', 0, 'd'.charCodeAt(0)]
+      [1, 'a', 1, 'a'.charCodeAt(0)],
+      [4, 'd', 1, 'd'.charCodeAt(0)],
+      [4, 'd', 1, 'd'.charCodeAt(0)]
     ]);
   });
   it('deleteCells', function(): void {
     const line = new TestBufferLine(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    line.deleteCells(1, 2, CellData.fromCharData([6, 'f', 0, 'f'.charCodeAt(0)]));
+    line.setCell(0, createCellData(1, 'a', 1));
+    line.setCell(1, createCellData(2, 'b', 1));
+    line.setCell(2, createCellData(3, 'c', 1));
+    line.setCell(3, createCellData(4, 'd', 1));
+    line.setCell(4, createCellData(5, 'e', 1));
+    line.deleteCells(1, 2, createCellData(6, 'f', 1));
     assert.deepEqual(line.toArray(), [
-      [1, 'a', 0, 'a'.charCodeAt(0)],
-      [4, 'd', 0, 'd'.charCodeAt(0)],
-      [5, 'e', 0, 'e'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)]
+      [1, 'a', 1, 'a'.charCodeAt(0)],
+      [4, 'd', 1, 'd'.charCodeAt(0)],
+      [5, 'e', 1, 'e'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)]
     ]);
   });
   it('replaceCells', function(): void {
     const line = new TestBufferLine(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    line.replaceCells(2, 4, CellData.fromCharData([6, 'f', 0, 'f'.charCodeAt(0)]));
+    line.setCell(0, createCellData(1, 'a', 1));
+    line.setCell(1, createCellData(2, 'b', 1));
+    line.setCell(2, createCellData(3, 'c', 1));
+    line.setCell(3, createCellData(4, 'd', 1));
+    line.setCell(4, createCellData(5, 'e', 1));
+    line.replaceCells(2, 4, createCellData(6, 'f', 1));
     assert.deepEqual(line.toArray(), [
-      [1, 'a', 0, 'a'.charCodeAt(0)],
-      [2, 'b', 0, 'b'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)],
-      [6, 'f', 0, 'f'.charCodeAt(0)],
-      [5, 'e', 0, 'e'.charCodeAt(0)]
+      [1, 'a', 1, 'a'.charCodeAt(0)],
+      [2, 'b', 1, 'b'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)],
+      [6, 'f', 1, 'f'.charCodeAt(0)],
+      [5, 'e', 1, 'e'.charCodeAt(0)]
     ]);
   });
   it('fill', function(): void {
     const line = new TestBufferLine(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    line.fill(CellData.fromCharData([123, 'z', 0, 'z'.charCodeAt(0)]));
+    line.setCell(0, createCellData(1, 'a', 1));
+    line.setCell(1, createCellData(2, 'b', 1));
+    line.setCell(2, createCellData(3, 'c', 1));
+    line.setCell(3, createCellData(4, 'd', 1));
+    line.setCell(4, createCellData(5, 'e', 1));
+    line.fill(createCellData(123, 'z', 1));
     assert.deepEqual(line.toArray(), [
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)],
-      [123, 'z', 0, 'z'.charCodeAt(0)]
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)],
+      [123, 'z', 1, 'z'.charCodeAt(0)]
     ]);
   });
   it('clone', function(): void {
     const line = new TestBufferLine(5, undefined, true);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
+    line.setCell(0, createCellData(1, 'a', 1));
+    line.setCell(1, createCellData(2, 'b', 1));
+    line.setCell(2, createCellData(3, 'c', 1));
+    line.setCell(3, createCellData(4, 'd', 1));
+    line.setCell(4, createCellData(5, 'e', 1));
     const line2 = line.clone();
     assert.deepEqual(TestBufferLine.prototype.toArray.apply(line2), line.toArray());
     assert.equal(line2.length, line.length);
@@ -252,12 +259,12 @@ describe('BufferLine', function(): void {
   });
   it('copyFrom', function(): void {
     const line = new TestBufferLine(5);
-    line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-    line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
-    line.setCell(2, CellData.fromCharData([3, 'c', 0, 'c'.charCodeAt(0)]));
-    line.setCell(3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
-    line.setCell(4, CellData.fromCharData([5, 'e', 0, 'e'.charCodeAt(0)]));
-    const line2 = new TestBufferLine(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), true);
+    line.setCell(0, createCellData(1, 'a', 1));
+    line.setCell(1, createCellData(2, 'b', 1));
+    line.setCell(2, createCellData(3, 'c', 1));
+    line.setCell(3, createCellData(4, 'd', 1));
+    line.setCell(4, createCellData(5, 'e', 1));
+    const line2 = new TestBufferLine(5, createCellData(1, 'a', 1), true);
     line2.copyFrom(line);
     assert.deepEqual(line2.toArray(), line.toArray());
     assert.equal(line2.length, line.length);
@@ -267,9 +274,9 @@ describe('BufferLine', function(): void {
     // CHAR_DATA_CODE_INDEX resembles current behavior in InputHandler.print
     // --> set code to the last charCodeAt value of the string
     // Note: needs to be fixed once the string pointer is in place
-    const line = new TestBufferLine(2, CellData.fromCharData([1, 'e\u0301', 0, '\u0301'.charCodeAt(0)]));
-    assert.deepEqual(line.toArray(), [[1, 'e\u0301', 0, '\u0301'.charCodeAt(0)], [1, 'e\u0301', 0, '\u0301'.charCodeAt(0)]]);
-    const line2 = new TestBufferLine(5, CellData.fromCharData([1, 'a', 0, '\u0301'.charCodeAt(0)]), true);
+    const line = new TestBufferLine(2, createCellData(1, 'e\u0301', 1));
+    assert.deepEqual(line.toArray(), [[1, 'e\u0301', 1, '\u0301'.charCodeAt(0)], [1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]]);
+    const line2 = new TestBufferLine(5, createCellData(1, 'a', 1), true);
     line2.copyFrom(line);
     assert.deepEqual(line2.toArray(), line.toArray());
     const line3 = line.clone();
@@ -277,72 +284,72 @@ describe('BufferLine', function(): void {
   });
   describe('resize', function(): void {
     it('enlarge(false)', function(): void {
-      const line = new TestBufferLine(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
-      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-      assert.deepEqual(line.toArray(), (Array(10) as any).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+      const line = new TestBufferLine(5, createCellData(1, 'a', 1), false);
+      line.resize(10, createCellData(1, 'a', 1));
+      assert.deepEqual(line.toArray(), (Array(10) as any).fill([1, 'a', 1, 'a'.charCodeAt(0)]));
     });
     it('enlarge(true)', function(): void {
-      const line = new TestBufferLine(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
-      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-      assert.deepEqual(line.toArray(), (Array(10) as any).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+      const line = new TestBufferLine(5, createCellData(1, 'a', 1), false);
+      line.resize(10, createCellData(1, 'a', 1));
+      assert.deepEqual(line.toArray(), (Array(10) as any).fill([1, 'a', 1, 'a'.charCodeAt(0)]));
     });
     it('shrink(true) - should apply new size', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
-      line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-      assert.deepEqual(line.toArray(), (Array(5) as any).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, createCellData(1, 'a', 1), false);
+      line.resize(5, createCellData(1, 'a', 1));
+      assert.deepEqual(line.toArray(), (Array(5) as any).fill([1, 'a', 1, 'a'.charCodeAt(0)]));
     });
     it('shrink to 0 length', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
-      line.resize(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
-      assert.deepEqual(line.toArray(), (Array(0) as any).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, createCellData(1, 'a', 1), false);
+      line.resize(0, createCellData(1, 'a', 1));
+      assert.deepEqual(line.toArray(), (Array(0) as any).fill([1, 'a', 1, 'a'.charCodeAt(0)]));
     });
     it('should remove combining data on replaced cells after shrinking then enlarging', () => {
-      const line = new TestBufferLine(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
+      const line = new TestBufferLine(10, createCellData(1, 'a', 1), false);
       line.set(2, [ 0, '😁', 1, '😁'.charCodeAt(0) ]);
       line.set(9, [ 0, '😁', 1, '😁'.charCodeAt(0) ]);
       assert.equal(line.translateToString(), 'aa😁aaaaaa😁');
       assert.equal(Object.keys(line.combined).length, 2);
-      line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
+      line.resize(5, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aa😁aa');
-      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
+      line.resize(10, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aa😁aaaaaaa');
       assert.equal(Object.keys(line.combined).length, 1);
     });
   });
   describe('getTrimLength', function(): void {
     it('empty line', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       assert.equal(line.getTrimmedLength(), 0);
     });
     it('ASCII', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, 'a', 1));
       assert.equal(line.getTrimmedLength(), 3);
     });
     it('surrogate', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, '𝄞', 1));
       assert.equal(line.getTrimmedLength(), 3);
     });
     it('combining', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, 'e\u0301', 1));
       assert.equal(line.getTrimmedLength(), 3);
     });
     it('fullwidth', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, '１', 2, '１'.charCodeAt(0)]));
-      line.setCell(3, CellData.fromCharData([0, '', 0, 0]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, '１', 2));
+      line.setCell(3, createCellData(0, '', 0));
       assert.equal(line.getTrimmedLength(), 4); // also counts null cell after fullwidth
     });
   });
   describe('translateToString with and w\'o trimming', function(): void {
     it('empty line', function(): void {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       const columns: number[] = [];
       assert.equal(line.translateToString(false, undefined, undefined, columns), '          ');
       assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -351,11 +358,11 @@ describe('BufferLine', function(): void {
     });
     it('ASCII', function(): void {
       const columns: number[] = [];
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(4, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(5, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, 'a', 1));
+      line.setCell(4, createCellData(1, 'a', 1));
+      line.setCell(5, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a a aa    ');
       assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a a aa');
@@ -372,11 +379,11 @@ describe('BufferLine', function(): void {
     });
     it('surrogate', function(): void {
       const columns: number[] = [];
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
-      line.setCell(4, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
-      line.setCell(5, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, '𝄞', 1));
+      line.setCell(4, createCellData(1, '𝄞', 1));
+      line.setCell(5, createCellData(1, '𝄞', 1));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a 𝄞 𝄞𝄞    ');
       assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a 𝄞 𝄞𝄞');
@@ -392,11 +399,11 @@ describe('BufferLine', function(): void {
     });
     it('combining', function(): void {
       const columns: number[] = [];
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
-      line.setCell(4, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
-      line.setCell(5, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, 'e\u0301', 1));
+      line.setCell(4, createCellData(1, 'e\u0301', 1));
+      line.setCell(5, createCellData(1, 'e\u0301', 1));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a e\u0301 e\u0301e\u0301    ');
       assert.deepEqual(columns, [0, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a e\u0301 e\u0301e\u0301');
@@ -412,14 +419,14 @@ describe('BufferLine', function(): void {
     });
     it('fullwidth', function(): void {
       const columns: number[] = [];
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, '１', 2, '１'.charCodeAt(0)]));
-      line.setCell(3, CellData.fromCharData([0, '', 0, 0]));
-      line.setCell(5, CellData.fromCharData([1, '１', 2, '１'.charCodeAt(0)]));
-      line.setCell(6, CellData.fromCharData([0, '', 0, 0]));
-      line.setCell(7, CellData.fromCharData([1, '１', 2, '１'.charCodeAt(0)]));
-      line.setCell(8, CellData.fromCharData([0, '', 0, 0]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, '１', 2));
+      line.setCell(3, createCellData(0, '', 0));
+      line.setCell(5, createCellData(1, '１', 2));
+      line.setCell(6, createCellData(0, '', 0));
+      line.setCell(7, createCellData(1, '１', 2));
+      line.setCell(8, createCellData(0, '', 0));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a １ １１ ');
       assert.deepEqual(columns, [0, 1, 2, 4, 5, 7, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a １ １１');
@@ -441,12 +448,12 @@ describe('BufferLine', function(): void {
     });
     it('space at end', function(): void {
       const columns: number[] = [];
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(4, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(5, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(6, CellData.fromCharData([1, ' ', 1, ' '.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(2, createCellData(1, 'a', 1));
+      line.setCell(4, createCellData(1, 'a', 1));
+      line.setCell(5, createCellData(1, 'a', 1));
+      line.setCell(6, createCellData(1, ' ', 1));
       assert.equal(line.translateToString(false, undefined, undefined, columns), 'a a aa    ');
       assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), 'a a aa ');
@@ -457,7 +464,7 @@ describe('BufferLine', function(): void {
       // sanity check - broken line with invalid out of bound null width cells
       // this can atm happen with deleting/inserting chars in inputhandler by "breaking"
       // fullwidth pairs --> needs to be fixed after settling BufferLine impl
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       assert.equal(line.translateToString(false, undefined, undefined, columns), '          ');
       assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       assert.equal(line.translateToString(true, undefined, undefined, columns), '');
@@ -465,15 +472,15 @@ describe('BufferLine', function(): void {
     });
     it('should work with endCol=0', () => {
       const columns: number[] = [];
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
-      line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      line.setCell(0, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(true, 0, 0, columns), '');
       assert.deepEqual(columns, [0]);
     });
   });
   describe('addCharToCell', () => {
     it('should set width to 1 for empty cell', () => {
-      const line = new TestBufferLine(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(3, NULL_CELL_DATA, false);
       line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);
       const cell = line.loadCell(0, new CellData());
       // chars contains single combining char
@@ -483,7 +490,7 @@ describe('BufferLine', function(): void {
       assert.equal(cell.isCombined(), 0);
     });
     it('should add char to combining string in cell', () => {
-      const line = new TestBufferLine(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(3, NULL_CELL_DATA, false);
       const cell = line .loadCell(0, new CellData());
       cell.setFromCharData([123, 'e\u0301', 1, 'e\u0301'.charCodeAt(1)]);
       line.setCell(0, cell);
@@ -496,7 +503,7 @@ describe('BufferLine', function(): void {
       assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
     });
     it('should create combining string on taken cell', () => {
-      const line = new TestBufferLine(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(3, NULL_CELL_DATA, false);
       const cell = line .loadCell(0, new CellData());
       cell.setFromCharData([123, 'e', 1, 'e'.charCodeAt(1)]);
       line.setCell(0, cell);
@@ -511,98 +518,98 @@ describe('BufferLine', function(): void {
   });
   describe('correct fullwidth handling', () => {
     function populate(line: BufferLine): void {
-      const cell = CellData.fromCharData([1, '￥', 2, '￥'.charCodeAt(0)]);
+      const cell = createCellData(1, '￥', 2);
       for (let i = 0; i < line.length; i += 2) {
         line.setCell(i, cell);
       }
     }
     it('insert - wide char at pos', () => {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.insertCells(9, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.insertCells(9, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), '￥￥￥￥ a');
-      line.insertCells(8, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.insertCells(8, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), '￥￥￥￥a ');
-      line.insertCells(1, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.insertCells(1, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' a ￥￥￥a');
     });
     it('insert - wide char at end', () => {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.insertCells(0, 3, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.insertCells(0, 3, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaa￥￥￥ ');
-      line.insertCells(4, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.insertCells(4, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaa a ￥￥');
-      line.insertCells(4, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.insertCells(4, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaa aa ￥ ');
     });
     it('delete', () => {
-      const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.deleteCells(0, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.deleteCells(0, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' ￥￥￥￥a');
-      line.deleteCells(5, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.deleteCells(5, 2, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' ￥￥￥aaa');
-      line.deleteCells(0, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.deleteCells(0, 2, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' ￥￥aaaaa');
     });
     it('replace - start at 0', () => {
-      let line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      let line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(0, 1, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(0, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'a ￥￥￥￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(0, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(0, 2, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aa￥￥￥￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(0, 3, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(0, 3, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaa ￥￥￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(0, 8, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(0, 8, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaaaaaaa￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(0, 9, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(0, 9, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaaaaaaaa ');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(0, 10, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(0, 10, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaaaaaaaaa');
     });
     it('replace - start at 1', () => {
-      let line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      let line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(1, 2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(1, 2, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' a￥￥￥￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(1, 3, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(1, 3, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' aa ￥￥￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(1, 4, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(1, 4, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' aaa￥￥￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(1, 8, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(1, 8, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' aaaaaaa￥');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(1, 9, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(1, 9, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' aaaaaaaa ');
-      line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE]), false);
+      line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);
-      line.replaceCells(1, 10, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
+      line.replaceCells(1, 10, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), ' aaaaaaaaa');
     });
   });
   describe('extended attributes', () => {
     it('setCells', function(): void {
       const line = new TestBufferLine(5);
-      const cell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const cell = createCellData(1, 'a', 1);
       // no eAttrs
       line.setCell(0, cell);
 
@@ -612,7 +619,7 @@ describe('BufferLine', function(): void {
       line.setCell(1, cell);
 
       // same eAttr, different codepoint
-      cell.content = 65;  // 'A'
+      cell.content = createCellData(1, 'A', 1).content;
       line.setCell(2, cell);
 
       // different eAttr
@@ -625,25 +632,25 @@ describe('BufferLine', function(): void {
       line.setCell(4, cell);
 
       assert.deepEqual(line.toArray(), [
-        [1, 'a', 0, 'a'.charCodeAt(0)],
-        [1, 'a', 0, 'a'.charCodeAt(0)],
-        [1, 'A', 0, 'A'.charCodeAt(0)],
-        [1, 'A', 0, 'A'.charCodeAt(0)],
-        [1, 'A', 0, 'A'.charCodeAt(0)]
+        [1, 'a', 1, 'a'.charCodeAt(0)],
+        [1, 'a', 1, 'a'.charCodeAt(0)],
+        [1, 'A', 1, 'A'.charCodeAt(0)],
+        [1, 'A', 1, 'A'.charCodeAt(0)],
+        [1, 'A', 1, 'A'.charCodeAt(0)]
       ]);
-      assert.equal((line as any)._extendedAttrs[0], undefined);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[4], undefined);
+      assert.equal(extendedAttributes(line, 0), undefined);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, undefined);
       // should be ref to the same object
-      assert.equal((line as any)._extendedAttrs[1], (line as any)._extendedAttrs[2]);
+      assert.equal(extendedAttributes(line, 1), extendedAttributes(line, 2));
       // should be a different obj
-      assert.notEqual((line as any)._extendedAttrs[1], (line as any)._extendedAttrs[3]);
+      assert.notEqual(extendedAttributes(line, 1), extendedAttributes(line, 3));
     });
     it('loadCell', () => {
       const line = new TestBufferLine(5);
-      const cell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const cell = createCellData(1, 'a', 1);
       // no eAttrs
       line.setCell(0, cell);
 
@@ -686,65 +693,65 @@ describe('BufferLine', function(): void {
     });
     it('fill', () => {
       const line = new TestBufferLine(3);
-      const cell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const cell = createCellData(1, 'a', 1);
       cell.extended.underlineStyle = UnderlineStyle.CURLY;
       cell.bg |= BgFlags.HAS_EXTENDED;
       line.fill(cell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('insertCells', () => {
       const line = new TestBufferLine(5);
-      const cell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const cell = createCellData(1, 'a', 1);
       cell.extended.underlineStyle = UnderlineStyle.CURLY;
       cell.bg |= BgFlags.HAS_EXTENDED;
       line.insertCells(1, 3, cell);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[4], undefined);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 4), undefined);
       cell.extended = cell.extended.clone();
       cell.extended.underlineStyle = UnderlineStyle.DOTTED;
       line.insertCells(2, 2, cell);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOTTED);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOTTED);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('deleteCells', () => {
       const line = new TestBufferLine(5);
-      const fillCell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const fillCell = createCellData(1, 'a', 1);
       fillCell.extended.underlineStyle = UnderlineStyle.CURLY;
       fillCell.bg |= BgFlags.HAS_EXTENDED;
       line.fill(fillCell);
       fillCell.extended = fillCell.extended.clone();
       fillCell.extended.underlineStyle = UnderlineStyle.DOUBLE;
       line.deleteCells(1, 3, fillCell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.DOUBLE);
     });
     it('replaceCells', () => {
       const line = new TestBufferLine(5);
-      const fillCell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const fillCell = createCellData(1, 'a', 1);
       fillCell.extended.underlineStyle = UnderlineStyle.CURLY;
       fillCell.bg |= BgFlags.HAS_EXTENDED;
       line.fill(fillCell);
       fillCell.extended = fillCell.extended.clone();
       fillCell.extended.underlineStyle = UnderlineStyle.DOUBLE;
       line.replaceCells(1, 3, fillCell);
-      assert.equal((line as any)._extendedAttrs[0].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[1].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[2].underlineStyle, UnderlineStyle.DOUBLE);
-      assert.equal((line as any)._extendedAttrs[3].underlineStyle, UnderlineStyle.CURLY);
-      assert.equal((line as any)._extendedAttrs[4].underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 0)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 1)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOUBLE);
+      assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.CURLY);
+      assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.CURLY);
     });
     it('clone', () => {
       const line = new TestBufferLine(5);
-      const cell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const cell = createCellData(1, 'a', 1);
       // no eAttrs
       line.setCell(0, cell);
 
@@ -767,15 +774,15 @@ describe('BufferLine', function(): void {
       line.setCell(4, cell);
 
       const nLine = line.clone();
-      assert.equal((nLine as any)._extendedAttrs[0], (line as any)._extendedAttrs[0]);
-      assert.equal((nLine as any)._extendedAttrs[1], (line as any)._extendedAttrs[1]);
-      assert.equal((nLine as any)._extendedAttrs[2], (line as any)._extendedAttrs[2]);
-      assert.equal((nLine as any)._extendedAttrs[3], (line as any)._extendedAttrs[3]);
-      assert.equal((nLine as any)._extendedAttrs[4], (line as any)._extendedAttrs[4]);
+      assert.equal(extendedAttributes(nLine, 0), extendedAttributes(line, 0));
+      assert.equal(extendedAttributes(nLine, 1), extendedAttributes(line, 1));
+      assert.equal(extendedAttributes(nLine, 2), extendedAttributes(line, 2));
+      assert.equal(extendedAttributes(nLine, 3), extendedAttributes(line, 3));
+      assert.equal(extendedAttributes(nLine, 4), extendedAttributes(line, 4));
     });
     it('copyFrom', () => {
       const initial = new TestBufferLine(5);
-      const cell = CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]);
+      const cell = createCellData(1, 'a', 1);
       // no eAttrs
       initial.setCell(0, cell);
 
@@ -798,13 +805,13 @@ describe('BufferLine', function(): void {
       initial.setCell(4, cell);
 
       const line = new TestBufferLine(5);
-      line.fill(CellData.fromCharData([1, 'b', 0, 'b'.charCodeAt(0)]));
+      line.fill(createCellData(1, 'b', 1));
       line.copyFrom(initial);
-      assert.equal((line as any)._extendedAttrs[0], (initial as any)._extendedAttrs[0]);
-      assert.equal((line as any)._extendedAttrs[1], (initial as any)._extendedAttrs[1]);
-      assert.equal((line as any)._extendedAttrs[2], (initial as any)._extendedAttrs[2]);
-      assert.equal((line as any)._extendedAttrs[3], (initial as any)._extendedAttrs[3]);
-      assert.equal((line as any)._extendedAttrs[4], (initial as any)._extendedAttrs[4]);
+      assert.equal(extendedAttributes(line, 0), extendedAttributes(initial, 0));
+      assert.equal(extendedAttributes(line, 1), extendedAttributes(initial, 1));
+      assert.equal(extendedAttributes(line, 2), extendedAttributes(initial, 2));
+      assert.equal(extendedAttributes(line, 3), extendedAttributes(initial, 3));
+      assert.equal(extendedAttributes(line, 4), extendedAttributes(initial, 4));
     });
   });
 });

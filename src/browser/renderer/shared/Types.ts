@@ -65,6 +65,7 @@ export interface IRenderer extends IDisposable {
   handleCharSizeChanged(): void;
   handleBlur(): void;
   handleFocus(): void;
+  handleViewportVisibilityChange?(isVisible: boolean): void;
   handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void;
   handleCursorMove(): void;
   clear(): void;

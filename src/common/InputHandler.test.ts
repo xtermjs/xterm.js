@@ -11,7 +11,7 @@ import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
-import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockCoreMouseService, MockCharsetService, MockUnicodeService, MockOscLinkService } from 'common/TestUtils.test';
+import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockMouseStateService, MockCharsetService, MockUnicodeService, MockOscLinkService } from 'common/TestUtils.test';
 import { IBufferService, ICoreService, type IOscLinkService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
@@ -65,12 +65,12 @@ describe('InputHandler', () => {
 
   beforeEach(() => {
     optionsService = new MockOptionsService();
-    bufferService = new BufferService(optionsService);
+    bufferService = new BufferService(optionsService, new MockLogService());
     bufferService.resize(80, 30);
     coreService = new CoreService(bufferService, new MockLogService(), optionsService);
     oscLinkService = new OscLinkService(bufferService);
 
-    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, oscLinkService, new MockCoreMouseService(), new MockUnicodeService());
+    inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, oscLinkService, new MockMouseStateService(), new MockUnicodeService());
   });
 
   describe('SL/SR/DECIC/DECDC', () => {
@@ -261,7 +261,7 @@ describe('InputHandler', () => {
   describe('setMode', () => {
     it('should toggle bracketedPasteMode', () => {
       const coreService = new MockCoreService();
-      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), new MockOptionsService(), new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), new MockOptionsService(), new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
       // Set bracketed paste mode
       inputHandler.setModePrivate(Params.fromArray([2004]));
       assert.equal(coreService.decPrivateModes.bracketedPasteMode, true);
@@ -272,7 +272,7 @@ describe('InputHandler', () => {
     it('should toggle colorSchemeUpdates (DECSET 2031)', () => {
       const coreService = new MockCoreService();
       const optionsService = new MockOptionsService();
-      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
       // Set color scheme updates mode (default colorSchemeQuery=true)
       inputHandler.setModePrivate(Params.fromArray([2031]));
       assert.equal(coreService.decPrivateModes.colorSchemeUpdates, true);
@@ -284,7 +284,7 @@ describe('InputHandler', () => {
       const coreService = new MockCoreService();
       const optionsService = new MockOptionsService();
       optionsService.rawOptions.vtExtensions = { colorSchemeQuery: false };
-      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      const inputHandler = new TestInputHandler(new MockBufferService(80, 30), new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
       // Attempt to set color scheme updates mode
       inputHandler.setModePrivate(Params.fromArray([2031]));
       assert.equal(coreService.decPrivateModes.colorSchemeUpdates, false);
@@ -306,7 +306,7 @@ describe('InputHandler', () => {
         new MockLogService(),
         new MockOptionsService(),
         new MockOscLinkService(),
-        new MockCoreMouseService(),
+        new MockMouseStateService(),
         new MockUnicodeService()
       );
 
@@ -352,7 +352,7 @@ describe('InputHandler', () => {
         new MockLogService(),
         new MockOptionsService(),
         new MockOscLinkService(),
-        new MockCoreMouseService(),
+        new MockMouseStateService(),
         new MockUnicodeService()
       );
 
@@ -402,7 +402,7 @@ describe('InputHandler', () => {
         new MockLogService(),
         new MockOptionsService(),
         new MockOscLinkService(),
-        new MockCoreMouseService(),
+        new MockMouseStateService(),
         new MockUnicodeService()
       );
 
@@ -439,7 +439,7 @@ describe('InputHandler', () => {
         new MockLogService(),
         new MockOptionsService(),
         new MockOscLinkService(),
-        new MockCoreMouseService(),
+        new MockMouseStateService(),
         new MockUnicodeService()
       );
 
@@ -488,7 +488,7 @@ describe('InputHandler', () => {
         new MockLogService(),
         new MockOptionsService({ scrollOnEraseInDisplay: true }),
         new MockOscLinkService(),
-        new MockCoreMouseService(),
+        new MockMouseStateService(),
         new MockUnicodeService()
       );
       const aLine = Array(bufferService.cols + 1).join('a');
@@ -520,7 +520,7 @@ describe('InputHandler', () => {
         new MockLogService(),
         new MockOptionsService(),
         new MockOscLinkService(),
-        new MockCoreMouseService(),
+        new MockMouseStateService(),
         new MockUnicodeService()
       );
 
@@ -646,7 +646,7 @@ describe('InputHandler', () => {
         new MockLogService(),
         new MockOptionsService(),
         new MockOscLinkService(),
-        new MockCoreMouseService(),
+        new MockMouseStateService(),
         new MockUnicodeService()
       );
       const container = new Uint32Array(10);
@@ -674,7 +674,7 @@ describe('InputHandler', () => {
 
     beforeEach(() => {
       bufferService = new MockBufferService(80, 30);
-      handler = new TestInputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockLogService(), new MockOptionsService(), new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      handler = new TestInputHandler(bufferService, new MockCharsetService(), new MockCoreService(), new MockLogService(), new MockOptionsService(), new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
     });
     it('should handle DECSET/DECRST 47 (alt screen buffer)', async () => {
       await handler.parseP('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
@@ -887,7 +887,7 @@ describe('InputHandler', () => {
   describe('colon notation', () => {
     let inputHandler2: TestInputHandler;
     beforeEach(() => {
-      inputHandler2 = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      inputHandler2 = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
     });
     describe('should equal to semicolon', () => {
       it('CSI 38:2::50:100:150 m', async () => {
@@ -2458,10 +2458,10 @@ describe('InputHandler', () => {
 
     beforeEach(() => {
       optionsService = new MockOptionsService({ vtExtensions: { kittyKeyboard: true } });
-      bufferService = new BufferService(optionsService);
+      bufferService = new BufferService(optionsService, new MockLogService());
       bufferService.resize(80, 30);
       coreService = new CoreService(bufferService, new MockLogService(), optionsService);
-      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
     });
 
     describe('stack limit', () => {
@@ -2508,12 +2508,12 @@ describe('InputHandler', () => {
 
     beforeEach(() => {
       optionsService = new MockOptionsService();
-      bufferService = new BufferService(optionsService);
+      bufferService = new BufferService(optionsService, new MockLogService());
       bufferService.resize(80, 30);
       coreService = new CoreService(bufferService, new MockLogService(), optionsService);
       coreService.onData(data => { console.log(data); });
 
-      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockCoreMouseService(), new MockUnicodeService());
+      inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
     });
 
     it('async CUP with CPR check', async () => {

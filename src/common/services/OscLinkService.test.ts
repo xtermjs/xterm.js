@@ -9,6 +9,7 @@ import { BufferService } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { OscLinkService } from 'common/services/OscLinkService';
 import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
+import { MockLogService } from 'common/TestUtils.test';
 
 describe('OscLinkService', () => {
   describe('constructor', () => {
@@ -17,7 +18,7 @@ describe('OscLinkService', () => {
     let oscLinkService: IOscLinkService;
     beforeEach(() => {
       optionsService = new OptionsService({ rows: 3, cols: 10 });
-      bufferService = new BufferService(optionsService);
+      bufferService = new BufferService(optionsService, new MockLogService());
       oscLinkService = new OscLinkService(bufferService);
     });
 

@@ -22,8 +22,17 @@ const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
 export const isFirefox = userAgent.includes('Firefox');
+export const isChrome = userAgent.includes('Chrome');
 export const isLegacyEdge = userAgent.includes('Edge');
 export const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+
+interface IZoomWindow {
+  devicePixelRatio?: number;
+}
+
+export function getZoomFactor(_targetWindow: IZoomWindow): number {
+  return 1;
+}
 export function getSafariVersion(): number {
   if (!isSafari) {
     return 0;

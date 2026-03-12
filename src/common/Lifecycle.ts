@@ -14,17 +14,21 @@ export function toDisposable(fn: () => void): IDisposable {
   return { dispose: fn };
 }
 
-export function dispose<T extends IDisposable>(disposables: T | T[] | undefined): void {
-  if (!disposables) {
-    return;
+export function dispose<T extends IDisposable>(disposable: T): T;
+export function dispose<T extends IDisposable>(disposable: T | undefined): T | undefined;
+export function dispose<T extends IDisposable>(disposables: T[]): T[];
+export function dispose<T extends IDisposable>(arg: T | T[] | undefined): T | T[] | undefined {
+  if (!arg) {
+    return arg;
   }
-  if (Array.isArray(disposables)) {
-    for (const d of disposables) {
+  if (Array.isArray(arg)) {
+    for (const d of arg) {
       d.dispose();
     }
-  } else {
-    disposables.dispose();
+    return [];
   }
+  arg.dispose();
+  return arg;
 }
 
 export function combinedDisposable(...disposables: IDisposable[]): IDisposable {
@@ -58,9 +62,18 @@ export class DisposableStore implements IDisposable {
     }
     this._disposables.clear();
   }
+
+  public clear(): void {
+    for (const d of this._disposables) {
+      d.dispose();
+    }
+    this._disposables.clear();
+  }
 }
 
 export abstract class Disposable implements IDisposable {
+  public static readonly None: IDisposable = Object.freeze({ dispose() { } });
+
   protected readonly _store = new DisposableStore();
 
   public dispose(): void {

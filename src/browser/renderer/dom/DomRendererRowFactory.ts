@@ -24,6 +24,7 @@ export const enum RowCss {
   UNDERLINE_CLASS = 'xterm-underline',
   OVERLINE_CLASS = 'xterm-overline',
   STRIKETHROUGH_CLASS = 'xterm-strikethrough',
+  BLINK_HIDDEN_CLASS = 'xterm-blink-hidden',
   CURSOR_CLASS = 'xterm-cursor',
   CURSOR_BLINK_CLASS = 'xterm-cursor-blink',
   CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block',
@@ -66,13 +67,18 @@ export class DomRendererRowFactory {
     cursorInactiveStyle: string | undefined,
     cursorX: number,
     cursorBlink: boolean,
+    blinkOn: boolean,
     cellWidth: number,
     widthCache: WidthCache,
     linkStart: number,
-    linkEnd: number
+    linkEnd: number,
+    rowInfo?: { hasBlinkingCells: boolean }
   ): HTMLSpanElement[] {
 
     const elements: HTMLSpanElement[] = [];
+    if (rowInfo) {
+      rowInfo.hasBlinkingCells = false;
+    }
     const joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
     const colors = this._themeService.colors;
 
@@ -118,7 +124,7 @@ export class DomRendererRowFactory {
       // Process any joined character ranges as needed. Because of how the
       // ranges are produced, we know that they are valid for the characters
       // and attributes of our input.
-      let cell = this._workCell;
+      let cell: ICellData = this._workCell;
       if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
         const range = joinedRanges.shift()!;
         // If the ligature's selection state is not consistent, don't join it. This helps the
@@ -153,6 +159,13 @@ export class DomRendererRowFactory {
       const isInSelection = this._isCellInSelection(x, row);
       const isCursorCell = isCursorRow && x === cursorX;
       const isLinkHover = hasHover && x >= linkStart && x <= linkEnd;
+      if (rowInfo && cell.isBlink()) {
+        rowInfo.hasBlinkingCells = true;
+      }
+      const isBlinkHidden = !blinkOn && cell.isBlink();
+      if (isBlinkHidden) {
+        classes.push(RowCss.BLINK_HIDDEN_CLASS);
+      }
 
       let isDecorated = false;
       this._decorationService.forEachDecorationAtCell(x, row, undefined, d => {
