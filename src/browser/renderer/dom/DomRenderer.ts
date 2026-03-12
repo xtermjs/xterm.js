@@ -45,6 +45,9 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _selectionContainer: HTMLElement;
   private _widthCache: WidthCache;
   private _selectionRenderModel: ISelectionRenderModel = createSelectionRenderModel();
+  private _lastSelectionStart: [number, number] | undefined;
+  private _lastSelectionEnd: [number, number] | undefined;
+  private _lastSelectionColumnMode: boolean = false;
   private _cursorBlinkStateManager: CursorBlinkStateManager;
   private _textBlinkStateManager: TextBlinkStateManager;
   private _rowHasBlinkingCells: boolean[] = [];
@@ -374,51 +377,89 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public handleSelectionChanged(start: [number, number] | undefined, end: [number, number] | undefined, columnSelectMode: boolean): void {
+    const rows = this._bufferService.rows;
+
     // Remove all selections
     this._selectionContainer.replaceChildren();
     this._rowFactory.handleSelectionChanged(start, end, columnSelectMode);
-    this.renderRows(0, this._bufferService.rows - 1);
 
-    // Selection does not exist
+    // Determine old selection viewport band
+    let oldViewportStart = 0;
+    let oldViewportEnd = -1;
+    if (this._lastSelectionStart && this._lastSelectionEnd) {
+      this._selectionRenderModel.update(this._terminal, this._lastSelectionStart, this._lastSelectionEnd, this._lastSelectionColumnMode);
+      if (this._selectionRenderModel.hasSelection) {
+        oldViewportStart = this._selectionRenderModel.viewportCappedStartRow;
+        oldViewportEnd = this._selectionRenderModel.viewportCappedEndRow;
+      }
+    }
+
+    // Determine new selection viewport band and create overlays
+    let newViewportStart = 0;
+    let newViewportEnd = -1;
     if (!start || !end) {
       return;
     }
-
     this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
-    if (!this._selectionRenderModel.hasSelection) {
-      return;
-    }
+    if (this._selectionRenderModel.hasSelection) {
+      const viewportStartRow = this._selectionRenderModel.viewportStartRow;
+      const viewportEndRow = this._selectionRenderModel.viewportEndRow;
+      const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
+      const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
 
-    // Translate from buffer position to viewport position
-    const viewportStartRow = this._selectionRenderModel.viewportStartRow;
-    const viewportEndRow = this._selectionRenderModel.viewportEndRow;
-    const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
-    const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
+      newViewportStart = viewportCappedStartRow;
+      newViewportEnd = viewportCappedEndRow;
 
-    // Create the selections
-    const documentFragment = this._document.createDocumentFragment();
+      // Create the selections
+      const documentFragment = this._document.createDocumentFragment();
 
-    if (columnSelectMode) {
-      const isXFlipped = start[0] > end[0];
-      documentFragment.appendChild(
-        this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
-      );
-    } else {
-      // Draw first row
-      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const endCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
-      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
-      // Draw middle rows
-      const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
-      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._bufferService.cols, middleRowsCount));
-      // Draw final row
-      if (viewportCappedStartRow !== viewportCappedEndRow) {
-        // Only draw viewportEndRow if it's not the same as viewporttartRow
-        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
-        documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
+      if (columnSelectMode) {
+        const isXFlipped = start[0] > end[0];
+        documentFragment.appendChild(
+          this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
+        );
+      } else {
+        // Draw first row
+        const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+        const endCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
+        documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
+        // Draw middle rows
+        const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
+        documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._bufferService.cols, middleRowsCount));
+        // Draw final row
+        if (viewportCappedStartRow !== viewportCappedEndRow) {
+          // Only draw viewportEndRow if it's not the same as viewporttartRow
+          const finalEndCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
+          documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, finalEndCol));
+        }
       }
+      this._selectionContainer.appendChild(documentFragment);
     }
-    this._selectionContainer.appendChild(documentFragment);
+
+    // Compute minimal row range to redraw
+    let renderStartRow = Math.min(oldViewportStart, newViewportStart);
+    let renderEndRow = Math.max(oldViewportEnd, newViewportEnd);
+
+    if (renderEndRow >= 0) {
+      // Clamp to viewport
+      renderStartRow = Math.max(renderStartRow, 0);
+      renderEndRow = Math.min(renderEndRow, rows - 1);
+
+      // Ensure cursor row is included when a selection is present
+      const buffer = this._bufferService.buffer;
+      const cursorViewportRow = buffer.y;
+      if (this._selectionRenderModel.hasSelection && cursorViewportRow >= 0 && cursorViewportRow < rows) {
+        renderStartRow = Math.min(renderStartRow, cursorViewportRow);
+        renderEndRow = Math.max(renderEndRow, cursorViewportRow);
+      }
+
+      this.renderRows(renderStartRow, renderEndRow);
+    }
+
+    // Update last selection state
+    this._lastSelectionStart = start;
+    this._lastSelectionEnd = end;
+    this._lastSelectionColumnMode = columnSelectMode;
   }
 
   /**
