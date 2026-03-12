@@ -11,16 +11,12 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "removeComments": true,
-    "baseUrl": ".",
     "paths": {
       "common/*": [
         "../../../src/common/*"
       ],
       "browser/*": [
         "../../../src/browser/*"
-      ],
-      "vs/*": [
-        "../../../src/vs/*"
       ],
       "@xterm/addon-webgpu": [
         "../typings/addon-webgpu.d.ts"
@@ -43,9 +39,6 @@
     },
     {
       "path": "../../../src/browser"
-    },
-    {
-      "path": "../../../src/vs"
     }
   ]
 }

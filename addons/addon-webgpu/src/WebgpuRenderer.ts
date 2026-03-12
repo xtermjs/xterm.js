@@ -10,7 +10,7 @@ import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeS
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { Emitter, EventUtils } from 'common/Event';
-import { addDisposableListener } from 'vs/base/browser/dom';
+import { addDisposableListener } from 'browser/Dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
@@ -545,7 +545,13 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
         code = cell.getCode();
         i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
 
-        this._cellColorResolver.resolve(cell, x, row, this.dimensions.device.cell.width);
+        this._cellColorResolver.resolve(
+          cell,
+          x,
+          row,
+          this.dimensions.device.cell.width,
+          this.dimensions.device.cell.height
+        );
 
         if (isCursorVisible && row === cursorY) {
           if (x === cursorX) {
