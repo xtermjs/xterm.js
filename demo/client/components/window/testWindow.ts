@@ -705,13 +705,13 @@ function loadTest(term: Terminal, addons: AddonCollection): void {
   term.write('', () => {
     const time = Math.round(performance.now() - start);
     const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
-    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
+    term.write(`\n\r\nWrote ${byteCount}KiB in ${time}ms (${mbs}MiB/s) using the (${rendererName} renderer)`);
     // Send ^C to get a new prompt
     (term as any)._core._onData.fire('\x03');
   });
 }
 
-function loadTestLongLines(term: Terminal, addons: AddonCollection): void {
+async function loadTestLongLines(term: Terminal, addons: AddonCollection): Promise<void> {
   const rendererName = addons.webgl.instance ? 'webgl' : 'dom';
   const testData = [];
   let byteCount = 0;
@@ -729,16 +729,23 @@ function loadTestLongLines(term: Terminal, addons: AddonCollection): void {
     testData.push(data);
   }
   const start = performance.now();
-  for (let i = 0; i < 1024 * 50; i++) {
+  for (let i = 0; i < 1024; i++) {
     for (const d of testData) {
-      term.write(d);
+      try {
+        term.write(d);
+      } catch {
+        // Flush events when cap is hit and try again(workaround for not having flow control in
+        // demo)
+        await new Promise<void>(r => term.write('', () => r()));
+        term.write(d);
+      }
     }
   }
   // Wait for all data to be parsed before evaluating time
   term.write('', () => {
     const time = Math.round(performance.now() - start);
     const mbs = ((byteCount / 1024) * (1 / (time / 1000))).toFixed(2);
-    term.write(`\n\r\nWrote ${byteCount}kB in ${time}ms (${mbs}MB/s) using the (${rendererName} renderer)`);
+    term.write(`\n\r\nWrote ${byteCount}KiB in ${time}ms (${mbs}MiB/s) using the (${rendererName} renderer)`);
     // Send ^C to get a new prompt
     (term as any)._core._onData.fire('\x03');
   });

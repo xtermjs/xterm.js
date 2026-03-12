@@ -7,12 +7,12 @@ import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { UnderlineStyle } from 'common/buffer/Constants';
 import { IBufferSet } from 'common/buffer/Types';
 import { IParams } from 'common/parser/Types';
-import { ICoreMouseService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
 import type { Emitter, IEvent } from 'common/Event';
 
 export interface ICoreTerminal {
-  coreMouseService: ICoreMouseService;
+  mouseStateService: IMouseStateService;
   coreService: ICoreService;
   optionsService: IOptionsService;
   unicodeService: IUnicodeService;
@@ -101,13 +101,13 @@ export interface ICharset {
   [key: string]: string | undefined;
 }
 
-export type CharData = [number, string, number, number];
+export type CharData = [attr: number, char: string, width: number, code: number];
 
 export interface IColor {
   readonly css: string;
   readonly rgba: number; // 32-bit int with rgba in each byte
 }
-export type IColorRGB = [number, number, number];
+export type IColorRGB = [red: number, green: number, blue: number];
 
 export interface IExtendedAttrs {
   ext: number;
@@ -343,7 +343,7 @@ export interface ICoreMouseEvent {
    * it is not possible to report multiple buttons at once.
    * Wheel is treated as a button.
    * There are invalid combinations of buttons and actions possible
-   * (like move + wheel), those are silently ignored by the CoreMouseService.
+   * (like move + wheel), those are silently ignored by the MouseStateService.
    */
   button: CoreMouseButton;
   action: CoreMouseAction;
@@ -360,7 +360,7 @@ export interface ICoreMouseEvent {
  * CoreMouseEventType
  * To be reported to the browser component which events a mouse
  * protocol wants to be catched and forwarded as an ICoreMouseEvent
- * to CoreMouseService.
+ * to MouseStateService.
  */
 export const enum CoreMouseEventType {
   NONE = 0,
@@ -378,7 +378,7 @@ export const enum CoreMouseEventType {
 
 /**
  * Mouse protocol interface.
- * A mouse protocol can be registered and activated at the CoreMouseService.
+ * A mouse protocol can be registered and activated at the MouseStateService.
  * `events` should contain a list of needed events as a hint for the browser component
  * to install/remove the appropriate event handlers.
  * `restrict` applies further protocol specific restrictions like not allowed
@@ -391,7 +391,7 @@ export interface ICoreMouseProtocol {
 
 /**
  * CoreMouseEncoding
- * The tracking encoding can be registered and activated at the CoreMouseService.
+ * The tracking encoding can be registered and activated at the MouseStateService.
  * If a ICoreMouseEvent passes all procotol restrictions it will be encoded
  * with the active encoding and sent out.
  * Note: Returning an empty string will supress sending a mouse report,

@@ -184,6 +184,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       // refresh() being called during the mousedown handler to start a selection.
       ` pointer-events: none;` +
       ` color: ${colors.foreground.css};` +
+      `}`;
+    styles +=
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}, ${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
       ` font-kerning: none;` +

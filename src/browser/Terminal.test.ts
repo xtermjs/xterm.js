@@ -8,7 +8,7 @@ import type { IBrowser } from 'browser/Types';
 import { assert } from 'chai';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { MockUnicodeService } from 'common/TestUtils.test';
+import { MockUnicodeService, createCellData } from 'common/TestUtils.test';
 import { IMarker } from 'common/Types';
 
 const INIT_COLS = 80;
@@ -440,8 +440,8 @@ describe('Terminal', () => {
     describe('scroll() function', () => {
       describe('when scrollback > 0', () => {
         it('should create a new line and scroll', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, createCellData(0, 'b', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.scroll(DEFAULT_ATTR_DATA.clone());
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
@@ -451,9 +451,9 @@ describe('Terminal', () => {
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 0));
+          term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.scroll(DEFAULT_ATTR_DATA.clone());
@@ -463,11 +463,11 @@ describe('Terminal', () => {
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 0));
+          term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
+          term.buffer.lines.get(3)!.setCell(0, createCellData(0, 'd', 0));
+          term.buffer.lines.get(4)!.setCell(0, createCellData(0, 'e', 0));
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
           term.scroll(DEFAULT_ATTR_DATA.clone());
@@ -481,11 +481,11 @@ describe('Terminal', () => {
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 0));
+          term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
+          term.buffer.lines.get(3)!.setCell(0, createCellData(0, 'd', 0));
+          term.buffer.lines.get(4)!.setCell(0, createCellData(0, 'e', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;
@@ -506,9 +506,9 @@ describe('Terminal', () => {
         });
 
         it('should create a new line and shift everything up', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 0));
+          term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, createCellData(0, 'c', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           term.scroll(DEFAULT_ATTR_DATA.clone());
@@ -521,9 +521,9 @@ describe('Terminal', () => {
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 0));
+          term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.scroll(DEFAULT_ATTR_DATA.clone());
@@ -533,11 +533,11 @@ describe('Terminal', () => {
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 0));
+          term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
+          term.buffer.lines.get(3)!.setCell(0, createCellData(0, 'd', 0));
+          term.buffer.lines.get(4)!.setCell(0, createCellData(0, 'e', 0));
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
           term.scroll(DEFAULT_ATTR_DATA.clone());
@@ -550,11 +550,11 @@ describe('Terminal', () => {
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
-          term.buffer.lines.get(0)!.setCell(0, CellData.fromCharData([0, 'a', 0, 'a'.charCodeAt(0)]));
-          term.buffer.lines.get(1)!.setCell(0, CellData.fromCharData([0, 'b', 0, 'b'.charCodeAt(0)]));
-          term.buffer.lines.get(2)!.setCell(0, CellData.fromCharData([0, 'c', 0, 'c'.charCodeAt(0)]));
-          term.buffer.lines.get(3)!.setCell(0, CellData.fromCharData([0, 'd', 0, 'd'.charCodeAt(0)]));
-          term.buffer.lines.get(4)!.setCell(0, CellData.fromCharData([0, 'e', 0, 'e'.charCodeAt(0)]));
+          term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
+          term.buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 0));
+          term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
+          term.buffer.lines.get(3)!.setCell(0, createCellData(0, 'd', 0));
+          term.buffer.lines.get(4)!.setCell(0, createCellData(0, 'e', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;

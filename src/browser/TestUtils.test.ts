@@ -12,7 +12,7 @@ import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, I
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
-import { IUnicodeService, IOptionsService, ICoreService, ICoreMouseService } from 'common/services/Services';
+import { IUnicodeService, IOptionsService, ICoreService, IMouseStateService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
@@ -51,7 +51,7 @@ export class MockTerminal implements ITerminal {
   public dimensions: IRenderDimensionsApi | undefined;
   public markers!: IMarker[];
   public linkifier: ILinkifier2 | undefined;
-  public coreMouseService!: ICoreMouseService;
+  public mouseStateService!: IMouseStateService;
   public coreService!: ICoreService;
   public optionsService!: IOptionsService;
   public unicodeService!: IUnicodeService;
@@ -392,6 +392,9 @@ export class MockMouseService implements IMouseService {
   public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
     throw new Error('Not implemented');
   }
+
+  public bindMouse(): void { }
+  public reset(): void { }
 }
 
 export class MockRenderService implements IRenderService {

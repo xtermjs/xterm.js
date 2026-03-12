@@ -20,6 +20,15 @@ export class KittyImageStorage implements IDisposable {
 
   private _nextImageId = 1;
   private readonly _images: Map<number, IKittyImageData> = new Map();
+  // TODO: Support multiple placements per image. The kitty spec identifies
+  // placements by an (image id, placement id) pair — same i + different p
+  // values should coexist, and same i + same p should replace the prior
+  // placement. Currently we track only one storage entry per kitty image id,
+  // so multiple placements of the same image overwrite each other. Fixing
+  // this requires changing these maps to Map<number, Map<number, number>>
+  // (kittyId → placementId → storageId) and updating addImage/deleteById
+  // accordingly. The underlying shared ImageStorage would also need to
+  // support multiple entries per logical image.
   private readonly _kittyIdToStorageId: Map<number, number> = new Map();
   private readonly _storageIdToKittyId: Map<number, number> = new Map();
 
@@ -81,6 +90,14 @@ export class KittyImageStorage implements IDisposable {
   }
 
   public addImage(kittyId: number, image: HTMLCanvasElement | ImageBitmap, scrolling: boolean, layer: ImageLayer, zIndex: number): void {
+    // Clean up stale reverse-mapping from a previous placement of the same
+    // kitty image.  The old shared-storage entry is kept (it may still be
+    // visible on screen) but its reverse mapping is removed so that eviction
+    // of the old entry won't incorrectly delete the kitty image data.
+    const oldStorageId = this._kittyIdToStorageId.get(kittyId);
+    if (oldStorageId !== undefined) {
+      this._storageIdToKittyId.delete(oldStorageId);
+    }
     const storageId = this._storage.addImage(image, scrolling, layer, zIndex);
     this._kittyIdToStorageId.set(kittyId, storageId);
     this._storageIdToKittyId.set(storageId, kittyId);

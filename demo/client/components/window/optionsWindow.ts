@@ -116,6 +116,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       'linkHandler',
       'logger',
       'quirks',
+      'scrollbar',
       'theme',
       'vtExtensions',
       'windowOptions',
