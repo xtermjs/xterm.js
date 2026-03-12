@@ -153,6 +153,8 @@ export interface IGestureEvent extends MouseEvent {
   translationY: number;
   pageX: number;
   pageY: number;
+  clientX: number;
+  clientY: number;
   tapCount: number;
 }
 
@@ -459,6 +461,8 @@ export class Gesture extends Disposable {
       evt.translationY = touch.pageY - tail(data.rollingPageY)!;
       evt.pageX = touch.pageX;
       evt.pageY = touch.pageY;
+      evt.clientX = touch.clientX;
+      evt.clientY = touch.clientY;
       this._dispatchEvent(evt);
 
       if (data.rollingPageX.length > 3) {

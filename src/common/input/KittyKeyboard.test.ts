@@ -100,24 +100,24 @@ describe('KittyKeyboard', () => {
         assert.strictEqual(result.key, '\x1b[27u');
       });
 
-      it('Enter → CSI 13 u', () => {
+      it('Enter → legacy \\r', () => {
         const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags);
-        assert.strictEqual(result.key, '\x1b[13u');
+        assert.strictEqual(result.key, '\r');
       });
 
-      it('Tab → CSI 9 u', () => {
+      it('Tab → legacy \\t', () => {
         const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags);
-        assert.strictEqual(result.key, '\x1b[9u');
+        assert.strictEqual(result.key, '\t');
       });
 
-      it('Backspace → CSI 127 u', () => {
+      it('Backspace → legacy \\x7f', () => {
         const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags);
-        assert.strictEqual(result.key, '\x1b[127u');
+        assert.strictEqual(result.key, '\x7f');
       });
 
-      it('Space → CSI 32 u', () => {
+      it('Space → plain space (text-generating key)', () => {
         const result = kitty.evaluate(createEvent({ key: ' ' }), flags);
-        assert.strictEqual(result.key, '\x1b[32u');
+        assert.strictEqual(result.key, ' ');
       });
 
       it('Shift+Tab → CSI 9;2 u', () => {
@@ -133,6 +133,21 @@ describe('KittyKeyboard', () => {
       it('Alt+Escape → CSI 27;3 u', () => {
         const result = kitty.evaluate(createEvent({ key: 'Escape', altKey: true }), flags);
         assert.strictEqual(result.key, '\x1b[27;3u');
+      });
+
+      it('Ctrl+Backspace → CSI 127;5 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace', ctrlKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[127;5u');
+      });
+
+      it('Ctrl+Space → CSI 32;5 u', () => {
+        const result = kitty.evaluate(createEvent({ key: ' ', ctrlKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[32;5u');
+      });
+
+      it('Alt+Space → CSI 32;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: ' ', altKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[32;3u');
       });
     });
 
