@@ -27,6 +27,7 @@ export class Viewport extends Disposable {
   private _isSyncing: boolean = false;
   private _isHandlingScroll: boolean = false;
   private _suppressOnScrollHandler: boolean = false;
+  private _needsSyncOnRender: boolean = false;
 
   constructor(
     element: HTMLElement,
@@ -105,6 +106,16 @@ export class Viewport extends Disposable {
     }));
     this._register(this._bufferService.onScroll(() => this._sync()));
 
+    // Flush deferred viewport sync after a render completes (e.g. after ESU ends
+    // synchronized output mode). This ensures DOM scroll position updates atomically
+    // with the canvas render.
+    this._register(this._renderService.onRender(() => {
+      if (this._needsSyncOnRender) {
+        this._needsSyncOnRender = false;
+        this._sync();
+      }
+    }));
+
     this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
 
   }
@@ -162,8 +173,12 @@ export class Viewport extends Disposable {
     if (!this._renderService || this._isSyncing) {
       return;
     }
-    // Plumb synchronized output state into Viewport for follow-up behavior changes.
-    void this._coreService.decPrivateModes.synchronizedOutput;
+    // Defer DOM scroll updates during synchronized output to prevent visible
+    // scroll position flickering while the canvas content is frozen.
+    if (this._coreService.decPrivateModes.synchronizedOutput) {
+      this._needsSyncOnRender = true;
+      return;
+    }
     this._isSyncing = true;
 
     // Ignore any onScroll event that happens as a result of dimensions changing as this should
