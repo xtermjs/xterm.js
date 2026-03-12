@@ -6,7 +6,7 @@
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ViewportConstants } from 'browser/shared/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, IMouseStateService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { scheduleAtNextAnimationFrame } from 'browser/Dom';
 import { SmoothScrollableElement } from 'browser/scrollable/scrollableElement';
@@ -33,6 +33,7 @@ export class Viewport extends Disposable {
     screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreBrowserService coreBrowserService: ICoreBrowserService,
+    @ICoreService private readonly _coreService: ICoreService,
     @IMouseStateService mouseStateService: IMouseStateService,
     @IThemeService themeService: IThemeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
@@ -161,6 +162,8 @@ export class Viewport extends Disposable {
     if (!this._renderService || this._isSyncing) {
       return;
     }
+    // Plumb synchronized output state into Viewport for follow-up behavior changes.
+    void this._coreService.decPrivateModes.synchronizedOutput;
     this._isSyncing = true;
 
     // Ignore any onScroll event that happens as a result of dimensions changing as this should
