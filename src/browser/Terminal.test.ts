@@ -871,7 +871,7 @@ describe('Terminal', () => {
       assert.equal(cell.getWidth(), 1);
     });
     it('multiple combined é', async () => {
-      await term.writeP(Array(100).join('e\u0301'));
+      await term.writeP('e\u0301'.repeat(99));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         assert.equal(cell.getChars(), 'e\u0301');
@@ -884,7 +884,7 @@ describe('Terminal', () => {
       assert.equal(cell.getWidth(), 1);
     });
     it('multiple surrogate with combined', async () => {
-      await term.writeP(Array(100).join('\uD800\uDC00\u0301'));
+      await term.writeP('\uD800\uDC00\u0301'.repeat(99));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         assert.equal(cell.getChars(), '\uD800\uDC00\u0301');
@@ -912,7 +912,7 @@ describe('Terminal', () => {
       assert.equal(term.buffer.x, 3);
     });
     it('line of ￥ even', async () => {
-      await term.writeP(Array(50).join('￥'));
+      await term.writeP('￥'.repeat(49));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
@@ -932,7 +932,7 @@ describe('Terminal', () => {
     });
     it('line of ￥ odd', async () => {
       term.buffer.x = 1;
-      await term.writeP(Array(50).join('￥'));
+      await term.writeP('￥'.repeat(49));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
@@ -956,7 +956,7 @@ describe('Terminal', () => {
     });
     it('line of ￥ with combining odd', async () => {
       term.buffer.x = 1;
-      await term.writeP(Array(50).join('￥\u0301'));
+      await term.writeP('￥\u0301'.repeat(49));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
@@ -979,7 +979,7 @@ describe('Terminal', () => {
       assert.equal(cell.getWidth(), 2);
     });
     it('line of ￥ with combining even', async () => {
-      await term.writeP(Array(50).join('￥\u0301'));
+      await term.writeP('￥\u0301'.repeat(49));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
@@ -999,7 +999,7 @@ describe('Terminal', () => {
     });
     it('line of surrogate fullwidth with combining odd', async () => {
       term.buffer.x = 1;
-      await term.writeP(Array(50).join('\ud843\ude6d\u0301'));
+      await term.writeP('\ud843\ude6d\u0301'.repeat(49));
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (!(i % 2)) {
@@ -1022,7 +1022,7 @@ describe('Terminal', () => {
       assert.equal(cell.getWidth(), 2);
     });
     it('line of surrogate fullwidth with combining even', async () => {
-      await term.writeP(Array(50).join('\ud843\ude6d\u0301'));
+      await term.writeP('\ud843\ude6d\u0301'.repeat(49));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0)!.loadCell(i, cell);
         if (i % 2) {
@@ -1045,7 +1045,7 @@ describe('Terminal', () => {
   describe('insert mode', () => {
     const cell = new CellData();
     it('halfwidth - all', async () => {
-      await term.writeP(Array(9).join('0123456789').slice(-80));
+      await term.writeP('0123456789'.repeat(8).slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.write('\x1b[4h');
@@ -1057,7 +1057,7 @@ describe('Terminal', () => {
       assert.equal(term.buffer.lines.get(0)!.loadCell(79, cell).getChars(), '4');
     });
     it('fullwidth - insert', async () => {
-      await term.writeP(Array(9).join('0123456789').slice(-80));
+      await term.writeP('0123456789'.repeat(8).slice(-80));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.write('\x1b[4h');
@@ -1070,7 +1070,7 @@ describe('Terminal', () => {
       assert.equal(term.buffer.lines.get(0)!.loadCell(79, cell).getChars(), '3');
     });
     it('fullwidth - right border', async () => {
-      await term.writeP(Array(41).join('￥'));
+      await term.writeP('￥'.repeat(40));
       term.buffer.x = 10;
       term.buffer.y = 0;
       term.write('\x1b[4h');
