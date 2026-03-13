@@ -311,37 +311,37 @@ describe('InputHandler', () => {
       );
 
       // insert some data in first and second line
-      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('a'.repeat(bufferService.cols - 10));
       await inputHandler.parseP('1234567890');
-      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('a'.repeat(bufferService.cols - 10));
       await inputHandler.parseP('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '1234567890');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '1234567890');
 
       // insert one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([0]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + ' 123456789');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + ' 123456789');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([1]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '  12345678');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '  12345678');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([2]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '    123456');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '    123456');
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.insertChars(Params.fromArray([10]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '          ');
-      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a'));
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '          ');
+      assert.equal(line1.translateToString(true), 'a'.repeat(bufferService.cols - 10));
     });
     it('deleteChars', async () => {
       const bufferService = new MockBufferService(80, 30);
@@ -357,41 +357,41 @@ describe('InputHandler', () => {
       );
 
       // insert some data in first and second line
-      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('a'.repeat(bufferService.cols - 10));
       await inputHandler.parseP('1234567890');
-      await inputHandler.parseP(Array(bufferService.cols - 9).join('a'));
+      await inputHandler.parseP('a'.repeat(bufferService.cols - 10));
       await inputHandler.parseP('1234567890');
       const line1: IBufferLine = bufferService.buffer.lines.get(0)!;
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '1234567890');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '1234567890');
 
       // delete one char from params = [0]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([0]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '234567890 ');
-      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '234567890');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '234567890 ');
+      assert.equal(line1.translateToString(true), 'a'.repeat(bufferService.cols - 10) + '234567890');
 
       // insert one char from params = [1]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([1]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '34567890  ');
-      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '34567890');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '34567890  ');
+      assert.equal(line1.translateToString(true), 'a'.repeat(bufferService.cols - 10) + '34567890');
 
       // insert two chars from params = [2]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([2]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '567890    ');
-      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a') + '567890');
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '567890    ');
+      assert.equal(line1.translateToString(true), 'a'.repeat(bufferService.cols - 10) + '567890');
 
 
       // insert 10 chars from params = [10]
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.deleteChars(Params.fromArray([10]));
-      assert.equal(line1.translateToString(false), Array(bufferService.cols - 9).join('a') + '          ');
-      assert.equal(line1.translateToString(true), Array(bufferService.cols - 9).join('a'));
+      assert.equal(line1.translateToString(false), 'a'.repeat(bufferService.cols - 10) + '          ');
+      assert.equal(line1.translateToString(true), 'a'.repeat(bufferService.cols - 10));
     });
     it('eraseInLine', async () => {
       const bufferService = new MockBufferService(80, 30);
@@ -407,27 +407,27 @@ describe('InputHandler', () => {
       );
 
       // fill 6 lines to test 3 different states
-      await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
-      await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
-      await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP('a'.repeat(bufferService.cols));
+      await inputHandler.parseP('a'.repeat(bufferService.cols));
+      await inputHandler.parseP('a'.repeat(bufferService.cols));
 
       // params[0] - right erase
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([0]));
-      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), Array(71).join('a') + '          ');
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), 'a'.repeat(70) + '          ');
 
       // params[1] - left erase
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([1]));
-      assert.equal(bufferService.buffer.lines.get(1)!.translateToString(false), Array(71).join(' ') + ' aaaaaaaaa');
+      assert.equal(bufferService.buffer.lines.get(1)!.translateToString(false), ' '.repeat(70) + ' aaaaaaaaa');
 
       // params[1] - left erase
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 70;
       inputHandler.eraseInLine(Params.fromArray([2]));
-      assert.equal(bufferService.buffer.lines.get(2)!.translateToString(false), Array(bufferService.cols + 1).join(' '));
+      assert.equal(bufferService.buffer.lines.get(2)!.translateToString(false), ' '.repeat(bufferService.cols));
 
     });
     it('eraseInLine reflow', async () => {
@@ -447,9 +447,9 @@ describe('InputHandler', () => {
         // reset and add a wrapped line
         bufferService.buffer.y = 0;
         bufferService.buffer.x = 0;
-        await inputHandler.parseP(Array(bufferService.cols + 1).join('a')); // line 0
-        await inputHandler.parseP(Array(bufferService.cols + 10).join('a')); // line 1 and 2
-        for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+        await inputHandler.parseP('a'.repeat(bufferService.cols)); // line 0
+        await inputHandler.parseP('a'.repeat(bufferService.cols + 9)); // line 1 and 2
+        for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
         // confirm precondition that line 2 is wrapped
         assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
@@ -491,7 +491,7 @@ describe('InputHandler', () => {
         new MockMouseStateService(),
         new MockUnicodeService()
       );
-      const aLine = Array(bufferService.cols + 1).join('a');
+      const aLine = 'a'.repeat(bufferService.cols);
       // add 2 full lines of text.
       await inputHandler.parseP(aLine);
       await inputHandler.parseP(aLine);
@@ -525,48 +525,48 @@ describe('InputHandler', () => {
       );
 
       // fill display with a's
-      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
       // params [0] - right and below erase
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([0]));
       assert.deepEqual(termContent(bufferService, false), [
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(40 + 1).join('a') + Array(bufferService.cols - 40 + 1).join(' '),
-        Array(bufferService.cols + 1).join(' ')
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(40) + ' '.repeat(bufferService.cols - 40),
+        ' '.repeat(bufferService.cols)
       ]);
       assert.deepEqual(termContent(bufferService, true), [
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(bufferService.cols + 1).join('a'),
-        Array(40 + 1).join('a'),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(bufferService.cols),
+        'a'.repeat(40),
         ''
       ]);
 
       // reset
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
       // params [1] - left and above
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([1]));
       assert.deepEqual(termContent(bufferService, false), [
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(41 + 1).join(' ') + Array(bufferService.cols - 41 + 1).join('a'),
-        Array(bufferService.cols + 1).join('a')
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(41) + 'a'.repeat(bufferService.cols - 41),
+        'a'.repeat(bufferService.cols)
       ]);
       assert.deepEqual(termContent(bufferService, true), [
         '',
@@ -574,27 +574,27 @@ describe('InputHandler', () => {
         '',
         '',
         '',
-        Array(41 + 1).join(' ') + Array(bufferService.cols - 41 + 1).join('a'),
-        Array(bufferService.cols + 1).join('a')
+        ' '.repeat(41) + 'a'.repeat(bufferService.cols - 41),
+        'a'.repeat(bufferService.cols)
       ]);
 
       // reset
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      for (let i = 0; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
       // params [2] - whole screen
       bufferService.buffer.y = 5;
       bufferService.buffer.x = 40;
       inputHandler.eraseInDisplay(Params.fromArray([2]));
       assert.deepEqual(termContent(bufferService, false), [
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' '),
-        Array(bufferService.cols + 1).join(' ')
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols),
+        ' '.repeat(bufferService.cols)
       ]);
       assert.deepEqual(termContent(bufferService, true), [
         '',
@@ -609,9 +609,9 @@ describe('InputHandler', () => {
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      await inputHandler.parseP(Array(bufferService.cols + 1).join('a')); // line 0
-      await inputHandler.parseP(Array(bufferService.cols + 10).join('a')); // line 1 and 2
-      for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP('a'.repeat(bufferService.cols)); // line 0
+      await inputHandler.parseP('a'.repeat(bufferService.cols + 9)); // line 1 and 2
+      for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
@@ -624,9 +624,9 @@ describe('InputHandler', () => {
       // reset and add a wrapped line
       bufferService.buffer.y = 0;
       bufferService.buffer.x = 0;
-      await inputHandler.parseP(Array(bufferService.cols + 1).join('a')); // line 0
-      await inputHandler.parseP(Array(bufferService.cols + 10).join('a')); // line 1 and 2
-      for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP(Array(bufferService.cols + 1).join('a'));
+      await inputHandler.parseP('a'.repeat(bufferService.cols)); // line 0
+      await inputHandler.parseP('a'.repeat(bufferService.cols + 9)); // line 1 and 2
+      for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
       // params[1] left and above with wrap
       // confirm precondition that line 2 is wrapped
