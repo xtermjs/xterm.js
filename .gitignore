@@ -21,6 +21,7 @@ build/
 .DS_Store
 yarn.lock
 test-results/
+.playwright-cli/
 
 # Keep bundled code out of Git
 dist/
