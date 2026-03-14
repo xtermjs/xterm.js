@@ -129,12 +129,12 @@ export class ImageRenderer extends Disposable implements IDisposable {
   }
 
   /**
-   * Current cell size (float).
+   * Current cell size in device pixels (accounts for devicePixelRatio).
    */
   public get cellSize(): ICellSize {
     return {
-      width: this.dimensions?.css.cell.width || -1,
-      height: this.dimensions?.css.cell.height || -1
+      width: this.dimensions?.device.cell.width || -1,
+      height: this.dimensions?.device.cell.height || -1
     };
   }
 
@@ -142,9 +142,9 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Clear a region of the image layer canvas.
    */
   public clearLines(start: number, end: number, layer?: ImageLayer): void {
-    const y = start * (this.dimensions?.css.cell.height || 0);
-    const w = this.dimensions?.css.canvas.width || 0;
-    const h = (++end - start) * (this.dimensions?.css.cell.height || 0);
+    const y = start * (this.dimensions?.device.cell.height || 0);
+    const w = this.dimensions?.device.canvas.width || 0;
+    const h = (++end - start) * (this.dimensions?.device.cell.height || 0);
     if (!layer || layer === 'top') {
       this._layers.get('top')?.clearRect(0, y, w, h);
     }
@@ -273,12 +273,16 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Checked once from `ImageStorage.render`.
    */
   public rescaleCanvas(): void {
-    const w = this.dimensions?.css.canvas.width || 0;
-    const h = this.dimensions?.css.canvas.height || 0;
+    const dw = this.dimensions?.device.canvas.width || 0;
+    const dh = this.dimensions?.device.canvas.height || 0;
+    const cw = this.dimensions?.css.canvas.width || 0;
+    const ch = this.dimensions?.css.canvas.height || 0;
     for (const ctx of this._layers.values()) {
-      if (ctx.canvas.width !== w || ctx.canvas.height !== h) {
-        ctx.canvas.width = w;
-        ctx.canvas.height = h;
+      if (ctx.canvas.width !== dw || ctx.canvas.height !== dh) {
+        ctx.canvas.width = dw;
+        ctx.canvas.height = dh;
+        ctx.canvas.style.width = cw + 'px';
+        ctx.canvas.style.height = ch + 'px';
       }
     }
   }
@@ -335,9 +339,11 @@ export class ImageRenderer extends Disposable implements IDisposable {
       return;
     }
     const canvas = ImageRenderer.createCanvas(
-      this.document, this.dimensions?.css.canvas.width || 0,
-      this.dimensions?.css.canvas.height || 0
+      this.document, this.dimensions?.device.canvas.width || 0,
+      this.dimensions?.device.canvas.height || 0
     );
+    canvas.style.width = (this.dimensions?.css.canvas.width || 0) + 'px';
+    canvas.style.height = (this.dimensions?.css.canvas.height || 0) + 'px';
     canvas.classList.add(`xterm-image-layer-${layer}`);
     const screenElement = this._terminal._core.screenElement;
     // Use isolation to create a stacking context without overriding z-index,
