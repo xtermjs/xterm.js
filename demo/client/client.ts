@@ -617,8 +617,12 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 }
 
 function updateTerminalSize(): void {
+  const showScrollbar = term!.options.scrollbar?.showScrollbar ?? true;
+  const scrollBarWidth = (term!.options.scrollback === 0 || !showScrollbar)
+    ? 0
+    : (term!.options.scrollbar?.width ?? 14);
   const width = optionsWindow.autoResize ? '100%'
-    : ((term as any).dimensions.css.canvas.width + (term as any)._core.viewport.scrollBarWidth).toString() + 'px';
+    : ((term as any).dimensions.css.canvas.width + scrollBarWidth).toString() + 'px';
   const height = optionsWindow.autoResize ? '100%'
     : ((term as any).dimensions.css.canvas.height).toString() + 'px';
   terminalContainer!.style.width = width;

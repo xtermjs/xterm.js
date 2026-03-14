@@ -6,7 +6,7 @@
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ViewportConstants } from 'browser/shared/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, IMouseStateService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from 'common/services/Services';
 import { CoreMouseEventType } from 'common/Types';
 import { scheduleAtNextAnimationFrame } from 'browser/Dom';
 import { SmoothScrollableElement } from 'browser/scrollable/scrollableElement';
@@ -27,12 +27,14 @@ export class Viewport extends Disposable {
   private _isSyncing: boolean = false;
   private _isHandlingScroll: boolean = false;
   private _suppressOnScrollHandler: boolean = false;
+  private _needsSyncOnRender: boolean = false;
 
   constructor(
     element: HTMLElement,
     screenElement: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @ICoreBrowserService coreBrowserService: ICoreBrowserService,
+    @ICoreService private readonly _coreService: ICoreService,
     @IMouseStateService mouseStateService: IMouseStateService,
     @IThemeService themeService: IThemeService,
     @IOptionsService private readonly _optionsService: IOptionsService,
@@ -104,6 +106,16 @@ export class Viewport extends Disposable {
     }));
     this._register(this._bufferService.onScroll(() => this._sync()));
 
+    // Flush deferred viewport sync after a render completes (e.g. after ESU ends
+    // synchronized output mode). This ensures DOM scroll position updates atomically
+    // with the canvas render.
+    this._register(this._renderService.onRender(() => {
+      if (this._needsSyncOnRender) {
+        this._needsSyncOnRender = false;
+        this._sync();
+      }
+    }));
+
     this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
 
   }
@@ -159,6 +171,12 @@ export class Viewport extends Disposable {
 
   private _sync(ydisp: number = this._bufferService.buffer.ydisp): void {
     if (!this._renderService || this._isSyncing) {
+      return;
+    }
+    // Defer DOM scroll updates during synchronized output to prevent visible
+    // scroll position flickering while the canvas content is frozen.
+    if (this._coreService.decPrivateModes.synchronizedOutput) {
+      this._needsSyncOnRender = true;
       return;
     }
     this._isSyncing = true;
