@@ -119,6 +119,17 @@ test.describe('FitAddon', () => {
       strictEqual(await ctx.proxy.cols, 2);
       strictEqual(await ctx.proxy.rows, 1);
     });
+
+    test('same dimensions', async function(): Promise<any> {
+      await setDimensions();
+      await ctx.page.evaluate(`window.fit.fit()`);
+      const cols: number = await ctx.proxy.cols;
+      const rows: number = await ctx.proxy.rows;
+      // Calling fit() again at the same container size should not throw
+      await ctx.page.evaluate(`window.fit.fit()`);
+      strictEqual(await ctx.proxy.cols, cols);
+      strictEqual(await ctx.proxy.rows, rows);
+    });
   });
 });
 
