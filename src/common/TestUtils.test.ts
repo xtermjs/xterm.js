@@ -7,9 +7,9 @@ import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOp
 import { UnicodeService } from 'common/services/UnicodeService';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { IBufferSet, IBuffer } from 'common/buffer/Types';
+import { IBufferSet, IBuffer, IExtendedAttrs } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable, IBufferLine } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { Emitter, type IEvent } from 'common/Event';
@@ -18,6 +18,12 @@ import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from 'common/buffer/Con
 
 export function createCellData(attr: number, char: string, width: number): CellData {
   return CellData.fromCharData([attr, char, width, char.length === 0 ? 0 : char.charCodeAt(0)]);
+}
+
+export function extendedAttributes(line: IBufferLine, index: number): IExtendedAttrs | undefined {
+  const cell = new CellData();
+  line.loadCell(index, cell);
+  return cell.hasExtendedAttrs() !== 0 ? cell.extended : undefined;
 }
 
 export const NULL_CELL_DATA = Object.freeze(createCellData(DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH));

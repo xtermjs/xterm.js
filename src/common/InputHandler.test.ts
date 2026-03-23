@@ -11,7 +11,7 @@ import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import { Params } from 'common/parser/Params';
-import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockMouseStateService, MockCharsetService, MockUnicodeService, MockOscLinkService } from 'common/TestUtils.test';
+import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockMouseStateService, MockCharsetService, MockUnicodeService, MockOscLinkService, extendedAttributes } from 'common/TestUtils.test';
 import { IBufferService, ICoreService, type IOscLinkService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
@@ -2002,15 +2002,15 @@ describe('InputHandler', () => {
 
       // eAttrs in buffer pos 0 and 1 should be the same object
       assert.equal(
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[0],
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[1]
+        extendedAttributes(bufferService.buffer!.lines.get(0)!, 0),
+        extendedAttributes(bufferService.buffer!.lines.get(0)!, 1)
       );
       // should not have written eAttr for pos 2 in the buffer
-      assert.equal((bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[2], undefined);
+      assert.equal(extendedAttributes(bufferService.buffer!.lines.get(0)!, 2), undefined);
       // eAttrs in buffer pos 1 and pos 3 must be different objs
       assert.notEqual(
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[1],
-        (bufferService.buffer!.lines.get(0)! as any)._extendedAttrs[3]
+        extendedAttributes(bufferService.buffer!.lines.get(0)!, 1),
+        extendedAttributes(bufferService.buffer!.lines.get(0)!, 3)
       );
     });
   });
