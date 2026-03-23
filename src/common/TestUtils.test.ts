@@ -7,9 +7,9 @@ import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOp
 import { UnicodeService } from 'common/services/UnicodeService';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { IBufferSet, IBuffer, IExtendedAttrs } from 'common/buffer/Types';
+import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable, IBufferLine } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable, IBufferLine, IExtendedAttrs } from 'common/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { Emitter, type IEvent } from 'common/Event';
