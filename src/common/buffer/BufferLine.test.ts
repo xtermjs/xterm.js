@@ -5,10 +5,10 @@
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
 import { BufferLine } from 'common/buffer//BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { CharData, IBufferLine, IExtendedAttrs } from '../Types';
+import { CharData, IBufferLine } from '../Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { createCellData, NULL_CELL_DATA } from 'common/TestUtils.test';
+import { createCellData, NULL_CELL_DATA, extendedAttributes } from 'common/TestUtils.test';
 
 
 class TestBufferLine extends BufferLine {
@@ -23,12 +23,6 @@ class TestBufferLine extends BufferLine {
     }
     return result;
   }
-}
-
-function extendedAttributes(line: IBufferLine, index: number): IExtendedAttrs | undefined {
-  const cell = new CellData();
-  line.loadCell(index, cell);
-  return cell.hasExtendedAttrs() !== 0 ? cell.extended : undefined;
 }
 
 describe('AttributeData', () => {
