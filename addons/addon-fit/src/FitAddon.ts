@@ -48,10 +48,7 @@ export class FitAddon implements ITerminalAddon, IFitApi {
       return;
     }
 
-    // Force a full render
-    if (this._terminal.rows !== dims.rows || this._terminal.cols !== dims.cols) {
-      this._terminal.resize(dims.cols, dims.rows);
-    }
+    this._terminal.resize(dims.cols, dims.rows);
   }
 
   public proposeDimensions(): ITerminalDimensions | undefined {
