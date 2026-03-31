@@ -39,6 +39,7 @@ export interface IBuffer {
   addMarker(y: number): IMarker;
   clearMarkers(y: number): void;
   clearAllMarkers(): void;
+  setWrapped(row: number, value: boolean): void;
 }
 
 export interface IBufferSet extends IDisposable {
