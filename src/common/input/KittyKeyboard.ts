@@ -266,6 +266,19 @@ export class KittyKeyboard {
   }
 
   /**
+   * Check if a key is a lock key (CapsLock/NumLock/ScrollLock).
+   *
+   * Kitty's reference implementation classifies these as modifier keys for the
+   * purpose of suppressing press events (kitty/keys.c `is_modifier_key()`
+   * includes `GLFW_FKEY_CAPS_LOCK`, `GLFW_FKEY_SCROLL_LOCK`, `GLFW_FKEY_NUM_LOCK`),
+   * and its test suite asserts that a CapsLock press with no protocol flags
+   * produces empty output.
+   */
+  private _isLockKey(ev: IKeyboardEvent): boolean {
+    return ev.key === 'CapsLock' || ev.key === 'NumLock' || ev.key === 'ScrollLock';
+  }
+
+  /**
    * Build CSI letter sequence for arrow keys, Home, End.
    * Format: CSI [1;mod] letter
    */
@@ -419,6 +432,14 @@ export class KittyKeyboard {
     }
 
     if (isMod && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
+      return result;
+    }
+
+    // Spec § "Report all keys as escape codes": "Additionally, with this mode,
+    // events for pressing modifier keys are reported." — i.e. *without* this
+    // mode, modifier-key press events are suppressed. Kitty's is_modifier_key()
+    // treats CapsLock/NumLock/ScrollLock as modifier keys for this rule.
+    if (this._isLockKey(ev) && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
       return result;
     }
 
