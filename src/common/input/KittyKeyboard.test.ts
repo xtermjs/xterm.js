@@ -506,6 +506,25 @@ describe('KittyKeyboard', () => {
         const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, undefined);
       });
+
+      it('does not report CapsLock press without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        assert.strictEqual(kitty.evaluate(createEvent({ key: 'CapsLock', code: 'CapsLock' }), KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES).key, undefined);
+        assert.strictEqual(kitty.evaluate(createEvent({ key: 'CapsLock', code: 'CapsLock' }), KittyKeyboardFlags.REPORT_EVENT_TYPES).key, undefined);
+        assert.strictEqual(kitty.evaluate(createEvent({ key: 'CapsLock', code: 'CapsLock' }), KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES | KittyKeyboardFlags.REPORT_EVENT_TYPES).key, undefined);
+      });
+
+      it('does not report NumLock press without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        assert.strictEqual(kitty.evaluate(createEvent({ key: 'NumLock', code: 'NumLock' }), KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES).key, undefined);
+      });
+
+      it('does not report ScrollLock press without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        assert.strictEqual(kitty.evaluate(createEvent({ key: 'ScrollLock', code: 'ScrollLock' }), KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES).key, undefined);
+      });
+
+      it('does not report CapsLock release without REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+        const result = kitty.evaluate(createEvent({ key: 'CapsLock', code: 'CapsLock' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
+      });
     });
 
     describe('REPORT_ALL_KEYS_AS_ESCAPE_CODES flag', () => {
