@@ -453,9 +453,29 @@ describe('KittyKeyboard', () => {
     describe('event types (press/repeat/release)', () => {
       const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES | KittyKeyboardFlags.REPORT_EVENT_TYPES;
 
-      it('press event (default, no suffix)', () => {
+      it('UTF-8 text press event', () => {
         const result = kitty.evaluate(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.PRESS);
-        assert.strictEqual(result.key, '\x1b[97u');
+        assert.strictEqual(result.key, 'a');
+      });
+
+      it('Escape key press event (default, no suffix)', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Escape' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x1b[27u');
+      });
+
+      it('Enter key press event → legacy \\r', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\r');
+      });
+
+      it('Tab key press event → legacy \\t', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\t');
+      });
+
+      it('Backspace key press event → legacy \\x7f', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x7f');
       });
 
       it('press event explicit :1 when modifiers present', () => {
@@ -463,14 +483,54 @@ describe('KittyKeyboard', () => {
         assert.strictEqual(result.key, '\x1b[97;5u');
       });
 
-      it('repeat event → :2 suffix', () => {
+      it('UTF-8 text repeat event', () => {
         const result = kitty.evaluate(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.REPEAT);
-        assert.strictEqual(result.key, '\x1b[97;1:2u');
+        assert.strictEqual(result.key, 'a');
+      });
+
+      it('Escape key repeat event → :2 suffix', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Escape' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[27;1:2u');
+      });
+
+      it('Enter key repeat event → legacy \\r', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\r');
+      });
+
+      it('Tab key repeat event → legacy \\t', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\t');
+      });
+
+      it('Backspace key repeat event → legacy \\x7f', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x7f');
       });
 
       it('release event → :3 suffix', () => {
         const result = kitty.evaluate(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, '\x1b[97;1:3u');
+      });
+
+      it('Escape key release event → :3 suffix', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Escape' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[27;1:3u');
+      });
+
+      it('Enter key release event is not reported', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
+      });
+
+      it('Tab key release event is not reported', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
+      });
+
+      it('Backspace key release event is not reported', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
       });
 
       it('release with modifier → mod:3', () => {
