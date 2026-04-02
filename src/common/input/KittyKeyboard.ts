@@ -477,7 +477,12 @@ export class KittyKeyboard {
 
     if (flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES) {
       useCsiU = true;
-    } else if (reportEventTypes) {
+    } else if (reportEventTypes && eventType === KittyKeyboardEventType.RELEASE) {
+      // Per spec, Enter/Tab/Backspace will not have release events unless "Report all keys as
+      // escape codes" (which is handled by the branch above) is also set.
+      if (keyCode === 13 || keyCode === 9 || keyCode === 127) {
+        return result;
+      }
       useCsiU = true;
     } else if (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES) {
       // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy
