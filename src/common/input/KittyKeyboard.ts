@@ -410,15 +410,13 @@ export class KittyKeyboard {
    * @param ev The keyboard event.
    * @param flags The active Kitty keyboard enhancement flags.
    * @param eventType The event type (press, repeat, release).
-   * @param macOptionAsAlt isMac && macOptionIsMeta (kitty: macos_option_as_alt).
+   * @param macOptionAsAlt When true, macOS Option-composed ev.key values are unwound via ev.code.
    * @returns The keyboard result with the encoded key sequence.
    */
   public evaluate(
     ev: IKeyboardEvent,
     flags: number,
     eventType: KittyKeyboardEventType = KittyKeyboardEventType.PRESS,
-    // Analogous to kitty's macos_option_as_alt (kitty/options/definition.py:2624).
-    // When true, macOS Option-composed ev.key values are unwound via ev.code.
     macOptionAsAlt: boolean = false
   ): IKeyboardResult {
     const result: IKeyboardResult = {
