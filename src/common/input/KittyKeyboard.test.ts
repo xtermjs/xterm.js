@@ -730,7 +730,6 @@ describe('KittyKeyboard', () => {
       });
     });
 
-    // https://github.com/microsoft/vscode/issues/304765
     describe('macOS Option as Alt (macOptionIsMeta)', () => {
       const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES;
       const press = KittyKeyboardEventType.PRESS;
