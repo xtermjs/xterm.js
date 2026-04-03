@@ -218,7 +218,7 @@ export class KittyKeyboard {
    * Returns the lowercase codepoint for letters.
    * For shifted keys, uses the code property to get the base key.
    */
-  private _getKeyCode(ev: IKeyboardEvent): number | undefined {
+  private _getKeyCode(ev: IKeyboardEvent, macOptionAsAlt: boolean): number | undefined {
     const numpadCode = this._getNumpadKeyCode(ev);
     if (numpadCode !== undefined) {
       return numpadCode;
@@ -234,7 +234,7 @@ export class KittyKeyboard {
       return funcCode;
     }
 
-    if (ev.shiftKey && ev.code) {
+    if ((ev.shiftKey || (macOptionAsAlt && ev.altKey)) && ev.code) {
       if (ev.code.startsWith('Digit') && ev.code.length === 6) {
         const digit = ev.code.charAt(5);
         if (digit >= '0' && digit <= '9') {
@@ -410,12 +410,16 @@ export class KittyKeyboard {
    * @param ev The keyboard event.
    * @param flags The active Kitty keyboard enhancement flags.
    * @param eventType The event type (press, repeat, release).
+   * @param macOptionAsAlt isMac && macOptionIsMeta (kitty: macos_option_as_alt).
    * @returns The keyboard result with the encoded key sequence.
    */
   public evaluate(
     ev: IKeyboardEvent,
     flags: number,
-    eventType: KittyKeyboardEventType = KittyKeyboardEventType.PRESS
+    eventType: KittyKeyboardEventType = KittyKeyboardEventType.PRESS,
+    // Analogous to kitty's macos_option_as_alt (kitty/options/definition.py:2624).
+    // When true, macOS Option-composed ev.key values are unwound via ev.code.
+    macOptionAsAlt: boolean = false
   ): IKeyboardResult {
     const result: IKeyboardResult = {
       type: KeyboardResultType.SEND_KEY,
@@ -464,7 +468,7 @@ export class KittyKeyboard {
       return result;
     }
 
-    const keyCode = this._getKeyCode(ev);
+    const keyCode = this._getKeyCode(ev, macOptionAsAlt);
     if (keyCode === undefined) {
       return result;
     }
