@@ -729,5 +729,86 @@ describe('KittyKeyboard', () => {
         assert.strictEqual(result.key, '\x1b[57440u');
       });
     });
+
+    describe('macOS Option as Alt (macOptionIsMeta)', () => {
+      const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES;
+      const press = KittyKeyboardEventType.PRESS;
+
+      it('Opt+f (key=ƒ) → CSI 102;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'ƒ', code: 'KeyF', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[102;3u');
+      });
+
+      it('Opt+b (key=∫) → CSI 98;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '∫', code: 'KeyB', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[98;3u');
+      });
+
+      it('Opt+d (key=∂) → CSI 100;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '∂', code: 'KeyD', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[100;3u');
+      });
+
+      it('Opt+n dead key (key=Dead, code=KeyN) → CSI 110;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Dead', code: 'KeyN', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[110;3u');
+      });
+
+      it('Opt+e dead key (key=Dead, code=KeyE) → CSI 101;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Dead', code: 'KeyE', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[101;3u');
+      });
+
+      it('Opt+u dead key (key=Dead, code=KeyU) → CSI 117;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Dead', code: 'KeyU', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[117;3u');
+      });
+
+      it('Opt+5 (key=∞) → CSI 53;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '∞', code: 'Digit5', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[53;3u');
+      });
+
+      it('Opt+Shift+f (key=Ï) → CSI 102;4 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Ï', code: 'KeyF', altKey: true, shiftKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[102;4u');
+      });
+
+      it('Ctrl+Opt+f (key=ƒ) → CSI 102;7 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'ƒ', code: 'KeyF', altKey: true, ctrlKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[102;7u');
+      });
+
+      it('does not unwind when macOptionAsAlt is false (Linux Alt is a chord)', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', code: 'KeyA', altKey: true }), flags, press, false);
+        assert.strictEqual(result.key, '\x1b[97;3u');
+      });
+
+      it('does not unwind on Linux AZERTY (key=a, code=KeyQ) — uses ev.key not ev.code', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', code: 'KeyQ', altKey: true }), flags, press, false);
+        assert.strictEqual(result.key, '\x1b[97;3u');
+      });
+
+      it('does not unwind when macOptionAsAlt is false even with composed key', () => {
+        const result = kitty.evaluate(createEvent({ key: 'ƒ', code: 'KeyF', altKey: true }), flags, press, false);
+        assert.strictEqual(result.key, '\x1b[402;3u');
+      });
+
+      it('does not unwind when altKey is false', () => {
+        const result = kitty.evaluate(createEvent({ key: 'ƒ', code: 'KeyF' }), flags, press, true);
+        assert.strictEqual(result.key, 'ƒ');
+      });
+
+      it('falls through when ev.code is not Key*/Digit* (Opt+;)', () => {
+        const result = kitty.evaluate(createEvent({ key: '…', code: 'Semicolon', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[8230;3u');
+      });
+
+      it('Opt+f release with REPORT_EVENT_TYPES → CSI 102;3:3 u', () => {
+        const releaseFlags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES | KittyKeyboardFlags.REPORT_EVENT_TYPES;
+        const result = kitty.evaluate(createEvent({ key: 'ƒ', code: 'KeyF', altKey: true }), releaseFlags, KittyKeyboardEventType.RELEASE, true);
+        assert.strictEqual(result.key, '\x1b[102;3:3u');
+      });
+    });
   });
 });
