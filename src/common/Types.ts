@@ -77,7 +77,6 @@ export interface ICircularList<T> {
   get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
-  recycle(): T;
   pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
@@ -238,7 +237,6 @@ export interface IBufferLine {
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
   copyFrom(line: IBufferLine): void;
-  clone(): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
