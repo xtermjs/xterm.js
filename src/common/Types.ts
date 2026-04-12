@@ -267,6 +267,7 @@ export interface IModes {
 export interface IDecPrivateModes {
   applicationCursorKeys: boolean;
   applicationKeypad: boolean;
+  backarrowKey: boolean;
   bracketedPasteMode: boolean;
   colorSchemeUpdates: boolean;
   cursorBlink: boolean | undefined;

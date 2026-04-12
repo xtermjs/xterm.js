@@ -41,7 +41,7 @@ export class KeyboardService implements IKeyboardService {
     const kittyFlags = this._coreService.kittyKeyboard.flags;
     return this.useKitty
       ? this._getKittyKeyboard().evaluate(event, kittyFlags, event.repeat ? KittyKeyboardEventType.REPEAT : KittyKeyboardEventType.PRESS, isMac && this._optionsService.rawOptions.macOptionIsMeta)
-      : evaluateKeyboardEvent(event, this._coreService.decPrivateModes.applicationCursorKeys, isMac, this._optionsService.rawOptions.macOptionIsMeta);
+      : evaluateKeyboardEvent(event, this._coreService.decPrivateModes.applicationCursorKeys, isMac, this._optionsService.rawOptions.macOptionIsMeta, this._coreService.decPrivateModes.backarrowKey);
   }
 
   public evaluateKeyUp(event: KeyboardEvent): IKeyboardResult | undefined {

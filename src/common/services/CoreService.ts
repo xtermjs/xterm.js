@@ -16,6 +16,7 @@ const DEFAULT_MODES: IModes = Object.freeze({
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
   applicationCursorKeys: false,
   applicationKeypad: false,
+  backarrowKey: false,
   bracketedPasteMode: false,
   colorSchemeUpdates: false,
   cursorBlink: undefined,
