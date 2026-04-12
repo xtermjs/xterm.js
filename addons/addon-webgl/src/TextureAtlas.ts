@@ -348,7 +348,12 @@ export class TextureAtlas implements ITextureAtlas {
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          result = this._config.colors.background;
+          // When the theme background is transparent, using it directly as
+          // the foreground (text) color produces invisible glyphs. Fall back
+          // to the foreground color so text remains readable.
+          result = color.isOpaque(this._config.colors.background)
+            ? this._config.colors.background
+            : this._config.colors.foreground;
         } else {
           result = this._config.colors.foreground;
         }
@@ -396,7 +401,11 @@ export class TextureAtlas implements ITextureAtlas {
       case Attributes.CM_DEFAULT:
       default:
         if (inverse) {
-          return this._config.colors.background.rgba;
+          // Mirror the _getForegroundColor fallback: avoid returning a
+          // transparent value that would break contrast ratio calculations.
+          return color.isOpaque(this._config.colors.background)
+            ? this._config.colors.background.rgba
+            : this._config.colors.foreground.rgba;
         }
         return this._config.colors.foreground.rgba;
     }

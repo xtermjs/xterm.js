@@ -303,8 +303,8 @@ export class DomRenderer extends Disposable implements IRenderer {
         `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     }
     styles +=
-      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(colors.background).css}; }` +
-      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${(color.isOpaque(colors.background) ? colors.background : colors.foreground).css}; }` +
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(color.isOpaque(colors.background) ? colors.background : colors.foreground, 0.5).css}; }` +
       `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
 
     this._themeStyleElement.textContent = styles;
