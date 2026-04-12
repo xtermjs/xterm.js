@@ -2440,9 +2440,21 @@ describe('InputHandler', () => {
       await inputHandler.parseP(`\x1b[?${mode}$p`);
       assert.deepEqual(reportStack.pop(), `\x1b[?${mode};2$y`);   // now inactive
     });
+    it('DECBKM (67) set/reset via DECRQM', async () => {
+      await inputHandler.parseP('\x1b[?67$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[?67;2$y'); // reset by default
+      await inputHandler.parseP('\x1b[?67h');
+      assert.strictEqual(coreService.decPrivateModes.backarrowKey, true);
+      await inputHandler.parseP('\x1b[?67$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[?67;1$y'); // set
+      await inputHandler.parseP('\x1b[?67l');
+      assert.strictEqual(coreService.decPrivateModes.backarrowKey, false);
+      await inputHandler.parseP('\x1b[?67$p');
+      assert.deepEqual(reportStack.pop(), '\x1b[?67;2$y'); // reset
+    });
     it('DEC privates perma modes', async () => {
       // [mode number, state value]
-      const perma = [[3, 0], [8, 3], [67, 4], [1005, 4], [1015, 4], [1048, 1]];
+      const perma = [[3, 0], [8, 3], [1005, 4], [1015, 4], [1048, 1]];
       for (const [mode, value] of perma) {
         await inputHandler.parseP(`\x1b[?${mode}$p`);
         assert.deepEqual(reportStack.pop(), `\x1b[?${mode};${value}$y`);

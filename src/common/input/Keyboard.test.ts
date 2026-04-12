@@ -20,6 +20,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
   applicationCursorMode?: boolean;
   isMac?: boolean;
   macOptionIsMeta?: boolean;
+  backarrowKey?: boolean;
 } = {}): IKeyboardResult {
   const event: IKeyboardEvent = {
     altKey: partialEvent.altKey || false,
@@ -34,9 +35,10 @@ function testEvaluateKeyboardEvent(partialEvent: {
   const options = {
     applicationCursorMode: partialOptions.applicationCursorMode || false,
     isMac: partialOptions.isMac || false,
-    macOptionIsMeta: partialOptions.macOptionIsMeta || false
+    macOptionIsMeta: partialOptions.macOptionIsMeta || false,
+    backarrowKey: partialOptions.backarrowKey || false
   };
-  return evaluateKeyboardEvent(event, options.applicationCursorMode, options.isMac, options.macOptionIsMeta);
+  return evaluateKeyboardEvent(event, options.applicationCursorMode, options.isMac, options.macOptionIsMeta, options.backarrowKey);
 }
 
 describe('Keyboard', () => {
@@ -359,6 +361,21 @@ describe('Keyboard', () => {
 
     it('should return proper sequence for ctrl+_', () => {
       assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 189, code: 'Minus', key: '_' }).key, '\x1f');
+    });
+
+    describe('DECBKM (backarrow key mode)', () => {
+      it('default (reset): backspace sends DEL, ctrl+backspace sends BS', () => {
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 8 }, { backarrowKey: false }).key, '\x7f');
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 8, ctrlKey: true }, { backarrowKey: false }).key, '\b');
+      });
+      it('set: backspace sends BS, ctrl+backspace sends DEL', () => {
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 8 }, { backarrowKey: true }).key, '\b');
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 8, ctrlKey: true }, { backarrowKey: true }).key, '\x7f');
+      });
+      it('alt prefix is preserved in both modes', () => {
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 8, altKey: true }, { backarrowKey: false }).key, '\x1b\x7f');
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 8, altKey: true }, { backarrowKey: true }).key, '\x1b\b');
+      });
     });
 
   });

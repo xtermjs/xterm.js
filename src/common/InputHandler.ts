@@ -1925,6 +1925,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 45    | Reverse wrap-around.                                    | #Y      |
    * | 47    | Use Alternate Screen Buffer.                            | #Y      |
    * | 66    | Application keypad (DECNKM).                            | #Y      |
+   * | 67    | Backarrow key sends backspace (DECBKM).                 | #Y      |
    * | 1000  | X11 xterm mouse protocol.                               | #Y      |
    * | 1002  | Use Cell Motion Mouse Tracking.                         | #Y      |
    * | 1003  | Use All Motion Mouse Tracking.                          | #Y      |
@@ -1984,6 +1985,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._logService.debug('Serial port requested application keypad.');
           this._coreService.decPrivateModes.applicationKeypad = true;
           this._onRequestSyncScrollBar.fire();
+          break;
+        case 67:
+          this._coreService.decPrivateModes.backarrowKey = true;
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -2191,6 +2195,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 45    | No reverse wrap-around.                                 | #Y      |
    * | 47    | Use Normal Screen Buffer.                               | #Y      |
    * | 66    | Numeric keypad (DECNKM).                                | #Y      |
+   * | 67    | Backarrow key sends delete (DECBKM).                    | #Y      |
    * | 1000  | Don't send Mouse reports.                               | #Y      |
    * | 1002  | Don't use Cell Motion Mouse Tracking.                   | #Y      |
    * | 1003  | Don't use All Motion Mouse Tracking.                    | #Y      |
@@ -2243,6 +2248,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._logService.debug('Switching back to normal keypad.');
           this._coreService.decPrivateModes.applicationKeypad = false;
           this._onRequestSyncScrollBar.fire();
+          break;
+        case 67:
+          this._coreService.decPrivateModes.backarrowKey = false;
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -2389,7 +2397,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (p === 25) return f(p, b2v(!cs.isCursorHidden));
     if (p === 45) return f(p, b2v(dm.reverseWraparound));
     if (p === 66) return f(p, b2v(dm.applicationKeypad));
-    if (p === 67) return f(p, V.PERMANENTLY_RESET);
+    if (p === 67) return f(p, b2v(dm.backarrowKey));
     if (p === 1000) return f(p, b2v(mouseProtocol === 'VT200'));
     if (p === 1002) return f(p, b2v(mouseProtocol === 'DRAG'));
     if (p === 1003) return f(p, b2v(mouseProtocol === 'ANY'));

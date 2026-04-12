@@ -118,6 +118,7 @@ export class MockCoreService implements ICoreService {
   public decPrivateModes: IDecPrivateModes = {
     applicationCursorKeys: false,
     applicationKeypad: false,
+    backarrowKey: false,
     bracketedPasteMode: false,
     colorSchemeUpdates: false,
     cursorBlink: undefined,

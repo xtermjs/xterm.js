@@ -39,7 +39,8 @@ export function evaluateKeyboardEvent(
   ev: IKeyboardEvent,
   applicationCursorMode: boolean,
   isMac: boolean,
-  macOptionIsMeta: boolean
+  macOptionIsMeta: boolean,
+  backarrowKey: boolean = false
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
@@ -82,8 +83,10 @@ export function evaluateKeyboardEvent(
       }
       break;
     case 8:
-      // backspace
-      result.key = ev.ctrlKey ? '\b' : C0.DEL; // ^H or ^?
+      // backspace (DECBKM: set -> BS, reset -> DEL)
+      result.key = backarrowKey
+        ? (ev.ctrlKey ? C0.DEL : '\b')
+        : (ev.ctrlKey ? '\b' : C0.DEL);
       if (ev.altKey) {
         result.key = C0.ESC + result.key;
       }
