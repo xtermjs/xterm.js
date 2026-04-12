@@ -20,7 +20,6 @@ export class Viewport extends Disposable {
   public readonly onRequestScrollLines = this._onRequestScrollLines.event;
 
   private _scrollableElement: SmoothScrollableElement;
-  private _styleElement: HTMLStyleElement;
 
   private _queuedAnimationFrame?: number;
   private _latestYDisp?: number;
@@ -80,21 +79,12 @@ export class Viewport extends Disposable {
     element.appendChild(this._scrollableElement.getDomNode());
     this._register(toDisposable(() => this._scrollableElement.getDomNode().remove()));
 
-    this._styleElement = coreBrowserService.mainDocument.createElement('style');
-    screenElement.appendChild(this._styleElement);
-    this._register(toDisposable(() => this._styleElement.remove()));
+    // Apply theme colors via CSS custom properties rather than an inline <style>
+    // textContent, so the terminal works under a strict style-src 'self' CSP (#4445).
     this._register(EventUtils.runAndSubscribe(themeService.onChangeColors, () => {
-      this._styleElement.textContent = [
-        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider {`,
-        `  background: ${themeService.colors.scrollbarSliderBackground.css};`,
-        `}`,
-        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider:hover {`,
-        `  background: ${themeService.colors.scrollbarSliderHoverBackground.css};`,
-        `}`,
-        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider.xterm-active {`,
-        `  background: ${themeService.colors.scrollbarSliderActiveBackground.css};`,
-        `}`
-      ].join('\n');
+      element.style.setProperty('--xterm-scrollbar-slider-background', themeService.colors.scrollbarSliderBackground.css);
+      element.style.setProperty('--xterm-scrollbar-slider-hover-background', themeService.colors.scrollbarSliderHoverBackground.css);
+      element.style.setProperty('--xterm-scrollbar-slider-active-background', themeService.colors.scrollbarSliderActiveBackground.css);
     }));
 
     this._register(this._bufferService.onResize(() => this.queueSync()));

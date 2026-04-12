@@ -39,7 +39,6 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _terminalClass: number = nextTerminalId++;
 
   private _themeStyleElement!: HTMLStyleElement;
-  private _dimensionsStyleElement!: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -118,7 +117,6 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._selectionContainer.remove();
       this._widthCache.dispose();
       this._themeStyleElement.remove();
-      this._dimensionsStyleElement.remove();
     }));
 
     this._widthCache = new WidthCache();
@@ -154,19 +152,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       element.style.overflow = 'hidden';
     }
 
-    if (!this._dimensionsStyleElement) {
-      this._dimensionsStyleElement = this._document.createElement('style');
-      this._screenElement.appendChild(this._dimensionsStyleElement);
-    }
-
-    const styles =
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
-      ` display: inline-block;` +   // TODO: find workaround for inline-block (creates ~20% render penalty)
-      ` height: 100%;` +
-      ` vertical-align: top;` +
-      `}`;
-
-    this._dimensionsStyleElement.textContent = styles;
+    // Row span rules (inline-block, full height) live in the static xterm.css
+    // stylesheet rather than an injected <style>, so the DOM renderer works under
+    // a strict style-src 'self' CSP (#4445).
 
     this._selectionContainer.style.height = this._viewportElement.style.height;
     this._screenElement.style.width = `${this.dimensions.css.canvas.width}px`;
