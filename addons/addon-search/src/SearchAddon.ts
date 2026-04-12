@@ -72,9 +72,36 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (this._state.cachedSearchTerm && this._state.lastSearchOptions?.decorations) {
       this._highlightTimeout.value = disposableTimeout(() => {
         const term = this._state.cachedSearchTerm;
+        const lastOptions = this._state.lastSearchOptions;
+        if (!term || !lastOptions) {
+          return;
+        }
+        // Preserve the currently selected match across re-highlights triggered
+        // by new output or resize. Without this, the "X of Y" index flickers
+        // or jumps as each incremental re-search starts from the terminal
+        // selection — see #3886.
+        const prevMatch = this._resultTracker.selectedDecoration?.match;
         this._state.clearCachedTerm();
-        this.findPrevious(term!, { ...this._state.lastSearchOptions, incremental: true }, { noScroll: true });
+        this._highlightAllMatches(term, { ...lastOptions, incremental: true });
+        this._restoreSelectedMatch(prevMatch, lastOptions);
+        this._fireResults(lastOptions);
+        this._state.cachedSearchTerm = term;
       }, 200);
+    }
+  }
+
+  private _restoreSelectedMatch(prevMatch: ISearchResult | undefined, searchOptions: ISearchOptions): void {
+    if (!this._decorationManager || !prevMatch || !searchOptions.decorations) {
+      return;
+    }
+    const idx = this._resultTracker.findResultIndex(prevMatch);
+    if (idx === -1) {
+      return;
+    }
+    const match = this._resultTracker.searchResults[idx];
+    const activeDecoration = this._decorationManager.createActiveDecoration(match, searchOptions.decorations);
+    if (activeDecoration) {
+      this._resultTracker.selectedDecoration = activeDecoration;
     }
   }
 
