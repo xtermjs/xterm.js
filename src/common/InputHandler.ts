@@ -3520,7 +3520,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    * | Type                             | Request           | Response (`Pt`)                                       |
    * | -------------------------------- | ----------------- | ----------------------------------------------------- |
-   * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | always reporting `0m` (currently broken)              |
+   * | Graphic Rendition (SGR)          | `DCS $ q m ST`    | `Ps ; ... m` reporting the current SGR state          |
    * | Top and Bottom Margins (DECSTBM) | `DCS $ q r ST`    | `Ps ; Ps r`                                           |
    * | Cursor Style (DECSCUSR)          | `DCS $ q SP q ST` | `Ps SP q`                                             |
    * | Protection Attribute (DECSCA)    | `DCS $ q " q ST`  | `Ps " q` (DECSCA 2 is reported as Ps = 0)             |
@@ -3528,7 +3528,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    *
    *
    * TODO:
-   * - fix SGR report
    * - either check which conformance is better suited or remove the report completely
    *   --> we are currently a mixture of all up to VT400 but dont follow anyone strictly
    */
@@ -3546,10 +3545,49 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (data === '"q') return f(`P1$r${this._curAttrData.isProtected() ? 1 : 0}"q`);
     if (data === '"p') return f(`P1$r61;1"p`);
     if (data === 'r') return f(`P1$r${b.scrollTop + 1};${b.scrollBottom + 1}r`);
-    // FIXME: report real SGR settings instead of 0m
-    if (data === 'm') return f(`P1$r0m`);
+    if (data === 'm') return f(`P1$r${this._reportSGR()}m`);
     if (data === ' q') return f(`P1$r${STYLES[opts.cursorStyle] - (opts.cursorBlink ? 1 : 0)} q`);
     return f(`P0$r`);
+  }
+
+  private _reportSGR(): string {
+    const attr = this._curAttrData;
+    const opts = this._optionsService.rawOptions;
+    let report = '0';
+    if (attr.isBold()) report += ';1';
+    if (attr.isDim()) report += ';2';
+    if (attr.isItalic()) report += ';3';
+    switch (attr.getUnderlineStyle()) {
+      case UnderlineStyle.SINGLE: report += ';4'; break;
+      case UnderlineStyle.DOUBLE: report += ';21'; break;
+      case UnderlineStyle.CURLY: report += ';4:3'; break;
+      case UnderlineStyle.DOTTED: report += ';4:4'; break;
+      case UnderlineStyle.DASHED: report += ';4:5'; break;
+    }
+    if (opts.blinkIntervalDuration > 0 && attr.isBlink()) report += ';5';
+    if (attr.isInverse()) report += ';7';
+    if (attr.isInvisible()) report += ';8';
+    if (attr.isStrikethrough()) report += ';9';
+    if (attr.isOverline()) report += ';53';
+    const colorAttr = (color: number, colorMode: number, baseAttr: number): string => {
+      switch (colorMode) {
+        case Attributes.CM_P16:
+          if (color < 8) return `;${baseAttr + color}`;
+          return `;${baseAttr + 60 + color - 8}`;
+        case Attributes.CM_P256:
+          return `;${baseAttr + 8}:5:${color}`;
+        case Attributes.CM_RGB:
+          return `;${baseAttr + 8}:2::${(color >> 16) & 0xFF}:${(color >> 8) & 0xFF}:${color & 0xFF}`;
+        default:
+          return '';
+      }
+    };
+    report += colorAttr(attr.getFgColor(), attr.getFgColorMode(), 30);
+    report += colorAttr(attr.getBgColor(), attr.getBgColorMode(), 40);
+    if (attr.hasExtendedAttrs() && ~attr.extended.underlineColor) {
+      report += colorAttr(attr.getUnderlineColor(), attr.getUnderlineColorMode(), 50);
+    }
+    return report;
   }
 
   public markRangeDirty(y1: number, y2: number): void {
