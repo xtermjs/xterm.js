@@ -2359,6 +2359,67 @@ describe('InputHandler', () => {
       assert.deepEqual(sendStack.pop(), '\x1bP1$r0"q\x1b\\');  // reported as DECSCA 0
     });
   });
+  describe('DECRQSS SGR', () => {
+    const sendStack: string[] = [];
+    beforeEach(() => {
+      sendStack.length = 0;
+      coreService.onData(d => sendStack.push(d));
+    });
+    const query = async (): Promise<string | undefined> => {
+      await inputHandler.parseP('\x1bP$qm\x1b\\');
+      return sendStack.pop();
+    };
+    it('reports 0m by default', async () => {
+      assert.deepEqual(await query(), '\x1bP1$r0m\x1b\\');
+    });
+    it('reports bold/dim/italic', async () => {
+      await inputHandler.parseP('\x1b[1;2;3m');
+      assert.deepEqual(await query(), '\x1bP1$r0;1;2;3m\x1b\\');
+    });
+    it('reports underline styles', async () => {
+      await inputHandler.parseP('\x1b[4m');
+      assert.deepEqual(await query(), '\x1bP1$r0;4m\x1b\\');
+      await inputHandler.parseP('\x1b[0m\x1b[21m');
+      assert.deepEqual(await query(), '\x1bP1$r0;21m\x1b\\');
+      await inputHandler.parseP('\x1b[0m\x1b[4:3m');
+      assert.deepEqual(await query(), '\x1bP1$r0;4:3m\x1b\\');
+      await inputHandler.parseP('\x1b[0m\x1b[4:4m');
+      assert.deepEqual(await query(), '\x1bP1$r0;4:4m\x1b\\');
+      await inputHandler.parseP('\x1b[0m\x1b[4:5m');
+      assert.deepEqual(await query(), '\x1bP1$r0;4:5m\x1b\\');
+    });
+    it('reports inverse, invisible, strikethrough, overline', async () => {
+      await inputHandler.parseP('\x1b[7;8;9;53m');
+      assert.deepEqual(await query(), '\x1bP1$r0;7;8;9;53m\x1b\\');
+    });
+    it('reports blink only when blinkIntervalDuration > 0', async () => {
+      await inputHandler.parseP('\x1b[5m');
+      assert.deepEqual(await query(), '\x1bP1$r0m\x1b\\');
+      optionsService.options.blinkIntervalDuration = 500;
+      assert.deepEqual(await query(), '\x1bP1$r0;5m\x1b\\');
+      optionsService.options.blinkIntervalDuration = 0;
+    });
+    it('reports 16-color fg/bg', async () => {
+      await inputHandler.parseP('\x1b[31;42m');
+      assert.deepEqual(await query(), '\x1bP1$r0;31;42m\x1b\\');
+      await inputHandler.parseP('\x1b[0m\x1b[93;104m');
+      assert.deepEqual(await query(), '\x1bP1$r0;93;104m\x1b\\');
+    });
+    it('reports 256-color fg/bg', async () => {
+      await inputHandler.parseP('\x1b[38;5;123;48;5;45m');
+      assert.deepEqual(await query(), '\x1bP1$r0;38:5:123;48:5:45m\x1b\\');
+    });
+    it('reports RGB fg/bg', async () => {
+      await inputHandler.parseP('\x1b[38;2;10;20;30;48;2;40;50;60m');
+      assert.deepEqual(await query(), '\x1bP1$r0;38:2::10:20:30;48:2::40:50:60m\x1b\\');
+    });
+    it('reports underline color', async () => {
+      await inputHandler.parseP('\x1b[4;58:5:99m');
+      assert.deepEqual(await query(), '\x1bP1$r0;4;58:5:99m\x1b\\');
+      await inputHandler.parseP('\x1b[0m\x1b[4;58:2::1:2:3m');
+      assert.deepEqual(await query(), '\x1bP1$r0;4;58:2::1:2:3m\x1b\\');
+    });
+  });
   describe('DECRQM', () => {
     const reportStack: string[] = [];
     beforeEach(() => {
