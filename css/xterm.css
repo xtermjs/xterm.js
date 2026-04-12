@@ -241,6 +241,24 @@
     transform: rotate(180deg);
 }
 
+/* Theme colors applied via CSS custom properties set on the terminal element at
+ * runtime, so theming works without style-src 'unsafe-inline'. See #4445. */
+.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider {
+    background: var(--xterm-scrollbar-slider-background, rgba(100, 100, 100, 0.4));
+}
+.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider:hover {
+    background: var(--xterm-scrollbar-slider-hover-background, rgba(100, 100, 100, 0.7));
+}
+.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider.xterm-active {
+    background: var(--xterm-scrollbar-slider-active-background, rgba(0, 0, 0, 0.6));
+}
+
+.xterm .xterm-rows span {
+    display: inline-block;
+    height: 100%;
+    vertical-align: top;
+}
+
 .xterm .xterm-scrollable-element > .xterm-visible {
 	opacity: 1;
 
