@@ -239,9 +239,6 @@ export class MouseService implements IMouseService {
       // Convert wheel events into up/down events when the buffer does not have scrollback, this
       // enables scrolling in apps hosted in the alt buffer such as vim or tmux even when mouse
       // events are not enabled.
-      // This used implementation used get the actual lines/partial lines scrolled from the
-      // viewport but since moving to the new viewport implementation has been simplified to
-      // simply send a single up or down sequence.
 
       // Do nothing if there's no vertical scroll
       const deltaY = ev.deltaY;
@@ -260,9 +257,12 @@ export class MouseService implements IMouseService {
         return false;
       }
 
-      // Construct and send sequences
+      // Construct and send sequences, repeating once per line scrolled to match
+      // the behavior of native terminals (e.g. less/man scroll 3 lines per click).
       const sequence = C0.ESC + (this._coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
-      this._coreService.triggerDataEvent(sequence, true);
+      for (let i = 0; i < lines; i++) {
+        this._coreService.triggerDataEvent(sequence, true);
+      }
       ev.preventDefault();
       ev.stopPropagation();
       return false;
