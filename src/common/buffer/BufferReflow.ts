@@ -44,8 +44,15 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
 
     if (!reflowCursorLine) {
       // If these lines contain the cursor don't touch them, the program will handle fixing up
-      // wrapped lines with the cursor
+      // wrapped lines with the cursor. But clear stale `isWrapped` flags for wraps that cannot
+      // exist in the wider layout — otherwise selection (e.g. triple-click) still treats the
+      // group as one logical line even though each row now visually stands alone. See #3482.
       if (bufferAbsoluteY >= y && bufferAbsoluteY < i) {
+        for (let j = 1; j < wrappedLines.length; j++) {
+          if (!wrappedLines[j - 1].hasContent(newCols - 1)) {
+            wrappedLines[j].isWrapped = false;
+          }
+        }
         y += wrappedLines.length - 1;
         continue;
       }
