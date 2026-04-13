@@ -126,7 +126,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._optionsService.rawOptions.fontFamily,
       this._optionsService.rawOptions.fontSize,
       this._optionsService.rawOptions.fontWeight,
-      this._optionsService.rawOptions.fontWeightBold
+      this._optionsService.rawOptions.fontWeightBold,
+      this._optionsService.rawOptions.fontStretch
     );
     this._setDefaultSpacing();
   }
@@ -203,9 +204,11 @@ export class DomRenderer extends Disposable implements IRenderer {
     styles +=
       `${this._terminalSelector} span:not(.${RowCss.BOLD_CLASS}) {` +
       ` font-weight: ${this._optionsService.rawOptions.fontWeight};` +
+      ` font-stretch: ${this._optionsService.rawOptions.fontStretch};` +
       `}` +
       `${this._terminalSelector} span.${RowCss.BOLD_CLASS} {` +
       ` font-weight: ${this._optionsService.rawOptions.fontWeightBold};` +
+      ` font-stretch: ${this._optionsService.rawOptions.fontStretch};` +
       `}` +
       `${this._terminalSelector} span.${RowCss.ITALIC_CLASS} {` +
       ` font-style: italic;` +
@@ -498,7 +501,8 @@ export class DomRenderer extends Disposable implements IRenderer {
       this._optionsService.rawOptions.fontFamily,
       this._optionsService.rawOptions.fontSize,
       this._optionsService.rawOptions.fontWeight,
-      this._optionsService.rawOptions.fontWeightBold
+      this._optionsService.rawOptions.fontWeightBold,
+      this._optionsService.rawOptions.fontStretch
     );
     this._setDefaultSpacing();
   }

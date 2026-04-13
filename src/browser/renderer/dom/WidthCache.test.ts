@@ -10,7 +10,7 @@ import { IWidthCacheFontVariantCanvas, WidthCache, WidthCacheSettings } from 'br
 class MockWidthCacheFontVariantCanvas implements IWidthCacheFontVariantCanvas {
   public widths: { [key: string]: number } = {};
 
-  public setFont(_fontFamily: string, _fontSize: number, _fontWeight: unknown, _italic: boolean): void {
+  public setFont(_fontFamily: string, _fontSize: number, _fontWeight: unknown, _fontStretch: unknown, _italic: boolean): void {
   }
 
   public measure(c: string): number {
@@ -52,7 +52,7 @@ describe('WidthCache', () => {
   let wc: TestWidthCache;
   beforeEach(() => {
     wc = new TestWidthCache();
-    wc.setFont('monospace', 15, 'normal', 'bold');
+    wc.setFont('monospace', 15, 'normal', 'bold', 'normal');
   });
   describe('cache invalidation', () => {
     beforeEach(() => {
@@ -71,31 +71,37 @@ describe('WidthCache', () => {
       assert.deepStrictEqual(wc.holey?.size, 0);
     });
     it('setFont with changed font name', () => {
-      wc.setFont('Arial', 15, 'normal', 'bold');
+      wc.setFont('Arial', 15, 'normal', 'bold', 'normal');
       assert.deepStrictEqual(wc.flat[0], castf32(WidthCacheSettings.FLAT_UNSET));
       assert.deepStrictEqual(wc.holey?.get('a'), undefined);
       assert.deepStrictEqual(wc.holey?.size, 0);
     });
     it('setFont with changed font size', () => {
-      wc.setFont('monospace', 14, 'normal', 'bold');
+      wc.setFont('monospace', 14, 'normal', 'bold', 'normal');
       assert.deepStrictEqual(wc.flat[0], castf32(WidthCacheSettings.FLAT_UNSET));
       assert.deepStrictEqual(wc.holey?.get('a'), undefined);
       assert.deepStrictEqual(wc.holey?.size, 0);
     });
     it('setFont with changed weight', () => {
-      wc.setFont('monospace', 15, '100', 'bold');
+      wc.setFont('monospace', 15, '100', 'bold', 'normal');
       assert.deepStrictEqual(wc.flat[0], castf32(WidthCacheSettings.FLAT_UNSET));
       assert.deepStrictEqual(wc.holey?.get('a'), undefined);
       assert.deepStrictEqual(wc.holey?.size, 0);
     });
     it('setFont with changed weightBold', () => {
-      wc.setFont('monospace', 15, 'normal', '900');
+      wc.setFont('monospace', 15, 'normal', '900', 'normal');
+      assert.deepStrictEqual(wc.flat[0], castf32(WidthCacheSettings.FLAT_UNSET));
+      assert.deepStrictEqual(wc.holey?.get('a'), undefined);
+      assert.deepStrictEqual(wc.holey?.size, 0);
+    });
+    it('setFont with changed stretch', () => {
+      wc.setFont('monospace', 15, 'normal', 'bold', 'condensed');
       assert.deepStrictEqual(wc.flat[0], castf32(WidthCacheSettings.FLAT_UNSET));
       assert.deepStrictEqual(wc.holey?.get('a'), undefined);
       assert.deepStrictEqual(wc.holey?.size, 0);
     });
     it('setFont with unchanged settings does not cache entries', () => {
-      wc.setFont('monospace', 15, 'normal', 'bold');
+      wc.setFont('monospace', 15, 'normal', 'bold', 'normal');
       assert.deepStrictEqual(wc.flat[0], castf32(1.23));
       assert.deepStrictEqual(wc.holey?.get('a'), 2.34);
       assert.deepStrictEqual(wc.holey?.size, 1);

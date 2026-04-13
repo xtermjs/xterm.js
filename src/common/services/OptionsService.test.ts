@@ -58,6 +58,17 @@ describe('OptionsService', () => {
       service.options.fontWeight = 1000;
       assert.equal(service.options.fontWeight, 1000, 'Range should include maximum value: 1000');
     });
+    it('applies valid fontStretch option values', () => {
+      service.options.fontStretch = 'condensed';
+      assert.equal(service.options.fontStretch, 'condensed');
+      service.options.fontStretch = 'ultra-expanded';
+      assert.equal(service.options.fontStretch, 'ultra-expanded');
+    });
+    it('normalizes invalid fontStretch option values', () => {
+      service.options.fontStretch = 'condensed';
+      service.options.fontStretch = 'squashed' as any;
+      assert.equal(service.options.fontStretch, DEFAULT_OPTIONS.fontStretch, 'unknown keyword should reset to default');
+    });
     it('normalizes invalid fontWeight option values', () => {
       service.options.fontWeight = 350;
       assert.doesNotThrow(() => service.options.fontWeight = 10000, 'fontWeight should be normalized instead of throwing');
