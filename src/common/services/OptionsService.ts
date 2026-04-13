@@ -6,7 +6,7 @@
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { isMac } from 'common/Platform';
 import { CursorStyle, IDisposable } from 'common/Types';
-import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
+import { FontStretch, FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
 import { Emitter } from 'common/Event';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
@@ -25,6 +25,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   fontSize: 15,
   fontWeight: 'normal',
   fontWeightBold: 'bold',
+  fontStretch: 'normal',
   ignoreBracketedPasteMode: false,
   lineHeight: 1.0,
   letterSpacing: 0,
@@ -60,6 +61,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
 };
 
 const FONT_WEIGHT_OPTIONS: Extract<FontWeight, string>[] = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+const FONT_STRETCH_OPTIONS: FontStretch[] = ['normal', 'ultra-condensed', 'extra-condensed', 'condensed', 'semi-condensed', 'semi-expanded', 'expanded', 'extra-expanded', 'ultra-expanded'];
 
 export class OptionsService extends Disposable implements IOptionsService {
   public serviceBrand: any;
@@ -168,6 +170,9 @@ export class OptionsService extends Disposable implements IOptionsService {
           break;
         }
         value = FONT_WEIGHT_OPTIONS.includes(value) ? value : DEFAULT_OPTIONS[key];
+        break;
+      case 'fontStretch':
+        value = FONT_STRETCH_OPTIONS.includes(value) ? value : DEFAULT_OPTIONS[key];
         break;
       case 'blinkIntervalDuration':
         value = Math.floor(value);

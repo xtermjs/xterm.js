@@ -137,6 +137,7 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
       fontFamily: null,
       fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
       fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
+      fontStretch: ['normal', 'ultra-condensed', 'extra-condensed', 'condensed', 'semi-condensed', 'semi-expanded', 'expanded', 'extra-expanded', 'ultra-expanded'],
       logLevel: ['trace', 'debug', 'info', 'warn', 'error', 'off'],
       theme: ['default', 'xtermjs', 'sapphire', 'light'],
       wordSeparator: null,

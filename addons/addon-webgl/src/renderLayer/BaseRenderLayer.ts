@@ -216,7 +216,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize! * this._coreBrowserService.dpr}px ${terminal.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${terminal.options.fontStretch} ${terminal.options.fontSize! * this._coreBrowserService.dpr}px ${terminal.options.fontFamily}`;
   }
 }
 

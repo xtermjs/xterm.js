@@ -5,7 +5,7 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IDisposable } from 'common/Types';
-import { FontWeight } from 'common/services/Services';
+import { FontStretch, FontWeight } from 'common/services/Services';
 
 
 export const enum WidthCacheSettings {
@@ -26,7 +26,7 @@ const enum FontVariant {
 }
 
 export interface IWidthCacheFontVariantCanvas {
-  setFont(fontFamily: string, fontSize: number, fontWeight: FontWeight, italic: boolean): void;
+  setFont(fontFamily: string, fontSize: number, fontWeight: FontWeight, fontStretch: FontStretch, italic: boolean): void;
   measure(c: string): number;
 }
 
@@ -47,6 +47,7 @@ export class WidthCache implements IDisposable {
   private _fontSize = 0;
   private _weight: FontWeight = 'normal';
   private _weightBold: FontWeight = 'bold';
+  private _stretch: FontStretch = 'normal';
   private _canvasElements: IWidthCacheFontVariantCanvas[] = [];
 
   constructor(
@@ -81,13 +82,14 @@ export class WidthCache implements IDisposable {
    * Must be called for any changes on font settings.
    * Also clears the cache.
    */
-  public setFont(font: string, fontSize: number, weight: FontWeight, weightBold: FontWeight): void {
+  public setFont(font: string, fontSize: number, weight: FontWeight, weightBold: FontWeight, stretch: FontStretch): void {
     // skip if nothing changed
     if (
       font === this._font &&
       fontSize === this._fontSize &&
       weight === this._weight &&
-      weightBold === this._weightBold
+      weightBold === this._weightBold &&
+      stretch === this._stretch
     ) {
       return;
     }
@@ -96,11 +98,12 @@ export class WidthCache implements IDisposable {
     this._fontSize = fontSize;
     this._weight = weight;
     this._weightBold = weightBold;
+    this._stretch = stretch;
 
-    this._canvasElements[FontVariant.REGULAR].setFont(font, fontSize, weight, false);
-    this._canvasElements[FontVariant.BOLD].setFont(font, fontSize, weightBold, false);
-    this._canvasElements[FontVariant.ITALIC].setFont(font, fontSize, weight, true);
-    this._canvasElements[FontVariant.BOLD_ITALIC].setFont(font, fontSize, weightBold, true);
+    this._canvasElements[FontVariant.REGULAR].setFont(font, fontSize, weight, stretch, false);
+    this._canvasElements[FontVariant.BOLD].setFont(font, fontSize, weightBold, stretch, false);
+    this._canvasElements[FontVariant.ITALIC].setFont(font, fontSize, weight, stretch, true);
+    this._canvasElements[FontVariant.BOLD_ITALIC].setFont(font, fontSize, weightBold, stretch, true);
 
     this.clear();
   }
@@ -158,9 +161,9 @@ class WidthCacheFontVariantCanvas implements IWidthCacheFontVariantCanvas {
     }
   }
 
-  public setFont(fontFamily: string, fontSize: number, fontWeight: FontWeight, italic: boolean): void {
+  public setFont(fontFamily: string, fontSize: number, fontWeight: FontWeight, fontStretch: FontStretch, italic: boolean): void {
     const fontStyle = italic ? 'italic' : '';
-    this._ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`.trim();
+    this._ctx.font = `${fontStyle} ${fontWeight} ${fontStretch} ${fontSize}px ${fontFamily}`.trim();
   }
 
   public measure(c: string): number {

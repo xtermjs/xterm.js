@@ -45,6 +45,7 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
     fontSize: options.fontSize,
     fontWeight: options.fontWeight,
     fontWeightBold: options.fontWeightBold,
+    fontStretch: options.fontStretch,
     allowTransparency: options.allowTransparency,
     drawBoldTextInBrightColors: options.drawBoldTextInBrightColors,
     minimumContrastRatio: options.minimumContrastRatio,
@@ -66,6 +67,7 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.fontSize === b.fontSize &&
       a.fontWeight === b.fontWeight &&
       a.fontWeightBold === b.fontWeightBold &&
+      a.fontStretch === b.fontStretch &&
       a.allowTransparency === b.allowTransparency &&
       a.deviceCharWidth === b.deviceCharWidth &&
       a.deviceCharHeight === b.deviceCharHeight &&

@@ -16,6 +16,11 @@ declare module '@xterm/xterm' {
   export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
 
   /**
+   * Valid `fontStretch` values matching CSS's `font-stretch` keyword range.
+   */
+  export type FontStretch = 'normal' | 'ultra-condensed' | 'extra-condensed' | 'condensed' | 'semi-condensed' | 'semi-expanded' | 'expanded' | 'extra-expanded' | 'ultra-expanded';
+
+  /**
    * A string representing log level.
    */
   export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
@@ -131,6 +136,14 @@ declare module '@xterm/xterm' {
      * The font weight used to render bold text.
      */
     fontWeightBold?: FontWeight;
+
+    /**
+     * The font stretch used to render text. This maps to the CSS `font-stretch`
+     * keyword range and is applied to both DOM and canvas-based renderers.
+     * Note that browser support in canvas rendering varies; fonts without a
+     * matching stretched face will fall back to the nearest available one.
+     */
+    fontStretch?: FontStretch;
 
     /**
      * Whether to ignore the bracketed paste mode. When true, this will always

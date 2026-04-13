@@ -204,6 +204,7 @@ export interface IOptionsService {
 }
 
 export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | number;
+export type FontStretch = 'normal' | 'ultra-condensed' | 'extra-condensed' | 'condensed' | 'semi-condensed' | 'semi-expanded' | 'expanded' | 'extra-expanded' | 'ultra-expanded';
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 
 export interface ITerminalOptions {
@@ -225,6 +226,7 @@ export interface ITerminalOptions {
   fontFamily?: string;
   fontWeight?: FontWeight;
   fontWeightBold?: FontWeight;
+  fontStretch?: FontStretch;
   ignoreBracketedPasteMode?: boolean;
   letterSpacing?: number;
   lineHeight?: number;
