@@ -518,6 +518,26 @@ describe('Buffer', () => {
         assert.equal(secondMarker.line, 1, 'second marker should be restored');
         assert.equal(thirdMarker.line, 2, 'third marker should be restored');
       });
+      it('should clear stale isWrapped when the cursor is on a wrapped line and reflow is skipped (#3482)', () => {
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        for (let i = 0; i < 5; i++) {
+          buffer.lines.get(0)!.set(i, [0, 'a', 1, 'a'.charCodeAt(0)]);
+          buffer.lines.get(1)!.set(i, [0, 'b', 1, 'b'.charCodeAt(0)]);
+        }
+        buffer.lines.get(1)!.isWrapped = true;
+        // Leave the cursor inside the wrapped group — this matches the real
+        // scenario where the user is still typing on the wrapped line.
+        buffer.y = 1;
+        buffer.x = 5;
+        buffer.resize(10, 10);
+        // Content is preserved (the program owns the cursor line) but the
+        // wrap is no longer valid in the wider layout, so isWrapped must be
+        // cleared — otherwise triple-click still treats both rows as one
+        // logical line.
+        assert.equal(buffer.lines.get(0)!.isWrapped, false);
+        assert.equal(buffer.lines.get(1)!.isWrapped, false);
+      });
       it('should correctly reflow wrapped lines that end in 0 space (via tab char)', () => {
         buffer.fillViewportRows();
         buffer.resize(4, 10);
