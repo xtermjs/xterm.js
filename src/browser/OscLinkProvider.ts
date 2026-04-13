@@ -6,6 +6,7 @@
 import { IBufferRange, ILink } from 'browser/Types';
 import { ILinkProvider } from 'browser/services/Services';
 import { CellData } from 'common/buffer/CellData';
+import { IBufferLine } from 'common/Types';
 import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
 
 export class OscLinkProvider implements ILinkProvider {
@@ -57,19 +58,8 @@ export class OscLinkProvider implements ILinkProvider {
       if (finishLink || (currentStart !== -1 && x === lineLength - 1)) {
         const text = this._oscLinkService.getLinkData(currentLinkId)?.uri;
         if (text) {
-          // These ranges are 1-based
-          const range: IBufferRange = {
-            start: {
-              x: currentStart + 1,
-              y
-            },
-            end: {
-              // Offset end x if it's a link that ends on the last cell in the line
-              x: x + (!finishLink && x === lineLength - 1 ? 1 : 0),
-              y
-            }
-          };
-
+          const endX = x + (!finishLink && x === lineLength - 1 ? 1 : 0);
+          const range = this._getRangeWithLineWrap(y, currentStart, endX, currentLinkId);
           let ignoreLink = false;
           if (!linkHandler?.allowNonHttpProtocols) {
             try {
@@ -110,6 +100,82 @@ export class OscLinkProvider implements ILinkProvider {
     // TODO: Handle fetching and returning other link ranges to underline other links with the same
     //       id
     callback(result);
+  }
+
+  /**
+   * Expand a single-line OSC 8 range to a contiguous wrapped range for the same link id.
+   */
+  private _getRangeWithLineWrap(y: number, startX: number, endX: number, linkId: number): IBufferRange {
+    let startY = y;
+    let finalStartX = startX;
+    let endY = y;
+    let finalEndX = endX;
+
+    // Expand upward only when this segment starts at column 0 and the current line is wrapped.
+    while (finalStartX === 0) {
+      const currentLine = this._bufferService.buffer.lines.get(startY - 1);
+      if (!currentLine?.isWrapped) {
+        break;
+      }
+      const previousLine = this._bufferService.buffer.lines.get(startY - 2);
+      if (!previousLine) {
+        break;
+      }
+      const previousLineLength = previousLine.getTrimmedLength();
+      if (previousLineLength === 0 || !this._hasUrlId(previousLine, previousLineLength - 1, linkId)) {
+        break;
+      }
+      let previousStartX = previousLineLength - 1;
+      while (previousStartX > 0 && this._hasUrlId(previousLine, previousStartX - 1, linkId)) {
+        previousStartX--;
+      }
+      startY--;
+      finalStartX = previousStartX;
+    }
+
+    // Expand downward only when this segment reaches trimmed EOL and the next line is wrapped.
+    while (true) {
+      const currentLine = this._bufferService.buffer.lines.get(endY - 1);
+      if (!currentLine) {
+        break;
+      }
+      const currentLineLength = currentLine.getTrimmedLength();
+      if (finalEndX !== currentLineLength) {
+        break;
+      }
+      const nextLine = this._bufferService.buffer.lines.get(endY);
+      if (!nextLine?.isWrapped) {
+        break;
+      }
+      const nextLineLength = nextLine.getTrimmedLength();
+      if (nextLineLength === 0 || !this._hasUrlId(nextLine, 0, linkId)) {
+        break;
+      }
+      let nextEndX = 1;
+      while (nextEndX < nextLineLength && this._hasUrlId(nextLine, nextEndX, linkId)) {
+        nextEndX++;
+      }
+      endY++;
+      finalEndX = nextEndX;
+    }
+
+    // IBufferRange uses 1-based coordinates.
+    return {
+      start: {
+        x: finalStartX + 1,
+        y: startY
+      },
+      end: {
+        x: finalEndX,
+        y: endY
+      }
+    };
+  }
+
+  private _hasUrlId(line: IBufferLine, x: number, linkId: number): boolean {
+    const cell = this._workCell;
+    line.loadCell(x, cell);
+    return !!cell.hasExtendedAttrs() && cell.extended.urlId === linkId;
   }
 }
 
