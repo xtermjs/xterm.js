@@ -453,9 +453,21 @@ describe('KittyKeyboard', () => {
     describe('event types (press/repeat/release)', () => {
       const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES | KittyKeyboardFlags.REPORT_EVENT_TYPES;
 
-      it('press event (default, no suffix)', () => {
+      it('text-producing key uses legacy encoding in REPORT_EVENT_TYPES mode', () => {
+        // Per spec: "In report event types mode, function keys are encoded as CSI u...
+        // all other keys are encoded in legacy mode"
         const result = kitty.evaluate(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.PRESS);
-        assert.strictEqual(result.key, '\x1b[97u');
+        assert.strictEqual(result.key, 'a');
+      });
+
+      it('Shift+1 (text-producing) sends character in PRESS, CSI u in RELEASE', () => {
+        // Regression test for issue where Shift+1 was not sending '!' character
+        // PRESS event should send the character
+        const pressResult = kitty.evaluate(createEvent({ key: '!', code: 'Digit1', shiftKey: true }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(pressResult.key, '!');
+        // RELEASE event should send CSI u sequence
+        const releaseResult = kitty.evaluate(createEvent({ key: '!', code: 'Digit1', shiftKey: true }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(releaseResult.key, '\x1b[49;2:3u');
       });
 
       it('press event explicit :1 when modifiers present', () => {
