@@ -493,6 +493,59 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   /**
+   * CSI fast path: scan params and dispatch from position `start` (first byte after '[').
+   * Returns new `i` position (>= 0) on success, -1 on failure/incomplete.
+   * Stores a Promise in `_parseStack` and returns -2 for async handlers.
+   */
+  private _csiFast(data: Uint32Array, start: number, length: number): number | Promise<boolean> {
+    let k = start;
+    let ch = data[k];
+    if (ch >= 0x3c && ch <= 0x3f) {
+      this._collect = ch;
+      k++;
+    }
+    for (; k < length; k++) {
+      ch = data[k];
+      if (ch >= 0x30 && ch <= 0x39) {
+        this._params.addDigit(ch - 48);
+      } else if (ch === 0x3b) {
+        this._params.addParam(0);
+      } else if (ch === 0x3a) {
+        this._params.addSubParam(-1);
+      } else if (ch >= 0x40 && ch <= 0x7e) {
+        const handlers = this._csiHandlers[this._collect << 8 | ch];
+        let j = handlers ? handlers.length - 1 : -1;
+        for (; j >= 0; j--) {
+          const handlerResult = handlers[j](this._params);
+          if (handlerResult === true) {
+            break;
+          } else if (handlerResult instanceof Promise) {
+            const transition = ParserAction.CSI_DISPATCH << TableAccess.TRANSITION_ACTION_SHIFT | ParserState.GROUND;
+            this._preserveStack(ParserStackType.CSI, handlers, j, transition, k);
+            return handlerResult;
+          }
+        }
+        if (j < 0) {
+          this._csiHandlerFb(this._collect << 8 | ch, this._params);
+        }
+        this.precedingJoinState = 0;
+        let pEnd = k + 1;
+        if (pEnd < length && data[pEnd] >= 0x20 && data[pEnd] <= 0x7e) {
+          for (++pEnd; pEnd < length; ++pEnd) {
+            const pc = data[pEnd];
+            if (pc < 0x20 || (pc > 0x7e && pc < NON_ASCII_PRINTABLE)) break;
+          }
+          this._printHandler(data, k + 1, pEnd);
+        }
+        return pEnd - 1;
+      } else {
+        break;
+      }
+    }
+    return -1;
+  }
+
+  /**
    * Parse UTF32 codepoints in `data` up to `length`.
    *
    * Note: For several actions with high data load the parsing is optimized
@@ -649,69 +702,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     for (let i = start; i < length; ++i) {
       code = data[i];
 
-      // CSI fast path: in GROUND seeing ESC [, consume entire CSI sequence without table lookups
-      if (code === 0x1b && this.currentState === ParserState.GROUND && i + 2 < length && data[i + 1] === 0x5b) {
-        this._params.reset();
-        this._params.addParam(0);
-        this._collect = 0;
-        let k = i + 2;
-        let ch = data[k];
-        if (ch >= 0x3c && ch <= 0x3f) {
-          this._collect = ch;
-          k++;
-        }
-        let csiComplete = false;
-        for (; k < length; k++) {
-          ch = data[k];
-          if (ch >= 0x30 && ch <= 0x39) {
-            this._params.addDigit(ch - 48);
-          } else if (ch === 0x3b) {
-            this._params.addParam(0);
-          } else if (ch === 0x3a) {
-            this._params.addSubParam(-1);
-          } else if (ch >= 0x40 && ch <= 0x7e) {
-            const handlers = this._csiHandlers[this._collect << 8 | ch];
-            let j = handlers ? handlers.length - 1 : -1;
-            for (; j >= 0; j--) {
-              handlerResult = handlers[j](this._params);
-              if (handlerResult === true) {
-                break;
-              } else if (handlerResult instanceof Promise) {
-                transition = ParserAction.CSI_DISPATCH << TableAccess.TRANSITION_ACTION_SHIFT | ParserState.GROUND;
-                this._preserveStack(ParserStackType.CSI, handlers, j, transition, k);
-                return handlerResult;
-              }
-            }
-            if (j < 0) {
-              this._csiHandlerFb(this._collect << 8 | ch, this._params);
-            }
-            this.precedingJoinState = 0;
-            // scan ahead for print run after CSI dispatch
-            let pEnd = k + 1;
-            if (pEnd < length && data[pEnd] >= 0x20 && data[pEnd] <= 0x7e) {
-              for (++pEnd; pEnd < length; ++pEnd) {
-                const pc = data[pEnd];
-                if (pc < 0x20 || (pc > 0x7e && pc < NON_ASCII_PRINTABLE)) break;
-              }
-              this._printHandler(data, k + 1, pEnd);
-            }
-            i = pEnd - 1;
-            csiComplete = true;
-            break;
-          } else {
-            break;
-          }
-        }
-        if (csiComplete) continue;
-        // incomplete or unexpected byte — fall back to normal path
-        this._params.reset();
-        this._params.addParam(0);
-        this._collect = 0;
-        this.currentState = ParserState.ESCAPE;
-        // let normal loop process '[' at i+1
-        continue;
-      }
-
       // normal transition & action lookup
       transition = this._transitions.table[this.currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
@@ -824,6 +814,18 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._params.reset();
           this._params.addParam(0); // ZDM
           this._collect = 0;
+          if ((transition & TableAccess.TRANSITION_STATE_MASK) === ParserState.ESCAPE
+            && i + 2 < length && data[i + 1] === 0x5b) {
+            const csiFastResult = this._csiFast(data, i + 2, length);
+            if (csiFastResult instanceof Promise) {
+              return csiFastResult;
+            }
+            if (csiFastResult >= 0) {
+              i = csiFastResult as number;
+              this.currentState = ParserState.GROUND;
+              continue;
+            }
+          }
           break;
         case ParserAction.DCS_HOOK:
           this._dcsParser.hook(this._collect << 8 | code, this._params);
