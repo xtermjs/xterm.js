@@ -649,6 +649,60 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     for (let i = start; i < length; ++i) {
       code = data[i];
 
+      // CSI fast path: in GROUND seeing ESC [, consume entire CSI sequence without table lookups
+      if (code === 0x1b && this.currentState === ParserState.GROUND && i + 2 < length && data[i + 1] === 0x5b) {
+        this._params.reset();
+        this._params.addParam(0);
+        this._collect = 0;
+        let k = i + 2;
+        let ch = data[k];
+        if (ch >= 0x3c && ch <= 0x3f) {
+          this._collect = ch;
+          k++;
+        }
+        let csiComplete = false;
+        for (; k < length; k++) {
+          ch = data[k];
+          if (ch >= 0x30 && ch <= 0x39) {
+            this._params.addDigit(ch - 48);
+          } else if (ch === 0x3b) {
+            this._params.addParam(0);
+          } else if (ch === 0x3a) {
+            this._params.addSubParam(-1);
+          } else if (ch >= 0x40 && ch <= 0x7e) {
+            const handlers = this._csiHandlers[this._collect << 8 | ch];
+            let j = handlers ? handlers.length - 1 : -1;
+            for (; j >= 0; j--) {
+              handlerResult = handlers[j](this._params);
+              if (handlerResult === true) {
+                break;
+              } else if (handlerResult instanceof Promise) {
+                transition = ParserAction.CSI_DISPATCH << TableAccess.TRANSITION_ACTION_SHIFT | ParserState.GROUND;
+                this._preserveStack(ParserStackType.CSI, handlers, j, transition, k);
+                return handlerResult;
+              }
+            }
+            if (j < 0) {
+              this._csiHandlerFb(this._collect << 8 | ch, this._params);
+            }
+            this.precedingJoinState = 0;
+            i = k;
+            csiComplete = true;
+            break;
+          } else {
+            break;
+          }
+        }
+        if (csiComplete) continue;
+        // incomplete or unexpected byte — fall back to normal path
+        this._params.reset();
+        this._params.addParam(0);
+        this._collect = 0;
+        this.currentState = ParserState.ESCAPE;
+        // let normal loop process '[' at i+1
+        continue;
+      }
+
       // normal transition & action lookup
       transition = this._transitions.table[this.currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
