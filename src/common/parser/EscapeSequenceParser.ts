@@ -686,7 +686,16 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               this._csiHandlerFb(this._collect << 8 | ch, this._params);
             }
             this.precedingJoinState = 0;
-            i = k;
+            // scan ahead for print run after CSI dispatch
+            let pEnd = k + 1;
+            if (pEnd < length && data[pEnd] >= 0x20 && data[pEnd] <= 0x7e) {
+              for (++pEnd; pEnd < length; ++pEnd) {
+                const pc = data[pEnd];
+                if (pc < 0x20 || (pc > 0x7e && pc < NON_ASCII_PRINTABLE)) break;
+              }
+              this._printHandler(data, k + 1, pEnd);
+            }
+            i = pEnd - 1;
             csiComplete = true;
             break;
           } else {
