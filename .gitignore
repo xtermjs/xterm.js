@@ -29,3 +29,7 @@ demo/dist/
 # dont commit benchmark folders
 .benchmark/
 timeline/
+
+# slim-forge
+results.tsv
+run.log

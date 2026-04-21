@@ -1,0 +1,6 @@
+install_cmd = """npm install --no-audit --no-fund --loglevel=error"""
+build_cmd = """npm run build && npm run esbuild"""
+test_cmd = """npm run test-unit"""
+bench_cmd = """node bench/workload.js"""
+primary_bench_name = """weighted_mbps"""
+target = "xterm"
