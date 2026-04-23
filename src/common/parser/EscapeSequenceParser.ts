@@ -734,7 +734,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
           ) {}
           if (c >= l4)
-            while (c < length && data[c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)) c++;
+            while (c < length && data[c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)) {
+              c++;
+            }
           this._printHandler(data, i, c);
           i = c - 1;
           break;
