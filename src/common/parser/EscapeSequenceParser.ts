@@ -659,9 +659,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
       // CSI fast-path: collapse ESC [ into a single entry, parse params+final in a tight loop
       if (code === 0x1b
-        && this.currentState !== ParserState.OSC_STRING
-        && this.currentState !== ParserState.DCS_PASSTHROUGH
-        && this.currentState !== ParserState.APC_STRING
+        && this.currentState < ParserState.OSC_STRING
         && i + 1 < length && data[i + 1] === 0x5b
       ) {
         this._params.reset();
