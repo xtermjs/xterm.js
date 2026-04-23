@@ -247,6 +247,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   // handler lookup containers
   protected _printHandler: PrintHandlerType;
   protected _executeHandlers: { [flag: number]: ExecuteHandlerType };
+  protected _executeHandlersArr: (ExecuteHandlerType | undefined)[];
   protected _csiHandlers: IHandlerCollection<CsiHandlerType>;
   protected _escHandlers: IHandlerCollection<EscHandlerType>;
   protected readonly _oscParser: IOscParser;
@@ -290,11 +291,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandlerFb = (state: IParsingState): IParsingState => state;
     this._printHandler = this._printHandlerFb;
     this._executeHandlers = Object.create(null);
+    this._executeHandlersArr = new Array<ExecuteHandlerType | undefined>(0x18).fill(undefined);
     this._csiHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
     this._register(toDisposable(() => {
       this._csiHandlers = Object.create(null);
       this._executeHandlers = Object.create(null);
+      this._executeHandlersArr = new Array<ExecuteHandlerType | undefined>(0x18).fill(undefined);
       this._escHandlers = Object.create(null);
     }));
     this._oscParser = this._register(new OscParser());
@@ -381,10 +384,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   public setExecuteHandler(flag: string, handler: ExecuteHandlerType): void {
-    this._executeHandlers[flag.charCodeAt(0)] = handler;
+    const code = flag.charCodeAt(0);
+    this._executeHandlers[code] = handler;
+    if (code < 0x18) this._executeHandlersArr[code] = handler;
   }
   public clearExecuteHandler(flag: string): void {
-    if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
+    const code = flag.charCodeAt(0);
+    if (this._executeHandlers[code]) delete this._executeHandlers[code];
+    if (code < 0x18) this._executeHandlersArr[code] = undefined;
   }
   public setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void {
     this._executeHandlerFb = handler;
@@ -655,8 +662,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
       // EXE fast-path: common control bytes (0x00-0x17) in non-payload states
       if (code < 0x18 && this.currentState <= ParserState.CSI_IGNORE) {
-        if (this._executeHandlers[code]) this._executeHandlers[code]();
-        else this._executeHandlerFb(code);
+        (this._executeHandlersArr[code] ?? this._executeHandlerFb)(code);
         this.precedingJoinState = 0;
         continue;
       }
