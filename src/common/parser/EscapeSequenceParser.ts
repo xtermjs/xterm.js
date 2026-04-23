@@ -660,17 +660,16 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       // CSI fast-path: collapse ESC [ into a single entry, parse params+final in a tight loop
       if (code === 0x1b
         && this.currentState < ParserState.OSC_STRING
-        && i + 1 < length && data[i + 1] === 0x5b
+        && i + 2 < length && data[i + 1] === 0x5b
       ) {
         this._params.reset();
         this._params.addParam(0); // ZDM
         this._collect = 0;
         let k = i + 2;
-        if (k >= length) { i = k - 1; this.currentState = ParserState.CSI_ENTRY; continue; }
         let ch = data[k];
         if (ch >= 0x3c && ch <= 0x3f) {
           this._collect = ch;
-          if (++k >= length) { i = k - 1; this.currentState = ParserState.CSI_PARAM; continue; }
+          k++;
         }
         let csiDone = false;
         for (; k < length; k++) {
@@ -700,13 +699,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             this.precedingJoinState = 0;
             i = k;
             this.currentState = ParserState.GROUND;
-            csiDone = true;
-            break;
-          } else if (ch >= 0x20 && ch <= 0x2f) {
-            this._collect <<= 8;
-            this._collect |= ch;
-            i = k;
-            this.currentState = ParserState.CSI_INTERMEDIATE;
             csiDone = true;
             break;
           } else {
