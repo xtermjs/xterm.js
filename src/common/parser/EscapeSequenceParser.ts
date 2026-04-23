@@ -247,6 +247,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   // handler lookup containers
   protected _printHandler: PrintHandlerType;
   protected _executeHandlers: { [flag: number]: ExecuteHandlerType };
+  // fast path for EXE bytes < 0x18
   protected _executeHandlersArr: (ExecuteHandlerType | undefined)[];
   protected _csiHandlers: IHandlerCollection<CsiHandlerType>;
   protected _escHandlers: IHandlerCollection<EscHandlerType>;
@@ -291,13 +292,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandlerFb = (state: IParsingState): IParsingState => state;
     this._printHandler = this._printHandlerFb;
     this._executeHandlers = Object.create(null);
-    this._executeHandlersArr = new Array<ExecuteHandlerType | undefined>(0x18).fill(undefined);
+    this._executeHandlersArr = new Array(0x18).fill(undefined);
     this._csiHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
     this._register(toDisposable(() => {
       this._csiHandlers = Object.create(null);
       this._executeHandlers = Object.create(null);
-      this._executeHandlersArr = new Array<ExecuteHandlerType | undefined>(0x18).fill(undefined);
+      this._executeHandlersArr = new Array(0x18).fill(undefined);
       this._escHandlers = Object.create(null);
     }));
     this._oscParser = this._register(new OscParser());
