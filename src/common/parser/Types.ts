@@ -32,6 +32,7 @@ export interface IParams {
   clone(): IParams;
   toArray(): ParamsArray;
   reset(): void;
+  resetZdm(): void;
   addParam(value: number): void;
   addSubParam(value: number): void;
   hasSubParams(idx: number): boolean;

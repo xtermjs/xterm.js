@@ -470,8 +470,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._oscParser.reset();
     this._dcsParser.reset();
     this._apcParser.reset();
-    this._params.reset();
-    this._params.addParam(0); // ZDM
+    this._params.resetZdm();
     this._collect = 0;
     this.precedingJoinState = 0;
     // abort pending continuation from async handler
@@ -620,8 +619,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-            this._params.reset();
-            this._params.addParam(0); // ZDM
+            this._params.resetZdm();
             this._collect = 0;
             break;
           case ParserStackType.OSC:
@@ -631,8 +629,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-            this._params.reset();
-            this._params.addParam(0); // ZDM
+            this._params.resetZdm();
             this._collect = 0;
             break;
           case ParserStackType.APC:
@@ -642,8 +639,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-            this._params.reset();
-            this._params.addParam(0); // ZDM
+            this._params.resetZdm();
             this._collect = 0;
             break;
         }
@@ -673,8 +669,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         && this.currentState < ParserState.OSC_STRING
         && i + 2 < length && data[i + 1] === 0x5b
       ) {
-        this._params.reset();
-        this._params.addParam(0); // ZDM
+        this._params.resetZdm();
         this._collect = 0;
         let k = i + 2;
         let ch = data[k];
@@ -824,8 +819,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this.precedingJoinState = 0;
           break;
         case ParserAction.CLEAR:
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           break;
         case ParserAction.DCS_HOOK:
@@ -849,8 +843,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           this.precedingJoinState = 0;
           break;
@@ -874,8 +867,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           this.precedingJoinState = 0;
           break;
@@ -899,8 +891,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           this.precedingJoinState = 0;
           break;
