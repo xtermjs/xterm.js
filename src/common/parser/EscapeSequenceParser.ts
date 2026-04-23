@@ -506,6 +506,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * - OSC_STRING:OSC_PUT
    * - DCS_PASSTHROUGH:DCS_PUT
    *
+   * Additionally the following fast paths exist before the table lookup:
+   * - EXE bytes < 0x18 in non-payload states (avoids table lookup entirely)
+   * - 7-bit CSI sequences without intermediates (ESC [ params final)
+   *
    * Note on asynchronous handler support:
    * Any handler returning a promise will be treated as asynchronous.
    * To keep the in-band blocking working for async handlers, `parse` pauses execution,
