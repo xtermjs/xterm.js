@@ -108,7 +108,7 @@ export type EscFallbackHandlerType = (identifier: number) => void;
 /**
  * EXECUTE handler types.
  */
-export type ExecuteHandlerType = () => boolean;
+export type ExecuteHandlerType = (ident?: number) => boolean;
 export type ExecuteFallbackHandlerType = (ident: number) => void;
 
 /**
