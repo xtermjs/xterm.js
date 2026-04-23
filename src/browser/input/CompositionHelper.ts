@@ -50,7 +50,20 @@ export class CompositionHelper {
   /**
    * The pending textarea change timer, if any.
    */
-  private _textareaChangeTimer?: number;
+  private _textareaChangeTimer?: ReturnType<typeof setTimeout>;
+
+  /**
+   * Snapshot of textarea value captured when the current 229 pending cycle started.
+   */
+  private _pending229Baseline: string | undefined;
+  /**
+   * Whether the timeout fallback has executed for the current pending cycle.
+   */
+  private _pending229TimerFired: boolean;
+  /**
+   * Whether matching keyup has executed for the current pending cycle.
+   */
+  private _pending229KeyupFired: boolean;
 
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
@@ -65,6 +78,10 @@ export class CompositionHelper {
     this._compositionPosition = { start: 0, end: 0 };
     this._compositionSuffix = '';
     this._dataAlreadySent = '';
+    this._textareaChangeTimer = undefined;
+    this._pending229Baseline = undefined;
+    this._pending229TimerFired = false;
+    this._pending229KeyupFired = false;
   }
 
   /**
@@ -131,11 +148,22 @@ export class CompositionHelper {
     if (ev.keyCode === 229) {
       // If the "composition character" is used but gets to this point it means a non-composition
       // character (eg. numbers and punctuation) was pressed when the IME was active.
-      this._handleAnyTextareaChanges();
+      if (this._pending229Baseline === undefined) {
+        this._pending229Baseline = this._textarea.value;
+        this._pending229KeyupFired = false;
+      }
+      this._ensurePending229Timer();
       return false;
     }
 
     return true;
+  }
+
+  /**
+   * Handles keyup for deferred keyCode=229 processing.
+   */
+  public keyup(_ev: KeyboardEvent): void {
+    this._flushPending229('keyup');
   }
 
   /**
@@ -154,7 +182,10 @@ export class CompositionHelper {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
-      this._coreService.triggerDataEvent(input, true);
+      if (input.length > 0) {
+        this._clearPending229();
+        this._coreService.triggerDataEvent(input, true);
+      }
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
       // fire before the setTimeout executes.
@@ -196,6 +227,7 @@ export class CompositionHelper {
             input = value.substring(currentCompositionPosition.start, Math.max(currentCompositionPosition.start, valueEnd));
           }
           if (input.length > 0) {
+            this._clearPending229();
             this._coreService.triggerDataEvent(input, true);
           }
         }
@@ -209,31 +241,75 @@ export class CompositionHelper {
    * character" (229) is triggered, in order to allow non-composition text to be entered when an
    * IME is active.
    */
-  private _handleAnyTextareaChanges(): void {
-    if (this._textareaChangeTimer) {
+  private _handleAnyTextareaChanges(oldValue: string): boolean {
+    const newValue = this._textarea.value;
+    if (newValue === oldValue) {
+      return false;
+    }
+    if (newValue.length < oldValue.length) {
+      this._dataAlreadySent = newValue;
+      this._coreService.triggerDataEvent(`${C0.DEL}`, true);
+      return true;
+    }
+
+    let commonPrefixLength = 0;
+    while (
+      commonPrefixLength < oldValue.length &&
+      commonPrefixLength < newValue.length &&
+      oldValue.charCodeAt(commonPrefixLength) === newValue.charCodeAt(commonPrefixLength)
+    ) {
+      commonPrefixLength++;
+    }
+
+    const removedCount = oldValue.length - commonPrefixLength;
+    const inserted = newValue.substring(commonPrefixLength);
+    const payload = `${C0.DEL.repeat(removedCount)}${inserted}`;
+
+    this._dataAlreadySent = inserted;
+    this._coreService.triggerDataEvent(payload, true);
+    return true;
+  }
+
+  private _flushPending229(source: 'timer' | 'keyup'): void {
+    const baseline = this._pending229Baseline;
+    if (baseline === undefined) {
       return;
     }
-    const oldValue = this._textarea.value;
-    this._textareaChangeTimer = window.setTimeout(() => {
+    // If a composition has started, cancel this cycle to avoid stale baseline.
+    if (this._isComposing) {
+      this._clearPending229();
+      return;
+    }
+    if (source === 'timer') {
+      this._pending229TimerFired = true;
+    } else {
+      this._pending229KeyupFired = true;
+    }
+    const dataSent = this._handleAnyTextareaChanges(baseline);
+    if (dataSent || (this._pending229TimerFired && this._pending229KeyupFired)) {
+      this._clearPending229();
+    }
+  }
+
+  private _ensurePending229Timer(): void {
+    if (this._textareaChangeTimer !== undefined) {
+      return;
+    }
+    this._pending229TimerFired = false;
+    this._textareaChangeTimer = setTimeout(() => {
       this._textareaChangeTimer = undefined;
-      // Ignore if a composition has started since the timeout
-      if (!this._isComposing) {
-        const newValue = this._textarea.value;
-
-        const diff = newValue.replace(oldValue, '');
-
-        this._dataAlreadySent = diff;
-
-        if (newValue.length > oldValue.length) {
-          this._coreService.triggerDataEvent(diff, true);
-        } else if (newValue.length < oldValue.length) {
-          this._coreService.triggerDataEvent(`${C0.DEL}`, true);
-        } else if ((newValue.length === oldValue.length) && (newValue !== oldValue)) {
-          this._coreService.triggerDataEvent(newValue, true);
-        }
-
-      }
+      this._flushPending229('timer');
     }, 0);
+  }
+
+  private _clearPending229(): void {
+    if (this._textareaChangeTimer !== undefined) {
+      clearTimeout(this._textareaChangeTimer);
+      this._textareaChangeTimer = undefined;
+    }
+    this._pending229Baseline = undefined;
+    this._pending229TimerFired = false;
+    this._pending229KeyupFired = false;
   }
 
   /**
