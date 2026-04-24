@@ -890,9 +890,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           // allowed: 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
           for (let j = i + 1; ; ++j) {
             if (j < length && (
-                (data[j] >= 0x20 && data[j] < 0x7f) || (data[j] >= 0x08 && data[j] < 0x0e) || data[j] >= NON_ASCII_PRINTABLE
-              )
-            ) continue;
+              (data[j] >= 0x20 && data[j] < 0x7f) || (data[j] >= 0x08 && data[j] < 0x0e) || data[j] >= NON_ASCII_PRINTABLE
+            )) continue;
             this._apcParser.put(data, i, j);
             i = j - 1;
             break;
