@@ -71,16 +71,16 @@ describe('ApcParser', () => {
       ]);
     });
 
-    //it('identifier with no payload', () => {
-    //  parser.start('G'.charCodeAt(0));
-    //  const data = toUtf32('');
-    //  parser.put(data, 0, data.length);
-    //  parser.end(true);
-    //  assert.deepEqual(reports, [
-    //    [0x47, 'START', undefined],
-    //    [0x47, 'END', true]
-    //  ]);
-    //});
+    // it('identifier with no payload', () => {
+    //   parser.start('G'.charCodeAt(0));
+    //   const data = toUtf32('');
+    //   parser.put(data, 0, data.length);
+    //   parser.end(true);
+    //   assert.deepEqual(reports, [
+    //     [0x47, 'START', undefined],
+    //     [0x47, 'END', true]
+    //   ]);
+    // });
 
     it('identifier with chunked payload', () => {
       parser.start('G'.charCodeAt(0));
@@ -100,11 +100,11 @@ describe('ApcParser', () => {
       ]);
     });
 
-    //it('empty APC sequence', () => {
-    //  parser.start('G'.charCodeAt(0));
-    //  parser.end(true);
-    //  assert.deepEqual(reports, []);
-    //});
+    // it('empty APC sequence', () => {
+    //   parser.start('G'.charCodeAt(0));
+    //   parser.end(true);
+    //   assert.deepEqual(reports, []);
+    // });
   });
 
   describe('handler registration', () => {

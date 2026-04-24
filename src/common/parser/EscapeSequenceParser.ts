@@ -77,7 +77,8 @@ const NON_ASCII_PRINTABLE = 0xA0;
  * Taken from https://vt100.net/emu/dec_ansi_parser.
  */
 export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
-  // table size: (ParserState.STATE_LENGTH - 1) << TableAccess.INDEX_STATE_SHIFT | NON_ASCII_PRINTABLE + 1
+  // table size:
+  // (ParserState.STATE_LENGTH - 1) << TableAccess.INDEX_STATE_SHIFT | NON_ASCII_PRINTABLE + 1
   const table: TransitionTable = new TransitionTable(4257);
 
   // range macro for byte
@@ -891,13 +892,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.APC_PUT:
           // FIXME: this is wrong, must be 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
           // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
-          //for (let j = i + 1; ; ++j) {
-          //  if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || code === 0x9c || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-          //    this._apcParser.put(data, i, j);
-          //    i = j - 1;
-          //    break;
-          //  }
-          //}
+          // for (let j = i + 1; ; ++j) {
+          //   if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || code === 0x9c || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
+          //     this._apcParser.put(data, i, j);
+          //     i = j - 1;
+          //     break;
+          //   }
+          // }
           this._apcParser.put(data, i, i+1);
           break;
         case ParserAction.APC_END:

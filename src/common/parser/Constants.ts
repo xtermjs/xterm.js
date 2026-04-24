@@ -62,16 +62,6 @@ export const enum OscState {
   ABORT = 3
 }
 
-/**
- * Internal states of ApcParser.
- */
-export const enum ApcState {
-  START = 0,
-  ID = 1,
-  PAYLOAD = 2,
-  ABORT = 3
-}
-
 // payload limit for OSC and DCS
 export const enum ParserConstants {
   PAYLOAD_LIMIT = 10000000

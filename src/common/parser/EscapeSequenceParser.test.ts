@@ -727,20 +727,6 @@ describe('EscapeSequenceParser', () => {
         }
       }
     });
-    //it('trans ANYWHERE/ESCAPE --> APC_STRING', () => {
-    //  parser.reset();
-    //  // C0 (ESC _)
-    //  parse(parser, '\x1b_');
-    //  assert.equal(parser.currentState, ParserState.APC_STRING);
-    //  parser.reset();
-    //  // C1
-    //  for (state in states) {
-    //    parser.currentState = state;
-    //    parse(parser, '\x9f');
-    //    assert.equal(parser.currentState, ParserState.APC_STRING);
-    //    parser.reset();
-    //  }
-    //});
     it('state SOS_PM_STRING ignore rules', () => {
       parser.reset();
       let ignored = r(0x00, 0x18);
