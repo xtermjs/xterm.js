@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType, ResumableHandlersType } from 'common/parser/Types';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import { assert } from 'chai';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
@@ -145,6 +145,15 @@ const testTerminal: any = {
   },
   actionDCSUnhook(success: boolean): void {
     this.calls.push(['dcs unhook', success]);
+  },
+  actionAPCStart(): void {
+    this.calls.push(['apc start']);
+  },
+  actionAPCPut(s: string): void {
+    this.calls.push(['apc put', s]);
+  },
+  actionAPCEnd(success: boolean): void {
+    this.calls.push(['apc end', success]);
   }
 };
 
@@ -198,6 +207,18 @@ testParser.setDcsHandlerFallback((collectAndFlag, action, payload) => {
       break;
     case 'UNHOOK':
       testTerminal.actionDCSUnhook(payload);
+  }
+});
+testParser.setApcHandlerFallback((collectAndFlag, action, payload) => {
+  switch (action) {
+    case 'START':
+      testTerminal.actionAPCStart(payload);
+      break;
+    case 'PUT':
+      testTerminal.actionAPCPut(payload);
+      break;
+    case 'END':
+      testTerminal.actionAPCEnd(payload);
   }
 });
 
@@ -280,7 +301,7 @@ describe('EscapeSequenceParser', () => {
       const exceptions: { [key: number]: { [key: string]: any[] } } = {
         8: { '\x18': [], '\x1a': [] }, // abort OSC_STRING
         13: { '\x18': [['dcs unhook', false]], '\x1a': [['dcs unhook', false]] }, // abort DCS_PASSTHROUGH
-        16: { '\x18': [], '\x1a': [] } // abort APC_PASSTHROUGH
+        16: { '\x18': [['apc end', false]], '\x1a': [['apc end', false]] } // abort APC_PASSTHROUGH
       };
       parser.reset();
       testTerminal.clear();
@@ -1023,6 +1044,134 @@ describe('EscapeSequenceParser', () => {
       parser.reset();
       testTerminal.clear();
     });
+    it('state APC_ENTRY', () => {
+      parser.reset();
+      // C0
+      parse(parser, '\x1b_');
+      assert.equal(parser.currentState, ParserState.APC_ENTRY);
+      parser.reset();
+      // C1
+      for (state in states) {
+        parser.currentState = state;
+        parse(parser, '\x9f');
+        assert.equal(parser.currentState, ParserState.APC_ENTRY);
+        parser.reset();
+      }
+    });
+    it('state APC_ENTRY ignore rules', () => {
+      parser.reset();
+      const ignored = [
+        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08',
+        '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f', '\x10', '\x11',
+        '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x19', '\x1c', '\x1d', '\x1e', '\x1f', '\x7f'];
+      for (let i = 0; i < ignored.length; ++i) {
+        parser.currentState = ParserState.APC_ENTRY;
+        parse(parser, ignored[i]);
+        assert.equal(parser.currentState, ParserState.APC_ENTRY);
+        parser.reset();
+      }
+    });
+    it('trans APC_ENTRY --> APC_INTERMEDIATE with collect action', () => {
+      parser.reset();
+      const collect = r(0x20, 0x30);
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_ENTRY;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.APC_INTERMEDIATE);
+        assert.equal(parser.collect, collect[i]);
+        parser.reset();
+      }
+    });
+    it('trans APC_ENTRY --> APC_PASSTHROUGH with start', () => {
+      parser.reset();
+      testTerminal.clear();
+      const collect = r(0x30, 0x7f);
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_ENTRY;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([['apc start']]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('trans APC_INTERMEDIATE --> APC_PASSTHROUGH with start', () => {
+      parser.reset();
+      testTerminal.clear();
+      const collect = r(0x30, 0x7f);
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_INTERMEDIATE;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([['apc start']]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('state APC_INTERMEDIATE ignore rules', () => {
+      parser.reset();
+      const ignored = [
+        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08',
+        '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f', '\x10', '\x11',
+        '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x19', '\x1c', '\x1d', '\x1e', '\x1f', '\x7f'];
+      for (let i = 0; i < ignored.length; ++i) {
+        parser.currentState = ParserState.APC_INTERMEDIATE;
+        parse(parser, ignored[i]);
+        assert.equal(parser.currentState, ParserState.APC_INTERMEDIATE);
+        parser.reset();
+      }
+    });
+    it('state APC_PASSTHROUGH put action', () => {
+      parser.reset();
+      testTerminal.clear();
+      let puts = r(0x08, 0x0e);
+      puts = puts.concat(r(0x20, 0x7f));
+      for (let i = 0; i < puts.length; ++i) {
+        parser.currentState = ParserState.APC_PASSTHROUGH;
+        parse(parser, puts[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([['apc put', puts[i]]]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('state APC_PASSTHROUGH ignore rules', () => {
+      parser.reset();
+      testTerminal.clear();
+      let puts = r(0x00, 0x08);
+      puts = puts.concat(r(0x0e, 0x18));
+      puts.push('\x19');
+      puts = puts.concat(r(0x1c, 0x20));
+      puts.push('\x7f');
+      for (let i = 0; i < puts.length; ++i) {
+        parser.currentState = ParserState.APC_PASSTHROUGH;
+        parse(parser, puts[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('trans APC_PASSTHROUGH --> GROUND|ESCAPE with end action', () => {
+      parser.reset();
+      testTerminal.clear();
+      const collect = ['\x9c', '\x18', '\x1a']; // ST - true, CAN & SUB - false
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_PASSTHROUGH;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.GROUND);
+        testTerminal.compare([['apc end', collect[i] === '\x9c']]);
+        parser.reset();
+        testTerminal.clear();
+      }
+      // ESC end
+      parser.currentState = ParserState.APC_PASSTHROUGH;
+      parse(parser, '\x1b');
+      assert.equal(parser.currentState, ParserState.ESCAPE);
+      testTerminal.compare([['apc end', true]]);
+      parser.reset();
+      testTerminal.clear();
+    });
   });
 
   function test(s: string, value: any, noReset: any): void {
@@ -1088,6 +1237,72 @@ describe('EscapeSequenceParser', () => {
         ['print', 'defg']
       ], null);
     });
+    it('single APC', () => {
+      test('\x1b_X3+$aäbc;däe\x9c', [
+        ['apc start'],
+        //['apc put', '3+$aäbc;däe'],
+        ['apc put', '3'],
+        ['apc put', '+'],
+        ['apc put', '$'],
+        ['apc put', 'a'],
+        ['apc put', 'ä'],
+        ['apc put', 'b'],
+        ['apc put', 'c'],
+        ['apc put', ';'],
+        ['apc put', 'd'],
+        ['apc put', 'ä'],
+        ['apc put', 'e'],
+        ['apc end', true]
+      ], null);
+    });
+    it('multi APC', () => {
+      test('\x1b_Xabc;de', [
+        ['apc start'],
+        //['dcs put', 'abc;de']
+        ['apc put', 'a'],
+        ['apc put', 'b'],
+        ['apc put', 'c'],
+        ['apc put', ';'],
+        ['apc put', 'd'],
+        ['apc put', 'e'],
+      ], null);
+      testTerminal.clear();
+      test('abc\x9c', [
+        //['apc put', 'abc'],
+        ['apc put', 'a'],
+        ['apc put', 'b'],
+        ['apc put', 'c'],
+        ['apc end', true]
+      ], true);
+    });
+    it('print + DCS(C1) + print', () => {
+      test('abc\x9fAbc;de\x9cxyz', [
+        ['print', 'abc'],
+        ['apc start'],
+        //['apc put', 'bc;de'],
+        ['apc put', 'b'],
+        ['apc put', 'c'],
+        ['apc put', ';'],
+        ['apc put', 'd'],
+        ['apc put', 'e'],
+        ['apc end', true],
+        ['print', 'xyz']
+      ], null);
+    });
+    it('print + DCS(C0) + print', () => {
+      test('abc\x1b_Abc;de\x1b\\xyz', [
+        ['print', 'abc'],
+        ['apc start'],
+        //['apc put', 'bc;de'],
+        ['apc put', 'b'],
+        ['apc put', 'c'],
+        ['apc put', ';'],
+        ['apc put', 'd'],
+        ['apc put', 'e'],
+        ['apc end', true],
+        ['print', 'xyz']
+      ], null);
+    });
     it('error recovery', () => {
       test('\x1b[1€abcdefg\x9b<;c', [
         ['print', 'abcdefg'],
@@ -1132,6 +1347,32 @@ describe('EscapeSequenceParser', () => {
         ['dcs hook', [1, 2, [-1, 55], 3]],
         ['dcs put', 'bc;de'],
         ['dcs unhook', false] // false for abort
+      ], null);
+    });
+    it('CAN should abort APC', () => {
+      test('abc\x9fXbc;de\x18', [
+        ['print', 'abc'],
+        ['apc start'],
+        //['apc put', 'bc;de'],
+        ['apc put', 'b'],
+        ['apc put', 'c'],
+        ['apc put', ';'],
+        ['apc put', 'd'],
+        ['apc put', 'e'],
+        ['apc end', false] // false for abort
+      ], null);
+    });
+    it('SUB should abort APC', () => {
+      test('abc\x9fXbc;de\x1a', [
+        ['print', 'abc'],
+        ['apc start'],
+        //['apc put', 'bc;de'],
+        ['apc put', 'b'],
+        ['apc put', 'c'],
+        ['apc put', ';'],
+        ['apc put', 'd'],
+        ['apc put', 'e'],
+        ['apc end', false] // false for abort
       ], null);
     });
     it('CAN should abort OSC', () => {
