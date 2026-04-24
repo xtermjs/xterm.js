@@ -1240,38 +1240,18 @@ describe('EscapeSequenceParser', () => {
     it('single APC', () => {
       test('\x1b_X3+$aäbc;däe\x9c', [
         ['apc start'],
-        //['apc put', '3+$aäbc;däe'],
-        ['apc put', '3'],
-        ['apc put', '+'],
-        ['apc put', '$'],
-        ['apc put', 'a'],
-        ['apc put', 'ä'],
-        ['apc put', 'b'],
-        ['apc put', 'c'],
-        ['apc put', ';'],
-        ['apc put', 'd'],
-        ['apc put', 'ä'],
-        ['apc put', 'e'],
+        ['apc put', '3+$aäbc;däe'],
         ['apc end', true]
       ], null);
     });
     it('multi APC', () => {
       test('\x1b_Xabc;de', [
         ['apc start'],
-        //['dcs put', 'abc;de']
-        ['apc put', 'a'],
-        ['apc put', 'b'],
-        ['apc put', 'c'],
-        ['apc put', ';'],
-        ['apc put', 'd'],
-        ['apc put', 'e'],
+        ['apc put', 'abc;de']
       ], null);
       testTerminal.clear();
       test('abc\x9c', [
-        //['apc put', 'abc'],
-        ['apc put', 'a'],
-        ['apc put', 'b'],
-        ['apc put', 'c'],
+        ['apc put', 'abc'],
         ['apc end', true]
       ], true);
     });
@@ -1279,12 +1259,7 @@ describe('EscapeSequenceParser', () => {
       test('abc\x9fAbc;de\x9cxyz', [
         ['print', 'abc'],
         ['apc start'],
-        //['apc put', 'bc;de'],
-        ['apc put', 'b'],
-        ['apc put', 'c'],
-        ['apc put', ';'],
-        ['apc put', 'd'],
-        ['apc put', 'e'],
+        ['apc put', 'bc;de'],
         ['apc end', true],
         ['print', 'xyz']
       ], null);
@@ -1293,12 +1268,7 @@ describe('EscapeSequenceParser', () => {
       test('abc\x1b_Abc;de\x1b\\xyz', [
         ['print', 'abc'],
         ['apc start'],
-        //['apc put', 'bc;de'],
-        ['apc put', 'b'],
-        ['apc put', 'c'],
-        ['apc put', ';'],
-        ['apc put', 'd'],
-        ['apc put', 'e'],
+        ['apc put', 'bc;de'],
         ['apc end', true],
         ['print', 'xyz']
       ], null);
@@ -1353,12 +1323,7 @@ describe('EscapeSequenceParser', () => {
       test('abc\x9fXbc;de\x18', [
         ['print', 'abc'],
         ['apc start'],
-        //['apc put', 'bc;de'],
-        ['apc put', 'b'],
-        ['apc put', 'c'],
-        ['apc put', ';'],
-        ['apc put', 'd'],
-        ['apc put', 'e'],
+        ['apc put', 'bc;de'],
         ['apc end', false] // false for abort
       ], null);
     });
@@ -1366,12 +1331,7 @@ describe('EscapeSequenceParser', () => {
       test('abc\x9fXbc;de\x1a', [
         ['print', 'abc'],
         ['apc start'],
-        //['apc put', 'bc;de'],
-        ['apc put', 'b'],
-        ['apc put', 'c'],
-        ['apc put', ';'],
-        ['apc put', 'd'],
-        ['apc put', 'e'],
+        ['apc put', 'bc;de'],
         ['apc end', false] // false for abort
       ], null);
     });
