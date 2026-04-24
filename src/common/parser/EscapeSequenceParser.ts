@@ -886,16 +886,16 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._apcParser.start(this._collect << 8 | code);
           break;
         case ParserAction.APC_PUT:
-          // FIXME: this is wrong, must be 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
           // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
-          // for (let j = i + 1; ; ++j) {
-          //   if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || code === 0x9c || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-          //     this._apcParser.put(data, i, j);
-          //     i = j - 1;
-          //     break;
-          //   }
-          // }
-          this._apcParser.put(data, i, i+1);
+          // allowed: 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
+          // FIXME: 00/08 .. 00/13 currently handled by second APC_PUT invocation
+          for (let j = i + 1; ; ++j) {
+            if (j >= length || data[j] < 0x20 || (data[j] >= 0x7f && data[j] < NON_ASCII_PRINTABLE)) {
+              this._apcParser.put(data, i, j);
+              i = j - 1;
+              break;
+            }
+          }
           break;
         case ParserAction.APC_END:
           handlerResult = this._apcParser.end(code !== 0x18 && code !== 0x1a);
