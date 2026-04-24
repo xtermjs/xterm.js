@@ -729,8 +729,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Forward registerApcHandler from parser.
    */
-  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
-    return this._parser.registerApcHandler(ident, new ApcHandler(callback));
+  public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._parser.registerApcHandler(id, new ApcHandler(callback));
   }
 
   /**

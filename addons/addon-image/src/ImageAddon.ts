@@ -166,7 +166,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       this._disposeLater(
         kittyStorage,
         kittyHandler,
-        terminal._core._inputHandler._parser.registerApcHandler(0x47, kittyHandler)
+        terminal._core._inputHandler._parser.registerApcHandler({ final: 'G' }, kittyHandler)
       );
     }
   }

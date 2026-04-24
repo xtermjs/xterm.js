@@ -77,7 +77,8 @@ const NON_ASCII_PRINTABLE = 0xA0;
  * Taken from https://vt100.net/emu/dec_ansi_parser.
  */
 export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
-  const table: TransitionTable = new TransitionTable(4095);
+  // table size: (ParserState.STATE_LENGTH - 1) << TableAccess.INDEX_STATE_SHIFT | NON_ASCII_PRINTABLE + 1
+  const table: TransitionTable = new TransitionTable(4257);
 
   // range macro for byte
   const BYTE_VALUES = 256;
@@ -105,7 +106,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
     table.add(0x1b, state, ParserAction.CLEAR, ParserState.ESCAPE);  // ESC
     table.add(0x9d, state, ParserAction.OSC_START, ParserState.OSC_STRING);  // OSC
     table.addMany([0x98, 0x9e], state, ParserAction.IGNORE, ParserState.SOS_PM_STRING);  // SOS, PM
-    table.add(0x9f, state, ParserAction.APC_START, ParserState.APC_STRING);  // APC
+    table.add(0x9f, state, ParserAction.CLEAR, ParserState.APC_ENTRY);  // APC
     table.add(0x9b, state, ParserAction.CLEAR, ParserState.CSI_ENTRY);  // CSI
     table.add(0x90, state, ParserAction.CLEAR, ParserState.DCS_ENTRY);  // DCS
   }
@@ -136,11 +137,19 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.add(0x9c, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.GROUND);
   table.add(0x7f, ParserState.SOS_PM_STRING, ParserAction.IGNORE, ParserState.SOS_PM_STRING);
   // apc
-  table.add(0x5f, ParserState.ESCAPE, ParserAction.APC_START, ParserState.APC_STRING);
-  table.addMany(PRINTABLES, ParserState.APC_STRING, ParserAction.APC_PUT, ParserState.APC_STRING);
-  table.addMany(EXECUTABLES, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
-  table.add(0x7f, ParserState.APC_STRING, ParserAction.IGNORE, ParserState.APC_STRING);
-  table.addMany([0x1b, 0x9c, 0x18, 0x1a], ParserState.APC_STRING, ParserAction.APC_END, ParserState.GROUND);
+  table.add(0x5f, ParserState.ESCAPE, ParserAction.CLEAR, ParserState.APC_ENTRY);
+  table.addMany(EXECUTABLES, ParserState.APC_ENTRY, ParserAction.IGNORE, ParserState.APC_ENTRY);
+  table.add(0x7f, ParserState.APC_ENTRY, ParserAction.IGNORE, ParserState.APC_ENTRY);
+  table.addMany(r(0x20, 0x30), ParserState.APC_ENTRY, ParserAction.COLLECT, ParserState.APC_INTERMEDIATE);
+  table.addMany(r(0x30, 0x7f), ParserState.APC_ENTRY, ParserAction.APC_START, ParserState.APC_PASSTHROUGH);
+  table.addMany(r(0x30, 0x7f), ParserState.APC_INTERMEDIATE, ParserAction.APC_START, ParserState.APC_PASSTHROUGH);
+  table.addMany(EXECUTABLES, ParserState.APC_INTERMEDIATE, ParserAction.IGNORE, ParserState.APC_INTERMEDIATE);
+  table.add(0x7f, ParserState.APC_INTERMEDIATE, ParserAction.IGNORE, ParserState.APC_INTERMEDIATE);
+  table.addMany(PRINTABLES, ParserState.APC_PASSTHROUGH, ParserAction.APC_PUT, ParserState.APC_PASSTHROUGH);
+  table.addMany(EXECUTABLES, ParserState.APC_PASSTHROUGH, ParserAction.IGNORE, ParserState.APC_PASSTHROUGH);
+  table.addMany(r(0x08, 0x0e), ParserState.APC_PASSTHROUGH, ParserAction.APC_PUT, ParserState.APC_PASSTHROUGH);
+  table.add(0x7f, ParserState.APC_PASSTHROUGH, ParserAction.IGNORE, ParserState.APC_PASSTHROUGH);
+  table.addMany([0x1b, 0x9c, 0x18, 0x1a], ParserState.APC_PASSTHROUGH, ParserAction.APC_END, ParserState.GROUND);
   // csi entries
   table.add(0x5b, ParserState.ESCAPE, ParserAction.CLEAR, ParserState.CSI_ENTRY);
   table.addMany(r(0x40, 0x7f), ParserState.CSI_ENTRY, ParserAction.CSI_DISPATCH, ParserState.GROUND);
@@ -200,7 +209,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.add(NON_ASCII_PRINTABLE, ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
   table.add(NON_ASCII_PRINTABLE, ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
   table.add(NON_ASCII_PRINTABLE, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
-  table.add(NON_ASCII_PRINTABLE, ParserState.APC_STRING, ParserAction.APC_PUT, ParserState.APC_STRING);
+  table.add(NON_ASCII_PRINTABLE, ParserState.APC_PASSTHROUGH, ParserAction.APC_PUT, ParserState.APC_PASSTHROUGH);
   return table;
 })();
 
@@ -439,11 +448,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._oscParser.setHandlerFallback(handler);
   }
 
-  public registerApcHandler(ident: number, handler: IApcHandler): IDisposable {
-    return this._apcParser.registerHandler(ident, handler);
+  public registerApcHandler(id: IFunctionIdentifier, handler: IApcHandler): IDisposable {
+    id.prefix = undefined;  // APC does not support prefix byte
+    return this._apcParser.registerHandler(this._identifier(id, [0x30, 0x7e]), handler);
   }
-  public clearApcHandler(ident: number): void {
-    this._apcParser.clearHandler(ident);
+  public clearApcHandler(id: IFunctionIdentifier): void {
+    id.prefix = undefined;  // APC does not support prefix byte
+    this._apcParser.clearHandler(this._identifier(id, [0x30, 0x7e]));
   }
   public setApcHandlerFallback(handler: ApcFallbackHandlerType): void {
     this._apcParser.setHandlerFallback(handler);
@@ -719,7 +730,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
 
       // normal transition & action lookup
-      transition = this._transitions.table[this.currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
+      transition = this._transitions.table[
+        this.currentState << TableAccess.INDEX_STATE_SHIFT |
+        (code < NON_ASCII_PRINTABLE ? code : NON_ASCII_PRINTABLE)
+      ];
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
           // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded
@@ -872,17 +886,19 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this.precedingJoinState = 0;
           break;
         case ParserAction.APC_START:
-          this._apcParser.start();
+          this._apcParser.start(this._collect << 8 | code);
           break;
         case ParserAction.APC_PUT:
+          // FIXME: this is wrong, must be 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
           // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
-          for (let j = i + 1; ; ++j) {
-            if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || code === 0x9c || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              this._apcParser.put(data, i, j);
-              i = j - 1;
-              break;
-            }
-          }
+          //for (let j = i + 1; ; ++j) {
+          //  if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || code === 0x9c || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
+          //    this._apcParser.put(data, i, j);
+          //    i = j - 1;
+          //    break;
+          //  }
+          //}
+          this._apcParser.put(data, i, i+1);
           break;
         case ParserAction.APC_END:
           handlerResult = this._apcParser.end(code !== 0x18 && code !== 0x1a);
