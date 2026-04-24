@@ -19,10 +19,9 @@ const EMPTY_HANDLERS: IApcHandler[] = [];
  * The identifier is the character code of the first byte after ESC _.
  */
 export class ApcParser implements IApcParser {
-  private _state = ApcState.START;
-  private _active = EMPTY_HANDLERS;
-  private _id = -1;
   private _handlers: IHandlerCollection<IApcHandler> = Object.create(null);
+  private _active = EMPTY_HANDLERS;
+  private _ident: number = 0;
   private _handlerFb: ApcFallbackHandlerType = () => { };
   private _stack: ISubParserStackState = {
     paused: false,
@@ -64,22 +63,24 @@ export class ApcParser implements IApcParser {
   }
 
   public reset(): void {
-    // force cleanup handlers if payload was already sent
-    if (this._state === ApcState.PAYLOAD) {
+    // force cleanup handlers
+    if (this._active.length) {
       for (let j = this._stack.paused ? this._stack.loopPosition - 1 : this._active.length - 1; j >= 0; --j) {
         this._active[j].end(false);
       }
     }
     this._stack.paused = false;
     this._active = EMPTY_HANDLERS;
-    this._id = -1;
-    this._state = ApcState.START;
+    this._ident = 0;
   }
 
-  private _start(): void {
-    this._active = this._handlers[this._id] || EMPTY_HANDLERS;
+  public start(ident: number): void {
+    // always reset leftover handlers
+    this.reset();
+    this._ident = ident;
+    this._active = this._handlers[ident] || EMPTY_HANDLERS;
     if (!this._active.length) {
-      this._handlerFb(this._id, 'START');
+      this._handlerFb(this._ident, 'START');
     } else {
       for (let j = this._active.length - 1; j >= 0; j--) {
         this._active[j].start();
@@ -87,42 +88,13 @@ export class ApcParser implements IApcParser {
     }
   }
 
-  private _put(data: Uint32Array, start: number, end: number): void {
+  public put(data: Uint32Array, start: number, end: number): void {
     if (!this._active.length) {
-      this._handlerFb(this._id, 'PUT', utf32ToString(data, start, end));
+      this._handlerFb(this._ident, 'PUT', utf32ToString(data, start, end));
     } else {
       for (let j = this._active.length - 1; j >= 0; j--) {
         this._active[j].put(data, start, end);
       }
-    }
-  }
-
-  public start(): void {
-    // always reset leftover handlers
-    this.reset();
-    this._state = ApcState.ID;
-  }
-
-  /**
-   * Put data to current APC command.
-   * For APC, the first character is used as the identifier.
-   * Format: ESC _ <identifier><payload> ESC \
-   * Example: ESC _ G f=100,a=T;... ESC \ (Kitty graphics, identifier='G')
-   */
-  public put(data: Uint32Array, start: number, end: number): void {
-    if (this._state === ApcState.ABORT) {
-      return;
-    }
-    if (this._state === ApcState.ID) {
-      // The first character is the identifier
-      if (start < end) {
-        this._id = data[start++];
-        this._state = ApcState.PAYLOAD;
-        this._start();
-      }
-    }
-    if (this._state === ApcState.PAYLOAD && end - start > 0) {
-      this._put(data, start, end);
     }
   }
 
@@ -132,65 +104,45 @@ export class ApcParser implements IApcParser {
    * is indicated by `success`.
    */
   public end(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
-    if (this._state === ApcState.START) {
-      return;
-    }
-    // do nothing if command was faulty
-    if (this._state !== ApcState.ABORT) {
-      // if we are still in ID state and get an early end
-      // means we got an empty APC sequence with no identifier,
-      // which is invalid - just reset and return
-      if (this._state === ApcState.ID) {
-        this._active = EMPTY_HANDLERS;
-        this._id = -1;
-        this._state = ApcState.START;
-        return;
+    if (!this._active.length) {
+      this._handlerFb(this._ident, 'END', success);
+    } else {
+      let handlerResult: boolean | Promise<boolean> = false;
+      let j = this._active.length - 1;
+      let fallThrough = false;
+      if (this._stack.paused) {
+        j = this._stack.loopPosition - 1;
+        handlerResult = promiseResult;
+        fallThrough = this._stack.fallThrough;
+        this._stack.paused = false;
       }
-
-      if (!this._active.length) {
-        this._handlerFb(this._id, 'END', success);
-      } else {
-        let handlerResult: boolean | Promise<boolean> = false;
-        let j = this._active.length - 1;
-        let fallThrough = false;
-        if (this._stack.paused) {
-          j = this._stack.loopPosition - 1;
-          handlerResult = promiseResult;
-          fallThrough = this._stack.fallThrough;
-          this._stack.paused = false;
-        }
-        if (!fallThrough && handlerResult === false) {
-          for (; j >= 0; j--) {
-            handlerResult = this._active[j].end(success);
-            if (handlerResult === true) {
-              break;
-            } else if (handlerResult instanceof Promise) {
-              this._stack.paused = true;
-              this._stack.loopPosition = j;
-              this._stack.fallThrough = false;
-              return handlerResult;
-            }
-          }
-          j--;
-        }
-        // cleanup left over handlers
-        // we always have to call .end for proper cleanup,
-        // here we use `success` to indicate whether a handler should execute
+      if (!fallThrough && handlerResult === false) {
         for (; j >= 0; j--) {
-          handlerResult = this._active[j].end(false);
-          if (handlerResult instanceof Promise) {
+          handlerResult = this._active[j].end(success);
+          if (handlerResult === true) {
+            break;
+          } else if (handlerResult instanceof Promise) {
             this._stack.paused = true;
             this._stack.loopPosition = j;
-            this._stack.fallThrough = true;
+            this._stack.fallThrough = false;
             return handlerResult;
           }
         }
+        j--;
       }
-
+      // cleanup left over handlers (fallThrough for async)
+      for (; j >= 0; j--) {
+        handlerResult = this._active[j].end(false);
+        if (handlerResult instanceof Promise) {
+          this._stack.paused = true;
+          this._stack.loopPosition = j;
+          this._stack.fallThrough = true;
+          return handlerResult;
+        }
+      }
     }
     this._active = EMPTY_HANDLERS;
-    this._id = -1;
-    this._state = ApcState.START;
+    this._ident = 0;
   }
 }
 

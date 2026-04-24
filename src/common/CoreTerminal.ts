@@ -243,8 +243,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   /** Add handler for APC escape sequence. See xterm.d.ts for details. */
-  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
-    return this._inputHandler.registerApcHandler(ident, callback);
+  public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerApcHandler(id, callback);
   }
 
   protected _setup(): void {
