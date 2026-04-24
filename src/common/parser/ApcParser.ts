@@ -4,7 +4,7 @@
  */
 
 import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, ISubParserStackState } from 'common/parser/Types';
-import { ApcState, ParserConstants } from 'common/parser/Constants';
+import { ParserConstants } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 

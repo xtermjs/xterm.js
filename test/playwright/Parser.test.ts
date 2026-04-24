@@ -334,7 +334,7 @@ test.describe('Parser Integration Tests', () => {
             window.customApcHandlerCallStack!.push(['F', data]);
             return true;
           }),
-          term.parser.registerApcHandler({ final: 'X' }, data => { 
+          term.parser.registerApcHandler({ final: 'X' }, data => {
             window.customApcHandlerCallStack!.push(['X', data]);
             return true;
           })
