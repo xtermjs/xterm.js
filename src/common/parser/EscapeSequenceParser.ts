@@ -145,6 +145,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.addMany(r(0x30, 0x7f), ParserState.APC_ENTRY, ParserAction.APC_START, ParserState.APC_PASSTHROUGH);
   table.addMany(r(0x30, 0x7f), ParserState.APC_INTERMEDIATE, ParserAction.APC_START, ParserState.APC_PASSTHROUGH);
   table.addMany(EXECUTABLES, ParserState.APC_INTERMEDIATE, ParserAction.IGNORE, ParserState.APC_INTERMEDIATE);
+  table.addMany(r(0x20, 0x30), ParserState.APC_INTERMEDIATE, ParserAction.COLLECT, ParserState.APC_INTERMEDIATE);
   table.add(0x7f, ParserState.APC_INTERMEDIATE, ParserAction.IGNORE, ParserState.APC_INTERMEDIATE);
   table.addMany(PRINTABLES, ParserState.APC_PASSTHROUGH, ParserAction.APC_PUT, ParserState.APC_PASSTHROUGH);
   table.addMany(EXECUTABLES, ParserState.APC_PASSTHROUGH, ParserAction.IGNORE, ParserState.APC_PASSTHROUGH);
