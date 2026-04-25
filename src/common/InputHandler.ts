@@ -211,6 +211,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
       this._logService.debug('Unknown DCS code: ', { identifier: this._parser.identToString(ident), action, payload });
     });
+    this._parser.setApcHandlerFallback((ident, action, payload) => {
+      this._logService.debug('Unknown APC code: ', { identifier: this._parser.identToString(ident), action, payload });
+    });
 
     /**
      * print handler
