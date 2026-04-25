@@ -2065,9 +2065,9 @@ async function throwsAsync(fn: () => Promise<any>, message?: string | undefined)
 }
 
 describe('EscapeSequenceParser - async', () => {
-  // sequences: SGR 1;31 | hello SP | ESC %G | wor | ESC E | ld! | SGR 0 | EXE \r\n | $> | DCS 1;2 a [xyz] ST | OSC 1;foo=bar ST | FIN
-  // needed handlers: CSI m, PRINT, ESC %G, ESC E, EXE \r, EXE \n, OSC 1
-  const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1bP1;2axyz\x1b\\\x1b]1;foo=bar\x1b\\FIN';
+  // sequences: SGR 1;31 | hello SP | ESC %G | wor | ESC E | ld! | SGR 0 | EXE \r\n | $> | DCS 1;2 a [xyz] ST | OSC 1;foo=bar ST | APC X abc ST | FIN
+  // needed handlers: CSI m, PRINT, ESC %G, ESC E, EXE \r, EXE \n, OSC 1, APC X
+  const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1bP1;2axyz\x1b\\\x1b]1;foo=bar\x1b\\\x1b_Xabc\x1b\\FIN';
   let RESULT: any[];
   let parser: TestEscapeSequenceParser;
   const callstack: any[] = [];
@@ -2089,6 +2089,7 @@ describe('EscapeSequenceParser - async', () => {
       ['PRINT', '$>'],
       ['DCS a', ['xyz', [1, 2]]],
       ['OSC 1', 'foo=bar'],
+      ['APC X', 'abc'],
       ['PRINT', 'FIN']
     ];
     parser = new TestEscapeSequenceParser();
@@ -2112,6 +2113,7 @@ describe('EscapeSequenceParser - async', () => {
       parser.setExecuteHandler('\n', () => { callstack.push(['EXE \n']); return true; });
       parser.registerOscHandler(1, new OscHandler(data => { callstack.push(['OSC 1', data]); return true; }));
       parser.registerDcsHandler({ final: 'a' }, new DcsHandler((data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true; }));
+      parser.registerApcHandler({ final: 'X' }, new ApcHandler(data => { callstack.push(['APC X', data]); return true; }));
     });
 
     it('sync handlers keep being parsed in sync mode', () => {
@@ -2147,6 +2149,7 @@ describe('EscapeSequenceParser - async', () => {
       parser.setExecuteHandler('\n', () => { callstack.push(['EXE \n']); return true; });
       parser.registerOscHandler(1, new OscHandler(async data => { callstack.push(['OSC 1', data]); return true; }));
       parser.registerDcsHandler({ final: 'a' }, new DcsHandler(async (data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true; }));
+      parser.registerApcHandler({ final: 'X' }, new ApcHandler(async data => { callstack.push(['APC X', data]); return true; }));
     });
 
     it('sync parse call does not work anymore', () => {
@@ -2183,7 +2186,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('correct result on chunked awaited parse calls', async () => {
@@ -2210,6 +2214,7 @@ describe('EscapeSequenceParser - async', () => {
         ['PRINT', '>'],
         ['DCS a', ['xyz', [1, 2]]],
         ['OSC 1', 'foo=bar'],
+        ['APC X', 'abc'],
         ['PRINT', 'F'],
         ['PRINT', 'I'],
         ['PRINT', 'N']
@@ -2228,7 +2233,8 @@ describe('EscapeSequenceParser - async', () => {
         [0, ParserStackType.ESC, 0],
         [0, ParserStackType.CSI, 0],
         [0, ParserStackType.DCS, 0],
-        [0, ParserStackType.OSC, 0]
+        [0, ParserStackType.OSC, 0],
+        [0, ParserStackType.APC, 0],
       ]);
     });
     it('multiple async SGR handlers', async () => {
@@ -2248,7 +2254,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 1],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2261,7 +2268,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -2279,7 +2287,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 1],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2292,7 +2301,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('multiple async ESC handlers', async () => {
@@ -2310,7 +2320,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2323,7 +2334,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -2340,7 +2352,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 1],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2353,7 +2366,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('sync/async SGR mixed', async () => {
@@ -2378,7 +2392,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 2],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // dispose SGR2 (sync one)
@@ -2399,7 +2414,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 1],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // dispose SGR3 (async one)
@@ -2412,7 +2428,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('multiple async OSC handlers', async () => {
@@ -2430,7 +2447,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
         [54, ParserStackType.OSC, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2443,7 +2461,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -2460,7 +2479,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2473,7 +2493,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
     });
@@ -2492,7 +2513,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2505,7 +2527,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -2522,7 +2545,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2535,7 +2559,74 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+    });
+    it('multiple async APC handlers', async () => {
+      // register with fallback
+      const APC2 = parser.registerApcHandler({ final: 'X' }, new ApcHandler(async data => { callstack.push(['#2 APC X', data]); return false; }));
+      await parseP(parser, INPUT);
+      for (let i = 0; i < callstack.length; ++i) {
+        const entry = callstack[i];
+        if (entry[0] === '2# APC X') assert.equal(callstack[i + 1][0], 'APC a', 'Should fallback to original handler');
+      }
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+      // after dispose we should be back to RESULT
+      APC2.dispose();
+      await parseP(parser, INPUT);
+      assert.deepEqual(callstack, RESULT, 'Should not call custom handler');
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+
+      // register without fallback
+      const APC22 = parser.registerApcHandler({ final: 'X' }, new ApcHandler(async data => { callstack.push(['#2 APC X', data]); return true; }));
+      await parseP(parser, INPUT);
+      for (let i = 0; i < callstack.length; ++i) {
+        const entry = callstack[i];
+        if (entry[0] === '2# APC X') assert.notEqual(callstack[i + 1][0], 'APC X', 'Should fallback to original handler');
+      }
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+      // after dispose we should be back to RESULT
+      APC22.dispose();
+      await parseP(parser, INPUT);
+      assert.deepEqual(callstack, RESULT, 'Should not call custom handler');
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
     });
