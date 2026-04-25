@@ -12,6 +12,7 @@ import { Params } from 'common/parser/Params';
 import { OscHandler } from 'common/parser/OscParser';
 import { IDisposable } from 'common/Types';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { ApcHandler } from 'common/parser/ApcParser';
 
 
 function r(a: number, b: number): string[] {
@@ -1399,6 +1400,7 @@ describe('EscapeSequenceParser', () => {
     const exe: string[] = [];
     const osc: [number, string][] = [];
     const dcs: ([string] | [string, string] | [string, string, ParamsArray, number])[] = [];
+    const apc: [string, string][] = [];
     function clearAccu(): void {
       print = '';
       esc.length = 0;
@@ -1406,6 +1408,7 @@ describe('EscapeSequenceParser', () => {
       exe.length = 0;
       osc.length = 0;
       dcs.length = 0;
+      apc.length = 0;
     }
     beforeEach(() => {
       parser2 = new TestEscapeSequenceParser();
@@ -1763,6 +1766,95 @@ describe('EscapeSequenceParser', () => {
         assert.deepEqual(dcsCustom, [['A', [1, 2, 3], 'abc']]);
       });
     });
+    it('APC handler', () => {
+      parser2.registerApcHandler({ intermediates: '+', final: 'p' }, {
+        start: function (): void {
+          apc.push(['start', '']);
+        },
+        put: function (data: Uint32Array, start: number, end: number): void {
+          let s = '';
+          for (let i = start; i < end; ++i) {
+            s += stringFromCodePoint(data[i]);
+          }
+          apc.push(['put', s]);
+        },
+        end: function (success): boolean {
+          apc.push(['end', success ? '1' : '0']);
+          return true;
+        }
+      });
+      parse(parser2, '\x1b_+pabc');
+      parse(parser2, ';de\x9c');
+      assert.deepEqual(apc, [
+        ['start', ''],
+        ['put', 'abc'], ['put', ';de'],
+        ['end', '1']
+      ]);
+      parser2.clearApcHandler({ intermediates: '+', final: 'p' });
+      parser2.clearApcHandler({ intermediates: '+', final: 'p' }); // should not throw
+      clearAccu();
+      parse(parser2, '\x1b_+pabc');
+      parse(parser2, ';de\x9c');
+      assert.deepEqual(apc, []);
+    });
+    describe('APC custom handlers', () => {
+      const APC_INPUT = '\x1b_+pabc\x1b\\';
+      it('Prevent fallback', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['B', 'abc']]);
+      });
+      it('Allow fallback', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return false; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['B', 'abc'], ['A', 'abc']]);
+      });
+      it('Multiple custom handlers fallback once', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['C', data]); return false; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['C', 'abc'], ['B', 'abc']]);
+      });
+      it('Multiple custom handlers no fallback', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['C', data]); return true; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['C', 'abc']]);
+      });
+      it('Execution order should go from latest handler down to the original', () => {
+        const order: number[] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(() => { order.push(1); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(() => { order.push(2); return false; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(() => { order.push(3); return false; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(order, [3, 2, 1]);
+      });
+      it('Dispose should work', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        const dispo = parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        dispo.dispose();
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['A', 'abc']]);
+      });
+      it('Should not corrupt the parser when dispose is called twice', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        const dispo = parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        dispo.dispose();
+        dispo.dispose();
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['A', 'abc']]);
+      });
+    });
     it('ERROR handler', () => {
       let errorState: IParsingState | null = null;
       parser2.setErrorHandler(function (state: IParsingState): IParsingState {
@@ -1814,15 +1906,22 @@ describe('EscapeSequenceParser', () => {
         assert.throws(() => { parser.identifier({ final: '\x7f' }); }, 'final must be in range 64 .. 126');
         assert.throws(() => { parser.identifier({ final: 'zz' }); }, 'final must be a single byte');
       });
-      it('final ESC range 0x30 .. 0x7e, one byte', () => {
+      it('final ESC + APC range 0x30 .. 0x7e, one byte', () => {
         for (let i = 0x30; i <= 0x7e; ++i) {
           const final = String.fromCharCode(i);
           let handler: IDisposable | undefined;
           assert.doesNotThrow(() => { handler = parser.registerEscHandler({ final }, () => true); }, 'final must be in range 48 .. 126');
           if (handler) handler.dispose();
+          assert.doesNotThrow(
+            () => { handler = parser.registerApcHandler({ final }, {start: () => {}, put: ()=>{}, end: ()=>true}); },
+            'final must be in range 48 .. 126'
+          );
+          if (handler) handler.dispose();
         }
         assert.throws(() => { parser.registerEscHandler({ final: '\x2f' }, () => true); }, 'final must be in range 48 .. 126');
         assert.throws(() => { parser.registerEscHandler({ final: '\x7f' }, () => true); }, 'final must be in range 48 .. 126');
+        assert.throws(() => { parser.registerApcHandler({ final: '\x2f' }, {start: () => {}, put: ()=>{}, end: ()=>true}); }, 'final must be in range 48 .. 126');
+        assert.throws(() => { parser.registerApcHandler({ final: '\x7f' }, {start: () => {}, put: ()=>{}, end: ()=>true}); }, 'final must be in range 48 .. 126');
       });
       it('id calculation - should stacking prefix -> intermediate -> final', () => {
         assert.equal(parser.identToString(parser.identifier({ final: 'z' })), 'z');
@@ -1891,6 +1990,25 @@ describe('EscapeSequenceParser', () => {
             ['?z', [1, 0], 'AB'],
             ['?!z', [1, 0], 'AB'],
             ['?!!z', [1, 0], 'AB']
+          ]
+        );
+      });
+      it('APC', () => {
+        const callstack: any[] = [];
+        const h1 = parser.registerApcHandler({ final: 'z' }, new ApcHandler(data => { callstack.push(['z', data]); return true; }));
+        const h2 = parser.registerApcHandler({ intermediates: '!', final: 'z' }, new ApcHandler(data => { callstack.push(['!z', data]); return true; }));
+        const h3 = parser.registerApcHandler({ intermediates: '!!', final: 'z' }, new ApcHandler(data => { callstack.push(['!!z', data]); return true; }));
+        parse(parser, '\x1b_zAB\x1b\\\x1b_!zAB\x1b\\\x1b_!!zAB\x1b\\');
+        h1.dispose();
+        h2.dispose();
+        h3.dispose();
+        parse(parser, '\x1b_zAB\x1b\\\x1b_!zAB\x1b\\\x1b_!!zAB\x1b\\');
+        assert.deepEqual(
+          callstack,
+          [
+            ['z', 'AB'],
+            ['!z', 'AB'],
+            ['!!z', 'AB'],
           ]
         );
       });
