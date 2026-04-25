@@ -30,7 +30,7 @@ import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
-  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
+  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = this._register(new MutableDisposable());
   private _textBlinkStateManager: TextBlinkStateManager;
   private _charAtlasDisposable = this._register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;

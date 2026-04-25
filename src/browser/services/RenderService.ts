@@ -68,7 +68,7 @@ export class RenderService extends Disposable implements IRenderService {
   ) {
     super();
 
-    this._pausedResizeTask = new DebouncedIdleTask(this._logService);
+    this._pausedResizeTask = this._register(new DebouncedIdleTask(this._logService));
 
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), this._coreBrowserService);
     this._register(this._renderDebouncer);

@@ -130,6 +130,19 @@ export class Params implements IParams {
   }
 
   /**
+   * Reset and add 0 as first param (ZDM).
+   */
+  public resetZdm(): void {
+    this.length = 1;
+    this._subParamsLength = 0;
+    this._rejectDigits = false;
+    this._rejectSubDigits = false;
+    this._digitIsSub = false;
+    this._subParamsIdx[0] = 0;
+    this.params[0] = 0;
+  }
+
+  /**
    * Add a parameter value.
    * `Params` only stores up to `maxLength` parameters, any later
    * parameter will be ignored.

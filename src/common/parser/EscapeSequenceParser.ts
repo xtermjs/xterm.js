@@ -247,6 +247,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   // handler lookup containers
   protected _printHandler: PrintHandlerType;
   protected _executeHandlers: { [flag: number]: ExecuteHandlerType };
+  // fast path for EXE bytes < 0x18
+  protected _executeHandlersArr: (ExecuteHandlerType | undefined)[];
   protected _csiHandlers: IHandlerCollection<CsiHandlerType>;
   protected _escHandlers: IHandlerCollection<EscHandlerType>;
   protected readonly _oscParser: IOscParser;
@@ -290,11 +292,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandlerFb = (state: IParsingState): IParsingState => state;
     this._printHandler = this._printHandlerFb;
     this._executeHandlers = Object.create(null);
+    this._executeHandlersArr = new Array(0x18).fill(undefined);
     this._csiHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
     this._register(toDisposable(() => {
       this._csiHandlers = Object.create(null);
       this._executeHandlers = Object.create(null);
+      this._executeHandlersArr = new Array(0x18).fill(undefined);
       this._escHandlers = Object.create(null);
     }));
     this._oscParser = this._register(new OscParser());
@@ -381,10 +385,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   public setExecuteHandler(flag: string, handler: ExecuteHandlerType): void {
-    this._executeHandlers[flag.charCodeAt(0)] = handler;
+    const code = flag.charCodeAt(0);
+    this._executeHandlers[code] = handler;
+    if (code < 0x18) this._executeHandlersArr[code] = handler;
   }
   public clearExecuteHandler(flag: string): void {
-    if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
+    const code = flag.charCodeAt(0);
+    if (this._executeHandlers[code]) delete this._executeHandlers[code];
+    if (code < 0x18) this._executeHandlersArr[code] = undefined;
   }
   public setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void {
     this._executeHandlerFb = handler;
@@ -462,8 +470,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._oscParser.reset();
     this._dcsParser.reset();
     this._apcParser.reset();
-    this._params.reset();
-    this._params.addParam(0); // ZDM
+    this._params.resetZdm();
     this._collect = 0;
     this.precedingJoinState = 0;
     // abort pending continuation from async handler
@@ -505,6 +512,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * - DCS_PARAM:PARAM
    * - OSC_STRING:OSC_PUT
    * - DCS_PASSTHROUGH:DCS_PUT
+   *
+   * Additionally the following fast paths exist before the table lookup:
+   * - EXE bytes < 0x18 in non-payload states (avoids table lookup entirely)
+   * - 7-bit CSI sequences without intermediates (ESC [ params final)
    *
    * Note on asynchronous handler support:
    * Any handler returning a promise will be treated as asynchronous.
@@ -608,8 +619,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-            this._params.reset();
-            this._params.addParam(0); // ZDM
+            this._params.resetZdm();
             this._collect = 0;
             break;
           case ParserStackType.OSC:
@@ -619,8 +629,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-            this._params.reset();
-            this._params.addParam(0); // ZDM
+            this._params.resetZdm();
             this._collect = 0;
             break;
           case ParserStackType.APC:
@@ -630,8 +639,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               return handlerResult;
             }
             if (code === 0x1b) this._parseStack.transition |= ParserState.ESCAPE;
-            this._params.reset();
-            this._params.addParam(0); // ZDM
+            this._params.resetZdm();
             this._collect = 0;
             break;
         }
@@ -649,34 +657,87 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     for (let i = start; i < length; ++i) {
       code = data[i];
 
+      // EXE fast-path: common control bytes (0x00-0x17) in non-payload states
+      if (code < 0x18 && this.currentState <= ParserState.CSI_IGNORE) {
+        (this._executeHandlersArr[code] ?? this._executeHandlerFb)(code);
+        this.precedingJoinState = 0;
+        continue;
+      }
+
+      // CSI fast-path: collapse ESC [ into a single entry, parse params+final in a tight loop
+      if (code === 0x1b
+        && this.currentState < ParserState.OSC_STRING
+        && i + 2 < length && data[i + 1] === 0x5b
+      ) {
+        this._params.resetZdm();
+        this._collect = 0;
+        let k = i + 2;
+        let ch = data[k];
+        if (ch >= 0x3c && ch <= 0x3f) {
+          this._collect = ch;
+          k++;
+        }
+        let csiDone = false;
+        for (; k < length; k++) {
+          ch = data[k];
+          if (ch >= 0x30 && ch <= 0x39) {
+            this._params.addDigit(ch - 48);
+          } else if (ch === 0x3b) {
+            this._params.addParam(0);
+          } else if (ch === 0x3a) {
+            this._params.addSubParam(-1);
+          } else if (ch >= 0x40 && ch <= 0x7e) {
+            const handlers = this._csiHandlers[this._collect << 8 | ch];
+            let j = handlers ? handlers.length - 1 : -1;
+            for (; j >= 0; j--) {
+              handlerResult = handlers[j](this._params);
+              if (handlerResult === true) {
+                break;
+              } else if (handlerResult instanceof Promise) {
+                transition = ParserAction.CSI_DISPATCH << TableAccess.TRANSITION_ACTION_SHIFT | ParserState.GROUND;
+                this._preserveStack(ParserStackType.CSI, handlers, j, transition, k);
+                return handlerResult;
+              }
+            }
+            if (j < 0) {
+              this._csiHandlerFb(this._collect << 8 | ch, this._params);
+            }
+            this.precedingJoinState = 0;
+            i = k;
+            this.currentState = ParserState.GROUND;
+            csiDone = true;
+            break;
+          } else {
+            break;
+          }
+        }
+        if (!csiDone) {
+          i = k - 1;
+          this.currentState = ParserState.CSI_PARAM;
+        }
+        continue;
+      }
+
       // normal transition & action lookup
       transition = this._transitions.table[this.currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
-          // read ahead with loop unrolling
           // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded
-          for (let j = i + 1; ; ++j) {
-            if (j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              this._printHandler(data, i, j);
-              i = j - 1;
-              break;
-            }
-            if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              this._printHandler(data, i, j);
-              i = j - 1;
-              break;
-            }
-            if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              this._printHandler(data, i, j);
-              i = j - 1;
-              break;
-            }
-            if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
-              this._printHandler(data, i, j);
-              i = j - 1;
-              break;
+          let c = i;
+          const l4 = length - 4;
+          while (c < l4
+            && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
+          ) {}
+          if (c >= l4) {
+            while (c < length && data[c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)) {
+              c++;
             }
           }
+          this._printHandler(data, i, c);
+          i = c - 1;
           break;
         case ParserAction.EXECUTE:
           if (this._executeHandlers[code]) this._executeHandlers[code]();
@@ -758,8 +819,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this.precedingJoinState = 0;
           break;
         case ParserAction.CLEAR:
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           break;
         case ParserAction.DCS_HOOK:
@@ -783,8 +843,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           this.precedingJoinState = 0;
           break;
@@ -808,8 +867,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           this.precedingJoinState = 0;
           break;
@@ -833,8 +891,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             return handlerResult;
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
-          this._params.reset();
-          this._params.addParam(0); // ZDM
+          this._params.resetZdm();
           this._collect = 0;
           this.precedingJoinState = 0;
           break;
