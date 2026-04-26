@@ -13,6 +13,24 @@ import { DcsParser } from 'common/parser/DcsParser';
 import { ApcParser } from 'common/parser/ApcParser';
 
 /**
+ * VT commands done by the parser
+ */
+// @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
+// @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
+// @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
+// @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
+// @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
+// @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
+// @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
+// @vt: #Y   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
+// @vt: #Y   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
+// @vt: #Y   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
+// @vt: #Y   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
+// @vt: #Y   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
+// @vt: #Y   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
+// @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
+
+/**
  * Table values are generated like this:
  *    index:  currentState << TableValue.INDEX_STATE_SHIFT | charCode
  *    value:  action << TableValue.TRANSITION_ACTION_SHIFT | nextState
