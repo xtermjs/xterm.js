@@ -34,7 +34,7 @@ import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
  *
  * @vt: #E[Supported via @xterm/addon-image.] OSC 1337  "iTerm2 Commands"   "OSC 1337 ; Pt BEL"  "Custom iTerm2 commands."
  *
- * Only the inline image protocol (IIP) is supported with the following limitations:
+ * Only the inline image protocol (IIP) is supported by the addon @xterm/addon-image with the following limitations:
  * - sequence:
  *   - format: `OSC 1337 ; File=inline=1 ; size=<unencoded size> ; ... : <base64 payload> BEL`
  *   - size param must be set and payload may not exceed CEIL(size * 4 / 3)
@@ -51,7 +51,8 @@ import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
  *
  * @vt: #E[Supported via @xterm/addon-image.] APC KITTY_GRAPHICS "Kitty Graphics"  "APC G Pt ST"  "Kitty Graphics Protocol."
  *
- * **Note:** While basic image output already works, this is still work in progress.
+ * Kitty graphics support is provided by the addon @xterm/addon-image.
+ * Note that while basic image output already works, this is still work in progress.
  */
 
 // default values of addon ctor options
