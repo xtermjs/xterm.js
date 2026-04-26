@@ -22,14 +22,14 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   pixelLimit: 16777216, // limit to 4096 * 4096 pixels
   sixelSupport: true,
   sixelScrolling: true,
-  sixelPaletteLimit: 256,
-  sixelSizeLimit: 25000000,
+  sixelPaletteLimit: 4096,
+  sixelSizeLimit: 33554432,
   storageLimit: 128,
   showPlaceholder: true,
   iipSupport: true,
-  iipSizeLimit: 20000000,
+  iipSizeLimit: 33554432,
   kittySupport: true,
-  kittySizeLimit: 20000000
+  kittySizeLimit: 33554432
 };
 
 // max palette size supported by the sixel lib (compile time setting)
