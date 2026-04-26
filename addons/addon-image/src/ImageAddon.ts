@@ -38,7 +38,8 @@ import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
  * - sequence:
  *   - format: `OSC 1337 ; File=inline=1 ; size=<unencoded size> ; ... : <base64 payload> BEL`
  *   - size param must be set and payload may not exceed CEIL(size * 4 / 3)
- *   - strict base64 handling as of RFC4648 §4 (standard alphabet, optional padding, no separator bytes allowed)
+ *   - strict base64 handling as of RFC4648 §4 (standard alphabet, optional padding,
+ *     no separator bytes allowed)
  *   - supported params: size, name, width, height, preserveAspectRatio
  * - image formats: PNG, JPEG and GIF
  * - no animation support (renders first image of a GIF)
