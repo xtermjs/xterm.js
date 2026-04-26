@@ -31,27 +31,8 @@ import { XTERM_VERSION } from 'common/Version';
 const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
- * VT commands done by the parser - FIXME: move this to the parser?
- */
-// @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
-// @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
-// @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
-// @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
-// @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
-// @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
-// @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
-// @vt: #Y   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
-// @vt: #Y   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
-// @vt: #Y   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
-// @vt: #Y   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
-// @vt: #Y   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
-// @vt: #Y   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
-// @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
-
-/**
  * Document xterm VT features here that are currently unsupported
  */
-// @vt: #E[Supported via @xterm/addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
 // @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
 // @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
 // @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
