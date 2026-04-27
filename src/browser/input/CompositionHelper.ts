@@ -160,7 +160,8 @@ export class CompositionHelper {
   }
 
   /**
-   * Handles keyup for deferred keyCode=229 processing.
+   * Handles keyup for deferred keyCode=229 processing. Some IMEs do not expose the final
+   * non-composition character on keydown, and keyup serves as a reliable fallback.
    */
   public keyup(_ev: KeyboardEvent): void {
     this._flushPending229('keyup');
