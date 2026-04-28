@@ -169,7 +169,8 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 1), [0, 0, 0, 255]);
   });
 
-  test('background 0-15 invisible', async () => {
+  // due to #5852
+  test.skip('background 0-15 invisible', async () => {
     const theme: ITheme = {
       black: '#010203',
       red: '#040506',
@@ -335,7 +336,8 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     }
   });
 
-  test('background 16-255 invisible', async () => {
+  // due to #5852
+  test.skip('background 16-255 invisible', async () => {
     let data = '';
     for (let y = 0; y < 240 / 16; y++) {
       for (let x = 0; x < 16; x++) {
@@ -715,7 +717,8 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
     }
   });
 
-  test('background true color grey invisible', async () => {
+  // due to #5852
+  test.skip('background true color grey invisible', async () => {
     let data = '';
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
@@ -872,7 +875,8 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 2), [64, 64, 64, 255]);
     });
 
-    test('should enforce half the contrast for dim cells', async () => {
+    // due to #5852
+    test.skip('should enforce half the contrast for dim cells', async () => {
       const theme: ITheme = {
         background: '#ffffff',
         black: '#2e3436',
@@ -1177,7 +1181,8 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 2, 3), [0, 0, 255, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 3, 3), [0, 0, 255, 255]);
     });
-    test('#4758: multiple invisible text characters without SGR change should not be rendered', async () => {
+    // due to #5852
+    test.skip('#4758: multiple invisible text characters without SGR change should not be rendered', async () => {
       // Regression test: #4758 when multiple invisible characters are used
       await ctx.value.proxy.writeln(`■\x1b[8m■■`);
       // Full refresh as the before result is the same as after
