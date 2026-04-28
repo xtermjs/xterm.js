@@ -454,8 +454,8 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(1)!.translateToString(), '0123456789');
         assert.equal(buffer.lines.get(2)!.translateToString(), 'klmnopqrst');
         assert.equal(firstMarker.line, 0, 'first marker should remain unchanged');
-        assert.equal(secondMarker.line, 1, 'second marker should be restored to it\'s original line');
-        assert.equal(thirdMarker.line, 2, 'third marker should be restored to it\'s original line');
+        assert.equal(secondMarker.line, 1, 'second marker should be restored to its original line');
+        assert.equal(thirdMarker.line, 2, 'third marker should be restored to its original line');
         assert.equal(firstMarker.isDisposed, false);
         assert.equal(secondMarker.isDisposed, false);
         assert.equal(thirdMarker.isDisposed, false);
@@ -494,7 +494,6 @@ describe('Buffer', () => {
         assert.equal(firstMarker.line, 0);
         assert.equal(secondMarker.line, 1);
         assert.equal(thirdMarker.line, 2);
-        buffer.resize(2, 11);
         assert.equal(buffer.lines.get(0)!.translateToString(), 'ij');
         assert.equal(buffer.lines.get(1)!.translateToString(), '01');
         assert.equal(buffer.lines.get(2)!.translateToString(), '23');

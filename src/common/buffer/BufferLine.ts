@@ -6,6 +6,7 @@
 import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
+import { Marker } from 'common/buffer/Marker';
 import { Attributes, BgFlags, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 
@@ -24,14 +25,14 @@ const CELL_SIZE = 3;
 /** Column count within current visible BufferLine(row).
  * The left-most column is column 0.
  */
-type BufferColumn = number;
+export type BufferColumn = number;
 
 /** Column count within current LogicalLine.
  * If the display is 80 columns wide, then LineColumn of the left-most
  * character of the first wrapped line would normally be 80.
  * (It might be 79 if the character at column 79 is double-width.)
  */
-type LogicalColumn = number;
+export type LogicalColumn = number;
 
 /**
  * Cell member indices.
@@ -68,7 +69,10 @@ export class LogicalLine {
    * @internal
    */
   public _combined: {[index: LogicalColumn]: string} = {};
-
+  /**
+   * @internal
+   */
+  public _firstMarker: Marker | undefined;
   /**
    * @internal
    */
@@ -856,10 +860,18 @@ export class BufferLine implements IBufferLine {
       }
     }
     */
-
+    let prevLastMarker;
+    for (let m = logicalLine._firstMarker; m; m = m._nextMarker) {
+      prevLastMarker = m;
+    }
+    let m = oldLogical._firstMarker;
+    if (prevLastMarker) prevLastMarker._nextMarker = m;
+    else logicalLine._firstMarker = m;
+    for (; m; m = m._nextMarker) {
+      m._startColumn += column;
+    }
+    oldLogical._firstMarker = undefined;
     logicalLine.length = column + oldLogical.length;
-    if ((globalThis as any).xyz) console.log('- llen='+column+'+'+oldLogical.length);
-    logicalLine.backgroundColor = oldLogical.backgroundColor;
     previousLine.nextBufferLine = this;
     for (let line: BufferLine | undefined = this; line; line = line.nextBufferLine) {
       line.startColumn += column;
@@ -882,6 +894,22 @@ export class BufferLine implements IBufferLine {
     for (let nextRow: BufferLine | undefined = this; nextRow; nextRow = nextRow.nextBufferLine) {
       nextRow.startColumn -= oldStartColumn;
       nextRow.logicalLine = newLogical;
+    }
+    let prevMarker: Marker | undefined; // in oldLine marker list
+    let newMarkerLast: Marker | undefined; // in newLogical marker list
+    for (let m = oldLine._firstMarker; m; ) {
+      const oldNext = m._nextMarker;
+      if (m._startColumn >= oldStartColumn) { // move to new line
+        m._startColumn -= oldStartColumn;
+        if (prevMarker) { prevMarker._nextMarker = oldNext; }
+        else { oldLine._firstMarker = oldNext; }
+        m._nextMarker = undefined;
+        if (newMarkerLast) { newMarkerLast._nextMarker = m; }
+        else { newLogical._firstMarker = m; }
+        newMarkerLast = m;
+      }
+      prevMarker = m;
+      m = oldNext;
     }
     oldLine.length = oldStartColumn;
     oldLine.trimLength();

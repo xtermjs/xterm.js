@@ -253,10 +253,17 @@ export interface IBufferLine {
 }
 
 export interface IMarker extends IDisposable {
+  /**
+   * @deprecated
+   */
   readonly id: number;
   readonly isDisposed: boolean;
+  /**
+   * @deprecated
+   */
   readonly line: number;
   onDispose: IEvent<void>;
+  payload?: IDisposable;
 }
 export interface IModes {
   insertMode: boolean;

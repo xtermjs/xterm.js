@@ -8,7 +8,8 @@ import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
-import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
+import { BufferLine } from 'common/buffer/BufferLine';
+import { IBufferLine, IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/Event';
 
 // Work variables to avoid garbage collection
@@ -89,7 +90,28 @@ export class DecorationService extends Disposable implements IDecorationService 
       }
     }
   }
+  public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, bline: BufferLine): void {
+    const lline = bline.logicalLine;
+    // FIXME needs some work to handle wrapped lines
+    /*
+    let wrapOffset = 0;
+    for (let line = lline.firstBufferLine; line; line = line.nextBufferLine) {
+      if (line === bline) { break; }
+      wrapOffset++;
+    }
+    */
+    for (let marker = lline._firstMarker; marker; marker = marker._nextMarker) {
+      const d = marker.payload;
+      if (d instanceof Decoration) {
+        const xmin = d.options.x ?? 0;
+        const xmax = xmin + (d.options.width ?? 1);
+        if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
+          callback(d);
+        }
+      }
+    }
 
+  }
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
     for (const d of this._decorations.values()) {
       $ymin = d.marker.line;
@@ -144,6 +166,7 @@ class Decoration extends DisposableStore implements IInternalDecoration {
   ) {
     super();
     this.marker = options.marker;
+    this.marker.payload = this;
     if (this.options.overviewRulerOptions && !this.options.overviewRulerOptions.position) {
       this.options.overviewRulerOptions.position = 'full';
     }

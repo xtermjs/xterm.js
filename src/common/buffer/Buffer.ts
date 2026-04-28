@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2017 The xterm.js authors. All rsavedights reserved.
  * @license MIT
  */
 
@@ -42,7 +42,24 @@ export class Buffer implements IBuffer {
   public savedGlevel: number = 0;
   public savedOriginMode: boolean = false;
   public savedWraparoundMode: boolean = true;
-  public markers: Marker[] = [];
+  /**
+   * This is an expensive operation.
+   * @deprecated
+   */
+  public get markers(): Marker[] {
+    const mm: Marker[] = [];
+    const nlines = this.lines.length;
+    for (let i = 0; i < nlines; i++) {
+      const bline = this.lines.get(i) as BufferLine;
+      const lline = bline.logicalLine;
+      if (lline.firstBufferLine === bline) {
+        for (let m = lline._firstMarker; m; m = m._nextMarker) {
+          mm.push(m);
+        }
+      }
+    }
+    return mm;
+  }
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
@@ -542,16 +559,13 @@ export class Buffer implements IBuffer {
         }
       }
 
-      // Update markers
-      let insertCountEmitted = 0;
-      for (let i = insertEvents.length - 1; i >= 0; i--) {
-        insertEvents[i].index += insertCountEmitted;
-        this.lines.onInsertEmitter.fire(insertEvents[i]);
-        insertCountEmitted += insertEvents[i].amount;
-      }
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
-        this.lines.onTrimEmitter.fire(amountToTrim);
+        /*
+        for (let i = 0; i < amountToTrim; i++) {
+          this.clearMarkers(i);
+        }
+        */
       }
     }
   }
@@ -633,10 +647,13 @@ export class Buffer implements IBuffer {
    */
   public clearMarkers(y: number): void {
     this._isClearing = true;
-    for (let i = 0; i < this.markers.length; i++) {
-      if (this.markers[i].line === y) {
-        this.markers[i].dispose();
-        this.markers.splice(i--, 1);
+    const bline = this.lines.get(y) as BufferLine;
+    const startColumn = bline.startColumn;
+    const endColumn = bline.nextBufferLine ? bline.nextBufferLine.startColumn : Infinity;
+    const lline = bline.logicalLine;
+    for (let m = lline._firstMarker; m; m = m._nextMarker) {
+      if (m._startColumn >= startColumn && m._startColumn < endColumn) {
+        m.dispose();
       }
     }
     this._isClearing = false;
@@ -644,49 +661,30 @@ export class Buffer implements IBuffer {
 
   /**
    * Clears markers on all lines
+   * Must be called before removing lines from Buffer.
+   * Only used for the alt buffer, which should be small.
    */
   public clearAllMarkers(): void {
     this._isClearing = true;
-    for (let i = 0; i < this.markers.length; i++) {
-      this.markers[i].dispose();
+    const nlines = this.lines.length;
+    for (let i = 0; i < nlines; i++) {
+      this.clearMarkers(i);
     }
-    this.markers.length = 0;
     this._isClearing = false;
   }
 
-  public addMarker(y: number): Marker {
-    const marker = new Marker(y);
-    this.markers.push(marker);
-    marker.register(this.lines.onTrim(amount => {
-      marker.line -= amount;
-      // The marker should be disposed when the line is trimmed from the buffer
-      if (marker.line < 0) {
-        marker.dispose();
-      }
-    }));
-    marker.register(this.lines.onInsert(event => {
-      if (marker.line >= event.index) {
-        marker.line += event.amount;
-      }
-    }));
-    marker.register(this.lines.onDelete(event => {
-      // Delete the marker if it's within the range
-      if (marker.line >= event.index && marker.line < event.index + event.amount) {
-        marker.dispose();
-      }
-
-      // Shift the marker if it's after the deleted range
-      if (marker.line > event.index) {
-        marker.line -= event.amount;
-      }
-    }));
-    marker.register(marker.onDispose(() => this._removeMarker(marker)));
-    return marker;
+  public addMarker(y: number, x?: number, marker?: Marker): Marker {
+    const bline = this.lines.get(y) as BufferLine;
+    const lline = bline.logicalLine;
+    const m = marker ?? new Marker();
+    m.addToLine(this, lline, x ?? bline.startColumn);
+    m.register(m.onDispose(() => this._removeMarker(m)));
+    return m;
   }
 
   private _removeMarker(marker: Marker): void {
     if (!this._isClearing) {
-      this.markers.splice(this.markers.indexOf(marker), 1);
+      marker.removeMarker();
     }
   }
 }
