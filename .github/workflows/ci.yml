@@ -207,31 +207,31 @@ jobs:
     - name: Build demo server
       run: npm run esbuild-demo-server
     - name: Integration tests (core) # Tests use 50% workers to reduce flakiness
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=core
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=core
     - name: Integration tests (addon-attach)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-attach
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-attach
     - name: Integration tests (addon-clipboard)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-clipboard
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-clipboard
     - name: Integration tests (addon-fit)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-fit
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-fit
     - name: Integration tests (addon-image)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-image
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-image
     - name: Integration tests (addon-progress)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-progress
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-progress
     - name: Integration tests (addon-search)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-search
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-search
     - name: Integration tests (addon-serialize)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-serialize
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-serialize
     - name: Integration tests (addon-unicode-graphemes)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode-graphemes
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-unicode-graphemes
     - name: Integration tests (addon-unicode11)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-unicode11
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-unicode11
     - name: Integration tests (addon-web-fonts)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-fonts
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-web-fonts
     - name: Integration tests (addon-web-links)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-web-links
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-web-links
     - name: Integration tests (addon-webgl)
-      run: npm run test-integration-${{ matrix.browser }} --workers=50% --forbid-only --suite=addon-webgl
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-webgl
 
   release-dry-run:
     needs: build
