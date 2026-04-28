@@ -33,16 +33,16 @@ test.describe('WebFontsAddon', () => {
   test.describe('font loading at runtime', () => {
     test('loadFonts (JS)', async () => {
       await ctx.page.evaluate(`
-        const ff1 = new FontFace('Kongtext', "url(/kongtext.regular.ttf) format('truetype')");
-        const ff2 = new FontFace('BPdots', "url(/bpdots.regular.otf) format('opentype')");
+        const ff1 = new FontFace('Kongtext', "url(/fonts/kongtext.regular.ttf) format('truetype')");
+        const ff2 = new FontFace('BPdots', "url(/fonts/bpdots.regular.otf) format('opentype')");
         loadFonts([ff1, ff2]);
       `);
       deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loaded' }, { family: 'BPdots', status: 'loaded' }]);
     });
     test('loadFonts (CSS, unquoted)', async () => {
       await ctx.page.evaluate(`
-        document.styleSheets[0].insertRule("@font-face {font-family: Kongtext; src: url(/kongtext.regular.ttf) format('truetype')}", 0);
-        document.styleSheets[0].insertRule("@font-face {font-family: BPdots; src: url(/bpdots.regular.otf) format('opentype')}", 1);
+        document.styleSheets[0].insertRule("@font-face {font-family: Kongtext; src: url(/fonts/kongtext.regular.ttf) format('truetype')}", 0);
+        document.styleSheets[0].insertRule("@font-face {font-family: BPdots; src: url(/fonts/bpdots.regular.otf) format('opentype')}", 1);
         loadFonts(['Kongtext', 'BPdots']);
       `);
       deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loaded' }, { family: 'BPdots', status: 'loaded' }]);
@@ -50,8 +50,8 @@ test.describe('WebFontsAddon', () => {
     test('loadFonts (CSS, quoted)', async ({ browser }) => {
       // NOTE: firefox preserves family quotes from CSS rules in fontface, all other browsers unquote them
       await ctx.page.evaluate(`
-        document.styleSheets[0].insertRule("@font-face {font-family: 'Kongtext'; src: url(/kongtext.regular.ttf) format('truetype')}", 0);
-        document.styleSheets[0].insertRule("@font-face {font-family: 'BPdots'; src: url(/bpdots.regular.otf) format('opentype')}", 1);
+        document.styleSheets[0].insertRule("@font-face {font-family: 'Kongtext'; src: url(/fonts/kongtext.regular.ttf) format('truetype')}", 0);
+        document.styleSheets[0].insertRule("@font-face {font-family: 'BPdots'; src: url(/fonts/bpdots.regular.otf) format('opentype')}", 1);
         loadFonts(['Kongtext', 'BPdots']);
       `);
       if (browser.browserType().name() === 'firefox') {
@@ -63,8 +63,8 @@ test.describe('WebFontsAddon', () => {
     test('FontFace hashing', async () => {
       // multiple calls of `loadFonts` with the same objects shall not bloat document.fonts
       await ctx.page.evaluate(`
-        const ff1 = new FontFace('Kongtext', "url(/kongtext.regular.ttf) format('truetype')");
-        const ff2 = new FontFace('BPdots', "url(/bpdots.regular.otf) format('opentype')");
+        const ff1 = new FontFace('Kongtext', "url(/fonts/kongtext.regular.ttf) format('truetype')");
+        const ff2 = new FontFace('BPdots', "url(/fonts/bpdots.regular.otf) format('opentype')");
         loadFonts([ff1, ff2]);
         loadFonts([ff1, ff2]);
         loadFonts([ff1, ff2]).then(() => loadFonts([ff1, ff2]));
@@ -76,7 +76,7 @@ test.describe('WebFontsAddon', () => {
       // to make this test work, we exclude the default measurement char W (x57) by restricting unicode-range
       // now the browser will postpone font loading until codepoint is hit --> wrong glyph metrics on first usage
       const data = await ctx.page.evaluate(`
-          document.styleSheets[0].insertRule("@font-face {font-family: Kongtext; src: url(/kongtext.regular.ttf) format('truetype'); unicode-range: U+00A0-00FF}", 0);
+          document.styleSheets[0].insertRule("@font-face {font-family: Kongtext; src: url(/fonts/kongtext.regular.ttf) format('truetype'); unicode-range: U+00A0-00FF}", 0);
         `);
       deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'unloaded' }]);
 
