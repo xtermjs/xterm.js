@@ -16,6 +16,47 @@ import { SixelImageStorage } from './SixelImageStorage';
 import { IIPImageStorage } from './IIPImageStorage';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
 
+
+/**
+ * Document VT features provided by this addon.
+ *
+ * @vt: #E[Supported via @xterm/addon-image.] DCS SIXEL "SIXEL Graphics"  "DCS Ps ; Ps ; Ps ; q Pt ST"  "Draw SIXEL image."
+ *
+ * Sixel support is provided by the addon @xterm/addon-image with these limitations:
+ * - immediate coloring (no shared palette, allows high color settings of `img2sixel`)
+ * - max. palette size of 4096 colors
+ * - max. pixel width of 16K
+ * - max. 25 MB per sixel sequence
+ * - VT340 cursor positioning (begin of last sixel data row)
+ *
+ * See [addon readme](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image) for more details.
+ *
+ *
+ * @vt: #E[Supported via @xterm/addon-image.] OSC 1337  "iTerm2 Commands"   "OSC 1337 ; Pt BEL"  "Custom iTerm2 commands."
+ *
+ * Only the inline image protocol (IIP) is supported by the addon @xterm/addon-image with
+ * the following limitations:
+ * - sequence:
+ *   - format: `OSC 1337 ; File=inline=1 ; size=<unencoded size> ; ... : <base64 payload> BEL`
+ *   - size param must be set and payload may not exceed CEIL(size * 4 / 3)
+ *   - strict base64 handling as of RFC4648 §4 (standard alphabet, optional padding,
+ *     no separator bytes allowed)
+ *   - supported params: size, name, width, height, preserveAspectRatio
+ * - image formats: PNG, JPEG and GIF
+ * - no animation support (renders first image of a GIF)
+ * - no multipart support
+ * - VT340 cursor positioning (begin of last sixel data row)
+ *
+ * See [addon readme](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image)
+ * and [iTerm2 IIP docs](https://iterm2.com/documentation-images.html) for more details.
+ *
+ *
+ * @vt: #E[Supported via @xterm/addon-image.] APC KITTY_GRAPHICS "Kitty Graphics"  "APC G Pt ST"  "Kitty Graphics Protocol."
+ *
+ * Kitty graphics support is provided by the addon @xterm/addon-image.
+ * Note that while basic image output already works, this is still work in progress.
+ */
+
 // default values of addon ctor options
 const DEFAULT_OPTIONS: IImageAddonOptions = {
   enableSizeReports: true,
@@ -166,7 +207,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       this._disposeLater(
         kittyStorage,
         kittyHandler,
-        terminal._core._inputHandler._parser.registerApcHandler(0x47, kittyHandler)
+        terminal._core._inputHandler._parser.registerApcHandler({ final: 'G' }, kittyHandler)
       );
     }
   }
