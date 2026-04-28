@@ -2415,7 +2415,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       color &= ~Attributes.RGB_MASK;
       color |= AttributeData.fromColorRGB([c1, c2, c3]);
     } else if (mode === 5) {
-      color &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+      color &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
       color |= Attributes.CM_P256 | (c1 & 0xff);
     }
     return color;
@@ -2628,19 +2628,19 @@ export class InputHandler extends Disposable implements IInputHandler {
       p = params.params[i];
       if (p >= 30 && p <= 37) {
         // fg color 8
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
         attr.fg |= Attributes.CM_P16 | (p - 30);
       } else if (p >= 40 && p <= 47) {
         // bg color 8
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
         attr.bg |= Attributes.CM_P16 | (p - 40);
       } else if (p >= 90 && p <= 97) {
         // fg color 16
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
         attr.fg |= Attributes.CM_P16 | (p - 90) | 8;
       } else if (p >= 100 && p <= 107) {
         // bg color 16
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
         attr.bg |= Attributes.CM_P16 | (p - 100) | 8;
       } else if (p === 0) {
         // default
@@ -2700,11 +2700,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 39) {
         // reset fg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.fg |= DEFAULT_ATTR_DATA.fg & Attributes.RGB_MASK;
+        attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else if (p === 49) {
         // reset bg
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.bg |= DEFAULT_ATTR_DATA.bg & Attributes.RGB_MASK;
+        attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
