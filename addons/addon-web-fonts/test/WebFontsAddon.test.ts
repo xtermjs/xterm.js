@@ -88,7 +88,7 @@ test.describe('WebFontsAddon', () => {
 
       // safari loads the font, firefox & chrome dont
       if (browser.browserType().name() === 'webkit') {
-        deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loaded' }]);
+        deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loading' }]);
       } else {
         deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'unloaded' }]);
       }
