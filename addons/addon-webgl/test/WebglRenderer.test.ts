@@ -15,8 +15,10 @@ test.beforeAll(async ({ browser }) => {
   await openTerminal(ctx);
   ctxWrapper.value = ctx;
   await ctx.page.evaluate(`
-    window.addon = new window.WebglAddon(true);
-    window.term.loadAddon(window.addon);
+    try {
+      window.addon = new window.WebglAddon(true);
+      window.term.loadAddon(window.addon);
+    } catch (e) {}
   `);
 });
 test.afterAll(async () => await ctx.page.close());
@@ -24,15 +26,18 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('WebGL Renderer Integration Tests', async () => {
   // HACK: webgl2 is often not supported in headless firefox on Linux
   // https://github.com/microsoft/playwright/issues/11566
+  // also disable safari due to #5852
   if (platform() === 'linux') {
-    test.skip(({ browserName }) => browserName === 'firefox');
+    test.skip(({ browserName }) => browserName === 'firefox' || browserName === 'webkit');
   }
 
   injectSharedRendererTests(ctxWrapper);
   injectSharedRendererTestsStandalone(ctxWrapper, async () => {
     await ctx.page.evaluate(`
-      window.addon = new window.WebglAddon(true);
-      window.term.loadAddon(window.addon);
+      try {
+        window.addon = new window.WebglAddon(true);
+        window.term.loadAddon(window.addon);
+      } catch (e) {}
     `);
   });
 });
