@@ -86,6 +86,13 @@ test.describe('WebFontsAddon', () => {
           window.helperTerm.open(term.element);
         `);
 
+      // safari loads the font, firefox & chrome dont
+      if (browser.browserType().name() === 'webkit') {
+        deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loading' }]);
+      } else {
+        deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'unloaded' }]);
+      }
+
       // good case: addon fixes layout for webfont in ctor
       // the relayout happens async, so wait a bit with a promise
       await ctx.page.evaluate(`
