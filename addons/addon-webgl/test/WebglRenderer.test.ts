@@ -24,8 +24,9 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('WebGL Renderer Integration Tests', async () => {
   // HACK: webgl2 is often not supported in headless firefox on Linux
   // https://github.com/microsoft/playwright/issues/11566
+  // also disable safari due to #5852
   if (platform() === 'linux') {
-    test.skip(({ browserName }) => browserName === 'firefox');
+    test.skip(({ browserName }) => browserName === 'firefox' || browserName === 'webkit');
   }
 
   injectSharedRendererTests(ctxWrapper);
