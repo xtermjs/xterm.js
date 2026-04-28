@@ -32,6 +32,7 @@ export interface IParams {
   clone(): IParams;
   toArray(): ParamsArray;
   reset(): void;
+  resetZdm(): void;
   addParam(value: number): void;
   addSubParam(value: number): void;
   hasSubParams(idx: number): boolean;
@@ -107,7 +108,7 @@ export type EscFallbackHandlerType = (identifier: number) => void;
 /**
  * EXECUTE handler types.
  */
-export type ExecuteHandlerType = () => boolean;
+export type ExecuteHandlerType = (ident?: number) => boolean;
 export type ExecuteFallbackHandlerType = (ident: number) => void;
 
 /**
