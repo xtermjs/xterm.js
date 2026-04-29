@@ -72,6 +72,8 @@ export class TransitionTable {
 const NON_ASCII_PRINTABLE = 0xA0;
 
 
+
+
 /**
  * VT500 compatible transition table.
  * Taken from https://vt100.net/emu/dec_ansi_parser.
@@ -548,6 +550,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let code = 0;
     let transition = 0;
     let start = 0;
+    let c = 0;
+    const l4 = length - 4;
     let handlerResult: void | boolean | Promise<boolean>;
 
     // resume from async handler
@@ -723,8 +727,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
           // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded
-          let c = i;
-          const l4 = length - 4;
+          c = i;
           while (c < l4
             && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
             && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
@@ -826,15 +829,20 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._dcsParser.hook(this._collect << 8 | code, this._params);
           break;
         case ParserAction.DCS_PUT:
-          // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f
+          // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x80 - 0x9f
           // unhook triggered by: 0x1b, 0x9c (success) and 0x18, 0x1a (abort)
-          for (let j = i + 1; ; ++j) {
-            if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              this._dcsParser.put(data, i, j);
-              i = j - 1;
-              break;
-            }
+          c = i;
+          for (; c < l4;) {
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
           }
+          if (c >= l4) {
+            while (c < length && !((data[c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE)))) c++;
+          }
+          this._dcsParser.put(data, i, c);
+          i = c - 1;
           break;
         case ParserAction.DCS_UNHOOK:
           handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a);
@@ -852,13 +860,18 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.OSC_PUT:
           // inner loop: 0x20 (SP) included, 0x7F (DEL) included
-          for (let j = i + 1; ; j++) {
-            if (j >= length || (code = data[j]) < 0x20 || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              this._oscParser.put(data, i, j);
-              i = j - 1;
-              break;
-            }
+          c = i;
+          while (c < l4
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+          ) {}
+          if (c >= l4) {
+            while (c < length && data[c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)) c++;
           }
+          this._oscParser.put(data, i, c);
+          i = c - 1;
           break;
         case ParserAction.OSC_END:
           handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a);
@@ -875,14 +888,19 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._apcParser.start();
           break;
         case ParserAction.APC_PUT:
-          // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
-          for (let j = i + 1; ; ++j) {
-            if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || code === 0x9c || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              this._apcParser.put(data, i, j);
-              i = j - 1;
-              break;
-            }
+          // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c, 0x80 - 0x9f
+          c = i;
+          for (; c < l4;) {
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
+            if ((data[++c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE))) break;
           }
+          if (c >= l4) {
+            while (c < length && !((data[c] <= 0x1b || data[c] > 0x7f) && (data[c] === 0x1b || data[c] === 0x1a || data[c] === 0x18 || (data[c] > 0x7f && data[c] < NON_ASCII_PRINTABLE)))) c++;
+          }
+          this._apcParser.put(data, i, c);
+          i = c - 1;
           break;
         case ParserAction.APC_END:
           handlerResult = this._apcParser.end(code !== 0x18 && code !== 0x1a);
