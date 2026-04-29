@@ -6,6 +6,7 @@
 import { assert } from 'chai';
 import { CompositionHelper } from 'browser/input/CompositionHelper';
 import { MockRenderService } from 'browser/TestUtils.test';
+import { C0 } from 'common/data/EscapeSequences';
 import { MockCoreService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
 
 describe('CompositionHelper', () => {
@@ -13,6 +14,20 @@ describe('CompositionHelper', () => {
   let compositionView: HTMLElement;
   let textarea: HTMLTextAreaElement;
   let handledText: string;
+  const nextTick = (callback: () => void): void => {
+    setTimeout(callback, 0);
+  };
+  const keydown229 = (key: string): boolean => compositionHelper.keydown({ keyCode: 229, key } as KeyboardEvent);
+  const keyup229 = (key: string): void => compositionHelper.keyup({ keyCode: 229, key } as KeyboardEvent);
+  const startPending229 = (oldValue: string, key = 'x'): void => {
+    textarea.value = oldValue;
+    assert.equal(keydown229(key), false);
+  };
+  const applyPending229Change = (oldValue: string, newValue: string, key = 'x'): void => {
+    startPending229(oldValue, key);
+    textarea.value = newValue;
+    keyup229(key);
+  };
 
   beforeEach(() => {
     compositionView = {
@@ -258,6 +273,209 @@ describe('CompositionHelper', () => {
           done();
         }, 0);
       }, 0);
+    });
+
+    it('Should handle keyCode 229 on keyup when key matches', () => {
+      textarea.value = '';
+      assert.equal(keydown229('。'), false);
+      textarea.value = '。';
+
+      keyup229('。');
+
+      assert.equal(handledText, '。');
+    });
+
+    it('Should allow keyup with a different key value and still emit from keydown path', (done) => {
+      textarea.value = '';
+      assert.equal(keydown229('。'), false);
+      textarea.value = '。';
+
+      keyup229('x');
+
+      nextTick(() => {
+        assert.equal(handledText, '。');
+        done();
+      });
+    });
+
+    it('Should emit precise DEL+insert on keyup for equal-length replacements in pending keyCode 229 path', (done) => {
+      applyPending229Change('ab', 'ac');
+
+      assert.equal(handledText, `${C0.DEL}c`);
+      nextTick(() => {
+        done();
+      });
+    });
+
+    it('Should emit precise DEL+insert on timer for equal-length replacements in pending keyCode 229 path', (done) => {
+      startPending229('ab');
+      textarea.value = 'ac';
+
+      nextTick(() => {
+        assert.equal(handledText, `${C0.DEL}c`);
+        done();
+      });
+    });
+
+    it('Should emit prefix-based DEL+insert for mid-string replacement', () => {
+      applyPending229Change('abcde', 'abXYde');
+
+      assert.equal(handledText, `${C0.DEL.repeat(3)}XYde`);
+    });
+
+    it('Should emit only inserted text for append-only changes', () => {
+      applyPending229Change('ab', 'abXYZ');
+
+      assert.equal(handledText, 'XYZ');
+    });
+
+    it('Should emit single DEL and cache new value on shrink', () => {
+      applyPending229Change('abc', 'a');
+
+      assert.equal(handledText, `${C0.DEL}`);
+      assert.equal((compositionHelper as any)._dataAlreadySent, 'a');
+    });
+
+    it('Should not emit when baseline and textarea value are unchanged', (done) => {
+      applyPending229Change('same', 'same');
+      assert.equal(handledText, '');
+      nextTick(() => {
+        assert.equal(handledText, '');
+        done();
+      });
+    });
+
+    it('Should emit pending keyCode 229 data from earliest baseline', (done) => {
+      textarea.value = 'x';
+      assert.equal(keydown229('。'), false);
+      textarea.value = 'xy';
+      assert.equal(keydown229('，'), false);
+      textarea.value = 'xy，';
+
+      keyup229('，');
+
+      nextTick(() => {
+        assert.equal(handledText, 'y，');
+        done();
+      });
+    });
+
+    it('Should create only one timer for repeated keyCode 229 keydown', () => {
+      const originalSetTimeout = globalThis.setTimeout;
+      let scheduled = 0;
+      (globalThis as any).setTimeout = () => {
+        scheduled++;
+        return 1;
+      };
+      try {
+        textarea.value = '';
+        assert.equal(keydown229('。'), false);
+        assert.equal(keydown229('，'), false);
+        assert.equal(keydown229('！'), false);
+        assert.equal(scheduled, 1);
+      } finally {
+        (globalThis as any).setTimeout = originalSetTimeout;
+      }
+    });
+
+    it('Should start a timer when keyCode 229 baseline exists but timer is missing', (done) => {
+      textarea.value = 'x';
+      assert.equal(keydown229('。'), false);
+
+      nextTick(() => {
+        assert.equal((compositionHelper as any)._pending229Baseline, 'x');
+        assert.equal((compositionHelper as any)._textareaChangeTimer, undefined);
+        assert.equal((compositionHelper as any)._pending229TimerFired, true);
+
+        assert.equal(keydown229('，'), false);
+        assert.notEqual((compositionHelper as any)._textareaChangeTimer, undefined);
+        assert.equal((compositionHelper as any)._pending229TimerFired, false);
+
+        keyup229('，');
+        nextTick(() => {
+          assert.equal((compositionHelper as any)._pending229Baseline, undefined);
+          done();
+        });
+      });
+    });
+
+    it('Should clear pending baseline after timer and keyup fire without data', (done) => {
+      textarea.value = 'x';
+      assert.equal(keydown229('。'), false);
+
+      nextTick(() => {
+        keyup229('。');
+        textarea.value = 'xyz';
+        assert.equal(keydown229('，'), false);
+        textarea.value = 'xyz，';
+        keyup229('，');
+
+        assert.equal(handledText, '，');
+        done();
+      });
+    });
+
+    it('Should allow keyup fallback when keydown 229 key is non-printable', (done) => {
+      textarea.value = '';
+      assert.equal(keydown229('Process'), false);
+
+      nextTick(() => {
+        textarea.value = '。';
+        keyup229('Unidentified');
+        assert.equal(handledText, '。');
+        done();
+      });
+    });
+
+    it('Should not emit pending keyCode 229 data after compositionstart', (done) => {
+      textarea.value = '';
+      assert.equal(keydown229('。'), false);
+      textarea.value = '。';
+
+      compositionHelper.compositionstart();
+
+      nextTick(() => {
+        assert.equal(handledText, '');
+        done();
+      });
+    });
+
+    it('Should cancel pending keyCode 229 keydown send on compositionend finalize after composition data is sent', (done) => {
+      textarea.value = '';
+      assert.equal(keydown229('。'), false);
+      nextTick(() => {
+        compositionHelper.compositionstart();
+        compositionHelper.compositionupdate({ data: 'x' });
+        textarea.value = 'x';
+        compositionHelper.compositionend();
+
+        nextTick(() => {
+          assert.equal(handledText, 'x');
+          assert.equal((compositionHelper as any)._pending229Baseline, undefined);
+          keyup229('。');
+          assert.equal(handledText, 'x');
+          done();
+        });
+      });
+    });
+
+    it('Should keep pending keyCode 229 keydown send on compositionend finalize when no composition data is sent', (done) => {
+      textarea.value = '';
+      assert.equal(keydown229('。'), false);
+      nextTick(() => {
+        compositionHelper.compositionstart();
+        compositionHelper.compositionupdate({ data: 'x' });
+        compositionHelper.compositionend();
+
+        nextTick(() => {
+          assert.equal(handledText, '');
+          assert.equal((compositionHelper as any)._pending229Baseline, '');
+          textarea.value = '。';
+          keyup229('。');
+          assert.equal(handledText, '。');
+          done();
+        });
+      });
     });
   });
 });
