@@ -92,6 +92,7 @@ let terminalContainer = document.getElementById('terminal-container');
 let actionElements: {
   findNext: HTMLInputElement;
   findPrevious: HTMLInputElement;
+  findNth: { nthSearchStrInput: HTMLInputElement, nthPositionIndexInput: HTMLInputElement };
   findResults: HTMLElement;
 };
 let paddingElement: HTMLInputElement;
@@ -135,7 +136,20 @@ function getSearchOptions(): ISearchOptions {
       activeMatchBackground: '#ef2929',
       activeMatchBorder: '#ffffff',
       activeMatchColorOverviewRuler: '#ef2929'
-    } : undefined
+    } : undefined,
+    // This is a  single-use IIFE that validates the arbitrary value in the
+    // N input and coerces it to a bounded, numeric value.
+    // This should idealy be performed client-side where the constraints are better understood.
+    // Just in case, there's a similar, last-minute validation in the server-side implementation.
+    // See SearchAddon.ts ---> findNth(...)
+    nthMatchPosition: (() => {
+      const rawValue = (document.getElementById('find-nth-position-index') as HTMLInputElement)?.value;
+      if (isNaN(+rawValue)) {
+        return -1;
+      }
+      return parseInt(`${+rawValue}`, 10);
+    }
+    )()
   };
 }
 
@@ -228,6 +242,10 @@ if (document.location.pathname === '/test') {
   actionElements = {
     findNext: addonSearchWindow.findNextInput,
     findPrevious: addonSearchWindow.findPreviousInput,
+    findNth: {
+      nthSearchStrInput: addonSearchWindow.findNthSearchStrInput,
+      nthPositionIndexInput: addonSearchWindow.findNthPositionInput
+    },
     findResults: addonSearchWindow.findResultsSpan
   };
   controlBar.activateDefaultTab();
@@ -268,10 +286,37 @@ if (document.location.pathname === '/test') {
   addDomListener(actionElements.findPrevious, 'input', (e) => {
     addons.search.instance!.findPrevious(actionElements.findPrevious.value, getSearchOptions());
   });
+
+  addDomListener(actionElements.findNth.nthSearchStrInput, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance!.findNth(actionElements.findNth.nthSearchStrInput.value, getSearchOptions());
+      e.preventDefault();
+    }
+  });
+  addDomListener(actionElements.findNth.nthSearchStrInput, 'input', (e) => {
+    addons.search.instance!.findNth(actionElements.findNth.nthSearchStrInput.value, getSearchOptions());
+  });
+  addDomListener(actionElements.findNth.nthPositionIndexInput, 'keydown', (e) => {
+    if (e.key === 'Enter') {
+      addons.search.instance!.findNth(actionElements.findNth.nthSearchStrInput.value, getSearchOptions());
+      e.preventDefault();
+    }
+  });
+  addDomListener(actionElements.findNth.nthPositionIndexInput, 'input', (e) => {
+    addons.search.instance!.findNth(actionElements.findNth.nthSearchStrInput.value, getSearchOptions());
+  });
+
   addDomListener(actionElements.findNext, 'blur', (e) => {
     addons.search.instance!.clearActiveDecoration();
   });
   addDomListener(actionElements.findPrevious, 'blur', (e) => {
+    addons.search.instance!.clearActiveDecoration();
+  });
+
+  addDomListener(actionElements.findNth.nthSearchStrInput, 'blur', (e) => {
+    addons.search.instance!.clearActiveDecoration();
+  });
+  addDomListener(actionElements.findNth.nthSearchStrInput, 'blur', (e) => {
     addons.search.instance!.clearActiveDecoration();
   });
 }

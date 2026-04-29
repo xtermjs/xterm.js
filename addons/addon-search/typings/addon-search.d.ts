@@ -38,6 +38,12 @@ declare module '@xterm/addon-search' {
      * them in the overview ruler if it's enabled.
      */
     decorations?: ISearchDecorationOptions;
+
+    /** 
+     * The 1-based index of the desired match relative to its peer matches. 
+     * Set it to a bounded, positive integer for reliable results.
+     */
+    nthMatchPosition?: number;
   }
 
   /**
@@ -130,6 +136,15 @@ declare module '@xterm/addon-search' {
      * @param searchOptions The options for the search.
      */
     public findNext(term: string, searchOptions?: ISearchOptions): boolean;
+
+    /**
+     * Search arbitrarily for the Nth result that matches the search term and
+     * options, where searchOptions stores N, the 1-based index of the desired match relative to its peers.
+     * @param term The search term.
+     * @param searchOptions The options for the search.
+     */
+    public findNth(term: string, searchOptions?: ISearchOptions): boolean;
+
 
     /**
      * Search backwards for the previous result that matches the search term and
