@@ -29,6 +29,7 @@ export class RenderService extends Disposable implements IRenderService {
   private _renderDebouncer: IRenderDebouncerWithCallback;
   private _pausedResizeTask: DebouncedIdleTask;
   private _observerDisposable = this._register(new MutableDisposable());
+  private _intersectionObserver: IntersectionObserver | undefined;
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -127,8 +128,12 @@ export class RenderService extends Disposable implements IRenderService {
     // and resume based on terminal visibility if so
     if ('IntersectionObserver' in w) {
       const observer = new w.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
+      this._observerDisposable.value = toDisposable(() => {
+        this._intersectionObserver?.disconnect();
+        this._intersectionObserver = undefined;
+      });
+      this._intersectionObserver = observer;
       observer.observe(screenElement);
-      this._observerDisposable.value = toDisposable(() => observer.disconnect());
     }
   }
 
