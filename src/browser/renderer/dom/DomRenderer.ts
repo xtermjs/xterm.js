@@ -136,7 +136,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     this.dimensions.device.char.width = this._charSizeService.width * dpr;
     this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * dpr);
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
-    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
+    // Values >= 8 are treated as absolute pixel heights (Monaco convention),
+    // values < 8 are treated as multipliers of the character height.
+    const lineHeight = this._optionsService.rawOptions.lineHeight;
+    this.dimensions.device.cell.height = lineHeight >= 8
+      ? Math.max(Math.floor(lineHeight * dpr), this.dimensions.device.char.height)
+      : Math.floor(this.dimensions.device.char.height * lineHeight);
     this.dimensions.device.char.left = 0;
     this.dimensions.device.char.top = 0;
     this.dimensions.device.canvas.width = this.dimensions.device.cell.width * this._bufferService.cols;
