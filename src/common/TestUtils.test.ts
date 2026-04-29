@@ -14,6 +14,7 @@ import { UnicodeV6 } from 'common/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { Emitter, type IEvent } from 'common/Event';
 import { CellData } from 'common/buffer/CellData';
+import { BufferLine } from 'common/buffer/BufferLine';
 import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from 'common/buffer/Constants';
 
 export function createCellData(attr: number, char: string, width: number): CellData {
@@ -239,5 +240,6 @@ export class MockDecorationService implements IDecorationService {
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
   public reset(): void { }
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void { }
+  public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, lineData: BufferLine): void { }
   public dispose(): void { }
 }
