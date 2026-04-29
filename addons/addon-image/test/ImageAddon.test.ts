@@ -90,11 +90,6 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('ImageAddon', () => {
 
   test.beforeEach(async ({}, testInfo) => {
-    // DEBT: This test never worked on webkit
-    //if (ctx.browser.browserType().name() === 'webkit') {
-    //  testInfo.skip();
-    //  return;
-    //}
     await ctx.page.evaluate(`
       window.term.reset()
       window.imageAddon?.dispose();
