@@ -121,6 +121,11 @@ export class Buffer implements IBuffer {
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
 
+  public setWrapped(absrow: number, value: boolean): void {
+    const line = this.lines.get(absrow);
+    line instanceof BufferLine && line.setWrapped(value);
+  }
+
   /**
    * Fills the buffer's viewport with blank lines.
    */
@@ -135,7 +140,7 @@ export class Buffer implements IBuffer {
   }
 
   /**
-   * Clears the buffer to it's initial state, discarding all previous data.
+   * Clears the buffer to its initial state, discarding all previous data.
    */
   public clear(): void {
     this.ydisp = 0;
