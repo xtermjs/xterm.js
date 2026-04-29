@@ -365,6 +365,44 @@ test.describe('ImageAddon', () => {
       const qoiScrape = await getImageAtBufferCell(0, 11);
       deepStrictEqual(qoiScrape, pngScrape);
     });
+    test.describe.only('IIP resizing - QOI format', () => {
+      /**
+       * Same as the tests above, but with QOI format.
+       * This is needed, as QOI uses a slightly different parse path.
+       */
+      test('palette.qoi: N --> width=20 height=5 preserveAspectRatio=0', async () => {
+        // cell based resize
+        const header = `size=${qoiData.length};width=20;height=5;preserveAspectRatio=0`;
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;${header}:${PALETTE_QOI_BASE64}\x07`);
+        const dim = await getDimensions();
+        deepStrictEqual(await getOrigSize(1), [dim.cellWidth * 20, dim.cellHeight * 5]);
+      });
+      test('palette.qoi: Npx --> width=320px height=160px preserveAspectRatio=0', async () => {
+        // pixel based resize
+        const header = `size=${qoiData.length};width=320px;height=160px;preserveAspectRatio=0`;
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;${header}:${PALETTE_QOI_BASE64}\x07`);
+        deepStrictEqual(await getOrigSize(1), [320, 160]);
+      });
+      test('palette.qoi: N% --> width=50% height=30% preserveAspectRatio=0', async () => {
+        // % of viewport resize
+        const header = `size=${qoiData.length};width=50%;height=30%;preserveAspectRatio=0`;
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;${header}:${PALETTE_QOI_BASE64}\x07`);
+        const dim = await getDimensions();
+        deepStrictEqual(await getOrigSize(1), [Math.floor(dim.width * 0.5), Math.floor(dim.height * 0.3)]);
+      });
+      test('palette.qoi: ommitted dimension assumes preserveAspectRatio=1', async () => {
+        // width provided in percent
+        const header = `size=${qoiData.length};width=50%`;
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;${header}:${PALETTE_QOI_BASE64}\x07`);
+        const dim = await getDimensions();
+        const width = Math.floor(dim.width * 0.5);
+        deepStrictEqual(await getOrigSize(1), [width, Math.floor(width * 80 / 640)]);
+        // height provided in pixel
+        const header2 = `size=${qoiData.length};height=200px`;
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;${header2}:${PALETTE_QOI_BASE64}\x07`);
+        deepStrictEqual(await getOrigSize(2), [Math.floor(200 * 640 / 80), 200]);
+      });
+    });
   });
 });
 
