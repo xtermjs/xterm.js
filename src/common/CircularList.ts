@@ -116,20 +116,6 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
   }
 
   /**
-   * Advance ringbuffer index and return current element for recycling.
-   * Note: The buffer must be full for this method to work.
-   * @throws When the buffer is not full.
-   */
-  public recycle(): T {
-    if (this._length !== this._maxLength) {
-      throw new Error('Can only recycle when the buffer is full');
-    }
-    this._startIndex = ++this._startIndex % this._maxLength;
-    this.onTrimEmitter.fire(1);
-    return this._array[this._getCyclicIndex(this._length - 1)]!;
-  }
-
-  /**
    * Ringbuffer is at max length.
    */
   public get isFull(): boolean {
