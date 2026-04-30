@@ -113,8 +113,16 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
     if (seqType === SequenceType.REPORTCELLSIZE) {
       // OSC 1337 ; ReportCellSize=[height];[width];[scale] ST
-      // TODO: fill stub with real values
-      const report = `\x1b]1337;ReportCellSize=[height];[width];[scale]\x1b\\`;
+      let width = CELL_SIZE_DEFAULT.width;
+      let height = CELL_SIZE_DEFAULT.height;
+      if (this._renderer.dimensions) {
+        width = this._renderer.dimensions.css.canvas.width / this._coreTerminal.cols;
+        height = this._renderer.dimensions.css.canvas.height / this._coreTerminal.rows;
+        console.log(this._renderer.dimensions);
+        console.log({width, height});
+      }
+      const scale = window ? window.devicePixelRatio : 1;
+      const report = `\x1b]1337;ReportCellSize=${height.toFixed(3)};${width.toFixed(3)};${scale.toFixed(3)}\x1b\\`;
       this._coreTerminal?._core.coreService.triggerDataEvent(report);
       return true;
     }
@@ -123,6 +131,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       this._header = Object.assign({}, DEFAULT_HEADER, this._hp.fields);
       this._isMultipart = true;
       this._abortMulti = false;
+      this._dec.release();
       this._dec.init();
       return true;
     }
