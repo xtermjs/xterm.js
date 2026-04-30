@@ -118,8 +118,6 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       if (this._renderer.dimensions) {
         width = this._renderer.dimensions.css.canvas.width / this._coreTerminal.cols;
         height = this._renderer.dimensions.css.canvas.height / this._coreTerminal.rows;
-        console.log(this._renderer.dimensions);
-        console.log({width, height});
       }
       const scale = window ? window.devicePixelRatio : 1;
       const report = `\x1b]1337;ReportCellSize=${height.toFixed(3)};${width.toFixed(3)};${scale.toFixed(3)}\x1b\\`;
