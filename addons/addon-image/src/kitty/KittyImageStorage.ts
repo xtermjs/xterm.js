@@ -5,7 +5,7 @@
 
 import { IDisposable } from '@xterm/xterm';
 import { ImageStorage } from '../ImageStorage';
-import { ImageLayer } from '../Types';
+import { ImageLayer, IAddImageOpts } from '../Types';
 import { IKittyImageData } from './KittyGraphicsTypes';
 
 // Kitty-specific image storage controller.
@@ -42,6 +42,7 @@ export class KittyImageStorage implements IDisposable {
       this._images.delete(kittyId);
     }
   };
+  private _addImageOpts: IAddImageOpts = {scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'iip'};
 
   constructor(
     private readonly _storage: ImageStorage
@@ -98,7 +99,10 @@ export class KittyImageStorage implements IDisposable {
     if (oldStorageId !== undefined) {
       this._storageIdToKittyId.delete(oldStorageId);
     }
-    const storageId = this._storage.addImage(image, scrolling, layer, zIndex);
+    this._addImageOpts.scrolling = scrolling;
+    this._addImageOpts.layer = layer;
+    this._addImageOpts.zIndex = zIndex;
+    const storageId = this._storage.addImage(image, this._addImageOpts);
     this._kittyIdToStorageId.set(kittyId, storageId);
     this._storageIdToKittyId.set(storageId, kittyId);
   }

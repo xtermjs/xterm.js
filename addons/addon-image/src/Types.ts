@@ -100,6 +100,14 @@ export interface ICellSize {
 }
 
 export type ImageLayer = 'top' | 'bottom';
+export type CursorPos = 'vt340' | 'iip';
+
+export interface IAddImageOpts {
+  scrolling: boolean;
+  layer: ImageLayer;
+  zIndex: number;
+  cursorPos: CursorPos;
+}
 
 export interface IImageSpec {
   orig: HTMLCanvasElement | ImageBitmap | undefined;

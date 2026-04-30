@@ -4,7 +4,7 @@
  */
 
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
-import { IImageAddonOptions, ITerminalExt } from './Types';
+import { IImageAddonOptions, ITerminalExt, IAddImageOpts } from './Types';
 import { ImageRenderer } from './ImageRenderer';
 
 /**
@@ -15,6 +15,7 @@ import { ImageRenderer } from './ImageRenderer';
  * - advanceCursor for empty sixels carrying only height
  */
 export class SixelImageStorage {
+  private _addImageOpts: IAddImageOpts = {scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'vt340'};
   constructor(
     private readonly _storage: ImageStorage,
     private readonly _opts: IImageAddonOptions,
@@ -27,7 +28,8 @@ export class SixelImageStorage {
    * Cursor behavior depends on the sixelScrolling option (DECSET 80).
    */
   public addImage(img: HTMLCanvasElement | ImageBitmap): void {
-    this._storage.addImage(img, this._opts.sixelScrolling);
+    this._addImageOpts.scrolling = this._opts.sixelScrolling;
+    this._storage.addImage(img, this._addImageOpts);
   }
 
   /**
