@@ -13,7 +13,7 @@ import { ImageStorage } from './ImageStorage';
  * - Always uses scrolling mode (cursor advances with image)
  */
 export class IIPImageStorage {
-  private _addImageOpts: IAddImageOpts = {scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'iip'};
+  private _addImageOpts: IAddImageOpts = { scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'iip' };
   constructor(
     private readonly _storage: ImageStorage
   ) {}

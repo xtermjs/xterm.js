@@ -15,7 +15,7 @@ import { ImageRenderer } from './ImageRenderer';
  * - advanceCursor for empty sixels carrying only height
  */
 export class SixelImageStorage {
-  private _addImageOpts: IAddImageOpts = {scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'vt340'};
+  private _addImageOpts: IAddImageOpts = { scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'vt340' };
   constructor(
     private readonly _storage: ImageStorage,
     private readonly _opts: IImageAddonOptions,

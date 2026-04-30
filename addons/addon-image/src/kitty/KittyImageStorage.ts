@@ -42,7 +42,7 @@ export class KittyImageStorage implements IDisposable {
       this._images.delete(kittyId);
     }
   };
-  private _addImageOpts: IAddImageOpts = {scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'iip'};
+  private _addImageOpts: IAddImageOpts = { scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'iip' };
 
   constructor(
     private readonly _storage: ImageStorage

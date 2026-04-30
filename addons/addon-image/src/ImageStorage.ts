@@ -239,10 +239,12 @@ export class ImageStorage implements IDisposable {
   /**
    * Method to add an image to the storage.
    * @param img - The image to add (canvas or bitmap).
-   * @param scrolling - When true, cursor advances with the image (lineFeed per row).
-   *   When false, image is placed at (0,0) and cursor is restored (DECSET 80 / sixel origin mode).
-   * @param layer - Which canvas layer to render on ('top' or 'bottom').
-   * @param zIndex - Z-index for image layering within the same layer.
+   * @param opts - Options for addImage:
+   *   - scrolling:  When true, cursor advances with the image.
+   *                 When false, image is placed at ORIGIN and cursor does not move.
+   *   - layer:      Which canvas layer to render on ('top' or 'bottom').
+   *   - zIndex:     Z-index for image layering within the same layer.
+   *   - cursorPos:  'vt340' for bottom-left, 'iip' for bottom.right.
    * @returns The internal image ID assigned to the stored image.
    */
   public addImage(img: HTMLCanvasElement | ImageBitmap, opts: IAddImageOpts): number {
