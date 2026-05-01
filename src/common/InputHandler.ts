@@ -31,27 +31,8 @@ import { XTERM_VERSION } from 'common/Version';
 const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
- * VT commands done by the parser - FIXME: move this to the parser?
- */
-// @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
-// @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
-// @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
-// @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
-// @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
-// @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
-// @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
-// @vt: #Y   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
-// @vt: #Y   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
-// @vt: #Y   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
-// @vt: #Y   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
-// @vt: #Y   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
-// @vt: #Y   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
-// @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
-
-/**
  * Document xterm VT features here that are currently unsupported
  */
-// @vt: #E[Supported via @xterm/addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
 // @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
 // @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
 // @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
@@ -210,6 +191,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         payload = payload.toArray();
       }
       this._logService.debug('Unknown DCS code: ', { identifier: this._parser.identToString(ident), action, payload });
+    });
+    this._parser.setApcHandlerFallback((ident, action, payload) => {
+      this._logService.debug('Unknown APC code: ', { identifier: this._parser.identToString(ident), action, payload });
     });
 
     /**
@@ -729,8 +713,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Forward registerApcHandler from parser.
    */
-  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
-    return this._parser.registerApcHandler(ident, new ApcHandler(callback));
+  public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._parser.registerApcHandler(id, new ApcHandler(callback));
   }
 
   /**
@@ -2415,7 +2399,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       color &= ~Attributes.RGB_MASK;
       color |= AttributeData.fromColorRGB([c1, c2, c3]);
     } else if (mode === 5) {
-      color &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+      color &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
       color |= Attributes.CM_P256 | (c1 & 0xff);
     }
     return color;
@@ -2628,19 +2612,19 @@ export class InputHandler extends Disposable implements IInputHandler {
       p = params.params[i];
       if (p >= 30 && p <= 37) {
         // fg color 8
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.fg |= Attributes.CM_P16 | (p - 30);
       } else if (p >= 40 && p <= 47) {
         // bg color 8
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= Attributes.CM_P16 | (p - 40);
       } else if (p >= 90 && p <= 97) {
         // fg color 16
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.fg |= Attributes.CM_P16 | (p - 90) | 8;
       } else if (p >= 100 && p <= 107) {
         // bg color 16
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= Attributes.CM_P16 | (p - 100) | 8;
       } else if (p === 0) {
         // default
@@ -2700,11 +2684,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 39) {
         // reset fg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
+        attr.fg |= DEFAULT_ATTR_DATA.fg & Attributes.RGB_MASK;
       } else if (p === 49) {
         // reset bg
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
+        attr.bg |= DEFAULT_ATTR_DATA.bg & Attributes.RGB_MASK;
       } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);

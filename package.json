@@ -29,6 +29,7 @@
   "scripts": {
     "presetup": "npm run build",
     "setup": "npm run esbuild",
+    "setup-full": "node bin/setup-full.mjs",
     "postsetup": "npm run esbuild-demo-server",
     "start": "node demo/start",
     "dev": "concurrently -k -p [{name}] -n tsc,esbuild,esbuild-demo-client,esbuild-demo-server,server -c blue,yellow,cyan,green,magenta \"npm:tsc-watch\" \"npm:esbuild-watch\" \"npm:esbuild-demo-client-watch\" \"npm:esbuild-demo-server-watch\" \"npm:start\"",
@@ -65,15 +66,14 @@
     "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/*benchmark.js",
     "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/*benchmark.js",
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
-    "vtfeatures": "node bin/extract_vtfeatures.js src/**/*.ts src/*.ts",
+    "vtfeatures": "node bin/extract_vtfeatures.js src/*/*.ts src/*/*/*.ts src/*.ts addons/**/src/*.ts",
     "prepackage": "npm run build",
     "package": "webpack",
     "postpackage": "npm run esbuild-package",
     "prepackage-headless": "npm run esbuild-package-headless-only",
     "package-headless": "webpack --config ./webpack.config.headless.js",
     "postpackage-headless": "node ./bin/package_headless.js",
-    "prepublishOnly": "npm run package",
-    "agent:setup-repo": "node bin/agent/setup-repo.mjs"
+    "prepublishOnly": "npm run package"
   },
   "devDependencies": {
     "@lunapaint/png-codec": "^0.2.0",
