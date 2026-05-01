@@ -808,40 +808,30 @@ describe('BufferLine', function(): void {
       assert.equal(extendedAttributes(line, 4), extendedAttributes(initial, 4));
     });
 
-    it('should cache canonical trimmed string translations', () => {
+    it('should cache canonical non-trimmed string translations', () => {
       const line = new TestBufferLine(3);
       line.setCell(0, createCellData(1, 'a', 1));
       line.setCell(1, createCellData(1, 'b', 1));
       line.setCell(2, createCellData(1, 'c', 1));
 
-      const originalGetTrimmedLength = line.getTrimmedLength.bind(line);
-      let trimmedLengthCalls = 0;
-      line.getTrimmedLength = (): number => {
-        trimmedLengthCalls++;
-        return originalGetTrimmedLength();
-      };
-
+      const translated = line.translateToString(false, undefined, undefined, undefined);
+      assert.equal(translated, 'abc');
+      assert.equal((line as any)._cachedTrimmedString, 'abc');
+      (line as any)._cachedTrimmedString = 'cached';
+      assert.equal(line.translateToString(false, undefined, undefined, undefined), 'cached');
+      // Any optional translation argument should bypass cache.
+      assert.equal(line.translateToString(false, 0, 2, undefined), 'ab');
       assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
-      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
-      assert.equal(trimmedLengthCalls, 1);
     });
 
     it('should invalidate cached trimmed strings on line mutations', () => {
       const assertCacheInvalidated = (mutate: (line: TestBufferLine) => void): void => {
         const line = new TestBufferLine(5);
         line.fill(createCellData(1, 'a', 1));
-        const originalGetTrimmedLength = line.getTrimmedLength.bind(line);
-        let trimmedLengthCalls = 0;
-        line.getTrimmedLength = (): number => {
-          trimmedLengthCalls++;
-          return originalGetTrimmedLength();
-        };
-        assert.equal(line.translateToString(true, undefined, undefined, undefined), 'aaaaa');
-        assert.equal(line.translateToString(true, undefined, undefined, undefined), 'aaaaa');
-        assert.equal(trimmedLengthCalls, 1);
+        line.translateToString(false, undefined, undefined, undefined);
+        assert.equal((line as any)._cachedTrimmedString, 'aaaaa');
         mutate(line);
-        line.translateToString(true, undefined, undefined, undefined);
-        assert.equal(trimmedLengthCalls, 2);
+        assert.equal((line as any)._cachedTrimmedString, undefined);
       };
 
       assertCacheInvalidated(line => line.set(0, [0, 'b', 1, 'b'.charCodeAt(0)]));
