@@ -544,8 +544,8 @@ export class BufferLine implements IBufferLine {
   }
 
   /**
-   * Translates the buffer line to a string. Using any of the optional arguments will disable the
-   * cache.
+   * Translates the buffer line to a string. Caching only applies to canonical non-trimmed
+   * translation requests. Using `trimRight` or any optional range/mapping arguments disables cache.
    *
    * @param trimRight Whether to trim any empty cells on the right.
    * @param startCol The column to start the string (0-based inclusive).
@@ -558,7 +558,7 @@ export class BufferLine implements IBufferLine {
    * returned string, the corresponding entries in `outColumns` will have the same column number.
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
-    const isCanonicalTrimmedRequest = !trimRight && !startCol && endCol === undefined && outColumns === undefined;
+    const isCanonicalTrimmedRequest = !trimRight && (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
     if (isCanonicalTrimmedRequest && this._cachedTrimmedString !== undefined) {
       return this._cachedTrimmedString;
     }
