@@ -8,6 +8,7 @@ import { readFileSync } from 'fs';
 import { FINALIZER, introducer, sixelEncode } from 'sixel';
 import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../test/playwright/TestUtils';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
+import QoiEncoder from 'xterm-wasm-parts/lib/qoi/QoiEncoder.wasm';
 
 /**
  * Plugin ctor options.
@@ -74,6 +75,10 @@ const TESTDATA_IIP: [string, [number, number]][] = [
   [readFileSync('./addons/addon-image/fixture/iip/w3c_jpg.iip', { encoding: 'utf-8' }), [72, 48]],
   [readFileSync('./addons/addon-image/fixture/iip/w3c_png.iip', { encoding: 'utf-8' }), [72, 48]]
 ];
+const PALETTE_PNG_BASE64 = readFileSync('./addons/addon-image/fixture/palette.png').toString('base64');
+const qoiEnc = new QoiEncoder(1024*1024);
+const qoiData = qoiEnc.encode(TESTDATA.bytes, 640, 80);
+const PALETTE_QOI_BASE64 = Buffer.from(qoiData).toString('base64');
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
@@ -85,11 +90,6 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('ImageAddon', () => {
 
   test.beforeEach(async ({}, testInfo) => {
-    // DEBT: This test never worked on webkit
-    if (ctx.browser.browserType().name() === 'webkit') {
-      testInfo.skip();
-      return;
-    }
     await ctx.page.evaluate(`
       window.term.reset()
       window.imageAddon?.dispose();
@@ -312,6 +312,68 @@ test.describe('ImageAddon', () => {
       deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[4][1]);
     });
   });
+
+  test.describe('IIP - QOI support', () => {
+    test('palette should yield same bytes from PNG and QOI', async () => {
+      await ctx.proxy.write(`\x1b]1337;File=inline=1;size=525:${PALETTE_PNG_BASE64}\x07`);
+      deepStrictEqual(await getOrigSize(1), [640, 80]);
+      await ctx.proxy.write(`\x1b[10H\x1b]1337;File=inline=1;size=${qoiData.length}:${PALETTE_QOI_BASE64}\x07`);
+      deepStrictEqual(await getOrigSize(2), [640, 80]);
+      const pngScrape = await getImageAtBufferCell(0, 0);
+      const qoiScrape = await getImageAtBufferCell(0, 11);
+      deepStrictEqual(qoiScrape, pngScrape);
+    });
+  });
+
+  test.describe('IIP - resizing', () => {
+    /**
+     * The correct resize behavior is wonky and needs to be tested against iTerm2,
+     * especially for missing params to derive correct default behavior.
+     * We document the current behavior here w'o claiming to be fully in line with iTerm2.
+     * ref: https://iterm2.com/documentation-images.html
+     * imgcat: https://iterm2.com/utilities/imgcat
+     *
+     * NOTE: QOI has a slightly different parse path, thus we test resizing explicitly
+     */
+    const images = [
+      ['palette.png', 525, PALETTE_PNG_BASE64],
+      ['palette.qoi', qoiData.length, PALETTE_QOI_BASE64]
+    ];
+    for (const [name, size, payload] of images) {
+      test(name + ': N --> width=20 height=5 preserveAspectRatio=0', async () => {
+        // cell based resize
+        const header = 'width=20;height=5;preserveAspectRatio=0';
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
+        const dim = await getDimensions();
+        deepStrictEqual(await getOrigSize(1), [dim.cellWidth * 20, dim.cellHeight * 5]);
+      });
+      test(name + ': Npx --> width=320px height=160px preserveAspectRatio=0', async () => {
+        // pixel based resize
+        const header = 'width=320px;height=160px;preserveAspectRatio=0';
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
+        deepStrictEqual(await getOrigSize(1), [320, 160]);
+      });
+      test(name + ': N% --> width=50% height=30% preserveAspectRatio=0', async () => {
+        // % of viewport resize
+        const header = 'width=50%;height=30%;preserveAspectRatio=0';
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
+        const dim = await getDimensions();
+        deepStrictEqual(await getOrigSize(1), [Math.floor(dim.width * 0.5), Math.floor(dim.height * 0.3)]);
+      });
+      test(name + ': ommitted dimension assumes preserveAspectRatio=1', async () => {
+        // width provided in percent
+        const header = 'width=50%';
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
+        const dim = await getDimensions();
+        const width = Math.floor(dim.width * 0.5);
+        deepStrictEqual(await getOrigSize(1), [width, Math.floor(width * 80 / 640)]);
+        // height provided in pixel
+        const header2 = 'height=200px';
+        await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header2}:${payload}\x07`);
+        deepStrictEqual(await getOrigSize(2), [Math.floor(200 * 640 / 80), 200]);
+      });
+    }
+  });
 });
 
 /**
@@ -344,4 +406,8 @@ async function getOrigSize(id: number): Promise<[number, number]> {
     window.imageAddon._storage._images.get(${id}).orig.width,
     window.imageAddon._storage._images.get(${id}).orig.height
   ]`);
+}
+
+async function getImageAtBufferCell(x: number, y: number): Promise<string | undefined> {
+  return ctx.page.evaluate<any>(`window.imageAddon.getImageAtBufferCell(${x}, ${y})?.toDataURL('image/png')`);
 }
