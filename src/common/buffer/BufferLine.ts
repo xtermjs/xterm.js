@@ -63,6 +63,7 @@ export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
+  private _cachedTrimmedString: string | undefined;
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
@@ -98,6 +99,7 @@ export class BufferLine implements IBufferLine {
    * @deprecated
    */
   public set(index: number, value: CharData): void {
+    this._invalidateStringCache();
     this._data[index * CELL_SIZE + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
     if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
       this._combined[index] = value[1];
@@ -197,6 +199,7 @@ export class BufferLine implements IBufferLine {
    * Set data at `index` to `cell`.
    */
   public setCell(index: number, cell: ICellData): void {
+    this._invalidateStringCache();
     if (cell.content & Content.IS_COMBINED_MASK) {
       this._combined[index] = cell.combinedData;
     }
@@ -214,6 +217,7 @@ export class BufferLine implements IBufferLine {
    * it gets an optimized access method.
    */
   public setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
+    this._invalidateStringCache();
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = attrs.extended;
     }
@@ -229,6 +233,7 @@ export class BufferLine implements IBufferLine {
    * by the previous `setDataFromCodePoint` call, we can omit it here.
    */
   public addCodepointToCell(index: number, codePoint: number, width: number): void {
+    this._invalidateStringCache();
     let content = this._data[index * CELL_SIZE + Cell.CONTENT];
     if (content & Content.IS_COMBINED_MASK) {
       // we already have a combined string, simply add
@@ -255,6 +260,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public insertCells(pos: number, n: number, fillCellData: ICellData): void {
+    this._invalidateStringCache();
     pos %= this.length;
 
     // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
@@ -282,6 +288,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
+    this._invalidateStringCache();
     pos %= this.length;
     if (n < this.length - pos) {
       for (let i = 0; i < this.length - pos - n; ++i) {
@@ -308,6 +315,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public replaceCells(start: number, end: number, fillCellData: ICellData, respectProtect: boolean = false): void {
+    this._invalidateStringCache();
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
     if (respectProtect) {
       if (start && this.getWidth(start - 1) === 2 && !this.isProtected(start - 1)) {
@@ -347,6 +355,7 @@ export class BufferLine implements IBufferLine {
    * excess memory (true after shrinking > CLEANUP_THRESHOLD).
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
+    this._invalidateStringCache();
     if (cols === this.length) {
       return this._data.length * 4 * CLEANUP_THRESHOLD < this._data.buffer.byteLength;
     }
@@ -406,6 +415,7 @@ export class BufferLine implements IBufferLine {
 
   /** fill a line with fillCharData */
   public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
+    this._invalidateStringCache();
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
     if (respectProtect) {
       for (let i = 0; i < this.length; ++i) {
@@ -424,6 +434,7 @@ export class BufferLine implements IBufferLine {
 
   /** alter to a full copy of line  */
   public copyFrom(line: BufferLine): void {
+    this._invalidateStringCache();
     if (this.length !== line.length) {
       this._data = new Uint32Array(line._data);
     } else {
@@ -476,6 +487,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void {
+    this._invalidateStringCache();
     const srcData = src._data;
     if (applyInReverse) {
       for (let cell = length - 1; cell >= 0; cell--) {
@@ -508,7 +520,8 @@ export class BufferLine implements IBufferLine {
   }
 
   /**
-   * Translates the buffer line to a string.
+   * Translates the buffer line to a string. Using any of the optional arguments will disable the
+   * cache.
    *
    * @param trimRight Whether to trim any empty cells on the right.
    * @param startCol The column to start the string (0-based inclusive).
@@ -521,6 +534,10 @@ export class BufferLine implements IBufferLine {
    * returned string, the corresponding entries in `outColumns` will have the same column number.
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
+    const isCanonicalTrimmedRequest = !trimRight && !startCol && endCol === undefined && outColumns === undefined;
+    if (isCanonicalTrimmedRequest && this._cachedTrimmedString !== undefined) {
+      return this._cachedTrimmedString;
+    }
     startCol = startCol ?? 0;
     endCol = endCol ?? this.length;
     if (trimRight) {
@@ -545,6 +562,13 @@ export class BufferLine implements IBufferLine {
     if (outColumns) {
       outColumns.push(startCol);
     }
+    if (isCanonicalTrimmedRequest) {
+      this._cachedTrimmedString = result;
+    }
     return result;
+  }
+
+  private _invalidateStringCache(): void {
+    this._cachedTrimmedString = undefined;
   }
 }
