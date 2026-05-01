@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { IAddImageOpts } from 'Types';
 import { ImageStorage } from './ImageStorage';
 
 /**
@@ -12,6 +13,7 @@ import { ImageStorage } from './ImageStorage';
  * - Always uses scrolling mode (cursor advances with image)
  */
 export class IIPImageStorage {
+  private _addImageOpts: IAddImageOpts = { scrolling: true, layer: 'top', zIndex: 0, cursorPos: 'iip' };
   constructor(
     private readonly _storage: ImageStorage
   ) {}
@@ -21,6 +23,6 @@ export class IIPImageStorage {
    * Always uses scrolling mode — cursor advances past the image.
    */
   public addImage(img: HTMLCanvasElement | ImageBitmap): void {
-    this._storage.addImage(img, true);
+    this._storage.addImage(img, this._addImageOpts);
   }
 }
