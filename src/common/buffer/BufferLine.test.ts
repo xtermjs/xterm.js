@@ -807,5 +807,62 @@ describe('BufferLine', function(): void {
       assert.equal(extendedAttributes(line, 3), extendedAttributes(initial, 3));
       assert.equal(extendedAttributes(line, 4), extendedAttributes(initial, 4));
     });
+
+    it('should cache canonical trimmed string translations', () => {
+      const line = new TestBufferLine(3);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(1, createCellData(1, 'b', 1));
+      line.setCell(2, createCellData(1, 'c', 1));
+
+      const originalGetTrimmedLength = line.getTrimmedLength.bind(line);
+      let trimmedLengthCalls = 0;
+      line.getTrimmedLength = (): number => {
+        trimmedLengthCalls++;
+        return originalGetTrimmedLength();
+      };
+
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
+      assert.equal(trimmedLengthCalls, 1);
+    });
+
+    it('should invalidate cached trimmed strings on line mutations', () => {
+      const assertCacheInvalidated = (mutate: (line: TestBufferLine) => void): void => {
+        const line = new TestBufferLine(5);
+        line.fill(createCellData(1, 'a', 1));
+        const originalGetTrimmedLength = line.getTrimmedLength.bind(line);
+        let trimmedLengthCalls = 0;
+        line.getTrimmedLength = (): number => {
+          trimmedLengthCalls++;
+          return originalGetTrimmedLength();
+        };
+        assert.equal(line.translateToString(true, undefined, undefined, undefined), 'aaaaa');
+        assert.equal(line.translateToString(true, undefined, undefined, undefined), 'aaaaa');
+        assert.equal(trimmedLengthCalls, 1);
+        mutate(line);
+        line.translateToString(true, undefined, undefined, undefined);
+        assert.equal(trimmedLengthCalls, 2);
+      };
+
+      assertCacheInvalidated(line => line.set(0, [0, 'b', 1, 'b'.charCodeAt(0)]));
+      assertCacheInvalidated(line => line.setCell(0, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.setCellFromCodepoint(0, 'b'.charCodeAt(0), 1, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.addCodepointToCell(0, 0x301, 0));
+      assertCacheInvalidated(line => line.insertCells(1, 1, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.deleteCells(1, 1, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.replaceCells(1, 3, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.resize(6, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.fill(createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => {
+        const src = new TestBufferLine(5);
+        src.fill(createCellData(1, 'x', 1));
+        line.copyFrom(src);
+      });
+      assertCacheInvalidated(line => {
+        const src = new TestBufferLine(5);
+        src.fill(createCellData(1, 'x', 1));
+        line.copyCellsFrom(src, 0, 0, 2, false);
+      });
+    });
   });
 });
