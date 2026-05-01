@@ -224,7 +224,7 @@ export interface ICellData extends IAttributeData {
  */
 export interface IBufferLine {
   length: number;
-  isWrapped: boolean;
+  get isWrapped(): boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;

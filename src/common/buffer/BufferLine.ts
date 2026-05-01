@@ -64,14 +64,26 @@ export class BufferLine implements IBufferLine {
   protected _combined: {[index: number]: string} = {};
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
   public length: number;
+  private _isWrapped: boolean;
 
-  constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
+  public get isWrapped(): boolean {
+    return this._isWrapped;
+  }
+  /**
+   * @internal
+   */
+  public setWrapped(isWrapped: boolean): void {
+    this._isWrapped = isWrapped;
+  }
+
+  constructor(cols: number, fillCellData?: ICellData, isWrapped: boolean = false) {
     this._data = new Uint32Array(cols * CELL_SIZE);
     const cell = fillCellData ?? CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {
       this.setCell(i, cell);
     }
     this.length = cols;
+    this._isWrapped = isWrapped;
   }
 
   /**
@@ -439,7 +451,7 @@ export class BufferLine implements IBufferLine {
     for (const el in line._extendedAttrs) {
       this._extendedAttrs[el] = line._extendedAttrs[el];
     }
-    this.isWrapped = line.isWrapped;
+    this._isWrapped = line._isWrapped;
   }
 
   /** create a new clone */
@@ -453,7 +465,7 @@ export class BufferLine implements IBufferLine {
     for (const el in this._extendedAttrs) {
       newLine._extendedAttrs[el] = this._extendedAttrs[el];
     }
-    newLine.isWrapped = this.isWrapped;
+    newLine._isWrapped = this._isWrapped;
     return newLine;
   }
 

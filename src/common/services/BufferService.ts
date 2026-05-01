@@ -6,6 +6,7 @@
 import { Disposable } from 'common/Lifecycle';
 import { IAttributeData, IBufferLine } from 'common/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
+import { BufferLine } from 'common/buffer/BufferLine';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from 'common/services/Services';
 import { Emitter } from 'common/Event';
@@ -73,7 +74,7 @@ export class BufferService extends Disposable implements IBufferService {
       newLine = buffer.getBlankLine(eraseAttr, isWrapped);
       this._cachedBlankLine = newLine;
     }
-    newLine.isWrapped = isWrapped;
+    (newLine as BufferLine).setWrapped(isWrapped);
 
     const topRow = buffer.ybase + buffer.scrollTop;
     const bottomRow = buffer.ybase + buffer.scrollBottom;
