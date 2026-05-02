@@ -93,6 +93,7 @@ export class Marker implements IMarker {
     this._onDispose.fire();
     dispose(this._disposables);
     this._disposables.length = 0;
+    this.removeMarker();
     this._buffer = undefined;
     this._lineData = undefined;
     this._startColumn = -1;

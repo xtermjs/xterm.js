@@ -8,15 +8,11 @@ import { DecorationService } from './DecorationService';
 import { IMarker } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
-import { MockLogService } from 'common/TestUtils.test';
+import { MockLogService, MockBufferService } from 'common/TestUtils.test';
 
 function createFakeMarker(line: number): IMarker {
-  return Object.freeze(new class extends Disposable {
-    public readonly id = 1;
-    public readonly line = line;
-    public readonly isDisposed = false;
-    public readonly onDispose = new Emitter<void>().event;
-  }());
+  const bufferService = new MockBufferService(80, 30);
+  return bufferService.buffer.addMarker(line);
 }
 
 const fakeMarker: IMarker = createFakeMarker(1);

@@ -9,7 +9,8 @@ import { IDecorationService, IInternalDecoration, ILogService } from 'common/ser
 import { SortedList } from 'common/SortedList';
 import { IColor } from 'common/Types';
 import { BufferLine } from 'common/buffer/BufferLine';
-import { IBufferLine, IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
+import { Marker } from 'common/buffer/Marker';
+import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/Event';
 
 // Work variables to avoid garbage collection
@@ -72,6 +73,10 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._decorations.clear();
   }
 
+  /**
+   * Only used in tests.
+   * @param @deprecated
+   */
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;
     let xmax = 0;
@@ -100,10 +105,11 @@ export class DecorationService extends Disposable implements IDecorationService 
       wrapOffset++;
     }
     */
+    x += bline.startColumn;
     for (let marker = lline._firstMarker; marker; marker = marker._nextMarker) {
       const d = marker.payload;
       if (d instanceof Decoration) {
-        const xmin = d.options.x ?? 0;
+        const xmin = marker._startColumn;
         const xmax = xmin + (d.options.width ?? 1);
         if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
           callback(d);
@@ -166,6 +172,7 @@ class Decoration extends DisposableStore implements IInternalDecoration {
   ) {
     super();
     this.marker = options.marker;
+    if (options.x) { (this.marker as Marker)._startColumn += options.x; }
     this.marker.payload = this;
     if (this.options.overviewRulerOptions && !this.options.overviewRulerOptions.position) {
       this.options.overviewRulerOptions.position = 'full';

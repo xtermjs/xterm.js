@@ -80,11 +80,19 @@ export class Buffer implements IBuffer {
     this.setupTabStops();
 
     this.lines.onTrim(amount => {
+      for (let i = 0; i < amount; i++) {
+        this.clearMarkers(i);
+      }
       const first = this.lines.length && this.lines.get(0);
       if (first instanceof BufferLine && first.isWrapped) {
         const prev = first.getPreviousLine();
         prev && first.asUnwrapped(prev);
       }});
+    this.lines.onDelete(event => {
+      for (let i = event.amount; --i >= 0; ) {
+        this.clearMarkers(event.index + i);
+      }
+    });
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -420,7 +428,6 @@ export class Buffer implements IBuffer {
     const logical = curLine.logicalLine;
     for (;;) {
       const endCol = logical.charStart(startCol + newCols);
-      if ((this as any).xyz) console.log('-curR:'+curRow+' endCol:'+endCol);
       if (endCol >= logical.length) {
         curLine.nextBufferLine = undefined;
         curLine.startColumn = startCol;
@@ -561,11 +568,9 @@ export class Buffer implements IBuffer {
 
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
-        /*
         for (let i = 0; i < amountToTrim; i++) {
           this.clearMarkers(i);
         }
-        */
       }
     }
   }
@@ -647,15 +652,7 @@ export class Buffer implements IBuffer {
    */
   public clearMarkers(y: number): void {
     this._isClearing = true;
-    const bline = this.lines.get(y) as BufferLine;
-    const startColumn = bline.startColumn;
-    const endColumn = bline.nextBufferLine ? bline.nextBufferLine.startColumn : Infinity;
-    const lline = bline.logicalLine;
-    for (let m = lline._firstMarker; m; m = m._nextMarker) {
-      if (m._startColumn >= startColumn && m._startColumn < endColumn) {
-        m.dispose();
-      }
-    }
+    (this.lines.get(y) as BufferLine).clearMarkers();
     this._isClearing = false;
   }
 
@@ -678,13 +675,6 @@ export class Buffer implements IBuffer {
     const lline = bline.logicalLine;
     const m = marker ?? new Marker();
     m.addToLine(this, lline, x ?? bline.startColumn);
-    m.register(m.onDispose(() => this._removeMarker(m)));
     return m;
-  }
-
-  private _removeMarker(marker: Marker): void {
-    if (!this._isClearing) {
-      marker.removeMarker();
-    }
   }
 }

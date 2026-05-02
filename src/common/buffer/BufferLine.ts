@@ -646,6 +646,20 @@ export class BufferLine implements IBufferLine {
   }
 
   /**
+   * @internal
+   */
+  public clearMarkers(): void {
+    const lline = this.logicalLine;
+    const startColumn = this.startColumn;
+    const endColumn = this.nextBufferLine ? this.nextBufferLine.startColumn : Infinity;
+    for (let m = lline._firstMarker; m; m = m._nextMarker) {
+      if (m._startColumn >= startColumn && m._startColumn < endColumn) {
+        m.dispose();
+      }
+    }
+  }
+
+  /**
    * Resize to `cols` filling excess cells with `fillCellData`.
    * The underlying array buffer will not change if there is still enough space
    * to hold the new buffer line data.

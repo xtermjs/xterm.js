@@ -494,6 +494,7 @@ describe('Buffer', () => {
         assert.equal(firstMarker.line, 0);
         assert.equal(secondMarker.line, 1);
         assert.equal(thirdMarker.line, 2);
+        buffer.resize(2, 11);
         assert.equal(buffer.lines.get(0)!.translateToString(), 'ij');
         assert.equal(buffer.lines.get(1)!.translateToString(), '01');
         assert.equal(buffer.lines.get(2)!.translateToString(), '23');
