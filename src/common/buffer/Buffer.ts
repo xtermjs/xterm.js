@@ -4,6 +4,7 @@
  */
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
@@ -18,7 +19,6 @@ import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
-const STRING_CACHE_CLEAR_DELAY_MS = 50;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -27,7 +27,7 @@ const STRING_CACHE_CLEAR_DELAY_MS = 50;
  *   - cursor position
  *   - scroll position
  */
-export class Buffer implements IBuffer {
+export class Buffer extends Disposable implements IBuffer {
   public lines: CircularList<IBufferLine>;
   public ydisp: number = 0;
   public ybase: number = 0;
@@ -53,7 +53,6 @@ export class Buffer implements IBuffer {
   private _memoryCleanupQueue: InstanceType<typeof IdleTaskQueue>;
   private _memoryCleanupPosition = 0;
   private readonly _stringCache: BufferLineStringCache;
-  private _stringCacheClearTimeout: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private _hasScrollback: boolean,
@@ -61,6 +60,8 @@ export class Buffer implements IBuffer {
     private _bufferService: IBufferService,
     private readonly _logService: ILogService
   ) {
+    super();
+    this._register(toDisposable(() => this.clearAllMarkers()));
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
     this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
@@ -68,7 +69,8 @@ export class Buffer implements IBuffer {
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();
     this._memoryCleanupQueue = new IdleTaskQueue(this._logService);
-    this._stringCache = new BufferLineStringCache(() => this._scheduleStringCacheCleanup());
+    this._register(toDisposable(() => this._memoryCleanupQueue.clear()));
+    this._stringCache = this._register(new BufferLineStringCache());
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -148,7 +150,7 @@ export class Buffer implements IBuffer {
    * Clears the buffer to its initial state, discarding all previous data.
    */
   public clear(): void {
-    this._resetStringCache();
+    this._stringCache.clear();
     this.ydisp = 0;
     this.ybase = 0;
     this.y = 0;
@@ -167,7 +169,7 @@ export class Buffer implements IBuffer {
   public resize(newCols: number, newRows: number): void {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
-    this._resetStringCache();
+    this._stringCache.clear();
 
     // count bufferlines with overly big memory to be cleaned afterwards
     let dirtyMemoryLines = 0;
@@ -313,28 +315,6 @@ export class Buffer implements IBuffer {
     // if we made it here with normalRun=false, we are in a final run
     // and can end the cleanup task for sure
     return normalRun;
-  }
-
-  private _scheduleStringCacheCleanup(): void {
-    if (this._stringCacheClearTimeout !== undefined) {
-      clearTimeout(this._stringCacheClearTimeout);
-    }
-    this._stringCacheClearTimeout = setTimeout(() => {
-      this._stringCacheClearTimeout = undefined;
-      this._clearStringCache();
-    }, STRING_CACHE_CLEAR_DELAY_MS);
-  }
-
-  private _resetStringCache(): void {
-    if (this._stringCacheClearTimeout !== undefined) {
-      clearTimeout(this._stringCacheClearTimeout);
-      this._stringCacheClearTimeout = undefined;
-    }
-    this._clearStringCache();
-  }
-
-  private _clearStringCache(): void {
-    this._stringCache.clear();
   }
 
   private get _isReflowEnabled(): boolean {
