@@ -4,7 +4,8 @@
     "lib": [
       "es2015",
       "es2016.Array.Include",
-      "es2019.string"
+      "es2019.string",
+      "es2021.weakref"
     ],
     "outDir": "../../out",
     "types": [

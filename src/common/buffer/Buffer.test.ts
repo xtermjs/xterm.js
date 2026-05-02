@@ -8,12 +8,14 @@ import { Buffer } from 'common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
 import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { CellData } from 'common/buffer/CellData';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
 const INIT_SCROLLBACK = 1000;
+const TEST_STRING_CACHE = new BufferLineStringCache();
 
 describe('Buffer', () => {
   let optionsService: MockOptionsService;
@@ -1104,7 +1106,7 @@ describe('Buffer', () => {
 
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
-      const line = new BufferLine(4);
+      const line = new BufferLine(TEST_STRING_CACHE, 4);
       line.setCell(0, createCellData(0, 'a', 1));
       line.setCell(1, createCellData(0, 'b', 1));
       line.setCell(2, createCellData(0, 'c', 1));
@@ -1116,7 +1118,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a cut-off double width character by including it', () => {
-      const line = new BufferLine(3);
+      const line = new BufferLine(TEST_STRING_CACHE, 3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1127,7 +1129,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
-      const line = new BufferLine(3);
+      const line = new BufferLine(TEST_STRING_CACHE, 3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1144,7 +1146,7 @@ describe('Buffer', () => {
     });
 
     it('should handle single width emojis', () => {
-      const line = new BufferLine(2);
+      const line = new BufferLine(TEST_STRING_CACHE, 2);
       line.setCell(0, createCellData(0, '😁', 1));
       line.setCell(1, createCellData(0, 'a', 1));
       buffer.lines.set(0, line);
@@ -1157,7 +1159,7 @@ describe('Buffer', () => {
     });
 
     it('should handle double width emojis', () => {
-      const line = new BufferLine(2);
+      const line = new BufferLine(TEST_STRING_CACHE, 2);
       line.setCell(0, createCellData(0, '😁', 2));
       line.setCell(1, createCellData(0, '', 0));
       buffer.lines.set(0, line);
@@ -1168,7 +1170,7 @@ describe('Buffer', () => {
       const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
       assert.equal(str2, '😁');
 
-      const line2 = new BufferLine(3);
+      const line2 = new BufferLine(TEST_STRING_CACHE, 3);
       line2.setCell(0, createCellData(0, '😁', 2));
       line2.setCell(1, createCellData(0, '', 0));
       line2.setCell(2, createCellData(0, 'a', 1));
@@ -1176,6 +1178,59 @@ describe('Buffer', () => {
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
       assert.equal(str3, '😁a');
+    });
+  });
+
+  describe('line string cache cleanup', () => {
+    it('should clear shared cache entries with a single timer', async () => {
+      buffer.fillViewportRows();
+      buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
+      buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 1));
+
+      assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+      assert.equal(buffer.translateBufferLineToString(1, false), `b${' '.repeat(INIT_COLS - 1)}`);
+
+      const cache = (buffer as any)._stringCache;
+      assert.equal(cache.entries.size, 2);
+      const previousTimer = (buffer as any)._stringCacheClearTimeout;
+      assert.notEqual(previousTimer, undefined);
+
+      // Another translation should refresh the same shared timer, not create a second queue.
+      assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+      assert.notEqual((buffer as any)._stringCacheClearTimeout, undefined);
+      assert.notEqual((buffer as any)._stringCacheClearTimeout, previousTimer);
+
+      await new Promise(r => setTimeout(r, 70));
+
+      assert.equal(cache.entries.size, 0);
+      assert.equal((buffer as any)._stringCacheClearTimeout, undefined);
+
+      // Cache entries should be recreated lazily after a timer-based reset.
+      assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+      assert.equal(cache.entries.size, 1);
+    });
+
+    it('should reset line string cache state on clear and resize', () => {
+      buffer.fillViewportRows();
+      buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
+      buffer.translateBufferLineToString(0, false);
+
+      const cache = (buffer as any)._stringCache;
+      assert.equal(cache.entries.size, 1);
+      assert.notEqual((buffer as any)._stringCacheClearTimeout, undefined);
+
+      buffer.clear();
+      assert.equal(cache.entries.size, 0);
+      assert.equal((buffer as any)._stringCacheClearTimeout, undefined);
+
+      buffer.fillViewportRows();
+      buffer.lines.get(0)!.setCell(0, createCellData(0, 'b', 1));
+      buffer.translateBufferLineToString(0, false);
+      assert.equal(cache.entries.size, 1);
+
+      buffer.resize(INIT_COLS - 1, INIT_ROWS);
+      assert.equal(cache.entries.size, 0);
+      assert.equal((buffer as any)._stringCacheClearTimeout, undefined);
     });
   });
 
