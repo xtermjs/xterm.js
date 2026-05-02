@@ -23,6 +23,7 @@ import { Emitter, type IEvent } from 'common/Event';
 export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
   public keyDown(ev: any): boolean | undefined { return this._keyDown(ev); }
+  public keyUp(ev: any): void { this._keyUp(ev); }
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
   public writeP(data: string | Uint8Array): Promise<void> {
     return new Promise(r => this.write(data, r));
@@ -358,6 +359,8 @@ export class MockCompositionHelper implements ICompositionHelper {
   }
   public keydown(ev: KeyboardEvent): boolean {
     return true;
+  }
+  public keyup(ev: KeyboardEvent): void {
   }
 }
 

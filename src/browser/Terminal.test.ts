@@ -3,12 +3,13 @@
  * @license MIT
  */
 
-import { MockCompositionHelper, MockRenderer, MockViewport, TestTerminal } from 'browser/TestUtils.test';
+import { CompositionHelper } from 'browser/input/CompositionHelper';
+import { MockCompositionHelper, MockRenderer, MockRenderService, MockViewport, TestTerminal } from 'browser/TestUtils.test';
 import type { IBrowser } from 'browser/Types';
 import { assert } from 'chai';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { MockUnicodeService, createCellData } from 'common/TestUtils.test';
+import { MockBufferService, MockOptionsService, MockUnicodeService, createCellData } from 'common/TestUtils.test';
 import { IMarker } from 'common/Types';
 
 const INIT_COLS = 80;
@@ -172,6 +173,87 @@ describe('Terminal', () => {
       term.reset();
       assert.equal(term.keyDown(evKeyDown), false);
       assert.equal(term.keyPress(evKeyPress), false);
+    });
+  });
+
+  describe('keyup handling', () => {
+    const create229KeyboardEvent = (type: 'keydown' | 'keyup'): KeyboardEvent => ({
+      type,
+      key: '。',
+      keyCode: 229
+    } as KeyboardEvent);
+
+    const createCompositionHelperStub = (onKeyup: () => void): MockCompositionHelper => {
+      const compositionHelper = new MockCompositionHelper();
+      compositionHelper.keyup = () => onKeyup();
+      return compositionHelper;
+    };
+
+    const setupRealCompositionHelper = (): HTMLTextAreaElement => {
+      const textarea = {
+        value: '',
+        focus: () => {},
+        blur: () => {},
+        style: {
+          left: 0,
+          top: 0
+        }
+      } as any as HTMLTextAreaElement;
+      const compositionView = {
+        classList: {
+          add: () => {},
+          remove: () => {}
+        },
+        getBoundingClientRect: () => ({ width: 0, height: 0 }),
+        style: {
+          left: 0,
+          top: 0
+        },
+        textContent: ''
+      } as any;
+      (term as any).textarea = textarea;
+      (term as any)._compositionHelper = new CompositionHelper(
+        textarea,
+        compositionView,
+        new MockBufferService(10, 5),
+        new MockOptionsService(),
+        term.coreService as any,
+        new MockRenderService()
+      );
+      return textarea;
+    };
+
+    it('should forward keyup event to composition helper', () => {
+      let keyupCalls = 0;
+      (term as any)._compositionHelper = createCompositionHelperStub(() => keyupCalls++);
+
+      term.keyUp(create229KeyboardEvent('keyup'));
+
+      assert.equal(keyupCalls, 1);
+    });
+
+    it('should not forward keyup event when custom keyup handler returns false', () => {
+      let keyupCalls = 0;
+      (term as any)._compositionHelper = createCompositionHelperStub(() => keyupCalls++);
+      term.attachCustomKeyEventHandler(ev => ev.type !== 'keyup');
+
+      term.keyUp(create229KeyboardEvent('keyup'));
+
+      assert.equal(keyupCalls, 0);
+    });
+
+    it('should emit pending keyCode 229 input on keyup when key matches', () => {
+      const calls: string[] = [];
+      (term.coreService as any).triggerDataEvent = (data: string) => calls.push(data);
+      const textarea = setupRealCompositionHelper();
+
+      term.keyDown(create229KeyboardEvent('keydown'));
+      assert.deepEqual(calls, []);
+
+      textarea.value = '。';
+      term.keyUp(create229KeyboardEvent('keyup'));
+
+      assert.deepEqual(calls, ['。']);
     });
   });
 
