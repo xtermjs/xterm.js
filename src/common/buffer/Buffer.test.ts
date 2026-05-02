@@ -1192,18 +1192,18 @@ describe('Buffer', () => {
 
       const cache = (buffer as any)._stringCache;
       assert.equal(cache.entries.size, 2);
-      const previousTimer = (buffer as any)._stringCacheClearTimeout;
+      const previousTimer = (cache as any)._clearTimeout;
       assert.notEqual(previousTimer, undefined);
 
       // Another translation should refresh the same shared timer, not create a second queue.
       assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-      assert.notEqual((buffer as any)._stringCacheClearTimeout, undefined);
-      assert.notEqual((buffer as any)._stringCacheClearTimeout, previousTimer);
+      assert.notEqual((cache as any)._clearTimeout, undefined);
+      assert.notEqual((cache as any)._clearTimeout, previousTimer);
 
       await new Promise(r => setTimeout(r, 70));
 
       assert.equal(cache.entries.size, 0);
-      assert.equal((buffer as any)._stringCacheClearTimeout, undefined);
+      assert.equal((cache as any)._clearTimeout, undefined);
 
       // Cache entries should be recreated lazily after a timer-based reset.
       assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
@@ -1217,11 +1217,11 @@ describe('Buffer', () => {
 
       const cache = (buffer as any)._stringCache;
       assert.equal(cache.entries.size, 1);
-      assert.notEqual((buffer as any)._stringCacheClearTimeout, undefined);
+      assert.notEqual((cache as any)._clearTimeout, undefined);
 
       buffer.clear();
       assert.equal(cache.entries.size, 0);
-      assert.equal((buffer as any)._stringCacheClearTimeout, undefined);
+      assert.equal((cache as any)._clearTimeout, undefined);
 
       buffer.fillViewportRows();
       buffer.lines.get(0)!.setCell(0, createCellData(0, 'b', 1));
@@ -1230,7 +1230,7 @@ describe('Buffer', () => {
 
       buffer.resize(INIT_COLS - 1, INIT_ROWS);
       assert.equal(cache.entries.size, 0);
-      assert.equal((buffer as any)._stringCacheClearTimeout, undefined);
+      assert.equal((cache as any)._clearTimeout, undefined);
     });
   });
 
