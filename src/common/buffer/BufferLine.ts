@@ -63,9 +63,8 @@ export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
-  // Cache for canonical full-line translations.
-  protected _cachedCanonicalString: string | undefined;
-  protected _cachedCanonicalTrimmedString: string | undefined;
+  protected _cachedString: string | undefined;
+  protected _isCachedStringTrimmed: boolean = false;
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
@@ -537,9 +536,13 @@ export class BufferLine implements IBufferLine {
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
     const isCanonicalRequest = (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
-    const cachedResult = trimRight ? this._cachedCanonicalTrimmedString ?? this._cachedCanonicalString?.trimEnd() : this._cachedCanonicalString;
-    if (isCanonicalRequest && cachedResult !== undefined) {
-      return cachedResult;
+    if (isCanonicalRequest && this._cachedString !== undefined) {
+      if (trimRight) {
+        return this._isCachedStringTrimmed ? this._cachedString : this._cachedString.trimEnd();
+      }
+      if (!this._isCachedStringTrimmed) {
+        return this._cachedString;
+      }
     }
     startCol = startCol ?? 0;
     endCol = endCol ?? this.length;
@@ -566,19 +569,14 @@ export class BufferLine implements IBufferLine {
       outColumns.push(startCol);
     }
     if (isCanonicalRequest) {
-      if (trimRight) {
-        this._cachedCanonicalTrimmedString = result;
-      } else {
-        this._cachedCanonicalString = result;
-        // Free the trimmed string as trimEnd() will be used to save memory
-        this._cachedCanonicalTrimmedString = undefined;
-      }
+      this._cachedString = result;
+      this._isCachedStringTrimmed = !!trimRight;
     }
     return result;
   }
 
   private _invalidateStringCache(): void {
-    this._cachedCanonicalString = undefined;
-    this._cachedCanonicalTrimmedString = undefined;
+    this._cachedString = undefined;
+    this._isCachedStringTrimmed = false;
   }
 }
