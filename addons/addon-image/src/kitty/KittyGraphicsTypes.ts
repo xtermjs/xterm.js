@@ -82,9 +82,11 @@ export const enum KittyKey {
 }
 
 // Pixel format constants
-export const BYTES_PER_PIXEL_RGB = 3;
-export const BYTES_PER_PIXEL_RGBA = 4;
-export const ALPHA_OPAQUE = 255;
+export const enum KittyPixelConstants {
+  BYTES_PER_PIXEL_RGB = 3,
+  BYTES_PER_PIXEL_RGBA = 4,
+  ALPHA_OPAQUE = 255
+}
 
 // Parsed Kitty graphics command.
 export interface IKittyCommand {
