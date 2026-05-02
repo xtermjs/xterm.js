@@ -44,6 +44,18 @@ const $workCell = new CellData();
 /** Factor when to cleanup underlying array buffer after shrinking. */
 const CLEANUP_THRESHOLD = 2;
 
+export interface IBufferLineStringCacheEntry {
+  value: string | undefined;
+  isTrimmed: boolean;
+  generation: number;
+}
+
+export interface IBufferLineStringCache {
+  generation: number;
+  allocateEntry(): IBufferLineStringCacheEntry;
+  touch?(): void;
+}
+
 /**
  * Typed array based bufferline implementation.
  *
@@ -63,11 +75,15 @@ export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
-  protected _cachedString: string | undefined;
-  protected _isCachedStringTrimmed: boolean = false;
+  protected _stringCacheEntryRef: WeakRef<IBufferLineStringCacheEntry> | undefined;
   public length: number;
 
-  constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
+  constructor(
+    protected readonly _stringCache: IBufferLineStringCache,
+    cols: number,
+    fillCellData?: ICellData,
+    public isWrapped: boolean = false
+  ) {
     this._data = new Uint32Array(cols * CELL_SIZE);
     const cell = fillCellData ?? CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {
@@ -456,7 +472,7 @@ export class BufferLine implements IBufferLine {
 
   /** create a new clone */
   public clone(): IBufferLine {
-    const newLine = new BufferLine(0);
+    const newLine = new BufferLine(this._stringCache, 0, undefined, false);
     newLine._data = new Uint32Array(this._data);
     newLine.length = this.length;
     for (const el in this._combined) {
@@ -536,12 +552,16 @@ export class BufferLine implements IBufferLine {
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
     const isCanonicalRequest = (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
-    if (isCanonicalRequest && this._cachedString !== undefined) {
+    if (isCanonicalRequest) {
+      this._stringCache.touch?.();
+    }
+    const stringCacheEntry = isCanonicalRequest ? this._getStringCacheEntry(false) : undefined;
+    if (isCanonicalRequest && stringCacheEntry?.value !== undefined) {
       if (trimRight) {
-        return this._isCachedStringTrimmed ? this._cachedString : this._cachedString.trimEnd();
+        return stringCacheEntry.isTrimmed ? stringCacheEntry.value : stringCacheEntry.value.trimEnd();
       }
-      if (!this._isCachedStringTrimmed) {
-        return this._cachedString;
+      if (!stringCacheEntry.isTrimmed) {
+        return stringCacheEntry.value;
       }
     }
     startCol = startCol ?? 0;
@@ -569,14 +589,33 @@ export class BufferLine implements IBufferLine {
       outColumns.push(startCol);
     }
     if (isCanonicalRequest) {
-      this._cachedString = result;
-      this._isCachedStringTrimmed = !!trimRight;
+      const cacheEntry = this._getStringCacheEntry(true)!;
+      cacheEntry.value = result;
+      cacheEntry.isTrimmed = !!trimRight;
     }
     return result;
   }
 
+  protected _getStringCacheEntry(createIfNeeded: boolean): IBufferLineStringCacheEntry | undefined {
+    const cachedEntry = this._stringCacheEntryRef?.deref();
+    if (cachedEntry) {
+      if (cachedEntry.generation === this._stringCache.generation) {
+        return cachedEntry;
+      }
+    }
+    if (!createIfNeeded) {
+      return undefined;
+    }
+    const cacheEntry = this._stringCache.allocateEntry();
+    this._stringCacheEntryRef = new WeakRef(cacheEntry);
+    return cacheEntry;
+  }
+
   private _invalidateStringCache(): void {
-    this._cachedString = undefined;
-    this._isCachedStringTrimmed = false;
+    const cacheEntry = this._getStringCacheEntry(false);
+    if (cacheEntry) {
+      cacheEntry.value = undefined;
+      cacheEntry.isTrimmed = false;
+    }
   }
 }

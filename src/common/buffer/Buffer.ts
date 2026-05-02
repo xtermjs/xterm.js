@@ -8,6 +8,7 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
 import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
@@ -17,6 +18,7 @@ import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
+const STRING_CACHE_CLEAR_DELAY_MS = 50;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -50,6 +52,8 @@ export class Buffer implements IBuffer {
   private _isClearing: boolean = false;
   private _memoryCleanupQueue: InstanceType<typeof IdleTaskQueue>;
   private _memoryCleanupPosition = 0;
+  private readonly _stringCache: BufferLineStringCache;
+  private _stringCacheClearTimeout: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private _hasScrollback: boolean,
@@ -64,6 +68,7 @@ export class Buffer implements IBuffer {
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();
     this._memoryCleanupQueue = new IdleTaskQueue(this._logService);
+    this._stringCache = new BufferLineStringCache(() => this._scheduleStringCacheCleanup());
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -93,7 +98,7 @@ export class Buffer implements IBuffer {
   }
 
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
+    return new BufferLine(this._stringCache, this._bufferService.cols, this.getNullCell(attr), isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -138,6 +143,7 @@ export class Buffer implements IBuffer {
    * Clears the buffer to it's initial state, discarding all previous data.
    */
   public clear(): void {
+    this._resetStringCache();
     this.ydisp = 0;
     this.ybase = 0;
     this.y = 0;
@@ -156,6 +162,7 @@ export class Buffer implements IBuffer {
   public resize(newCols: number, newRows: number): void {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
+    this._resetStringCache();
 
     // count bufferlines with overly big memory to be cleaned afterwards
     let dirtyMemoryLines = 0;
@@ -190,7 +197,7 @@ export class Buffer implements IBuffer {
             if (this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
-              this.lines.push(new BufferLine(newCols, nullCell));
+              this.lines.push(new BufferLine(this._stringCache, newCols, nullCell, false));
             } else {
               if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
                 // There is room above the buffer and there are no empty elements below the line,
@@ -204,7 +211,7 @@ export class Buffer implements IBuffer {
               } else {
                 // Add a blank line if there is no buffer left at the top to scroll to, or if there
                 // are blank lines after the cursor
-                this.lines.push(new BufferLine(newCols, nullCell));
+                this.lines.push(new BufferLine(this._stringCache, newCols, nullCell, false));
               }
             }
           }
@@ -303,6 +310,28 @@ export class Buffer implements IBuffer {
     return normalRun;
   }
 
+  private _scheduleStringCacheCleanup(): void {
+    if (this._stringCacheClearTimeout !== undefined) {
+      clearTimeout(this._stringCacheClearTimeout);
+    }
+    this._stringCacheClearTimeout = setTimeout(() => {
+      this._stringCacheClearTimeout = undefined;
+      this._clearStringCache();
+    }, STRING_CACHE_CLEAR_DELAY_MS);
+  }
+
+  private _resetStringCache(): void {
+    if (this._stringCacheClearTimeout !== undefined) {
+      clearTimeout(this._stringCacheClearTimeout);
+      this._stringCacheClearTimeout = undefined;
+    }
+    this._clearStringCache();
+  }
+
+  private _clearStringCache(): void {
+    this._stringCache.clear();
+  }
+
   private get _isReflowEnabled(): boolean {
     const windowsPty = this._optionsService.rawOptions.windowsPty;
     if (windowsPty && windowsPty.buildNumber) {
@@ -345,7 +374,7 @@ export class Buffer implements IBuffer {
         }
         if (this.lines.length < newRows) {
           // Add an extra row at the bottom of the viewport
-          this.lines.push(new BufferLine(newCols, nullCell));
+          this.lines.push(new BufferLine(this._stringCache, newCols, nullCell, false));
         }
       } else {
         if (this.ydisp === this.ybase) {
