@@ -80,7 +80,7 @@ void main() {
 
 const enum Constants {
   INDICES_PER_CELL = 11,
-  BYTES_PER_CELL = INDICES_PER_CELL * 4/*Float32Array.BYTES_PER_ELEMENT*/,
+  BYTES_PER_CELL = INDICES_PER_CELL * 4/* Float32Array.BYTES_PER_ELEMENT */,
   CELL_POSITION_INDICES = 2
 }
 

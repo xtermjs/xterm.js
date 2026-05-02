@@ -9,6 +9,12 @@ import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 
+// Buffer memory layout:
+//
+// [0]: content `uint32_t` - wcwidth(2) comb(1) codepoint(21)
+// [1]: fg      `uint32_t` - flags(8) r(8) g(8) b(8)
+// [2]: bg      `uint32_t` - flags(8) r(8) g(8) b(8)
+
 const enum Constants {
   /** The number of 32 bit array indices taken by one cell. */
   CELL_INDICIES = 3,
@@ -64,14 +70,6 @@ export interface IBufferLineStringCache {
  * memory allocs / GC pressure can be greatly reduced by reusing the CellData object.
  */
 export class BufferLine implements IBufferLine {
-  /**
-   * Buffer memory layout:
-   *
-   * | uint32_t                               | uint32_t                        | uint32_t                        |
-   * |----------------------------------------|---------------------------------|---------------------------------|
-   * | `content`                              | `FG`                            | `BG`                            |
-   * | `wcwidth(2)` `comb(1)` `codepoint(21)` | `flags(8)` `R(8)` `G(8)` `B(8)` | `flags(8)` `R(8)` `G(8)` `B(8)` |
-   */
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
