@@ -43,6 +43,20 @@ describe('Linkifier2', () => {
     },
     activate: () => { }
   };
+  const multiLineLink: ILink = {
+    text: 'foo',
+    range: {
+      start: {
+        x: 2,
+        y: 1
+      },
+      end: {
+        x: 4,
+        y: 2
+      }
+    },
+    activate: () => { }
+  };
 
   beforeEach(() => {
     const dom = new jsdom.JSDOM();
@@ -84,6 +98,32 @@ describe('Linkifier2', () => {
     });
 
     linkifier.linkLeave({ classList: { add: () => { } } } as any, link, {} as any);
+  });
+
+  it('onShowLinkUnderline event range is correct for wrapped links', done => {
+    linkifier.onShowLinkUnderline(e => {
+      assert.equal(multiLineLink.range.start.x - 1, e.x1);
+      assert.equal(multiLineLink.range.start.y - 1, e.y1);
+      assert.equal(multiLineLink.range.end.x, e.x2);
+      assert.equal(multiLineLink.range.end.y - 1, e.y2);
+
+      done();
+    });
+
+    linkifier.linkHover({ classList: { add: () => { } } } as any, multiLineLink, {} as any);
+  });
+
+  it('onHideLinkUnderline event range is correct for wrapped links', done => {
+    linkifier.onHideLinkUnderline(e => {
+      assert.equal(multiLineLink.range.start.x - 1, e.x1);
+      assert.equal(multiLineLink.range.start.y - 1, e.y1);
+      assert.equal(multiLineLink.range.end.x, e.x2);
+      assert.equal(multiLineLink.range.end.y - 1, e.y2);
+
+      done();
+    });
+
+    linkifier.linkLeave({ classList: { add: () => { } } } as any, multiLineLink, {} as any);
   });
 
 });
