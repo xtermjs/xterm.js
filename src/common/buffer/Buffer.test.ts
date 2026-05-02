@@ -1199,7 +1199,7 @@ describe('Buffer', () => {
       let timeoutId = 0;
       let now = 0;
       const clearedTimeouts: number[] = [];
-      const scheduledTimeouts = new Map<number, { delay: number; fire: () => void }>();
+      const scheduledTimeouts = new Map<number, { delay: number, fire: () => void }>();
       (globalThis as any).setTimeout = ((handler: (...args: any[]) => void, timeout?: number) => {
         const id = ++timeoutId;
         scheduledTimeouts.set(id, {

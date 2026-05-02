@@ -5,11 +5,10 @@
 
 import type { IBufferLineStringCache, IBufferLineStringCacheEntry } from 'common/buffer/BufferLine';
 import { disposableTimeout } from 'common/Async';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import type { IDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable, type IDisposable } from 'common/Lifecycle';
 
 const enum Constants {
-  CacheTtlMs = 15000
+  CACHE_TTL_MS = 15000
 }
 
 export class BufferLineStringCache extends Disposable implements IBufferLineStringCache {
@@ -54,17 +53,17 @@ export class BufferLineStringCache extends Disposable implements IBufferLineStri
     if (this._clearTimeout.value) {
       return;
     }
-    this._scheduleClearTimeout(Constants.CacheTtlMs);
+    this._scheduleClearTimeout(Constants.CACHE_TTL_MS);
   }
 
   private _scheduleClearTimeout(timeoutMs: number): void {
     this._clearTimeout.value = disposableTimeout(() => {
       const elapsed = Date.now() - this._lastAccessTimestamp;
-      if (elapsed >= Constants.CacheTtlMs) {
+      if (elapsed >= Constants.CACHE_TTL_MS) {
         this.clear();
         return;
       }
-      this._scheduleClearTimeout(Constants.CacheTtlMs - elapsed);
+      this._scheduleClearTimeout(Constants.CACHE_TTL_MS - elapsed);
     }, timeoutMs);
   }
 }
