@@ -41,12 +41,13 @@ const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-':
 /**
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
  */
-const MAX_PARSEBUFFER_LENGTH = 131072;
-
-/**
- * Limit length of title and icon name stacks.
- */
-const STACK_LIMIT = 10;
+const enum Constants {
+  MAX_PARSEBUFFER_LENGTH = 131072,
+  /** Limit length of title and icon name stacks. */
+  STACK_LIMIT = 10,
+  // create a warning log if an async handler takes longer than the limit (in ms)
+  SLOW_ASYNC_LIMIT = 5000
+}
 
 // map params to window option
 function paramToWindowOption(n: number, opts: IWindowOptions): boolean {
@@ -84,9 +85,6 @@ export enum WindowsOptionsReportType {
   GET_WIN_SIZE_PIXELS = 0,
   GET_CELL_SIZE_PIXELS = 1
 }
-
-// create a warning log if an async handler takes longer than the limit (in ms)
-const SLOW_ASYNC_LIMIT = 5000;
 
 // Work variables to avoid garbage collection
 let $temp = 0;
@@ -393,7 +391,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._logService.logLevel <= LogLevelEnum.WARN) {
       let slowTimeout: ReturnType<typeof setTimeout> | undefined;
       const slowPromise = new Promise<never>((_res, rej) => {
-        slowTimeout = setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT);
+        slowTimeout = setTimeout(() => rej('#SLOW_TIMEOUT'), Constants.SLOW_ASYNC_LIMIT);
       });
       Promise.race([p, slowPromise])
         .then(() => {
@@ -407,7 +405,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (err !== '#SLOW_TIMEOUT') {
             throw err;
           }
-          console.warn(`async parser handler taking longer than ${SLOW_ASYNC_LIMIT} ms`);
+          console.warn(`async parser handler taking longer than ${Constants.SLOW_ASYNC_LIMIT} ms`);
         });
     }
   }
@@ -445,8 +443,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       cursorStartX = this._parseStack.cursorStartX;
       cursorStartY = this._parseStack.cursorStartY;
       this._parseStack.paused = false;
-      if (data.length > MAX_PARSEBUFFER_LENGTH) {
-        start = this._parseStack.position + MAX_PARSEBUFFER_LENGTH;
+      if (data.length > Constants.MAX_PARSEBUFFER_LENGTH) {
+        start = this._parseStack.position + Constants.MAX_PARSEBUFFER_LENGTH;
       }
     }
 
@@ -463,8 +461,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // resize input buffer if needed
     if (this._parseBuffer.length < data.length) {
-      if (this._parseBuffer.length < MAX_PARSEBUFFER_LENGTH) {
-        this._parseBuffer = new Uint32Array(Math.min(data.length, MAX_PARSEBUFFER_LENGTH));
+      if (this._parseBuffer.length < Constants.MAX_PARSEBUFFER_LENGTH) {
+        this._parseBuffer = new Uint32Array(Math.min(data.length, Constants.MAX_PARSEBUFFER_LENGTH));
       }
     }
 
@@ -475,9 +473,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // process big data in smaller chunks
-    if (data.length > MAX_PARSEBUFFER_LENGTH) {
-      for (let i = start; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
-        const end = i + MAX_PARSEBUFFER_LENGTH < data.length ? i + MAX_PARSEBUFFER_LENGTH : data.length;
+    if (data.length > Constants.MAX_PARSEBUFFER_LENGTH) {
+      for (let i = start; i < data.length; i += Constants.MAX_PARSEBUFFER_LENGTH) {
+        const end = i + Constants.MAX_PARSEBUFFER_LENGTH < data.length ? i + Constants.MAX_PARSEBUFFER_LENGTH : data.length;
         const len = (typeof data === 'string')
           ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
@@ -2955,13 +2953,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 22:  // PushTitle
         if (second === 0 || second === 2) {
           this._windowTitleStack.push(this._windowTitle);
-          if (this._windowTitleStack.length > STACK_LIMIT) {
+          if (this._windowTitleStack.length > Constants.STACK_LIMIT) {
             this._windowTitleStack.shift();
           }
         }
         if (second === 0 || second === 1) {
           this._iconNameStack.push(this._iconName);
-          if (this._iconNameStack.length > STACK_LIMIT) {
+          if (this._iconNameStack.length > Constants.STACK_LIMIT) {
             this._iconNameStack.shift();
           }
         }

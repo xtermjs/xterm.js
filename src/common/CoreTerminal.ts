@@ -24,7 +24,7 @@
 import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
-import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
+import { BufferService, BufferServiceConstants } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
 import { CoreService } from 'common/services/CoreService';
@@ -173,8 +173,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
       return;
     }
 
-    x = Math.max(x, MINIMUM_COLS);
-    y = Math.max(y, MINIMUM_ROWS);
+    x = Math.max(x, BufferServiceConstants.MINIMUM_COLS);
+    y = Math.max(y, BufferServiceConstants.MINIMUM_ROWS);
 
     // Flush pending writes before resize to avoid race conditions where async
     // writes are processed with incorrect dimensions
