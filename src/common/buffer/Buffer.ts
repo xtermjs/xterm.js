@@ -61,7 +61,6 @@ export class Buffer extends Disposable implements IBuffer {
     private readonly _logService: ILogService
   ) {
     super();
-    this._register(toDisposable(() => this.clearAllMarkers()));
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
     this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
@@ -70,6 +69,7 @@ export class Buffer extends Disposable implements IBuffer {
     this.setupTabStops();
     this._memoryCleanupQueue = new IdleTaskQueue(this._logService);
     this._register(toDisposable(() => this._memoryCleanupQueue.clear()));
+    this._register(toDisposable(() => this.clearAllMarkers()));
     this._stringCache = this._register(new BufferLineStringCache());
   }
 
