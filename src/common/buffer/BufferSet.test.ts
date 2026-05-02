@@ -91,13 +91,13 @@ describe('BufferSet', () => {
 
       const oldCache = oldNormal._stringCache;
       assert.equal(oldCache.entries.size, 1);
-      assert.notEqual(oldCache._clearTimeout, undefined);
+      assert.notEqual(oldCache._clearTimeout.value, undefined);
 
       bufferSet.reset();
 
       assert.notEqual(bufferSet.normal, oldNormal);
       assert.equal(oldCache.entries.size, 0);
-      assert.equal(oldCache._clearTimeout, undefined);
+      assert.equal(oldCache._clearTimeout.value, undefined);
     });
 
     it('should dispose both buffers when disposed', () => {
@@ -112,15 +112,15 @@ describe('BufferSet', () => {
 
       const normalCache = normal._stringCache;
       const altCache = alt._stringCache;
-      assert.notEqual(normalCache._clearTimeout, undefined);
-      assert.notEqual(altCache._clearTimeout, undefined);
+      assert.notEqual(normalCache._clearTimeout.value, undefined);
+      assert.notEqual(altCache._clearTimeout.value, undefined);
 
       bufferSet.dispose();
 
       assert.equal(normalCache.entries.size, 0);
       assert.equal(altCache.entries.size, 0);
-      assert.equal(normalCache._clearTimeout, undefined);
-      assert.equal(altCache._clearTimeout, undefined);
+      assert.equal(normalCache._clearTimeout.value, undefined);
+      assert.equal(altCache._clearTimeout.value, undefined);
     });
   });
 });
