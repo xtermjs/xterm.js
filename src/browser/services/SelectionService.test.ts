@@ -9,11 +9,14 @@ import { SelectionModel } from 'browser/selection/SelectionModel';
 import { IBufferLine } from 'common/Types';
 import { MockBufferService, MockOptionsService, MockCoreService, createCellData } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
+import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { IBufferService, IOptionsService } from 'common/services/Services';
 import { MockCoreBrowserService, MockMouseService, MockRenderService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
 import { IRenderService } from 'browser/services/Services';
+
+const TEST_STRING_CACHE = new BufferLineStringCache();
 
 class TestSelectionService extends SelectionService {
   constructor(
@@ -55,7 +58,7 @@ describe('SelectionService', () => {
   });
 
   function stringToRow(text: string): IBufferLine {
-    const result = new BufferLine(text.length);
+    const result = new BufferLine(TEST_STRING_CACHE, text.length);
     for (let i = 0; i < text.length; i++) {
       result.setCell(i, createCellData(0, text.charAt(i), 1));
     }
@@ -63,7 +66,7 @@ describe('SelectionService', () => {
   }
 
   function stringArrayToRow(chars: string[]): IBufferLine {
-    const line = new BufferLine(chars.length);
+    const line = new BufferLine(TEST_STRING_CACHE, chars.length);
     chars.map((c, idx) => line.setCell(idx, createCellData(0, c, 1)));
     return line;
   }
@@ -118,7 +121,7 @@ describe('SelectionService', () => {
         [0, 'o', 1, 'o'.charCodeAt(0)],
         [0, 'o', 1, 'o'.charCodeAt(0)]
       ];
-      const line = new BufferLine(data.length);
+      const line = new BufferLine(TEST_STRING_CACHE, data.length);
       for (let i = 0; i < data.length; ++i) line.setCell(i, CellData.fromCharData(data[i]));
       buffer.lines.set(0, line);
       // Ensure wide characters take up 2 columns

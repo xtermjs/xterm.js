@@ -3,7 +3,8 @@
   "compilerOptions": {
     "lib": [
       "es2015",
-      "es2016.Array.Include"
+      "es2016.Array.Include",
+      "es2021.weakref"
     ],
     "outDir": "../../out",
     "types": [
