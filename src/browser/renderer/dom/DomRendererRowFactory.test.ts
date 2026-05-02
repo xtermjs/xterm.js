@@ -15,9 +15,7 @@ import { MockCoreService, MockDecorationService, MockOptionsService, createCellD
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
 import { TestWidthCache } from 'browser/renderer/dom/WidthCache.test';
 
-const dom = new jsdom.JSDOM('');
 const TEST_STRING_CACHE = new BufferLineStringCache();
-
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
