@@ -218,7 +218,7 @@ export class KittyKeyboard {
    * Returns the lowercase codepoint for letters.
    * For shifted keys, uses the code property to get the base key.
    */
-  private _getKeyCode(ev: IKeyboardEvent): number | undefined {
+  private _getKeyCode(ev: IKeyboardEvent, macOptionAsAlt: boolean): number | undefined {
     const numpadCode = this._getNumpadKeyCode(ev);
     if (numpadCode !== undefined) {
       return numpadCode;
@@ -234,7 +234,7 @@ export class KittyKeyboard {
       return funcCode;
     }
 
-    if (ev.shiftKey && ev.code) {
+    if ((ev.shiftKey || (macOptionAsAlt && ev.altKey)) && ev.code) {
       if (ev.code.startsWith('Digit') && ev.code.length === 6) {
         const digit = ev.code.charAt(5);
         if (digit >= '0' && digit <= '9') {
@@ -263,6 +263,19 @@ export class KittyKeyboard {
    */
   private _isModifierKey(ev: IKeyboardEvent): boolean {
     return ev.key === 'Shift' || ev.key === 'Control' || ev.key === 'Alt' || ev.key === 'Meta';
+  }
+
+  /**
+   * Check if a key is a lock key (CapsLock/NumLock/ScrollLock).
+   *
+   * Kitty's reference implementation classifies these as modifier keys for the
+   * purpose of suppressing press events (kitty/keys.c `is_modifier_key()`
+   * includes `GLFW_FKEY_CAPS_LOCK`, `GLFW_FKEY_SCROLL_LOCK`, `GLFW_FKEY_NUM_LOCK`),
+   * and its test suite asserts that a CapsLock press with no protocol flags
+   * produces empty output.
+   */
+  private _isLockKey(ev: IKeyboardEvent): boolean {
+    return ev.key === 'CapsLock' || ev.key === 'NumLock' || ev.key === 'ScrollLock';
   }
 
   /**
@@ -397,12 +410,14 @@ export class KittyKeyboard {
    * @param ev The keyboard event.
    * @param flags The active Kitty keyboard enhancement flags.
    * @param eventType The event type (press, repeat, release).
+   * @param macOptionAsAlt When true, macOS Option-composed ev.key values are unwound via ev.code.
    * @returns The keyboard result with the encoded key sequence.
    */
   public evaluate(
     ev: IKeyboardEvent,
     flags: number,
-    eventType: KittyKeyboardEventType = KittyKeyboardEventType.PRESS
+    eventType: KittyKeyboardEventType = KittyKeyboardEventType.PRESS,
+    macOptionAsAlt: boolean = false
   ): IKeyboardResult {
     const result: IKeyboardResult = {
       type: KeyboardResultType.SEND_KEY,
@@ -419,6 +434,14 @@ export class KittyKeyboard {
     }
 
     if (isMod && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
+      return result;
+    }
+
+    // Spec § "Report all keys as escape codes": "Additionally, with this mode,
+    // events for pressing modifier keys are reported." — i.e. *without* this
+    // mode, modifier-key press events are suppressed. Kitty's is_modifier_key()
+    // treats CapsLock/NumLock/ScrollLock as modifier keys for this rule.
+    if (this._isLockKey(ev) && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
       return result;
     }
 
@@ -443,7 +466,7 @@ export class KittyKeyboard {
       return result;
     }
 
-    const keyCode = this._getKeyCode(ev);
+    const keyCode = this._getKeyCode(ev, macOptionAsAlt);
     if (keyCode === undefined) {
       return result;
     }

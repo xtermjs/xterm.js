@@ -4,7 +4,7 @@
  */
 
 
-export type ImageType = 'image/png' | 'image/jpeg' | 'image/gif' | 'unsupported' | '';
+export type ImageType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/qoi' | 'unsupported' | '';
 
 export interface IMetrics {
   mime: ImageType;
@@ -43,6 +43,14 @@ export function imageType(d: Uint8Array): IMetrics {
       mime: 'image/gif',
       width: d[7] << 8 | d[6],
       height: d[9] << 8 | d[8]
+    };
+  }
+  // QOI: qoif
+  if (d32[0] === 0x66696F71) {
+    return {
+      mime: 'image/qoi',
+      width: d[4] << 24 | d[5] << 16 | d[6] << 8 | d[7],
+      height: d[8] << 24 | d[9] << 16 | d[10] << 8 | d[11]
     };
   }
   return UNSUPPORTED_TYPE;

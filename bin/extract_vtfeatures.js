@@ -57,6 +57,9 @@ xterm.js version: {{version}}
 {{#CSI.length}}
 - [CSI](#csi)
 {{/CSI.length}}
+{{#APC.length}}
+- [APC](#apc)
+{{/APC.length}}
 {{#DCS.length}}
 - [DCS](#dcs)
 {{/DCS.length}}
@@ -80,8 +83,9 @@ This document lists xterm.js' support of terminal sequences. The sequences are g
 - CSI - Control Sequence Introducer: sequence starting with \`ESC [\` (7bit) or CSI (\`\\x9B\`, 8bit)
 - DCS - Device Control String: sequence starting with \`ESC P\` (7bit) or DCS (\`\\x90\`, 8bit)
 - OSC - Operating System Command: sequence starting with \`ESC ]\` (7bit) or OSC (\`\\x9D\`, 8bit)
+- APC - Application Program Command: sequence starting with \`ESC _\` (7bit) or OSC (\`\\x9F\`, 8bit)
 
-Application Program Command (APC), Privacy Message (PM) and Start of String (SOS) are recognized but not supported,
+Privacy Message (PM) and Start of String (SOS) are recognized but not supported,
 any sequence of these types will be silently ignored. They are also not hookable by the API.
 
 Note that the list only marks sequences implemented in xterm.js' core codebase as supported. Missing sequences are either
@@ -176,6 +180,33 @@ To denote the sequences the tables use the same abbreviations as xterm does:
 {{/CSI.hasLongDescriptions}}
 
 {{/CSI.length}}
+
+
+{{#APC.length}}
+## APC
+
+| Mnemonic | Name | Sequence | Short Description | Support |
+| -------- | ---- | -------- | ----------------- | ------- |
+{{#APC}}
+| {{mnemonic}} | {{name}} | \`{{sequence}}\` | {{{shortDescription}}} {{#longDescription.length}}_[more](#{{longTarget}}){: .link-details}_{{/longDescription.length}} | {{{status}}} |
+{{/APC}}
+
+{{#APC.hasLongDescriptions}}
+{{#APC}}
+{{#longDescription.length}}
+<section class="sequence-details">
+
+### {{name}}
+{{#longDescription}}
+{{{.}}}
+{{/longDescription}}
+
+</section>
+{{/longDescription.length}}
+{{/APC}}
+{{/APC.hasLongDescriptions}}
+
+{{/APC.length}}
 
 
 {{#DCS.length}}

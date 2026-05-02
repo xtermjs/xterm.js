@@ -25,14 +25,14 @@ const customSettings: IImageAddonOptions = {
   pixelLimit: 16777216,       // max. pixel size of a single image
   sixelSupport: true,         // enable sixel support
   sixelScrolling: true,       // whether to scroll on image output
-  sixelPaletteLimit: 256,     // initial sixel palette size
-  sixelSizeLimit: 25000000,   // size limit of a single sixel sequence
+  sixelPaletteLimit: 4096,    // initial sixel palette size
+  sixelSizeLimit: 33554432,   // size limit of a single sixel sequence
   storageLimit: 128,          // FIFO storage limit in MB
   showPlaceholder: true,      // whether to show a placeholder for evicted images
   iipSupport: true,           // enable iTerm IIP support
-  iipSizeLimit: 20000000,     // size limit of a single IIP sequence
+  iipSizeLimit: 33554432,     // size limit of a single IIP sequence
   kittySupport: true,         // enable Kitty graphics support
-  kittySizeLimit: 20000000    // size limit of a single Kitty sequence
+  kittySizeLimit: 33554432    // size limit of a single Kitty sequence
 }
 
 // initialization

@@ -32,6 +32,7 @@ export interface IParams {
   clone(): IParams;
   toArray(): ParamsArray;
   reset(): void;
+  resetZdm(): void;
   addParam(value: number): void;
   addSubParam(value: number): void;
   hasSubParams(idx: number): boolean;
@@ -107,7 +108,7 @@ export type EscFallbackHandlerType = (identifier: number) => void;
 /**
  * EXECUTE handler types.
  */
-export type ExecuteHandlerType = () => boolean;
+export type ExecuteHandlerType = (ident?: number) => boolean;
 export type ExecuteFallbackHandlerType = (ident: number) => void;
 
 /**
@@ -219,8 +220,8 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(handler: OscFallbackHandlerType): void;
 
-  registerApcHandler(ident: number, handler: IApcHandler): IDisposable;
-  clearApcHandler(ident: number): void;
+  registerApcHandler(id: IFunctionIdentifier, handler: IApcHandler): IDisposable;
+  clearApcHandler(id: IFunctionIdentifier): void;
   setApcHandlerFallback(handler: ApcFallbackHandlerType): void;
 
   setErrorHandler(handler: (state: IParsingState) => IParsingState): void;
@@ -251,7 +252,7 @@ export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerTy
 }
 
 export interface IApcParser extends ISubParser<IApcHandler, ApcFallbackHandlerType> {
-  start(): void;
+  start(ident: number): void;
   end(success: boolean, promiseResult?: boolean): void | Promise<boolean>;
 }
 

@@ -18,27 +18,26 @@ import { IBuffer } from 'common/buffer/Types';
 import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'common/Event';
 
-/**
- * The number of pixels the mouse needs to be above or below the viewport in
- * order to scroll at the maximum speed.
- */
-const DRAG_SCROLL_MAX_THRESHOLD = 50;
-
-/**
- * The maximum scrolling speed
- */
-const DRAG_SCROLL_MAX_SPEED = 15;
-
-/**
- * The number of milliseconds between drag scroll updates.
- */
-const DRAG_SCROLL_INTERVAL = 50;
-
-/**
- * The maximum amount of time that can have elapsed for an alt click to move the
- * cursor.
- */
-const ALT_CLICK_MOVE_CURSOR_TIME = 500;
+const enum Constants {
+  /**
+   * The number of pixels the mouse needs to be above or below the viewport in
+   * order to scroll at the maximum speed.
+   */
+  DRAG_SCROLL_MAX_THRESHOLD = 50,
+  /**
+   * The maximum scrolling speed
+   */
+  DRAG_SCROLL_MAX_SPEED = 15,
+  /**
+   * The number of milliseconds between drag scroll updates.
+   */
+  DRAG_SCROLL_INTERVAL = 50,
+  /**
+   * The maximum amount of time that can have elapsed for an alt click to move the
+   * cursor.
+   */
+  ALT_CLICK_MOVE_CURSOR_TIME = 500
+}
 
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
@@ -424,9 +423,9 @@ export class SelectionService extends Disposable implements ISelectionService {
       offset -= terminalHeight;
     }
 
-    offset = Math.min(Math.max(offset, -DRAG_SCROLL_MAX_THRESHOLD), DRAG_SCROLL_MAX_THRESHOLD);
-    offset /= DRAG_SCROLL_MAX_THRESHOLD;
-    return (offset / Math.abs(offset)) + Math.round(offset * (DRAG_SCROLL_MAX_SPEED - 1));
+    offset = Math.min(Math.max(offset, -Constants.DRAG_SCROLL_MAX_THRESHOLD), Constants.DRAG_SCROLL_MAX_THRESHOLD);
+    offset /= Constants.DRAG_SCROLL_MAX_THRESHOLD;
+    return (offset / Math.abs(offset)) + Math.round(offset * (Constants.DRAG_SCROLL_MAX_SPEED - 1));
   }
 
   /**
@@ -500,7 +499,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       this._screenElement.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
       this._screenElement.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     }
-    this._dragScrollIntervalTimer = this._coreBrowserService.window.setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
+    this._dragScrollIntervalTimer = this._coreBrowserService.window.setInterval(() => this._dragScroll(), Constants.DRAG_SCROLL_INTERVAL);
   }
 
   /**
@@ -675,7 +674,7 @@ export class SelectionService extends Disposable implements ISelectionService {
   }
 
   /**
-   * The callback that occurs every DRAG_SCROLL_INTERVAL ms that does the
+   * The callback that occurs every Constants.DRAG_SCROLL_INTERVAL ms that does the
    * scrolling of the viewport.
    */
   private _dragScroll(): void {
@@ -713,7 +712,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     this._removeMouseDownListeners();
 
-    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME && event.altKey && this._optionsService.rawOptions.altClickMovesCursor) {
+    if (this.selectionText.length <= 1 && timeElapsed < Constants.ALT_CLICK_MOVE_CURSOR_TIME && event.altKey && this._optionsService.rawOptions.altClickMovesCursor) {
       if (this._bufferService.buffer.ybase === this._bufferService.buffer.ydisp) {
         const coordinates = this._mouseCoordsService.getCoords(
           event,

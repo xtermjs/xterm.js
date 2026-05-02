@@ -19,7 +19,7 @@ import { ICoreService, IDecorationService, IOptionsService } from 'common/servic
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
-import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RenderModel, RenderModelConstants } from './RenderModel';
 import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
@@ -30,7 +30,7 @@ import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
-  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = new MutableDisposable();
+  private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = this._register(new MutableDisposable());
   private _textBlinkStateManager: TextBlinkStateManager;
   private _charAtlasDisposable = this._register(new MutableDisposable());
   private _charAtlas: ITextureAtlas | undefined;
@@ -493,7 +493,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         chars = cell.getChars();
         code = cell.getCode();
-        i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        i = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
 
         if (!rowHasBlinkingCells && cell.isBlink()) {
           rowHasBlinkingCells = true;
@@ -538,9 +538,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
-            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
+            this._model.cells[i + RenderModelConstants.BG_OFFSET] === this._cellColorResolver.result.bg &&
+            this._model.cells[i + RenderModelConstants.FG_OFFSET] === this._cellColorResolver.result.fg &&
+            this._model.cells[i + RenderModelConstants.EXT_OFFSET] === this._cellColorResolver.result.ext) {
           continue;
         }
 
@@ -553,9 +553,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
-        this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
+        this._model.cells[i + RenderModelConstants.BG_OFFSET] = this._cellColorResolver.result.bg;
+        this._model.cells[i + RenderModelConstants.FG_OFFSET] = this._cellColorResolver.result.fg;
+        this._model.cells[i + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
 
         width = cell.getWidth();
         this._glyphRenderer.value!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, width, lastBg);
@@ -566,14 +566,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
           // Null out non-first cells
           for (x++; x <= lastCharX; x++) {
-            j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+            j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
             this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
             // supported
-            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
-            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
-            this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
+            this._model.cells[j + RenderModelConstants.BG_OFFSET] = this._cellColorResolver.result.bg;
+            this._model.cells[j + RenderModelConstants.FG_OFFSET] = this._cellColorResolver.result.fg;
+            this._model.cells[j + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
           }
           x--; // Go back to the previous update cell for next iteration
         }
