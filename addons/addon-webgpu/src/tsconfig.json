@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "dom",
+      "es2021"
+    ],
+    "rootDir": "../..",
+    "outDir": "../out",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "removeComments": true,
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
+      "browser/*": [
+        "../../../src/browser/*"
+      ],
+      "@xterm/addon-webgpu": [
+        "../typings/addon-webgpu.d.ts"
+      ]
+    },
+    "strict": true,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ]
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/browser"
+    }
+  ]
+}
