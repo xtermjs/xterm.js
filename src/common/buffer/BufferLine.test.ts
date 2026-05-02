@@ -16,6 +16,22 @@ class TestBufferLine extends BufferLine {
     return this._combined;
   }
 
+  public get cachedCanonicalString(): string | undefined {
+    return this._cachedCanonicalString;
+  }
+
+  public set cachedCanonicalString(value: string | undefined) {
+    this._cachedCanonicalString = value;
+  }
+
+  public get cachedCanonicalTrimmedString(): string | undefined {
+    return this._cachedCanonicalTrimmedString;
+  }
+
+  public set cachedCanonicalTrimmedString(value: string | undefined) {
+    this._cachedCanonicalTrimmedString = value;
+  }
+
   public toArray(): CharData[] {
     const result = [];
     for (let i = 0; i < this.length; ++i) {
@@ -808,30 +824,52 @@ describe('BufferLine', function(): void {
       assert.equal(extendedAttributes(line, 4), extendedAttributes(initial, 4));
     });
 
-    it('should cache canonical non-trimmed string translations', () => {
-      const line = new TestBufferLine(3);
+    it('should cache canonical string translations', () => {
+      const line = new TestBufferLine(5);
       line.setCell(0, createCellData(1, 'a', 1));
       line.setCell(1, createCellData(1, 'b', 1));
       line.setCell(2, createCellData(1, 'c', 1));
 
+      // Trimmed-only canonical request should cache the trimmed value.
+      const trimmed = line.translateToString(true, undefined, undefined, undefined);
+      assert.equal(trimmed, 'abc');
+      assert.equal(line.cachedCanonicalTrimmedString, 'abc');
+
+      // Non-trimmed canonical request should cache the full value and free trimmed cache.
       const translated = line.translateToString(false, undefined, undefined, undefined);
-      assert.equal(translated, 'abc');
-      assert.equal((line as any)._cachedTrimmedString, 'abc');
-      (line as any)._cachedTrimmedString = 'cached';
-      assert.equal(line.translateToString(false, undefined, undefined, undefined), 'cached');
+      assert.equal(translated, 'abc  ');
+      assert.equal(line.cachedCanonicalString, 'abc  ');
+      assert.equal(line.cachedCanonicalTrimmedString, undefined);
+
+      // Once non-trimmed is cached, trimmed should be derived from trimEnd() (not re-cached).
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
+      assert.equal(line.cachedCanonicalTrimmedString, undefined);
+
+      line.cachedCanonicalString = 'cached-non-trimmed  ';
+      line.cachedCanonicalTrimmedString = 'cached-trimmed';
+      assert.equal(line.translateToString(false, undefined, undefined, undefined), 'cached-non-trimmed  ');
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'cached-trimmed');
+
+      line.cachedCanonicalTrimmedString = undefined;
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'cached-non-trimmed');
+
       // Any optional translation argument should bypass cache.
       assert.equal(line.translateToString(false, 0, 2, undefined), 'ab');
-      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
+      assert.equal(line.translateToString(true, 0, 2, undefined), 'ab');
     });
 
-    it('should invalidate cached trimmed strings on line mutations', () => {
+    it('should invalidate cached canonical strings on line mutations', () => {
       const assertCacheInvalidated = (mutate: (line: TestBufferLine) => void): void => {
         const line = new TestBufferLine(5);
         line.fill(createCellData(1, 'a', 1));
+        line.translateToString(true, undefined, undefined, undefined);
+        assert.equal(line.cachedCanonicalTrimmedString, 'aaaaa');
         line.translateToString(false, undefined, undefined, undefined);
-        assert.equal((line as any)._cachedTrimmedString, 'aaaaa');
+        assert.equal(line.cachedCanonicalString, 'aaaaa');
+        assert.equal(line.cachedCanonicalTrimmedString, undefined);
         mutate(line);
-        assert.equal((line as any)._cachedTrimmedString, undefined);
+        assert.equal(line.cachedCanonicalString, undefined);
+        assert.equal(line.cachedCanonicalTrimmedString, undefined);
       };
 
       assertCacheInvalidated(line => line.set(0, [0, 'b', 1, 'b'.charCodeAt(0)]));
