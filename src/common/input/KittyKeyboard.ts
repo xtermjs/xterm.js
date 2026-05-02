@@ -478,7 +478,24 @@ export class KittyKeyboard {
     if (flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES) {
       useCsiU = true;
     } else if (reportEventTypes) {
-      useCsiU = true;
+      // In REPORT_EVENT_TYPES mode:
+      // - Function keys always use CSI u (for all event types)
+      // - Text-producing keys use legacy encoding for plain PRESS, but CSI u for:
+      //   - PRESS with modifiers (except plain Shift)
+      //   - REPEAT and RELEASE events
+      if (isFunc) {
+        useCsiU = true;
+      } else {
+        // For text-producing keys
+        if (eventType !== KittyKeyboardEventType.PRESS) {
+          // REPEAT and RELEASE always use CSI u
+          useCsiU = true;
+        } else if (modifiers > 0) {
+          // PRESS with modifiers uses CSI u, except for plain Shift
+          const plainShiftOnly = ev.shiftKey && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.key.length === 1;
+          useCsiU = !plainShiftOnly;
+        }
+      }
     } else if (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES) {
       // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy
       // mode" and consider space to be a text-generating key, so these skip the isFunc fast-path
