@@ -1071,9 +1071,9 @@ describe('Buffer', () => {
       buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
-      assert.equal(marker.line, buffer.lines.length - 1);
-      buffer.lines.onTrimEmitter.fire(1);
-      assert.equal(marker.line, buffer.lines.length - 2);
+      assert.equal(marker.line, 23);
+      buffer.lines.trimStart(1);
+      assert.equal(marker.line, 22);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
       buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
