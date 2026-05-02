@@ -1195,16 +1195,28 @@ describe('Buffer', () => {
     it('should clear shared cache entries with a single timer', () => {
       const originalSetTimeout = globalThis.setTimeout;
       const originalClearTimeout = globalThis.clearTimeout;
+      const originalDateNow = Date.now;
       let timeoutId = 0;
-      const scheduledTimeouts = new Map<number, () => void>();
-      (globalThis as any).setTimeout = ((handler: (...args: any[]) => void) => {
+      let now = 0;
+      const clearedTimeouts: number[] = [];
+      const scheduledTimeouts = new Map<number, { delay: number; fire: () => void }>();
+      (globalThis as any).setTimeout = ((handler: (...args: any[]) => void, timeout?: number) => {
         const id = ++timeoutId;
-        scheduledTimeouts.set(id, () => handler());
+        scheduledTimeouts.set(id, {
+          delay: timeout ?? 0,
+          fire: () => {
+            scheduledTimeouts.delete(id);
+            handler();
+          }
+        });
         return id as ReturnType<typeof setTimeout>;
       }) as typeof setTimeout;
       (globalThis as any).clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
-        scheduledTimeouts.delete(id as unknown as number);
+        const numericId = id as unknown as number;
+        clearedTimeouts.push(numericId);
+        scheduledTimeouts.delete(numericId);
       }) as typeof clearTimeout;
+      Date.now = () => now;
       try {
         buffer.fillViewportRows();
         buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
@@ -1215,26 +1227,34 @@ describe('Buffer', () => {
 
         const cache = buffer.getStringCache();
         assert.equal(cache.entries.size, 2);
-        const previousTimer = buffer.getStringCacheClearTimeout();
-        assert.ok(previousTimer !== undefined);
-
-        // Another translation should refresh the same shared timer, not create a second queue.
-        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
         assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
-        assert.notEqual(buffer.getStringCacheClearTimeout(), previousTimer);
+        assert.equal(scheduledTimeouts.size, 1);
+        assert.equal([...scheduledTimeouts.values()][0].delay, 15000);
+        const initialTimerCreationCount = timeoutId;
 
-        for (const timeout of scheduledTimeouts.values()) {
-          timeout();
-        }
-        scheduledTimeouts.clear();
+        now = 5000;
+        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+        assert.equal(timeoutId, initialTimerCreationCount);
+        assert.equal(scheduledTimeouts.size, 1);
+        assert.deepEqual(clearedTimeouts, []);
+
+        now = 15000;
+        [...scheduledTimeouts.values()][0].fire();
+        assert.equal(timeoutId, initialTimerCreationCount + 1);
+        assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
+        assert.equal(scheduledTimeouts.size, 1);
+        assert.equal([...scheduledTimeouts.values()][0].delay, 5000);
+
+        now = 20000;
+        [...scheduledTimeouts.values()][0].fire();
 
         assert.equal(cache.entries.size, 0);
         assert.equal(buffer.getStringCacheClearTimeout(), undefined);
 
-        // Cache entries should be recreated lazily after a timer-based reset.
         assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
         assert.equal(cache.entries.size, 1);
       } finally {
+        Date.now = originalDateNow;
         globalThis.setTimeout = originalSetTimeout;
         globalThis.clearTimeout = originalClearTimeout;
       }

@@ -16,6 +16,7 @@ export class BufferLineStringCache extends Disposable implements IBufferLineStri
   public generation: number = 0;
   public readonly entries: Set<IBufferLineStringCacheEntry> = new Set();
   private readonly _clearTimeout = this._register(new MutableDisposable<IDisposable>());
+  private _lastAccessTimestamp: number = 0;
 
   constructor() {
     super();
@@ -39,6 +40,7 @@ export class BufferLineStringCache extends Disposable implements IBufferLineStri
 
   public clear(): void {
     this._clearTimeout.clear();
+    this._lastAccessTimestamp = 0;
     this.generation++;
     for (const entry of this.entries) {
       entry.value = undefined;
@@ -48,9 +50,21 @@ export class BufferLineStringCache extends Disposable implements IBufferLineStri
   }
 
   private _scheduleClear(): void {
+    this._lastAccessTimestamp = Date.now();
+    if (this._clearTimeout.value) {
+      return;
+    }
+    this._scheduleClearTimeout(Constants.CacheTtlMs);
+  }
+
+  private _scheduleClearTimeout(timeoutMs: number): void {
     this._clearTimeout.value = disposableTimeout(() => {
-      this._clearTimeout.clear();
-      this.clear();
-    }, Constants.CacheTtlMs);
+      const elapsed = Date.now() - this._lastAccessTimestamp;
+      if (elapsed >= Constants.CacheTtlMs) {
+        this.clear();
+        return;
+      }
+      this._scheduleClearTimeout(Constants.CacheTtlMs - elapsed);
+    }, timeoutMs);
   }
 }
