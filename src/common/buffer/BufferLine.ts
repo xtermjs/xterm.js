@@ -63,7 +63,9 @@ export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
-  private _cachedTrimmedString: string | undefined;
+  // Cache for canonical full-line translations.
+  protected _cachedCanonicalString: string | undefined;
+  protected _cachedCanonicalTrimmedString: string | undefined;
   public length: number;
   private _isWrapped: boolean;
 
@@ -544,8 +546,8 @@ export class BufferLine implements IBufferLine {
   }
 
   /**
-   * Translates the buffer line to a string. Caching only applies to canonical non-trimmed
-   * translation requests. Using `trimRight` or any optional range/mapping arguments disables cache.
+   * Translates the buffer line to a string. Caching only applies to canonical full-line translation
+   * requests (regardless of `trimRight` value).
    *
    * @param trimRight Whether to trim any empty cells on the right.
    * @param startCol The column to start the string (0-based inclusive).
@@ -558,9 +560,10 @@ export class BufferLine implements IBufferLine {
    * returned string, the corresponding entries in `outColumns` will have the same column number.
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
-    const isCanonicalTrimmedRequest = !trimRight && (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
-    if (isCanonicalTrimmedRequest && this._cachedTrimmedString !== undefined) {
-      return this._cachedTrimmedString;
+    const isCanonicalRequest = (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
+    const cachedResult = trimRight ? this._cachedCanonicalTrimmedString ?? this._cachedCanonicalString?.trimEnd() : this._cachedCanonicalString;
+    if (isCanonicalRequest && cachedResult !== undefined) {
+      return cachedResult;
     }
     startCol = startCol ?? 0;
     endCol = endCol ?? this.length;
@@ -586,13 +589,20 @@ export class BufferLine implements IBufferLine {
     if (outColumns) {
       outColumns.push(startCol);
     }
-    if (isCanonicalTrimmedRequest) {
-      this._cachedTrimmedString = result;
+    if (isCanonicalRequest) {
+      if (trimRight) {
+        this._cachedCanonicalTrimmedString = result;
+      } else {
+        this._cachedCanonicalString = result;
+        // Free the trimmed string as trimEnd() will be used to save memory
+        this._cachedCanonicalTrimmedString = undefined;
+      }
     }
     return result;
   }
 
   private _invalidateStringCache(): void {
-    this._cachedTrimmedString = undefined;
+    this._cachedCanonicalString = undefined;
+    this._cachedCanonicalTrimmedString = undefined;
   }
 }
