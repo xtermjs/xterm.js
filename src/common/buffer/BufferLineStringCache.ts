@@ -5,14 +5,22 @@
 
 import type { IBufferLineStringCache, IBufferLineStringCacheEntry } from 'common/buffer/BufferLine';
 import { disposableTimeout } from 'common/Async';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import type { IDisposable } from 'common/Lifecycle';
 
-const STRING_CACHE_CLEAR_DELAY_MS = 50;
+const enum Constants {
+  CacheTtlMs = 15000
+}
 
-export class BufferLineStringCache implements IBufferLineStringCache, IDisposable {
+export class BufferLineStringCache extends Disposable implements IBufferLineStringCache {
   public generation: number = 0;
   public readonly entries: Set<IBufferLineStringCacheEntry> = new Set();
-  private _clearTimeout: IDisposable | undefined;
+  private readonly _clearTimeout = this._register(new MutableDisposable<IDisposable>());
+
+  constructor() {
+    super();
+    this._register(toDisposable(() => this.entries.clear()));
+  }
 
   public touch(): void {
     this._scheduleClear();
@@ -30,8 +38,7 @@ export class BufferLineStringCache implements IBufferLineStringCache, IDisposabl
   }
 
   public clear(): void {
-    this._clearTimeout?.dispose();
-    this._clearTimeout = undefined;
+    this._clearTimeout.clear();
     this.generation++;
     for (const entry of this.entries) {
       entry.value = undefined;
@@ -40,15 +47,10 @@ export class BufferLineStringCache implements IBufferLineStringCache, IDisposabl
     this.entries.clear();
   }
 
-  public dispose(): void {
-    this.clear();
-  }
-
   private _scheduleClear(): void {
-    this._clearTimeout?.dispose();
-    this._clearTimeout = disposableTimeout(() => {
-      this._clearTimeout = undefined;
+    this._clearTimeout.value = disposableTimeout(() => {
+      this._clearTimeout.clear();
       this.clear();
-    }, STRING_CACHE_CLEAR_DELAY_MS);
+    }, Constants.CacheTtlMs);
   }
 }

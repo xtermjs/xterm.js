@@ -1182,32 +1182,52 @@ describe('Buffer', () => {
   });
 
   describe('line string cache cleanup', () => {
-    it('should clear shared cache entries with a single timer', async () => {
-      buffer.fillViewportRows();
-      buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
-      buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 1));
+    it('should clear shared cache entries with a single timer', () => {
+      const originalSetTimeout = globalThis.setTimeout;
+      const originalClearTimeout = globalThis.clearTimeout;
+      let timeoutId = 0;
+      const scheduledTimeouts = new Map<number, () => void>();
+      (globalThis as any).setTimeout = ((handler: (...args: any[]) => void) => {
+        const id = ++timeoutId;
+        scheduledTimeouts.set(id, () => handler());
+        return id as ReturnType<typeof setTimeout>;
+      }) as typeof setTimeout;
+      (globalThis as any).clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
+        scheduledTimeouts.delete(id as unknown as number);
+      }) as typeof clearTimeout;
+      try {
+        buffer.fillViewportRows();
+        buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
+        buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 1));
 
-      assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-      assert.equal(buffer.translateBufferLineToString(1, false), `b${' '.repeat(INIT_COLS - 1)}`);
+        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+        assert.equal(buffer.translateBufferLineToString(1, false), `b${' '.repeat(INIT_COLS - 1)}`);
 
-      const cache = (buffer as any)._stringCache;
-      assert.equal(cache.entries.size, 2);
-      const previousTimer = (cache as any)._clearTimeout;
-      assert.notEqual(previousTimer, undefined);
+        const cache = (buffer as any)._stringCache;
+        assert.equal(cache.entries.size, 2);
+        const previousTimer = (cache as any)._clearTimeout.value;
+        assert.notEqual(previousTimer, undefined);
 
-      // Another translation should refresh the same shared timer, not create a second queue.
-      assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-      assert.notEqual((cache as any)._clearTimeout, undefined);
-      assert.notEqual((cache as any)._clearTimeout, previousTimer);
+        // Another translation should refresh the same shared timer, not create a second queue.
+        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+        assert.notEqual((cache as any)._clearTimeout.value, undefined);
+        assert.notEqual((cache as any)._clearTimeout.value, previousTimer);
 
-      await new Promise(r => setTimeout(r, 70));
+        for (const timeout of scheduledTimeouts.values()) {
+          timeout();
+        }
+        scheduledTimeouts.clear();
 
-      assert.equal(cache.entries.size, 0);
-      assert.equal((cache as any)._clearTimeout, undefined);
+        assert.equal(cache.entries.size, 0);
+        assert.equal((cache as any)._clearTimeout.value, undefined);
 
-      // Cache entries should be recreated lazily after a timer-based reset.
-      assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-      assert.equal(cache.entries.size, 1);
+        // Cache entries should be recreated lazily after a timer-based reset.
+        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+        assert.equal(cache.entries.size, 1);
+      } finally {
+        globalThis.setTimeout = originalSetTimeout;
+        globalThis.clearTimeout = originalClearTimeout;
+      }
     });
 
     it('should reset line string cache state on clear and resize', () => {
@@ -1217,11 +1237,11 @@ describe('Buffer', () => {
 
       const cache = (buffer as any)._stringCache;
       assert.equal(cache.entries.size, 1);
-      assert.notEqual((cache as any)._clearTimeout, undefined);
+      assert.notEqual((cache as any)._clearTimeout.value, undefined);
 
       buffer.clear();
       assert.equal(cache.entries.size, 0);
-      assert.equal((cache as any)._clearTimeout, undefined);
+      assert.equal((cache as any)._clearTimeout.value, undefined);
 
       buffer.fillViewportRows();
       buffer.lines.get(0)!.setCell(0, createCellData(0, 'b', 1));
@@ -1230,7 +1250,7 @@ describe('Buffer', () => {
 
       buffer.resize(INIT_COLS - 1, INIT_ROWS);
       assert.equal(cache.entries.size, 0);
-      assert.equal((cache as any)._clearTimeout, undefined);
+      assert.equal((cache as any)._clearTimeout.value, undefined);
     });
   });
 
