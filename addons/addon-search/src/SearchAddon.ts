@@ -120,6 +120,41 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return found;
   }
 
+  /**
+   * Find the Nth instance of the term, then scroll to and select it. If it
+   * doesn't exist, do nothing.
+   * @param term The search term.
+   * @param searchOptions Search options.
+   * @returns Whether a result was found.
+   */
+  public findNth(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
+    if (!this._terminal || !this._engine) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
+
+    // If nthMatchPosition is invalid for any reason, pass along -1 as a substitute.
+    // That way, `clearDecoration()` logic is guaranteed to run and reflect match failure.
+    if (!searchOptions || isNaN(parseInt(`${searchOptions.nthMatchPosition}`, 10)) || !searchOptions.nthMatchPosition) {
+      searchOptions = { nthMatchPosition: -1, ...(searchOptions ?? {}) };
+    }
+
+    this._onBeforeSearch.fire();
+
+    this._state.lastSearchOptions = searchOptions;
+
+    if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
+      this._highlightAllMatches(term, searchOptions!);
+    }
+
+    const found = this._findNthAndSelect(term, searchOptions, internalSearchOptions);
+    this._fireResults(searchOptions);
+    this._state.cachedSearchTerm = term;
+
+    this._onAfterSearch.fire();
+
+    return found;
+  }
+
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
     if (!this._terminal || !this._engine || !this._decorationManager) {
       throw new Error('Cannot use addon until it has been loaded');
@@ -167,6 +202,21 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
 
     const result = this._engine.findNextWithSelection(term, searchOptions, this._state.cachedSearchTerm);
+    return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
+  }
+
+  private _findNthAndSelect(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
+    if (!this._terminal || !this._engine) {
+      return false;
+    }
+
+    if (!this._state.isValidSearchTerm(term)) {
+      this._terminal.clearSelection();
+      this.clearDecorations();
+      return false;
+    }
+
+    const result = this._resultTracker.searchResults.find((match: ISearchResult, index: number) => index + 1 === searchOptions?.nthMatchPosition);
     return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
