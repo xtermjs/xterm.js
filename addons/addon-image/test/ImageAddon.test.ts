@@ -132,13 +132,13 @@ test.describe('ImageAddon', () => {
         sixelSupport: true,
         sixelScrolling: true,
         sixelPaletteLimit: 512,  // set to 512 to get example image working
-        sixelSizeLimit: 25000000,
+        sixelSizeLimit: 33554432,
         storageLimit: 128,
         showPlaceholder: true,
         iipSupport: true,
-        iipSizeLimit: 20000000,
+        iipSizeLimit: 33554432,
         kittySupport: true,
-        kittySizeLimit: 20000000
+        kittySizeLimit: 33554432
       };
       deepStrictEqual(await ctx.page.evaluate(`window.imageAddon._opts`), DEFAULT_OPTIONS);
     });
