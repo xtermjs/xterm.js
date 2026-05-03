@@ -18,8 +18,10 @@ import * as platform from 'common/Platform';
 import { INewScrollDimensions, INewScrollPosition, IScrollDimensions, IScrollPosition, IScrollEvent, Scrollable, ScrollbarVisibility } from './scrollable';
 // import 'vs/css!./media/scrollbars';
 
-const HIDE_TIMEOUT = 500;
-const SCROLL_WHEEL_SENSITIVITY = 50;
+const enum Constants {
+  HIDE_TIMEOUT = 500,
+  SCROLL_WHEEL_SENSITIVITY = 50
+}
 
 class MouseWheelClassifierItem {
   public timestamp: number;
@@ -404,12 +406,12 @@ export class SmoothScrollableElement extends Widget {
 
       let desiredScrollPosition: INewScrollPosition = {};
       if (deltaY) {
-        const deltaScrollTop = SCROLL_WHEEL_SENSITIVITY * deltaY;
+        const deltaScrollTop = Constants.SCROLL_WHEEL_SENSITIVITY * deltaY;
         const desiredScrollTop = futureScrollPosition.scrollTop - (deltaScrollTop < 0 ? Math.floor(deltaScrollTop) : Math.ceil(deltaScrollTop));
         this._verticalScrollbar.writeScrollPosition(desiredScrollPosition, desiredScrollTop);
       }
       if (deltaX) {
-        const deltaScrollLeft = SCROLL_WHEEL_SENSITIVITY * deltaX;
+        const deltaScrollLeft = Constants.SCROLL_WHEEL_SENSITIVITY * deltaX;
         const desiredScrollLeft = futureScrollPosition.scrollLeft - (deltaScrollLeft < 0 ? Math.floor(deltaScrollLeft) : Math.ceil(deltaScrollLeft));
         this._horizontalScrollbar.writeScrollPosition(desiredScrollPosition, desiredScrollLeft);
       }
@@ -533,7 +535,7 @@ export class SmoothScrollableElement extends Widget {
 
   private _scheduleHide(): void {
     if (!this._mouseIsOver && !this._isDragging) {
-      this._hideTimeout.cancelAndSet(() => this._hide(), HIDE_TIMEOUT);
+      this._hideTimeout.cancelAndSet(() => this._hide(), Constants.HIDE_TIMEOUT);
     }
   }
 }

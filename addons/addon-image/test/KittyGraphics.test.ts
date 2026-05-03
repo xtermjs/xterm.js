@@ -109,11 +109,6 @@ test.describe('Kitty Graphics Protocol', () => {
   // TODO: Distinguish lowercase delete selectors (placement only) from uppercase (placement + free data)
 
   test.beforeEach(async ({}, testInfo) => {
-    // DEBT: This test never worked on webkit
-    if (ctx.browser.browserType().name() === 'webkit') {
-      testInfo.skip();
-      return;
-    }
     await ctx.page.evaluate(`
       window.term.reset()
       window.imageAddon?.dispose();
