@@ -36,6 +36,11 @@ declare module '@xterm/addon-clipboard' {
    * - SYSTEM `c`: The system clipboard.
    * - PRIMARY `p`: The primary clipboard. This is provided for compatibility
    *  with Linux X11.
+   *
+   * OSC 52 may also specify other selection characters (e.g. `q`, `s`, `0`-`7`).
+   * Browsers expose a single clipboard, so the default
+   * {@link BrowserClipboardProvider} maps any selection to `navigator.clipboard`.
+   * Custom providers may handle additional selections as needed.
    */
   export const enum ClipboardSelectionType {
     SYSTEM = 'c',
