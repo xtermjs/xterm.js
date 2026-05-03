@@ -48,6 +48,14 @@ test.describe('ClipboardAddon', () => {
       await ctx.proxy.write(`\x1b]52;c;${testDataEncoded}\x07`);
       deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
     });
+    test('primary selection', async () => {
+      await ctx.proxy.write(`\x1b]52;p;${testDataEncoded}\x07`);
+      deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
+    });
+    test('empty selection (default)', async () => {
+      await ctx.proxy.write(`\x1b]52;;${testDataEncoded}\x07`);
+      deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
+    });
     test('invalid base64 string', async () => {
       await ctx.proxy.write(`\x1b]52;c;${testDataEncoded}invalid\x07`);
       deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), '');
@@ -68,6 +76,15 @@ test.describe('ClipboardAddon', () => {
       await ctx.page.evaluate(() => window.navigator.clipboard.writeText('hello world'));
       await ctx.proxy.write(`\x1b]52;c;?\x07`);
       deepEqual(await ctx.page.evaluate('window.data'), [`\x1b]52;c;${testDataEncoded}\x07`]);
+    });
+    test('primary selection', async () => {
+      await ctx.page.evaluate(`
+        window.data = [];
+        window.term.onData(e => data.push(e));
+      `);
+      await ctx.page.evaluate(() => window.navigator.clipboard.writeText('hello world'));
+      await ctx.proxy.write(`\x1b]52;p;?\x07`);
+      deepEqual(await ctx.page.evaluate('window.data'), [`\x1b]52;p;${testDataEncoded}\x07`]);
     });
     test('clear clipboard', async () => {
       await ctx.proxy.write(`\x1b]52;c;!\x07`);

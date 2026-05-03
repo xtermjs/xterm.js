@@ -70,17 +70,11 @@ export class ClipboardAddon implements ITerminalAddon {
 }
 
 export class BrowserClipboardProvider implements IClipboardProvider {
-  public async readText(selection: ClipboardSelectionType): Promise<string> {
-    if (selection !== 'c') {
-      return Promise.resolve('');
-    }
+  public readText(_selection: ClipboardSelectionType): Promise<string> {
     return navigator.clipboard.readText();
   }
 
-  public async writeText(selection: ClipboardSelectionType, text: string): Promise<void> {
-    if (selection !== 'c') {
-      return Promise.resolve();
-    }
+  public writeText(_selection: ClipboardSelectionType, text: string): Promise<void> {
     return navigator.clipboard.writeText(text);
   }
 }
