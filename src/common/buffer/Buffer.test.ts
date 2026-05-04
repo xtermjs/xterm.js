@@ -8,22 +8,34 @@ import { Buffer } from 'common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
 import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { CellData } from 'common/buffer/CellData';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
 const INIT_SCROLLBACK = 1000;
+const TEST_STRING_CACHE = new BufferLineStringCache();
+
+class TestBuffer extends Buffer {
+  public getStringCache(): BufferLineStringCache {
+    return (this as unknown as { _stringCache: BufferLineStringCache })._stringCache;
+  }
+
+  public getStringCacheClearTimeout(): unknown {
+    return (this.getStringCache() as unknown as { _clearTimeout: { value: unknown } })._clearTimeout.value;
+  }
+}
 
 describe('Buffer', () => {
   let optionsService: MockOptionsService;
   let bufferService: MockBufferService;
-  let buffer: Buffer;
+  let buffer: TestBuffer;
 
   beforeEach(() => {
     optionsService = new MockOptionsService({ scrollback: INIT_SCROLLBACK });
     bufferService = new MockBufferService(INIT_COLS, INIT_ROWS);
-    buffer = new Buffer(true, optionsService, bufferService, new MockLogService());
+    buffer = new TestBuffer(true, optionsService, bufferService, new MockLogService());
   });
 
   describe('constructor', () => {
@@ -151,7 +163,7 @@ describe('Buffer', () => {
 
       describe('no scrollback', () => {
         it('should trim from the top of the buffer when the cursor reaches the bottom', () => {
-          buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
+          buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
@@ -1054,7 +1066,7 @@ describe('Buffer', () => {
   describe('buffer marked to have no scrollback', () => {
     it('should always have a scrollback of 0', () => {
       // Test size on initialization
-      buffer = new Buffer(false, new MockOptionsService({ scrollback: 1000 }), bufferService, new MockLogService());
+      buffer = new TestBuffer(false, new MockOptionsService({ scrollback: 1000 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       assert.equal(buffer.lines.maxLength, INIT_ROWS);
       // Test size on buffer increase
@@ -1068,7 +1080,7 @@ describe('Buffer', () => {
 
   describe('addMarker', () => {
     it('should adjust a marker line when the buffer is trimmed', () => {
-      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
+      buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
       assert.equal(marker.line, 23);
@@ -1076,7 +1088,7 @@ describe('Buffer', () => {
       assert.equal(marker.line, 22);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
-      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
+      buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       assert.equal(buffer.markers.length, 0);
       const marker = buffer.addMarker(0);
@@ -1088,7 +1100,7 @@ describe('Buffer', () => {
     });
     it('should call onDispose', () => {
       const eventStack: string[] = [];
-      buffer = new Buffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
+      buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       assert.equal(buffer.markers.length, 0);
       const marker = buffer.addMarker(0);
@@ -1104,7 +1116,7 @@ describe('Buffer', () => {
 
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
-      const line = new BufferLine(4);
+      const line = new BufferLine(TEST_STRING_CACHE, 4);
       line.setCell(0, createCellData(0, 'a', 1));
       line.setCell(1, createCellData(0, 'b', 1));
       line.setCell(2, createCellData(0, 'c', 1));
@@ -1116,7 +1128,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a cut-off double width character by including it', () => {
-      const line = new BufferLine(3);
+      const line = new BufferLine(TEST_STRING_CACHE, 3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1127,7 +1139,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
-      const line = new BufferLine(3);
+      const line = new BufferLine(TEST_STRING_CACHE, 3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1144,7 +1156,7 @@ describe('Buffer', () => {
     });
 
     it('should handle single width emojis', () => {
-      const line = new BufferLine(2);
+      const line = new BufferLine(TEST_STRING_CACHE, 2);
       line.setCell(0, createCellData(0, '😁', 1));
       line.setCell(1, createCellData(0, 'a', 1));
       buffer.lines.set(0, line);
@@ -1157,7 +1169,7 @@ describe('Buffer', () => {
     });
 
     it('should handle double width emojis', () => {
-      const line = new BufferLine(2);
+      const line = new BufferLine(TEST_STRING_CACHE, 2);
       line.setCell(0, createCellData(0, '😁', 2));
       line.setCell(1, createCellData(0, '', 0));
       buffer.lines.set(0, line);
@@ -1168,7 +1180,7 @@ describe('Buffer', () => {
       const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
       assert.equal(str2, '😁');
 
-      const line2 = new BufferLine(3);
+      const line2 = new BufferLine(TEST_STRING_CACHE, 3);
       line2.setCell(0, createCellData(0, '😁', 2));
       line2.setCell(1, createCellData(0, '', 0));
       line2.setCell(2, createCellData(0, 'a', 1));
@@ -1178,4 +1190,97 @@ describe('Buffer', () => {
       assert.equal(str3, '😁a');
     });
   });
+  describe('line string cache cleanup', () => {
+    it('should clear shared cache entries with a single timer', () => {
+      const originalSetTimeout = globalThis.setTimeout;
+      const originalClearTimeout = globalThis.clearTimeout;
+      const originalDateNow = Date.now;
+      let timeoutId = 0;
+      let now = 0;
+      const clearedTimeouts: number[] = [];
+      const scheduledTimeouts = new Map<number, { delay: number, fire: () => void }>();
+      (globalThis as any).setTimeout = ((handler: (...args: any[]) => void, timeout?: number) => {
+        const id = ++timeoutId;
+        scheduledTimeouts.set(id, {
+          delay: timeout ?? 0,
+          fire: () => {
+            scheduledTimeouts.delete(id);
+            handler();
+          }
+        });
+        return id as ReturnType<typeof setTimeout>;
+      }) as typeof setTimeout;
+      (globalThis as any).clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
+        const numericId = id as unknown as number;
+        clearedTimeouts.push(numericId);
+        scheduledTimeouts.delete(numericId);
+      }) as typeof clearTimeout;
+      Date.now = () => now;
+      try {
+        buffer.fillViewportRows();
+        buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
+        buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 1));
+
+        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+        assert.equal(buffer.translateBufferLineToString(1, false), `b${' '.repeat(INIT_COLS - 1)}`);
+
+        const cache = buffer.getStringCache();
+        assert.equal(cache.entries.size, 2);
+        assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
+        assert.equal(scheduledTimeouts.size, 1);
+        assert.equal([...scheduledTimeouts.values()][0].delay, 15000);
+        const initialTimerCreationCount = timeoutId;
+
+        now = 5000;
+        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+        assert.equal(timeoutId, initialTimerCreationCount);
+        assert.equal(scheduledTimeouts.size, 1);
+        assert.deepEqual(clearedTimeouts, []);
+
+        now = 15000;
+        [...scheduledTimeouts.values()][0].fire();
+        assert.equal(timeoutId, initialTimerCreationCount + 1);
+        assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
+        assert.equal(scheduledTimeouts.size, 1);
+        assert.equal([...scheduledTimeouts.values()][0].delay, 5000);
+
+        now = 20000;
+        [...scheduledTimeouts.values()][0].fire();
+
+        assert.equal(cache.entries.size, 0);
+        assert.equal(buffer.getStringCacheClearTimeout(), undefined);
+
+        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
+        assert.equal(cache.entries.size, 1);
+      } finally {
+        Date.now = originalDateNow;
+        globalThis.setTimeout = originalSetTimeout;
+        globalThis.clearTimeout = originalClearTimeout;
+      }
+    });
+
+    it('should reset line string cache state on clear and resize', () => {
+      buffer.fillViewportRows();
+      buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
+      buffer.translateBufferLineToString(0, false);
+
+      const cache = buffer.getStringCache();
+      assert.equal(cache.entries.size, 1);
+      assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
+
+      buffer.clear();
+      assert.equal(cache.entries.size, 0);
+      assert.equal(buffer.getStringCacheClearTimeout(), undefined);
+
+      buffer.fillViewportRows();
+      buffer.lines.get(0)!.setCell(0, createCellData(0, 'b', 1));
+      buffer.translateBufferLineToString(0, false);
+      assert.equal(cache.entries.size, 1);
+
+      buffer.resize(INIT_COLS - 1, INIT_ROWS);
+      assert.equal(cache.entries.size, 0);
+      assert.equal(buffer.getStringCacheClearTimeout(), undefined);
+    });
+  });
+
 });

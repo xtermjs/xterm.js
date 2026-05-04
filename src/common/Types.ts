@@ -22,7 +22,7 @@ export interface ICoreTerminal {
   registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
   registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
   registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
-  registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+  registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 }
 
 export interface IDisposable {
@@ -216,6 +216,9 @@ export interface ICellData extends IAttributeData {
   getCode(): number;
   setFromCharData(value: CharData): void;
   getAsCharData(): CharData;
+}
+
+export interface ILogicalLine {
 }
 
 /**
@@ -481,7 +484,7 @@ export interface IInputHandler {
   registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
   registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
   registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
-  registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+  registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 
   /** C0 BEL */ bell(): boolean;
   /** C0 LF */ lineFeed(): boolean;

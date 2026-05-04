@@ -3,24 +3,25 @@
  * @license MIT
  */
 
-import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from 'common/Types';
+import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Marker } from 'common/buffer/Marker';
 import { Attributes, BgFlags, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 
-/**
- * buffer memory layout:
- *
- *   |             uint32_t             |        uint32_t         |        uint32_t         |
- *   |             `content`            |          `FG`           |          `BG`           |
- *   | wcwidth(2) comb(1) codepoint(21) | flags(8) R(8) G(8) B(8) | flags(8) R(8) G(8) B(8) |
- */
+// Buffer memory layout:
+//
+// [0]: content `uint32_t` - wcwidth(2) comb(1) codepoint(21)
+// [1]: fg      `uint32_t` - flags(8) r(8) g(8) b(8)
+// [2]: bg      `uint32_t` - flags(8) r(8) g(8) b(8)
 
-
-/** typed array slots taken by one cell */
-const CELL_SIZE = 3;
+const enum Constants {
+  /** The number of 32 bit array indices taken by one cell. */
+  CELL_INDICIES = 3,
+  /** Factor when to cleanup underlying array buffer after shrinking. */
+  CLEANUP_THRESHOLD = 2
+}
 
 /** Column count within current visible BufferLine(row).
  * The left-most column is column 0.
@@ -38,9 +39,9 @@ export type LogicalColumn = number;
  * Cell member indices.
  *
  * Direct access:
- *    `content = data[column * CELL_SIZE + Cell.CONTENT];`
- *    `fg = data[column * CELL_SIZE + Cell.FG];`
- *    `bg = data[column * CELL_SIZE + Cell.BG];`
+ *    `content = data[column * Constants.CELL_INDICIES + Cell.CONTENT];`
+ *    `fg = data[column * Constants.CELL_INDICIES + Cell.FG];`
+ *    `bg = data[column * Constants.CELL_INDICIES + Cell.BG];`
  */
 const enum Cell {
   CONTENT = 0,
@@ -53,18 +54,26 @@ export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 // Work variable to avoid garbage collection
 const $workCell = new CellData();
 
-/** Factor when to cleanup underlying array buffer after shrinking. */
-const CLEANUP_THRESHOLD = 2;
+export interface IBufferLineStringCacheEntry {
+  value: string | undefined;
+  isTrimmed: boolean;
+  generation: number;
+}
+
+export interface IBufferLineStringCache {
+  generation: number;
+  allocateEntry(): IBufferLineStringCacheEntry;
+  touch?(): void;
+}
 
 /*
  * The data "model" of a line ignoring line wrapping.
  */
-export class LogicalLine {
+export class LogicalLine implements ILogicalLine {
   /**
    * @internal
    */
   public _data: Uint32Array;
-
   /**
    * @internal
    */
@@ -86,7 +95,7 @@ export class LogicalLine {
    * Must be no more than this._data.length / 3. */
   public length: number = 0;
 
-  constructor(cols: number = 0, data = new Uint32Array(cols * CELL_SIZE)) {
+  constructor(cols: number = 0, data = new Uint32Array(cols * Constants.CELL_INDICIES)) {
     this._data = data;
   }
 
@@ -94,7 +103,7 @@ export class LogicalLine {
    * @internal
    */
   public resizeData(cols: number): void {
-    const uint32Cells = cols * CELL_SIZE;
+    const uint32Cells = cols * Constants.CELL_INDICIES;
     const oldByteLength = this._data.buffer.byteLength;
     const neededByteLength = uint32Cells * 4;
     if (oldByteLength >= neededByteLength) {
@@ -111,7 +120,7 @@ export class LogicalLine {
 
   public getWidth(index: LogicalColumn): number {
     return index >= this.length ? NULL_CELL_WIDTH
-      : this._data[index * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT;
+      : this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT;
   }
 
   /** usually same as argument, but adjust if wide or at end.
@@ -133,7 +142,7 @@ export class LogicalLine {
       cell.bg = this.backgroundColor;
       return cell;
     }
-    const startIndex = index * CELL_SIZE;
+    const startIndex = index * Constants.CELL_INDICIES;
     cell.content = this._data[startIndex + Cell.CONTENT];
     cell.fg = this._data[startIndex + Cell.FG];
     cell.bg = this._data[startIndex + Cell.BG];
@@ -146,21 +155,30 @@ export class LogicalLine {
     return cell;
   }
 
-  /**
-   * Set data at `index` to `cell`.
-   */
-  public setCell(index: LogicalColumn, cell: ICellData): void {
-    const content = cell.content & (Content.CODEPOINT_MASK|Content.IS_COMBINED_MASK);
-    this.setCellFromCodepoint(index, content, cell.getWidth(), cell);
-    if (cell.content & Content.IS_COMBINED_MASK) {
-      this._combined[index] = cell.combinedData;
+  /** Returns the string content of the cell. */
+  public getString(index: number): string {
+    const content = this._data[index * Constants.CELL_INDICIES + Cell.CONTENT];
+    if (content & Content.IS_COMBINED_MASK) {
+      return this._combined[index];
     }
+    if (content & Content.CODEPOINT_MASK) {
+      return stringFromCodePoint(content & Content.CODEPOINT_MASK);
+    }
+    // return empty string for empty cells
+    return '';
+  }
+
+  /** Get state of protected flag. */
+  public isProtected(index: number): number {
+    return this._data[index * Constants.CELL_INDICIES + Cell.BG] & BgFlags.PROTECTED;
   }
 
   /**
    * Set cell data from input handler.
    * Since the input handler see the incoming chars as UTF32 codepoints,
    * it gets an optimized access method.
+   * Warning - does not invalidatw the string cache - callers should do so.
+   * @internal
    */
   public setCellFromCodepoint(index: LogicalColumn, codePoint: number, width: number, attrs: IAttributeData): void {
     if (codePoint === 0 && width === 1 && index >= this.length - 1 && attrs.fg === 0 && attrs.bg === this.backgroundColor) {
@@ -175,30 +193,30 @@ export class LogicalLine {
       if ((this as any).xyz) { console.log('-set fill '+index+' to '+this.length);}
       this.resizeData(index + 1);
       for (let i = this.length; i < index; i++) {
-        this._data[i * CELL_SIZE + Cell.CONTENT] = NULL_CELL_WIDTH << Content.WIDTH_SHIFT;
-        this._data[i * CELL_SIZE + Cell.FG] = 0;
-        this._data[i * CELL_SIZE + Cell.BG] = this.backgroundColor;
+        this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] = NULL_CELL_WIDTH << Content.WIDTH_SHIFT;
+        this._data[i * Constants.CELL_INDICIES + Cell.FG] = 0;
+        this._data[i * Constants.CELL_INDICIES + Cell.BG] = this.backgroundColor;
       }
       this.length = index + 1;
     }
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = attrs.extended;
     }
-    this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
-    this._data[index * CELL_SIZE + Cell.FG] = attrs.fg;
-    this._data[index * CELL_SIZE + Cell.BG] = attrs.bg;
+    this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
+    this._data[index * Constants.CELL_INDICIES + Cell.FG] = attrs.fg;
+    this._data[index * Constants.CELL_INDICIES + Cell.BG] = attrs.bg;
   }
 
   /**
    * Cleanup underlying array buffer.
    * A cleanup will be triggered if the array buffer exceeds the actual used
-   * memory by a factor of CLEANUP_THRESHOLD.
+   * memory by a factor of Constants.CLEANUP_THRESHOLD.
    * Returns 0 or 1 indicating whether a cleanup happened.
    */
   public cleanupMemory(threshold: number = 1.3): number {
     const cols = this.length;
-    if (cols * CELL_SIZE * 4 * threshold < this._data.buffer.byteLength) {
-      const data = new Uint32Array(CELL_SIZE * cols);
+    if (cols * Constants.CELL_INDICIES * 4 * threshold < this._data.buffer.byteLength) {
+      const data = new Uint32Array(Constants.CELL_INDICIES * cols);
       data.set(this._data);
       this._data = data;
       // Remove any cut off combined data
@@ -224,13 +242,12 @@ export class LogicalLine {
 
   /**
    * @internal
-   *
    */
   public trimLength(): void {
     let index = this.length;
     while (index > 0) {
       index--;
-      const content = this._data[index * CELL_SIZE + Cell.CONTENT];
+      const content = this._data[index * Constants.CELL_INDICIES + Cell.CONTENT];
       if (content & Content.HAS_CONTENT_MASK) {
         index++;
         break;
@@ -247,12 +264,20 @@ export class LogicalLine {
     }
   }
 
+  /**
+   * Warning - does not invalidate string cache.
+   */
   public copyCellsFrom(src: LogicalLine, srcCol: number, dstCol: number, length: number, applyInReverse: boolean): void {
     let cell = applyInReverse ? length - 1 : 0;
     const cellIncrement = applyInReverse ? -1 : 1;
     for (let todo = length; --todo >= 0; cell += cellIncrement) {
       src.loadCell(srcCol + cell, $workCell);
-      this.setCell(dstCol + cell, $workCell);
+      const dstIndex = dstCol + cell;
+      const content = $workCell.content & (Content.CODEPOINT_MASK|Content.IS_COMBINED_MASK);
+      this.setCellFromCodepoint(dstIndex, content, $workCell.getWidth(), $workCell);
+      if (content & Content.IS_COMBINED_MASK) {
+        this._combined[dstIndex] = $workCell.combinedData;
+      }
     }
   }
 
@@ -278,7 +303,7 @@ export class LogicalLine {
     let result = '';
     while (startCol < endCol) {
       const content = startCol >= dataLength ? 0
-        : this._data[startCol * CELL_SIZE + Cell.CONTENT];
+        : this._data[startCol * Constants.CELL_INDICIES + Cell.CONTENT];
       const cp = content & Content.CODEPOINT_MASK;
       const chars = (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
       result += chars;
@@ -314,6 +339,7 @@ export class LogicalLine {
 export class BufferLine implements IBufferLine {
   public logicalLine: LogicalLine;
   public nextBufferLine: BufferLine | undefined;
+  protected _stringCacheEntryRef: WeakRef<IBufferLineStringCacheEntry> | undefined;
 
   /** Number of logical columns in previous rows.
    * Also: logical column number (column number assuming infinitely-wide
@@ -336,7 +362,10 @@ export class BufferLine implements IBufferLine {
     return this.nextBufferLine ? this.nextBufferLine.startColumn : this.logicalLine.length;
   }
 
-  constructor(cols: number, logicalLine = new LogicalLine(cols)) {
+  constructor(protected readonly _stringCache: IBufferLineStringCache,
+    cols: number,
+    logicalLine = new LogicalLine(cols)
+  ) {
     this.logicalLine = logicalLine;
     this.length = cols;
     logicalLine.firstBufferLine ??= this;
@@ -356,10 +385,10 @@ export class BufferLine implements IBufferLine {
     if (lindex >= this.validEnd) {
       return [0, '', NULL_CELL_WIDTH, 0];
     }
-    const content = lline._data[index * CELL_SIZE + Cell.CONTENT];
+    const content = lline._data[index * Constants.CELL_INDICIES + Cell.CONTENT];
     const cp = content & Content.CODEPOINT_MASK;
     return [
-      lline._data[lindex * CELL_SIZE + Cell.FG],
+      lline._data[lindex * Constants.CELL_INDICIES + Cell.FG],
       (content & Content.IS_COMBINED_MASK)
         ? lline._combined[lindex]
         : (cp) ? stringFromCodePoint(cp) : '',
@@ -397,7 +426,7 @@ export class BufferLine implements IBufferLine {
   public getFg(index: number): number {
     const lline = this.logicalLine;
     const lcolumn = index + this.startColumn;
-    return lcolumn >= this.validEnd ? 0 : lline._data[lcolumn * CELL_SIZE + Cell.FG];
+    return lcolumn >= this.validEnd ? 0 : lline._data[lcolumn * Constants.CELL_INDICIES + Cell.FG];
   }
 
   /** Get BG cell component. */
@@ -405,7 +434,7 @@ export class BufferLine implements IBufferLine {
     index += this.startColumn;
     const lline = this.logicalLine;
     return index > lline.length ? lline.backgroundColor
-      : lline._data[index * CELL_SIZE + Cell.BG];
+      : lline._data[index * Constants.CELL_INDICIES + Cell.BG];
   }
 
   /**
@@ -419,7 +448,7 @@ export class BufferLine implements IBufferLine {
       return 0;
     }
     const lline = this.logicalLine;
-    return lline._data[index * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK;
+    return lline._data[index * Constants.CELL_INDICIES + Cell.CONTENT] & Content.HAS_CONTENT_MASK;
   }
 
   /**
@@ -433,7 +462,7 @@ export class BufferLine implements IBufferLine {
     if (lcolumn >= this.validEnd) {
       return 0;
     }
-    const content = lline._data[lcolumn * CELL_SIZE + Cell.CONTENT];
+    const content = lline._data[lcolumn * Constants.CELL_INDICIES + Cell.CONTENT];
     if (content & Content.IS_COMBINED_MASK) {
       const combined = lline._combined[lcolumn];
       return combined.charCodeAt(combined.length - 1);
@@ -448,7 +477,7 @@ export class BufferLine implements IBufferLine {
     if (lcolumn >= this.validEnd) {
       return 0;
     }
-    return lline._data[lcolumn * CELL_SIZE + Cell.CONTENT] & Content.IS_COMBINED_MASK;
+    return lline._data[lcolumn * Constants.CELL_INDICIES + Cell.CONTENT] & Content.IS_COMBINED_MASK;
   }
 
   /** Returns the string content of the cell. */
@@ -458,7 +487,7 @@ export class BufferLine implements IBufferLine {
     if (lcolumn >= this.validEnd) {
       return '';
     }
-    const content = lline._data[lcolumn * CELL_SIZE + Cell.CONTENT];
+    const content = lline._data[lcolumn * Constants.CELL_INDICIES + Cell.CONTENT];
     if (content & Content.IS_COMBINED_MASK) {
       return lline._combined[lcolumn];
     }
@@ -474,7 +503,7 @@ export class BufferLine implements IBufferLine {
     const lline = this.logicalLine;
     const lcolumn = index + this.startColumn;
     return index >= this.length || lcolumn >= lline.length ? 0
-      : lline._data[lcolumn * CELL_SIZE + Cell.BG] & BgFlags.PROTECTED;
+      : lline._data[lcolumn * Constants.CELL_INDICIES + Cell.BG] & BgFlags.PROTECTED;
   }
 
   /**
@@ -502,6 +531,7 @@ export class BufferLine implements IBufferLine {
    * Set data at `index` to `cell`.
    */
   public setCell(index: number, cell: ICellData): void {
+    this._invalidateStringCache();
     // this.logicalLine.setCell(index + this.startColumn, cell);
     const content = cell.content & (Content.CODEPOINT_MASK|Content.IS_COMBINED_MASK);
     this.setCellFromCodepoint(index, content, cell.getWidth(), cell);
@@ -516,6 +546,7 @@ export class BufferLine implements IBufferLine {
    * it gets an optimized access method.
    */
   public setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
+    this._invalidateStringCache();
     this.logicalLine.setCellFromCodepoint(index + this.startColumn,
       codePoint, width, attrs);
   }
@@ -527,6 +558,7 @@ export class BufferLine implements IBufferLine {
    * by the previous `setDataFromCodePoint` call, we can omit it here.
    */
   public addCodepointToCell(index: number, codePoint: number, width: number): void {
+    this._invalidateStringCache();
     const lline = this.logicalLine;
     const lcolumn = index + this.startColumn;
     if (lcolumn >= this.validEnd) {
@@ -535,7 +567,7 @@ export class BufferLine implements IBufferLine {
       this.setCellFromCodepoint(index, codePoint, 1, CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]));
       return;
     }
-    let content = lline._data[lcolumn * CELL_SIZE + Cell.CONTENT];
+    let content = lline._data[lcolumn * Constants.CELL_INDICIES + Cell.CONTENT];
     if (content & Content.IS_COMBINED_MASK) {
       // we already have a combined string, simply add
       lline._combined[lcolumn] += stringFromCodePoint(codePoint);
@@ -557,10 +589,11 @@ export class BufferLine implements IBufferLine {
       content &= ~Content.WIDTH_MASK;
       content |= width << Content.WIDTH_SHIFT;
     }
-    lline._data[lcolumn * CELL_SIZE + Cell.CONTENT] = content;
+    lline._data[lcolumn * Constants.CELL_INDICIES + Cell.CONTENT] = content;
   }
 
   public insertCells(pos: number, n: number, fillCellData: ICellData): void {
+    this._invalidateStringCache();
     pos %= this.length;
 
     // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
@@ -588,6 +621,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
+    this._invalidateStringCache();
     pos %= this.length;
     if (n < this.length - pos) {
       for (let i = 0; i < this.length - pos - n; ++i) {
@@ -614,6 +648,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public replaceCells(start: number, end: number, fillCellData: ICellData, respectProtect: boolean = false): void {
+    this._invalidateStringCache();
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
     if (respectProtect) {
       if (start && this.getWidth(start - 1) === 2 && !this.isProtected(start - 1)) {
@@ -664,19 +699,20 @@ export class BufferLine implements IBufferLine {
    * The underlying array buffer will not change if there is still enough space
    * to hold the new buffer line data.
    * Returns a boolean indicating, whether a `cleanupMemory` call would free
-   * excess memory (true after shrinking > CLEANUP_THRESHOLD).
+   * excess memory (true after shrinking > Constants.Constants.CLEANUP_THRESHOLD).
    * Assumes single unwrapped line.
    * @deprecated only used in tests
    */
   public resize(cols: number, fillCellData: ICellData): boolean {
+    this._invalidateStringCache();
     const logical = this.logicalLine;
     if (logical.firstBufferLine !== this || this.nextBufferLine) {
       throw new Error('invalid call to resize');
     }
     if (cols === this.length) {
-      return logical._data.length * 4 * CLEANUP_THRESHOLD < logical._data.buffer.byteLength;
+      return logical._data.length * 4 * Constants.CLEANUP_THRESHOLD < logical._data.buffer.byteLength;
     }
-    const uint32Cells = cols * CELL_SIZE;
+    const uint32Cells = cols * Constants.CELL_INDICIES;
     if (cols > this.length) {
       logical.resizeData(cols);
       for (let i = this.length; i < cols; ++i) {
@@ -684,7 +720,7 @@ export class BufferLine implements IBufferLine {
       }
     } else {
       // optimization: just shrink the view on existing buffer
-      logical._data = logical._data.subarray(0, cols * CELL_SIZE);
+      logical._data = logical._data.subarray(0, cols * Constants.CELL_INDICIES);
       // Remove any cut off combined data
       const keys = Object.keys(logical._combined);
       for (let i = 0; i < keys.length; i++) {
@@ -703,21 +739,22 @@ export class BufferLine implements IBufferLine {
       }
     }
     this.length = cols;
-    return uint32Cells * 4 * CLEANUP_THRESHOLD < logical._data.buffer.byteLength;
+    return uint32Cells * 4 * Constants.CLEANUP_THRESHOLD < logical._data.buffer.byteLength;
   }
 
   /**
    * Cleanup underlying array buffer.
    * A cleanup will be triggered if the array buffer exceeds the actual used
-   * memory by a factor of CLEANUP_THRESHOLD.
+   * memory by a factor of Constants.Constants.CLEANUP_THRESHOLD.
    * Returns 0 or 1 indicating whether a cleanup happened.
    */
   public cleanupMemory(): number {
-    return this.logicalLine.cleanupMemory(CLEANUP_THRESHOLD);
+    return this.logicalLine.cleanupMemory(Constants.CLEANUP_THRESHOLD);
   }
 
   /** fill a line with fillCharData */
   public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
+    this._invalidateStringCache();
     // full branching on respectProtect==true, hopefully getting fast JIT for standard case
     if (respectProtect) {
       for (let i = 0; i < this.length; ++i) {
@@ -750,9 +787,9 @@ export class BufferLine implements IBufferLine {
     const startColumn = this.startColumn;
     const data = logicalLine._data;
     for (let i = this.validEnd; --i >= startColumn; ) {
-      if ((data[i * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK)
-      || (noBg && (data[i * CELL_SIZE + Cell.BG] & Attributes.CM_MASK))) {
-        i += data[i * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT;
+      if ((data[i * Constants.CELL_INDICIES + Cell.CONTENT] & Content.HAS_CONTENT_MASK)
+      || (noBg && (data[i * Constants.CELL_INDICIES + Cell.BG] & Attributes.CM_MASK))) {
+        i += data[i * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT;
         return i - startColumn;
       }
     }
@@ -767,43 +804,9 @@ export class BufferLine implements IBufferLine {
   }
 
   public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void {
+    this._invalidateStringCache();
     this.logicalLine.copyCellsFrom(src.logicalLine, srcCol + src.startColumn,
       destCol + this.startColumn, length, applyInReverse);
-  }
-
-  /**
-   * Translates the buffer line to a string.
-   *
-   * @param trimRight Whether to trim any empty cells on the right.
-   * @param startCol The column to start the string (0-based inclusive).
-   * @param endCol The column to end the string (0-based exclusive).
-   * @param outColumns if specified, this array will be filled with column numbers such that
-   * `returnedString[i]` is displayed at `outColumns[i]` column. `outColumns[returnedString.length]`
-   * is where the character following `returnedString` will be displayed.
-   *
-   * When a single cell is translated to multiple UTF-16 code units (e.g. surrogate pair) in the
-   * returned string, the corresponding entries in `outColumns` will have the same column number.
-   */
-  public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
-    startCol = startCol ?? 0;
-    endCol = endCol ?? this.length;
-    if (trimRight) {
-      endCol = Math.min(endCol, this.getTrimmedLength());
-    }
-    const lline = this.logicalLine;
-    const lineStart = this.startColumn;
-    const validEnd = this.validEnd;
-    startCol += lineStart;
-    endCol += lineStart;
-    const paddingNeeded = trimRight || endCol <= validEnd ? 0
-      : endCol - validEnd;
-    const result = lline.translateToString(startCol, endCol, endCol - paddingNeeded, outColumns);
-    if (outColumns && lineStart) {
-      for (let i = outColumns.length; --i >= 0; ) {
-        outColumns[i] -= lineStart;
-      }
-    }
-    return result;
   }
 
   public getPreviousLine(): BufferLine | undefined {
@@ -820,6 +823,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public eraseRight(index: BufferColumn): void {
+    this._invalidateStringCache();
     const lineStart = this.startColumn;
     const lineEnd = lineStart + index;
     const lline = this.logicalLine;
@@ -850,16 +854,16 @@ export class BufferLine implements IBufferLine {
     logicalLine.resizeData(column + oldLogical.length);
     const newData = logicalLine._data;
     for (let i = logicalLine.length; i < column + oldLogical.length; i++) {
-      newData[i * CELL_SIZE + Cell.CONTENT] = 0;
-      newData[i * CELL_SIZE + Cell.FG] = 0;
-      newData[i * CELL_SIZE + Cell.BG] = logicalLine.backgroundColor;
+      newData[i * Constants.CELL_INDICIES + Cell.CONTENT] = 0;
+      newData[i * Constants.CELL_INDICIES + Cell.FG] = 0;
+      newData[i * Constants.CELL_INDICIES + Cell.BG] = logicalLine.backgroundColor;
     }
     logicalLine.copyCellsFrom(oldLogical, 0, column, oldLogical.length, false);
     /*
     const oldData = oldLogical._data;
     for (let i = 0; i < oldLogical.length; i++) {
-      const oldIndex = i * CELL_SIZE;
-      const newIndex = (column + i) * CELL_SIZE
+      const oldIndex = i * Constants.CELL_INDICIES;
+      const newIndex = (column + i) * Constants.CELL_INDICIES
       const content = oldData[oldIndex + Cell.CONTENT];
       const fg = oldData[oldIndex + Cell.FG];
       const bg = oldData[oldIndex + Cell.BG];
@@ -930,5 +934,82 @@ export class BufferLine implements IBufferLine {
     // FIXME truncate/resize
     newLogical.backgroundColor = oldLine.backgroundColor;
     return newLogical;
+  }
+
+  /**
+   * Translates the buffer line to a string. Caching only applies to canonical full-line translation
+   * requests (regardless of `trimRight` value).
+   *
+   * @param trimRight Whether to trim any empty cells on the right.
+   * @param startCol The column to start the string (0-based inclusive).
+   * @param endCol The column to end the string (0-based exclusive).
+   * @param outColumns if specified, this array will be filled with column numbers such that
+   * `returnedString[i]` is displayed at `outColumns[i]` column. `outColumns[returnedString.length]`
+   * is where the character following `returnedString` will be displayed.
+   *
+   * When a single cell is translated to multiple UTF-16 code units (e.g. surrogate pair) in the
+   * returned string, the corresponding entries in `outColumns` will have the same column number.
+   */
+  public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
+    const isCanonicalRequest = (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
+    if (isCanonicalRequest) {
+      this._stringCache.touch?.();
+    }
+    const stringCacheEntry = isCanonicalRequest ? this._getStringCacheEntry(false) : undefined;
+    if (isCanonicalRequest && stringCacheEntry?.value !== undefined) {
+      if (trimRight) {
+        return stringCacheEntry.isTrimmed ? stringCacheEntry.value : stringCacheEntry.value.trimEnd();
+      }
+      if (!stringCacheEntry.isTrimmed) {
+        return stringCacheEntry.value;
+      }
+    }
+    startCol = startCol ?? 0;
+    endCol = endCol ?? this.length;
+    if (trimRight) {
+      endCol = Math.min(endCol, this.getTrimmedLength());
+    }
+    const lline = this.logicalLine;
+    const lineStart = this.startColumn;
+    const validEnd = this.validEnd;
+    startCol += lineStart;
+    endCol += lineStart;
+    const paddingNeeded = trimRight || endCol <= validEnd ? 0
+      : endCol - validEnd;
+    const result = lline.translateToString(startCol, endCol, endCol - paddingNeeded, outColumns);
+    if (outColumns && lineStart) {
+      for (let i = outColumns.length; --i >= 0; ) {
+        outColumns[i] -= lineStart;
+      }
+    }
+    if (isCanonicalRequest) {
+      const cacheEntry = this._getStringCacheEntry(true)!;
+      cacheEntry.value = result;
+      cacheEntry.isTrimmed = !!trimRight;
+    }
+    return result;
+  }
+
+  protected _getStringCacheEntry(createIfNeeded: boolean): IBufferLineStringCacheEntry | undefined {
+    const cachedEntry = this._stringCacheEntryRef?.deref();
+    if (cachedEntry) {
+      if (cachedEntry.generation === this._stringCache.generation) {
+        return cachedEntry;
+      }
+    }
+    if (!createIfNeeded) {
+      return undefined;
+    }
+    const cacheEntry = this._stringCache.allocateEntry();
+    this._stringCacheEntryRef = new WeakRef(cacheEntry);
+    return cacheEntry;
+  }
+
+  private _invalidateStringCache(): void {
+    const cacheEntry = this._getStringCacheEntry(false);
+    if (cacheEntry) {
+      cacheEntry.value = undefined;
+      cacheEntry.isTrimmed = false;
+    }
   }
 }

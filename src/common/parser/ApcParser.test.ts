@@ -5,7 +5,7 @@
 import { assert } from 'chai';
 import { ApcParser, ApcHandler } from 'common/parser/ApcParser';
 import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
-import { IApcHandler } from 'common/parser/Types';
+import { IApcHandler, IFunctionIdentifier } from 'common/parser/Types';
 
 function toUtf32(s: string): Uint32Array {
   const utf32 = new Uint32Array(s.length);
@@ -14,31 +14,53 @@ function toUtf32(s: string): Uint32Array {
   return utf32.subarray(0, length);
 }
 
-class TestHandler implements IApcHandler {
-  public id: number;
-  public output: [string, number, string, (boolean | string)?][];
-  public msg: string;
-  public returnFalse: boolean;
-
-  constructor(
-    id: number,
-    output: [string, number, string, (boolean | string)?][],
-    msg: string,
-    returnFalse: boolean = false
-  ) {
-    this.id = id;
-    this.output = output;
-    this.msg = msg;
-    this.returnFalse = returnFalse;
+function identifier(id: IFunctionIdentifier): number {
+  let res = 0;
+  if (id.prefix) {
+    if (id.prefix.length > 1) {
+      throw new Error('only one byte as prefix supported');
+    }
+    res = id.prefix.charCodeAt(0);
+    if (res && 0x3c > res || res > 0x3f) {
+      throw new Error('prefix must be in range 0x3c .. 0x3f');
+    }
   }
+  if (id.intermediates) {
+    if (id.intermediates.length > 2) {
+      throw new Error('only two bytes as intermediates are supported');
+    }
+    for (let i = 0; i < id.intermediates.length; ++i) {
+      const intermediate = id.intermediates.charCodeAt(i);
+      if (0x20 > intermediate || intermediate > 0x2f) {
+        throw new Error('intermediate must be in range 0x20 .. 0x2f');
+      }
+      res <<= 8;
+      res |= intermediate;
+    }
+  }
+  if (id.final.length !== 1) {
+    throw new Error('final must be a single byte');
+  }
+  const finalCode = id.final.charCodeAt(0);
+  if (0x40 > finalCode || finalCode > 0x7e) {
+    throw new Error('final must be in range 0x40 .. 0x7e');
+  }
+  res <<= 8;
+  res |= finalCode;
+
+  return res;
+}
+
+class TestHandler implements IApcHandler {
+  constructor(public output: any[], public msg: string, public returnFalse: boolean = false) {}
   public start(): void {
-    this.output.push([this.msg, this.id, 'START']);
+    this.output.push([this.msg, 'START']);
   }
   public put(data: Uint32Array, start: number, end: number): void {
-    this.output.push([this.msg, this.id, 'PUT', utf32ToString(data, start, end)]);
+    this.output.push([this.msg, 'PUT', utf32ToString(data, start, end)]);
   }
   public end(success: boolean): boolean {
-    this.output.push([this.msg, this.id, 'END', success]);
+    this.output.push([this.msg, 'END', success]);
     if (this.returnFalse) {
       return false;
     }
@@ -48,173 +70,105 @@ class TestHandler implements IApcHandler {
 
 describe('ApcParser', () => {
   let parser: ApcParser;
-  let reports: [number, string, (boolean | string | undefined)?][] = [];
-
+  let reports: any[] = [];
   beforeEach(() => {
     reports = [];
     parser = new ApcParser();
-    parser.setHandlerFallback((id: number, action: 'START' | 'PUT' | 'END', data?: string | boolean) => {
-      reports.push([id, action, data]);
-    });
+    parser.setHandlerFallback((id, action, data) => reports.push([id, action, data]));
   });
-
-  describe('identifier parsing', () => {
-    it('single character identifier', () => {
-      parser.start();
-      const data = toUtf32('Gf=100,a=T;payload');
-      parser.put(data, 0, data.length);
-      parser.end(true);
-      assert.deepEqual(reports, [
-        [0x47, 'START', undefined],  // 0x47 = 'G'
-        [0x47, 'PUT', 'f=100,a=T;payload'],
-        [0x47, 'END', true]
-      ]);
-    });
-
-    it('identifier with no payload', () => {
-      parser.start();
-      const data = toUtf32('G');
-      parser.put(data, 0, data.length);
-      parser.end(true);
-      assert.deepEqual(reports, [
-        [0x47, 'START', undefined],
-        [0x47, 'END', true]
-      ]);
-    });
-
-    it('identifier with chunked payload', () => {
-      parser.start();
-      let data = toUtf32('Gf=100');
-      parser.put(data, 0, data.length);
-      data = toUtf32(',a=T');
-      parser.put(data, 0, data.length);
-      data = toUtf32(';payload');
-      parser.put(data, 0, data.length);
-      parser.end(true);
-      assert.deepEqual(reports, [
-        [0x47, 'START', undefined],
-        [0x47, 'PUT', 'f=100'],
-        [0x47, 'PUT', ',a=T'],
-        [0x47, 'PUT', ';payload'],
-        [0x47, 'END', true]
-      ]);
-    });
-
-    it('empty APC sequence', () => {
-      parser.start();
-      parser.end(true);
-      assert.deepEqual(reports, []);
-    });
-  });
-
   describe('handler registration', () => {
-    let handlerReports: [string, number, string, (boolean | string)?][];
-
-    beforeEach(() => {
-      handlerReports = [];
-    });
-
-    it('registerHandler for specific identifier', () => {
-      const G_CODE = 0x47;  // 'G'
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'kitty'));
-      parser.start();
-      const data = toUtf32('Gf=100,a=T;imagedata');
+    it('setApcHandler', () => {
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th'));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32('the mouse!');
       parser.put(data, 0, data.length);
       parser.end(true);
-      assert.deepEqual(handlerReports, [
-        ['kitty', G_CODE, 'START'],
-        ['kitty', G_CODE, 'PUT', 'f=100,a=T;imagedata'],
-        ['kitty', G_CODE, 'END', true]
-      ]);
-      assert.deepEqual(reports, []);
-    });
-
-    it('unregistered identifier falls back', () => {
-      const G_CODE = 0x47;  // 'G'
-      const X_CODE = 0x58;  // 'X'
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'kitty'));
-      parser.start();
-      const data = toUtf32('Xsome data');
-      parser.put(data, 0, data.length);
-      parser.end(true);
-      assert.deepEqual(handlerReports, []);
       assert.deepEqual(reports, [
-        [X_CODE, 'START', undefined],
-        [X_CODE, 'PUT', 'some data'],
-        [X_CODE, 'END', true]
+        // messages from TestHandler
+        ['th', 'START'],
+        ['th', 'PUT', 'Here comes'],
+        ['th', 'PUT', 'the mouse!'],
+        ['th', 'END', true]
       ]);
     });
-
-    it('clearHandler removes handler', () => {
-      const G_CODE = 0x47;
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'kitty'));
-      parser.clearHandler(G_CODE);
-      parser.start();
-      const data = toUtf32('Gf=100');
+    it('clearApcHandler', () => {
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th'));
+      parser.clearHandler(identifier({intermediates: '+', final: 'p'}));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32('the mouse!');
       parser.put(data, 0, data.length);
       parser.end(true);
-      assert.deepEqual(handlerReports, []);
       assert.deepEqual(reports, [
-        [G_CODE, 'START', undefined],
-        [G_CODE, 'PUT', 'f=100'],
-        [G_CODE, 'END', true]
+        // messages from fallback handler
+        [identifier({intermediates: '+', final: 'p'}), 'START', undefined],
+        [identifier({intermediates: '+', final: 'p'}), 'PUT', 'Here comes'],
+        [identifier({intermediates: '+', final: 'p'}), 'PUT', 'the mouse!'],
+        [identifier({intermediates: '+', final: 'p'}), 'END', true]
       ]);
     });
-
-    it('multiple handlers for same identifier', () => {
-      const G_CODE = 0x47;
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'handler1'));
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'handler2'));
-      parser.start();
-      const data = toUtf32('Gdata');
+    it('addApcHandler', () => {
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2'));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32('the mouse!');
       parser.put(data, 0, data.length);
       parser.end(true);
-      assert.deepEqual(handlerReports, [
-        ['handler2', G_CODE, 'START'],
-        ['handler1', G_CODE, 'START'],
-        ['handler2', G_CODE, 'PUT', 'data'],
-        ['handler1', G_CODE, 'PUT', 'data'],
-        ['handler2', G_CODE, 'END', true],
-        ['handler1', G_CODE, 'END', false]
+      assert.deepEqual(reports, [
+        ['th2', 'START'],
+        ['th1', 'START'],
+        ['th2', 'PUT', 'Here comes'],
+        ['th1', 'PUT', 'Here comes'],
+        ['th2', 'PUT', 'the mouse!'],
+        ['th1', 'PUT', 'the mouse!'],
+        ['th2', 'END', true],
+        ['th1', 'END', false]  // false due being already handled by th2!
       ]);
     });
-
-    it('handler returning false allows fallthrough', () => {
-      const G_CODE = 0x47;
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'handler1'));
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'handler2', true));
-      parser.start();
-      const data = toUtf32('Gdata');
+    it('addApcHandler with return false', () => {
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2', true));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32('the mouse!');
       parser.put(data, 0, data.length);
       parser.end(true);
-      assert.deepEqual(handlerReports, [
-        ['handler2', G_CODE, 'START'],
-        ['handler1', G_CODE, 'START'],
-        ['handler2', G_CODE, 'PUT', 'data'],
-        ['handler1', G_CODE, 'PUT', 'data'],
-        ['handler2', G_CODE, 'END', true],
-        ['handler1', G_CODE, 'END', true]
+      assert.deepEqual(reports, [
+        ['th2', 'START'],
+        ['th1', 'START'],
+        ['th2', 'PUT', 'Here comes'],
+        ['th1', 'PUT', 'Here comes'],
+        ['th2', 'PUT', 'the mouse!'],
+        ['th1', 'PUT', 'the mouse!'],
+        ['th2', 'END', true],
+        ['th1', 'END', true]  // true since th2 indicated to keep bubbling
       ]);
     });
-
-    it('dispose removes handler', () => {
-      const G_CODE = 0x47;
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'handler1'));
-      const disposable = parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'handler2'));
-      disposable.dispose();
-      parser.start();
-      const data = toUtf32('Gdata');
+    it('dispose handlers', () => {
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th1'));
+      const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 'th2', true));
+      dispo.dispose();
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32('the mouse!');
       parser.put(data, 0, data.length);
       parser.end(true);
-      assert.deepEqual(handlerReports, [
-        ['handler1', G_CODE, 'START'],
-        ['handler1', G_CODE, 'PUT', 'data'],
-        ['handler1', G_CODE, 'END', true]
+      assert.deepEqual(reports, [
+        ['th1', 'START'],
+        ['th1', 'PUT', 'Here comes'],
+        ['th1', 'PUT', 'the mouse!'],
+        ['th1', 'END', true]
       ]);
     });
   });
-
-  describe('ApcHandler convenience class', () => {
+  describe('ApcHandlerFactory', () => {
     const TEST_PAYLOAD_LIMIT = 100;
     const CHUNK_SIZE = 10;
     let originalPayloadLimit: number;
@@ -231,133 +185,278 @@ describe('ApcParser', () => {
     });
 
     it('should be called once on end(true)', () => {
-      const G_CODE = 0x47;
-      const results: [number, string][] = [];
-      parser.registerHandler(G_CODE, new ApcHandler((data: string) => {
-        results.push([G_CODE, data]);
-        return true;
-      }));
-      parser.start();
-      let data = toUtf32('Gf=100');
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
-      data = toUtf32(',a=T;payload');
+      data = toUtf32(' the mouse!');
       parser.put(data, 0, data.length);
       parser.end(true);
-      assert.deepEqual(results, [[G_CODE, 'f=100,a=T;payload']]);
+      assert.deepEqual(reports, ['Here comes the mouse!']);
     });
-
     it('should not be called on end(false)', () => {
-      const G_CODE = 0x47;
-      const results: [number, string][] = [];
-      parser.registerHandler(G_CODE, new ApcHandler((data: string) => {
-        results.push([G_CODE, data]);
-        return true;
-      }));
-      parser.start();
-      const data = toUtf32('Gf=100,a=T;payload');
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32(' the mouse!');
       parser.put(data, 0, data.length);
       parser.end(false);
-      assert.deepEqual(results, []);
+      assert.deepEqual(reports, []);
     });
-
-    it('should handle payload up to limit', function(): void {
-      this.timeout(30000);
-      const G_CODE = 0x47;
-      const results: [number, string][] = [];
-      parser.registerHandler(G_CODE, new ApcHandler((data: string) => {
-        results.push([G_CODE, data]);
-        return true;
-      }));
-      parser.start();
-      let data = toUtf32('G');
+    it('should be disposable', () => {
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['one', data]); return true; }));
+      const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['two', data]); return true; }));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
-      data = toUtf32('A'.repeat(CHUNK_SIZE));
+      data = toUtf32(' the mouse!');
+      parser.put(data, 0, data.length);
+      parser.end(true);
+      assert.deepEqual(reports, [['two', 'Here comes the mouse!']]);
+      dispo.dispose();
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      data = toUtf32('some other');
+      parser.put(data, 0, data.length);
+      data = toUtf32(' data');
+      parser.put(data, 0, data.length);
+      parser.end(true);
+      assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
+    });
+    it('should respect return false', () => {
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['one', data]); return true; }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['two', data]); return false; }));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('Here comes');
+      parser.put(data, 0, data.length);
+      data = toUtf32(' the mouse!');
+      parser.put(data, 0, data.length);
+      parser.end(true);
+      assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'Here comes the mouse!']]);
+    });
+    it('should work up to payload limit', function(): void {
+      this.timeout(30000);
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      const data = toUtf32('A'.repeat(CHUNK_SIZE));
       for (let i = 0; i < TEST_PAYLOAD_LIMIT; i += CHUNK_SIZE) {
         parser.put(data, 0, data.length);
       }
       parser.end(true);
-      assert.deepEqual(results, [[G_CODE, 'A'.repeat(TEST_PAYLOAD_LIMIT)]]);
+      assert.deepEqual(reports, ['A'.repeat(TEST_PAYLOAD_LIMIT)]);
     });
-
-    it('should abort for payload over limit', function(): void {
+    it('should abort for payload limit +1', function(): void {
       this.timeout(30000);
-      const G_CODE = 0x47;
-      const results: [number, string][] = [];
-      parser.registerHandler(G_CODE, new ApcHandler((data: string) => {
-        results.push([G_CODE, data]);
-        return true;
-      }));
-      parser.start();
-      let data = toUtf32('G');
-      parser.put(data, 0, data.length);
-      data = toUtf32('A'.repeat(CHUNK_SIZE));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.start(identifier({intermediates: '+', final: 'p'}));
+      let data = toUtf32('A'.repeat(CHUNK_SIZE));
       for (let i = 0; i < TEST_PAYLOAD_LIMIT; i += CHUNK_SIZE) {
         parser.put(data, 0, data.length);
       }
       data = toUtf32('A');
       parser.put(data, 0, data.length);
       parser.end(true);
-      assert.deepEqual(results, []);
-    });
-  });
-
-  describe('reset behavior', () => {
-    let handlerReports: [string, number, string, (boolean | string)?][];
-
-    beforeEach(() => {
-      handlerReports = [];
-    });
-
-    it('reset during payload cleans up handlers', () => {
-      const G_CODE = 0x47;
-      parser.registerHandler(G_CODE, new TestHandler(G_CODE, handlerReports, 'kitty'));
-      parser.start();
-      const data = toUtf32('Gf=100');
-      parser.put(data, 0, data.length);
-      parser.reset();
-      assert.deepEqual(handlerReports, [
-        ['kitty', G_CODE, 'START'],
-        ['kitty', G_CODE, 'PUT', 'f=100'],
-        ['kitty', G_CODE, 'END', false]
-      ]);
+      assert.deepEqual(reports, []);
     });
   });
 });
 
+
+class TestHandlerAsync implements IApcHandler {
+  constructor(public output: any[], public msg: string, public returnFalse: boolean = false) {}
+  public start(): void {
+    this.output.push([this.msg, 'START']);
+  }
+  public put(data: Uint32Array, start: number, end: number): void {
+    this.output.push([this.msg, 'PUT', utf32ToString(data, start, end)]);
+  }
+  public async end(success: boolean): Promise<boolean> {
+    // simple sleep to check in tests whether ordering gets messed up
+    await Promise.resolve();
+    this.output.push([this.msg, 'END', success]);
+    if (this.returnFalse) {
+      return false;
+    }
+    return true;
+  }
+}
+async function unhookP(parser: ApcParser, success: boolean): Promise<void> {
+  let result: void | Promise<boolean>;
+  let prev: boolean | undefined;
+  while (result = parser.end(success, prev)) {
+    prev = await result;
+  }
+}
+
+
 describe('ApcParser - async tests', () => {
   let parser: ApcParser;
-  let reports: [number, string, (boolean | string | undefined)?][] = [];
-
+  let reports: any[] = [];
   beforeEach(() => {
     reports = [];
     parser = new ApcParser();
-    parser.setHandlerFallback((id: number, action: 'START' | 'PUT' | 'END', data?: string | boolean) => {
-      reports.push([id, action, data]);
-    });
+    parser.setHandlerFallback((id, action, data) => reports.push([id, action, data]));
   });
-
-  async function endP(parser: ApcParser, success: boolean): Promise<void> {
-    let result: void | Promise<boolean>;
-    let prev: boolean | undefined;
-    while (result = parser.end(success, prev)) {
-      prev = await result;
-    }
-  }
-
-  describe('async ApcHandler', () => {
-    it('should handle async handler', async () => {
-      const G_CODE = 0x47;
-      const results: [number, string][] = [];
-      parser.registerHandler(G_CODE, new ApcHandler(async (data: string) => {
-        await new Promise(res => setTimeout(res, 10));
-        results.push([G_CODE, data]);
-        return true;
-      }));
-      parser.start();
-      const data = toUtf32('Gf=100,a=T');
-      parser.put(data, 0, data.length);
-      await endP(parser, true);
-      assert.deepEqual(results, [[G_CODE, 'f=100,a=T']]);
+  describe('sync and async mixed', () => {
+    describe('sync | async | sync', () => {
+      it('first should run, cleanup action for others', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's2', false));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 'START'],
+          ['a1', 'START'],
+          ['s1', 'START'],
+          ['s2', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['s2', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['s2', 'END', true],
+          ['a1', 'END', false],  // important: a1 before s1
+          ['s1', 'END', false]
+        ]);
+      });
+      it('all should run', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's2', true));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['s2', 'START'],
+          ['a1', 'START'],
+          ['s1', 'START'],
+          ['s2', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['s2', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['s2', 'END', true],
+          ['a1', 'END', true],  // important: a1 before s1
+          ['s1', 'END', true]
+        ]);
+      });
+    });
+    describe('async | sync | async', () => {
+      it('first should run, cleanup action for others', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', false));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a2', false));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['a2', 'START'],
+          ['s1', 'START'],
+          ['a1', 'START'],
+          ['a2', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['a2', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['a2', 'END', true],
+          ['s1', 'END', false],  // important: s1 between a2 .. a1
+          ['a1', 'END', false]
+        ]);
+      });
+      it('all should run', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandler(reports, 's1', true));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new TestHandlerAsync(reports, 'a2', true));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32('the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [
+          // messages from TestHandler
+          ['a2', 'START'],
+          ['s1', 'START'],
+          ['a1', 'START'],
+          ['a2', 'PUT', 'Here comes'],
+          ['s1', 'PUT', 'Here comes'],
+          ['a1', 'PUT', 'Here comes'],
+          ['a2', 'PUT', 'the mouse!'],
+          ['s1', 'PUT', 'the mouse!'],
+          ['a1', 'PUT', 'the mouse!'],
+          ['a2', 'END', true],
+          ['s1', 'END', true],  // important: s1 between a2 .. a1
+          ['a1', 'END', true]
+        ]);
+      });
+    });
+    describe('ApcHandlerFactory', () => {
+      it('should be called once on end(true)', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(data); return true; }));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, ['Here comes the mouse!']);
+      });
+      it('should not be called on end(false)', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(data); return true; }));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, false);
+        assert.deepEqual(reports, []);
+      });
+      it('should be disposable', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['one', data]); return true; }));
+        const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['two', data]); return true; }));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [['two', 'Here comes the mouse!']]);
+        dispo.dispose();
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        data = toUtf32('some other');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' data');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
+      });
+      it('should respect return false', async () => {
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['one', data]); return true; }));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['two', data]); return false; }));
+        parser.start(identifier({intermediates: '+', final: 'p'}));
+        let data = toUtf32('Here comes');
+        parser.put(data, 0, data.length);
+        data = toUtf32(' the mouse!');
+        parser.put(data, 0, data.length);
+        await unhookP(parser, true);
+        assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'Here comes the mouse!']]);
+      });
     });
   });
 });
