@@ -168,4 +168,8 @@ export class DebouncedIdleTask {
   public flush(): void {
     this._queue.flush();
   }
+
+  public dispose(): void {
+    this._queue.clear();
+  }
 }

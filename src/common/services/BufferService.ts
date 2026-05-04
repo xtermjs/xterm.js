@@ -11,8 +11,10 @@ import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent }
 import { Emitter } from 'common/Event';
 import { BufferLine, LogicalLine } from 'common/buffer/BufferLine';
 
-export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
-export const MINIMUM_ROWS = 1;
+export const enum BufferServiceConstants {
+  MINIMUM_COLS = 2, // Less than 2 can mess with wide chars
+  MINIMUM_ROWS = 1
+}
 
 export class BufferService extends Disposable implements IBufferService {
   public serviceBrand: any;
@@ -38,8 +40,8 @@ export class BufferService extends Disposable implements IBufferService {
     @ILogService logService: ILogService
   ) {
     super();
-    this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
-    this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
+    this.cols = Math.max(optionsService.rawOptions.cols || 0, BufferServiceConstants.MINIMUM_COLS);
+    this.rows = Math.max(optionsService.rawOptions.rows || 0, BufferServiceConstants.MINIMUM_ROWS);
     this.buffers = this._register(new BufferSet(optionsService, this, logService));
     this._register(this.buffers.onBufferActivate(e => {
       this._onScroll.fire(e.activeBuffer.ydisp);
@@ -76,7 +78,7 @@ export class BufferService extends Disposable implements IBufferService {
     } else {
       lline = new LogicalLine(0);
     }
-    const newLine = new BufferLine(this.cols, lline);
+    const newLine = buffer.getBlankLine(eraseAttr, lline) as BufferLine;
     if (isWrapped && oldLine) {
       oldLine.nextBufferLine = newLine;
       newLine.startColumn = lline.length;

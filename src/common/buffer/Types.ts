@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker, ICharset, IDisposable } from 'common/Types';
+import { IAttributeData, ICircularList, IBufferLine, ILogicalLine, ICellData, IMarker, ICharset, IDisposable } from 'common/Types';
 import type { IEvent } from 'common/Event';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
@@ -53,7 +53,7 @@ export interface IBuffer {
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
-  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
+  getBlankLine(attr: IAttributeData, logicalLine?: ILogicalLine): IBufferLine;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
   addMarker(y: number): IMarker;
