@@ -3,16 +3,22 @@
  * @license MIT
  */
 
-import type { Terminal, IDisposable, ITerminalAddon } from '@xterm/xterm';
-import type { SearchAddon as ISearchApi, ISearchOptions, ISearchAddonOptions, ISearchResultChangeEvent, ISearchDecorationOptions } from '@xterm/addon-search';
-import { Emitter, type IEvent } from 'common/Event';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import { disposableTimeout } from 'common/Async';
-import { SearchLineCache } from './SearchLineCache';
-import { SearchState } from './SearchState';
-import { SearchEngine, type ISearchResult } from './SearchEngine';
-import { DecorationManager } from './DecorationManager';
-import { SearchResultTracker } from './SearchResultTracker';
+import type { Terminal, IDisposable, ITerminalAddon } from "@xterm/xterm";
+import type {
+  SearchAddon as ISearchApi,
+  ISearchOptions,
+  ISearchAddonOptions,
+  ISearchResultChangeEvent,
+  ISearchDecorationOptions,
+} from "@xterm/addon-search";
+import { Emitter, type IEvent } from "common/Event";
+import { Disposable, MutableDisposable, toDisposable } from "common/Lifecycle";
+import { disposableTimeout } from "common/Async";
+import { SearchLineCache } from "./SearchLineCache";
+import { SearchState } from "./SearchState";
+import { SearchEngine, type ISearchResult } from "./SearchEngine";
+import { DecorationManager } from "./DecorationManager";
+import { SearchResultTracker } from "./SearchResultTracker";
 
 interface IInternalSearchOptions {
   noScroll: boolean;
@@ -27,7 +33,7 @@ const enum Constants {
    * performance degradation when searching for very common terms that would result in excessive
    * highlighting decorations.
    */
-  DEFAULT_HIGHLIGHT_LIMIT = 1000
+  DEFAULT_HIGHLIGHT_LIMIT = 1000,
 }
 
 export class SearchAddon extends Disposable implements ITerminalAddon, ISearchApi {
@@ -73,7 +79,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       this._highlightTimeout.value = disposableTimeout(() => {
         const term = this._state.cachedSearchTerm;
         this._state.clearCachedTerm();
-        this.findPrevious(term!, { ...this._state.lastSearchOptions, incremental: true }, { noScroll: true });
+        this.findPrevious(
+          term!,
+          { ...this._state.lastSearchOptions, incremental: true },
+          { noScroll: true }
+        );
       }, 200);
     }
   }
@@ -98,9 +108,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param searchOptions Search options.
    * @returns Whether a result was found.
    */
-  public findNext(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
+  public findNext(
+    term: string,
+    searchOptions?: ISearchOptions,
+    internalSearchOptions?: IInternalSearchOptions
+  ): boolean {
     if (!this._terminal || !this._engine) {
-      throw new Error('Cannot use addon until it has been loaded');
+      throw new Error("Cannot use addon until it has been loaded");
     }
 
     this._onBeforeSearch.fire();
@@ -122,14 +136,33 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
   private _highlightAllMatches(term: string, searchOptions: ISearchOptions): void {
     if (!this._terminal || !this._engine || !this._decorationManager) {
-      throw new Error('Cannot use addon until it has been loaded');
+      throw new Error("Cannot use addon until it has been loaded");
     }
     if (!this._state.isValidSearchTerm(term)) {
       this.clearDecorations();
       return;
     }
 
-    // new search, clear out the old decorations
+    // If the new term is just an extension of the previous term (e.g. "hel" → "hell"),
+    // filter the existing results instead of scanning the entire buffer again.
+    const existingResults = this._resultTracker.searchResults;
+    if (this._state.isIncrementalExtension(term, searchOptions) && existingResults.length > 0) {
+      const compare = searchOptions?.caseSensitive
+        ? (s: string) => s
+        : (s: string) => s.toLowerCase();
+      const needle = compare(term);
+      const filtered = (existingResults as ISearchResult[]).filter(
+        (r) => compare(r.term) === needle
+      );
+      this.clearDecorations(true);
+      this._resultTracker.updateResults(filtered, this._highlightLimit);
+      if (searchOptions.decorations) {
+        this._decorationManager.createHighlightDecorations(filtered, searchOptions.decorations);
+      }
+      return;
+    }
+
+    // Full search — original behavior
     this.clearDecorations(true);
 
     const results: ISearchResult[] = [];
@@ -144,7 +177,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       results.push(prevResult);
       result = this._engine.find(
         term,
-        prevResult.col + prevResult.term.length >= this._terminal.cols ? prevResult.row + 1 : prevResult.row,
+        prevResult.col + prevResult.term.length >= this._terminal.cols
+          ? prevResult.row + 1
+          : prevResult.row,
         prevResult.col + prevResult.term.length >= this._terminal.cols ? 0 : prevResult.col + 1,
         searchOptions
       );
@@ -156,7 +191,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
   }
 
-  private _findNextAndSelect(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
+  private _findNextAndSelect(
+    term: string,
+    searchOptions?: ISearchOptions,
+    internalSearchOptions?: IInternalSearchOptions
+  ): boolean {
     if (!this._terminal || !this._engine) {
       return false;
     }
@@ -166,7 +205,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return false;
     }
 
-    const result = this._engine.findNextWithSelection(term, searchOptions, this._state.cachedSearchTerm);
+    const result = this._engine.findNextWithSelection(
+      term,
+      searchOptions,
+      this._state.cachedSearchTerm
+    );
     return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
@@ -177,9 +220,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param searchOptions Search options.
    * @returns Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
+  public findPrevious(
+    term: string,
+    searchOptions?: ISearchOptions,
+    internalSearchOptions?: IInternalSearchOptions
+  ): boolean {
     if (!this._terminal || !this._engine) {
-      throw new Error('Cannot use addon until it has been loaded');
+      throw new Error("Cannot use addon until it has been loaded");
     }
 
     this._onBeforeSearch.fire();
@@ -203,7 +250,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     this._resultTracker.fireResultsChanged(!!searchOptions?.decorations);
   }
 
-  private _findPreviousAndSelect(term: string, searchOptions?: ISearchOptions, internalSearchOptions?: IInternalSearchOptions): boolean {
+  private _findPreviousAndSelect(
+    term: string,
+    searchOptions?: ISearchOptions,
+    internalSearchOptions?: IInternalSearchOptions
+  ): boolean {
     if (!this._terminal || !this._engine) {
       return false;
     }
@@ -213,7 +264,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return false;
     }
 
-    const result = this._engine.findPreviousWithSelection(term, searchOptions, this._state.cachedSearchTerm);
+    const result = this._engine.findPreviousWithSelection(
+      term,
+      searchOptions,
+      this._state.cachedSearchTerm
+    );
     return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
@@ -222,7 +277,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
    * @param result The result to select.
    * @returns Whether a result was selected.
    */
-  private _selectResult(result: ISearchResult | undefined, options?: ISearchDecorationOptions, noScroll?: boolean): boolean {
+  private _selectResult(
+    result: ISearchResult | undefined,
+    options?: ISearchDecorationOptions,
+    noScroll?: boolean
+  ): boolean {
     if (!this._terminal || !this._decorationManager) {
       return false;
     }
@@ -243,7 +302,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
     if (!noScroll) {
       // If it is not in the viewport then we scroll else it just gets selected
-      if (result.row >= (this._terminal.buffer.active.viewportY + this._terminal.rows) || result.row < this._terminal.buffer.active.viewportY) {
+      if (
+        result.row >= this._terminal.buffer.active.viewportY + this._terminal.rows ||
+        result.row < this._terminal.buffer.active.viewportY
+      ) {
         let scroll = result.row - this._terminal.buffer.active.viewportY;
         scroll -= Math.floor(this._terminal.rows / 2);
         this._terminal.scrollLines(scroll);

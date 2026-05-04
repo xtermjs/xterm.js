@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { ISearchOptions } from '@xterm/addon-search';
+import type { ISearchOptions } from "@xterm/addon-search";
 
 /**
  * Manages search state including cached search terms, options tracking, and validation.
@@ -73,6 +73,28 @@ export class SearchState {
     }
     return false;
   }
+  /**
+   * Determines if the new term is an incremental extension of the cached term
+   * (e.g. "hel" → "hell"), meaning we can filter existing results instead of
+   * re-scanning the entire buffer.
+   * Only applies to plain text searches (not regex or wholeWord).
+   * @param term The new search term.
+   * @param options The search options.
+   * @returns true if the new term starts with the cached term.
+   */
+  public isIncrementalExtension(term: string, options?: ISearchOptions): boolean {
+    if (!this._cachedSearchTerm) {
+      return false;
+    }
+    if (options?.regex || options?.wholeWord) {
+      return false;
+    }
+    const cached = options?.caseSensitive
+      ? this._cachedSearchTerm
+      : this._cachedSearchTerm.toLowerCase();
+    const newTerm = options?.caseSensitive ? term : term.toLowerCase();
+    return newTerm.startsWith(cached) && newTerm !== cached;
+  }
 
   /**
    * Determines if a new search should trigger highlighting updates.
@@ -84,9 +106,11 @@ export class SearchState {
     if (!options?.decorations) {
       return false;
     }
-    return this._cachedSearchTerm === undefined ||
-           term !== this._cachedSearchTerm ||
-           this.didOptionsChange(options);
+    return (
+      this._cachedSearchTerm === undefined ||
+      term !== this._cachedSearchTerm ||
+      this.didOptionsChange(options)
+    );
   }
 
   /**
