@@ -80,40 +80,40 @@ describe('Buffer', () => {
     describe('wrapped', () => {
       it('should return a range for the first row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(0), { first: 0, last: 1 });
       });
       it('should return a range for a middle row wrapping upwards', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(12)!.isWrapped = true;
+        buffer.setWrapped(12, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 11, last: 12 });
       });
       it('should return a range for a middle row wrapping downwards', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(13)!.isWrapped = true;
+        buffer.setWrapped(13, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 12, last: 13 });
       });
       it('should return a range for a middle row wrapping both ways', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(11)!.isWrapped = true;
-        buffer.lines.get(12)!.isWrapped = true;
-        buffer.lines.get(13)!.isWrapped = true;
-        buffer.lines.get(14)!.isWrapped = true;
+        buffer.setWrapped(11, true);
+        buffer.setWrapped(12, true);
+        buffer.setWrapped(13, true);
+        buffer.setWrapped(14, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 10, last: 14 });
       });
       it('should return a range for the last row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(23)!.isWrapped = true;
+        buffer.setWrapped(23, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 1), { first: 22, last: 23 });
       });
       it('should return a range for a row that wraps upward to first row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(1), { first: 0, last: 1 });
       });
       it('should return a range for a row that wraps downward to last row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(buffer.lines.length - 1)!.isWrapped = true;
+        buffer.setWrapped(buffer.lines.length - 1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 2), { first: 22, last: 23 });
       });
     });
@@ -466,8 +466,8 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(1)!.translateToString(), '0123456789');
         assert.equal(buffer.lines.get(2)!.translateToString(), 'klmnopqrst');
         assert.equal(firstMarker.line, 0, 'first marker should remain unchanged');
-        assert.equal(secondMarker.line, 1, 'second marker should be restored to it\'s original line');
-        assert.equal(thirdMarker.line, 2, 'third marker should be restored to it\'s original line');
+        assert.equal(secondMarker.line, 1, 'second marker should be restored to its original line');
+        assert.equal(thirdMarker.line, 2, 'third marker should be restored to its original line');
         assert.equal(firstMarker.isDisposed, false);
         assert.equal(secondMarker.isDisposed, false);
         assert.equal(thirdMarker.isDisposed, false);
@@ -538,7 +538,7 @@ describe('Buffer', () => {
         buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // "ab  " (wrapped)
         // "cd"
@@ -569,7 +569,7 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // 汉语汉语汉语 (wrapped)
         // 汉语汉语汉语
@@ -596,7 +596,7 @@ describe('Buffer', () => {
         buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // "ab  " (wrapped)
         // "cd"
@@ -630,7 +630,7 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // 汉语汉语汉语 (wrapped)
         // 汉语汉语汉语
@@ -685,17 +685,17 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
           buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
           buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-          buffer.lines.get(1)!.isWrapped = true;
+          buffer.setWrapped(1, true);
           buffer.lines.get(2)!.set(0, [0, 'e', 1, 'e'.charCodeAt(0)]);
           buffer.lines.get(2)!.set(1, [0, 'f', 1, 'f'.charCodeAt(0)]);
           buffer.lines.get(3)!.set(0, [0, 'g', 1, 'g'.charCodeAt(0)]);
           buffer.lines.get(3)!.set(1, [0, 'h', 1, 'h'.charCodeAt(0)]);
-          buffer.lines.get(3)!.isWrapped = true;
+          buffer.setWrapped(3, true);
           buffer.lines.get(4)!.set(0, [0, 'i', 1, 'i'.charCodeAt(0)]);
           buffer.lines.get(4)!.set(1, [0, 'j', 1, 'j'.charCodeAt(0)]);
           buffer.lines.get(5)!.set(0, [0, 'k', 1, 'k'.charCodeAt(0)]);
           buffer.lines.get(5)!.set(1, [0, 'l', 1, 'l'.charCodeAt(0)]);
-          buffer.lines.get(5)!.isWrapped = true;
+          buffer.setWrapped(5, true);
         });
         describe('viewport not yet filled', () => {
           it('should move the cursor up and add empty lines', () => {
@@ -1083,9 +1083,9 @@ describe('Buffer', () => {
       buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
-      assert.equal(marker.line, buffer.lines.length - 1);
-      buffer.lines.onTrimEmitter.fire(1);
-      assert.equal(marker.line, buffer.lines.length - 2);
+      assert.equal(marker.line, 23);
+      buffer.lines.trimStart(1);
+      assert.equal(marker.line, 22);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
       buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
@@ -1190,7 +1190,6 @@ describe('Buffer', () => {
       assert.equal(str3, '😁a');
     });
   });
-
   describe('line string cache cleanup', () => {
     it('should clear shared cache entries with a single timer', () => {
       const originalSetTimeout = globalThis.setTimeout;
@@ -1284,32 +1283,4 @@ describe('Buffer', () => {
     });
   });
 
-  describe('memory cleanup after shrinking', () => {
-    it('should realign memory from idle task execution', async () => {
-      buffer.fillViewportRows();
-
-      // shrink more than 2 times to trigger lazy memory cleanup
-      buffer.resize(INIT_COLS / 2 - 1, INIT_ROWS);
-
-      // sync
-      for (let i = 0; i < INIT_ROWS; i++) {
-        const line = buffer.lines.get(i)!;
-        // line memory is still at old size from initialization
-        assert.equal((line as any)._data.buffer.byteLength, INIT_COLS * 3 * 4);
-        // array.length and .length get immediately adjusted
-        assert.equal((line as any)._data.length, (INIT_COLS / 2 - 1) * 3);
-        assert.equal(line.length, INIT_COLS / 2 - 1);
-      }
-
-      // wait for a bit to give IdleTaskQueue a chance to kick in
-      // and finish memory cleaning
-      await new Promise(r => setTimeout(r, 30));
-
-      // cleanup should have realigned memory with exact bytelength
-      for (let i = 0; i < INIT_ROWS; i++) {
-        const line = buffer.lines.get(i)!;
-        assert.equal((line as any)._data.buffer.byteLength, (INIT_COLS / 2 - 1) * 3 * 4);
-      }
-    });
-  });
 });

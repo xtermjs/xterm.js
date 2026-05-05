@@ -168,9 +168,9 @@ export class DomRendererRowFactory {
       }
 
       let isDecorated = false;
-      this._decorationService.forEachDecorationAtCell(x, row, undefined, d => {
+      this._decorationService.forEachDecorationAtCellLine(x, row, undefined, d => {
         isDecorated = true;
-      });
+      }, lineData);
 
       // get chars to render for this cell
       let chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -358,7 +358,7 @@ export class DomRendererRowFactory {
       let bgOverride: IColor | undefined;
       let fgOverride: IColor | undefined;
       let isTop = false;
-      this._decorationService.forEachDecorationAtCell(x, row, undefined, d => {
+      this._decorationService.forEachDecorationAtCellLine(x, row, undefined, d => {
         if (d.options.layer !== 'top' && isTop) {
           return;
         }
@@ -373,7 +373,7 @@ export class DomRendererRowFactory {
           fgOverride = d.foregroundColorRGB;
         }
         isTop = d.options.layer === 'top';
-      });
+      }, lineData);
 
       // Apply selection
       if (!isTop && isInSelection) {

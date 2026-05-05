@@ -7,7 +7,9 @@ import { css } from 'common/Color';
 import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
-import { IColor } from 'common/Types';
+import { IColor, IBufferLine } from 'common/Types';
+import { BufferLine } from 'common/buffer/BufferLine';
+import { Marker } from 'common/buffer/Marker';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/Event';
 
@@ -71,6 +73,10 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._decorations.clear();
   }
 
+  /**
+   * Only used in tests.
+   * @param @deprecated
+   */
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;
     let xmax = 0;
@@ -88,6 +94,21 @@ export class DecorationService extends Disposable implements IDecorationService 
         yield d;
       }
     }
+  }
+
+  public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, bline: IBufferLine): void {
+    const lline = bline.logicalLine;
+    x += bline.startColumn;
+    lline.forEachMarker((marker: IMarker) => {
+      const d = marker.payload;
+      if (d instanceof Decoration) {
+        const xmin = (marker as Marker)._startColumn;
+        const xmax = xmin + (d.options.width ?? 1);
+        if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
+          callback(d);
+        }
+      }
+    });
   }
 
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
@@ -144,6 +165,8 @@ class Decoration extends DisposableStore implements IInternalDecoration {
   ) {
     super();
     this.marker = options.marker;
+    if (options.x) { (this.marker as Marker)._startColumn += options.x; }
+    this.marker.payload = this;
     if (this.options.overviewRulerOptions && !this.options.overviewRulerOptions.position) {
       this.options.overviewRulerOptions.position = 'full';
     }

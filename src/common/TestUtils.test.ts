@@ -239,5 +239,6 @@ export class MockDecorationService implements IDecorationService {
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
   public reset(): void { }
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void { }
+  public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, lineData: IBufferLine): void { }
   public dispose(): void { }
 }

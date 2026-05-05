@@ -106,27 +106,16 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @param value The value to push onto the list.
    */
   public push(value: T): void {
-    this._array[this._getCyclicIndex(this._length)] = value;
-    if (this._length === this._maxLength) {
-      this._startIndex = ++this._startIndex % this._maxLength;
+    const trimNeeded = this._length === this._maxLength;
+    if (trimNeeded) {
       this.onTrimEmitter.fire(1);
+    }
+    this._array[this._getCyclicIndex(this._length)] = value;
+    if (trimNeeded) {
+      this._startIndex = ++this._startIndex % this._maxLength;
     } else {
       this._length++;
     }
-  }
-
-  /**
-   * Advance ringbuffer index and return current element for recycling.
-   * Note: The buffer must be full for this method to work.
-   * @throws When the buffer is not full.
-   */
-  public recycle(): T {
-    if (this._length !== this._maxLength) {
-      throw new Error('Can only recycle when the buffer is full');
-    }
-    this._startIndex = ++this._startIndex % this._maxLength;
-    this.onTrimEmitter.fire(1);
-    return this._array[this._getCyclicIndex(this._length - 1)]!;
   }
 
   /**
@@ -154,34 +143,50 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @param items The items to insert.
    */
   public splice(start: number, deleteCount: number, ...items: T[]): void {
+    let trimTodo = Math.max(0, (this._length + items.length - deleteCount) - this._maxLength);
+    if (trimTodo > 0) {
+      const preTrim = Math.min(start, trimTodo);
+      this.trimStart(preTrim);
+      trimTodo -= preTrim;
+      start -= preTrim;
+    }
     // Delete items
     if (deleteCount) {
+      this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
       for (let i = start; i < this._length - deleteCount; i++) {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
       }
       this._length -= deleteCount;
-      this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
     }
-
-    // Add items
-    for (let i = this._length - 1; i >= start; i--) {
-      this._array[this._getCyclicIndex(i + items.length)] = this._array[this._getCyclicIndex(i)];
+    const postTrim = trimTodo - items.length;
+    if (postTrim > 0) {
+      this.trimStart(postTrim);
+      trimTodo -= postTrim;
     }
-    for (let i = 0; i < items.length; i++) {
-      this._array[this._getCyclicIndex(start + i)] = items[i];
-    }
-    if (items.length) {
-      this.onInsertEmitter.fire({ index: start, amount: items.length });
-    }
-
-    // Adjust length as needed
-    if (this._length + items.length > this._maxLength) {
-      const countToTrim = (this._length + items.length) - this._maxLength;
-      this._startIndex += countToTrim;
-      this._length = this._maxLength;
-      this.onTrimEmitter.fire(countToTrim);
-    } else {
-      this._length += items.length;
+    let firstItem = 0;
+    let itemsTodo = items.length;
+    while (itemsTodo > 0) {
+      const availSpace = this._maxLength - this.length;
+      const itemsAvail = Math.min(availSpace, itemsTodo);
+      // Add items
+      for (let i = this._length - 1; i >= start; i--) {
+        this._array[this._getCyclicIndex(i + itemsAvail)] = this._array[this._getCyclicIndex(i)];
+      }
+      for (let i = 0; i < itemsAvail; i++) {
+        this._array[this._getCyclicIndex(start + i)] = items[firstItem + i];
+      }
+      this._length += itemsAvail;
+      if (items.length) {
+        this.onInsertEmitter.fire({ index: start, amount: itemsAvail });
+      }
+      if (trimTodo > 0) {
+        const trimAvail = Math.min(trimTodo, itemsAvail);
+        this.trimStart(trimAvail);
+        trimTodo -= trimAvail;
+      }
+      itemsTodo -= itemsAvail;
+      firstItem += itemsAvail;
+      start += itemsAvail;
     }
   }
 
@@ -193,9 +198,9 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
     if (count > this._length) {
       count = this._length;
     }
+    this.onTrimEmitter.fire(count);
     this._startIndex += count;
     this._length -= count;
-    this.onTrimEmitter.fire(count);
   }
 
   public shiftElements(start: number, count: number, offset: number): void {
@@ -217,9 +222,9 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
       if (expandListBy > 0) {
         this._length += expandListBy;
         while (this._length > this._maxLength) {
+          this.onTrimEmitter.fire(1);
           this._length--;
           this._startIndex++;
-          this.onTrimEmitter.fire(1);
         }
       }
     } else {
