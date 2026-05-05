@@ -7,7 +7,7 @@ import { css } from 'common/Color';
 import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
-import { IColor } from 'common/Types';
+import { IColor, IBufferLine } from 'common/Types';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { Marker } from 'common/buffer/Marker';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
@@ -95,29 +95,22 @@ export class DecorationService extends Disposable implements IDecorationService 
       }
     }
   }
-  public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, bline: BufferLine): void {
+
+  public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, bline: IBufferLine): void {
     const lline = bline.logicalLine;
-    // FIXME needs some work to handle wrapped lines
-    /*
-    let wrapOffset = 0;
-    for (let line = lline.firstBufferLine; line; line = line.nextBufferLine) {
-      if (line === bline) { break; }
-      wrapOffset++;
-    }
-    */
     x += bline.startColumn;
-    for (let marker = lline._firstMarker; marker; marker = marker._nextMarker) {
+    lline.forEachMarker((marker: IMarker) => {
       const d = marker.payload;
       if (d instanceof Decoration) {
-        const xmin = marker._startColumn;
+        const xmin = (marker as Marker)._startColumn;
         const xmax = xmin + (d.options.width ?? 1);
         if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
           callback(d);
         }
       }
-    }
-
+    });
   }
+
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
     for (const d of this._decorations.values()) {
       $ymin = d.marker.line;

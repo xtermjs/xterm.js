@@ -3,10 +3,9 @@
  * @license MIT
  */
 
-import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions, IBufferLine } from '@xterm/xterm';
-import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
+import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, IBufferLine, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { BufferLine } from 'common/buffer/BufferLine';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import type { Emitter, IEvent } from 'common/Event';
 
@@ -391,7 +390,7 @@ export interface IDecorationService extends IDisposable {
    * instead of an iterator as it's typically used in hot code paths.
    */
   forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void;
-  forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, lineData: BufferLine): void;
+  forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, lineData: IBufferLine): void;
 }
 export interface IInternalDecoration extends IDecoration {
   readonly options: IDecorationOptions;

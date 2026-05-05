@@ -13,7 +13,6 @@ import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'bro
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { BufferLine } from 'common/buffer/BufferLine';
 import { WidthCache } from 'browser/renderer/dom/WidthCache';
 import { IColorContrastCache } from 'browser/Types';
 
@@ -171,7 +170,7 @@ export class DomRendererRowFactory {
       let isDecorated = false;
       this._decorationService.forEachDecorationAtCellLine(x, row, undefined, d => {
         isDecorated = true;
-      }, lineData as BufferLine);
+      }, lineData);
 
       // get chars to render for this cell
       let chars = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -374,7 +373,7 @@ export class DomRendererRowFactory {
           fgOverride = d.foregroundColorRGB;
         }
         isTop = d.options.layer === 'top';
-      }, lineData as BufferLine);
+      }, lineData);
 
       // Apply selection
       if (!isTop && isInSelection) {

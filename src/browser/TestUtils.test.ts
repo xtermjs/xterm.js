@@ -8,7 +8,7 @@ import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseS
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, ILogicalLine, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
@@ -255,7 +255,7 @@ export class MockBuffer implements IBuffer {
   public setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
-  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
+  public getBlankLine(attr: IAttributeData, logicalLine?: ILogicalLine): IBufferLine {
     return Buffer.prototype.getBlankLine.apply(this, arguments as any);
   }
   public getNullCell(attr?: IAttributeData): ICellData {

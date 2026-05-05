@@ -219,12 +219,15 @@ export interface ICellData extends IAttributeData {
 }
 
 export interface ILogicalLine {
+  forEachMarker(callback: (marker: IMarker) => void): void;
 }
 
 /**
  * Interface for a line in the terminal buffer.
  */
 export interface IBufferLine {
+  logicalLine: ILogicalLine;
+  startColumn: number;
   length: number;
   get isWrapped(): boolean;
   get(index: number): CharData;

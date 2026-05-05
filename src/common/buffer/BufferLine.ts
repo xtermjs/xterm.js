@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs } from 'common/Types';
+import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs, IMarker } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Marker } from 'common/buffer/Marker';
@@ -97,6 +97,12 @@ export class LogicalLine implements ILogicalLine {
 
   constructor(cols: number = 0, data = new Uint32Array(cols * Constants.CELL_INDICIES)) {
     this._data = data;
+  }
+
+  public forEachMarker(callback: (marker: IMarker) => void): void {
+    for (let m= this._firstMarker; m; m = m._nextMarker) {
+      callback(m);
+    }
   }
 
   /**
