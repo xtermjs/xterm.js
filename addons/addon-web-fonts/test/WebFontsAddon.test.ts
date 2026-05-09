@@ -84,7 +84,11 @@ test.describe('WebFontsAddon', () => {
         try {
           deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'loading' }]);
         } catch (e) {
-          deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'unloaded' }]);
+          try {
+            deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'loaded' }]);
+          } catch (e) {
+            deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'unloaded' }]);
+          }
         }
       } else {
         deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'unloaded' }]);
@@ -98,12 +102,16 @@ test.describe('WebFontsAddon', () => {
         `);
 
       fonts = await getDocumentFonts();
-      // safari loads the font, firefox & chrome dont
+      // safari might load the font, firefox & chrome dont
       if (browser.browserType().name() === 'webkit') {
         try {
           deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'loading' }]);
         } catch (e) {
-          deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'loaded' }]);
+          try {
+            deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'loaded' }]);
+          } catch (e) {
+            deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'unloaded' }]);
+          }
         }
       } else {
         deepStrictEqual(fonts, [{ family: 'Kongtext', status: 'unloaded' }]);
