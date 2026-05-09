@@ -16,7 +16,7 @@
     "strict": true,
     "noImplicitAny": false,
     "declaration": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "paths": {
       "browser/*": [
         "../../src/browser/*"
@@ -26,7 +26,7 @@
       ]
     },
     "target": "ESNext",
-    "module": "commonjs",
+    "module": "nodenext",
     "composite": true
   },
   "include": [

@@ -90,14 +90,14 @@ export class DomRendererRowFactory {
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
     let text = '';
-    let i = 0;
+    let i;
     let oldBg = 0;
     let oldFg = 0;
     let oldExt = 0;
     let oldLinkHover: number | boolean = false;
     let oldSpacing = 0;
     let oldIsInSelection: boolean = false;
-    let spacing = 0;
+    let spacing;
     let skipJoinedCheckUntilX = 0;
     const classes: string[] = [];
 
@@ -231,6 +231,7 @@ export class DomRendererRowFactory {
           }
           charElement = this._document.createElement('span');
           cellAmount = 0;
+          // eslint-disable-next-line no-useless-assignment
           text = '';
         }
       }

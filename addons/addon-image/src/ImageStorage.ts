@@ -455,7 +455,7 @@ export class ImageStorage implements IDisposable {
             if (!nextE || nextE.imageId !== imageId || nextE.tileId !== startTile + count) {
               break;
             }
-            e = nextE;
+            // e = nextE;
             count++;
           }
           col--;

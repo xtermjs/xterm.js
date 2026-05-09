@@ -31,15 +31,12 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "lru-cache": "^6.0.0",
-    "opentype.js": "^0.8.0"
+    "lru-cache": "^11.3.6",
+    "opentype.js": "^2.0.0"
   },
   "devDependencies": {
-    "@types/lru-cache": "^5.1.0",
-    "@types/opentype.js": "^0.7.0",
-    "axios": "^1.15.0",
-    "font-finder": "^1.1.0",
-    "mkdirp": "0.5.5",
-    "yauzl": "^3.2.1"
+    "@types/lru-cache": "^7.10.9",
+    "@types/opentype.js": "^1.3.9",
+    "font-finder": "^1.1.0"
   }
 }

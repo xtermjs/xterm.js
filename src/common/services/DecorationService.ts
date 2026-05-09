@@ -72,10 +72,10 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
-    let xmin = 0;
-    let xmax = 0;
-    let ymin = 0;
-    let ymax = 0;
+    let xmin;
+    let xmax;
+    let ymin;
+    let ymax;
     for (const d of this._decorations.values()) {
       ymin = d.marker.line;
       ymax = ymin + (d.options.height ?? 1);
