@@ -78,7 +78,17 @@ test.describe('WebFontsAddon', () => {
       const data = await ctx.page.evaluate(`
           document.styleSheets[0].insertRule("@font-face {font-family: Kongtext; src: url(/fonts/kongtext.regular.ttf) format('truetype'); unicode-range: U+00A0-00FF}", 0);
         `);
-      deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'unloaded' }]);
+      // safari may have loaded the font, firefox & chrome never load it
+      if (browser.browserType().name() === 'webkit') {
+        try {
+          deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loading' }]);
+        } catch (e) {
+          deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loaded' }]);
+        }
+      } else {
+        deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'unloaded' }]);
+      }
+
 
       // broken case: webfont in ctor without addon usage
       await ctx.page.evaluate(`
