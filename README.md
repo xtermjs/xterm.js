@@ -252,6 +252,7 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**EmuDevz**](https://afska.github.io/emudevz): A free coding game where players learn how to build an emulator from scratch.
 - [**SSH Connection Manager**](https://github.com/Amtrend/ssh-manager): Modern web-based SSH terminal and SFTP manager with AES-256 encryption, PWA support, and session management.
 - [**WooTTY**](https://github.com/icoretech/wootty): Flawless browser terminal for real operators.
+- [**Orca**](https://github.com/stablyai/orca): Agentic development environment for 100x builders.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Please add any new contributions to the end of the list.

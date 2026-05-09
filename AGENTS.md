@@ -57,6 +57,13 @@ export class MyAddon implements ITerminalAddon {
 - Proposed APIs require `allowProposedApi: true` option
 - Constructor-only options (cols, rows) cannot be changed after instantiation
 
+**Disposable Management**:
+- When a disposable object can be replaced over time, prefer a registered `MutableDisposable` over manual dispose/reassign logic.
+- Register it on the owning class (for example, `this._register(new MutableDisposable())`) and assign through `.value`; this automatically disposes the previous value and avoids accidentally leaking resources.
+
+**TypeScript Constants**:
+- Prefer `const enum` over top-level `const` declarations for primitive constants when appropriate, since values are inlined and avoid runtime property lookups.
+
 **Testing Utilities**: Use `TestUtils.ts` helpers:
 - `openTerminal(ctx, options)` for setup
 - `pollFor(page, fn, expectedValue)` for async assertions

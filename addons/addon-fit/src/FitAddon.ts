@@ -19,8 +19,10 @@ interface ITerminalDimensions {
   cols: number;
 }
 
-const MINIMUM_COLS = 2;
-const MINIMUM_ROWS = 1;
+const enum Constants {
+  MINIMUM_COLS = 2,
+  MINIMUM_ROWS = 1
+}
 
 function getWindow(e: Node): Window {
   if (e?.ownerDocument?.defaultView) {
@@ -86,8 +88,8 @@ export class FitAddon implements ITerminalAddon, IFitApi {
     const availableHeight = parentElementHeight - elementPaddingVer;
     const availableWidth = parentElementWidth - elementPaddingHor - scrollbarWidth;
     const geometry = {
-      cols: Math.max(MINIMUM_COLS, Math.floor(availableWidth / dims.css.cell.width)),
-      rows: Math.max(MINIMUM_ROWS, Math.floor(availableHeight / dims.css.cell.height))
+      cols: Math.max(Constants.MINIMUM_COLS, Math.floor(availableWidth / dims.css.cell.width)),
+      rows: Math.max(Constants.MINIMUM_ROWS, Math.floor(availableHeight / dims.css.cell.height))
     };
     return geometry;
   }
