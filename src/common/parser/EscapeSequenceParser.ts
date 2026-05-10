@@ -928,8 +928,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             i = j - 1;
             break;
           }
-          this._apcParser.put(data, i, c);
-          i = c - 1;
           break;
         case ParserAction.APC_END:
           handlerResult = this._apcParser.end(code !== 0x18 && code !== 0x1a);
