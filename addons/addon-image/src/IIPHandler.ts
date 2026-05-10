@@ -55,7 +55,11 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     this._qoiDec = new QoiDecoder(DecoderConst.KEEP_DATA);
   }
 
-  public reset(): void {}
+  public reset(): void {
+    this._hp.reset();
+    this._dec.release();
+    this._qoiDec.release();
+  }
 
   public start(): void {
     this._aborted = false;
@@ -124,7 +128,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       }
       const scale = this._coreTerminal._core._coreBrowserService?.dpr ?? 1;
       const report = `\x1b]1337;ReportCellSize=${height.toFixed(3)};${width.toFixed(3)};${scale.toFixed(3)}\x1b\\`;
-      this._coreTerminal?._core.coreService.triggerDataEvent(report);
+      this._coreTerminal.input(report, false);
       return true;
     }
 
