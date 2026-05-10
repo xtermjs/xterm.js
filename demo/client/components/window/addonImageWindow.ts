@@ -65,7 +65,8 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     const dtIip = document.createElement('dt');
     dtIip.textContent = 'IIP (iTerm)';
     dlIip.appendChild(dtIip);
-    this._addDdWithButton(dlIip, 'image-demo3', 'palette');
+    this._addDdWithButton(dlIip, 'image-demo3', 'palette (png File)');
+    this._addDdWithButton(dlIip, 'image-demo4', 'dice (qoi MultipartFile)');
     container.appendChild(dlIip);
 
     // Kitty demos
@@ -141,6 +142,21 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
         this._terminal.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
       });
 
+    const iipDemoMulti = (url: string) => () => fetch(url)
+      .then(resp => resp.arrayBuffer())
+      .then(buffer => {
+        const data = new Uint8Array(buffer);
+        let sdata = '';
+        for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+        const encoded = btoa(sdata);
+        this._terminal.write('\r\n');
+        this._terminal.write(`\x1b]1337;MultipartFile=inline=1\x1b\\`);
+        for (let i = 0; i < encoded.length; i += 100) {
+          this._terminal.write(`\x1b]1337;FilePart=${encoded.slice(i, i + 100)}\x1b\\`);
+        }
+        this._terminal.write(`\x1b]1337;FileEnd\x1b\\`);
+      });
+
     const kittyDemo = (url: string) => () => fetch(url)
       .then(resp => resp.arrayBuffer())
       .then(buffer => {
@@ -158,6 +174,8 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
       sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
     document.getElementById('image-demo3')!.addEventListener('click',
       iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+    document.getElementById('image-demo4')!.addEventListener('click',
+      iipDemoMulti('https://raw.githubusercontent.com/jerch/xterm-wasm-parts/master/fixtures/qoi/dice.qoi'));
     document.getElementById('image-demo-kitty1')!.addEventListener('click',
       kittyDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
 
