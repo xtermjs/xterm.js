@@ -91,7 +91,7 @@ export class Base64 implements IBase64 {
   public decodeText(data: string): string {
     try {
       return atob(data);
-    } catch (e) {}
+    } catch {}
     return '';
   }
 }
