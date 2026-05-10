@@ -20,7 +20,7 @@ test.describe('ClipboardAddon', () => {
 
   test.beforeEach(async ({}, testInfo) => {
     // DEBT: This test doesn't work since the migration to @playwright/test
-    if (ctx.browser.browserType().name() !== 'chromium') {
+    if (ctx.browser.browserType().name() === 'webkit') {
       testInfo.skip();
       return;
     }

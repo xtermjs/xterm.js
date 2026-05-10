@@ -21,8 +21,5 @@
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
     "start": "node ../../demo/start"
-  },
-  "dependencies": {
-    "js-base64": "^3.7.5"
   }
 }

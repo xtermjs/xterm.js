@@ -5,7 +5,6 @@
 
 import type { IDisposable, ITerminalAddon, Terminal } from '@xterm/xterm';
 import { type IClipboardProvider, ClipboardSelectionType, type IBase64 } from '@xterm/addon-clipboard';
-import { Base64 as JSBase64 } from 'js-base64';
 
 export class ClipboardAddon implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -87,13 +86,12 @@ export class BrowserClipboardProvider implements IClipboardProvider {
 
 export class Base64 implements IBase64 {
   public encodeText(data: string): string {
-    return JSBase64.encode(data);
+    return btoa(data);
   }
   public decodeText(data: string): string {
-    const text = JSBase64.decode(data);
-    if (!JSBase64.isValid(data) || JSBase64.encode(text) !== data) {
-      return '';
-    }
-    return text;
+    try {
+      return atob(data);
+    } catch (e) {}
+    return '';
   }
 }
