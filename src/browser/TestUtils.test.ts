@@ -107,7 +107,7 @@ export class MockTerminal implements ITerminal {
   public registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
-  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+  public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {

@@ -4,16 +4,39 @@
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
 import { BufferLine } from 'common/buffer//BufferLine';
+import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { CellData } from 'common/buffer/CellData';
-import { CharData, IBufferLine } from '../Types';
+import { CharData, IBufferLine, ICellData } from '../Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { createCellData, NULL_CELL_DATA, extendedAttributes } from 'common/TestUtils.test';
 
+const TEST_STRING_CACHE = new BufferLineStringCache();
+
 
 class TestBufferLine extends BufferLine {
+  constructor(cols: number, fillCellData?: ICellData, isWrapped: boolean = false) {
+    super(TEST_STRING_CACHE, cols, fillCellData, isWrapped);
+  }
+
   public get combined(): {[index: number]: string} {
     return this._combined;
+  }
+
+  public get cachedString(): string | undefined {
+    return this._getStringCacheEntry(false)?.value;
+  }
+
+  public set cachedString(value: string | undefined) {
+    this._getStringCacheEntry(true)!.value = value;
+  }
+
+  public get isCachedStringTrimmed(): boolean {
+    return this._getStringCacheEntry(false)?.isTrimmed ?? false;
+  }
+
+  public set isCachedStringTrimmed(value: boolean) {
+    this._getStringCacheEntry(true)!.isTrimmed = value;
   }
 
   public toArray(): CharData[] {
@@ -806,6 +829,82 @@ describe('BufferLine', function(): void {
       assert.equal(extendedAttributes(line, 2), extendedAttributes(initial, 2));
       assert.equal(extendedAttributes(line, 3), extendedAttributes(initial, 3));
       assert.equal(extendedAttributes(line, 4), extendedAttributes(initial, 4));
+    });
+
+    it('should cache canonical string translations', () => {
+      const line = new TestBufferLine(5);
+      line.setCell(0, createCellData(1, 'a', 1));
+      line.setCell(1, createCellData(1, 'b', 1));
+      line.setCell(2, createCellData(1, 'c', 1));
+
+      // Trimmed-only canonical request should cache the trimmed value.
+      const trimmed = line.translateToString(true, undefined, undefined, undefined);
+      assert.equal(trimmed, 'abc');
+      assert.equal(line.cachedString, 'abc');
+      assert.equal(line.isCachedStringTrimmed, true);
+
+      // Non-trimmed canonical request should refresh cache with the full value.
+      const translated = line.translateToString(false, undefined, undefined, undefined);
+      assert.equal(translated, 'abc  ');
+      assert.equal(line.cachedString, 'abc  ');
+      assert.equal(line.isCachedStringTrimmed, false);
+
+      // Once non-trimmed is cached, trimmed should be derived via trimEnd().
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
+      assert.equal(line.cachedString, 'abc  ');
+      assert.equal(line.isCachedStringTrimmed, false);
+
+      line.cachedString = 'cached-non-trimmed  ';
+      line.isCachedStringTrimmed = false;
+      assert.equal(line.translateToString(false, undefined, undefined, undefined), 'cached-non-trimmed  ');
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'cached-non-trimmed');
+
+      line.cachedString = 'cached-trimmed';
+      line.isCachedStringTrimmed = true;
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'cached-trimmed');
+      assert.equal(line.translateToString(false, undefined, undefined, undefined), 'abc  ');
+      assert.equal(line.cachedString, 'abc  ');
+      assert.equal(line.isCachedStringTrimmed, false);
+
+      // Any optional translation argument should bypass cache.
+      assert.equal(line.translateToString(false, 0, 2, undefined), 'ab');
+      assert.equal(line.translateToString(true, 0, 2, undefined), 'ab');
+    });
+
+    it('should invalidate cached canonical strings on line mutations', () => {
+      const assertCacheInvalidated = (mutate: (line: TestBufferLine) => void): void => {
+        const line = new TestBufferLine(5);
+        line.fill(createCellData(1, 'a', 1));
+        line.translateToString(true, undefined, undefined, undefined);
+        assert.equal(line.cachedString, 'aaaaa');
+        assert.equal(line.isCachedStringTrimmed, true);
+        line.translateToString(false, undefined, undefined, undefined);
+        assert.equal(line.cachedString, 'aaaaa');
+        assert.equal(line.isCachedStringTrimmed, false);
+        mutate(line);
+        assert.equal(line.cachedString, undefined);
+        assert.equal(line.isCachedStringTrimmed, false);
+      };
+
+      assertCacheInvalidated(line => line.set(0, [0, 'b', 1, 'b'.charCodeAt(0)]));
+      assertCacheInvalidated(line => line.setCell(0, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.setCellFromCodepoint(0, 'b'.charCodeAt(0), 1, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.addCodepointToCell(0, 0x301, 0));
+      assertCacheInvalidated(line => line.insertCells(1, 1, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.deleteCells(1, 1, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.replaceCells(1, 3, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.resize(6, createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => line.fill(createCellData(1, 'b', 1)));
+      assertCacheInvalidated(line => {
+        const src = new TestBufferLine(5);
+        src.fill(createCellData(1, 'x', 1));
+        line.copyFrom(src);
+      });
+      assertCacheInvalidated(line => {
+        const src = new TestBufferLine(5);
+        src.fill(createCellData(1, 'x', 1));
+        line.copyCellsFrom(src, 0, 0, 2, false);
+      });
     });
   });
 });

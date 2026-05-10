@@ -16,24 +16,23 @@ import {
   IKittyCommand,
   IPendingTransmission,
   IKittyImageData,
-  BYTES_PER_PIXEL_RGB,
-  BYTES_PER_PIXEL_RGBA,
-  ALPHA_OPAQUE,
+  KittyPixelConstants,
   parseKittyCommand
 } from './KittyGraphicsTypes';
 
-// Memory limit for base64 decoder (4MB, same as IIPHandler)
-const DECODER_KEEP_DATA = 4194304;
-const DECODER_INITIAL_DATA = 4194304; // 4MB
+const enum Constants {
+  // Memory limit for base64 decoder (4MB, same as IIPHandler)
+  DECODER_KEEP_DATA = 4194304,
+  DECODER_INITIAL_DATA = 4194304, // 4MB
+  // Local mirror of const enum (esbuild can't inline const enums from external packages)
+  DECODER_OK = 0,
+  // Maximum control data size
+  MAX_CONTROL_DATA_SIZE = 512,
+  // Semicolon codepoint
+  SEMICOLON = 0x3B
+}
 
-// Local mirror of const enum (esbuild can't inline const enums from external packages)
-const DECODER_OK: DecodeStatus.OK = 0;
-
-// Maximum control data size
-const MAX_CONTROL_DATA_SIZE = 512;
-
-// Semicolon codepoint
-const SEMICOLON = 0x3B;
+const DECODER_OK = Constants.DECODER_OK as unknown as DecodeStatus.OK;
 
 // Kitty graphics protocol handler with streaming base64 decoding.
 export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDisposable {
@@ -50,7 +49,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
   private _inControlData = true;
 
   // Buffer for control data.
-  private _controlData = new Uint32Array(MAX_CONTROL_DATA_SIZE);
+  private _controlData = new Uint32Array(Constants.MAX_CONTROL_DATA_SIZE);
   private _controlLength = 0;
 
   // Pre-calculated encoded size limit
@@ -77,7 +76,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     // Convert decoded size limit -> max encoded bytes.
     this._maxEncodedBytes = Math.ceil(this._opts.kittySizeLimit * 4 / 3);
     // ensure we preallocate more than configured limit while using 4mb initial size.
-    this._initialEncodedBytes = Math.min(DECODER_INITIAL_DATA, this._maxEncodedBytes);
+    this._initialEncodedBytes = Math.min(Constants.DECODER_INITIAL_DATA, this._maxEncodedBytes);
   }
 
   public reset(): void {
@@ -129,7 +128,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       // Scan for semicolon
       let controlEnd = end;
       for (let i = start; i < end; i++) {
-        if (data[i] === SEMICOLON) {
+        if (data[i] === Constants.SEMICOLON) {
           this._inControlData = false;
           controlEnd = i;
           break;
@@ -138,7 +137,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
 
       // Copy control data
       const copyLength = controlEnd - start;
-      if (this._controlLength + copyLength > MAX_CONTROL_DATA_SIZE) {
+      if (this._controlLength + copyLength > Constants.MAX_CONTROL_DATA_SIZE) {
         this._aborted = true;
         return;
       }
@@ -201,7 +200,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       this._activeDecoder = pending.decoder;
     }
     if (!this._activeDecoder) {
-      this._activeDecoder = new Base64Decoder(DECODER_KEEP_DATA, this._maxEncodedBytes, this._initialEncodedBytes);
+      this._activeDecoder = new Base64Decoder(Constants.DECODER_KEEP_DATA, this._maxEncodedBytes, this._initialEncodedBytes);
       this._activeDecoder.init();
     }
 
@@ -484,7 +483,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         return true;
       }
 
-      const bytesPerPixel = format === KittyFormat.RGBA ? BYTES_PER_PIXEL_RGBA : BYTES_PER_PIXEL_RGB;
+      const bytesPerPixel = format === KittyFormat.RGBA ? KittyPixelConstants.BYTES_PER_PIXEL_RGBA : KittyPixelConstants.BYTES_PER_PIXEL_RGB;
       const expectedBytes = width * height * bytesPerPixel;
 
       if (bytes.length < expectedBytes) {
@@ -723,7 +722,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       throw new Error('Width and height required for raw pixel data');
     }
 
-    const bytesPerPixel = image.format === KittyFormat.RGBA ? BYTES_PER_PIXEL_RGBA : BYTES_PER_PIXEL_RGB;
+    const bytesPerPixel = image.format === KittyFormat.RGBA ? KittyPixelConstants.BYTES_PER_PIXEL_RGBA : KittyPixelConstants.BYTES_PER_PIXEL_RGB;
     const expectedBytes = width * height * bytesPerPixel;
 
     if (bytes.length < expectedBytes) {
@@ -734,13 +733,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
 
     if (image.format === KittyFormat.RGBA) {
       // RGBA: use bytes directly — no copy needed
-      return createImageBitmap(new ImageData(new Uint8ClampedArray(bytes.buffer as ArrayBuffer, bytes.byteOffset, pixelCount * BYTES_PER_PIXEL_RGBA), width, height));
+      return createImageBitmap(new ImageData(new Uint8ClampedArray(bytes.buffer as ArrayBuffer, bytes.byteOffset, pixelCount * KittyPixelConstants.BYTES_PER_PIXEL_RGBA), width, height));
     }
 
     // RGB→RGBA: interleave alpha using uint32 block processing (4 pixels per iteration).
     // 3 uint32 reads + 4 uint32 writes per 4 pixels vs 28 byte reads/writes — ~6x faster.
     // Assumes little-endian (all modern browsers/Node.js).
-    const data = new Uint8ClampedArray(pixelCount * BYTES_PER_PIXEL_RGBA);
+    const data = new Uint8ClampedArray(pixelCount * KittyPixelConstants.BYTES_PER_PIXEL_RGBA);
     const src32 = new Uint32Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 4));
     const dst32 = new Uint32Array(data.buffer);
     const alignedPixels = pixelCount & ~3;  // round down to multiple of 4
@@ -759,15 +758,15 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     }
 
     // Handle remaining 1–3 pixels
-    let srcByte = alignedPixels * BYTES_PER_PIXEL_RGB;
-    let dstByte = alignedPixels * BYTES_PER_PIXEL_RGBA;
+    let srcByte = alignedPixels * KittyPixelConstants.BYTES_PER_PIXEL_RGB;
+    let dstByte = alignedPixels * KittyPixelConstants.BYTES_PER_PIXEL_RGBA;
     for (let i = alignedPixels; i < pixelCount; i++) {
       data[dstByte]     = bytes[srcByte];
       data[dstByte + 1] = bytes[srcByte + 1];
       data[dstByte + 2] = bytes[srcByte + 2];
-      data[dstByte + 3] = ALPHA_OPAQUE;
-      srcByte += BYTES_PER_PIXEL_RGB;
-      dstByte += BYTES_PER_PIXEL_RGBA;
+      data[dstByte + 3] = KittyPixelConstants.ALPHA_OPAQUE;
+      srcByte += KittyPixelConstants.BYTES_PER_PIXEL_RGB;
+      dstByte += KittyPixelConstants.BYTES_PER_PIXEL_RGBA;
     }
 
     return createImageBitmap(new ImageData(data, width, height));

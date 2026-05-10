@@ -1274,12 +1274,12 @@ declare module '@xterm/headless' {
     prefix?: string;
     /**
      * Optional intermediate bytes, must be in range \x20 .. \x2f.
-     * Usable in CSI, DCS and ESC.
+     * Usable in CSI, DCS, ESC and APC.
      */
     intermediates?: string;
     /**
      * Final byte, must be in range \x40 .. \x7e for CSI and DCS,
-     * \x30 .. \x7e for ESC.
+     * \x30 .. \x7e for ESC and APC.
      */
     final: string;
   }
@@ -1354,8 +1354,8 @@ declare module '@xterm/headless' {
 
     /**
      * Adds a handler for APC escape sequences.
-     * @param ident The identifier (first character) of the sequence as a
-     * character code, e.g. 71 for 'G' (Kitty graphics protocol).
+     * @param id Specifies the function identifier under which the callback
+     * gets registered, e.g. {final: 'G'} for Kitty graphics protocol.
      * @param callback The function to handle the sequence. Note that the
      * function will only be called once if the sequence finished successfully.
      * There is currently no way to intercept smaller data chunks, data chunks
@@ -1368,7 +1368,7 @@ declare module '@xterm/headless' {
      * added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerApcHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean): IDisposable;
   }
 
   /**

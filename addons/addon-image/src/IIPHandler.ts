@@ -7,6 +7,7 @@ import { ImageRenderer } from './ImageRenderer';
 import { IIPImageStorage } from './IIPImageStorage';
 import { CELL_SIZE_DEFAULT } from './ImageStorage';
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
+import QoiDecoder from 'xterm-wasm-parts/lib/qoi/QoiDecoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
@@ -36,6 +37,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
   private _hp = new HeaderParser();
   private _header: IHeaderFields = DEFAULT_HEADER;
   private _dec: Base64Decoder;
+  private _qoiDec: QoiDecoder;
   private _metrics = UNSUPPORTED_TYPE;
 
   constructor(
@@ -47,6 +49,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     const maxEncodedBytes = Math.ceil(this._opts.iipSizeLimit * 4 / 3);
     const initialBytes = Math.min(DecoderConst.INITIAL_DATA, maxEncodedBytes);
     this._dec = new Base64Decoder(DecoderConst.KEEP_DATA, maxEncodedBytes, initialBytes);
+    this._qoiDec = new QoiDecoder(DecoderConst.KEEP_DATA);
   }
 
   public reset(): void {}
@@ -115,27 +118,27 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       return true;
     }
 
-    // HACK: The types on Blob are too restrictive, this is a Uint8Array so the browser accepts it
-    const blob = new Blob([this._dec.data8 as Uint8Array<ArrayBuffer>], { type: this._metrics.mime });
-    this._dec.release();
-
-    if (!window.createImageBitmap) {
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      return new Promise<boolean>(r => {
-        img.addEventListener('load', () => {
-          URL.revokeObjectURL(url);
-          const canvas = ImageRenderer.createCanvas(window.document, w, h);
-          canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-          this._storage.addImage(canvas);
-          r(true);
-        });
-        img.src = url;
-        // sanity measure to avoid terminal blocking from dangling promise
-        // happens from corrupt data (onload never gets fired)
-        setTimeout(() => r(true), 1000);
-      });
+    let blob: Blob | ImageData;
+    if (this._metrics.mime === 'image/qoi') {
+      const data = this._qoiDec.decode(this._dec.data8);
+      blob = new ImageData(
+        new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
+        this._qoiDec.width,
+        this._qoiDec.height
+      );
+      this._qoiDec.release();
+      if (w === this._qoiDec.width && h === this._qoiDec.height) {
+        // use fast-path if we don't need to rescale
+        this._dec.release();
+        const canvas = ImageRenderer.createCanvas(undefined, this._qoiDec.width, this._qoiDec.height);
+        canvas.getContext('2d')?.putImageData(blob, 0, 0);
+        this._storage.addImage(canvas);
+        return true;
+      }
+    } else {
+      blob = new Blob([this._dec.data8], { type: this._metrics.mime });
     }
+    this._dec.release();
     return createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
       .then(bm => {
         this._storage.addImage(bm);

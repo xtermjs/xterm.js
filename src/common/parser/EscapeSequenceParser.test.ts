@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType, ResumableHandlersType } from 'common/parser/Types';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import { assert } from 'chai';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
@@ -12,6 +12,7 @@ import { Params } from 'common/parser/Params';
 import { OscHandler } from 'common/parser/OscParser';
 import { IDisposable } from 'common/Types';
 import { DcsHandler } from 'common/parser/DcsParser';
+import { ApcHandler } from 'common/parser/ApcParser';
 
 
 function r(a: number, b: number): string[] {
@@ -145,6 +146,15 @@ const testTerminal: any = {
   },
   actionDCSUnhook(success: boolean): void {
     this.calls.push(['dcs unhook', success]);
+  },
+  actionAPCStart(): void {
+    this.calls.push(['apc start']);
+  },
+  actionAPCPut(s: string): void {
+    this.calls.push(['apc put', s]);
+  },
+  actionAPCEnd(success: boolean): void {
+    this.calls.push(['apc end', success]);
   }
 };
 
@@ -163,7 +173,9 @@ const states: number[] = [
   ParserState.DCS_IGNORE,
   ParserState.DCS_INTERMEDIATE,
   ParserState.DCS_PASSTHROUGH,
-  ParserState.APC_STRING
+  ParserState.APC_ENTRY,
+  ParserState.APC_INTERMEDIATE,
+  ParserState.APC_PASSTHROUGH
 ];
 let state: any;
 
@@ -196,6 +208,18 @@ testParser.setDcsHandlerFallback((collectAndFlag, action, payload) => {
       break;
     case 'UNHOOK':
       testTerminal.actionDCSUnhook(payload);
+  }
+});
+testParser.setApcHandlerFallback((collectAndFlag, action, payload) => {
+  switch (action) {
+    case 'START':
+      testTerminal.actionAPCStart(payload);
+      break;
+    case 'PUT':
+      testTerminal.actionAPCPut(payload);
+      break;
+    case 'END':
+      testTerminal.actionAPCEnd(payload);
   }
 });
 
@@ -278,7 +302,7 @@ describe('EscapeSequenceParser', () => {
       const exceptions: { [key: number]: { [key: string]: any[] } } = {
         8: { '\x18': [], '\x1a': [] }, // abort OSC_STRING
         13: { '\x18': [['dcs unhook', false]], '\x1a': [['dcs unhook', false]] }, // abort DCS_PASSTHROUGH
-        14: { '\x18': [], '\x1a': [] } // abort APC_STRING
+        16: { '\x18': [['apc end', false]], '\x1a': [['apc end', false]] } // abort APC_PASSTHROUGH
       };
       parser.reset();
       testTerminal.clear();
@@ -725,20 +749,6 @@ describe('EscapeSequenceParser', () => {
         }
       }
     });
-    it('trans ANYWHERE/ESCAPE --> APC_STRING', () => {
-      parser.reset();
-      // C0 (ESC _)
-      parse(parser, '\x1b_');
-      assert.equal(parser.currentState, ParserState.APC_STRING);
-      parser.reset();
-      // C1
-      for (state in states) {
-        parser.currentState = state;
-        parse(parser, '\x9f');
-        assert.equal(parser.currentState, ParserState.APC_STRING);
-        parser.reset();
-      }
-    });
     it('state SOS_PM_STRING ignore rules', () => {
       parser.reset();
       let ignored = r(0x00, 0x18);
@@ -1035,6 +1045,134 @@ describe('EscapeSequenceParser', () => {
       parser.reset();
       testTerminal.clear();
     });
+    it('state APC_ENTRY', () => {
+      parser.reset();
+      // C0
+      parse(parser, '\x1b_');
+      assert.equal(parser.currentState, ParserState.APC_ENTRY);
+      parser.reset();
+      // C1
+      for (state in states) {
+        parser.currentState = state;
+        parse(parser, '\x9f');
+        assert.equal(parser.currentState, ParserState.APC_ENTRY);
+        parser.reset();
+      }
+    });
+    it('state APC_ENTRY ignore rules', () => {
+      parser.reset();
+      const ignored = [
+        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08',
+        '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f', '\x10', '\x11',
+        '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x19', '\x1c', '\x1d', '\x1e', '\x1f', '\x7f'];
+      for (let i = 0; i < ignored.length; ++i) {
+        parser.currentState = ParserState.APC_ENTRY;
+        parse(parser, ignored[i]);
+        assert.equal(parser.currentState, ParserState.APC_ENTRY);
+        parser.reset();
+      }
+    });
+    it('trans APC_ENTRY --> APC_INTERMEDIATE with collect action', () => {
+      parser.reset();
+      const collect = r(0x20, 0x30);
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_ENTRY;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.APC_INTERMEDIATE);
+        assert.equal(parser.collect, collect[i]);
+        parser.reset();
+      }
+    });
+    it('trans APC_ENTRY --> APC_PASSTHROUGH with start', () => {
+      parser.reset();
+      testTerminal.clear();
+      const collect = r(0x30, 0x7f);
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_ENTRY;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([['apc start']]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('trans APC_INTERMEDIATE --> APC_PASSTHROUGH with start', () => {
+      parser.reset();
+      testTerminal.clear();
+      const collect = r(0x30, 0x7f);
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_INTERMEDIATE;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([['apc start']]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('state APC_INTERMEDIATE ignore rules', () => {
+      parser.reset();
+      const ignored = [
+        '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08',
+        '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f', '\x10', '\x11',
+        '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x19', '\x1c', '\x1d', '\x1e', '\x1f', '\x7f'];
+      for (let i = 0; i < ignored.length; ++i) {
+        parser.currentState = ParserState.APC_INTERMEDIATE;
+        parse(parser, ignored[i]);
+        assert.equal(parser.currentState, ParserState.APC_INTERMEDIATE);
+        parser.reset();
+      }
+    });
+    it('state APC_PASSTHROUGH put action', () => {
+      parser.reset();
+      testTerminal.clear();
+      let puts = r(0x08, 0x0e);
+      puts = puts.concat(r(0x20, 0x7f));
+      for (let i = 0; i < puts.length; ++i) {
+        parser.currentState = ParserState.APC_PASSTHROUGH;
+        parse(parser, puts[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([['apc put', puts[i]]]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('state APC_PASSTHROUGH ignore rules', () => {
+      parser.reset();
+      testTerminal.clear();
+      let puts = r(0x00, 0x08);
+      puts = puts.concat(r(0x0e, 0x18));
+      puts.push('\x19');
+      puts = puts.concat(r(0x1c, 0x20));
+      puts.push('\x7f');
+      for (let i = 0; i < puts.length; ++i) {
+        parser.currentState = ParserState.APC_PASSTHROUGH;
+        parse(parser, puts[i]);
+        assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+        testTerminal.compare([]);
+        parser.reset();
+        testTerminal.clear();
+      }
+    });
+    it('trans APC_PASSTHROUGH --> GROUND|ESCAPE with end action', () => {
+      parser.reset();
+      testTerminal.clear();
+      const collect = ['\x9c', '\x18', '\x1a']; // ST - true, CAN & SUB - false
+      for (let i = 0; i < collect.length; ++i) {
+        parser.currentState = ParserState.APC_PASSTHROUGH;
+        parse(parser, collect[i]);
+        assert.equal(parser.currentState, ParserState.GROUND);
+        testTerminal.compare([['apc end', collect[i] === '\x9c']]);
+        parser.reset();
+        testTerminal.clear();
+      }
+      // ESC end
+      parser.currentState = ParserState.APC_PASSTHROUGH;
+      parse(parser, '\x1b');
+      assert.equal(parser.currentState, ParserState.ESCAPE);
+      testTerminal.compare([['apc end', true]]);
+      parser.reset();
+      testTerminal.clear();
+    });
   });
 
   function test(s: string, value: any, noReset: any): void {
@@ -1100,6 +1238,42 @@ describe('EscapeSequenceParser', () => {
         ['print', 'defg']
       ], null);
     });
+    it('single APC', () => {
+      test('\x1b_X3+$aäbc;däe\x9c', [
+        ['apc start'],
+        ['apc put', '3+$aäbc;däe'],
+        ['apc end', true]
+      ], null);
+    });
+    it('multi APC', () => {
+      test('\x1b_Xabc;de', [
+        ['apc start'],
+        ['apc put', 'abc;de']
+      ], null);
+      testTerminal.clear();
+      test('abc\x9c', [
+        ['apc put', 'abc'],
+        ['apc end', true]
+      ], true);
+    });
+    it('print + DCS(C1) + print', () => {
+      test('abc\x9fAbc;de\x9cxyz', [
+        ['print', 'abc'],
+        ['apc start'],
+        ['apc put', 'bc;de'],
+        ['apc end', true],
+        ['print', 'xyz']
+      ], null);
+    });
+    it('print + DCS(C0) + print', () => {
+      test('abc\x1b_Abc;de\x1b\\xyz', [
+        ['print', 'abc'],
+        ['apc start'],
+        ['apc put', 'bc;de'],
+        ['apc end', true],
+        ['print', 'xyz']
+      ], null);
+    });
     it('error recovery', () => {
       test('\x1b[1€abcdefg\x9b<;c', [
         ['print', 'abcdefg'],
@@ -1144,6 +1318,22 @@ describe('EscapeSequenceParser', () => {
         ['dcs hook', [1, 2, [-1, 55], 3]],
         ['dcs put', 'bc;de'],
         ['dcs unhook', false] // false for abort
+      ], null);
+    });
+    it('CAN should abort APC', () => {
+      test('abc\x9fXbc;de\x18', [
+        ['print', 'abc'],
+        ['apc start'],
+        ['apc put', 'bc;de'],
+        ['apc end', false] // false for abort
+      ], null);
+    });
+    it('SUB should abort APC', () => {
+      test('abc\x9fXbc;de\x1a', [
+        ['print', 'abc'],
+        ['apc start'],
+        ['apc put', 'bc;de'],
+        ['apc end', false] // false for abort
       ], null);
     });
     it('CAN should abort OSC', () => {
@@ -1210,6 +1400,7 @@ describe('EscapeSequenceParser', () => {
     const exe: string[] = [];
     const osc: [number, string][] = [];
     const dcs: ([string] | [string, string] | [string, string, ParamsArray, number])[] = [];
+    const apc: [string, string][] = [];
     function clearAccu(): void {
       print = '';
       esc.length = 0;
@@ -1217,6 +1408,7 @@ describe('EscapeSequenceParser', () => {
       exe.length = 0;
       osc.length = 0;
       dcs.length = 0;
+      apc.length = 0;
     }
     beforeEach(() => {
       parser2 = new TestEscapeSequenceParser();
@@ -1574,6 +1766,95 @@ describe('EscapeSequenceParser', () => {
         assert.deepEqual(dcsCustom, [['A', [1, 2, 3], 'abc']]);
       });
     });
+    it('APC handler', () => {
+      parser2.registerApcHandler({ intermediates: '+', final: 'p' }, {
+        start: function (): void {
+          apc.push(['start', '']);
+        },
+        put: function (data: Uint32Array, start: number, end: number): void {
+          let s = '';
+          for (let i = start; i < end; ++i) {
+            s += stringFromCodePoint(data[i]);
+          }
+          apc.push(['put', s]);
+        },
+        end: function (success): boolean {
+          apc.push(['end', success ? '1' : '0']);
+          return true;
+        }
+      });
+      parse(parser2, '\x1b_+pabc');
+      parse(parser2, ';de\x9c');
+      assert.deepEqual(apc, [
+        ['start', ''],
+        ['put', 'abc'], ['put', ';de'],
+        ['end', '1']
+      ]);
+      parser2.clearApcHandler({ intermediates: '+', final: 'p' });
+      parser2.clearApcHandler({ intermediates: '+', final: 'p' }); // should not throw
+      clearAccu();
+      parse(parser2, '\x1b_+pabc');
+      parse(parser2, ';de\x9c');
+      assert.deepEqual(apc, []);
+    });
+    describe('APC custom handlers', () => {
+      const APC_INPUT = '\x1b_+pabc\x1b\\';
+      it('Prevent fallback', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['B', 'abc']]);
+      });
+      it('Allow fallback', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return false; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['B', 'abc'], ['A', 'abc']]);
+      });
+      it('Multiple custom handlers fallback once', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['C', data]); return false; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['C', 'abc'], ['B', 'abc']]);
+      });
+      it('Multiple custom handlers no fallback', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['C', data]); return true; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['C', 'abc']]);
+      });
+      it('Execution order should go from latest handler down to the original', () => {
+        const order: number[] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(() => { order.push(1); return true; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(() => { order.push(2); return false; }));
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(() => { order.push(3); return false; }));
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(order, [3, 2, 1]);
+      });
+      it('Dispose should work', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        const dispo = parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        dispo.dispose();
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['A', 'abc']]);
+      });
+      it('Should not corrupt the parser when dispose is called twice', () => {
+        const apcCustom: [string, string][] = [];
+        parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['A', data]); return true; }));
+        const dispo = parser2.registerApcHandler({ intermediates: '+', final: 'p' }, new ApcHandler(data => { apcCustom.push(['B', data]); return true; }));
+        dispo.dispose();
+        dispo.dispose();
+        parse(parser2, APC_INPUT);
+        assert.deepEqual(apcCustom, [['A', 'abc']]);
+      });
+    });
     it('ERROR handler', () => {
       let errorState: IParsingState | null = null;
       parser2.setErrorHandler(function (state: IParsingState): IParsingState {
@@ -1625,15 +1906,22 @@ describe('EscapeSequenceParser', () => {
         assert.throws(() => { parser.identifier({ final: '\x7f' }); }, 'final must be in range 64 .. 126');
         assert.throws(() => { parser.identifier({ final: 'zz' }); }, 'final must be a single byte');
       });
-      it('final ESC range 0x30 .. 0x7e, one byte', () => {
+      it('final ESC + APC range 0x30 .. 0x7e, one byte', () => {
         for (let i = 0x30; i <= 0x7e; ++i) {
           const final = String.fromCharCode(i);
           let handler: IDisposable | undefined;
           assert.doesNotThrow(() => { handler = parser.registerEscHandler({ final }, () => true); }, 'final must be in range 48 .. 126');
           if (handler) handler.dispose();
+          assert.doesNotThrow(
+            () => { handler = parser.registerApcHandler({ final }, {start: () => {}, put: ()=>{}, end: ()=>true}); },
+            'final must be in range 48 .. 126'
+          );
+          if (handler) handler.dispose();
         }
         assert.throws(() => { parser.registerEscHandler({ final: '\x2f' }, () => true); }, 'final must be in range 48 .. 126');
         assert.throws(() => { parser.registerEscHandler({ final: '\x7f' }, () => true); }, 'final must be in range 48 .. 126');
+        assert.throws(() => { parser.registerApcHandler({ final: '\x2f' }, {start: () => {}, put: ()=>{}, end: ()=>true}); }, 'final must be in range 48 .. 126');
+        assert.throws(() => { parser.registerApcHandler({ final: '\x7f' }, {start: () => {}, put: ()=>{}, end: ()=>true}); }, 'final must be in range 48 .. 126');
       });
       it('id calculation - should stacking prefix -> intermediate -> final', () => {
         assert.equal(parser.identToString(parser.identifier({ final: 'z' })), 'z');
@@ -1705,6 +1993,25 @@ describe('EscapeSequenceParser', () => {
           ]
         );
       });
+      it('APC', () => {
+        const callstack: any[] = [];
+        const h1 = parser.registerApcHandler({ final: 'z' }, new ApcHandler(data => { callstack.push(['z', data]); return true; }));
+        const h2 = parser.registerApcHandler({ intermediates: '!', final: 'z' }, new ApcHandler(data => { callstack.push(['!z', data]); return true; }));
+        const h3 = parser.registerApcHandler({ intermediates: '!!', final: 'z' }, new ApcHandler(data => { callstack.push(['!!z', data]); return true; }));
+        parse(parser, '\x1b_zAB\x1b\\\x1b_!zAB\x1b\\\x1b_!!zAB\x1b\\');
+        h1.dispose();
+        h2.dispose();
+        h3.dispose();
+        parse(parser, '\x1b_zAB\x1b\\\x1b_!zAB\x1b\\\x1b_!!zAB\x1b\\');
+        assert.deepEqual(
+          callstack,
+          [
+            ['z', 'AB'],
+            ['!z', 'AB'],
+            ['!!z', 'AB'],
+          ]
+        );
+      });
     });
   });
   // TODO: error conditions and error recovery (not implemented yet in parser)
@@ -1758,9 +2065,9 @@ async function throwsAsync(fn: () => Promise<any>, message?: string | undefined)
 }
 
 describe('EscapeSequenceParser - async', () => {
-  // sequences: SGR 1;31 | hello SP | ESC %G | wor | ESC E | ld! | SGR 0 | EXE \r\n | $> | DCS 1;2 a [xyz] ST | OSC 1;foo=bar ST | FIN
-  // needed handlers: CSI m, PRINT, ESC %G, ESC E, EXE \r, EXE \n, OSC 1
-  const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1bP1;2axyz\x1b\\\x1b]1;foo=bar\x1b\\FIN';
+  // sequences: SGR 1;31 | hello SP | ESC %G | wor | ESC E | ld! | SGR 0 | EXE \r\n | $> | DCS 1;2 a [xyz] ST | OSC 1;foo=bar ST | APC X abc ST | FIN
+  // needed handlers: CSI m, PRINT, ESC %G, ESC E, EXE \r, EXE \n, OSC 1, APC X
+  const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1bP1;2axyz\x1b\\\x1b]1;foo=bar\x1b\\\x1b_Xabc\x1b\\FIN';
   let RESULT: any[];
   let parser: TestEscapeSequenceParser;
   const callstack: any[] = [];
@@ -1782,6 +2089,7 @@ describe('EscapeSequenceParser - async', () => {
       ['PRINT', '$>'],
       ['DCS a', ['xyz', [1, 2]]],
       ['OSC 1', 'foo=bar'],
+      ['APC X', 'abc'],
       ['PRINT', 'FIN']
     ];
     parser = new TestEscapeSequenceParser();
@@ -1805,6 +2113,7 @@ describe('EscapeSequenceParser - async', () => {
       parser.setExecuteHandler('\n', () => { callstack.push(['EXE \n']); return true; });
       parser.registerOscHandler(1, new OscHandler(data => { callstack.push(['OSC 1', data]); return true; }));
       parser.registerDcsHandler({ final: 'a' }, new DcsHandler((data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true; }));
+      parser.registerApcHandler({ final: 'X' }, new ApcHandler(data => { callstack.push(['APC X', data]); return true; }));
     });
 
     it('sync handlers keep being parsed in sync mode', () => {
@@ -1840,6 +2149,7 @@ describe('EscapeSequenceParser - async', () => {
       parser.setExecuteHandler('\n', () => { callstack.push(['EXE \n']); return true; });
       parser.registerOscHandler(1, new OscHandler(async data => { callstack.push(['OSC 1', data]); return true; }));
       parser.registerDcsHandler({ final: 'a' }, new DcsHandler(async (data, params) => { callstack.push(['DCS a', [data, params.toArray()]]); return true; }));
+      parser.registerApcHandler({ final: 'X' }, new ApcHandler(async data => { callstack.push(['APC X', data]); return true; }));
     });
 
     it('sync parse call does not work anymore', () => {
@@ -1876,7 +2186,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('correct result on chunked awaited parse calls', async () => {
@@ -1903,6 +2214,7 @@ describe('EscapeSequenceParser - async', () => {
         ['PRINT', '>'],
         ['DCS a', ['xyz', [1, 2]]],
         ['OSC 1', 'foo=bar'],
+        ['APC X', 'abc'],
         ['PRINT', 'F'],
         ['PRINT', 'I'],
         ['PRINT', 'N']
@@ -1921,7 +2233,8 @@ describe('EscapeSequenceParser - async', () => {
         [0, ParserStackType.ESC, 0],
         [0, ParserStackType.CSI, 0],
         [0, ParserStackType.DCS, 0],
-        [0, ParserStackType.OSC, 0]
+        [0, ParserStackType.OSC, 0],
+        [0, ParserStackType.APC, 0],
       ]);
     });
     it('multiple async SGR handlers', async () => {
@@ -1941,7 +2254,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 1],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -1954,7 +2268,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -1972,7 +2287,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 1],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -1985,7 +2301,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('multiple async ESC handlers', async () => {
@@ -2003,7 +2320,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2016,7 +2334,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -2033,7 +2352,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 1],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2046,7 +2366,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('sync/async SGR mixed', async () => {
@@ -2071,7 +2392,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 2],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // dispose SGR2 (sync one)
@@ -2092,7 +2414,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 1],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // dispose SGR3 (async one)
@@ -2105,7 +2428,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
     });
     it('multiple async OSC handlers', async () => {
@@ -2123,7 +2447,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
         [54, ParserStackType.OSC, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2136,7 +2461,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -2153,7 +2479,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2166,7 +2493,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
     });
@@ -2185,7 +2513,8 @@ describe('EscapeSequenceParser - async', () => {
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2198,7 +2527,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
 
@@ -2215,7 +2545,8 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
       // after dispose we should be back to RESULT
@@ -2228,7 +2559,74 @@ describe('EscapeSequenceParser - async', () => {
         [20, ParserStackType.ESC, 0],
         [27, ParserStackType.CSI, 0],
         [41, ParserStackType.DCS, 0],
-        [54, ParserStackType.OSC, 0]
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+    });
+    it('multiple async APC handlers', async () => {
+      // register with fallback
+      const APC2 = parser.registerApcHandler({ final: 'X' }, new ApcHandler(async data => { callstack.push(['#2 APC X', data]); return false; }));
+      await parseP(parser, INPUT);
+      for (let i = 0; i < callstack.length; ++i) {
+        const entry = callstack[i];
+        if (entry[0] === '2# APC X') assert.equal(callstack[i + 1][0], 'APC a', 'Should fallback to original handler');
+      }
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+      // after dispose we should be back to RESULT
+      APC2.dispose();
+      await parseP(parser, INPUT);
+      assert.deepEqual(callstack, RESULT, 'Should not call custom handler');
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+
+      // register without fallback
+      const APC22 = parser.registerApcHandler({ final: 'X' }, new ApcHandler(async data => { callstack.push(['#2 APC X', data]); return true; }));
+      await parseP(parser, INPUT);
+      for (let i = 0; i < callstack.length; ++i) {
+        const entry = callstack[i];
+        if (entry[0] === '2# APC X') assert.notEqual(callstack[i + 1][0], 'APC X', 'Should fallback to original handler');
+      }
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
+      ]);
+      clearAccu();
+      // after dispose we should be back to RESULT
+      APC22.dispose();
+      await parseP(parser, INPUT);
+      assert.deepEqual(callstack, RESULT, 'Should not call custom handler');
+      evalStackSaves(parser.trackedStack, [
+        [6, ParserStackType.CSI, 0],
+        [15, ParserStackType.ESC, 0],
+        [20, ParserStackType.ESC, 0],
+        [27, ParserStackType.CSI, 0],
+        [41, ParserStackType.DCS, 0],
+        [54, ParserStackType.OSC, 0],
+        [62, ParserStackType.APC, 0],
       ]);
       clearAccu();
     });

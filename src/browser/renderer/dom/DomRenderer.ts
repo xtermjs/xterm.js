@@ -19,13 +19,15 @@ import { Emitter } from 'common/Event';
 import { addDisposableListener } from 'browser/Dom';
 
 
-const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
-const ROW_CONTAINER_CLASS = 'xterm-rows';
-const FG_CLASS_PREFIX = 'xterm-fg-';
-const BG_CLASS_PREFIX = 'xterm-bg-';
-const FOCUS_CLASS = 'xterm-focus';
-const SELECTION_CLASS = 'xterm-selection';
-const CURSOR_BLINK_IDLE_CLASS = 'xterm-cursor-blink-idle';
+const enum Constants {
+  TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-',
+  ROW_CONTAINER_CLASS = 'xterm-rows',
+  FG_CLASS_PREFIX = 'xterm-fg-',
+  BG_CLASS_PREFIX = 'xterm-bg-',
+  FOCUS_CLASS = 'xterm-focus',
+  SELECTION_CLASS = 'xterm-selection',
+  CURSOR_BLINK_IDLE_CLASS = 'xterm-cursor-blink-idle'
+}
 
 let nextTerminalId = 1;
 
@@ -76,12 +78,12 @@ export class DomRenderer extends Disposable implements IRenderer {
   ) {
     super();
     this._rowContainer = this._document.createElement('div');
-    this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
+    this._rowContainer.classList.add(Constants.ROW_CONTAINER_CLASS);
     this._rowContainer.style.lineHeight = 'normal';
     this._rowContainer.setAttribute('aria-hidden', 'true');
     this._refreshRowElements(this._bufferService.cols, this._bufferService.rows);
     this._selectionContainer = this._document.createElement('div');
-    this._selectionContainer.classList.add(SELECTION_CLASS);
+    this._selectionContainer.classList.add(Constants.SELECTION_CLASS);
     this._selectionContainer.setAttribute('aria-hidden', 'true');
 
     this.dimensions = createRenderDimensions();
@@ -93,7 +95,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document);
 
-    this._element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
+    this._element.classList.add(Constants.TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.appendChild(this._rowContainer);
     this._screenElement.appendChild(this._selectionContainer);
 
@@ -110,7 +112,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     ));
 
     this._register(toDisposable(() => {
-      this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
+      this._element.classList.remove(Constants.TERMINAL_CLASS_PREFIX + this._terminalClass);
 
       // Outside influences such as React unmounts may manipulate the DOM before our disposal.
       // https://github.com/xtermjs/xterm.js/issues/2960
@@ -160,7 +162,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
 
     const styles =
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} span {` +
       ` display: inline-block;` +   // TODO: find workaround for inline-block (creates ~20% render penalty)
       ` height: 100%;` +
       ` vertical-align: top;` +
@@ -181,7 +183,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
     // Base CSS
     let styles =
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} {` +
       // Disabling pointer events circumvents a browser behavior that prevents `click` events from
       // being delivered if the target element is replaced during the click. This happened due to
       // refresh() being called during the mousedown handler to start a selection.
@@ -189,14 +191,14 @@ export class DomRenderer extends Disposable implements IRenderer {
       ` color: ${colors.foreground.css};` +
       `}`;
     styles +=
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}, ${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS}, ${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} span {` +
       ` font-family: ${this._optionsService.rawOptions.fontFamily};` +
       ` font-size: ${this._optionsService.rawOptions.fontSize}px;` +
       ` font-kerning: none;` +
       ` white-space: pre` +
       `}`;
     styles +=
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .xterm-dim {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} .xterm-dim {` +
       ` color: ${color.multiplyOpacity(colors.foreground, 0.5).css};` +
       `}`;
     // Text styles
@@ -242,70 +244,70 @@ export class DomRenderer extends Disposable implements IRenderer {
       `}`;
     // Cursor
     styles +=
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS}.${Constants.FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} {` +
       ` animation: ${blinkAnimationUnderlineId} 1s step-end infinite;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS}.${Constants.FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} {` +
       ` animation: ${blinkAnimationBarId} 1s step-end infinite;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS}.${Constants.FOCUS_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` animation: ${blinkAnimationBlockId} 1s step-end infinite;` +
       `}` +
       // Disable cursor blinking when idle
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${CURSOR_BLINK_IDLE_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS}.${Constants.CURSOR_BLINK_IDLE_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS} {` +
       ` animation: none !important;` +
       `}` +
       // !important helps fix an issue where the cursor will not render on top of the selection,
       // however it's very hard to fix this issue and retain the blink animation without the use of
       // !important. So this edge case fails when cursor blink is on.
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` background-color: ${colors.cursor.css};` +
       ` color: ${colors.cursorAccent.css};` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS}:not(.${RowCss.CURSOR_BLINK_CLASS}) {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS}:not(.${RowCss.CURSOR_BLINK_CLASS}) {` +
       ` background-color: ${colors.cursor.css} !important;` +
       ` color: ${colors.cursorAccent.css} !important;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_OUTLINE_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_OUTLINE_CLASS} {` +
       ` outline: 1px solid ${colors.cursor.css};` +
       ` outline-offset: -1px;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BAR_CLASS} {` +
       ` box-shadow: ${this._optionsService.rawOptions.cursorWidth}px 0 0 ${colors.cursor.css} inset;` +
       `}` +
-      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_UNDERLINE_CLASS} {` +
       ` border-bottom: 1px ${colors.cursor.css};` +
       ` border-bottom-style: solid;` +
       ` height: calc(100% - 1px);` +
       `}`;
     // Selection
     styles +=
-      `${this._terminalSelector} .${SELECTION_CLASS} {` +
+      `${this._terminalSelector} .${Constants.SELECTION_CLASS} {` +
       ` position: absolute;` +
       ` top: 0;` +
       ` left: 0;` +
       ` z-index: 1;` +
       ` pointer-events: none;` +
       `}` +
-      `${this._terminalSelector}.focus .${SELECTION_CLASS} div {` +
+      `${this._terminalSelector}.focus .${Constants.SELECTION_CLASS} div {` +
       ` position: absolute;` +
       ` background-color: ${colors.selectionBackgroundOpaque.css};` +
       `}` +
-      `${this._terminalSelector} .${SELECTION_CLASS} div {` +
+      `${this._terminalSelector} .${Constants.SELECTION_CLASS} div {` +
       ` position: absolute;` +
       ` background-color: ${colors.selectionInactiveBackgroundOpaque.css};` +
       `}`;
     // Colors
     for (const [i, c] of colors.ansi.entries()) {
       styles +=
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(c, 0.5).css}; }` +
-        `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
+        `${this._terminalSelector} .${Constants.FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+        `${this._terminalSelector} .${Constants.FG_CLASS_PREFIX}${i}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(c, 0.5).css}; }` +
+        `${this._terminalSelector} .${Constants.BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     }
     styles +=
-      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(colors.background).css}; }` +
-      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
-      `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
+      `${this._terminalSelector} .${Constants.FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${color.opaque(colors.background).css}; }` +
+      `${this._terminalSelector} .${Constants.FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR}.${RowCss.DIM_CLASS} { color: ${color.multiplyOpacity(color.opaque(colors.background), 0.5).css}; }` +
+      `${this._terminalSelector} .${Constants.BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${colors.foreground.css}; }`;
 
     this._themeStyleElement.textContent = styles;
   }
@@ -361,13 +363,13 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   public handleBlur(): void {
-    this._rowContainer.classList.remove(FOCUS_CLASS);
+    this._rowContainer.classList.remove(Constants.FOCUS_CLASS);
     this._cursorBlinkStateManager.pause();
     this.renderRows(0, this._bufferService.rows - 1);
   }
 
   public handleFocus(): void {
-    this._rowContainer.classList.add(FOCUS_CLASS);
+    this._rowContainer.classList.add(Constants.FOCUS_CLASS);
     this._cursorBlinkStateManager.resume();
     this.renderRows(this._bufferService.buffer.y, this._bufferService.buffer.y);
   }
@@ -561,7 +563,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private get _terminalSelector(): string {
-    return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
+    return `.${Constants.TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
 
   private _handleLinkHover(e: ILinkifierEvent): void {
@@ -667,7 +669,7 @@ class CursorBlinkStateManager {
 
   public restartBlinkAnimation(): void {
     if (this._isIdlePaused) {
-      this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+      this._rowContainer.classList.remove(Constants.CURSOR_BLINK_IDLE_CLASS);
     }
     this._resetIdleTimer();
   }
@@ -679,7 +681,7 @@ class CursorBlinkStateManager {
 
   public resume(): void {
     this._isIdlePaused = false;
-    this._rowContainer.classList.remove(CURSOR_BLINK_IDLE_CLASS);
+    this._rowContainer.classList.remove(Constants.CURSOR_BLINK_IDLE_CLASS);
     this._resetIdleTimer();
   }
 
@@ -699,7 +701,7 @@ class CursorBlinkStateManager {
   }
 
   private _stopBlinkingDueToIdle(): void {
-    this._rowContainer.classList.add(CURSOR_BLINK_IDLE_CLASS);
+    this._rowContainer.classList.add(Constants.CURSOR_BLINK_IDLE_CLASS);
     this._isIdlePaused = true;
     this._idleTimeout = undefined;
   }

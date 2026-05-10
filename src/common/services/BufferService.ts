@@ -10,8 +10,10 @@ import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from 'common/services/Services';
 import { Emitter } from 'common/Event';
 
-export const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
-export const MINIMUM_ROWS = 1;
+export const enum BufferServiceConstants {
+  MINIMUM_COLS = 2, // Less than 2 can mess with wide chars
+  MINIMUM_ROWS = 1
+}
 
 export class BufferService extends Disposable implements IBufferService {
   public serviceBrand: any;
@@ -37,8 +39,8 @@ export class BufferService extends Disposable implements IBufferService {
     @ILogService logService: ILogService
   ) {
     super();
-    this.cols = Math.max(optionsService.rawOptions.cols || 0, MINIMUM_COLS);
-    this.rows = Math.max(optionsService.rawOptions.rows || 0, MINIMUM_ROWS);
+    this.cols = Math.max(optionsService.rawOptions.cols || 0, BufferServiceConstants.MINIMUM_COLS);
+    this.rows = Math.max(optionsService.rawOptions.rows || 0, BufferServiceConstants.MINIMUM_ROWS);
     this.buffers = this._register(new BufferSet(optionsService, this, logService));
     this._register(this.buffers.onBufferActivate(e => {
       this._onScroll.fire(e.activeBuffer.ydisp);

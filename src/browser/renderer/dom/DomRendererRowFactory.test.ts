@@ -8,14 +8,14 @@ import { assert } from 'chai';
 import { DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags, BgFlags, Attributes, UnderlineStyle } from 'common/buffer/Constants';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 import { MockCoreService, MockDecorationService, MockOptionsService, createCellData, NULL_CELL_DATA } from 'common/TestUtils.test';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from 'browser/TestUtils.test';
 import { TestWidthCache } from 'browser/renderer/dom/WidthCache.test';
 
-const dom = new jsdom.JSDOM('');
-
+const TEST_STRING_CACHE = new BufferLineStringCache();
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -517,7 +517,7 @@ describe('DomRendererRowFactory', () => {
   }
 
   function createEmptyLineData(cols: number): IBufferLine {
-    const lineData = new BufferLine(cols);
+    const lineData = new BufferLine(TEST_STRING_CACHE, cols);
     for (let i = 0; i < cols; i++) {
       lineData.setCell(i, NULL_CELL_DATA);
     }
