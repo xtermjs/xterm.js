@@ -471,29 +471,33 @@ export class KittyKeyboard {
       return result;
     }
 
+    // Special handling for Enter/Tab/Backspace.
+    const specialKey = keyCode === 13 || keyCode === 9 || keyCode === 127;
+
+    // Per spec, Enter/Tab/Backspace will not have release events unless "Report all keys as escape
+    // codes" is also set.
+    if (specialKey && eventType === KittyKeyboardEventType.RELEASE && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
+      return result;
+    }
+
     const isFunc = this._functionalKeyCodes[ev.key] !== undefined || this._getNumpadKeyCode(ev) !== undefined;
 
-    let useCsiU = false;
-
-    if (flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES) {
-      useCsiU = true;
-    } else if (reportEventTypes) {
-      useCsiU = true;
-    } else if (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES) {
-      // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy
-      // mode" and consider space to be a text-generating key, so these skip the isFunc fast-path
-      // and only get CSI u when modifiers are present (handled below).
-      const isDisambiguateLegacy = keyCode === 13 || keyCode === 9 || keyCode === 127;
-      if (isFunc && !isDisambiguateLegacy) {
-        useCsiU = true;
-      } else if (modifiers > 0) {
-        if (ev.shiftKey && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.key.length === 1) {
-          useCsiU = false;
-        } else {
-          useCsiU = true;
-        }
-      }
-    }
+    const useCsiU = !!(
+      flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES ||
+      (reportEventTypes && eventType === KittyKeyboardEventType.RELEASE) ||
+      (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES &&
+        (
+          // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy mode" and
+          // consider space to be a text-generating key, so these skip the isFunc fast-path and only
+          // get CSI u when modifiers are present (handled below).
+          (isFunc && !specialKey) ||
+          (
+            (modifiers > 0 && ev.key.length !== 1) ||
+            modifiers - 1 > KittyKeyboardModifiers.SHIFT
+          )
+        )
+      )
+    );
 
     if (useCsiU) {
       result.key = this._buildCsiUSequence(ev, keyCode, modifiers, eventType, flags, isFunc, isMod);
