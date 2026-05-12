@@ -485,7 +485,10 @@ export class KittyKeyboard {
     const useCsiU = !!(
       flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES ||
       (reportEventTypes && eventType === KittyKeyboardEventType.RELEASE) ||
-      (flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES &&
+      // Enabling REPORT_EVENT_TYPES without DISAMBIGUATE_ESCAPE_CODES doesn't really make sense, so
+      // just make REPORT_EVENT_TYPES imply DISAMBIGUATE_ESCAPE_CODES here for simplicity.
+      // See: https://github.com/kovidgoyal/kitty/issues/9999
+      ((flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES || reportEventTypes) &&
         (
           // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy mode" and
           // consider space to be a text-generating key, so these skip the isFunc fast-path and only
