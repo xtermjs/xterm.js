@@ -146,7 +146,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
   public clearLines(start: number, end: number, layer?: ImageLayer): void {
     const y = start * (this.dimensions?.css.cell.height || 0);
     const w = this.dimensions?.css.canvas.width || 0;
-    const h = (++end - start) * (this.dimensions?.css.cell.height || 0);
+    const h = (end + 1 - start) * (this.dimensions?.css.cell.height || 0);
     if (!layer || layer === 'top') {
       this._layers.get('top')?.clearRect(0, y, w, h);
     }

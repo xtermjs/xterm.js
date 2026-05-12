@@ -212,7 +212,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     if (!this._themeService) return;
     for (const req of event) {
       let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
-      let ident = '';
+      let ident: string;
       switch (req.index) {
         case SpecialColorIndex.FOREGROUND: // OSC 10 | 110
           acc = 'foreground';
