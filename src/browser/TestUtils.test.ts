@@ -270,6 +270,9 @@ export class MockBuffer implements IBuffer {
   public clearAllMarkers(): void {
     throw new Error('Method not implemented.');
   }
+  public setWrapped(row: number, value: boolean): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockRenderer implements IRenderer {

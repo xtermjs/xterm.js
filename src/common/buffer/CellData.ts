@@ -88,7 +88,9 @@ export class CellData extends AttributeData implements ICellData {
       this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
   }
-  /** Get data as CharData. */
+  /** Get data as CharData.
+   * @deprecated
+   */
   public getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
