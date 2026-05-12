@@ -1,6 +1,7 @@
 ## @xterm/addon-image
 
-Inline image output in xterm.js. Supports SIXEL and iTerm's inline image protocol (IIP).
+Inline image output in xterm.js. Supports SIXEL, iTerm's inline image protocol (IIP)
+and partially Kitty's terminal graphics prtocol (TGP).
 
 
 ![](fixture/example.png)
@@ -43,9 +44,6 @@ terminal.loadAddon(imageAddon);
 
 ### General Notes
 
-- *IMPORTANT:* The worker approach as done in previous releases got removed.
-  The addon contructor no longer expects a worker path as first argument.
-
 - By default the addon will activate these `windowOptions` reports on the terminal:
   - getWinSizePixels (CSI 14 t)
   - getCellSizePixels (CSI 16 t)
@@ -73,7 +71,7 @@ terminal.loadAddon(imageAddon);
 
 - **Cursor Positioning**  
   If scrolling is set, the cursor will be placed at the first image column of the last image row (VT340 mode).
-  Other cursor positioning modes as used by xterm or mintty are not supported.
+  Other cursor positioning modes as used by xterm or mintty are not supported for sixel.
 
 - **SIXEL Palette Handling**  
   By default the addon limits the palette size to 256 registers (as demanded by the DEC specification).
@@ -100,17 +98,24 @@ terminal.loadAddon(imageAddon);
   Set by default, change it with `{iipSupport: true}`.
 
   The IIP implementation has the following features / restrictions (sequence will silently fail for unmet conditions):
-  - Supported formats: PNG, JPEG and GIF
+  - Supported formats: PNG, JPEG, GIF and QOI
   - No animation support.
   - Image type hinting is not supported (always deducted from data header).
   - File download is not supported.
   - Filename gets parsed but not used.
   - Strict base64 handling as of RFC4648 §4 (standard alphabet, optional padding, no separator bytes allowed).
-  - Payload size may not exceed CEIL(sizeParameter * 4 / 3).
   - Image scaling beyond terminal viewport size is allowed (e.g. `width=200%`).
   - Image pixel size is restricted by `pixelLimit` (pre- and post resizing).
-  - Size parameter is restricted by `iipSizeLimit`.
-  - Cursor positioning behaves the same as for sixel (see above).
+  - Playload size is restricted by `iipSizeLimit`.
+  - size parameter is not mandatory anymore.
+  - Cursor gets positioned at the next cell of the last image line.
+  - ReportCellSize sequence is supported.
+  - Hi-res display support is currently limited (image gets blurred).
+
+- **Kitty Graphics Support (TGP)**  
+  Set by default, change it with `{kittySupport: true}`.
+
+  Note that the kitty graphics support is still WIP.
 
 
 ### Storage and Drawing Settings
@@ -127,6 +132,7 @@ The addon exposes two properties to interact with the storage limits at runtime:
 By default the addon will show a placeholder pattern for evicted images that are still part
 of the terminal (e.g. in the scrollback). The pattern can be deactivated by toggling `showPlaceholder`.
 
+
 ### Image Data Retrieval
 
 The addon provides the following API endpoints to retrieve raw image data as canvas:
@@ -139,6 +145,7 @@ The addon provides the following API endpoints to retrieve raw image data as can
   Returns a canvas containing the actual single tile image data (maybe resized) at the given buffer position.
   The buffer position is the 0-based absolute index (including scrollback at top).
   Note that the canvas gets created and data copied over for every call, thus it is not suitable for performance critical actions.
+
 
 ### Memory Usage
 
@@ -180,8 +187,8 @@ _How can I adjust the memory usage?_
   A constructor setting, thus you would have to anticipate, whether (multiple) terminals in your page gonna do lots of concurrent decoding. Since this is normally not the case and the memory usage is only temporarily peaking, a rather high value should work even with multiple terminals in one page.
 - `storageLimit`  
   A constructor and a runtime setting. In conjunction with `storageUsage` you can do runtime checks and adjust the limit to your needs. If you have to lower the limit below the current usage, images will be removed in FIFO order and may turn into a placeholder in the terminal's scrollback (if `showPlaceholder` is set). When adjusting keep in mind to leave enough room for memory peaking for decoding.
-- `sixelSizeLimit`  
-  A constructor setting. This has only a small impact on peaking memory during decoding. It is meant to avoid processing of overly big or broken SIXEL sequences at an earlier phase, thus may stop the decoder from entering its memory intensive task for potentially invalid data.
+- `sixelSizeLimit | iipSizeLimit | kittySizeLimit`  
+  Constructor settings. This has only a small impact on peaking memory during decoding. It is meant to avoid processing of overly big or broken image sequences at an earlier phase, thus may stop the invoked decoders from entering memory intensive tasks for potentially invalid data.
 
 
 ### Terminal Interaction
@@ -211,23 +218,5 @@ _How can I adjust the memory usage?_
 
 ### Status
 
-- Sixel support and image handling in xterm.js is considered beta quality.
-- IIP support is in alpha stage. Please file a bug for any awkwardities.
-
-
-### Changelog
-
-- 0.5.0 integrate with xtermjs base repo (at v0.4.3)
-- 0.4.3 defer canvas creation
-- 0.4.2 fix image canvas resize
-- 0.4.1 compat release for xterm.js 5.2.0
-- 0.4.0 IIP support
-- 0.3.1 compat release for xterm.js 5.1.0
-- 0.3.0 important change: worker removed from addon
-- 0.2.0 compat release for xterm.js 5.0.0
-- 0.1.3 bugfix: avoid striping
-- 0.1.2 bugfix: reset clear flag
-- 0.1.1 bugfixes:
-  - clear sticky image tiles on render
-  - create folder from bootstrap.sh
-  - fix peer dependency in package.json
+- Sixel and IIP support and image handling in xterm.js is considered beta quality.
+- Kitty support is in alpha stage. Please file a bug for any awkwardities or missing features.
