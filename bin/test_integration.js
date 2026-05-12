@@ -33,6 +33,7 @@ const addons = [
   'web-fonts',
   'web-links',
   'webgl',
+  'webgpu',
 ];
 for (const addon of addons) {
   configs.push({ name: `addon-${addon}`, path: `addons/addon-${addon}/out-esbuild-test/playwright.config.js` });
