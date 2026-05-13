@@ -115,6 +115,7 @@ export interface IExtendedAttrs {
   underlineColor: number;
   underlineVariantOffset: number;
   urlId: number;
+  payload: Object | undefined;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
 }
