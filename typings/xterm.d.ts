@@ -145,7 +145,10 @@ declare module '@xterm/xterm' {
     letterSpacing?: number;
 
     /**
-     * The line height used to render text.
+     * The line height used to render text. When the value is less than 8, it is
+     * treated as a multiplier of the character height (e.g. `1.2`). When the
+     * value is 8 or greater, it is treated as an absolute pixel height. This
+     * follows the same convention as Monaco editor's `lineHeight` option.
      */
     lineHeight?: number;
 

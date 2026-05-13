@@ -623,14 +623,16 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // cell.
     this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * this._devicePixelRatio);
 
-    // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
-    // floored since lineHeight can never be lower then 1, this guarentees the device cell height
-    // will always be larger than device char height.
-    this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
+    // Calculate the device cell height. Values >= 8 are treated as absolute pixel heights
+    // (Monaco convention), values < 8 are treated as multipliers of the character height.
+    const lineHeight = this._optionsService.rawOptions.lineHeight;
+    this.dimensions.device.cell.height = lineHeight >= 8
+      ? Math.max(Math.floor(lineHeight * this._devicePixelRatio), this.dimensions.device.char.height)
+      : Math.floor(this.dimensions.device.char.height * lineHeight);
 
     // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
     // correctly within the cell.
-    this.dimensions.device.char.top = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
+    this.dimensions.device.char.top = this.dimensions.device.cell.height === this.dimensions.device.char.height ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
 
     // Calculate the device cell width, taking the letterSpacing into account.
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);

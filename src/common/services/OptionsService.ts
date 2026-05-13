@@ -178,8 +178,14 @@ export class OptionsService extends Disposable implements IOptionsService {
       case 'cursorWidth':
         value = Math.floor(value);
         // Fall through for bounds check
-      case 'lineHeight':
       case 'tabStopWidth':
+        if (value < 1) {
+          throw new Error(`${key} cannot be less than 1, value: ${value}`);
+        }
+        break;
+      case 'lineHeight':
+        // Values >= 8 are treated as absolute pixel heights (Monaco convention),
+        // values < 8 are treated as multipliers and must be >= 1.
         if (value < 1) {
           throw new Error(`${key} cannot be less than 1, value: ${value}`);
         }
