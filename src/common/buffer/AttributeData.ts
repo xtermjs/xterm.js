@@ -138,6 +138,7 @@ export class AttributeData implements IAttributeData {
  */
 export class ExtendedAttrs implements IExtendedAttrs {
   private _ext: number = 0;
+  public payload: Object | undefined;
   public get ext(): number {
     if (this._urlId) {
       return (
@@ -206,6 +207,6 @@ export class ExtendedAttrs implements IExtendedAttrs {
    * that needs to be persistant in the buffer.
    */
   public isEmpty(): boolean {
-    return this.underlineStyle === UnderlineStyle.NONE && this._urlId === 0;
+    return this.underlineStyle === UnderlineStyle.NONE && this._urlId === 0 && this.payload === undefined;
   }
 }
