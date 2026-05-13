@@ -25,7 +25,7 @@ class TerminalContext:
         return TerminalContext(fd, True)
 
     def close(self) -> None:
-        tcsetattr(self.fd, TCSAFLUSH, self._initial_attr)
+        tcsetattr(self.fd, TCSADRAIN, self._initial_attr)
         if self.close_fd:
             os.close(self.fd)
 
@@ -47,11 +47,11 @@ class TerminalContext:
             return
         tattr = self.termios_attributes
         try:
-            setcbreak(self.fd, TCSAFLUSH)
+            setcbreak(self.fd, TCSADRAIN)
             self.is_cbreak = True
             yield
         finally:
-            tcsetattr(self.fd, TCSAFLUSH, tattr)
+            tcsetattr(self.fd, TCSADRAIN, tattr)
             self.is_cbreak = False
 
     @contextmanager
@@ -64,11 +64,11 @@ class TerminalContext:
             return
         tattr = self.termios_attributes
         try:
-            setraw(self.fd, TCSAFLUSH)
+            setraw(self.fd, TCSADRAIN)
             self.is_raw = True
             yield
         finally:
-            tcsetattr(self.fd, TCSAFLUSH, tattr)
+            tcsetattr(self.fd, TCSADRAIN, tattr)
             self.is_raw = False
 
     @contextmanager
@@ -139,7 +139,7 @@ def extract_events(data: list[str]):
 def query(term: TerminalContext, mode: int):
     with term.custom_state(undo=lambda:term.write('\x1b[<u')):
         term.write(f'\x1b[>{mode}u')
-        sleep(.1)
+        term.read(timeout=.1)
         print('PRESS (within 5s) and HOLD (for 5s)\r')
         data: list[bytes] = []
         cur = term.read(timeout=5)

@@ -628,5 +628,75 @@
       "REPEAT": "\u001b[57426u",
       "RELEASE": null
     }
+  },
+  "Numlock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Shift (ShiftLeft)": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Shift (ShiftRight)": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Control (ControlLeft)": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Meta (MetaLeft)": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Alt (AltLeft)": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "  (Space)": {
+    "1": {
+      "PRESS": " ",
+      "REPEAT": " ",
+      "RELEASE": null
+    }
+  },
+  "AltGraph (AltRight)": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Control (ControlRight)": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
   }
 }
