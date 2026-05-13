@@ -252,6 +252,11 @@ export class OptionsWindow extends BaseWindow implements IControlWindow {
             input.value = 'auto';
             this._handlers.updateTerminalSize();
           }
+          const screenElement = document.querySelector('.xterm-screen');
+          if (screenElement instanceof HTMLElement) {
+            screenElement.style.outline = this._autoResize ? ''
+              : 'solid thin red';
+          }
         } else if (o === 'theme') {
           value = this._getTheme();
         }
