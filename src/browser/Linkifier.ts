@@ -15,6 +15,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
   protected _currentLink: ILinkWithState | undefined;
   private _mouseDownLink: ILinkWithState | undefined;
+  private _lastMouseDownPos: IBufferCellPosition | undefined;
   private _lastMouseEvent: MouseEvent | undefined;
   private _linkCacheDisposables: IDisposable[] = [];
   private _lastBufferCell: IBufferCellPosition | undefined;
@@ -213,11 +214,21 @@ export class Linkifier extends Disposable implements ILinkifier2 {
     return linkProvided;
   }
 
-  private _handleMouseDown(): void {
+  private _handleMouseDown(event: MouseEvent): void {
+    if (!this._element) {
+      return;
+    }
+    const position = this._positionFromMouseEvent(event, this._element);
+
     this._mouseDownLink = this._currentLink;
+
+    this._lastMouseDownPos = position;
   }
 
   private _handleMouseUp(event: MouseEvent): void {
+    const mouseDownLink = this._mouseDownLink;
+    this._mouseDownLink = undefined;
+
     if (!this._currentLink) {
       return;
     }
@@ -227,7 +238,15 @@ export class Linkifier extends Disposable implements ILinkifier2 {
       return;
     }
 
-    if (this._mouseDownLink && linkEquals(this._mouseDownLink.link, this._currentLink.link) && this._linkAtPosition(this._currentLink.link, position)) {
+    // compare last mouse down position: if we strayed too much, don't open the link
+    // that's because very likely user intended to select the text instead of opening the link
+    let selectionDetected = true;
+    if (this._lastMouseDownPos) {
+      const deltaMov = Math.abs(this._lastMouseDownPos.x - position.x) + Math.abs(this._lastMouseDownPos.y - position.y);
+      selectionDetected = deltaMov >= 2;
+    }
+
+    if (!selectionDetected && mouseDownLink && linkEquals(mouseDownLink.link, this._currentLink.link) && this._linkAtPosition(this._currentLink.link, position)) {
       this._currentLink.link.activate(event, this._currentLink.link.text);
     }
   }
