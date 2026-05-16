@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Keyboard Layout</title>
+    <style>
+      body {
+        background: #f8f8f8;
+        font-size: 16px;
+      }
+      #keyinput {
+        border: 1px solid #aaa;
+        padding: 8px;
+        display: inline-block;
+        margin: 2px;
+        border-radius: 4px;
+        box-shadow: black 1px 1px 1px;
+        width: 1ch;
+      }
+      span {
+        border: 1px solid #aaa;
+        padding: 6px 8px;
+        display: inline-block;
+        margin: 2px;
+        border-radius: 4px;
+        box-shadow: black 1px 1px 1px;
+        min-width: 2ch;
+        text-align: center;
+        background: #fff;
+      }
+      #msg {
+        color: red;
+        display: none;
+        text-align: left;
+      }
+      #output {
+        border: 1px solid #666;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Keyboard Base Layout</h1>
+    <p>
+      To record your keyboard base layout (unshifted), press all keys from left to right.<br>
+      While you can record most keys with this helper, it is enough to press all character producing keys.<br><br>
+
+      <span>Esc</span> deletes last key except itself.<br>
+      <span>Enter</span> starts new key row (Enter itself gets not shown as key).
+    </p>
+    <div style="min-height: 200px; margin-top: 20px">
+      <div>
+        <span id="Escape">Esc</span><input id="keyinput"/>
+      </div>
+      <span id="msg"></span>
+    </div>
+    <div style="padding: 20px 5px;">
+      <label>Filename: <input type="text" id="filename"></label>
+      <button id="download">Export Mapping</button>
+    </div>
+    <pre id="output"></pre>
+    <script>
+
+const silent = [
+  'Escape',
+  'Backspace',
+  'Tab',
+  'Enter',
+  'CapsLock',
+  'ShiftLeft', 'ShiftRight',
+  'ControlLeft', 'ControlRight',
+  'MetaLeft', 'MetaRight',
+  'AltLeft', 'AltRight',
+  'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+];
+const modifier = [
+  'CapsLock',
+  'ShiftLeft', 'ShiftRight',
+  'ControlLeft', 'ControlRight',
+  'MetaLeft', 'MetaRight',
+  'AltLeft', 'AltRight',
+];
+const prevent = ['Tab', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
+const rename = { 'Escape': 'Esc', 'CapsLock': 'CapsL' };
+
+const inp = document.querySelector('#keyinput');
+inp.focus();
+let current_code = '';
+let err = false;
+const data = {};
+let cl_hold = false;
+let dead_code = '';
+let charProduced = false;
+
+function getClState(ev) {
+  if (ev.code !== 'CapsLock') {
+    cl_hold = ev.getModifierState('CapsLock');
+    return cl_hold;
+  }
+  if (ev.type === 'keydown' && ev.code === 'CapsLock') {
+    cl_hold = !cl_hold;
+    return true;
+  }
+  return cl_hold;
+}
+
+function createSpan(code, value) {
+  const el = document.createElement('span');
+  el.innerText = rename[value] ?? value;
+  el.id = code;
+  el.style.boxShadow = 'inset black 1px 1px 1px';
+  inp.parentNode.insertBefore(el, inp);
+}
+
+function showMsg(s) {
+  const el = document.querySelector('#msg');
+  el.innerText = s;
+  el.style.display = 'block';
+}
+
+function hideMsg() {
+  const el = document.querySelector('#msg');
+  el.style.display = 'none';
+}
+
+inp.addEventListener('keyup', ev => {
+  console.log('up', ev);
+  const cl_state = getClState(ev);
+  const el = document.querySelector('#'+ev.code);
+  if (el && ev.code !== 'CapsLock') el.style.boxShadow = 'black 1px 1px 1px';
+  const cl = document.querySelector('#CapsLock');
+  if (cl) {
+    if (cl_state) {
+      cl.style.boxShadow = 'inset black 1px 1px 1px';
+    } else {
+      cl.style.boxShadow = 'black 1px 1px 1px';
+    }
+  }
+  if (charProduced) {
+    hideMsg();
+    dead_code = '';
+  }
+  if (ev.key === 'Dead' && ev.code !== current_code) {
+    showMsg('Dead key found, press same key again.');
+    dead_code = ev.code;
+    current_code = ev.code;
+    if (!document.querySelector('#'+current_code)) {
+      createSpan(current_code, ev.key);
+    } else {
+      document.querySelector('#'+current_code).style.boxShadow = 'inset black 1px 1px 1px';
+    }
+  }
+});
+
+inp.addEventListener('keydown', ev => {
+  hideMsg();
+  charProduced = false;
+  console.log('down', ev);
+  const cl_state = getClState(ev);
+  const cl = document.querySelector('#CapsLock');
+  if (cl) {
+    if (cl_state) {
+      cl.style.boxShadow = 'inset black 1px 1px 1px';
+    } else {
+      cl.style.boxShadow = 'black 1px 1px 1px';
+    }
+  }
+  if ((ev.code === 'Unidentified' || ev.code === '')) {
+    if (dead_code) {
+      current_code = dead_code;
+      return;
+    };
+    err = true;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    showMsg('Unidentified key found.');
+    return;
+  }
+  if (ev.code === 'Escape') {
+    inp.previousSibling?.remove();
+  }
+  if (prevent.includes(ev.code)) {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    ev.stopPropagation();
+  }
+  if (current_code == 'CapsLock' && ev.code == 'CapsLock') {
+    return;
+  }
+  if (!modifier.includes(ev.code)) {
+    if (ev.shiftKey || ev.altKey || ev.ctrlKey || ev.getModifierState('CapsLock') || ev.getModifierState('AltGraph')) {
+      showMsg('Disable modifier keys.');
+      err = true;
+      return;
+    }
+  }
+  if (dead_code) {
+    if (ev.code !== dead_code) {
+      showMsg('Dead key found, press same key again.');
+      err = true;
+      return;
+    }
+    dead_code = '';
+  }
+  if (ev.key === 'Dead' && ev.code !== current_code) {
+    showMsg('Dead key found, press same key again.');
+    dead_code = ev.code;
+  }
+  err =false;
+  current_code = ev.code;
+  if (ev.code === 'Enter') {
+    const el = document.createElement('br');
+    inp.parentNode.insertBefore(el, inp);
+    return;
+  }
+  if (silent.includes(current_code) || ev.key === 'Dead') {
+    if (!document.querySelector('#'+current_code)) {
+      createSpan(current_code, ev.key);
+    } else {
+      document.querySelector('#'+current_code).style.boxShadow = 'inset black 1px 1px 1px';
+    }
+  }
+});
+
+inp.addEventListener('input', ev => {
+  if (!ev.target.value || err) {
+    ev.target.value = '';
+    return;
+  }
+  charProduced = true;
+  data[current_code] = ev.target.value;
+  let value = ev.target.value;
+  if (value === ' ') value = '\xa0'.repeat(50);
+  ev.target.value = '';
+  if (document.querySelector('#'+current_code)) {
+    const el = document.querySelector('#'+current_code);
+    el.innerText = value;
+    el.style.boxShadow = 'inset black 1px 1px 1px';
+  } else {
+    createSpan(current_code, value);
+  }
+  let keys = Object.keys(data).sort();
+  const final = {};
+  for (const key of keys) final[key] = data[key];
+  const out = JSON.stringify(final, null, 2);
+  console.log(out);
+  document.querySelector('#output').innerText = out;
+});
+
+function download() {
+  let keys = Object.keys(data).sort();
+  const final = {};
+  for (const key of keys) final[key] = data[key];
+  const out = JSON.stringify(final, null, 2);
+  const blob = new Blob([out], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', document.querySelector('#filename').value || 'data.json');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+document.querySelector('#download').addEventListener('click', download);
+    </script>
+  </body>
+</html>
