@@ -12,6 +12,10 @@ export class AddonSearchWindow extends BaseWindow implements IControlWindow {
 
   private _findNextInput!: HTMLInputElement;
   private _findPreviousInput!: HTMLInputElement;
+
+  private _findNthSearchStrInput!: HTMLInputElement;
+  private _findNthPositionInput!: HTMLInputElement;
+
   private _findResultsSpan!: HTMLElement;
   private _regexCheckbox!: HTMLInputElement;
   private _caseSensitiveCheckbox!: HTMLInputElement;
@@ -38,6 +42,9 @@ export class AddonSearchWindow extends BaseWindow implements IControlWindow {
     this._findPreviousInput.id = 'find-previous';
     findPrevLabel.appendChild(this._findPreviousInput);
     wrapper.appendChild(findPrevLabel);
+
+    // Find Nth
+    this._buildFindNthUI(wrapper);
 
     // Results
     const resultsDiv = document.createElement('div');
@@ -95,7 +102,50 @@ export class AddonSearchWindow extends BaseWindow implements IControlWindow {
     return this._findPreviousInput;
   }
 
+  public get findNthSearchStrInput(): HTMLInputElement {
+    return this._findNthSearchStrInput;
+  }
+
+  public get findNthPositionInput(): HTMLInputElement {
+    return this._findNthPositionInput;
+  }
+
   public get findResultsSpan(): HTMLElement {
     return this._findResultsSpan;
+  }
+
+  private _buildFindNthUI(wrapper: HTMLElement): HTMLElement {
+    const findNthLabel = document.createElement('label');
+    const findNthSearchStrLabel = document.createElement('label');
+    const findNthPositionLabel = document.createElement('label');
+
+    findNthLabel.textContent = 'Find Nth ';
+
+    const inputsList = document.createElement('ul');
+    const listItem1 = document.createElement('li');
+    const listItem2 = document.createElement('li');
+
+    findNthSearchStrLabel.textContent = 'Search Expression ';
+    this._findNthSearchStrInput = document.createElement('input');
+    this._findNthSearchStrInput.id = 'find-nth-search-string';
+    findNthSearchStrLabel.appendChild(this._findNthSearchStrInput);
+    findNthSearchStrLabel.appendChild(document.createElement('br'));
+    listItem1.appendChild(findNthSearchStrLabel);
+
+    findNthPositionLabel.textContent = 'N (1-based) ';
+    this._findNthPositionInput = document.createElement('input');
+    this._findNthPositionInput.id = 'find-nth-position-index';
+    this._findNthPositionInput.value = '1';
+    findNthPositionLabel.appendChild(this._findNthPositionInput);
+    listItem2.appendChild(findNthPositionLabel);
+
+    inputsList.append(listItem1);
+    inputsList.append(listItem2);
+
+    wrapper.appendChild(document.createElement('br'));
+    wrapper.appendChild(findNthLabel);
+    wrapper.appendChild(inputsList);
+
+    return wrapper;
   }
 }

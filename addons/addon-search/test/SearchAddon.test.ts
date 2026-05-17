@@ -79,6 +79,32 @@ test.describe('Search Tests', () => {
     line = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
     deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), 'package.jsonc');
   });
+  test('Find Nth', async () => {
+    let n = 4;
+    await ctx.proxy.writeln(`package.lock pack package.json package.ups\n`);
+    await ctx.proxy.write('package.jsonc');
+    await ctx.page.evaluate(`window.search.findNth('pack', {n: ${n}}`);
+    let selectionPosition: { start: { x: number, y: number }, end: { x: number, y: number } } = (await ctx.proxy.getSelectionPosition())!;
+    let line: string = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
+    // We look further ahead in the line to ensure that pack was selected from package.json
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 8), 'package.ups\n');
+    n = 2;
+    await ctx.page.evaluate(`window.search.findNth('package.j', {n: ${n}})`);
+    selectionPosition = (await ctx.proxy.getSelectionPosition())!;
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x + 4), 'package.json ');
+    n = 1;
+    await ctx.page.evaluate(`window.search.findNth('package.jsonc', {n: ${n}})`);
+    // We have to reevaluate line because it should have switched starting rows at this point
+    selectionPosition = (await ctx.proxy.getSelectionPosition())!;
+    line = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), 'package.jsonc');
+    n = -2;
+    await ctx.page.evaluate(`window.search.findNth('pack', {n: ${n}})`);
+    // We have to reevaluate line because it should have switched starting rows at this point
+    selectionPosition = (await ctx.proxy.getSelectionPosition())!;
+    line = await (await ctx.proxy.buffer.active.getLine(selectionPosition.start.y))!.translateToString();
+    deepStrictEqual(line.substring(selectionPosition.start.x, selectionPosition.end.x), '');
+  });
   test('Simple Regex', async () => {
     await ctx.proxy.write('abc123defABCD');
     await ctx.page.evaluate(`window.search.findNext('[a-z]+', {regex: true})`);
