@@ -28,6 +28,16 @@ import { addDisposableListener } from 'browser/Dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
+const enum Constants {
+  /**
+   * Upper bound on how many times `renderRows` re-runs `_updateModel` after detecting a
+   * mid-update atlas page merge. A single retry should always suffice once every glyph
+   * needed by the frame is cached; the cap exists purely as a safety net against an
+   * unexpected runaway, not as a tuned value.
+   */
+  MERGE_RETRY_LIMIT = 3
+}
+
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = this._register(new MutableDisposable());
@@ -373,6 +383,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     } else {
       // just update changed lines to draw
       this._updateModel(start, end);
+    }
+
+    // A mid-update atlas page merge shifts cached glyphs to new texture pages, leaving
+    // stale texturePage values in the vertex buffer. Re-run a full update if that happened.
+    let mergeRetries = 0;
+    while (this._charAtlas && this._glyphRenderer.value.beginFrame() && mergeRetries++ < Constants.MERGE_RETRY_LIMIT) {
+      this._clearModel(true);
+      this._updateModel(0, this._terminal.rows - 1);
     }
 
     // Render
