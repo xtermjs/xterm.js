@@ -20,7 +20,7 @@
     "package": "webpack",
     "pretest": "npm run build",
     "test": "nyc mocha out/**/*.test.js",
-    "prepublish": "npm run package"
+    "prepublishOnly": "npm run package"
   },
   "keywords": [
     "font",
