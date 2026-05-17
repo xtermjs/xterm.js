@@ -220,6 +220,8 @@ export interface ICellData extends IAttributeData {
 
 export interface ILogicalLine {
   forEachMarker(callback: (marker: IMarker) => void): void;
+  reflowNeeded: boolean;
+  isEmpty(): boolean;
 }
 
 /**

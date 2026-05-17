@@ -99,6 +99,10 @@ export class LogicalLine implements ILogicalLine {
     this._data = data;
   }
 
+  public isEmpty(): boolean {
+    return this.length === 0 && ! this._firstMarker;
+  }
+
   public forEachMarker(callback: (marker: IMarker) => void): void {
     for (let m= this._firstMarker; m; m = m._nextMarker) {
       callback(m);

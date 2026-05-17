@@ -8,7 +8,6 @@ import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
 import { IColor, IBufferLine } from 'common/Types';
-import { BufferLine } from 'common/buffer/BufferLine';
 import { Marker } from 'common/buffer/Marker';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/Event';
@@ -75,7 +74,7 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   /**
    * Only used in tests.
-   * @param @deprecated
+   * @deprecated
    */
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     let xmin = 0;

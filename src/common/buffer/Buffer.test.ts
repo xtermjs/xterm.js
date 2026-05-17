@@ -1003,6 +1003,7 @@ describe('Buffer', () => {
               for (let i = 0; i < 10; i++) {
                 buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
+              buffer.y = 9;
               buffer.ybase = 10;
             });
             describe('&& ydisp === ybase', () => {

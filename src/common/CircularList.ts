@@ -143,16 +143,22 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
    * @param items The items to insert.
    */
   public splice(start: number, deleteCount: number, ...items: T[]): void {
+    this.spliceItems(start, deleteCount, items, false);
+  }
+
+  public spliceItems(start: number, deleteCount: number, items: T[], onlyTrimEvents: boolean): void {
     let trimTodo = Math.max(0, (this._length + items.length - deleteCount) - this._maxLength);
-    if (trimTodo > 0) {
-      const preTrim = Math.min(start, trimTodo);
+    const preTrim = Math.min(start, trimTodo);
+    if (preTrim > 0) {
       this.trimStart(preTrim);
       trimTodo -= preTrim;
       start -= preTrim;
     }
     // Delete items
     if (deleteCount) {
-      this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
+      if (! onlyTrimEvents) {
+        this.onDeleteEmitter.fire({ index: start, amount: deleteCount });
+      }
       for (let i = start; i < this._length - deleteCount; i++) {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
       }
@@ -163,10 +169,14 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
       this.trimStart(postTrim);
       trimTodo -= postTrim;
     }
-    let firstItem = 0;
-    let itemsTodo = items.length;
+    // If trimTodo > 0 we will have to trim some of the inserted items.
+    // Copy in chunks (as many items as will not exceed _maxLength)
+    // in order to fire trim and insert events properly.
+    let firstItem = 0; // next index in items array
+    let itemsTodo = items.length; // number of items yet to insert
     while (itemsTodo > 0) {
       const availSpace = this._maxLength - this.length;
+      // Number of items we can insert this iteration.
       const itemsAvail = Math.min(availSpace, itemsTodo);
       // Add items
       for (let i = this._length - 1; i >= start; i--) {
@@ -176,13 +186,14 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
         this._array[this._getCyclicIndex(start + i)] = items[firstItem + i];
       }
       this._length += itemsAvail;
-      if (items.length) {
+      if (items.length && ! onlyTrimEvents) {
         this.onInsertEmitter.fire({ index: start, amount: itemsAvail });
       }
       if (trimTodo > 0) {
         const trimAvail = Math.min(trimTodo, itemsAvail);
         this.trimStart(trimAvail);
         trimTodo -= trimAvail;
+        start -= trimAvail;
       }
       itemsTodo -= itemsAvail;
       firstItem += itemsAvail;
