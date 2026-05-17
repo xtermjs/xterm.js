@@ -43,7 +43,7 @@ declare module '@xterm/addon-search' {
      * The 1-based index of the desired match relative to its peer matches. 
      * Set it to a bounded, positive integer for reliable results.
      */
-    nthMatchPosition?: number;
+    n?: number;
   }
 
   /**

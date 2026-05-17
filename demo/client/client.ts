@@ -142,12 +142,12 @@ function getSearchOptions(): ISearchOptions {
     // This should idealy be performed client-side where the constraints are better understood.
     // Just in case, there's a similar, last-minute validation in the server-side implementation.
     // See SearchAddon.ts ---> findNth(...)
-    nthMatchPosition: (() => {
-      const rawValue = (document.getElementById('find-nth-position-index') as HTMLInputElement)?.value;
-      if (isNaN(+rawValue)) {
+    n: (() => {
+      const rawValue = (document.getElementById('find-nth-position-index') as HTMLInputElement)?.value?.toString();
+      if (!rawValue || Number.isNaN(rawValue)) {
         return -1;
       }
-      return parseInt(`${+rawValue}`, 10);
+      return Number.parseInt(rawValue.toString(), 10);
     }
     )()
   };

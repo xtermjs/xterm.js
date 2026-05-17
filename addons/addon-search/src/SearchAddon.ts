@@ -132,10 +132,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       throw new Error('Cannot use addon until it has been loaded');
     }
 
-    // If nthMatchPosition is invalid for any reason, pass along -1 as a substitute.
+    // If n is invalid for any reason, pass along -1 as a substitute.
     // That way, `clearDecoration()` logic is guaranteed to run and reflect match failure.
-    if (!searchOptions || isNaN(parseInt(`${searchOptions.nthMatchPosition}`, 10)) || !searchOptions.nthMatchPosition) {
-      searchOptions = { nthMatchPosition: -1, ...(searchOptions ?? {}) };
+    if (!searchOptions || Number.isNaN(Number.parseInt(`${searchOptions.n}`, 10)) || !searchOptions.n) {
+      searchOptions = { ...(searchOptions ?? {}), n: -1 };
     }
 
     this._onBeforeSearch.fire();
@@ -216,7 +216,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return false;
     }
 
-    const result = this._resultTracker.searchResults.find((match: ISearchResult, index: number) => index + 1 === searchOptions?.nthMatchPosition);
+    const result = this._resultTracker.searchResults.find((match: ISearchResult, index: number) => index + 1 === searchOptions?.n);
     return this._selectResult(result, searchOptions?.decorations, internalSearchOptions?.noScroll);
   }
 
