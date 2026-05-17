@@ -124,9 +124,25 @@ export class RenderService extends Disposable implements IRenderService {
 
   private _registerIntersectionObserver(w: Window & typeof globalThis, screenElement: HTMLElement): void {
     // Detect whether IntersectionObserver is detected and enable renderer pause
-    // and resume based on terminal visibility if so
+    // and resume based on terminal visibility if so.
+    //
+    // The callback closes over a WeakRef to `this` rather than a strong
+    // reference. Even though `_observerDisposable` calls `observer.disconnect()`
+    // on disposal, in practice some browser-side (or devtools/extension-side)
+    // registries retain the callback past disconnect — the retained closure
+    // then keeps `this` (RenderService) alive, which transitively keeps
+    // `_coreService → _bufferService → buffers → BufferLines → Uint32Array`
+    // alive. Each leaked terminal was pinning ~1.3 KB × scrollback-lines of
+    // cell data, producing hundreds of MB of retained native buffer bytes
+    // across mode-toggle churn. WeakRef lets the RenderService (and hence
+    // its service graph and BufferLines) GC even if the callback itself
+    // is retained.
     if ('IntersectionObserver' in w) {
-      const observer = new w.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
+      const weakSelf = new WeakRef(this);
+      const observer = new w.IntersectionObserver(
+        e => weakSelf.deref()?._handleIntersectionChange(e[e.length - 1]),
+        { threshold: 0 }
+      );
       observer.observe(screenElement);
       this._observerDisposable.value = toDisposable(() => observer.disconnect());
     }
