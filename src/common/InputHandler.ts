@@ -1180,7 +1180,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const next = line.nextBufferLine;
       if (next) next.asUnwrapped(line);
       line.eraseRight(start);
-      line.logicalLine.backgroundColor = this._curAttrData.bg & ~0xFC000000;
+      line.logical().backgroundColor = this._curAttrData.bg & ~0xFC000000;
     } else {
       line.replaceCells(
         start,

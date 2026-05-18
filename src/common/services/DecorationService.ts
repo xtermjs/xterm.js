@@ -96,7 +96,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, bline: IBufferLine): void {
-    const lline = bline.logicalLine;
+    const lline = bline.logical();
     x += bline.startColumn;
     lline.forEachMarker((marker: IMarker) => {
       const d = marker.payload;

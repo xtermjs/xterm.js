@@ -48,6 +48,7 @@ export class Buffer extends Disposable implements IBuffer {
    * Lines later in the buffer are more likly to be visible and hence
    * have been updated. */
   public lastReflowNeeded: number = 0;
+
   /**
    * This is an expensive operation.
    * @deprecated
@@ -57,15 +58,14 @@ export class Buffer extends Disposable implements IBuffer {
     const nlines = this.lines.length;
     for (let i = 0; i < nlines; i++) {
       const bline = this.lines.get(i) as BufferLine;
-      const lline = bline.logicalLine;
+      const lline = bline.logical();
       if (lline.firstBufferLine === bline) {
-        for (let m = lline._firstMarker; m; m = m._nextMarker) {
-          mm.push(m);
-        }
+        lline.forEachMarker((m) => { mm.push(m as Marker);});
       }
     }
     return mm;
   }
+
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
@@ -225,7 +225,7 @@ export class Buffer extends Disposable implements IBuffer {
     const ydispOld = this.ydisp;
     if (newRows < this._rows || newCols < this._cols) {
       const minHeight = Math.max(this.savedY, this.ybase + this.y) + 1;
-      while (this.lines.length > minHeight && this.lines.get(this.lines.length - 1)?.logicalLine.isEmpty()) {
+      while (this.lines.length > minHeight && this.lines.get(this.lines.length - 1)?.logical().isEmpty()) {
         this.lines.pop();
       }
     }
@@ -235,7 +235,7 @@ export class Buffer extends Disposable implements IBuffer {
       for (let i = 0; i < nlines; i++) {
         const line = this.lines.get(i) as BufferLine;
         line.length = newCols;
-        const logical = line.logicalLine;
+        const logical = line.logical();
         if (! line.isWrapped) {
           if (line.nextBufferLine || logical.length > newCols) {
             logical.reflowNeeded = true;
@@ -346,7 +346,7 @@ export class Buffer extends Disposable implements IBuffer {
     let ySaved = ySavedOld;
     if (! reflowCursorLine && yAbs >= 0 && yAbs < this.lines.length) {
       const cursorLine = this.lines.get(yAbsOld) as BufferLine;
-      cursorLine.logicalLine.reflowNeeded = false;
+      cursorLine.logical().reflowNeeded = false;
     }
     let deltaSoFar = 0;
     for (let row = startRow; row < endRow;) {
@@ -356,7 +356,7 @@ export class Buffer extends Disposable implements IBuffer {
       }
       const line = this.lines.get(row) as BufferLine;
       newLines.push(line);
-      const logical = line.logicalLine;
+      const logical = line.logical();
       if (line === logical.firstBufferLine && logical.reflowNeeded) {
         let curLine: BufferLine = line;
 
@@ -557,7 +557,7 @@ export class Buffer extends Disposable implements IBuffer {
 
   public addMarker(y: number, x?: number, marker?: Marker): Marker {
     const bline = this.lines.get(y) as BufferLine;
-    const lline = bline.logicalLine;
+    const lline = bline.logical();
     const m = marker ?? new Marker();
     m.addToLine(this, lline, x ?? bline.startColumn);
     return m;

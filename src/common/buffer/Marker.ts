@@ -65,7 +65,7 @@ export class Marker implements IMarker {
     const nlines = buffer.lines.length;
     let prevLine: LogicalLine | undefined;
     for (let i: number = 0; i < nlines; i++) {
-      const lline = (buffer.lines.get(i) as BufferLine).logicalLine;
+      const lline = (buffer.lines.get(i) as BufferLine).logical();
       if (lline !== prevLine) {
         for (let m = lline._firstMarker; m; m = m._nextMarker) {
           if (m === this) {

@@ -229,7 +229,7 @@ export interface ILogicalLine {
  * Interface for a line in the terminal buffer.
  */
 export interface IBufferLine {
-  logicalLine: ILogicalLine;
+  logical(): ILogicalLine;
   startColumn: number;
   length: number;
   get isWrapped(): boolean;
