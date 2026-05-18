@@ -77,7 +77,6 @@ export interface ICircularList<T> {
   get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
-  recycle(): T;
   pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
@@ -115,6 +114,7 @@ export interface IExtendedAttrs {
   underlineColor: number;
   underlineVariantOffset: number;
   urlId: number;
+  payload: Object | undefined;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
 }
@@ -219,12 +219,20 @@ export interface ICellData extends IAttributeData {
   getAsCharData(): CharData;
 }
 
+export interface ILogicalLine {
+  forEachMarker(callback: (marker: IMarker) => void): void;
+  reflowNeeded: boolean;
+  isEmpty(): boolean;
+}
+
 /**
  * Interface for a line in the terminal buffer.
  */
 export interface IBufferLine {
+  logical(): ILogicalLine;
+  startColumn: number;
   length: number;
-  isWrapped: boolean;
+  get isWrapped(): boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
@@ -238,7 +246,6 @@ export interface IBufferLine {
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
   copyFrom(line: IBufferLine): void;
-  clone(): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
@@ -255,10 +262,17 @@ export interface IBufferLine {
 }
 
 export interface IMarker extends IDisposable {
+  /**
+   * @deprecated
+   */
   readonly id: number;
   readonly isDisposed: boolean;
+  /**
+   * @deprecated
+   */
   readonly line: number;
   onDispose: IEvent<void>;
+  payload?: IDisposable;
 }
 export interface IModes {
   insertMode: boolean;

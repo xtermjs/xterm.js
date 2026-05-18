@@ -561,14 +561,18 @@ declare module '@xterm/xterm' {
   export interface IMarker extends IDisposableWithEvent {
     /**
      * A unique identifier for this marker.
+     * @deprecated
      */
     readonly id: number;
 
     /**
      * The actual line index in the buffer at this point in time. This is set to
      * -1 if the marker has been disposed.
+     * This is an expensive operation.
+     * @deprecated
      */
     readonly line: number;
+    payload?: IDisposable;
   }
 
   /**
