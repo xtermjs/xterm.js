@@ -85,7 +85,6 @@ export class Marker implements IMarker {
   }
 
   public dispose(): void {
-    if ((globalThis as any).xyz && this.id===27) console.trace('dispose M:'+this.id);
     if (this.isDisposed) {
       return;
     }
