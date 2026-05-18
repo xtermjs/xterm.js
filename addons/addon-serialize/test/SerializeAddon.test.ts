@@ -58,7 +58,7 @@ test.describe('SerializeAddon', () => {
                 return undefined;
               }
               if (key === '_data') {
-                return new Uint32Array(value.buffer, 0, (logical as any).length * 3);
+                return new Uint32Array(value.buffer, 0, logical.length * 3);
               }
               return value;
             }));
