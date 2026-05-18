@@ -200,7 +200,6 @@ export class LogicalLine implements ILogicalLine {
       return;
     }
     if (index >= this.length) {
-      if ((this as any).xyz) { console.log('-set fill '+index+' to '+this.length);}
       this.resizeData(index + 1);
       for (let i = this.length; i < index; i++) {
         this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] = NULL_CELL_WIDTH << Content.WIDTH_SHIFT;

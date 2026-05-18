@@ -49,14 +49,20 @@ test.describe('SerializeAddon', () => {
         for (let i = 0; i < buffer.length; i++) {
           // Do this intentionally to get content of underlining source
           const bufferLine = buffer.getLine(i)._line;
-          lines.push(JSON.stringify(bufferLine, (key, value) => {
-            // BufferLine caches are internal/transient and can legitimately differ
-            // across equivalent terminal states.
-            if (key === '_stringCache' || key === '_stringCacheEntryRef') {
-              return undefined;
-            }
-            return value;
-          }));
+          if (bufferLine.isWrapped) {
+            lines.push({ startColumn: bufferLine.startColumn, length: bufferLine.length});
+          } else {
+            const logical = bufferLine.logical();
+            lines.push(JSON.stringify(logical, (key, value) => {
+              if (key === 'firstBufferLine' ) {
+                return undefined;
+              }
+              if (key === '_data') {
+                return new Uint32Array(value.buffer, 0, (logical as any).length * 3);
+              }
+              return value;
+            }));
+          }
         }
         return {
           x: buffer.cursorX,
