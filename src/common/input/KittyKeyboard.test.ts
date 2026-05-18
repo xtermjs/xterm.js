@@ -453,24 +453,84 @@ describe('KittyKeyboard', () => {
     describe('event types (press/repeat/release)', () => {
       const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES | KittyKeyboardFlags.REPORT_EVENT_TYPES;
 
-      it('press event (default, no suffix)', () => {
+      it('UTF-8 text press event', () => {
         const result = kitty.evaluate(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.PRESS);
-        assert.strictEqual(result.key, '\x1b[97u');
+        assert.strictEqual(result.key, 'a');
       });
 
-      it('press event explicit :1 when modifiers present', () => {
+      it('Escape key press event (default, no suffix)', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Escape' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x1b[27u');
+      });
+
+      it('Enter key press event → legacy \\r', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\r');
+      });
+
+      it('Tab key press event → legacy \\t', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\t');
+      });
+
+      it('Backspace key press event → legacy \\x7f', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x7f');
+      });
+
+      it('press event when modifiers present', () => {
         const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.PRESS);
         assert.strictEqual(result.key, '\x1b[97;5u');
       });
 
-      it('repeat event → :2 suffix', () => {
+      it('UTF-8 text repeat event', () => {
         const result = kitty.evaluate(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.REPEAT);
-        assert.strictEqual(result.key, '\x1b[97;1:2u');
+        assert.strictEqual(result.key, 'a');
+      });
+
+      it('Escape key repeat event → :2 suffix', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Escape' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[27;1:2u');
+      });
+
+      it('Enter key repeat event → legacy \\r', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\r');
+      });
+
+      it('Tab key repeat event → legacy \\t', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\t');
+      });
+
+      it('Backspace key repeat event → legacy \\x7f', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x7f');
       });
 
       it('release event → :3 suffix', () => {
         const result = kitty.evaluate(createEvent({ key: 'a' }), flags, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, '\x1b[97;1:3u');
+      });
+
+      it('Escape key release event → :3 suffix', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Escape' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[27;1:3u');
+      });
+
+      it('Enter key release event is not reported', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
+      });
+
+      it('Tab key release event is not reported', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
+      });
+
+      it('Backspace key release event is not reported', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, undefined);
       });
 
       it('release with modifier → mod:3', () => {
@@ -491,6 +551,27 @@ describe('KittyKeyboard', () => {
       it('modifier key release includes its own bit cleared', () => {
         const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags | KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, '\x1b[57441;1:3u');
+      });
+    });
+
+    // Enabling REPORT_EVENT_TYPES without DISAMBIGUATE_ESCAPE_CODES doesn't really make sense and
+    // isn't specified in the spec, but press and repeat events shouldn't get swallowed.
+    describe('REPORT_EVENT_TYPES flag without DISAMBIGUATE_ESCAPE_CODES', () => {
+      const flags = KittyKeyboardFlags.REPORT_EVENT_TYPES;
+
+      it('press event is not swallowed when modifiers present', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x1b[97;5u');
+      });
+
+      it('repeat event is not swallowed when modifiers present', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[97;5:2u');
+      });
+
+      it('release event is reported as CSI u sequence', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[97;5:3u');
       });
     });
 
@@ -560,6 +641,55 @@ describe('KittyKeyboard', () => {
       it('space → CSI 32 u', () => {
         const result = kitty.evaluate(createEvent({ key: ' ' }), flags);
         assert.strictEqual(result.key, '\x1b[32u');
+      });
+    });
+
+    describe('REPORT_ALL_KEYS_AS_ESCAPE_CODES flag with REPORT_EVENT_TYPES', () => {
+      const flags = KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES | KittyKeyboardFlags.REPORT_EVENT_TYPES;
+
+      it('Enter key press event → CSI 13 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x1b[13u');
+      });
+
+      it('Tab key press event → CSI 9 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x1b[9u');
+      });
+
+      it('Backspace key press event → CSI 127 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x1b[127u');
+      });
+
+      it('Enter key repeat event → CSI 13;1:2 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[13;1:2u');
+      });
+
+      it('Tab key repeat event → CSI 9;1:2 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[9;1:2u');
+      });
+
+      it('Backspace key repeat event → CSI 127;1:2 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[127;1:2u');
+      });
+
+      it('Enter key release event → CSI 13;1:3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Enter' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[13;1:3u');
+      });
+
+      it('Tab key release event → CSI 9;1:3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Tab' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[9;1:3u');
+      });
+
+      it('Backspace key release event → CSI 127;1:3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Backspace' }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[127;1:3u');
       });
     });
 
