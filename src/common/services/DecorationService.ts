@@ -26,6 +26,7 @@ export class DecorationService extends Disposable implements IDecorationService 
    * never become out of order.
    */
   private readonly _decorations: SortedList<IInternalDecoration>;
+  private _multiLineDecorationCount = 0;
 
   private readonly _onDecorationRegistered = this._register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRegistered = this._onDecorationRegistered.event;
@@ -48,11 +49,18 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
     const decoration = new Decoration(options);
     if (decoration) {
+      const isMultiLineDecoration = (decoration.options.height ?? 1) > 1;
+      if (isMultiLineDecoration) {
+        this._multiLineDecorationCount++;
+      }
       const markerDispose = decoration.marker.onDispose(() => decoration.dispose());
       const listener = decoration.onDispose(() => {
         listener.dispose();
         if (decoration) {
           if (this._decorations.delete(decoration)) {
+            if (isMultiLineDecoration) {
+              this._multiLineDecorationCount--;
+            }
             this._onDecorationRemoved.fire(decoration);
           }
           markerDispose.dispose();
@@ -69,6 +77,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       d.dispose();
     }
     this._decorations.clear();
+    this._multiLineDecorationCount = 0;
   }
 
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
@@ -91,6 +100,16 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
+    if (this._multiLineDecorationCount === 0) {
+      this._decorations.forEachByKey(line, d => {
+        $xmin = d.options.x ?? 0;
+        $xmax = $xmin + (d.options.width ?? 1);
+        if (x >= $xmin && x < $xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
+          callback(d);
+        }
+      });
+      return;
+    }
     for (const d of this._decorations.values()) {
       $ymin = d.marker.line;
       $ymax = $ymin + (d.options.height ?? 1);
