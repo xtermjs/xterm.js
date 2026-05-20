@@ -9,6 +9,7 @@ import { IMarker } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
 import { MockLogService } from 'common/TestUtils.test';
+import { IInternalDecoration } from 'common/services/Services';
 
 function createFakeMarker(line: number): IMarker {
   return Object.freeze(new class extends Disposable {
@@ -16,6 +17,18 @@ function createFakeMarker(line: number): IMarker {
     public readonly line = line;
     public readonly isDisposed = false;
     public readonly onDispose = new Emitter<void>().event;
+  }());
+}
+
+function createCountingMarker(line: number, counter: { count: number }): IMarker {
+  return Object.freeze(new class extends Disposable {
+    public readonly id = 1;
+    public readonly isDisposed = false;
+    public readonly onDispose = new Emitter<void>().event;
+    public get line(): number {
+      counter.count++;
+      return line;
+    }
   }());
 }
 
@@ -98,6 +111,25 @@ describe('DecorationService', () => {
       const foundAtX8: typeof decoration[] = [];
       service.forEachDecorationAtCell(8, 5, undefined, d => foundAtX8.push(d));
       assert.strictEqual(foundAtX8.length, 0);
+    });
+
+    it('should avoid scanning all decorations when they are single-line', () => {
+      const service = new DecorationService(new MockLogService());
+      const counter = { count: 0 };
+      for (let i = 0; i < 100; i++) {
+        service.registerDecoration({
+          marker: createCountingMarker(i, counter),
+          width: 1
+        });
+      }
+      Array.from(service.decorations);
+
+      counter.count = 0;
+      const found: IInternalDecoration[] = [];
+      service.forEachDecorationAtCell(0, 50, undefined, d => found.push(d));
+
+      assert.strictEqual(found.length, 1);
+      assert.isBelow(counter.count, 25);
     });
   });
 
