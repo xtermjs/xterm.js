@@ -373,6 +373,10 @@ export class GlyphRenderer extends Disposable {
 
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
+    this.invalidateAtlasTextures();
+  }
+
+  public invalidateAtlasTextures(): void {
     for (const glTexture of this._atlasTextures) {
       glTexture.version = -1;
     }
