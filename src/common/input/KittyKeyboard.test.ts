@@ -478,7 +478,7 @@ describe('KittyKeyboard', () => {
         assert.strictEqual(result.key, '\x7f');
       });
 
-      it('press event explicit :1 when modifiers present', () => {
+      it('press event when modifiers present', () => {
         const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.PRESS);
         assert.strictEqual(result.key, '\x1b[97;5u');
       });
@@ -551,6 +551,27 @@ describe('KittyKeyboard', () => {
       it('modifier key release includes its own bit cleared', () => {
         const result = kitty.evaluate(createEvent({ key: 'Shift', code: 'ShiftLeft', shiftKey: false }), flags | KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES, KittyKeyboardEventType.RELEASE);
         assert.strictEqual(result.key, '\x1b[57441;1:3u');
+      });
+    });
+
+    // Enabling REPORT_EVENT_TYPES without DISAMBIGUATE_ESCAPE_CODES doesn't really make sense and
+    // isn't specified in the spec, but press and repeat events shouldn't get swallowed.
+    describe('REPORT_EVENT_TYPES flag without DISAMBIGUATE_ESCAPE_CODES', () => {
+      const flags = KittyKeyboardFlags.REPORT_EVENT_TYPES;
+
+      it('press event is not swallowed when modifiers present', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.PRESS);
+        assert.strictEqual(result.key, '\x1b[97;5u');
+      });
+
+      it('repeat event is not swallowed when modifiers present', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.REPEAT);
+        assert.strictEqual(result.key, '\x1b[97;5:2u');
+      });
+
+      it('release event is reported as CSI u sequence', () => {
+        const result = kitty.evaluate(createEvent({ key: 'a', ctrlKey: true }), flags, KittyKeyboardEventType.RELEASE);
+        assert.strictEqual(result.key, '\x1b[97;5:3u');
       });
     });
 
