@@ -336,8 +336,9 @@ export class RectangleRenderer extends Disposable {
       }
     }
 
-    if (vertices.attributes.length < offset + 4) {
-      vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
+    if (vertices.attributes.length < offset + INDICES_PER_RECTANGLE) {
+      // +1 for the viewport-clear rectangle at offset 0.
+      vertices.attributes = expandFloat32Array(vertices.attributes, (this._terminal.rows * this._terminal.cols + 1) * INDICES_PER_RECTANGLE);
     }
     $x1 = startX * this._dimensions.device.cell.width;
     $y1 = y * this._dimensions.device.cell.height;
