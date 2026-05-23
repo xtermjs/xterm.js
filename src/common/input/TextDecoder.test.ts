@@ -5,7 +5,6 @@
 
 import { assert } from 'chai';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from 'common/input/TextDecoder';
-import { encode } from 'utf8';
 
 
 // convert UTF32 codepoints to string
@@ -27,6 +26,35 @@ function fromByteString(s: string): Uint8Array {
     result[i] = s.charCodeAt(i);
   }
   return result;
+}
+
+function stringToUtf8Bytes(s: string): Uint8Array {
+  const bytes: number[] = [];
+  for (let i = 0; i < s.length; i++) {
+    let cp = s.charCodeAt(i);
+    if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < s.length) {
+      const next = s.charCodeAt(i + 1);
+      if (next >= 0xDC00 && next <= 0xDFFF) {
+        cp = 0x10000 + ((cp - 0xD800) << 10) + (next - 0xDC00);
+        i++;
+      }
+    }
+    if (cp < 0x80) {
+      bytes.push(cp);
+    } else if (cp < 0x800) {
+      bytes.push(0xC0 | (cp >> 6), 0x80 | (cp & 0x3F));
+    } else if (cp < 0x10000) {
+      bytes.push(0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F));
+    } else {
+      bytes.push(
+        0xF0 | (cp >> 18),
+        0x80 | ((cp >> 12) & 0x3F),
+        0x80 | ((cp >> 6) & 0x3F),
+        0x80 | (cp & 0x3F)
+      );
+    }
+  }
+  return new Uint8Array(bytes);
 }
 
 function assertDecodedRange(
@@ -172,7 +200,7 @@ describe('text encodings', () => {
             max,
             (i) => (i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF,
             (i) => String.fromCharCode(i),
-            (input, target) => decoder.decode(fromByteString(encode(input)), target),
+            (input, target) => decoder.decode(stringToUtf8Bytes(input), target),
             (data, length) => toString(data, length)
           );
         });
@@ -187,7 +215,7 @@ describe('text encodings', () => {
             max,
             () => false,
             (i) => stringFromCodePoint(i),
-            (input, target) => decoder.decode(fromByteString(encode(input)), target),
+            (input, target) => decoder.decode(stringToUtf8Bytes(input), target),
             (data, length) => toString(data, length)
           );
         });
@@ -196,7 +224,7 @@ describe('text encodings', () => {
       it('0xFEFF(BOM)', () => {
         const decoder = new Utf8ToUtf32();
         const target = new Uint32Array(5);
-        const utf8Data = fromByteString(encode(String.fromCharCode(0xFEFF)));
+        const utf8Data = stringToUtf8Bytes(String.fromCharCode(0xFEFF));
         const length = decoder.decode(utf8Data, target);
         assert.equal(length, 0);
         decoder.clear();
@@ -207,7 +235,7 @@ describe('text encodings', () => {
       const decoder = new Utf8ToUtf32();
       const target = new Uint32Array(500);
       for (let i = 0; i < TEST_STRINGS.length; ++i) {
-        const utf8Data = fromByteString(encode(TEST_STRINGS[i]));
+        const utf8Data = stringToUtf8Bytes(TEST_STRINGS[i]);
         const length = decoder.decode(utf8Data, target);
         assert.equal(toString(target, length), TEST_STRINGS[i]);
         decoder.clear();
