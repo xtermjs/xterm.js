@@ -5,7 +5,7 @@
 
 import { IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
-import { ITerminalExt, IImageAddonOptions, IImageSpec, ICellSize, ImageLayer } from './Types';
+import type { ITerminalExt, IImageAddonOptions, IImageSpec, ICellSize, ImageLayer } from './Types';
 import type { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
 
