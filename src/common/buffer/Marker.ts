@@ -6,13 +6,14 @@
 import { IDisposable, IMarker } from 'common/Types';
 import { Emitter } from 'common/Event';
 import { Buffer } from 'common/buffer/Buffer';
-import { BufferLine, LogicalLine, LogicalColumn } from 'common/buffer/BufferLine';
+import { BufferLine, LogicalColumn } from 'common/buffer/BufferLine';
 import { dispose } from 'common/Lifecycle';
 
 export class Marker implements IMarker {
   public payload?: IDisposable;
   private _buffer: Buffer | undefined;
-  private _lineData: LogicalLine | undefined;
+  /** @internal */
+  public _lineData: BufferLine | undefined;
   /**
    * @internal
    */
@@ -43,45 +44,23 @@ export class Marker implements IMarker {
   private readonly _onDispose = this.register(new Emitter<void>());
   public readonly onDispose = this._onDispose.event;
 
-  public addToLine(buffer: Buffer, line: LogicalLine, startColumn: LogicalColumn): void {
+  public addToLine(buffer: Buffer, bline: BufferLine, startColumn: LogicalColumn): void {
     this._buffer = buffer;
-    this._lineData = line;
+    this._lineData = bline;
+    const lline = bline.logical();
     this._startColumn = startColumn;
-    this._nextMarker = line._firstMarker;
-    line._firstMarker = this;
+    this._nextMarker = lline._firstMarker;
+    lline._firstMarker = this;
   }
 
   /**
    * Get corresponding line number.
-   * This uses an expensive linear search through the buffer, so should be avoided.
-   * @deprecated
    *
    */
   public get line(): number {
-    const buffer = this._buffer;
-    if (! buffer) {
-      return -1;
-    }
-    const nlines = buffer.lines.length;
-    let prevLine: LogicalLine | undefined;
-    for (let i: number = 0; i < nlines; i++) {
-      const lline = (buffer.lines.get(i) as BufferLine).logical();
-      if (lline !== prevLine) {
-        for (let m = lline._firstMarker; m; m = m._nextMarker) {
-          if (m === this) {
-            let bline = lline.firstBufferLine;
-            for (let j = 0; ; j++) {
-              if (! bline || this._startColumn >= bline.startColumn) {
-                return i + j;
-              }
-              bline = bline?.nextBufferLine;
-            }
-          }
-        }
-        prevLine = lline;
-      }
-    }
-    return -1;
+    return this._buffer && this._lineData
+      ? this._buffer.lineNumberOf(this._lineData)
+      : -1;
   }
 
   public dispose(): void {
@@ -100,10 +79,11 @@ export class Marker implements IMarker {
   }
 
   public removeMarker(): void {
-    const lline = this._lineData;
-    if (! lline) {
+    const bline = this._lineData;
+    if (! bline) {
       return;
     }
+    const lline = bline.logical();
     let prev: Marker | undefined;
     for (let m = lline._firstMarker; m; ) {
       const next = m._nextMarker;

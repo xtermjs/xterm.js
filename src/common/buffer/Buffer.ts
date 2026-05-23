@@ -91,11 +91,18 @@ export class Buffer extends Disposable implements IBuffer {
       for (let i = 0; i < amount; i++) {
         this.clearMarkers(i);
       }
-      const first = this.lines.length && this.lines.get(amount);
+      const first = amount < this.lines.length && this.lines.get(amount);
       if (first instanceof BufferLine && first.isWrapped) {
         const prev = first.getPreviousLine();
         prev && first.asUnwrapped(prev);
-      }});
+      }
+      if (first instanceof BufferLine && first._voffset < 0 && amount > 0) {
+        const line0 = this.lines.get(0);
+        if (line0 instanceof BufferLine && line0._voffset >= 0) {
+          first._voffset = line0._voffset + amount;
+        }
+      }
+    });
     this.lines.onDelete(event => {
       for (let i = event.amount; --i >= 0; ) {
         this.clearMarkers(event.index + i);
@@ -150,6 +157,20 @@ export class Buffer extends Disposable implements IBuffer {
     const absoluteY = this.ybase + this.y;
     const relativeY = absoluteY - this.ydisp;
     return (relativeY >= 0 && relativeY < this._rows);
+  }
+
+  public lineNumberOf(line: BufferLine): number {
+    const nlines = this.lines.length;
+    const line0 = nlines > 0 && this.lines.get(0);
+    if (line0 instanceof BufferLine) {
+      if (line._voffset < 0 || line0._voffset < 0) {
+        for (let i = 0; i < nlines; i++) {
+          (this.lines.get(i) as BufferLine)._voffset = i;
+        }
+      }
+      return line._voffset - line0._voffset;
+    }
+    return -1;
   }
 
   /**
@@ -458,6 +479,15 @@ export class Buffer extends Disposable implements IBuffer {
     this.ydisp = Math.max(0, this.ydisp - trimmedCount);
     this.y = yAbs - this.ybase;
     this.savedY = ySaved;
+    if (deltaSoFar !== 0) {
+      const nlines = this.lines.length;
+      let prevOffset = startRow <= 0 ? -1
+        : (this.lines.get(startRow - 1) as BufferLine)._voffset;
+      if (prevOffset < 0) { startRow = 0; }
+      for (let row = startRow; row < nlines; row++) {
+        (this.lines.get(row) as BufferLine)._voffset = ++prevOffset;
+      }
+    }
   }
 
   /**
@@ -555,11 +585,35 @@ export class Buffer extends Disposable implements IBuffer {
     this._isClearing = false;
   }
 
-  public addMarker(y: number, x?: number, marker?: Marker): Marker {
+  public addMarker(y: number, x?: number, m?: Marker): Marker {
     const bline = this.lines.get(y) as BufferLine;
-    const lline = bline.logical();
-    const m = marker ?? new Marker();
-    m.addToLine(this, lline, x ?? bline.startColumn);
-    return m;
+    if (bline._voffset < 0) {
+      const line0offset = (this.lines.get(0) as BufferLine)._voffset;
+      if (line0offset >= 0) {
+        bline._voffset = y + line0offset;
+      }
+    }
+    const marker = m ?? new Marker();
+    marker.addToLine(this, bline, x ?? bline.startColumn);
+
+    marker.register(this.lines.onInsert(event => {
+      const line = marker._lineData;
+      if (marker.line >= event.index && line instanceof BufferLine && line._voffset >= 0) {
+        line._voffset += event.amount;
+      }
+    }));
+    marker.register(this.lines.onDelete(event => {
+      // Delete the marker if it's within the range
+      if (marker.line >= event.index && marker.line < event.index + event.amount) {
+        marker.dispose();
+      }
+      const line = marker._lineData;
+      // Shift the marker if it's after the deleted range
+      if (marker.line > event.index && line instanceof BufferLine && line._voffset >= 0) {
+        line._voffset = Math.max(-1, line._voffset - event.amount);
+      }
+    }));
+
+    return marker;
   }
 }

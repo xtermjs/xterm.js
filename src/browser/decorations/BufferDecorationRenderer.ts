@@ -69,13 +69,13 @@ export class BufferDecorationRenderer extends Disposable {
     }
   }
 
-  private _createElement(decoration: IInternalDecoration): HTMLElement {
+  private _createElement(decoration: IInternalDecoration, line: number): HTMLElement {
     const element = this._coreBrowserService.mainDocument.createElement('div');
     element.classList.add('xterm-decoration');
     element.classList.toggle('xterm-decoration-top-layer', decoration?.options?.layer === 'top');
     element.style.width = `${Math.round((decoration.options.width || 1) * this._renderService.dimensions.css.cell.width)}px`;
     element.style.height = `${(decoration.options.height || 1) * this._renderService.dimensions.css.cell.height}px`;
-    element.style.top = `${(decoration.marker.line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.css.cell.height}px`;
+    element.style.top = `${(line - this._bufferService.buffers.active.ydisp) * this._renderService.dimensions.css.cell.height}px`;
     element.style.lineHeight = `${this._renderService.dimensions.css.cell.height}px`;
 
     const x = decoration.options.x ?? 0;
@@ -99,7 +99,7 @@ export class BufferDecorationRenderer extends Disposable {
     } else {
       let element = this._decorationElements.get(decoration);
       if (!element) {
-        element = this._createElement(decoration);
+        element = this._createElement(decoration, line);
         decoration.element = element;
         this._decorationElements.set(decoration, element);
         this._container.appendChild(element);

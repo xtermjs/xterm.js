@@ -350,6 +350,7 @@ export class BufferLine implements IBufferLine {
   public logical(): LogicalLine { return this._logicalLine; }
   public nextBufferLine: BufferLine | undefined;
   protected _stringCacheEntryRef: WeakRef<IBufferLineStringCacheEntry> | undefined;
+  public _voffset: number = -1;
 
   /** Number of logical columns in previous rows.
    * Also: logical column number (column number assuming infinitely-wide
