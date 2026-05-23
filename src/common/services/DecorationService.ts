@@ -6,7 +6,6 @@
 import { css } from 'common/Color';
 import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
-import { SortedList } from 'common/SortedList';
 import { IColor, IBufferLine } from 'common/Types';
 import { Marker } from 'common/buffer/Marker';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
@@ -21,24 +20,32 @@ let $ymax = 0;
 export class DecorationService extends Disposable implements IDecorationService {
   public serviceBrand: any;
 
-  /**
-   * A list of all decorations, sorted by the marker's line value. This relies on the fact that
-   * while marker line values do change, they should all change by the same amount so this should
-   * never become out of order.
-   */
-  private readonly _decorations: SortedList<IInternalDecoration>;
-
   private readonly _onDecorationRegistered = this._register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRegistered = this._onDecorationRegistered.event;
   private readonly _onDecorationRemoved = this._register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRemoved = this._onDecorationRemoved.event;
 
-  public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
+  public get decorations(): IterableIterator<IInternalDecoration> {
+    const iterator = {
+      current: this._firstDecoration,
+      next: (): IteratorResult<IInternalDecoration> => {
+        const node = iterator.current;
+        if (node) {
+          iterator.current = node.nextDecoration;
+          return { done: false, value: node };
+        }
+        return { done: true, value: undefined };
+      },
+      [Symbol.iterator]: () => {
+        return iterator; }
+    };
+    return iterator;
+  }
+  private _firstDecoration: Decoration | undefined;
+  private _lastDecoration: Decoration | undefined;
 
   constructor(@ILogService private readonly _logService: ILogService) {
     super();
-
-    this._decorations = new SortedList(e => e?.marker.line, this._logService);
 
     this._register(toDisposable(() => this.reset()));
   }
@@ -53,23 +60,40 @@ export class DecorationService extends Disposable implements IDecorationService 
       const listener = decoration.onDispose(() => {
         listener.dispose();
         if (decoration) {
-          if (this._decorations.delete(decoration)) {
-            this._onDecorationRemoved.fire(decoration);
+          // Remove from linked list
+          const previous = decoration.previousDecoration;
+          const next = decoration.nextDecoration;
+          if (previous) {
+            previous.nextDecoration = next;
+          } else {
+            this._firstDecoration = next;
           }
+          if (next) {
+            next.previousDecoration = previous;
+          } else {
+            this._lastDecoration = previous;
+          }
+          this._onDecorationRemoved.fire(decoration);
           markerDispose.dispose();
         }
       });
-      this._decorations.insert(decoration);
+      // insert decoration into linked list
+      decoration.previousDecoration = this._lastDecoration;
+      if (this._lastDecoration) {
+        this._lastDecoration.nextDecoration = decoration;
+      } else {
+        this._firstDecoration = decoration;
+      }
+      this._lastDecoration = decoration;
       this._onDecorationRegistered.fire(decoration);
     }
     return decoration;
   }
 
   public reset(): void {
-    for (const d of this._decorations.values()) {
+    for (let d = this._firstDecoration; d; d = d.nextDecoration) {
       d.dispose();
     }
-    this._decorations.clear();
   }
 
   /**
@@ -81,7 +105,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     let xmax = 0;
     let ymin = 0;
     let ymax = 0;
-    for (const d of this._decorations.values()) {
+    for (const d of this.decorations) {
       ymin = d.marker.line;
       ymax = ymin + (d.options.height ?? 1);
       if (line < ymin || line >= ymax) {
@@ -111,7 +135,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
-    for (const d of this._decorations.values()) {
+    for (let d = this._firstDecoration; d; d = d.nextDecoration) {
       $ymin = d.marker.line;
       $ymax = $ymin + (d.options.height ?? 1);
       if (line < $ymin || line >= $ymax) {
@@ -126,9 +150,12 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 }
 
+
 class Decoration extends DisposableStore implements IInternalDecoration {
   public readonly marker: IMarker;
   public element: HTMLElement | undefined;
+  public nextDecoration: Decoration | undefined;
+  public previousDecoration: Decoration | undefined;
 
   public readonly onRenderEmitter = this.add(new Emitter<HTMLElement>());
   public readonly onRender = this.onRenderEmitter.event;
