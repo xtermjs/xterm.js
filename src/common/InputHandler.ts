@@ -2904,32 +2904,37 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * CSI Ps ; Ps ; Ps t - Various window manipulations and reports (xterm)
    *
-   * Note: Only those listed below are supported. All others are left to integrators and
-   * need special treatment based on the embedding environment.
+   * @vt: #P[Guarded by windowOptions; disabled by default for security. See below.] CSI WINMAN "Window Manipulation" "CSI Ps ; Ps t" "Various window manipulations and reports (xterm)."
    *
-   *    Ps = 1 4                                                          supported
-   *      Report xterm text area size in pixels.
-   *      Result is CSI 4 ; height ; width t
-   *    Ps = 14 ; 2                                                       not implemented
-   *    Ps = 16                                                           supported
-   *      Report xterm character cell size in pixels.
-   *      Result is CSI 6 ; height ; width t
-   *    Ps = 18                                                           supported
-   *      Report the size of the text area in characters.
-   *      Result is CSI 8 ; height ; width t
-   *    Ps = 20                                                           supported
-   *      Report xterm window's icon label.
-   *      Result is OSC L label ST
-   *    Ps = 21                                                           supported
-   *      Report xterm window's title.
-   *      Result is OSC l label ST
-   *    Ps = 22 ; 0  -> Save xterm icon and window title on stack.        supported
-   *    Ps = 22 ; 1  -> Save xterm icon title on stack.                   supported
-   *    Ps = 22 ; 2  -> Save xterm window title on stack.                 supported
-   *    Ps = 23 ; 0  -> Restore xterm icon and window title from stack.   supported
-   *    Ps = 23 ; 1  -> Restore xterm icon title from stack.              supported
-   *    Ps = 23 ; 2  -> Restore xterm window title from stack.            supported
-   *    Ps >= 24                                                          not implemented
+   * All `Ps` values are guarded by the corresponding `windowOptions` setting and disabled by
+   * default for security (see `ITerminalOptions.windowOptions`). Custom `CSI t` handlers registered
+   * via `registerCsiHandler` are subject to the same guard.
+   *
+   * | Ps | Action | windowOptions | Support |
+   * | --- | --- | --- | --- |
+   * | 1 | De-iconify window | restoreWin | #P[No default implementation.] |
+   * | 2 | Iconify window | minimizeWin | #P[No default implementation.] |
+   * | 3 | Move window to [x, y] | setWinPosition | #P[No default implementation.] |
+   * | 4 | Resize window in pixels | setWinSizePixels | #P[No default implementation.] |
+   * | 5 | Raise window | raiseWin | #P[No default implementation.] |
+   * | 6 | Lower window | lowerWin | #P[No default implementation.] |
+   * | 7 | Refresh window | refreshWin | #P[No default implementation.] |
+   * | 8 | Resize text area in characters | setWinSizeChars | #P[No default implementation.] |
+   * | 9 | Maximize window | maximizeWin | #P[No default implementation.] |
+   * | 10 | Full-screen mode | fullscreenWin | #P[No default implementation.] |
+   * | 11 | Report window state | getWinState | #P[No default implementation.] |
+   * | 13 | Report window position | getWinPosition | #P[No default implementation.] |
+   * | 14 | Report text area size in pixels (`CSI 4 ; height ; width t`) | getWinSizePixels | #Y |
+   * | 14 ; 2 | Report window size in pixels | getWinSizePixels | #N |
+   * | 15 | Report screen size in pixels | getScreenSizePixels | #P[No default implementation.] |
+   * | 16 | Report cell size in pixels (`CSI 6 ; height ; width t`) | getCellSizePixels | #Y |
+   * | 18 | Report text area size in characters (`CSI 8 ; height ; width t`) | getWinSizeChars | #Y |
+   * | 19 | Report screen size in characters | getScreenSizeChars | #P[No default implementation.] |
+   * | 20 | Report icon title (OSC) | getIconTitle | #P[No default implementation.] |
+   * | 21 | Report window title (OSC) | getWinTitle | #P[No default implementation.] |
+   * | 22 | Push title(s) on stack | pushTitle | #Y |
+   * | 23 | Pop title(s) from stack | popTitle | #Y |
+   * | >= 24 | DECSLPP / DECCOLM gate | setWinLines | #P[Enables DECCOLM (mode 3) only; DECSLPP not implemented.] |
    */
   public windowOptions(params: IParams): boolean {
     if (!paramToWindowOption(params.params[0], this._optionsService.rawOptions.windowOptions)) {
