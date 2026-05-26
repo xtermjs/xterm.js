@@ -40,6 +40,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _lastSearchKey: string | undefined;
   private _resultCount = 0;
   private _resultIndex = -1;
+  private _pendingResultRefresh = false;
   private readonly _matchCache = new Map<number, Map<number, Map<string, IMatch[] | undefined>>>();
   private readonly _matchCacheOrder: IMatchCacheKey[] = [];
   private _logicalLineCache: ILogicalLineCache | undefined;
@@ -181,7 +182,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return;
     }
     this._resultsUpdateListener.value = terminal.onWriteParsed(() => {
-      this._refreshResultsAfterBufferChange();
+      if (this._pendingResultRefresh) {
+        return;
+      }
+      this._pendingResultRefresh = true;
+      queueMicrotask(() => {
+        this._pendingResultRefresh = false;
+        this._refreshResultsAfterBufferChange();
+      });
     });
   }
 
