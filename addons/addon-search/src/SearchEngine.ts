@@ -153,7 +153,7 @@ export class SearchEngine {
         break;
       }
       results.push(result);
-      if (result.col + result.term.length >= cols) {
+      if (result.col + result.size >= cols) {
         startRow = result.row + 1;
         startCol = 0;
       } else {
@@ -163,6 +163,14 @@ export class SearchEngine {
     }
 
     return results;
+  }
+
+  private _getBufferEndRow(): number {
+    return this._terminal.buffer.active.baseY + this._terminal.rows;
+  }
+
+  private _getPreparedPlainTerm(term: string, searchOptions?: ISearchOptions): string {
+    return searchOptions?.caseSensitive ? term : term.toLowerCase();
   }
 
   private _findFromPosition(
@@ -176,14 +184,15 @@ export class SearchEngine {
       startRow,
       startCol
     };
+    const preparedPlainTerm = searchOptions?.regex ? undefined : this._getPreparedPlainTerm(term, searchOptions);
 
-    let result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
+    let result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex, preparedPlainTerm);
     if (!result) {
-      const bufferEnd = this._terminal.buffer.active.baseY + this._terminal.rows;
+      const bufferEnd = this._getBufferEndRow();
       for (let y = startRow + 1; y < bufferEnd; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
-        result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
+        result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex, preparedPlainTerm);
         if (result) {
           break;
         }
@@ -449,23 +458,24 @@ export class SearchEngine {
    * search to the left.
    * @returns The search result if it was found.
    */
-  private _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false, lineSearchRegex?: RegExp): ISearchResult | undefined {
+  private _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false, lineSearchRegex?: RegExp, preparedPlainTerm?: string): ISearchResult | undefined {
     const row = searchPosition.startRow;
     const col = searchPosition.startCol;
+    const cols = this._terminal.cols;
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
     const firstLine = this._terminal.buffer.active.getLine(row);
     if (firstLine?.isWrapped) {
       if (isReverseSearch) {
-        searchPosition.startCol += this._terminal.cols;
+        searchPosition.startCol += cols;
         return;
       }
 
       // This will iterate until we find the line start.
       // When we find it, we will search using the calculated start column.
       searchPosition.startRow--;
-      searchPosition.startCol += this._terminal.cols;
-      return this._findInLine(term, searchPosition, searchOptions, isReverseSearch, lineSearchRegex);
+      searchPosition.startCol += cols;
+      return this._findInLine(term, searchPosition, searchOptions, isReverseSearch, lineSearchRegex, preparedPlainTerm);
     }
     let cache = this._lineCache.getLineFromCache(row);
     if (!cache) {
@@ -478,7 +488,7 @@ export class SearchEngine {
     let searchTerm = term;
     let searchStringLine = stringLine;
     if (!searchOptions.regex) {
-      searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
+      searchTerm = preparedPlainTerm ?? this._getPreparedPlainTerm(term, searchOptions);
       if (searchOptions.caseSensitive) {
         searchStringLine = stringLine;
       } else {
@@ -486,7 +496,6 @@ export class SearchEngine {
         if (!lowerLine) {
           lowerLine = stringLine.toLowerCase();
           cache[2] = lowerLine;
-          this._lineCache.setLineInCache(row, cache);
         }
         searchStringLine = lowerLine;
       }
@@ -519,6 +528,8 @@ export class SearchEngine {
         searchEnd = resultIndex - 1;
         resultIndex = -1;
       }
+    } else if (!searchOptions.wholeWord) {
+      resultIndex = searchStringLine.indexOf(searchTerm, offset);
     } else {
       let searchStart = offset;
       while (searchStart <= searchStringLine.length - searchTerm.length) {
@@ -526,7 +537,7 @@ export class SearchEngine {
         if (resultIndex < 0) {
           break;
         }
-        if (!searchOptions.wholeWord || this._isWholeWord(resultIndex, searchStringLine, searchTerm)) {
+        if (this._isWholeWord(resultIndex, searchStringLine, searchTerm)) {
           break;
         }
         searchStart = resultIndex + 1;
@@ -549,7 +560,7 @@ export class SearchEngine {
       const endColOffset = resultIndex + term.length - offsets[endRowOffset];
       const startColIndex = this._stringLengthToBufferSize(row + startRowOffset, startColOffset);
       const endColIndex = this._stringLengthToBufferSize(row + endRowOffset, endColOffset);
-      const size = endColIndex - startColIndex + this._terminal.cols * (endRowOffset - startRowOffset);
+      const size = endColIndex - startColIndex + cols * (endRowOffset - startRowOffset);
 
       return {
         term,
