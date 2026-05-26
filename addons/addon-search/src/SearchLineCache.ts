@@ -40,6 +40,7 @@ export class SearchLineCache extends Disposable {
    * _linesCache is also invalidated when the terminal cursor moves.
    */
   private _linesCache: LineCacheEntry[] | undefined;
+  private _cacheGeneration = 0;
   private _linesCacheTimeout = this._register(new MutableDisposable());
   private _linesCacheDisposables = this._register(new MutableDisposable());
   // Track access to avoid recreating a timeout on every init call which occurs once per search
@@ -70,7 +71,12 @@ export class SearchLineCache extends Disposable {
     }
   }
 
+  public get cacheGeneration(): number {
+    return this._cacheGeneration;
+  }
+
   private _destroyLinesCache(): void {
+    this._cacheGeneration++;
     this._linesCache = undefined;
     this._lastAccessTimestamp = 0;
     this._linesCacheDisposables.clear();

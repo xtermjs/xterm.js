@@ -15,6 +15,15 @@ interface ISearchPosition {
   startRow: number;
 }
 
+interface INoMatchMemo {
+  term: string;
+  optionsKey: string;
+  bufferGeneration: number;
+  startRow: number;
+  startCol: number;
+  isReverse: boolean;
+}
+
 /**
  * Represents a search result with its position and content.
  */
@@ -42,10 +51,44 @@ const enum Constants {
  * This class is responsible for the actual search algorithms and position calculations.
  */
 export class SearchEngine {
+  private _noMatchMemo: INoMatchMemo | undefined;
+
   constructor(
     private readonly _terminal: Terminal,
     private readonly _lineCache: SearchLineCache
   ) {}
+
+  private _searchOptionsKey(searchOptions?: ISearchOptions): string {
+    return `${searchOptions?.caseSensitive ? 1 : 0}:${searchOptions?.regex ? 1 : 0}:${searchOptions?.wholeWord ? 1 : 0}`;
+  }
+
+  private _matchesNoMatchMemo(term: string, startRow: number, startCol: number, isReverse: boolean, searchOptions?: ISearchOptions): boolean {
+    const memo = this._noMatchMemo;
+    if (!memo) {
+      return false;
+    }
+    return memo.term === term &&
+      memo.optionsKey === this._searchOptionsKey(searchOptions) &&
+      memo.bufferGeneration === this._lineCache.cacheGeneration &&
+      memo.startRow === startRow &&
+      memo.startCol === startCol &&
+      memo.isReverse === isReverse;
+  }
+
+  private _recordNoMatchMemo(term: string, startRow: number, startCol: number, isReverse: boolean, searchOptions?: ISearchOptions): void {
+    this._noMatchMemo = {
+      term,
+      optionsKey: this._searchOptionsKey(searchOptions),
+      bufferGeneration: this._lineCache.cacheGeneration,
+      startRow,
+      startCol,
+      isReverse
+    };
+  }
+
+  private _clearNoMatchMemo(): void {
+    this._noMatchMemo = undefined;
+  }
 
   private _createLineSearchRegex(term: string, searchOptions?: ISearchOptions): RegExp | undefined {
     if (!searchOptions?.regex) {
@@ -72,8 +115,17 @@ export class SearchEngine {
     }
 
     this._lineCache.initLinesCache();
+    if (this._matchesNoMatchMemo(term, startRow, startCol, false, searchOptions)) {
+      return undefined;
+    }
     const lineSearchRegex = this._createLineSearchRegex(term, searchOptions);
-    return this._findFromPosition(term, startRow, startCol, searchOptions, lineSearchRegex);
+    const result = this._findFromPosition(term, startRow, startCol, searchOptions, lineSearchRegex);
+    if (result) {
+      this._clearNoMatchMemo();
+    } else {
+      this._recordNoMatchMemo(term, startRow, startCol, false, searchOptions);
+    }
+    return result;
   }
 
   /**
@@ -169,6 +221,9 @@ export class SearchEngine {
     }
 
     this._lineCache.initLinesCache();
+    if (this._matchesNoMatchMemo(term, startRow, startCol, false, searchOptions)) {
+      return undefined;
+    }
 
     const searchPosition: ISearchPosition = {
       startRow,
@@ -209,6 +264,12 @@ export class SearchEngine {
       result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
     }
 
+    if (result) {
+      this._clearNoMatchMemo();
+    } else {
+      this._recordNoMatchMemo(term, startRow, startCol, false, searchOptions);
+    }
+
     return result;
   }
 
@@ -233,6 +294,10 @@ export class SearchEngine {
     const isReverseSearch = true;
 
     this._lineCache.initLinesCache();
+    if (this._matchesNoMatchMemo(term, startRow, startCol, true, searchOptions)) {
+      return undefined;
+    }
+
     const searchPosition: ISearchPosition = {
       startRow,
       startCol
@@ -277,6 +342,12 @@ export class SearchEngine {
           break;
         }
       }
+    }
+
+    if (result) {
+      this._clearNoMatchMemo();
+    } else {
+      this._recordNoMatchMemo(term, startRow, startCol, true, searchOptions);
     }
 
     return result;
