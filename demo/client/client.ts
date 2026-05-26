@@ -521,8 +521,7 @@ function initAddons(term: Terminal): void {
           } else if (name === 'webLinks') {
             controlBar.setTabVisible('addon-web-links', true);
           }
-        }
-        catch {
+        } catch {
           addon.instance = undefined;
           checkbox.checked = false;
           checkbox.disabled = true;

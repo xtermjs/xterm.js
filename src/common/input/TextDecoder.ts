@@ -230,8 +230,7 @@ export class Utf8ToUtf32 {
         && !((byte1 = input[i]) & 0x80)
         && !((byte2 = input[i + 1]) & 0x80)
         && !((byte3 = input[i + 2]) & 0x80)
-        && !((byte4 = input[i + 3]) & 0x80))
-      {
+        && !((byte4 = input[i + 3]) & 0x80)) {
         target[size++] = byte1;
         target[size++] = byte2;
         target[size++] = byte3;

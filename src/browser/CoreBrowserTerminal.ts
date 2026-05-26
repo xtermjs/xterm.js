@@ -563,8 +563,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     try {
       this._onWillOpen.fire(this.element);
-    }
-    catch { /* fails to load addon for some reason */ }
+    } catch { /* fails to load addon for some reason */ }
     if (!this._renderService.hasRenderer()) {
       this._renderService.setRenderer(this._createRenderer());
     }

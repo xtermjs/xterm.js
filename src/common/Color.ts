@@ -132,8 +132,7 @@ export namespace css {
       $ctx.globalCompositeOperation = 'copy';
       $litmusColor = $ctx.createLinearGradient(0, 0, 1, 1);
     }
-  }
-  catch {
+  } catch {
     // noop
   }
 

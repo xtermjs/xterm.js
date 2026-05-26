@@ -1268,8 +1268,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           for (; j >= 0; j--) {
             this._bufferService.scroll(this._eraseAttrData());
           }
-        }
-        else {
+        } else {
           j = this._bufferService.rows;
           this._dirtyRowTracker.markDirty(j - 1);
           while (j--) {

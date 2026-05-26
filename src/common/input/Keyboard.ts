@@ -58,22 +58,19 @@ export function evaluateKeyboardEvent(
         } else {
           result.key = C0.ESC + '[A';
         }
-      }
-      else if (ev.key === 'UIKeyInputLeftArrow') {
+      } else if (ev.key === 'UIKeyInputLeftArrow') {
         if (applicationCursorMode) {
           result.key = C0.ESC + 'OD';
         } else {
           result.key = C0.ESC + '[D';
         }
-      }
-      else if (ev.key === 'UIKeyInputRightArrow') {
+      } else if (ev.key === 'UIKeyInputRightArrow') {
         if (applicationCursorMode) {
           result.key = C0.ESC + 'OC';
         } else {
           result.key = C0.ESC + '[C';
         }
-      }
-      else if (ev.key === 'UIKeyInputDownArrow') {
+      } else if (ev.key === 'UIKeyInputDownArrow') {
         if (applicationCursorMode) {
           result.key = C0.ESC + 'OB';
         } else {

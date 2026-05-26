@@ -291,21 +291,15 @@ class StringSerializeHandler extends BaseSerializeHandler {
       } else {
         if (fgChanged) {
           const color = cell.getFgColor();
-          if (cell.isFgRGB()) { sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
-          else if (cell.isFgPalette()) {
-            if (color >= 16) { sgrSeq.push(38, 5, color); }
-            else { sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); }
-          }
-          else { sgrSeq.push(39); }
+          if (cell.isFgRGB()) { sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); } else if (cell.isFgPalette()) {
+            if (color >= 16) { sgrSeq.push(38, 5, color); } else { sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); }
+          } else { sgrSeq.push(39); }
         }
         if (bgChanged) {
           const color = cell.getBgColor();
-          if (cell.isBgRGB()) { sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); }
-          else if (cell.isBgPalette()) {
-            if (color >= 16) { sgrSeq.push(48, 5, color); }
-            else { sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); }
-          }
-          else { sgrSeq.push(49); }
+          if (cell.isBgRGB()) { sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); } else if (cell.isBgPalette()) {
+            if (color >= 16) { sgrSeq.push(48, 5, color); } else { sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); }
+          } else { sgrSeq.push(49); }
         }
         if (flagsChanged) {
           if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
@@ -646,8 +640,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
     // For xterm headless: fallback to ansi colors
     if ((_terminal as any)._core._themeService) {
       this._ansiColors = (_terminal as any)._core._themeService.colors.ansi;
-    }
-    else {
+    } else {
       this._ansiColors = DEFAULT_ANSI_COLORS;
     }
   }

@@ -62,8 +62,7 @@ export class CellData extends AttributeData implements ICellData {
     // surrogates and combined strings need special treatment
     if (value[CHAR_DATA_CHAR_INDEX].length > 2) {
       combined = true;
-    }
-    else if (value[CHAR_DATA_CHAR_INDEX].length === 2) {
+    } else if (value[CHAR_DATA_CHAR_INDEX].length === 2) {
       const code = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
       // if the 2-char string is a surrogate create single codepoint
       // everything else is combined
@@ -71,16 +70,13 @@ export class CellData extends AttributeData implements ICellData {
         const second = value[CHAR_DATA_CHAR_INDEX].charCodeAt(1);
         if (0xDC00 <= second && second <= 0xDFFF) {
           this.content = ((code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
-        }
-        else {
+        } else {
           combined = true;
         }
-      }
-      else {
+      } else {
         combined = true;
       }
-    }
-    else {
+    } else {
       this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
     if (combined) {
