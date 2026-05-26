@@ -6,7 +6,7 @@
 import type { ISearchResultChangeEvent } from '@xterm/addon-search';
 import type { IDisposable } from '@xterm/xterm';
 import { Emitter, type IEvent } from 'common/Event';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable } from 'common/Lifecycle';
 import type { ISearchResult } from './SearchEngine';
 
 /**
@@ -22,7 +22,8 @@ interface ISelectedDecoration extends IDisposable {
  */
 export class SearchResultTracker extends Disposable {
   private _searchResults: ISearchResult[] = [];
-  private _selectedDecoration: ISelectedDecoration | undefined;
+  private _resultIndexByKey = new Map<string, number>();
+  private _selectedDecoration = this._register(new MutableDisposable<ISelectedDecoration>());
 
   private readonly _onDidChangeResults = this._register(new Emitter<ISearchResultChangeEvent>());
   public get onDidChangeResults(): IEvent<ISearchResultChangeEvent> { return this._onDidChangeResults.event; }
@@ -38,14 +39,25 @@ export class SearchResultTracker extends Disposable {
    * Gets the currently selected decoration.
    */
   public get selectedDecoration(): ISelectedDecoration | undefined {
-    return this._selectedDecoration;
+    return this._selectedDecoration.value;
   }
 
   /**
    * Sets the currently selected decoration.
    */
   public set selectedDecoration(decoration: ISelectedDecoration | undefined) {
-    this._selectedDecoration = decoration;
+    this._selectedDecoration.value = decoration;
+  }
+
+  private _resultKey(result: ISearchResult): string {
+    return `${result.row}:${result.col}:${result.size}`;
+  }
+
+  private _rebuildResultIndex(): void {
+    this._resultIndexByKey.clear();
+    for (let i = 0; i < this._searchResults.length; i++) {
+      this._resultIndexByKey.set(this._resultKey(this._searchResults[i]), i);
+    }
   }
 
   /**
@@ -55,6 +67,7 @@ export class SearchResultTracker extends Disposable {
    */
   public updateResults(results: ISearchResult[], maxResults: number): void {
     this._searchResults = results.length <= maxResults ? results : results.slice(0, maxResults);
+    this._rebuildResultIndex();
   }
 
   /**
@@ -62,16 +75,14 @@ export class SearchResultTracker extends Disposable {
    */
   public clearResults(): void {
     this._searchResults = [];
+    this._resultIndexByKey.clear();
   }
 
   /**
    * Clears the selected decoration.
    */
   public clearSelectedDecoration(): void {
-    if (this._selectedDecoration) {
-      this._selectedDecoration.dispose();
-      this._selectedDecoration = undefined;
-    }
+    this._selectedDecoration.clear();
   }
 
   /**
@@ -80,13 +91,7 @@ export class SearchResultTracker extends Disposable {
    * @returns The index of the result, or -1 if not found.
    */
   public findResultIndex(result: ISearchResult): number {
-    for (let i = 0; i < this._searchResults.length; i++) {
-      const match = this._searchResults[i];
-      if (match.row === result.row && match.col === result.col && match.size === result.size) {
-        return i;
-      }
-    }
-    return -1;
+    return this._resultIndexByKey.get(this._resultKey(result)) ?? -1;
   }
 
   /**
@@ -99,8 +104,8 @@ export class SearchResultTracker extends Disposable {
     }
 
     let resultIndex = -1;
-    if (this._selectedDecoration) {
-      resultIndex = this.findResultIndex(this._selectedDecoration.match);
+    if (this._selectedDecoration.value) {
+      resultIndex = this.findResultIndex(this._selectedDecoration.value.match);
     }
 
     this._onDidChangeResults.fire({

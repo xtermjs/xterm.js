@@ -23,6 +23,16 @@ describe('SearchResultTracker', () => {
       tracker.updateResults(results, 10);
       assert.strictEqual(tracker.searchResults, results);
     });
+
+    it('should cap results at maxResults', () => {
+      const results: ISearchResult[] = [
+        { term: 'a', row: 0, col: 0, size: 1 },
+        { term: 'b', row: 0, col: 1, size: 1 },
+        { term: 'c', row: 0, col: 2, size: 1 }
+      ];
+      tracker.updateResults(results, 2);
+      assert.strictEqual(tracker.searchResults.length, 2);
+    });
   });
 
   describe('findResultIndex', () => {
@@ -48,6 +58,17 @@ describe('SearchResultTracker', () => {
       tracker.updateResults([{ term: 'a', row: 0, col: 0, size: 1 }], 10);
       tracker.fireResultsChanged(false);
       assert.strictEqual(fired, false);
+    });
+  });
+
+  describe('selectedDecoration', () => {
+    it('should dispose the previous decoration when replaced', () => {
+      let disposeCount = 0;
+      const first = { match: { term: 'a', row: 0, col: 0, size: 1 }, dispose: () => disposeCount++ };
+      const second = { match: { term: 'b', row: 0, col: 1, size: 1 }, dispose: () => {} };
+      tracker.selectedDecoration = first;
+      tracker.selectedDecoration = second;
+      assert.strictEqual(disposeCount, 1);
     });
   });
 });
