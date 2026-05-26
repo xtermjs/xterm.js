@@ -36,12 +36,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _highlightLimit = SearchAddon._defaultHighlightLimit;
   private _lastSearchTerm: string | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
-  private _lastDirection: 'next' | 'previous' = 'next';
+  private _lastDirection: SearchDirection = 'next';
   private _lastSearchKey: string | undefined;
   private _resultCount = 0;
   private _resultIndex = -1;
   private _pendingResultRefresh = false;
-  private readonly _matchCache = new Map<number, Map<number, Map<string, IMatch[] | undefined>>>();
+  private readonly _matchCache = new Map<number, Map<MatchFlags, Map<string, IMatch[] | undefined>>>();
   private readonly _matchCacheOrder: IMatchCacheKey[] = [];
   private _logicalLineCache: ILogicalLineCache | undefined;
   private readonly _selectionIndexCache = new WeakMap<IMatch[], Map<number, Map<number, number>>>();
@@ -84,7 +84,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     this._activeDecoration.clear();
   }
 
-  private _find(term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous'): boolean {
+  private _find(term: string, searchOptions: ISearchOptions | undefined, direction: SearchDirection): boolean {
     this._onBeforeSearch.fire();
     try {
       const terminal = this._terminal;
@@ -113,23 +113,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       };
 
       if (searchOptions?.decorations) {
-        this._resultCount = matches.length;
-        this._resultIndex = nextIndex < this._resultCount ? nextIndex : -1;
-        this._lastSearchTerm = term;
-        this._lastSearchOptions = searchOptions;
-        this._lastDirection = direction;
-        this._lastSearchKey = searchKey;
+        this._setDecoratedSearchState(term, searchOptions, direction, searchKey, matches.length, nextIndex);
         this._registerResultRefreshListener();
         this._refreshDecorations(matches, searchOptions.decorations, activeMatch);
         this._onDidChangeResults.fire({ resultCount: this._resultCount, resultIndex: this._resultIndex });
       } else {
-        this._disposeDecorations();
-        this._resultsUpdateListener.clear();
-        this._resultCount = 0;
-        this._resultIndex = -1;
-        this._lastSearchTerm = undefined;
-        this._lastSearchOptions = undefined;
-        this._lastSearchKey = undefined;
+        this._clearSearchState();
       }
 
       return true;
@@ -138,17 +127,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
   }
 
-  private _clearStateOnFailedSearch(term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous'): void {
+  private _clearStateOnFailedSearch(term: string, searchOptions: ISearchOptions | undefined, direction: SearchDirection): void {
     this._lastResolvedNavigation = undefined;
     if (searchOptions?.decorations) {
-      this._lastSearchTerm = term;
-      this._lastSearchOptions = searchOptions;
-      this._lastDirection = direction;
-      this._lastSearchKey = this._createSearchKey(term, searchOptions, direction);
+      this._setDecoratedSearchState(term, searchOptions, direction, this._createSearchKey(term, searchOptions, direction), 0, -1);
       this._registerResultRefreshListener();
       this._disposeDecorations();
-      this._resultCount = 0;
-      this._resultIndex = -1;
       this._onDidChangeResults.fire({ resultCount: 0, resultIndex: -1 });
       return;
     }
@@ -164,13 +148,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     ) {
       return;
     }
-    this._disposeDecorations();
-    this._resultsUpdateListener.clear();
-    this._resultCount = 0;
-    this._resultIndex = -1;
-    this._lastSearchTerm = undefined;
-    this._lastSearchOptions = undefined;
-    this._lastSearchKey = undefined;
+    this._clearSearchState();
   }
 
   private _registerResultRefreshListener(): void {
@@ -484,7 +462,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return !isWordCharAt(text, startOffset - 1) && !isWordCharAt(text, endOffset);
   }
 
-  private _resolveResultIndex(matches: IMatch[], term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous', currentSearchKey: string): number {
+  private _resolveResultIndex(matches: IMatch[], term: string, searchOptions: ISearchOptions | undefined, direction: SearchDirection, currentSearchKey: string): number {
     const previousNavigation = this._lastResolvedNavigation;
     const selection = this._terminal?.getSelectionPosition();
     if (
@@ -493,10 +471,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       previousNavigation.matches === matches
     ) {
       if (!selection) {
-        if (direction === 'next') {
-          return (previousNavigation.index + 1) % matches.length;
-        }
-        return (previousNavigation.index + matches.length - 1) % matches.length;
+        return this._stepResultIndex(previousNavigation.index, matches.length, direction);
       }
       if (
         selection.start.x === previousNavigation.selectionStartX &&
@@ -504,10 +479,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         previousNavigation.index >= 0 &&
         previousNavigation.index < matches.length
       ) {
-        if (direction === 'next') {
-          return (previousNavigation.index + 1) % matches.length;
-        }
-        return (previousNavigation.index + matches.length - 1) % matches.length;
+        return this._stepResultIndex(previousNavigation.index, matches.length, direction);
       }
     }
     const currentSelectionIndex = this._findIndexFromSelection(matches, selection);
@@ -521,16 +493,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
 
     if (currentSelectionIndex !== -1) {
-      if (direction === 'next') {
-        return (currentSelectionIndex + 1) % matches.length;
-      }
-      return (currentSelectionIndex + matches.length - 1) % matches.length;
+      return this._stepResultIndex(currentSelectionIndex, matches.length, direction);
     }
 
-    if (direction === 'next') {
-      return 0;
-    }
-    return matches.length - 1;
+    return this._getDirectionalDefaultIndex(matches.length, direction);
   }
 
   private _findIndexFromSelection(matches: IMatch[], selection: ReturnType<Terminal['getSelectionPosition']> | undefined = this._terminal?.getSelectionPosition()): number {
@@ -586,7 +552,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
     const cursorLine = terminal.buffer.active.baseY + terminal.buffer.active.cursorY;
     const marker = terminal.registerMarker(activeMatch.startY - cursorLine);
-    const width = Math.max(1, Math.min(activeMatch.cellLength, terminal.cols - activeMatch.startX));
+    const width = this._getDecorationWidth(activeMatch, terminal.cols);
     const activeDecoration = terminal.registerDecoration({
       marker,
       x: activeMatch.startX,
@@ -643,7 +609,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const inactiveOverviewRulerOptions = undefined;
     for (const match of matches) {
       const marker = terminal.registerMarker(match.startY - cursorLine);
-      const width = Math.max(1, Math.min(match.cellLength, terminal.cols - match.startX));
+      const width = this._getDecorationWidth(match, terminal.cols);
       const decoration = terminal.registerDecoration({
         marker,
         x: match.startX,
@@ -657,15 +623,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
       set.decorations.push(decoration);
       set.disposables.push(decoration);
-      if (matchBorder) {
-        set.disposables.push(decoration.onRender(element => {
-          this._applyMatchDecorationStyle(element, set.isActive, decorationOptions.matchBackground, matchBorder);
-        }));
-      } else {
-        set.disposables.push(decoration.onRender(element => {
-          this._applyMatchDecorationStyle(element, set.isActive, decorationOptions.matchBackground, undefined);
-        }));
-      }
+      set.disposables.push(this._registerMatchDecorationRender(decoration, set, decorationOptions.matchBackground, matchBorder));
     }
     return set;
   }
@@ -692,6 +650,21 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       element.style.backgroundColor = '';
       element.style.outline = '';
     }
+  }
+
+  private _getDecorationWidth(match: IMatch, cols: number): number {
+    return Math.max(1, Math.min(match.cellLength, cols - match.startX));
+  }
+
+  private _registerMatchDecorationRender(
+    decoration: IDecoration,
+    set: IMatchDecorationSet,
+    background: string | undefined,
+    border: string | undefined
+  ): IDisposable {
+    return decoration.onRender(element => {
+      this._applyMatchDecorationStyle(element, set.isActive, background, border);
+    });
   }
 
   private _createDecorationOptionsKey(decorationOptions: ISearchDecorationOptions): string {
@@ -752,7 +725,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     this._disposeMatchDecorationSets();
   }
 
-  private _createSearchKey(term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous'): string {
+  private _createSearchKey(term: string, searchOptions: ISearchOptions | undefined, direction: SearchDirection): string {
     return `${this._createMatchKey(term, searchOptions)}|${direction}`;
   }
 
@@ -761,12 +734,49 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return `${term}|${flags}`;
   }
 
-  private _getMatchFlags(searchOptions: ISearchOptions | undefined): number {
+  private _getMatchFlags(searchOptions: ISearchOptions | undefined): MatchFlags {
     return (
-      (searchOptions?.caseSensitive ? 1 : 0) |
-      (searchOptions?.regex ? 2 : 0) |
-      (searchOptions?.wholeWord ? 4 : 0)
-    );
+      (searchOptions?.caseSensitive ? MatchFlags.CASE_SENSITIVE : 0) |
+      (searchOptions?.regex ? MatchFlags.REGEX : 0) |
+      (searchOptions?.wholeWord ? MatchFlags.WHOLE_WORD : 0)
+    ) as MatchFlags;
+  }
+
+  private _setDecoratedSearchState(
+    term: string,
+    searchOptions: ISearchOptions,
+    direction: SearchDirection,
+    searchKey: string,
+    resultCount: number,
+    resultIndex: number
+  ): void {
+    this._resultCount = resultCount;
+    this._resultIndex = resultIndex >= 0 && resultIndex < resultCount ? resultIndex : -1;
+    this._lastSearchTerm = term;
+    this._lastSearchOptions = searchOptions;
+    this._lastDirection = direction;
+    this._lastSearchKey = searchKey;
+  }
+
+  private _clearSearchState(): void {
+    this._disposeDecorations();
+    this._resultsUpdateListener.clear();
+    this._resultCount = 0;
+    this._resultIndex = -1;
+    this._lastSearchTerm = undefined;
+    this._lastSearchOptions = undefined;
+    this._lastSearchKey = undefined;
+  }
+
+  private _stepResultIndex(index: number, length: number, direction: SearchDirection): number {
+    if (direction === 'next') {
+      return (index + 1) % length;
+    }
+    return (index + length - 1) % length;
+  }
+
+  private _getDirectionalDefaultIndex(length: number, direction: SearchDirection): number {
+    return direction === 'next' ? 0 : length - 1;
   }
 }
 
@@ -809,6 +819,8 @@ interface IResolvedNavigation {
   selectionStartY: number;
 }
 
+type SearchDirection = 'next' | 'previous';
+
 interface IMatchDecorationSet {
   matches: IMatch[];
   options: ISearchDecorationOptions;
@@ -820,8 +832,14 @@ interface IMatchDecorationSet {
 
 interface IMatchCacheKey {
   cols: number;
-  flags: number;
+  flags: MatchFlags;
   term: string;
+}
+
+const enum MatchFlags {
+  CASE_SENSITIVE = 1,
+  REGEX = 2,
+  WHOLE_WORD = 4
 }
 
 function escapeRegExp(value: string): string {
