@@ -54,7 +54,7 @@ export class SearchResultTracker extends Disposable {
    * @param maxResults The maximum number of results to track.
    */
   public updateResults(results: ISearchResult[], maxResults: number): void {
-    this._searchResults = results.slice(0, maxResults);
+    this._searchResults = results.length <= maxResults ? results : results.slice(0, maxResults);
   }
 
   /**
