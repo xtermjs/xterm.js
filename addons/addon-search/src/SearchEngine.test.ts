@@ -256,6 +256,12 @@ describe('SearchEngine', () => {
 
         assert.strictEqual(searchEngine.find('.*?', 0, 0, { regex: true }), undefined); // Empty matches should be ignored
       });
+
+      it('should ignore empty regex matches when searching backwards', async () => {
+        await writeP(terminal, 'Hello World');
+
+        assert.strictEqual(searchEngine.findPreviousWithSelection('.*?', { regex: true }), undefined);
+      });
     });
 
     describe('combined options', () => {

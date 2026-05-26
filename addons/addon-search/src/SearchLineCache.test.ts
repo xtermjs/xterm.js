@@ -244,6 +244,17 @@ describe('SearchLineCache', () => {
       assert.equal(retrieved![1].length, 4);
     });
 
+    it('should lazily cache lowercased line text via SearchEngine usage', async () => {
+      await writeP(terminal, 'Hello WORLD');
+      cache.initLinesCache();
+      const entry = cache.translateBufferLineToStringWithWrap(0, true);
+      cache.setLineInCache(0, entry);
+      assert.equal(entry[2], undefined);
+      entry[2] = entry[0].toLowerCase();
+      cache.setLineInCache(0, entry);
+      assert.strictEqual(cache.getLineFromCache(0)?.[2], 'hello world');
+    });
+
     it('should handle unicode characters in cache entries', () => {
       const entry: LineCacheEntry = [
         'Hello 世界 🌍 测试',
