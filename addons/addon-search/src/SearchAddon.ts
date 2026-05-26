@@ -89,6 +89,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         return false;
       }
 
+      if (!searchOptions?.decorations && !searchOptions?.incremental && direction === 'next' && !this._logicalLineCache) {
+        const activeMatch = this._findSingleMatchForNext(term, searchOptions);
+        if (!activeMatch) {
+          this._clearStateOnFailedSearch(term, searchOptions, direction);
+          return false;
+        }
+        terminal.select(activeMatch.startX, activeMatch.startY, activeMatch.cellLength);
+        this._revealResult(activeMatch);
+        this._clearSearchState();
+        return true;
+      }
+
       const matches = this._getMatches(term, searchOptions);
       if (matches === undefined || matches.length === 0) {
         this._clearStateOnFailedSearch(term, searchOptions, direction);
@@ -270,6 +282,108 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     }
 
     return matches;
+  }
+
+  private _findSingleMatchForNext(term: string, searchOptions?: ISearchOptions): IMatch | undefined {
+    const terminal = this._terminal;
+    if (!terminal) {
+      return undefined;
+    }
+    const selection = terminal.getSelectionPosition();
+    const selectionStart = selection?.start;
+    const isRegex = !!searchOptions?.regex;
+    const regex = isRegex ? this._buildRegex(term, searchOptions) : undefined;
+    if (isRegex && !regex) {
+      return undefined;
+    }
+    const normalizedTerm = searchOptions?.caseSensitive ? term : term.toLowerCase();
+    const wholeWord = !!searchOptions?.wholeWord;
+    const cols = terminal.cols;
+    const logicalLines = this._getLogicalLines(cols);
+    let firstMatch: IMatch | undefined;
+    let selectionMatched = !selectionStart;
+    for (const logicalLine of logicalLines) {
+      if (isRegex) {
+        regex!.lastIndex = 0;
+        while (true) {
+          const match = regex!.exec(logicalLine.text);
+          if (!match) {
+            break;
+          }
+          if (match[0].length === 0) {
+            regex!.lastIndex++;
+            continue;
+          }
+          const startOffset = match.index;
+          const endOffset = startOffset + match[0].length;
+          if (!this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, wholeWord)) {
+            continue;
+          }
+          const nextMatch = this._createMatchFromOffsets(logicalLine, cols, startOffset, endOffset);
+          if (!firstMatch) {
+            firstMatch = nextMatch;
+            if (selectionMatched) {
+              return firstMatch;
+            }
+          }
+          if (!selectionMatched && selectionStart && nextMatch.startX === selectionStart.x && nextMatch.startY === selectionStart.y) {
+            selectionMatched = true;
+            continue;
+          }
+          if (selectionMatched) {
+            return nextMatch;
+          }
+        }
+      } else {
+        const haystack = searchOptions?.caseSensitive ? logicalLine.text : (logicalLine.lowerText ??= logicalLine.text.toLowerCase());
+        let searchIndex = 0;
+        while (searchIndex < haystack.length) {
+          const startOffset = haystack.indexOf(normalizedTerm, searchIndex);
+          if (startOffset === -1) {
+            break;
+          }
+          const endOffset = startOffset + term.length;
+          searchIndex = startOffset + 1;
+          if (!this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, wholeWord)) {
+            continue;
+          }
+          const nextMatch = this._createMatchFromOffsets(logicalLine, cols, startOffset, endOffset);
+          if (!firstMatch) {
+            firstMatch = nextMatch;
+            if (selectionMatched) {
+              return firstMatch;
+            }
+          }
+          if (!selectionMatched && selectionStart && nextMatch.startX === selectionStart.x && nextMatch.startY === selectionStart.y) {
+            selectionMatched = true;
+            continue;
+          }
+          if (selectionMatched) {
+            return nextMatch;
+          }
+        }
+      }
+    }
+    return firstMatch;
+  }
+
+  private _createMatchFromOffsets(logicalLine: ILogicalLineCacheEntry, cols: number, startOffset: number, endOffset: number): IMatch {
+    if (!logicalLine.offsetToPoint || !logicalLine.offsetToLinear) {
+      const offsets = this._buildLogicalLineOffsets(logicalLine.rows, cols);
+      logicalLine.offsetToPoint = offsets.offsetToPoint;
+      logicalLine.offsetToLinear = offsets.offsetToLinear;
+    }
+    const start = logicalLine.offsetToPoint[startOffset];
+    const end = logicalLine.offsetToPoint[endOffset];
+    const startLinear = logicalLine.offsetToLinear[startOffset];
+    const endLinear = logicalLine.offsetToLinear[endOffset];
+    return {
+      startX: start.x,
+      startY: start.y,
+      endX: end.x,
+      endY: end.y,
+      cellLength: Math.max(1, endLinear - startLinear)
+    };
   }
 
   private _getMatches(term: string, searchOptions?: ISearchOptions): IMatch[] | undefined {
