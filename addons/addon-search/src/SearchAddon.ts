@@ -54,7 +54,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   constructor(options?: Partial<ISearchAddonOptions>) {
     super();
 
-    this._highlightLimit = options?.highlightLimit ?? Constants.DEFAULT_HIGHLIGHT_LIMIT;
+    const limit = options?.highlightLimit ?? Constants.DEFAULT_HIGHLIGHT_LIMIT;
+    this._highlightLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : Constants.DEFAULT_HIGHLIGHT_LIMIT;
   }
 
   public activate(terminal: Terminal): void {
