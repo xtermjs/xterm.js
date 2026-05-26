@@ -145,7 +145,7 @@ export class DecorationManager extends Disposable {
       if (decoration) {
         const disposables: IDisposable[] = [];
         disposables.push(marker);
-        disposables.push(decoration.onRender((e) => this._applyStyles(e, isActiveResult ? options.activeMatchBorder : options.matchBorder, false)));
+        disposables.push(decoration.onRender((e) => this._applyStyles(e, isActiveResult ? options.activeMatchBorder : options.matchBorder, isActiveResult)));
         disposables.push(decoration.onDispose(() => dispose(disposables)));
         decorations.push(decoration);
       }
