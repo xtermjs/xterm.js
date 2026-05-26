@@ -33,7 +33,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
   private _lastSearchTerm: string | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
-  private _lastDirection: SearchDirection = 'next';
   private _lastSearchKey: string | undefined;
   private _resultCount = 0;
   private _resultIndex = -1;
@@ -97,7 +96,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
 
       const searchKey = this._createSearchKey(term, searchOptions, direction);
-      const nextIndex = this._resolveResultIndex(matches, term, searchOptions, direction, searchKey);
+      const nextIndex = this._resolveResultIndex(matches, searchOptions, direction, searchKey);
       const activeMatch = matches[nextIndex];
       terminal.select(activeMatch.startX, activeMatch.startY, activeMatch.cellLength);
       this._revealResult(activeMatch);
@@ -110,7 +109,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       };
 
       if (searchOptions?.decorations) {
-        this._setDecoratedSearchState(term, searchOptions, direction, searchKey, matches.length, nextIndex);
+        this._setDecoratedSearchState(term, searchOptions, searchKey, matches.length, nextIndex);
         this._registerResultRefreshListener();
         this._refreshDecorations(matches, searchOptions.decorations, activeMatch);
         this._onDidChangeResults.fire({ resultCount: this._resultCount, resultIndex: this._resultIndex });
@@ -127,7 +126,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _clearStateOnFailedSearch(term: string, searchOptions: ISearchOptions | undefined, direction: SearchDirection): void {
     this._lastResolvedNavigation = undefined;
     if (searchOptions?.decorations) {
-      this._setDecoratedSearchState(term, searchOptions, direction, this._createSearchKey(term, searchOptions, direction), 0, -1);
+      this._setDecoratedSearchState(term, searchOptions, this._createSearchKey(term, searchOptions, direction), 0, -1);
       this._registerResultRefreshListener();
       this._disposeDecorations();
       this._onDidChangeResults.fire({ resultCount: 0, resultIndex: -1 });
@@ -459,7 +458,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return !isWordCharAt(text, startOffset - 1) && !isWordCharAt(text, endOffset);
   }
 
-  private _resolveResultIndex(matches: IMatch[], term: string, searchOptions: ISearchOptions | undefined, direction: SearchDirection, currentSearchKey: string): number {
+  private _resolveResultIndex(matches: IMatch[], searchOptions: ISearchOptions | undefined, direction: SearchDirection, currentSearchKey: string): number {
     const previousNavigation = this._lastResolvedNavigation;
     const selection = this._terminal?.getSelectionPosition();
     if (
@@ -742,7 +741,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _setDecoratedSearchState(
     term: string,
     searchOptions: ISearchOptions,
-    direction: SearchDirection,
     searchKey: string,
     resultCount: number,
     resultIndex: number
@@ -751,7 +749,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     this._resultIndex = resultIndex >= 0 && resultIndex < resultCount ? resultIndex : -1;
     this._lastSearchTerm = term;
     this._lastSearchOptions = searchOptions;
-    this._lastDirection = direction;
     this._lastSearchKey = searchKey;
   }
 
