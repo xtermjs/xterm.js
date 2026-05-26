@@ -37,9 +37,11 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _lastSearchKey: string | undefined;
   private _resultCount = 0;
   private _resultIndex = -1;
-  private readonly _matchCache = new Map<string, IMatch[] | undefined>();
+  private readonly _matchCache = new Map<number, Map<number, Map<string, IMatch[] | undefined>>>();
+  private readonly _matchCacheOrder: IMatchCacheKey[] = [];
   private _logicalLineCache: ILogicalLineCache | undefined;
-  private readonly _selectionIndexCache = new WeakMap<IMatch[], Map<string, number>>();
+  private readonly _selectionIndexCache = new WeakMap<IMatch[], Map<number, Map<number, number>>>();
+  private _lastResolvedNavigation: IResolvedNavigation | undefined;
 
   constructor(options?: Partial<ISearchAddonOptions>) {
     super();
@@ -93,10 +95,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         return false;
       }
 
-      const nextIndex = this._resolveResultIndex(matches, term, searchOptions, direction);
+      const searchKey = this._createSearchKey(term, searchOptions, direction);
+      const nextIndex = this._resolveResultIndex(matches, term, searchOptions, direction, searchKey);
       const activeMatch = matches[nextIndex];
       terminal.select(activeMatch.startX, activeMatch.startY, activeMatch.cellLength);
       terminal.scrollToLine(activeMatch.startY);
+      this._lastResolvedNavigation = {
+        searchKey,
+        matches,
+        index: nextIndex,
+        selectionStartX: activeMatch.startX,
+        selectionStartY: activeMatch.startY
+      };
 
       if (searchOptions?.decorations) {
         this._resultCount = matches.length;
@@ -104,7 +114,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         this._lastSearchTerm = term;
         this._lastSearchOptions = searchOptions;
         this._lastDirection = direction;
-        this._lastSearchKey = this._createSearchKey(term, searchOptions, direction);
+        this._lastSearchKey = searchKey;
         this._registerResultRefreshListener();
         this._refreshDecorations(matches, searchOptions.decorations, activeMatch);
         this._onDidChangeResults.fire({ resultCount: this._resultCount, resultIndex: this._resultIndex });
@@ -125,6 +135,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   }
 
   private _clearStateOnFailedSearch(term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous'): void {
+    this._lastResolvedNavigation = undefined;
     if (searchOptions?.decorations) {
       this._lastSearchTerm = term;
       this._lastSearchOptions = searchOptions;
@@ -203,6 +214,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return undefined;
     }
     const normalizedTerm = searchOptions?.caseSensitive ? term : term.toLowerCase();
+    const wholeWord = !!searchOptions?.wholeWord;
     const matches: IMatch[] = [];
     const cols = terminal.cols;
     const logicalLines = this._getLogicalLines(cols);
@@ -221,14 +233,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
           }
           const startOffset = match.index;
           const endOffset = startOffset + match[0].length;
-          if (!this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, searchOptions)) {
+          if (!this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, wholeWord)) {
             continue;
           }
           matchedOffsets ??= [];
           matchedOffsets.push(startOffset, endOffset);
         }
       } else {
-        const haystack = searchOptions?.caseSensitive ? logicalLine.text : logicalLine.text.toLowerCase();
+        const haystack = searchOptions?.caseSensitive ? logicalLine.text : (logicalLine.lowerText ??= logicalLine.text.toLowerCase());
         let searchIndex = 0;
         while (searchIndex < haystack.length) {
           const startOffset = haystack.indexOf(normalizedTerm, searchIndex);
@@ -236,7 +248,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
             break;
           }
           const endOffset = startOffset + term.length;
-          if (this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, searchOptions)) {
+          if (this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, wholeWord)) {
             matchedOffsets ??= [];
             matchedOffsets.push(startOffset, endOffset);
           }
@@ -280,24 +292,49 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (!terminal) {
       return undefined;
     }
-    const key = `${terminal.cols}|${this._createMatchKey(term, searchOptions)}`;
-    if (this._matchCache.has(key)) {
-      return this._matchCache.get(key);
+    const cols = terminal.cols;
+    const flags = this._getMatchFlags(searchOptions);
+    const byFlags = this._matchCache.get(cols)?.get(flags);
+    if (byFlags?.has(term)) {
+      return byFlags.get(term);
     }
     const matches = this._findAllMatches(term, searchOptions);
-    if (!this._matchCache.has(key) && this._matchCache.size >= SearchAddon._maxMatchCacheEntries) {
-      const firstKey = this._matchCache.keys().next().value;
-      if (firstKey !== undefined) {
-        this._matchCache.delete(firstKey);
-      }
+    let byCols = this._matchCache.get(cols);
+    if (!byCols) {
+      byCols = new Map();
+      this._matchCache.set(cols, byCols);
     }
-    this._matchCache.set(key, matches);
+    let writableByFlags = byCols.get(flags);
+    if (!writableByFlags) {
+      writableByFlags = new Map();
+      byCols.set(flags, writableByFlags);
+    }
+    if (!writableByFlags.has(term)) {
+      if (this._matchCacheOrder.length >= SearchAddon._maxMatchCacheEntries) {
+        const oldest = this._matchCacheOrder.shift();
+        if (oldest) {
+          const oldestByCols = this._matchCache.get(oldest.cols);
+          const oldestByFlags = oldestByCols?.get(oldest.flags);
+          oldestByFlags?.delete(oldest.term);
+          if (oldestByFlags && oldestByFlags.size === 0) {
+            oldestByCols?.delete(oldest.flags);
+          }
+          if (oldestByCols && oldestByCols.size === 0) {
+            this._matchCache.delete(oldest.cols);
+          }
+        }
+      }
+      this._matchCacheOrder.push({ cols, flags, term });
+    }
+    writableByFlags.set(term, matches);
     return matches;
   }
 
   private _clearMatchCache(): void {
     this._matchCache.clear();
+    this._matchCacheOrder.length = 0;
     this._logicalLineCache = undefined;
+    this._lastResolvedNavigation = undefined;
   }
 
   private _buildRegex(term: string, searchOptions?: ISearchOptions): RegExp | undefined {
@@ -381,7 +418,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const offsetToLinear: number[] = [];
     let currentOffset = 0;
     let linearOffset = 0;
-    offsetToPoint[0] = this._linearToPoint(rows, cols, 0);
+    let rowIndex = 0;
+    let col = 0;
+    const getPoint = (): IPoint => {
+      if (rows.length === 0) {
+        return { x: 0, y: 0 };
+      }
+      if (rowIndex >= rows.length) {
+        return { x: cols, y: rows[rows.length - 1] };
+      }
+      return { x: col, y: rows[rowIndex] };
+    };
+    offsetToPoint[0] = getPoint();
     offsetToLinear[0] = 0;
 
     const cell = terminal.buffer.active.getNullCell();
@@ -396,12 +444,17 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         const chars = loadedCell?.getChars() || ' ';
         const codeUnitCount = chars.length;
         for (let i = 1; i < codeUnitCount; i++) {
-          offsetToPoint[currentOffset + i] = this._linearToPoint(rows, cols, linearOffset);
+          offsetToPoint[currentOffset + i] = getPoint();
           offsetToLinear[currentOffset + i] = linearOffset;
         }
         currentOffset += codeUnitCount;
         linearOffset += width;
-        offsetToPoint[currentOffset] = this._linearToPoint(rows, cols, linearOffset);
+        col += width;
+        while (col >= cols) {
+          col -= cols;
+          rowIndex++;
+        }
+        offsetToPoint[currentOffset] = getPoint();
         offsetToLinear[currentOffset] = linearOffset;
       }
     }
@@ -412,31 +465,39 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     };
   }
 
-  private _linearToPoint(rows: number[], cols: number, linear: number): IPoint {
-    if (rows.length === 0) {
-      return { x: 0, y: 0 };
-    }
-    const rowOffset = Math.floor(linear / cols);
-    const col = linear % cols;
-    if (rowOffset >= rows.length) {
-      return { x: cols, y: rows[rows.length - 1] };
-    }
-    return { x: col, y: rows[rowOffset] };
-  }
-
-  private _isWholeWordMatch(text: string, startOffset: number, endOffset: number, searchOptions: ISearchOptions | undefined): boolean {
-    if (!searchOptions?.wholeWord) {
+  private _isWholeWordMatch(text: string, startOffset: number, endOffset: number, wholeWord: boolean): boolean {
+    if (!wholeWord) {
       return true;
     }
-    const left = startOffset === 0 ? '' : text[startOffset - 1];
-    const right = endOffset >= text.length ? '' : text[endOffset];
-    return !isWordChar(left) && !isWordChar(right);
+    return !isWordCharAt(text, startOffset - 1) && !isWordCharAt(text, endOffset);
   }
 
-  private _resolveResultIndex(matches: IMatch[], term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous'): number {
+  private _resolveResultIndex(matches: IMatch[], term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous', currentSearchKey: string): number {
+    const previousNavigation = this._lastResolvedNavigation;
+    if (
+      previousNavigation &&
+      previousNavigation.searchKey === currentSearchKey &&
+      previousNavigation.matches === matches
+    ) {
+      const selection = this._terminal?.getSelectionPosition();
+      if (
+        selection &&
+        selection.start.x === previousNavigation.selectionStartX &&
+        selection.start.y === previousNavigation.selectionStartY &&
+        previousNavigation.index >= 0 &&
+        previousNavigation.index < matches.length
+      ) {
+        if (direction === 'next') {
+          return (previousNavigation.index + 1) % matches.length;
+        }
+        return (previousNavigation.index + matches.length - 1) % matches.length;
+      }
+    }
     const currentSelectionIndex = this._findIndexFromSelection(matches);
-    const currentSearchKey = this._createSearchKey(term, searchOptions, direction);
-    const isIncrementalUpdate = !!searchOptions?.incremental && this._lastSearchKey !== undefined && this._lastSearchKey !== currentSearchKey;
+    let isIncrementalUpdate = false;
+    if (searchOptions?.incremental && this._lastSearchKey !== undefined) {
+      isIncrementalUpdate = this._lastSearchKey !== currentSearchKey;
+    }
 
     if (isIncrementalUpdate && currentSelectionIndex !== -1) {
       return currentSelectionIndex;
@@ -461,15 +522,21 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (!selection) {
       return -1;
     }
-    let indexMap = this._selectionIndexCache.get(matches);
-    if (!indexMap) {
-      indexMap = new Map<string, number>();
+    let byRow = this._selectionIndexCache.get(matches);
+    if (!byRow) {
+      byRow = new Map<number, Map<number, number>>();
       for (let i = 0; i < matches.length; i++) {
-        indexMap.set(`${matches[i].startY}:${matches[i].startX}`, i);
+        const match = matches[i];
+        let byColumn = byRow.get(match.startY);
+        if (!byColumn) {
+          byColumn = new Map<number, number>();
+          byRow.set(match.startY, byColumn);
+        }
+        byColumn.set(match.startX, i);
       }
-      this._selectionIndexCache.set(matches, indexMap);
+      this._selectionIndexCache.set(matches, byRow);
     }
-    return indexMap.get(`${selection.start.y}:${selection.start.x}`) ?? -1;
+    return byRow.get(selection.start.y)?.get(selection.start.x) ?? -1;
   }
 
   private _refreshDecorations(matches: IMatch[], decorationOptions: ISearchDecorationOptions, activeMatch: IMatch | undefined): void {
@@ -478,6 +545,12 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return;
     }
     this._disposeDecorations();
+    if (!terminal.element) {
+      return;
+    }
+    const canRenderDomBorders = !!terminal.element;
+    const matchBorder = decorationOptions.matchBorder;
+    const activeMatchBorder = decorationOptions.activeMatchBorder;
 
     const cursorLine = terminal.buffer.active.baseY + terminal.buffer.active.cursorY;
     for (const match of matches) {
@@ -494,10 +567,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       if (!decoration) {
         continue;
       }
-      if (decorationOptions.matchBorder) {
-        const border = decorationOptions.matchBorder;
+      if (matchBorder && canRenderDomBorders) {
         this._matchDecorations.push(decoration.onRender(element => {
-          element.style.outline = `1px solid ${border}`;
+          element.style.outline = `1px solid ${matchBorder}`;
         }));
       }
       this._matchDecorations.push(decoration);
@@ -522,10 +594,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return;
     }
     const disposables: IDisposable[] = [activeDecoration];
-    if (decorationOptions.activeMatchBorder) {
-      const border = decorationOptions.activeMatchBorder;
+    if (activeMatchBorder && canRenderDomBorders) {
       disposables.push(activeDecoration.onRender(element => {
-        element.style.outline = `1px solid ${border}`;
+        element.style.outline = `1px solid ${activeMatchBorder}`;
       }));
     }
     this._activeDecoration.value = toDisposable(() => {
@@ -547,17 +618,23 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   }
 
   private _createMatchKey(term: string, searchOptions: ISearchOptions | undefined): string {
-    const flags =
+    const flags = this._getMatchFlags(searchOptions);
+    return `${term}|${flags}`;
+  }
+
+  private _getMatchFlags(searchOptions: ISearchOptions | undefined): number {
+    return (
       (searchOptions?.caseSensitive ? 1 : 0) |
       (searchOptions?.regex ? 2 : 0) |
-      (searchOptions?.wholeWord ? 4 : 0);
-    return `${term}|${flags}`;
+      (searchOptions?.wholeWord ? 4 : 0)
+    );
   }
 }
 
 interface ILogicalLineCacheEntry {
   rows: number[];
   text: string;
+  lowerText?: string;
   offsetToPoint?: IPoint[];
   offsetToLinear?: number[];
 }
@@ -585,15 +662,32 @@ interface IMatch {
   cellLength: number;
 }
 
+interface IResolvedNavigation {
+  searchKey: string;
+  matches: IMatch[];
+  index: number;
+  selectionStartX: number;
+  selectionStartY: number;
+}
+
+interface IMatchCacheKey {
+  cols: number;
+  flags: number;
+  term: string;
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function isWordChar(value: string): boolean {
-  if (value.length === 0) {
+function isWordCharAt(value: string, index: number): boolean {
+  if (index < 0 || index >= value.length) {
     return false;
   }
-  const code = value.charCodeAt(0);
+  return isWordCode(value.charCodeAt(index));
+}
+
+function isWordCode(code: number): boolean {
   return (
     (code >= 48 && code <= 57) || // 0-9
     (code >= 65 && code <= 90) || // A-Z
