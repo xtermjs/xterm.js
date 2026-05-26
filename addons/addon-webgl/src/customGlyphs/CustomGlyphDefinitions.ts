@@ -274,17 +274,15 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // #region Powerline Symbols (E0A0-E0BF)
 
-  /*
-   * This contains the definitions of the primarily used box drawing characters as vector shapes.
-   * The reason these characters are defined specially is to avoid common problems if a user's font
-   * has not been patched with powerline characters and also to get pixel perfect rendering as
-   * rendering issues can occur around AA/SPAA.
-   *
-   * The line variants draw beyond the cell and get clipped to ensure the end of the line is not
-   * visible.
-   *
-   * Original symbols defined in https://github.com/powerline/fontpatcher
-   */
+  // This contains the definitions of the primarily used box drawing characters as vector shapes.
+  // The reason these characters are defined specially is to avoid common problems if a user's font
+  // has not been patched with powerline characters and also to get pixel perfect rendering as
+  // rendering issues can occur around AA/SPAA.
+  //
+  // The line variants draw beyond the cell and get clipped to ensure the end of the line is not
+  // visible.
+  //
+  // Original symbols defined in https://github.com/powerline/fontpatcher
 
   // Git branch
   '\u{E0A0}': { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M.3,1 L.03,1 L.03,.88 C.03,.82,.06,.78,.11,.73 C.15,.7,.2,.68,.28,.65 L.43,.6 C.49,.58,.53,.56,.56,.53 C.59,.5,.6,.47,.6,.43 L.6,.27 L.4,.27 L.69,.1 L.98,.27 L.78,.27 L.78,.46 C.78,.52,.76,.56,.72,.61 C.68,.66,.63,.67,.56,.7 L.48,.72 C.42,.74,.38,.76,.35,.78 C.32,.8,.31,.84,.31,.88 L.31,1 M.3,.5 L.03,.59 L.03,.09 L.3,.09 L.3,.655', type: CustomGlyphVectorType.FILL } },
@@ -357,10 +355,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // #region Progress Indicators (EE00-EE0B)
 
-  /*
-   * initially added in Fira Code and later Nerd Fonts
-   * https://github.com/ryanoasis/nerd-fonts/pull/1733
-   */
+  // initially added in Fira Code and later Nerd Fonts
+  // https://github.com/ryanoasis/nerd-fonts/pull/1733
 
   // Progress bars (EE00-EE05)
   '\u{EE00}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,0 L1,0 L1,.05 L.1,.05 L.1,.95 L1,.95 L1,1 L0,1 Z' }, // PROGRESS BAR EMPTY START
@@ -382,10 +378,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // #region Git Branch Symbols (F5D0-F60D)
 
-  /*
-   * Initially added in Kitty (https://github.com/kovidgoyal/kitty/pull/7681)
-   * then in Wezterm (https://github.com/wezterm/wezterm/issues/6328).
-   */
+  // Initially added in Kitty (https://github.com/kovidgoyal/kitty/pull/7681)
+  // then in Wezterm (https://github.com/wezterm/wezterm/issues/6328).
 
   // Straight lines (F5D0-F5D9)
   '\u{F5D0}': GitBranchSymbolsParts.LINE_H, // Same as 2500
@@ -439,10 +433,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{F5FA}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
   '\u{F5FB}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_UP],
 
-  /*
-   * Extended Nodes (F5FC-F60D)
-   * These were added a little later https://github.com/kovidgoyal/kitty/pull/7805
-   */
+  // Extended Nodes (F5FC-F60D)
+  // These were added a little later https://github.com/kovidgoyal/kitty/pull/7805
   '\u{F5FC}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
   '\u{F5FD}': [GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_RIGHT],
   '\u{F5FE}': [GitBranchSymbolsParts.NODE_FILL, GitBranchSymbolsParts.NODE_STROKE, GitBranchSymbolsParts.NODE_LINE_DOWN, GitBranchSymbolsParts.NODE_LINE_LEFT],
@@ -468,10 +460,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
 
   // https://www.unicode.org/charts/PDF/U1FB00.pdf
 
-  /*
-   * Block mosaic terminal graphic characters (1FB00-1FB3B)
-   * The term "sextant" refers to block mosaics divided into six parts.
-   */
+  // Block mosaic terminal graphic characters (1FB00-1FB3B)
+  // The term "sextant" refers to block mosaics divided into six parts.
   '\u{1FB00}': sextant(0b000001), // BLOCK SEXTANT-1
   '\u{1FB01}': sextant(0b000010), // BLOCK SEXTANT-2
   '\u{1FB02}': sextant(0b000011), // BLOCK SEXTANT-12 (upper one third block)
@@ -734,10 +724,8 @@ export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefi
   '\u{1FBB2}': { type: CustomGlyphDefinitionType.PATH, data: 'M.29,.27 L0.13,.56 L.22,.59 L.35,0.35 L.67,.35 L.57,.57 L.71,.76 L.22,.76 L.42,1 L.53,.98 L.43,.86 L.9,.86 L.71,.6 L1,.6 L1,.52 L.83,.52 L.92,.36 L1,.36 L1,.27Z M.99,.13 A.12,.12,0,1,1,.75,.13 A.12,.12,0,1,1,.99,.13' }, // LEFT HALF RUNNING MAN
   '\u{1FBB3}': { type: CustomGlyphDefinitionType.PATH, data: 'M0,.27 L.3,.27 L.55,.12 L.63,.18 L.33,.36 L0,.36 M0,.52 L.33,.52 L.59,.89 L.73,.89 L.73,.98 L.53,.98 L.28,.6 L0,.6' },                                                                                                      // RIGHT HALF RUNNING MAN
 
-  /*
-   * Arrows (1FBB4-1FBB8)
-   * TODO: Improve all arrows, use hybrid approach
-   */
+  // Arrows (1FBB4-1FBB8)
+  // TODO: Improve all arrows, use hybrid approach
   '\u{1FBB4}': { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: { d: 'M.15,.55 L.5,.4 L.5,.45 L.65,.45 L.65,.35 L.85,.35 L.85,.625 L.5,.625 L.5,.7 Z', type: CustomGlyphVectorType.FILL }, scaleType: CustomGlyphScaleType.CHAR },                                        // INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
   '\u{1FBB5}': [ // LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
     { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: { d: 'M0,0 L1,0 L1,.0625 L0,.0625 Z M0,.9375 L1,.9375 L1,1 L0,1 Z', type: CustomGlyphVectorType.FILL } },
@@ -892,11 +880,9 @@ function sextant(pattern: number): { type: CustomGlyphDefinitionType.PATH_FUNCTI
   return {
     type: CustomGlyphDefinitionType.PATH_FUNCTION,
     data: () => {
-      /*
-       * Sextant grid: 2 columns, 3 rows
-       * Row heights in 8ths: top=3, middle=2, bottom=3
-       * Column widths: left=4, right=4
-       */
+      // Sextant grid: 2 columns, 3 rows
+      // Row heights in 8ths: top=3, middle=2, bottom=3
+      // Column widths: left=4, right=4
       const rects: string[] = [];
       const colW = 0.5; // Each column is half width
       const rowH = [3 / 8, 2 / 8, 3 / 8]; // Row heights as fractions
@@ -946,12 +932,10 @@ function sextant(pattern: number): { type: CustomGlyphDefinitionType.PATH_FUNCTI
 function segmentedDigit(pattern: number): string {
   const paths: string[] = [];
 
-  /*
-   * Each segment should have approximately the same stroke width, this is somewhat difficult to be
-   * precise since coordinates are 0-1 of the whole cell (percentage-based). To handle this, the
-   * fact that terminal cells are typically sized at ~2:1 (height:width) is leveraged.
-   * for horizontal vs vertical to make segments appear the same thickness
-   */
+  // Each segment should have approximately the same stroke width, this is somewhat difficult to be
+  // precise since coordinates are 0-1 of the whole cell (percentage-based). To handle this, the
+  // fact that terminal cells are typically sized at ~2:1 (height:width) is leveraged.
+  // for horizontal vs vertical to make segments appear the same thickness
   const segW = 0.15;  // Width of vertical segments (fraction of cell width)
   const segH = 0.075; // Height of horizontal segments (fraction of cell height, ~half of segW for 2:1 cells)
   const padX = 0.05;  // Horizontal padding from edge

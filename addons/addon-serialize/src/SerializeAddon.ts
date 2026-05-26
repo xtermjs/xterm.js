@@ -84,10 +84,8 @@ function equalBg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boole
 }
 
 function equalUnderline(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
-  /*
-   * If neither cell has underline, consider them equal regardless of internal underline color
-   * values
-   */
+  // If neither cell has underline, consider them equal regardless of internal underline color
+  // values
   if (!cell1.isUnderline() && !cell2.isUnderline()) {
     return true;
   }
@@ -136,18 +134,14 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _currentRow: string = '';
   private _nullCellCount: number = 0;
 
-  /*
-   * we can see a full colored cell and a null cell that only have background the same style
-   * but the information isn't preserved by null cell itself
-   * so wee need to record it when required.
-   */
+  // we can see a full colored cell and a null cell that only have background the same style
+  // but the information isn't preserved by null cell itself
+  // so wee need to record it when required.
   private _cursorStyle: IBufferCell = this._buffer.getNullCell();
 
-  /*
-   * where exact the cursor styles comes from
-   * because we can't copy the cell directly
-   * so we remember where the content comes from instead
-   */
+  // where exact the cursor styles comes from
+  // because we can't copy the cell directly
+  // so we remember where the content comes from instead
   private _cursorStyleRow: number = 0;
   private _cursorStyleCol: number = 0;
 
@@ -178,10 +172,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _thisRowLastSecondChar: IBufferCell = this._buffer.getNullCell();
   private _nextRowFirstChar: IBufferCell = this._buffer.getNullCell();
   protected _rowEnd(row: number, isLastRow: boolean): void {
-    /*
-     * if there is colorful empty cell at line end, whe must pad it back, or the the color block
-     * will missing
-     */
+    // if there is colorful empty cell at line end, whe must pad it back, or the the color block
+    // will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.
       this._currentRow += `\u001b[${this._nullCellCount}X`;
@@ -214,10 +206,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
         const nextRowFirstChar = nextLine.getCell(0, this._nextRowFirstChar)!;
         const isNextRowFirstCharDoubleWidth = nextRowFirstChar.getWidth() > 1;
 
-        /*
-         * validate whether this line wrap is ever possible
-         * which mean whether cursor can placed at a overflow position (x === row) naturally
-         */
+        // validate whether this line wrap is ever possible
+        // which mean whether cursor can placed at a overflow position (x === row) naturally
         let isValid = false;
 
         if (
@@ -226,31 +216,23 @@ class StringSerializeHandler extends BaseSerializeHandler {
             isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
         ) {
           if (
-            /*
-             * the last character can't be null,
-             * you can't use control sequence to move cursor to (x === row)
-             */
+            // the last character can't be null,
+            // you can't use control sequence to move cursor to (x === row)
             (thisRowLastChar.getChars() || thisRowLastChar.getWidth() === 0) &&
-            /*
-             * change background of the first wrapped cell also affects BCE
-             * so we mark it as invalid to simply the process to determine line separator
-             */
+            // change background of the first wrapped cell also affects BCE
+            // so we mark it as invalid to simply the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar)
           ) {
             isValid = true;
           }
 
           if (
-            /*
-             * the second to last character can't be null if the next line starts with CJK,
-             * you can't use control sequence to move cursor to (x === row)
-             */
+            // the second to last character can't be null if the next line starts with CJK,
+            // you can't use control sequence to move cursor to (x === row)
             isNextRowFirstCharDoubleWidth &&
             (thisRowLastSecondChar.getChars() || thisRowLastSecondChar.getWidth() === 0) &&
-            /*
-             * change background of the first wrapped cell also affects BCE
-             * so we mark it as invalid to simply the process to determine line separator
-             */
+            // change background of the first wrapped cell also affects BCE
+            // so we mark it as invalid to simply the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar) &&
             equalBg(thisRowLastSecondChar, nextRowFirstChar)
           ) {
@@ -259,10 +241,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
         }
 
         if (!isValid) {
-          /*
-           * force the wrap with magic
-           * insert enough character to force the wrap
-           */
+          // force the wrap with magic
+          // insert enough character to force the wrap
           rowSeparator = '-'.repeat(this._nullCellCount + 1);
           // move back and erase next line head
           rowSeparator += '\u001b[1D\u001b[1X';
@@ -276,10 +256,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
             rowSeparator += '\u001b[B';
           }
 
-          /*
-           * This is content and need the be serialized even it is invisible.
-           * without this, wrap will be missing from outputs.
-           */
+          // This is content and need the be serialized even it is invisible.
+          // without this, wrap will be missing from outputs.
           this._lastContentCursorRow = row + 1;
           this._lastContentCursorCol = 0;
 
@@ -380,10 +358,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     const sgrSeq = this._diffStyle(cell, this._cursorStyle);
 
-    /*
-     * the empty cell style is only assumed to be changed when background changed, because
-     * foreground is always 0.
-     */
+    // the empty cell style is only assumed to be changed when background changed, because
+    // foreground is always 0.
     const styleChanged = isEmptyCell ? !equalBg(this._cursorStyle, cell) : sgrSeq.length > 0;
 
     /**
@@ -422,11 +398,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
       this._nullCellCount += cell.getWidth();
     } else {
       if (this._nullCellCount > 0) {
-        /*
-         * we can just assume we have same style with previous one here
-         * because style change is handled by previous stage
-         * use move right when background is empty, use clear right when there is background.
-         */
+        // we can just assume we have same style with previous one here
+        // because style change is handled by previous stage
+        // use move right when background is empty, use clear right when there is background.
         if (equalBg(this._cursorStyle, this._backgroundCell)) {
           this._currentRow += `\u001b[${this._nullCellCount}C`;
         } else {
@@ -447,10 +421,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
   protected _serializeString(excludeFinalCursorPosition: boolean): string {
     let rowEnd = this._allRows.length;
 
-    /*
-     * the fixup is only required for data without scrollback
-     * because it will always be placed at last line otherwise
-     */
+    // the fixup is only required for data without scrollback
+    // because it will always be placed at last line otherwise
     if (this._buffer.length - this._firstRow <= this._terminal.rows) {
       rowEnd = this._lastContentCursorRow + 1 - this._firstRow;
       this._lastCursorCol = this._lastContentCursorCol;
@@ -494,11 +466,9 @@ class StringSerializeHandler extends BaseSerializeHandler {
       }
     }
 
-    /*
-     * Restore the cursor's current style, see https://github.com/xtermjs/xterm.js/issues/3677
-     * HACK: Internal API access since it's awkward to expose this in the API and serialize will
-     * likely be the only consumer
-     */
+    // Restore the cursor's current style, see https://github.com/xtermjs/xterm.js/issues/3677
+    // HACK: Internal API access since it's awkward to expose this in the API and serialize will
+    // likely be the only consumer
     const curAttrData: IAttributeData = (this._terminal as any)._core._inputHandler._curAttrData;
     const sgrSeq = this._diffStyle(curAttrData, this._cursorStyle);
     if (sgrSeq.length > 0) {
@@ -611,10 +581,8 @@ export class SerializeAddon implements ITerminalAddon, ISerializeApi {
       }
     }
 
-    /*
-     * Cursor visibility (DECTCEM)
-     * Default: visible
-     */
+    // Cursor visibility (DECTCEM)
+    // Default: visible
     if (!modes.showCursor) {
       content += '\x1b[?25l';
     }

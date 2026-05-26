@@ -576,16 +576,14 @@ describe('Terminal', () => {
 
     beforeEach(() => {
       term.clearSelection = () => { };
-      /*
-       * term.compositionHelper = {
-       *   isComposing: false,
-       *   keydown: {
-       *     bind: () => {
-       *       return () => { return true; };
-       *     }
-       *   }
-       * };
-       */
+      // term.compositionHelper = {
+      //   isComposing: false,
+      //   keydown: {
+      //     bind: () => {
+      //       return () => { return true; };
+      //     }
+      //   }
+      // };
       evKeyDown = {
         preventDefault: () => { },
         stopPropagation: () => { },
@@ -1150,10 +1148,8 @@ describe('Terminal', () => {
 
   // FIXME: move to common/CoreTerminal.test once the trimming is moved over
   describe('marker lifecycle', () => {
-    /*
-     * create a 10x5 terminal with markers on every line
-     * to test marker lifecycle under various terminal actions
-     */
+    // create a 10x5 terminal with markers on every line
+    // to test marker lifecycle under various terminal actions
     let markers: IMarker[];
     let disposeStack: IMarker[];
     let term: TestTerminal;

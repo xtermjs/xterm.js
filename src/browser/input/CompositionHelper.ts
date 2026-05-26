@@ -72,10 +72,8 @@ export class CompositionHelper {
    */
   public compositionstart(): void {
     this._isComposing = true;
-    /*
-     * It's important to use the selection here instead of textarea length to avoid conflicts with
-     * screen reader mode
-     */
+    // It's important to use the selection here instead of textarea length to avoid conflicts with
+    // screen reader mode
     const start = this._textarea.selectionStart ?? this._textarea.value.length;
     const end = this._textarea.selectionEnd ?? start;
     this._compositionPosition.start = Math.min(start, end);
@@ -91,10 +89,8 @@ export class CompositionHelper {
    * @param ev The event.
    */
   public compositionupdate(ev: Pick<CompositionEvent, 'data'>): void {
-    /*
-     * Mark text as LTR, direction=rtl is used in CSS so the end of the text is followed for long
-     * compositions
-     */
+    // Mark text as LTR, direction=rtl is used in CSS so the end of the text is followed for long
+    // compositions
     this._compositionView.textContent = `\u200E${ev.data}\u200E`;
     this.updateCompositionElements();
     setTimeout(() => {
@@ -119,28 +115,22 @@ export class CompositionHelper {
   public keydown(ev: KeyboardEvent): boolean {
     if (this._isComposing || this._isSendingComposition) {
       if (ev.keyCode === 20 || ev.keyCode === 229) {
-        /*
-         * 20 is CapsLock, 229 is Enter
-         * Continue composing if the keyCode is the "composition character"
-         */
+        // 20 is CapsLock, 229 is Enter
+        // Continue composing if the keyCode is the "composition character"
         return false;
       }
       if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
         // Continue composing if the keyCode is a modifier key
         return false;
       }
-      /*
-       * Finish composition immediately. This is mainly here for the case where enter is
-       * pressed and the handler needs to be triggered before the command is executed.
-       */
+      // Finish composition immediately. This is mainly here for the case where enter is
+      // pressed and the handler needs to be triggered before the command is executed.
       this._finalizeComposition(false);
     }
 
     if (ev.keyCode === 229) {
-      /*
-       * If the "composition character" is used but gets to this point it means a non-composition
-       * character (eg. numbers and punctuation) was pressed when the IME was active.
-       */
+      // If the "composition character" is used but gets to this point it means a non-composition
+      // character (eg. numbers and punctuation) was pressed when the IME was active.
       this._handleAnyTextareaChanges();
       return false;
     }
@@ -166,49 +156,39 @@ export class CompositionHelper {
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
       this._coreService.triggerDataEvent(input, true);
     } else {
-      /*
-       * Make a deep copy of the composition position here as a new compositionstart event may
-       * fire before the setTimeout executes.
-       */
+      // Make a deep copy of the composition position here as a new compositionstart event may
+      // fire before the setTimeout executes.
       const currentCompositionPosition = {
         start: this._compositionPosition.start,
         end: this._compositionPosition.end
       };
       const currentCompositionSuffix = this._compositionSuffix;
 
-      /*
-       * Since composition* events happen before the changes take place in the textarea on most
-       * browsers, use a setTimeout with 0ms time to allow the native compositionend event to
-       * complete. This ensures the correct character is retrieved.
-       * This solution was used because:
-       * - The compositionend event's data property is unreliable, at least on Chromium
-       * - The last compositionupdate event's data property does not always accurately describe
-       *   the character, a counter example being Korean where an ending consonsant can move to
-       *   the following character if the following input is a vowel.
-       */
+      // Since composition* events happen before the changes take place in the textarea on most
+      // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
+      // complete. This ensures the correct character is retrieved.
+      // This solution was used because:
+      // - The compositionend event's data property is unreliable, at least on Chromium
+      // - The last compositionupdate event's data property does not always accurately describe
+      //   the character, a counter example being Korean where an ending consonsant can move to
+      //   the following character if the following input is a vowel.
       this._isSendingComposition = true;
       setTimeout(() => {
         // Ensure that the input has not already been sent
         if (this._isSendingComposition) {
           this._isSendingComposition = false;
           let input;
-          /*
-           * Add length of data already sent due to keydown event,
-           * otherwise input characters can be duplicated. (Issue #3191)
-           */
+          // Add length of data already sent due to keydown event,
+          // otherwise input characters can be duplicated. (Issue #3191)
           currentCompositionPosition.start += this._dataAlreadySent.length;
           if (this._isComposing) {
-            /*
-             * Use the start position of the new composition to get the string
-             * if a new composition has started.
-             */
+            // Use the start position of the new composition to get the string
+            // if a new composition has started.
             input = this._textarea.value.substring(currentCompositionPosition.start, this._compositionPosition.start);
           } else {
-            /*
-             * Keep support for non-composition characters typed immediately after composition end
-             * while avoiding re-sending the trailing text that was already present
-             * before composition started.
-             */
+            // Keep support for non-composition characters typed immediately after composition end
+            // while avoiding re-sending the trailing text that was already present
+            // before composition started.
             const value = this._textarea.value;
             const valueEnd = currentCompositionSuffix.length > 0 && value.endsWith(currentCompositionSuffix)
               ? value.length - currentCompositionSuffix.length
@@ -280,18 +260,14 @@ export class CompositionHelper {
       this._compositionView.style.lineHeight = cellHeight + 'px';
       this._compositionView.style.fontFamily = this._optionsService.rawOptions.fontFamily;
       this._compositionView.style.fontSize = this._optionsService.rawOptions.fontSize + 'px';
-      /*
-       * Limit the composition view width to the space between the cursor and
-       * the terminal's right edge, preventing it from overflowing the terminal.
-       */
+      // Limit the composition view width to the space between the cursor and
+      // the terminal's right edge, preventing it from overflowing the terminal.
       const maxWidth = this._bufferService.cols * this._renderService.dimensions.css.cell.width - cursorLeft;
       this._compositionView.style.maxWidth = maxWidth + 'px';
       this._compositionView.style.overflow = 'hidden';
       this._compositionView.style.direction = 'rtl';
-      /*
-       * Sync the textarea to the exact position of the composition view so the IME knows where the
-       * text is.
-       */
+      // Sync the textarea to the exact position of the composition view so the IME knows where the
+      // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
       this._textarea.style.left = cursorLeft + 'px';
       this._textarea.style.top = cursorTop + 'px';

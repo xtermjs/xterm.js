@@ -43,10 +43,8 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
     this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
     this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
-    /*
-     * Only refresh if the time since last refresh is above a threshold, otherwise wait for
-     * enough time to pass before refreshing again.
-     */
+    // Only refresh if the time since last refresh is above a threshold, otherwise wait for
+    // enough time to pass before refreshing again.
     const refreshRequestTime: number = performance.now();
     if (refreshRequestTime - this._lastRefreshMs >= this._debounceThresholdMS) {
       // Enough time has lapsed since the last refresh; refresh immediately

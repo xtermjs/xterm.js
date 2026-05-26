@@ -613,10 +613,8 @@ describe('InputHandler', () => {
       await inputHandler.parseP('a'.repeat(bufferService.cols + 9)); // line 1 and 2
       for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
-      /*
-       * params[1] left and above with wrap
-       * confirm precondition that line 2 is wrapped
-       */
+      // params[1] left and above with wrap
+      // confirm precondition that line 2 is wrapped
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 40;
@@ -630,10 +628,8 @@ describe('InputHandler', () => {
       await inputHandler.parseP('a'.repeat(bufferService.cols + 9)); // line 1 and 2
       for (let i = 3; i < bufferService.rows; ++i) await inputHandler.parseP('a'.repeat(bufferService.cols));
 
-      /*
-       * params[1] left and above with wrap
-       * confirm precondition that line 2 is wrapped
-       */
+      // params[1] left and above with wrap
+      // confirm precondition that line 2 is wrapped
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
       bufferService.buffer.y = 1;
       bufferService.buffer.x = 90; // Cursor is beyond last column

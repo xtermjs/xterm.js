@@ -435,11 +435,9 @@ function customGlyphAlignmentHandler(term: Terminal): void {
 }
 
 function customGlyphRangesHandler(term: Terminal): void {
-  /*
-   * Box Drawing
-   * 2500-257F
-   * https://www.unicode.org/charts/PDF/U2500.pdf
-   */
+  // Box Drawing
+  // 2500-257F
+  // https://www.unicode.org/charts/PDF/U2500.pdf
   writeUnicodeTable(term, 'Box Drawing', 0x2500, 0x257F, [
     ['Light and heavy solid lines', 0x2500, 0x2503],
     ['Light and heavy dashed lines', 0x2504, 0x250B],
@@ -452,49 +450,39 @@ function customGlyphRangesHandler(term: Terminal): void {
     ['Light and heavy half lines', 0x2574, 0x257B],
     ['Mixed light and heavy lines', 0x257C, 0x257F],
   ]);
-  /*
-   * Box Elements
-   * 2580-259F
-   * https://www.unicode.org/charts/PDF/U2580.pdf
-   */
+  // Box Elements
+  // 2580-259F
+  // https://www.unicode.org/charts/PDF/U2580.pdf
   writeUnicodeTable(term, 'Box Elements', 0x2580, 0x259F, [
     ['Block elements', 0x2580, 0x2590],
     ['Shade characters', 0x2591, 0x2593],
     ['Block elements', 0x2594, 0x2595],
     ['Terminal graphic characters', 0x2596, 0x259F],
   ]);
-  /*
-   * Braille Patterns
-   * 2800-28FF
-   * https://www.unicode.org/charts/PDF/U2800.pdf
-   */
+  // Braille Patterns
+  // 2800-28FF
+  // https://www.unicode.org/charts/PDF/U2800.pdf
   writeUnicodeTable(term, 'Braille patterns', 0x2800, 0x28FF, [
     ['Braille patterns', 0x2800, 0x28FF],
   ]);
-  /*
-   * Powerline Symbols
-   * Range: E0A0–E0D4
-   * https://github.com/ryanoasis/nerd-fonts
-   */
+  // Powerline Symbols
+  // Range: E0A0–E0D4
+  // https://github.com/ryanoasis/nerd-fonts
   writeUnicodeTable(term, 'Powerline Symbols', 0xE0A0, 0xE0D4, [
     ['Powerline symbols', 0xE0A0, 0xE0B3, [0xE0A4, 0xE0A5, 0xE0A6, 0xE0A7, 0xE0A8, 0xE0A9, 0xE0AA, 0xE0AB, 0xE0AC, 0xE0AD, 0xE0AE, 0xE0AF]],
     ['Powerline extra symbols', 0xE0B4, 0xE0D4, [0xE0C9, 0xE0CB, 0xE0D3]],
   ]);
-  /*
-   * Progress Indicators
-   * Range: EE00-EE0B
-   * https://github.com/tonsky/FiraCode
-   */
+  // Progress Indicators
+  // Range: EE00-EE0B
+  // https://github.com/tonsky/FiraCode
   writeUnicodeTable(term, 'Progress Indicators', 0xEE00, 0xEE0B, [
     ['Progress bars', 0xEE00, 0xEE05],
     ['Progress spinners', 0xEE06, 0xEE0B],
   ]);
-  /*
-   * https://github.com/ryanoasis/nerd-fonts/pull/1733
-   * Git Branch Symbols
-   * F5D0-F60D
-   * https://github.com/xtermjs/xterm.js/issues/5477
-   */
+  // https://github.com/ryanoasis/nerd-fonts/pull/1733
+  // Git Branch Symbols
+  // F5D0-F60D
+  // https://github.com/xtermjs/xterm.js/issues/5477
   writeUnicodeTable(term, 'Git Branch Symbols', 0xF5D0, 0xF5FB, [
     ['Straight lines', 0xF5D0, 0xF5D5],
     ['Curved lines', 0xF5D6, 0xF5D9],
@@ -502,11 +490,9 @@ function customGlyphRangesHandler(term: Terminal): void {
     ['Nodes', 0xF5EE, 0xF5FB],
     ['Extended nodes', 0xF5FC, 0xF60D],
   ]);
-  /*
-   * Symbols for Legacy Computing
-   * Range: 1FB00–1FBFF
-   * https://www.unicode.org/charts/PDF/U1FB00.pdf
-   */
+  // Symbols for Legacy Computing
+  // Range: 1FB00–1FBFF
+  // https://www.unicode.org/charts/PDF/U1FB00.pdf
   writeUnicodeTable(term, 'Symbols for Legacy Computing', 0x1FB00, 0x1FBFF, [
     ['Block mosaic terminal graphic characters (Sextants)', 0x1FB00, 0x1FB3B],
     ['Smooth mosaic terminal graphic characters', 0x1FB3C, 0x1FB6F],
@@ -704,10 +690,8 @@ function loadTest(term: Terminal, addons: AddonCollection): void {
     for (let i = 1; i < count + 1; i++) {
       data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
     }
-    /*
-     * End each line with \r so the cursor remains constant, this is what ls/tree do and improves
-     * performance significantly due to the cursor DOM element not needing to change
-     */
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
     data[data.length - 1] = 0x0D; // \r
     testData.push(data);
   }
@@ -739,10 +723,8 @@ async function loadTestLongLines(term: Terminal, addons: AddonCollection): Promi
     for (let i = 1; i < count + 1; i++) {
       data[i] = 0x61 + Math.floor(Math.random() * (0x7A - 0x61));
     }
-    /*
-     * End each line with \r so the cursor remains constant, this is what ls/tree do and improves
-     * performance significantly due to the cursor DOM element not needing to change
-     */
+    // End each line with \r so the cursor remains constant, this is what ls/tree do and improves
+    // performance significantly due to the cursor DOM element not needing to change
     data[data.length - 1] = 0x0D; // \r
     testData.push(data);
   }
@@ -752,10 +734,8 @@ async function loadTestLongLines(term: Terminal, addons: AddonCollection): Promi
       try {
         term.write(d);
       } catch {
-        /*
-         * Flush events when cap is hit and try again(workaround for not having flow control in
-         * demo)
-         */
+        // Flush events when cap is hit and try again(workaround for not having flow control in
+        // demo)
         await new Promise<void>(r => term.write('', () => r()));
         term.write(d);
       }

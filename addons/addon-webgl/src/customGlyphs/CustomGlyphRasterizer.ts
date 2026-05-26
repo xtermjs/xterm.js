@@ -489,10 +489,8 @@ function drawPatternChar(
     pattern = throwIfFalsy(ctx.createPattern(tmpCanvas, null));
     patternSet.set(fillStyle, pattern);
   }
-  /*
-   * Apply pattern offset to ensure seamless tiling across cells when cell dimensions are odd.
-   * variantOffset encodes: bit 1 = x pixel shift, bit 0 = y pixel shift.
-   */
+  // Apply pattern offset to ensure seamless tiling across cells when cell dimensions are odd.
+  // variantOffset encodes: bit 1 = x pixel shift, bit 0 = y pixel shift.
   const dx = (variantOffset >> 1) & 1;
   const dy = variantOffset & 1;
   if (dx !== 0 || dy !== 0) {
@@ -715,10 +713,8 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
   for (let x = 0; x < result.length; x += 2) {
     // Translate from 0-1 to 0-cellWidth
     result[x] *= cellWidth - (leftPadding * devicePixelRatio) - (rightPadding * devicePixelRatio);
-    /*
-     * Round to the nearest 0.5 to ensure a crisp line at 100% devicePixelRatio, and optionally
-     * clamp to the cell bounds.
-     */
+    // Round to the nearest 0.5 to ensure a crisp line at 100% devicePixelRatio, and optionally
+    // clamp to the cell bounds.
     if (doClamp && result[x] !== 0) {
       const rounded = Math.round(result[x] + 0.5) - 0.5;
       result[x] = clampToCell ? clamp(rounded, cellWidth, 0) : rounded;
@@ -730,10 +726,8 @@ function translateArgs(args: string[], cellWidth: number, cellHeight: number, xO
   for (let y = 1; y < result.length; y += 2) {
     // Translate from 0-1 to 0-cellHeight
     result[y] *= cellHeight;
-    /*
-     * Round to the nearest 0.5 to ensure a crisp line at 100% devicePixelRatio, and optionally
-     * clamp to the cell bounds.
-     */
+    // Round to the nearest 0.5 to ensure a crisp line at 100% devicePixelRatio, and optionally
+    // clamp to the cell bounds.
     if (doClamp && result[y] !== 0) {
       const rounded = Math.round(result[y] + 0.5) - 0.5;
       result[y] = clampToCell ? clamp(rounded, cellHeight, 0) : rounded;

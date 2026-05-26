@@ -23,10 +23,8 @@ export function imageType(d: Uint8Array): IMetrics {
     return UNSUPPORTED_TYPE;
   }
   const d32 = new Uint32Array(d.buffer, d.byteOffset, 6);
-  /*
-   * PNG: 89 50 4E 47 0D 0A 1A 0A (8 first bytes == magic number for PNG)
-   * + first chunk must be IHDR
-   */
+  // PNG: 89 50 4E 47 0D 0A 1A 0A (8 first bytes == magic number for PNG)
+  // + first chunk must be IHDR
   if (d32[0] === 0x474E5089 && d32[1] === 0x0A1A0A0D && d32[3] === 0x52444849) {
     return {
       mime: 'image/png',

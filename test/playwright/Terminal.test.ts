@@ -837,10 +837,8 @@ test.describe('API Integration Tests', () => {
   test.describe('registerLinkProvider', () => {
     test('should fire provideLinks when hovering cells', async () => {
       await openTerminal(ctx);
-      /*
-       * Focus the terminal as the cursor will show and trigger a rerender, which can clear the
-       * active link
-       */
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
       await ctx.proxy.focus();
       await ctx.page.evaluate(`
         window.calls = [];
@@ -861,10 +859,8 @@ test.describe('API Integration Tests', () => {
 
     test('should fire hover and leave events on the link', async () => {
       await openTerminal(ctx);
-      /*
-       * Focus the terminal as the cursor will show and trigger a rerender, which can clear the
-       * active link
-       */
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
       await ctx.page.evaluate('window.term.focus()');
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
@@ -901,10 +897,8 @@ test.describe('API Integration Tests', () => {
 
     test('should work fine when hover and leave callbacks are not provided', async () => {
       await openTerminal(ctx);
-      /*
-       * Focus the terminal as the cursor will show and trigger a rerender, which can clear the
-       * active link
-       */
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
       await ctx.page.evaluate('window.term.focus()');
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
@@ -946,10 +940,8 @@ test.describe('API Integration Tests', () => {
 
     test('should fire activate events when clicking the link', async () => {
       await openTerminal(ctx);
-      /*
-       * Focus the terminal as the cursor will show and trigger a rerender, which can clear the
-       * active link
-       */
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
       await ctx.page.evaluate('window.term.focus()');
       await ctx.proxy.write('a b c');
       // Wait for renderer to catch up as links are cleared on render
@@ -990,10 +982,8 @@ test.describe('API Integration Tests', () => {
 
     test('should work when multiple links are provided on the same line', async () => {
       await openTerminal(ctx);
-      /*
-       * Focus the terminal as the cursor will show and trigger a rerender, which can clear the
-       * active link
-       */
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
       await ctx.page.evaluate('window.term.focus()');
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render
@@ -1041,10 +1031,8 @@ test.describe('API Integration Tests', () => {
 
     test('should dispose links when hovering away', async () => {
       await openTerminal(ctx);
-      /*
-       * Focus the terminal as the cursor will show and trigger a rerender, which can clear the
-       * active link
-       */
+      // Focus the terminal as the cursor will show and trigger a rerender, which can clear the
+      // active link
       await ctx.page.evaluate('window.term.focus()');
       await ctx.proxy.write('foo bar baz');
       // Wait for renderer to catch up as links are cleared on render

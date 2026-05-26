@@ -261,10 +261,8 @@ export class SearchEngine {
         return;
       }
 
-      /*
-       * This will iterate until we find the line start.
-       * When we find it, we will search using the calculated start column.
-       */
+      // This will iterate until we find the line start.
+      // When we find it, we will search using the calculated start column.
       searchPosition.startRow--;
       searchPosition.startCol += this._terminal.cols;
       return this._findInLine(term, searchPosition, searchOptions);
@@ -317,10 +315,8 @@ export class SearchEngine {
         return;
       }
 
-      /*
-       * Adjust the row number and search index if needed since a "line" of text can span multiple
-       * rows
-       */
+      // Adjust the row number and search index if needed since a "line" of text can span multiple
+      // rows
       let startRowOffset = 0;
       while (startRowOffset < offsets.length - 1 && resultIndex >= offsets[startRowOffset + 1]) {
         startRowOffset++;
@@ -359,10 +355,8 @@ export class SearchEngine {
       if (char.length > 1) {
         offset -= char.length - 1;
       }
-      /*
-       * Adjust the searchIndex for empty characters following wide unicode
-       * chars (eg. CJK)
-       */
+      // Adjust the searchIndex for empty characters following wide unicode
+      // chars (eg. CJK)
       const nextCell = line.getCell(i + 1);
       if (nextCell && nextCell.getWidth() === 0) {
         offset++;

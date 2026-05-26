@@ -257,10 +257,8 @@ describe('SelectionService', () => {
         ])); // The a is here to prevent the space being trimmed in selectionText
         selectionService.selectWordAt([0, 0]);
         assert.equal(selectionService.selectionText, ' ');
-        /*
-         * ZWJ emojis do not combine in the terminal so the family emoji used here consumed 4 cells
-         * The selection text should retain ZWJ chars despite not combining on the terminal
-         */
+        // ZWJ emojis do not combine in the terminal so the family emoji used here consumed 4 cells
+        // The selection text should retain ZWJ chars despite not combining on the terminal
         selectionService.selectWordAt([1, 0]);
         assert.equal(selectionService.selectionText, '👨‍👩‍👧‍👦');
         selectionService.selectWordAt([2, 0]);
@@ -475,10 +473,8 @@ describe('SelectionService', () => {
     });
 
     it('should select a column of text with double character emojis', () => {
-      /*
-       * TODO the case this is testing works for me in the demo webapp,
-       * but doing it programmatically fails.
-       */
+      // TODO the case this is testing works for me in the demo webapp,
+      // but doing it programmatically fails.
       buffer.lines.length = 3;
       buffer.lines.set(0, stringToRow('a '));
       buffer.lines.set(1, stringArrayToRow(['😁', ' ']));

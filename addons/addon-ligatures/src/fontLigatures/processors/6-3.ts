@@ -53,10 +53,8 @@ export default function buildTree(table: ChainingContextualSubstitutionTable.IFo
       );
     }
 
-    /*
-     * When we get to the end, all of the entries we've accumulated
-     * should have a lookup defined
-     */
+    // When we get to the end, all of the entries we've accumulated
+    // should have a lookup defined
     for (const { entry, substitutions } of currentEntries) {
       entry.lookup = {
         substitutions,

@@ -26,24 +26,18 @@ test.describe('FitAddon', () => {
     `);
   });
 
-  /*
-   * test.beforeEach(async function(): Promise<any> {
-   *   await ctx.page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
-   *   await openTerminal(page);
-   * });
-   */
+  // test.beforeEach(async function(): Promise<any> {
+  //   await ctx.page.evaluate(`document.querySelector('#terminal-container').style.display=''`);
+  //   await openTerminal(page);
+  // });
 
-  /*
-   * after(async () => {
-   *   await browser.close();
-   * });
-   */
+  // after(async () => {
+  //   await browser.close();
+  // });
 
-  /*
-   * afterEach(async function(): Promise<any> {
-   *   await ctx.proxy.dispose();
-   * });
-   */
+  // afterEach(async function(): Promise<any> {
+  //   await ctx.proxy.dispose();
+  // });
 
   test('no terminal', async function(): Promise<any> {
     await ctx.page.evaluate(`window.fit2 = new FitAddon();`);
@@ -85,10 +79,8 @@ test.describe('FitAddon', () => {
       await ctx.page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
       await setDimensions();
       const dimensions: { cols: number, rows: number } | undefined = await ctx.page.evaluate(`window.fit.proposeDimensions()`);
-      /*
-       * The value of dims will be undefined if the char measure strategy falls back to the DOM
-       * method, so only assert if it's not undefined.
-       */
+      // The value of dims will be undefined if the char measure strategy falls back to the DOM
+      // method, so only assert if it's not undefined.
       if (dimensions) {
         ok(dimensions.cols > 85);
         ok(dimensions.cols < 88);

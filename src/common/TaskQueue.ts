@@ -83,23 +83,17 @@ abstract class TaskQueue implements ITaskQueue {
       if (!this._tasks[this._i]()) {
         this._i++;
       }
-      /*
-       * other than performance.now, performance.now might not be stable (changes on wall clock
-       * changes), this is not an issue here as a clock change during a short running task is very
-       * unlikely in case it still happened and leads to negative duration, simply assume 1 msec
-       */
+      // other than performance.now, performance.now might not be stable (changes on wall clock
+      // changes), this is not an issue here as a clock change during a short running task is very
+      // unlikely in case it still happened and leads to negative duration, simply assume 1 msec
       taskDuration = Math.max(1, performance.now() - taskDuration);
       longestTask = Math.max(taskDuration, longestTask);
-      /*
-       * Guess the following task will take a similar time to the longest task in this batch, allow
-       * additional room to try avoid exceeding the deadline
-       */
+      // Guess the following task will take a similar time to the longest task in this batch, allow
+      // additional room to try avoid exceeding the deadline
       deadlineRemaining = deadline.timeRemaining();
       if (longestTask * 1.5 > deadlineRemaining) {
-        /*
-         * Warn when the time exceeding the deadline is over 20ms, if this happens in practice the
-         * task should be split into sub-tasks to ensure the UI remains responsive.
-         */
+        // Warn when the time exceeding the deadline is over 20ms, if this happens in practice the
+        // task should be split into sub-tasks to ensure the UI remains responsive.
         if (lastDeadlineRemaining - taskDuration < -20) {
           this._logService.warn(`task queue exceeded allotted deadline by ${Math.abs(Math.round(lastDeadlineRemaining - taskDuration))}ms`);
         }

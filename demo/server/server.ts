@@ -180,11 +180,9 @@ function startServer(): void {
     }
     const send = (USE_BINARY ? bufferUtf8 : buffer)(ws, 3, 262144);
 
-    /*
-     * WARNING: This is a naive implementation that will not throttle the flow of data. This means
-     * it could flood the communication channel and make the terminal unresponsive. Learn more about
-     * the problem and how to implement flow control at https://xtermjs.org/docs/guides/flowcontrol/
-     */
+    // WARNING: This is a naive implementation that will not throttle the flow of data. This means
+    // it could flood the communication channel and make the terminal unresponsive. Learn more about
+    // the problem and how to implement flow control at https://xtermjs.org/docs/guides/flowcontrol/
     term.onData(function(data) {
       try {
         send(data as string & Buffer);
@@ -211,10 +209,8 @@ function startServer(): void {
   app.listen(port, host, 0);
 }
 
-/*
- * HACK: There is an EPIPE error thrown when reloading a page. This only seems to happen on Windows
- * and it's unclear why it happens. Suppressing the error here since this is just the demo server.
- */
+// HACK: There is an EPIPE error thrown when reloading a page. This only seems to happen on Windows
+// and it's unclear why it happens. Suppressing the error here since this is just the demo server.
 process.on('uncaughtException', (error) => {
   if (process.platform === 'win32' && error.message === 'read EPIPE') {
     return;

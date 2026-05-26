@@ -13,11 +13,9 @@ export function throwIfFalsy<T>(value: T | undefined | null): T {
 }
 
 export function isPowerlineGlyph(codepoint: number): boolean {
-  /*
-   * Only return true for Powerline symbols which require
-   * different padding and should be excluded from minimum contrast
-   * ratio standards
-   */
+  // Only return true for Powerline symbols which require
+  // different padding and should be excluded from minimum contrast
+  // ratio standards
   return 0xE0A4 <= codepoint && codepoint <= 0xE0D6;
 }
 
@@ -50,10 +48,8 @@ export function allowRescaling(codepoint: number | undefined, width: number, gly
   return (
     // Is single cell width
     width === 1 &&
-    /*
-     * Glyph exceeds cell bounds, add 50% to avoid hurting readability by rescaling glyphs that
-     * barely overlap
-     */
+    // Glyph exceeds cell bounds, add 50% to avoid hurting readability by rescaling glyphs that
+    // barely overlap
     glyphSizeX > Math.ceil(deviceCellWidth * 1.5) &&
     // Never rescale ascii
     codepoint !== undefined && codepoint > 0xFF &&

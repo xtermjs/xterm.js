@@ -13,10 +13,8 @@ import { ICharacterJoinerService } from 'browser/services/Services';
 
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
-  /*
-   * .content carries no meaning for joined CellData, simply nullify it
-   * thus we have to overload all other .content accessors
-   */
+  // .content carries no meaning for joined CellData, simply nullify it
+  // thus we have to overload all other .content accessors
   public content: number = 0;
   public fg: number;
   public bg: number;
@@ -44,10 +42,8 @@ export class JoinedCellData extends AttributeData implements ICellData {
   }
 
   public getCode(): number {
-    /*
-     * code always gets the highest possible fake codepoint (read as -1)
-     * this is needed as code is used by caches as identifier
-     */
+    // code always gets the highest possible fake codepoint (read as -1)
+    // this is needed as code is used by caches as identifier
     return 0x1FFFFF;
   }
 
@@ -105,12 +101,10 @@ export class CharacterJoinerService implements ICharacterJoinerService {
     const ranges: [number, number][] = [];
     const lineStr = line.translateToString(true);
 
-    /*
-     * Because some cells can be represented by multiple javascript characters,
-     * we track the cell and the string indexes separately. This allows us to
-     * translate the string ranges we get from the joiners back into cell ranges
-     * for use when rendering
-     */
+    // Because some cells can be represented by multiple javascript characters,
+    // we track the cell and the string indexes separately. This allows us to
+    // translate the string ranges we get from the joiners back into cell ranges
+    // for use when rendering
     let rangeStartColumn = 0;
     let currentStringIndex = 0;
     let rangeStartStringIndex = 0;
@@ -127,10 +121,8 @@ export class CharacterJoinerService implements ICharacterJoinerService {
 
       // End of range
       if (this._workCell.fg !== rangeAttrFG || this._workCell.bg !== rangeAttrBG) {
-        /*
-         * If we ended up with a sequence of more than one character,
-         * look for ranges to join.
-         */
+        // If we ended up with a sequence of more than one character,
+        // look for ranges to join.
         if (x - rangeStartColumn > 1) {
           const joinedRanges = this._getJoinedRanges(
             lineStr,
@@ -181,11 +173,9 @@ export class CharacterJoinerService implements ICharacterJoinerService {
    */
   private _getJoinedRanges(line: string, startIndex: number, endIndex: number, lineData: IBufferLine, startCol: number): [number, number][] {
     const text = line.substring(startIndex, endIndex);
-    /*
-     * At this point we already know that there is at least one joiner so
-     * we can just pull its value and assign it directly rather than
-     * merging it into an empty array, which incurs unnecessary writes.
-     */
+    // At this point we already know that there is at least one joiner so
+    // we can just pull its value and assign it directly rather than
+    // merging it into an empty array, which incurs unnecessary writes.
     let allJoinedRanges: [number, number][] = [];
     try {
       allJoinedRanges = this._characterJoiners[0].handler(text);
@@ -230,10 +220,8 @@ export class CharacterJoinerService implements ICharacterJoinerService {
       const width = line.getWidth(x);
       const length = line.getString(x).length || WHITESPACE_CELL_CHAR.length;
 
-      /*
-       * We skip zero-width characters when creating the string to join the text
-       * so we do the same here
-       */
+      // We skip zero-width characters when creating the string to join the text
+      // so we do the same here
       if (width === 0) {
         continue;
       }
@@ -256,12 +244,10 @@ export class CharacterJoinerService implements ICharacterJoinerService {
           break;
         }
 
-        /*
-         * Ranges can be on adjacent characters. Because the end index of the
-         * ranges are exclusive, this means that the index for the start of a
-         * range can be the same as the end index of the previous range. To
-         * account for the start of the next range, we check here just in case.
-         */
+        // Ranges can be on adjacent characters. Because the end index of the
+        // ranges are exclusive, this means that the index for the start of a
+        // range can be the same as the end index of the previous range. To
+        // account for the start of the next range, we check here just in case.
         if (currentRange[0] <= currentStringIndex) {
           currentRange[0] = x;
           currentRangeStarted = true;
@@ -270,17 +256,13 @@ export class CharacterJoinerService implements ICharacterJoinerService {
         }
       }
 
-      /*
-       * Adjust the string index based on the character length to line up with
-       * the column adjustment
-       */
+      // Adjust the string index based on the character length to line up with
+      // the column adjustment
       currentStringIndex += length;
     }
 
-    /*
-     * If there is still a range left at the end, it must extend all the way to
-     * the end of the line.
-     */
+    // If there is still a range left at the end, it must extend all the way to
+    // the end of the line.
     if (currentRange) {
       currentRange[1] = this._bufferService.cols;
     }
@@ -306,19 +288,15 @@ export class CharacterJoinerService implements ICharacterJoinerService {
         }
 
         if (newRange[1] <= range[1]) {
-          /*
-           * Case 2: New range is either wholly contained within the
-           * search range or overlaps with the front of it
-           */
+          // Case 2: New range is either wholly contained within the
+          // search range or overlaps with the front of it
           range[0] = Math.min(newRange[0], range[0]);
           return ranges;
         }
 
         if (newRange[0] < range[1]) {
-          /*
-           * Case 3: New range either wholly contains the search range
-           * or overlaps with the end of it
-           */
+          // Case 3: New range either wholly contains the search range
+          // or overlaps with the end of it
           range[0] = Math.min(newRange[0], range[0]);
           inRange = true;
         }
@@ -327,28 +305,22 @@ export class CharacterJoinerService implements ICharacterJoinerService {
         continue;
       } else {
         if (newRange[1] <= range[0]) {
-          /*
-           * Case 5: New range extends from previous range but doesn't
-           * reach the current one
-           */
+          // Case 5: New range extends from previous range but doesn't
+          // reach the current one
           ranges[i - 1][1] = newRange[1];
           return ranges;
         }
 
         if (newRange[1] <= range[1]) {
-          /*
-           * Case 6: New range extends from prvious range into the
-           * current range
-           */
+          // Case 6: New range extends from prvious range into the
+          // current range
           ranges[i - 1][1] = Math.max(newRange[1], range[1]);
           ranges.splice(i, 1);
           return ranges;
         }
 
-        /*
-         * Case 7: New range extends from previous range past the
-         * end of the current range
-         */
+        // Case 7: New range extends from previous range past the
+        // end of the current range
         ranges.splice(i, 1);
         i--;
       }

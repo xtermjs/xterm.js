@@ -323,10 +323,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * Binds the desired blur behavior on a given terminal object.
    */
   private _handleTextAreaBlur(): void {
-    /*
-     * Text can safely be removed on blur. Doing it earlier could interfere with
-     * screen readers reading it out.
-     */
+    // Text can safely be removed on blur. Doing it earlier could interfere with
+    // screen readers reading it out.
     this.textarea!.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.coreService.decPrivateModes.sendFocus) {
@@ -352,10 +350,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     const cursorTop = this.buffer.y * this._renderService.dimensions.css.cell.height;
     const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
 
-    /*
-     * Sync the textarea to the exact position of the composition view so the IME knows where the
-     * text is.
-     */
+    // Sync the textarea to the exact position of the composition view so the IME knows where the
+    // text is.
     this.textarea.style.left = cursorLeft + 'px';
     this.textarea.style.top = cursorTop + 'px';
     this.textarea.style.width = cellWidth + 'px';
@@ -372,10 +368,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Bind clipboard functionality
     this._register(addDisposableListener(this.element!, 'copy', (event: ClipboardEvent) => {
-      /*
-       * If mouse events are active it means the selection manager is disabled and
-       * copy should be handled by the host program.
-       */
+      // If mouse events are active it means the selection manager is disabled and
+      // copy should be handled by the host program.
       if (!this.hasSelection()) {
         return;
       }
@@ -399,16 +393,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       }));
     }
 
-    /*
-     * Move the textarea under the cursor when middle clicking on Linux to ensure
-     * middle click to paste selection works. This only appears to work in Chrome
-     * at the time is writing.
-     */
+    // Move the textarea under the cursor when middle clicking on Linux to ensure
+    // middle click to paste selection works. This only appears to work in Chrome
+    // at the time is writing.
     if (Browser.isLinux) {
-      /*
-       * Use auxclick event over mousedown the latter doesn't seem to work. Note
-       * that the regular click event doesn't fire for the middle mouse button.
-       */
+      // Use auxclick event over mousedown the latter doesn't seem to work. Note
+      // that the regular click event doesn't fire for the middle mouse button.
       this._register(addDisposableListener(this.element!, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
           moveTextAreaUnderMouseCursor(event, this.textarea!, this.screenElement!);
@@ -425,13 +415,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
     this._register(addDisposableListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
     this._register(addDisposableListener(this.textarea!, 'compositionstart', () => {
-      /*
-       * Ensure the textarea is synced to the latest cursor location before composition begins. This
-       * is to workaround a problem where highly dynamic TUIs like agentic CLIs reprint agressively
-       * would cause the IME to appear in the wrong position. The theory is that when the IME is
-       * triggered during a partial render the textarea position becomes locked and will not move
-       * until it is hidden and a custom move occurs.
-       */
+      // Ensure the textarea is synced to the latest cursor location before composition begins. This
+      // is to workaround a problem where highly dynamic TUIs like agentic CLIs reprint agressively
+      // would cause the IME to appear in the wrong position. The theory is that when the IME is
+      // triggered during a partial render the textarea position becomes locked and will not move
+      // until it is hidden and a custom move occurs.
       this._syncTextArea();
       this._compositionHelper!.compositionstart();
       this._compositionHelper!.updateCompositionElements();
@@ -479,10 +467,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(this.optionsService.onSpecificOptionChange('allowTransparency', value => this.element!.classList.toggle('allow-transparency', value)));
     parent.appendChild(this.element);
 
-    /*
-     * Performance: Use a document fragment to build the terminal
-     * viewport and helper elements detached from the DOM
-     */
+    // Performance: Use a document fragment to build the terminal
+    // viewport and helper elements detached from the DOM
     const fragment = this._document.createDocumentFragment();
     this._viewportElement = this._document.createElement('div');
     this._viewportElement.classList.add('xterm-viewport');
@@ -491,10 +477,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.screenElement = this._document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
     this._register(addDisposableListener(this.screenElement, 'mousemove', (ev: MouseEvent) => this.updateCursorStyle(ev)));
-    /*
-     * Create the container that will hold helpers like the textarea for
-     * capturing DOM Events. Then produce the helpers.
-     */
+    // Create the container that will hold helpers like the textarea for
+    // capturing DOM Events. Then produce the helpers.
     this._helperContainer = this._document.createElement('div');
     this._helperContainer.classList.add('xterm-helpers');
     this.screenElement.appendChild(this._helperContainer);
@@ -504,10 +488,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel.get());
     if (!Browser.isChromeOS) {
-      /*
-       * ChromeVox on ChromeOS does not like this. See
-       * https://issuetracker.google.com/issues/260170397
-       */
+      // ChromeVox on ChromeOS does not like this. See
+      // https://issuetracker.google.com/issues/260170397
       this.textarea.setAttribute('aria-multiline', 'false');
     }
     this.textarea.setAttribute('autocorrect', 'off');
@@ -517,10 +499,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(this.optionsService.onSpecificOptionChange('disableStdin', () => textarea.readOnly = this.optionsService.rawOptions.disableStdin));
     this.textarea.readOnly = this.optionsService.rawOptions.disableStdin;
 
-    /*
-     * Register the core browser service before the generic textarea handlers are registered so it
-     * handles them first. Otherwise the renderers may use the wrong focus state.
-     */
+    // Register the core browser service before the generic textarea handlers are registered so it
+    // handles them first. Otherwise the renderers may use the wrong focus state.
     this._coreBrowserService = this._register(this._instantiationService.createInstance(CoreBrowserService,
       this.textarea,
       parent.ownerDocument.defaultView ?? window,
@@ -618,11 +598,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(this._selectionService.onSelectionChange(() => this._onSelectionChange.fire()));
     this._register(this._selectionService.onRequestRedraw(e => this._renderService!.handleSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this._register(this._selectionService.onLinuxMouseSelection(text => {
-      /*
-       * If there's a new selection, put it into the textarea, focus and select it
-       * in order to register it as a selection on the OS. This event is fired
-       * only on Linux to enable middle click to paste selection.
-       */
+      // If there's a new selection, put it into the textarea, focus and select it
+      // in order to register it as a selection on the OS. This event is fired
+      // only on Linux to enable middle click to paste selection.
       this.textarea!.value = text;
       this.textarea!.focus();
       this.textarea!.select();
@@ -647,10 +625,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
 
     if (this.options.screenReaderMode) {
-      /*
-       * Note that this must be done *after* the renderer is created in order to
-       * ensure the correct order of the dprchange event
-       */
+      // Note that this must be done *after* the renderer is created in order to
+      // ensure the correct order of the dprchange event
       this._accessibilityManager.value = this._instantiationService.createInstance(AccessibilityManager, this);
     }
     this._register(this.optionsService.onSpecificOptionChange('screenReaderMode', e => this._handleScreenReaderModeOptionChange(e)));
@@ -675,10 +651,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Initialize global actions that need to be taken on the document.
     this._initGlobal();
 
-    /*
-     * Listen for mouse events and translate
-     * them into terminal mouse protocols.
-     */
+    // Listen for mouse events and translate
+    // them into terminal mouse protocols.
     this._mouseService.bindMouse({
       element: this.element!,
       screenElement: this.screenElement!,
@@ -918,11 +892,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
-    /*
-     * HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
-     * letters cannot be input while caps lock is on. Skip this hack when using kitty protocol
-     * or Win32 input mode as they need to send proper sequences for all key events.
-     */
+    // HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
+    // letters cannot be input while caps lock is on. Skip this hack when using kitty protocol
+    // or Win32 input mode as they need to send proper sequences for all key events.
     if (!this._keyboardService.useKitty && !this._keyboardService.useWin32InputMode && event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
       if (event.key.charCodeAt(0) >= 65 && event.key.charCodeAt(0) <= 90) {
         return true;
@@ -934,11 +906,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
-    /*
-     * If ctrl+c or enter is being sent, clear out the textarea. This is done so that screen readers
-     * will announce deleted characters. This will not work 100% of the time but it should cover
-     * most scenarios.
-     */
+    // If ctrl+c or enter is being sent, clear out the textarea. This is done so that screen readers
+    // will announce deleted characters. This will not work 100% of the time but it should cover
+    // most scenarios.
     if (result.key === C0.ETX || result.key === C0.CR) {
       this.textarea!.value = '';
     }
@@ -948,12 +918,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._showCursor();
     this.coreService.triggerDataEvent(result.key, !wasModifierOnly);
 
-    /*
-     * Cancel events when not in screen reader mode so events don't get bubbled up and handled by
-     * other listeners. When screen reader mode is enabled, we don't cancel them (unless ctrl or alt
-     * is also depressed) so that the cursor textarea can be updated, which triggers the screen
-     * reader to read it.
-     */
+    // Cancel events when not in screen reader mode so events don't get bubbled up and handled by
+    // other listeners. When screen reader mode is enabled, we don't cancel them (unless ctrl or alt
+    // is also depressed) so that the cursor textarea can be updated, which triggers the screen
+    // reader to read it.
     if (!this.optionsService.rawOptions.screenReaderMode || event.altKey || event.ctrlKey) {
       event.preventDefault();
       event.stopPropagation();
@@ -1042,10 +1010,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._keyPressHandled = true;
 
-    /*
-     * The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
-     * keys could be ignored
-     */
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored
     this._unprocessedDeadKey = false;
 
     return true;
@@ -1058,20 +1024,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
-    /*
-     * Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
-     * support reading out character input which can doubling up input characters
-     * Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
-     */
+    // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
+    // support reading out character input which can doubling up input characters
+    // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
     if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen) && !this.optionsService.rawOptions.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }
 
-      /*
-       * The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
-       * keys could be ignored
-       */
+      // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+      // keys could be ignored
       this._unprocessedDeadKey = false;
 
       const text = ev.data;
@@ -1121,10 +1083,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     for (let i = 1; i < this.rows; i++) {
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
-    /*
-     * IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
-     * scroll event and that the viewport's state will be valid for immediate writes.
-     */
+    // IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
+    // scroll event and that the viewport's state will be valid for immediate writes.
     this._onScroll.fire({ position: this.buffer.ydisp });
     this.refresh(0, this.rows - 1);
   }

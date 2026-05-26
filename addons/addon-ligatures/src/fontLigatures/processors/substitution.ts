@@ -49,10 +49,8 @@ export function getIndividualSubstitutionGlyph(table: SubstitutionTable, glyphId
   switch (table.substFormat) {
     // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#11-single-substitution-format-1
     case 1:
-      /*
-       * TODO: determine if there's a rhyme or reason to the 16-bit
-       * wraparound and if it can ever be a different number
-       */
+      // TODO: determine if there's a rhyme or reason to the 16-bit
+      // wraparound and if it can ever be a different number
       return (glyphId + table.deltaGlyphId) % (2 ** 16);
     // https://docs.microsoft.com/en-us/typography/opentype/spec/gsub#12-single-substitution-format-2
     case 2:

@@ -66,13 +66,11 @@ export class AddonProgressWindow extends BaseWindow implements IControlWindow {
     const colors = { 0: '', 1: 'green', 2: 'red', 3: '', 4: 'yellow' };
 
     function progressHandler({ state, value }: IProgressState): void {
-      /*
-       * Simulate windows taskbar hack by windows terminal:
-       * Since the taskbar has no means to indicate error/pause state other than by coloring
-       * the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
-       * NOTE: This is most likely not what you want to do for other progress indicators,
-       *       that have a proper visual state for error/paused.
-       */
+      // Simulate windows taskbar hack by windows terminal:
+      // Since the taskbar has no means to indicate error/pause state other than by coloring
+      // the current progress, we move 0 to 10% and distribute higher values in the remaining 90 %
+      // NOTE: This is most likely not what you want to do for other progress indicators,
+      //       that have a proper visual state for error/paused.
       value = Math.min(10 + value * 0.9, 100);
       document.getElementById('progress-percent')!.style.width = `${value}%`;
       document.getElementById('progress-percent')!.style.backgroundColor = colors[state];

@@ -154,10 +154,8 @@ export class ImageStorage implements IDisposable {
     for (const spec of this._images.values()) {
       spec.marker?.dispose();
     }
-    /*
-     * NOTE: marker.dispose above already calls ImageBitmap.close
-     * therefore we can just wipe the map here
-     */
+    // NOTE: marker.dispose above already calls ImageBitmap.close
+    // therefore we can just wipe the map here
     this._images.clear();
     this._renderer.clearAll();
   }
@@ -308,10 +306,8 @@ export class ImageStorage implements IDisposable {
       this._delImg(id);
     }
 
-    /*
-     * eviction marker:
-     * delete the image when the marker gets disposed
-     */
+    // eviction marker:
+    // delete the image when the marker gets disposed
     const endMarker = this._terminal.registerMarker(0);
     endMarker?.onDispose(() => {
       const spec = this._images.get(imageId);
@@ -320,10 +316,8 @@ export class ImageStorage implements IDisposable {
       }
     });
 
-    /*
-     * since markers do not work on alternate for some reason,
-     * we evict images here manually
-     */
+    // since markers do not work on alternate for some reason,
+    // we evict images here manually
     if (this._terminal.buffer.active.type === 'alternate') {
       this._evictOnAlternate();
     }
@@ -422,12 +416,10 @@ export class ImageStorage implements IDisposable {
     const drawCalls: { imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number }[] = [];
     const placeholderCalls: { col: number, row: number, count: number }[] = [];
 
-    /*
-     * walk all cells in viewport and collect tiles found
-     * Note: We check _extendedAttrs directly (not just HAS_EXTENDED flag)
-     * because text writes clear the BG flag but leave image tile data intact.
-     * This lets top-layer images survive text overwrites (kitty C=1 behavior).
-     */
+    // walk all cells in viewport and collect tiles found
+    // Note: We check _extendedAttrs directly (not just HAS_EXTENDED flag)
+    // because text writes clear the BG flag but leave image tile data intact.
+    // This lets top-layer images survive text overwrites (kitty C=1 behavior).
     for (let row = start; row <= end; ++row) {
       const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
       if (!line) return;
@@ -500,10 +492,8 @@ export class ImageStorage implements IDisposable {
       return;
     }
 
-    /*
-     * handle only viewport width enlargements, exit all other cases
-     * TODO: needs patch for tile counter
-     */
+    // handle only viewport width enlargements, exit all other cases
+    // TODO: needs patch for tile counter
     if (this._viewportMetrics.cols >= metrics.cols) {
       this._viewportMetrics = metrics;
       return;
@@ -591,10 +581,8 @@ export class ImageStorage implements IDisposable {
     }
   }
 
-  /*
-   * TODO: Do we need some blob offloading tricks here to avoid early eviction?
-   * also see https://stackoverflow.com/questions/28307789/is-there-any-limitation-on-javascript-max-blob-size
-   */
+  // TODO: Do we need some blob offloading tricks here to avoid early eviction?
+  // also see https://stackoverflow.com/questions/28307789/is-there-any-limitation-on-javascript-max-blob-size
   private _evictOldest(room: number): number {
     const used = this._getStoredPixels();
     let current = used;
@@ -617,11 +605,9 @@ export class ImageStorage implements IDisposable {
       const old = line._extendedAttrs[x];
       if (old) {
         if (old.imageId !== undefined) {
-          /*
-           * found an old ExtendedAttrsImage, since we know that
-           * they are always isolated instances (single cell usage),
-           * we can re-use it and just update their id entries
-           */
+          // found an old ExtendedAttrsImage, since we know that
+          // they are always isolated instances (single cell usage),
+          // we can re-use it and just update their id entries
           const oldSpec = this._images.get(old.imageId);
           if (oldSpec) {
             // early eviction for in-viewport overwrites

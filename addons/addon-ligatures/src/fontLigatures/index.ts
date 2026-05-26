@@ -88,11 +88,9 @@ class FontImpl implements IFont {
       glyphIds.push(this._font.charToGlyphIndex(char));
     }
 
-    /*
-     * If there are no lookup groups, there's no point looking for
-     * replacements. This gives us a minor performance boost for fonts with
-     * no ligatures
-     */
+    // If there are no lookup groups, there's no point looking for
+    // replacements. This gives us a minor performance boost for fonts with
+    // no ligatures
     if (this._lookupTrees.length === 0) {
       return {
         inputGlyphs: glyphIds,
@@ -115,10 +113,8 @@ class FontImpl implements IFont {
   }
 
   public findLigatureRanges(text: string): [number, number][] {
-    /*
-     * Short circuit the process if there are no possible ligatures in the
-     * font
-     */
+    // Short circuit the process if there are no possible ligatures in the
+    // font
     if (this._lookupTrees.length === 0) {
       return [];
     }
@@ -174,11 +170,9 @@ class FontImpl implements IFont {
           }
         }
       } else {
-        /*
-         * We don't need to do the lastGlyphIndex tracking here because
-         * reverse processing isn't allowed to replace more than one
-         * character at a time.
-         */
+        // We don't need to do the lastGlyphIndex tracking here because
+        // reverse processing isn't allowed to replace more than one
+        // character at a time.
         for (let i = nextLookup.last - 1; i >= nextLookup.first; i--) {
           const result = walkTree(lookup.tree, sequence, i, i);
           if (result) {
@@ -230,10 +224,8 @@ class FontImpl implements IFont {
       for (let j = 0; j < lookups.length; j++) {
         const lookupIndex = lookups[j];
         if (lookupIndex >= start) {
-          /*
-           * Update the lookup information if it's the one we're
-           * storing or earlier than it.
-           */
+          // Update the lookup information if it's the one we're
+          // storing or earlier than it.
           if (result.index === null || lookupIndex <= result.index) {
             result.index = lookupIndex;
 

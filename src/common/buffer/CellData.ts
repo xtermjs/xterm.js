@@ -65,10 +65,8 @@ export class CellData extends AttributeData implements ICellData {
     }
     else if (value[CHAR_DATA_CHAR_INDEX].length === 2) {
       const code = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
-      /*
-       * if the 2-char string is a surrogate create single codepoint
-       * everything else is combined
-       */
+      // if the 2-char string is a surrogate create single codepoint
+      // everything else is combined
       if (0xD800 <= code && code <= 0xDBFF) {
         const second = value[CHAR_DATA_CHAR_INDEX].charCodeAt(1);
         if (0xDC00 <= second && second <= 0xDFFF) {

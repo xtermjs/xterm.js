@@ -87,17 +87,13 @@ export class CursorBlinkStateManager {
       this._blinkInterval = undefined;
     }
 
-    /*
-     * Setup the initial timeout which will hide the cursor, this is done before
-     * the regular interval is setup in order to support restarting the blink
-     * animation in a lightweight way (without thrashing clearInterval and
-     * setInterval).
-     */
+    // Setup the initial timeout which will hide the cursor, this is done before
+    // the regular interval is setup in order to support restarting the blink
+    // animation in a lightweight way (without thrashing clearInterval and
+    // setInterval).
     this._blinkStartTimeout = this._coreBrowserService.window.setTimeout(() => {
-      /*
-       * Check if another animation restart was requested while this was being
-       * started
-       */
+      // Check if another animation restart was requested while this was being
+      // started
       if (this._animationTimeRestarted) {
         const time = Constants.BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
         this._animationTimeRestarted = undefined;
@@ -118,10 +114,8 @@ export class CursorBlinkStateManager {
       this._blinkInterval = this._coreBrowserService.window.setInterval(() => {
         // Adjust the animation time if it was restarted
         if (this._animationTimeRestarted) {
-          /*
-           * calc time diff
-           * Make restart interval do a setTimeout initially?
-           */
+          // calc time diff
+          // Make restart interval do a setTimeout initially?
           const time = Constants.BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
           this._animationTimeRestarted = undefined;
           this._restartInterval(time);

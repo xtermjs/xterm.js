@@ -459,10 +459,8 @@ export async function openTerminal(
     } catch {}
   }
   `);
-  /*
-   * HACK: Tests may have side effects that could cause the terminal not to be removed. This
-   *       assertion catches this case early.
-   */
+  // HACK: Tests may have side effects that could cause the terminal not to be removed. This
+  //       assertion catches this case early.
   strictEqual(await ctx.page.evaluate(`document.querySelector('#terminal-container').children.length`), 0, 'there must be no terminals on the page');
 
   let script = `
@@ -503,10 +501,8 @@ export async function openTerminal(
 
   await ctx.page.evaluate(script);
 
-  /*
-   * HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
-   * more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
-   */
+  // HACK: This is a soft layer breaker that's temporarily included until unicode graphemes have
+  // more complete integration tests. See https://github.com/xtermjs/xterm.js/pull/4519#discussion_r1285234453
   if (testOptions.loadUnicodeGraphemesAddon) {
     await ctx.page.evaluate(`
       window.unicode = new UnicodeGraphemesAddon();

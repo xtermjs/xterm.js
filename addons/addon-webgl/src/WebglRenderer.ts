@@ -84,11 +84,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
   ) {
     super();
 
-    /*
-     * IMPORTANT: Canvas initialization and fetching of the context must be first in order to
-     * prevent possible listeners leaking and continuing to operate after the WebglRenderer has been
-     * discarded.
-     */
+    // IMPORTANT: Canvas initialization and fetching of the context must be first in order to
+    // prevent possible listeners leaking and continuing to operate after the WebglRenderer has been
+    // discarded.
     this._canvas = this._coreBrowserService.mainDocument.createElement('canvas');
     const contextAttributes = {
       antialias: false,
@@ -127,10 +125,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       console.log('webglcontextlost event received');
       // Prevent the default behavior in order to enable WebGL context restoration.
       e.preventDefault();
-      /*
-       * Wait a few seconds to see if the 'webglcontextrestored' event is fired.
-       * If not, dispatch the onContextLoss notification to observers.
-       */
+      // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
+      // If not, dispatch the onContextLoss notification to observers.
       this._contextRestorationTimeout = setTimeout(() => {
         this._contextRestorationTimeout = undefined;
         console.warn('webgl context not restored; firing onContextLoss');
@@ -141,10 +137,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       console.warn('webglcontextrestored event received');
       clearTimeout(this._contextRestorationTimeout);
       this._contextRestorationTimeout = undefined;
-      /*
-       * The texture atlas and glyph renderer must be fully reinitialized
-       * because their contents have been lost.
-       */
+      // The texture atlas and glyph renderer must be fully reinitialized
+      // because their contents have been lost.
       removeTerminalFromCache(this._terminal);
       this._initializeWebGLState();
       this._requestRedrawViewport();
@@ -184,10 +178,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public handleDevicePixelRatioChange(): void {
-    /*
-     * If the device pixel ratio changed, the char atlas needs to be regenerated
-     * and the terminal needs to refreshed
-     */
+    // If the device pixel ratio changed, the char atlas needs to be regenerated
+    // and the terminal needs to refreshed
     if (this._devicePixelRatio !== this._coreBrowserService.dpr) {
       this._devicePixelRatio = this._coreBrowserService.dpr;
       this.handleResize(this._terminal.cols, this._terminal.rows);
@@ -223,10 +215,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._refreshCharAtlas();
 
-    /*
-     * Force a full refresh. Resizing `_glyphRenderer` should clear it already,
-     * so there is no need to clear it again here.
-     */
+    // Force a full refresh. Resizing `_glyphRenderer` should clear it already,
+    // so there is no need to clear it again here.
     this._clearModel(false);
 
     // Render synchronously to avoid flicker when the canvas is cleared
@@ -378,11 +368,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    /*
-     * Tell renderer the frame is beginning
-     * upon a model clear also refresh the full viewport model
-     * (also triggered by an atlas page merge, part of #4480)
-     */
+    // Tell renderer the frame is beginning
+    // upon a model clear also refresh the full viewport model
+    // (also triggered by an atlas page merge, part of #4480)
     if (this._glyphRenderer.value.beginFrame()) {
       this._clearModel(true);
       this._updateModel(0, this._terminal.rows - 1);
@@ -391,10 +379,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._updateModel(start, end);
     }
 
-    /*
-     * A mid-update atlas page merge invalidates vertex data and may not bump the host
-     * page's version, so re-run the update and force a full texture rebind.
-     */
+    // A mid-update atlas page merge invalidates vertex data and may not bump the host
+    // page's version, so re-run the update and force a full texture rebind.
     let merged = false;
     let mergeRetries = 0;
     while (this._charAtlas && this._glyphRenderer.value.beginFrame() && mergeRetries++ < Constants.MERGE_RETRY_LIMIT) {
@@ -422,10 +408,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     } else {
       this._cursorBlinkStateManager.clear();
     }
-    /*
-     * Request a refresh from the terminal as management of rendering is being
-     * moved back to the terminal
-     */
+    // Request a refresh from the terminal as management of rendering is being
+    // moved back to the terminal
     this._requestRedrawCursor();
   }
 
@@ -486,26 +470,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
         // If true, indicates that the current character(s) to draw were joined.
         isJoined = false;
 
-        /*
-         * Indicates whether this cell is part of a joined range that should be ignored as it cannot
-         * be rendered entirely, like the selection state differs across the range.
-         */
+        // Indicates whether this cell is part of a joined range that should be ignored as it cannot
+        // be rendered entirely, like the selection state differs across the range.
         isValidJoinRange = (x >= skipJoinedCheckUntilX);
 
         lastCharX = x;
 
-        /*
-         * Process any joined character ranges as needed. Because of how the
-         * ranges are produced, we know that they are valid for the characters
-         * and attributes of our input.
-         */
+        // Process any joined character ranges as needed. Because of how the
+        // ranges are produced, we know that they are valid for the characters
+        // and attributes of our input.
         if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
           range = joinedRanges.shift()!;
 
-          /*
-           * If the ligature's selection state is not consistent, don't join it. This helps the
-           * selection render correctly regardless whether they should be joined.
-           */
+          // If the ligature's selection state is not consistent, don't join it. This helps the
+          // selection render correctly regardless whether they should be joined.
           const firstSelectionState = this._model.selection.isCellSelected(this._terminal, range[0], row);
           for (i = range[0] + 1; i < range[1]; i++) {
             isValidJoinRange &&= (firstSelectionState === this._model.selection.isCellSelected(this._terminal, i, row));
@@ -517,10 +495,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
           } else {
             isJoined = true;
 
-            /*
-             * We already know the exact start and end column of the joined range,
-             * so we get the string and width representing it directly.
-             */
+            // We already know the exact start and end column of the joined range,
+            // so we get the string and width representing it directly.
             cell = new JoinedCellData(
               cell,
               line!.translateToString(true, range[0], range[1]),
@@ -610,10 +586,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
             j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
             this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
             this._model.cells[j] = NULL_CELL_CODE;
-            /*
-             * Don't re-resolve the cell color since multi-colored ligature backgrounds are not
-             * supported
-             */
+            // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
+            // supported
             this._model.cells[j + RenderModelConstants.BG_OFFSET] = this._cellColorResolver.result.bg;
             this._model.cells[j + RenderModelConstants.FG_OFFSET] = this._cellColorResolver.result.fg;
             this._model.cells[j + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
@@ -657,64 +631,48 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    /*
-     * Calculate the device character width. Width is floored as it must be drawn to an integer grid
-     * in order for the char atlas glyphs to not be blurry.
-     */
+    // Calculate the device character width. Width is floored as it must be drawn to an integer grid
+    // in order for the char atlas glyphs to not be blurry.
     this.dimensions.device.char.width = Math.floor(this._charSizeService.width * this._devicePixelRatio);
 
-    /*
-     * Calculate the device character height. Height is ceiled in case devicePixelRatio is a
-     * floating point number in order to ensure there is enough space to draw the character to the
-     * cell.
-     */
+    // Calculate the device character height. Height is ceiled in case devicePixelRatio is a
+    // floating point number in order to ensure there is enough space to draw the character to the
+    // cell.
     this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * this._devicePixelRatio);
 
-    /*
-     * Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
-     * floored since lineHeight can never be lower then 1, this guarentees the device cell height
-     * will always be larger than device char height.
-     */
+    // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
+    // floored since lineHeight can never be lower then 1, this guarentees the device cell height
+    // will always be larger than device char height.
     this.dimensions.device.cell.height = Math.floor(this.dimensions.device.char.height * this._optionsService.rawOptions.lineHeight);
 
-    /*
-     * Calculate the y offset within a cell that glyph should draw at in order for it to be centered
-     * correctly within the cell.
-     */
+    // Calculate the y offset within a cell that glyph should draw at in order for it to be centered
+    // correctly within the cell.
     this.dimensions.device.char.top = this._optionsService.rawOptions.lineHeight === 1 ? 0 : Math.round((this.dimensions.device.cell.height - this.dimensions.device.char.height) / 2);
 
     // Calculate the device cell width, taking the letterSpacing into account.
     this.dimensions.device.cell.width = this.dimensions.device.char.width + Math.round(this._optionsService.rawOptions.letterSpacing);
 
-    /*
-     * Calculate the x offset with a cell that text should draw from in order for it to be centered
-     * correctly within the cell.
-     */
+    // Calculate the x offset with a cell that text should draw from in order for it to be centered
+    // correctly within the cell.
     this.dimensions.device.char.left = Math.floor(this._optionsService.rawOptions.letterSpacing / 2);
 
-    /*
-     * Recalculate the canvas dimensions, the device dimensions define the actual number of pixel in
-     * the canvas
-     */
+    // Recalculate the canvas dimensions, the device dimensions define the actual number of pixel in
+    // the canvas
     this.dimensions.device.canvas.height = this._terminal.rows * this.dimensions.device.cell.height;
     this.dimensions.device.canvas.width = this._terminal.cols * this.dimensions.device.cell.width;
 
-    /*
-     * The the size of the canvas on the page. It's important that this rounds to nearest integer
-     * and not ceils as browsers often have floating point precision issues where
-     * `window.devicePixelRatio` ends up being something like `1.100000023841858` for example, when
-     * it's actually 1.1. Ceiling may causes blurriness as the backing canvas image is 1 pixel too
-     * large for the canvas element size.
-     */
+    // The the size of the canvas on the page. It's important that this rounds to nearest integer
+    // and not ceils as browsers often have floating point precision issues where
+    // `window.devicePixelRatio` ends up being something like `1.100000023841858` for example, when
+    // it's actually 1.1. Ceiling may causes blurriness as the backing canvas image is 1 pixel too
+    // large for the canvas element size.
     this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / this._devicePixelRatio);
     this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / this._devicePixelRatio);
 
-    /*
-     * Get the CSS dimensions of an individual cell. This needs to be derived from the calculated
-     * device pixel canvas value above. CharMeasure.width/height by itself is insufficient when the
-     * page is not at 100% zoom level as CharMeasure is measured in CSS pixels, but the actual char
-     * size on the canvas can differ.
-     */
+    // Get the CSS dimensions of an individual cell. This needs to be derived from the calculated
+    // device pixel canvas value above. CharMeasure.width/height by itself is insufficient when the
+    // page is not at 100% zoom level as CharMeasure is measured in CSS pixels, but the actual char
+    // size on the canvas can differ.
     this.dimensions.css.cell.height = this.dimensions.device.cell.height / this._devicePixelRatio;
     this.dimensions.css.cell.width = this.dimensions.device.cell.width / this._devicePixelRatio;
   }
@@ -723,10 +681,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (this._canvas.width === width && this._canvas.height === height) {
       return;
     }
-    /*
-     * While the actual canvas size has changed, keep device canvas dimensions as the value before
-     * the change as it's an exact multiple of the cell sizes.
-     */
+    // While the actual canvas size has changed, keep device canvas dimensions as the value before
+    // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
     this._canvas.height = height;
     // Render synchronously to avoid flicker when the canvas is cleared
@@ -746,10 +702,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 // TODO: Share impl with core
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
-  /*
-   * .content carries no meaning for joined CellData, simply nullify it
-   * thus we have to overload all other .content accessors
-   */
+  // .content carries no meaning for joined CellData, simply nullify it
+  // thus we have to overload all other .content accessors
   public content: number = 0;
   public fg: number;
   public bg: number;
@@ -777,10 +731,8 @@ export class JoinedCellData extends AttributeData implements ICellData {
   }
 
   public getCode(): number {
-    /*
-     * code always gets the highest possible fake codepoint (read as -1)
-     * this is needed as code is used by caches as identifier
-     */
+    // code always gets the highest possible fake codepoint (read as -1)
+    // this is needed as code is used by caches as identifier
     return 0x1FFFFF;
   }
 

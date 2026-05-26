@@ -23,10 +23,8 @@ export interface INewLayoutResult {
  * @param reflowCursorLine Whether to reflow the line containing the cursor.
  */
 export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData, reflowCursorLine: boolean): number[] {
-  /*
-   * Gather all BufferLines that need to be removed from the Buffer here so that they can be
-   * batched up and only committed once
-   */
+  // Gather all BufferLines that need to be removed from the Buffer here so that they can be
+  // batched up and only committed once
   const toRemove: number[] = [];
 
   for (let y = 0; y < lines.length - 1; y++) {
@@ -45,10 +43,8 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
     }
 
     if (!reflowCursorLine) {
-      /*
-       * If these lines contain the cursor don't touch them, the program will handle fixing up
-       * wrapped lines with the cursor
-       */
+      // If these lines contain the cursor don't touch them, the program will handle fixing up
+      // wrapped lines with the cursor
       if (bufferAbsoluteY >= y && bufferAbsoluteY < i) {
         y += wrappedLines.length - 1;
         continue;
@@ -184,10 +180,8 @@ export function reflowSmallerGetNewLineLengths(wrappedLines: BufferLine[], oldCo
   const newLineLengths: number[] = [];
   const cellsNeeded = wrappedLines.map((l, i) => getWrappedLineTrimmedLength(wrappedLines, i, oldCols)).reduce((p, c) => p + c);
 
-  /*
-   * Use srcCol and srcLine to find the new wrapping point, use that to get the cellsAvailable and
-   * linesNeeded
-   */
+  // Use srcCol and srcLine to find the new wrapping point, use that to get the cellsAvailable and
+  // linesNeeded
   let srcCol = 0;
   let srcLine = 0;
   let cellsAvailable = 0;
@@ -220,11 +214,9 @@ export function getWrappedLineTrimmedLength(lines: BufferLine[], i: number, cols
   if (i === lines.length - 1) {
     return lines[i].getTrimmedLength();
   }
-  /*
-   * Detect whether the following line starts with a wide character and the end of the current line
-   * is null, if so then we can be pretty sure the null character should be excluded from the line
-   * length]
-   */
+  // Detect whether the following line starts with a wide character and the end of the current line
+  // is null, if so then we can be pretty sure the null character should be excluded from the line
+  // length]
   const endsInNull = !(lines[i].hasContent(cols - 1)) && lines[i].getWidth(cols - 1) === 1;
   const followingLineStartsWithWide = lines[i + 1].getWidth(0) === 2;
   if (endsInNull && followingLineStartsWithWide) {

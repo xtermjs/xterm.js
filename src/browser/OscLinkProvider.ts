@@ -33,10 +33,8 @@ export class OscLinkProvider implements ILinkProvider {
     let currentStart = -1;
     let finishLink = false;
     for (let x = 0; x < lineLength; x++) {
-      /*
-       * Minor optimization, only check for content if there isn't a link in case the link ends with
-       * a null cell
-       */
+      // Minor optimization, only check for content if there isn't a link in case the link ends with
+      // a null cell
       if (currentStart === -1 && !line.hasContent(x)) {
         continue;
       }
@@ -109,10 +107,8 @@ export class OscLinkProvider implements ILinkProvider {
       }
     }
 
-    /*
-     * TODO: Handle fetching and returning other link ranges to underline other links with the same
-     *       id
-     */
+    // TODO: Handle fetching and returning other link ranges to underline other links with the same
+    //       id
     callback(result);
   }
 }

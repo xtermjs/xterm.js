@@ -197,12 +197,10 @@ export class ImageRenderer extends Disposable implements IDisposable {
     const finalWidth = count * width + sx > img.width ? img.width - sx : count * width;
     const finalHeight = sy + height > img.height ? img.height - sy : height;
 
-    /*
-     * Floor all pixel offsets to get stable tile mapping without any overflows.
-     * Note: For not pixel perfect aligned cells like in the DOM renderer
-     * this will move a tile slightly to the top/left (subpixel range, thus ignore it).
-     * FIX #34: avoid striping on displays with pixelDeviceRatio != 1 by ceiling height and width
-     */
+    // Floor all pixel offsets to get stable tile mapping without any overflows.
+    // Note: For not pixel perfect aligned cells like in the DOM renderer
+    // this will move a tile slightly to the top/left (subpixel range, thus ignore it).
+    // FIX #34: avoid striping on displays with pixelDeviceRatio != 1 by ceiling height and width
     ctx.drawImage(
       img,
       Math.floor(sx), Math.floor(sy), Math.ceil(finalWidth), Math.ceil(finalHeight),
@@ -344,27 +342,21 @@ export class ImageRenderer extends Disposable implements IDisposable {
     );
     canvas.classList.add(`xterm-image-layer-${layer}`);
     const screenElement = this._terminal._core.screenElement;
-    /*
-     * Use isolation to create a stacking context without overriding z-index,
-     * which would conflict with integrators (e.g. VS Code) that set their
-     * own z-index on the screen element.
-     */
+    // Use isolation to create a stacking context without overriding z-index,
+    // which would conflict with integrators (e.g. VS Code) that set their
+    // own z-index on the screen element.
     screenElement.style.isolation = 'isolate';
     if (layer === 'bottom') {
-      /*
-       * Use z-index:-1 so it paints behind non-positioned text elements.
-       * The screen element needs to be a stacking context (via isolation)
-       * to contain the negative z-index, otherwise it would go behind the
-       * entire terminal.
-       */
+      // Use z-index:-1 so it paints behind non-positioned text elements.
+      // The screen element needs to be a stacking context (via isolation)
+      // to contain the negative z-index, otherwise it would go behind the
+      // entire terminal.
       canvas.style.zIndex = '-1';
       screenElement.insertBefore(canvas, screenElement.firstChild);
     } else {
-      /*
-       * Explicit z-index ensures the image canvas reliably stacks above
-       * the text layer (DOM renderer rows). z-index: 0 is below the
-       * selection overlay (z-index: 1).
-       */
+      // Explicit z-index ensures the image canvas reliably stacks above
+      // the text layer (DOM renderer rows). z-index: 0 is below the
+      // selection overlay (z-index: 1).
       canvas.style.zIndex = '0';
       screenElement.appendChild(canvas);
     }

@@ -137,13 +137,11 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
 
     // enable size reports
     if (this._opts.enableSizeReports) {
-      /*
-       * const windowOptions = terminal.getOption('windowOptions');
-       * windowOptions.getWinSizePixels = true;
-       * windowOptions.getCellSizePixels = true;
-       * windowOptions.getWinSizeChars = true;
-       * terminal.setOption('windowOptions', windowOptions);
-       */
+      // const windowOptions = terminal.getOption('windowOptions');
+      // windowOptions.getWinSizePixels = true;
+      // windowOptions.getCellSizePixels = true;
+      // windowOptions.getWinSizeChars = true;
+      // terminal.setOption('windowOptions', windowOptions);
       const windowOps = terminal.options.windowOptions ?? {};
       windowOps.getWinSizePixels = true;
       windowOps.getCellSizePixels = true;
@@ -292,13 +290,11 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
     if (params[0]) {
       return true;
     }
-    /*
-     * reported features:
-     * 62 - VT220
-     * 4 - SIXEL support
-     * 9 - charsets
-     * 22 - ANSI colors
-     */
+    // reported features:
+    // 62 - VT220
+    // 4 - SIXEL support
+    // 9 - charsets
+    // 22 - ANSI colors
     if (this._opts.sixelSupport) {
       this._report(`\x1b[?62;4;9;22c`);
       return true;
@@ -356,10 +352,8 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
           let width = this._renderer?.dimensions?.css.canvas.width;
           let height = this._renderer?.dimensions?.css.canvas.height;
           if (!width || !height) {
-            /*
-             * for some reason we have no working image renderer
-             * --> fallback to default cell size
-             */
+            // for some reason we have no working image renderer
+            // --> fallback to default cell size
             const cellSize = CELL_SIZE_DEFAULT;
             width = (this._terminal?.cols || 80) * cellSize.width;
             height = (this._terminal?.rows || 24) * cellSize.height;

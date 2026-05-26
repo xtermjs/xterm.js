@@ -169,25 +169,19 @@ export class Buffer extends Disposable implements IBuffer {
     // count bufferlines with overly big memory to be cleaned afterwards
     let dirtyMemoryLines = 0;
 
-    /*
-     * Increase max length if needed before adjustments to allow space to fill
-     * as required.
-     */
+    // Increase max length if needed before adjustments to allow space to fill
+    // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
     if (newMaxLength > this.lines.maxLength) {
       this.lines.maxLength = newMaxLength;
     }
 
-    /*
-     * if (this._cols > newCols) {
-     *   console.log('increase!');
-     * }
-     */
+    // if (this._cols > newCols) {
+    //   console.log('increase!');
+    // }
 
-    /*
-     * The following adjustments should only happen if the buffer has been
-     * initialized/filled.
-     */
+    // The following adjustments should only happen if the buffer has been
+    // initialized/filled.
     if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
@@ -203,17 +197,13 @@ export class Buffer extends Disposable implements IBuffer {
         for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
             if (this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
-              /*
-               * Just add the new missing rows on Windows as conpty reprints the screen with it's
-               * view of the world. Once a line enters scrollback for conpty it remains there
-               */
+              // Just add the new missing rows on Windows as conpty reprints the screen with it's
+              // view of the world. Once a line enters scrollback for conpty it remains there
               this.lines.push(new BufferLine(this._stringCache, newCols, nullCell, false));
             } else {
               if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
-                /*
-                 * There is room above the buffer and there are no empty elements below the line,
-                 * scroll up
-                 */
+                // There is room above the buffer and there are no empty elements below the line,
+                // scroll up
                 this.ybase--;
                 addToY++;
                 if (this.ydisp > 0) {
@@ -221,10 +211,8 @@ export class Buffer extends Disposable implements IBuffer {
                   this.ydisp--;
                 }
               } else {
-                /*
-                 * Add a blank line if there is no buffer left at the top to scroll to, or if there
-                 * are blank lines after the cursor
-                 */
+                // Add a blank line if there is no buffer left at the top to scroll to, or if there
+                // are blank lines after the cursor
                 this.lines.push(new BufferLine(this._stringCache, newCols, nullCell, false));
               }
             }
@@ -245,10 +233,8 @@ export class Buffer extends Disposable implements IBuffer {
         }
       }
 
-      /*
-       * Reduce max length if needed after adjustments, this is done after as it
-       * would otherwise cut data from the bottom of the buffer.
-       */
+      // Reduce max length if needed after adjustments, this is done after as it
+      // would otherwise cut data from the bottom of the buffer.
       if (newMaxLength < this.lines.maxLength) {
         // Trim from the top of the buffer and adjust ybase and ydisp.
         const amountToTrim = this.lines.length - newMaxLength;
@@ -289,10 +275,8 @@ export class Buffer extends Disposable implements IBuffer {
     this._cols = newCols;
     this._rows = newRows;
 
-    /*
-     * Ensure the cursor position invariant: ybase + y must be within buffer bounds
-     * This can be violated during reflow or when shrinking rows
-     */
+    // Ensure the cursor position invariant: ybase + y must be within buffer bounds
+    // This can be violated during reflow or when shrinking rows
     if (this.lines.length > 0) {
       const maxY = Math.max(0, this.lines.length - this.ybase - 1);
       this.y = Math.min(this.y, maxY);
@@ -309,10 +293,8 @@ export class Buffer extends Disposable implements IBuffer {
   private _batchedMemoryCleanup(): boolean {
     let normalRun = true;
     if (this._memoryCleanupPosition >= this.lines.length) {
-      /*
-       * cleanup made it once through all lines, thus rescan in loop below to also catch shifted
-       * lines, which should finish rather quick if there are no more cleanups pending
-       */
+      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted
+      // lines, which should finish rather quick if there are no more cleanups pending
       this._memoryCleanupPosition = 0;
       normalRun = false;
     }
@@ -324,11 +306,9 @@ export class Buffer extends Disposable implements IBuffer {
         return true;
       }
     }
-    /*
-     * normal runs always need another rescan afterwards
-     * if we made it here with normalRun=false, we are in a final run
-     * and can end the cleanup task for sure
-     */
+    // normal runs always need another rescan afterwards
+    // if we made it here with normalRun=false, we are in a final run
+    // and can end the cleanup task for sure
     return normalRun;
   }
 
@@ -389,10 +369,8 @@ export class Buffer extends Disposable implements IBuffer {
   private _reflowSmaller(newCols: number, newRows: number): void {
     const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
-    /*
-     * Gather all BufferLines that need to be inserted into the Buffer here so that they can be
-     * batched up and only committed once
-     */
+    // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
+    // batched up and only committed once
     const toInsert = [];
     let countToInsert = 0;
     // Go backwards as many lines may be trimmed and this will avoid considering them
@@ -411,10 +389,8 @@ export class Buffer extends Disposable implements IBuffer {
       }
 
       if (!reflowCursorLine) {
-        /*
-         * If these lines contain the cursor don't touch them, the program will handle fixing up
-         * wrapped lines with the cursor
-         */
+        // If these lines contain the cursor don't touch them, the program will handle fixing up
+        // wrapped lines with the cursor
         const absoluteY = this.ybase + this.y;
         if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
           continue;
@@ -440,10 +416,8 @@ export class Buffer extends Disposable implements IBuffer {
       }
       if (newLines.length > 0) {
         toInsert.push({
-          /*
-           * countToInsert here gets the actual index, taking into account other inserted items.
-           * using this we can iterate through the list forwards
-           */
+          // countToInsert here gets the actual index, taking into account other inserted items.
+          // using this we can iterate through the list forwards
           start: y + wrappedLines.length + countToInsert,
           newLines
         });
@@ -463,10 +437,8 @@ export class Buffer extends Disposable implements IBuffer {
       while (srcLineIndex >= 0) {
         const cellsToCopy = Math.min(srcCol, destCol);
         if (wrappedLines[destLineIndex] === undefined) {
-          /*
-           * Sanity check that the line exists, this has been known to fail for an unknown reason
-           * which would stop the reflow from happening if an exception would throw.
-           */
+          // Sanity check that the line exists, this has been known to fail for an unknown reason
+          // which would stop the reflow from happening if an exception would throw.
           break;
         }
         wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
@@ -514,16 +486,12 @@ export class Buffer extends Disposable implements IBuffer {
       this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
     }
 
-    /*
-     * Rearrange lines in the buffer if there are any insertions, this is done at the end rather
-     * than earlier so that it's a single O(n) pass through the buffer, instead of O(n^2) from many
-     * costly calls to CircularList.splice.
-     */
+    // Rearrange lines in the buffer if there are any insertions, this is done at the end rather
+    // than earlier so that it's a single O(n) pass through the buffer, instead of O(n^2) from many
+    // costly calls to CircularList.splice.
     if (toInsert.length > 0) {
-      /*
-       * Record buffer insert events and then play them back backwards so that the indexes are
-       * correct
-       */
+      // Record buffer insert events and then play them back backwards so that the indexes are
+      // correct
       const insertEvents: IInsertEvent[] = [];
 
       // Record original lines so they don't get overridden when we rearrange the list

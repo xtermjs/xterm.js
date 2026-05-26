@@ -78,20 +78,16 @@ export class UnicodeService implements IUnicodeService {
       // surrogate pair first
       if (0xD800 <= code && code <= 0xDBFF) {
         if (++i >= length) {
-          /*
-           * this should not happen with strings retrieved from
-           * Buffer.translateToString as it converts from UTF-32
-           * and therefore always should contain the second part
-           * for any other string we still have to handle it somehow:
-           * simply treat the lonely surrogate first as a single char (UCS-2 behavior)
-           */
+          // this should not happen with strings retrieved from
+          // Buffer.translateToString as it converts from UTF-32
+          // and therefore always should contain the second part
+          // for any other string we still have to handle it somehow:
+          // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
           return result + this.wcwidth(code);
         }
         const second = s.charCodeAt(i);
-        /*
-         * convert surrogate pair to high codepoint only for valid second part (UTF-16)
-         * otherwise treat them independently (UCS-2 behavior)
-         */
+        // convert surrogate pair to high codepoint only for valid second part (UTF-16)
+        // otherwise treat them independently (UCS-2 behavior)
         if (0xDC00 <= second && second <= 0xDFFF) {
           code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
         } else {

@@ -33,12 +33,10 @@ const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-':
 /**
  * Document xterm VT features here that are currently unsupported
  */
-/*
- * @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
- * @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
- * @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
- * @vt: #N  OSC   1           "Set Icon Name"           "OSC 1 ; Pt BEL"                "Set icon name."
- */
+// @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
+// @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
+// @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
+// @vt: #N  OSC   1           "Set Icon Name"           "OSC 1 ; Pt BEL"                "Set icon name."
 
 /**
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
@@ -290,17 +288,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerOscHandler(1, new OscHandler(data => this.setIconName(data)));
     //   2 - title
     this._parser.registerOscHandler(2, new OscHandler(data => this.setTitle(data)));
-    /*
-     *   3 - set property X in the form "prop=value"
-     *   4 - Change Color Number
-     */
+    //   3 - set property X in the form "prop=value"
+    //   4 - Change Color Number
     this._parser.registerOscHandler(4, new OscHandler(data => this.setOrReportIndexedColor(data)));
-    /*
-     *   5 - Change Special Color Number
-     *   6 - Enable/disable Special Color Number c
-     *   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
-     *   8 - create hyperlink (not in xterm spec, see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda)
-     */
+    //   5 - Change Special Color Number
+    //   6 - Enable/disable Special Color Number c
+    //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
+    //   8 - create hyperlink (not in xterm spec, see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda)
     this._parser.registerOscHandler(8, new OscHandler(data => this.setHyperlink(data)));
     //  10 - Change VT100 text foreground color to Pt.
     this._parser.registerOscHandler(10, new OscHandler(data => this.setOrReportFgColor(data)));
@@ -308,40 +302,34 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.registerOscHandler(11, new OscHandler(data => this.setOrReportBgColor(data)));
     //  12 - Change text cursor color to Pt.
     this._parser.registerOscHandler(12, new OscHandler(data => this.setOrReportCursorColor(data)));
-    /*
-     *  13 - Change mouse foreground color to Pt.
-     *  14 - Change mouse background color to Pt.
-     *  15 - Change Tektronix foreground color to Pt.
-     *  16 - Change Tektronix background color to Pt.
-     *  17 - Change highlight background color to Pt.
-     *  18 - Change Tektronix cursor color to Pt.
-     *  19 - Change highlight foreground color to Pt.
-     *  46 - Change Log File to Pt.
-     *  50 - Set Font to Pt.
-     *  51 - reserved for Emacs shell.
-     *  52 - Manipulate Selection Data.
-     * 104 ; c - Reset Color Number c.
-     */
+    //  13 - Change mouse foreground color to Pt.
+    //  14 - Change mouse background color to Pt.
+    //  15 - Change Tektronix foreground color to Pt.
+    //  16 - Change Tektronix background color to Pt.
+    //  17 - Change highlight background color to Pt.
+    //  18 - Change Tektronix cursor color to Pt.
+    //  19 - Change highlight foreground color to Pt.
+    //  46 - Change Log File to Pt.
+    //  50 - Set Font to Pt.
+    //  51 - reserved for Emacs shell.
+    //  52 - Manipulate Selection Data.
+    // 104 ; c - Reset Color Number c.
     this._parser.registerOscHandler(104, new OscHandler(data => this.restoreIndexedColor(data)));
-    /*
-     * 105 ; c - Reset Special Color Number c.
-     * 106 ; c; f - Enable/disable Special Color Number c.
-     * 110 - Reset VT100 text foreground color.
-     */
+    // 105 ; c - Reset Special Color Number c.
+    // 106 ; c; f - Enable/disable Special Color Number c.
+    // 110 - Reset VT100 text foreground color.
     this._parser.registerOscHandler(110, new OscHandler(data => this.restoreFgColor(data)));
     // 111 - Reset VT100 text background color.
     this._parser.registerOscHandler(111, new OscHandler(data => this.restoreBgColor(data)));
     // 112 - Reset text cursor color.
     this._parser.registerOscHandler(112, new OscHandler(data => this.restoreCursorColor(data)));
-    /*
-     * 113 - Reset mouse foreground color.
-     * 114 - Reset mouse background color.
-     * 115 - Reset Tektronix foreground color.
-     * 116 - Reset Tektronix background color.
-     * 117 - Reset highlight color.
-     * 118 - Reset Tektronix cursor color.
-     * 119 - Reset highlight foreground color.
-     */
+    // 113 - Reset mouse foreground color.
+    // 114 - Reset mouse background color.
+    // 115 - Reset Tektronix foreground color.
+    // 116 - Reset Tektronix background color.
+    // 117 - Reset highlight color.
+    // 118 - Reset Tektronix cursor color.
+    // 119 - Reset highlight foreground color.
 
     /**
      * ESC handlers
@@ -478,10 +466,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
 
-    /*
-     * Clear the dirty row service so we know which lines changed as a result of parsing
-     * Important: do not clear between async calls, otherwise we lost pending update information.
-     */
+    // Clear the dirty row service so we know which lines changed as a result of parsing
+    // Important: do not clear between async calls, otherwise we lost pending update information.
     if (!wasPaused) {
       this._dirtyRowTracker.clearRange();
     }
@@ -516,10 +502,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._onCursorMove.fire();
     }
 
-    /*
-     * Refresh any dirty rows accumulated as part of parsing, fire only for rows within the
-     * _viewport_ which is relative to ydisp, not relative to ybase.
-     */
+    // Refresh any dirty rows accumulated as part of parsing, fire only for rows within the
+    // _viewport_ which is relative to ydisp, not relative to ybase.
     const viewportEnd = this._dirtyRowTracker.end + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
     const viewportStart = this._dirtyRowTracker.start + (this._bufferService.buffer.ybase - this._bufferService.buffer.ydisp);
     if (viewportStart < this._bufferService.rows) {
@@ -541,10 +525,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     const curAttr = this._curAttrData;
     let bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
 
-    /*
-     * Defensive check: bufferRow can be undefined if a resize occurred mid-write due to async
-     * scheduling gaps in WriteBuffer. See https://github.com/xtermjs/xterm.js/issues/5597
-     */
+    // Defensive check: bufferRow can be undefined if a resize occurred mid-write due to async
+    // scheduling gaps in WriteBuffer. See https://github.com/xtermjs/xterm.js/issues/5597
     if (!bufferRow) {
       return;
     }
@@ -560,19 +542,15 @@ export class InputHandler extends Disposable implements IInputHandler {
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
 
-      /*
-       * Soft hyphen's (U+00AD) behavior is ambiguous and differs across terminals. We opt to treat
-       * it as a zero-width hint to text layout engines and simply ignore it.
-       */
+      // Soft hyphen's (U+00AD) behavior is ambiguous and differs across terminals. We opt to treat
+      // it as a zero-width hint to text layout engines and simply ignore it.
       if (code === 0xAD) {
         continue;
       }
 
-      /*
-       * get charset replacement character
-       * charset is only defined for ASCII, therefore we only
-       * search for an replacement char if code < 127
-       */
+      // get charset replacement character
+      // charset is only defined for ASCII, therefore we only
+      // search for an replacement char if code < 127
       if (code < 127 && charset) {
         const ch = charset[String.fromCharCode(code)];
         if (ch) {
@@ -593,16 +571,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
-      /*
-       * goto next line if ch would overflow
-       * NOTE: To avoid costly width checks here,
-       * the terminal does not allow a cols < 2.
-       */
+      // goto next line if ch would overflow
+      // NOTE: To avoid costly width checks here,
+      // the terminal does not allow a cols < 2.
       if (this._activeBuffer.x + chWidth - oldWidth > cols) {
-        /*
-         * autowrap - DECAWM
-         * automatically wraps to the beginning of the next line
-         */
+        // autowrap - DECAWM
+        // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
           const oldRow = bufferRow;
           let oldCol = this._activeBuffer.x - oldWidth;
@@ -615,10 +589,8 @@ export class InputHandler extends Disposable implements IInputHandler {
             if (this._activeBuffer.y >= this._bufferService.rows) {
               this._activeBuffer.y = this._bufferService.rows - 1;
             }
-            /*
-             * The line already exists (eg. the initial viewport), mark it as a
-             * wrapped line
-             */
+            // The line already exists (eg. the initial viewport), mark it as a
+            // wrapped line
             this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = true;
           }
           // row changed, get it again
@@ -627,10 +599,8 @@ export class InputHandler extends Disposable implements IInputHandler {
             return;
           }
           if (oldWidth > 0 && bufferRow instanceof BufferLine) {
-            /*
-             * Combining character widens 1 column to 2.
-             * Move old character to next line.
-             */
+            // Combining character widens 1 column to 2.
+            // Move old character to next line.
             bufferRow.copyCellsFrom(oldRow as BufferLine,
               oldCol, 0, oldWidth, false);
           }
@@ -641,28 +611,22 @@ export class InputHandler extends Disposable implements IInputHandler {
         } else {
           this._activeBuffer.x = cols - 1;
           if (chWidth === 2) {
-            /*
-             * FIXME: check for xterm behavior
-             * What to do here? We got a wide char that does not fit into last cell
-             */
+            // FIXME: check for xterm behavior
+            // What to do here? We got a wide char that does not fit into last cell
             continue;
           }
         }
       }
 
-      /*
-       * insert combining char at last cursor position
-       * this._activeBuffer.x should never be 0 for a combining char
-       * since they always follow a cell consuming char
-       * therefore we can test for this._activeBuffer.x to avoid overflow left
-       */
+      // insert combining char at last cursor position
+      // this._activeBuffer.x should never be 0 for a combining char
+      // since they always follow a cell consuming char
+      // therefore we can test for this._activeBuffer.x to avoid overflow left
       if (shouldJoin && this._activeBuffer.x) {
         const offset = bufferRow.getWidth(this._activeBuffer.x - 1) ? 1 : 2;
-        /*
-         * if empty cell after fullwidth, need to go 2 cells back
-         * it is save to step 2 cells back here
-         * since an empty cell is only set by fullwidth chars
-         */
+        // if empty cell after fullwidth, need to go 2 cells back
+        // it is save to step 2 cells back here
+        // since an empty cell is only set by fullwidth chars
         bufferRow.addCodepointToCell(this._activeBuffer.x - offset,
           code, chWidth);
         for (let delta = chWidth - oldWidth; --delta >= 0;) {
@@ -675,11 +639,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (insertMode) {
         // right shift cells according to the width
         bufferRow.insertCells(this._activeBuffer.x, chWidth - oldWidth, this._activeBuffer.getNullCell(curAttr));
-        /*
-         * test last cell - since the last cell has only room for
-         * a halfwidth char any fullwidth shifted there is lost
-         * and will be set to empty cell
-         */
+        // test last cell - since the last cell has only room for
+        // a halfwidth char any fullwidth shifted there is lost
+        // and will be set to empty cell
         if (bufferRow.getWidth(cols - 1) === 2) {
           bufferRow.setCellFromCodepoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr);
         }
@@ -688,11 +650,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       // write current char to buffer and advance cursor
       bufferRow.setCellFromCodepoint(this._activeBuffer.x++, code, chWidth, curAttr);
 
-      /*
-       * fullwidth char - also set next cell to placeholder stub and advance cursor
-       * for graphemes bigger than fullwidth we can simply loop to zero
-       * we already made sure above, that this._activeBuffer.x + chWidth will not overflow right
-       */
+      // fullwidth char - also set next cell to placeholder stub and advance cursor
+      // for graphemes bigger than fullwidth we can simply loop to zero
+      // we already made sure above, that this._activeBuffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
@@ -790,13 +750,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     } else if (this._activeBuffer.y >= this._bufferService.rows) {
       this._activeBuffer.y = this._bufferService.rows - 1;
     } else {
-      /*
-       * There was an explicit line feed (not just a carriage return), so clear the wrapped state of
-       * the line. This is particularly important on conpty/Windows where revisiting lines to
-       * reprint is common, especially on resize. Note that the windowsMode wrapped line heuristics
-       * can mess with this so windowsMode should be disabled, which is recommended on Windows build
-       * 21376 and above.
-       */
+      // There was an explicit line feed (not just a carriage return), so clear the wrapped state of
+      // the line. This is particularly important on conpty/Windows where revisiting lines to
+      // reprint is common, especially on resize. Note that the windowsMode wrapped line heuristics
+      // can mess with this so windowsMode should be disabled, which is recommended on Windows build
+      // 21376 and above.
       this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
@@ -841,11 +799,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       return true;
     }
 
-    /*
-     * reverse wrap-around is enabled
-     * other than for normal operation mode, reverse wrap-around allows the cursor
-     * to be at x=cols to be able to address the last cell of a row by BS
-     */
+    // reverse wrap-around is enabled
+    // other than for normal operation mode, reverse wrap-around allows the cursor
+    // to be at x=cols to be able to address the last cell of a row by BS
     this._restrictCursor(this._bufferService.cols);
 
     if (this._activeBuffer.x > 0) {
@@ -866,21 +822,17 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
         this._activeBuffer.y--;
         this._activeBuffer.x = this._bufferService.cols - 1;
-        /*
-         * find last taken cell - last cell can have 3 different states:
-         * - hasContent(true) + hasWidth(1): narrow char - we are done
-         * - hasWidth(0): second part of wide char - we are done
-         * - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one
-         *   cell further back
-         */
+        // find last taken cell - last cell can have 3 different states:
+        // - hasContent(true) + hasWidth(1): narrow char - we are done
+        // - hasWidth(0): second part of wide char - we are done
+        // - hasContent(false) + hasWidth(1): empty cell due to early wrapping wide char, go one
+        //   cell further back
         const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!;
         if (line.hasWidth(this._activeBuffer.x) && !line.hasContent(this._activeBuffer.x)) {
           this._activeBuffer.x--;
-          /*
-           * We do this only once, since width=1 + hasContent=false currently happens only once
-           * before early wrapping of a wide char.
-           * This needs to be fixed once we support graphemes taking more than 2 cells.
-           */
+          // We do this only once, since width=1 + hasContent=false currently happens only once
+          // before early wrapping of a wide char.
+          // This needs to be fixed once we support graphemes taking more than 2 cells.
         }
       }
     }
@@ -961,10 +913,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Set relative cursor position.
    */
   private _moveCursor(x: number, y: number): void {
-    /*
-     * for relative changes we have to make sure we are within 0 .. cols/rows - 1
-     * before calculating the new position
-     */
+    // for relative changes we have to make sure we are within 0 .. cols/rows - 1
+    // before calculating the new position
     this._restrictCursor();
     this._setCursor(this._activeBuffer.x + x, this._activeBuffer.y + y);
   }
@@ -1404,10 +1354,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     const scrollBottomRowsOffset = this._bufferService.rows - 1 - this._activeBuffer.scrollBottom;
     const scrollBottomAbsolute = this._bufferService.rows - 1 + this._activeBuffer.ybase - scrollBottomRowsOffset + 1;
     while (param--) {
-      /*
-       * test: echo -e '\e[44m\e[1L\e[0m'
-       * blankLine(true) - xterm/linux behavior
-       */
+      // test: echo -e '\e[44m\e[1L\e[0m'
+      // blankLine(true) - xterm/linux behavior
       this._activeBuffer.lines.splice(scrollBottomAbsolute - 1, 1);
       this._activeBuffer.lines.splice(row, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
@@ -1440,10 +1388,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     j = this._bufferService.rows - 1 - this._activeBuffer.scrollBottom;
     j = this._bufferService.rows - 1 + this._activeBuffer.ybase - j;
     while (param--) {
-      /*
-       * test: echo -e '\e[44m\e[1M\e[0m'
-       * blankLine(true) - xterm/linux behavior
-       */
+      // test: echo -e '\e[44m\e[1M\e[0m'
+      // blankLine(true) - xterm/linux behavior
       this._activeBuffer.lines.splice(row, 1);
       this._activeBuffer.lines.splice(j, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
     }
@@ -1791,20 +1737,16 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (params.params[0] > 0) {
       return true;
     }
-    /*
-     * xterm and urxvt
-     * seem to spit this
-     * out around ~370 times (?).
-     */
+    // xterm and urxvt
+    // seem to spit this
+    // out around ~370 times (?).
     if (this._is('xterm')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>0;276;0c');
     } else if (this._is('rxvt-unicode')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>85;95;0c');
     } else if (this._is('linux')) {
-      /*
-       * not supported by linux console.
-       * linux console echoes parameters.
-       */
+      // not supported by linux console.
+      // linux console echoes parameters.
       this._coreService.triggerDataEvent(params.params[0] + 'c');
     } else if (this._is('screen')) {
       this._coreService.triggerDataEvent(C0.ESC + '[>83;40003;0c');
@@ -2037,17 +1979,13 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._mouseStateService.activeProtocol = 'DRAG';
           break;
         case 1003: // any event mouse
-          /*
-           * any event - sends motion events,
-           * even if there is no button held down.
-           */
+          // any event - sends motion events,
+          // even if there is no button held down.
           this._mouseStateService.activeProtocol = 'ANY';
           break;
         case 1004: // send focusin/focusout events
-          /*
-           * focusin: ^[[I
-           * focusout: ^[[O
-           */
+          // focusin: ^[[I
+          // focusout: ^[[O
           this._coreService.decPrivateModes.sendFocus = true;
           this._onRequestSendFocus.fire();
           break;
@@ -2470,12 +2408,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Returns advance for params index.
    */
   private _extractColor(params: IParams, pos: number, attr: IAttributeData): number {
-    /*
-     * normalize params
-     * meaning: [target, CM, ign, val, val, val]
-     * RGB    : [ 38/48,  2, ign,   r,   g,   b]
-     * P256   : [ 38/48,  5, ign,   v, ign, ign]
-     */
+    // normalize params
+    // meaning: [target, CM, ign, val, val, val]
+    // RGB    : [ 38/48,  2, ign,   r,   g,   b]
+    // P256   : [ 38/48,  5, ign,   v, ign, ign]
     const accu = [0, 0, -1, 0, 0, 0];
 
     // alignment placeholder for non color space sequences
@@ -2541,10 +2477,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *    4:5   -   dashed underline
    */
   private _processUnderline(style: number, attr: IAttributeData): void {
-    /*
-     * treat extended attrs as immutable, thus always clone from old one
-     * this is needed since the buffer only holds references to it
-     */
+    // treat extended attrs as immutable, thus always clone from old one
+    // this is needed since the buffer only holds references to it
     attr.extended = attr.extended.clone();
 
     // default to 1 == single underline
@@ -2567,10 +2501,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     attr.fg = DEFAULT_ATTR_DATA.fg;
     attr.bg = DEFAULT_ATTR_DATA.bg;
     attr.extended = attr.extended.clone();
-    /*
-     * Reset underline style and color. Note that we don't want to reset other
-     * fields such as the url id.
-     */
+    // Reset underline style and color. Note that we don't want to reset other
+    // fields such as the url id.
     attr.extended.underlineStyle = UnderlineStyle.NONE;
     attr.extended.underlineColor &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
     attr.updateExtended();
@@ -2709,10 +2641,8 @@ export class InputHandler extends Disposable implements IInputHandler {
         // blink
         attr.fg |= FgFlags.BLINK;
       } else if (p === 7) {
-        /*
-         * inverse and positive
-         * test with: echo -e '\e[31m\e[42mhello\e[7mworld\e[27mhi\e[m'
-         */
+        // inverse and positive
+        // test with: echo -e '\e[31m\e[42mhello\e[7mworld\e[27mhi\e[m'
         attr.fg |= FgFlags.INVERSE;
       } else if (p === 8) {
         // invisible
@@ -2826,10 +2756,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   // @vt: #P[Only CPR is supported.]  CSI DECDSR  "DEC Device Status Report"  "CSI ? Ps n"  "Only CPR is supported (same as DSR)."
   public deviceStatusPrivate(params: IParams): boolean {
-    /*
-     * modern xterm doesnt seem to
-     * respond to any of these except ?6, 6, and 5
-     */
+    // modern xterm doesnt seem to
+    // respond to any of these except ?6, 6, and 5
     switch (params.params[0]) {
       case 6:
         // cursor position
@@ -2838,28 +2766,20 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._coreService.triggerDataEvent(`${C0.ESC}[?${y};${x}R`);
         break;
       case 15:
-        /*
-         * no printer
-         * this.handler(C0.ESC + '[?11n');
-         */
+        // no printer
+        // this.handler(C0.ESC + '[?11n');
         break;
       case 25:
-        /*
-         * dont support user defined keys
-         * this.handler(C0.ESC + '[?21n');
-         */
+        // dont support user defined keys
+        // this.handler(C0.ESC + '[?21n');
         break;
       case 26:
-        /*
-         * north american keyboard
-         * this.handler(C0.ESC + '[?27;1;0;0n');
-         */
+        // north american keyboard
+        // this.handler(C0.ESC + '[?27;1;0;0n');
         break;
       case 53:
-        /*
-         * no dec locator/mouse
-         * this.handler(C0.ESC + '[?50n');
-         */
+        // no dec locator/mouse
+        // this.handler(C0.ESC + '[?50n');
         break;
       case 996:
         // color scheme query (https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
@@ -3481,11 +3401,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   public reverseIndex(): boolean {
     this._restrictCursor();
     if (this._activeBuffer.y === this._activeBuffer.scrollTop) {
-      /*
-       * possibly move the code below to term.reverseScroll();
-       * test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
-       * blankLine(true) is xterm/linux behavior
-       */
+      // possibly move the code below to term.reverseScroll();
+      // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
+      // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this._activeBuffer.scrollBottom - this._activeBuffer.scrollTop;
       this._activeBuffer.lines.shiftElements(this._activeBuffer.ybase + this._activeBuffer.y, scrollRegionHeight, 1);
       this._activeBuffer.lines.set(this._activeBuffer.ybase + this._activeBuffer.y, this._activeBuffer.getBlankLine(this._eraseAttrData()));

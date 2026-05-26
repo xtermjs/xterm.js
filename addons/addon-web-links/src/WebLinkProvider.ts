@@ -73,10 +73,8 @@ export class LinkComputer {
         continue;
       }
 
-      /*
-       * map string positions back to buffer positions
-       * values are 0-based right side excluding
-       */
+      // map string positions back to buffer positions
+      // values are 0-based right side excluding
       const [startY, startX] = LinkComputer._mapStrIdx(terminal, startLineIndex, 0, match.index);
       const [endY, endX] = LinkComputer._mapStrIdx(terminal, startY, startX, text.length);
 
@@ -174,13 +172,11 @@ export class LinkComputer {
         if (width) {
           stringIndex -= chars.length || 1;
 
-          /*
-           * correct stringIndex for early wrapped wide chars:
-           * - currently only happens at last cell
-           * - cells to the right are reset with chars='' and width=1 in InputHandler.print
-           * - follow-up line must be wrapped and contain wide char at first cell
-           * --> if all these conditions are met, correct stringIndex by +1
-           */
+          // correct stringIndex for early wrapped wide chars:
+          // - currently only happens at last cell
+          // - cells to the right are reset with chars='' and width=1 in InputHandler.print
+          // - follow-up line must be wrapped and contain wide char at first cell
+          // --> if all these conditions are met, correct stringIndex by +1
           if (i === line.length - 1 && chars === '') {
             const line = buf.getLine(lineIndex + 1);
             if (line && line.isWrapped) {

@@ -115,26 +115,20 @@ export class DomRendererRowFactory {
       // If true, indicates that the current character(s) to draw were joined.
       let isJoined = false;
 
-      /*
-       * Indicates whether this cell is part of a joined range that should be ignored as it cannot
-       * be rendered entirely, like the selection state differs across the range.
-       */
+      // Indicates whether this cell is part of a joined range that should be ignored as it cannot
+      // be rendered entirely, like the selection state differs across the range.
       let isValidJoinRange = (x >= skipJoinedCheckUntilX);
 
       let lastCharX = x;
 
-      /*
-       * Process any joined character ranges as needed. Because of how the
-       * ranges are produced, we know that they are valid for the characters
-       * and attributes of our input.
-       */
+      // Process any joined character ranges as needed. Because of how the
+      // ranges are produced, we know that they are valid for the characters
+      // and attributes of our input.
       let cell: ICellData = this._workCell;
       if (joinedRanges.length > 0 && x === joinedRanges[0][0] && isValidJoinRange) {
         const range = joinedRanges.shift()!;
-        /*
-         * If the ligature's selection state is not consistent, don't join it. This helps the
-         * selection render correctly regardless whether they should be joined.
-         */
+        // If the ligature's selection state is not consistent, don't join it. This helps the
+        // selection render correctly regardless whether they should be joined.
         const firstSelectionState = this._isCellInSelection(range[0], row);
         for (i = range[0] + 1; i < range[1]; i++) {
           isValidJoinRange &&= (firstSelectionState === this._isCellInSelection(i, row));
@@ -146,10 +140,8 @@ export class DomRendererRowFactory {
         } else {
           isJoined = true;
 
-          /*
-           * We already know the exact start and end column of the joined range,
-           * so we get the string and width representing it directly
-           */
+          // We already know the exact start and end column of the joined range,
+          // so we get the string and width representing it directly
           cell = new JoinedCellData(
             this._workCell,
             lineData.translateToString(true, range[0], range[1]),
@@ -251,11 +243,9 @@ export class DomRendererRowFactory {
       oldIsInSelection = isInSelection;
 
       if (isJoined) {
-        /*
-         * The DOM renderer colors the background of the cursor but for ligatures all cells are
-         * joined. The workaround here is to show a cursor around the whole ligature so it shows up,
-         * the cursor looks the same when on any character of the ligature though
-         */
+        // The DOM renderer colors the background of the cursor but for ligatures all cells are
+        // joined. The workaround here is to show a cursor around the whole ligature so it shows up,
+        // the cursor looks the same when on any character of the ligature though
         if (cursorX >= x && cursorX <= lastCharX) {
           cursorX = x;
         }
@@ -343,10 +333,8 @@ export class DomRendererRowFactory {
         classes.push(RowCss.STRIKETHROUGH_CLASS);
       }
 
-      /*
-       * apply link hover underline late, effectively overrides any previous text-decoration
-       * settings
-       */
+      // apply link hover underline late, effectively overrides any previous text-decoration
+      // settings
       if (isLinkHover) {
         charElement.style.textDecoration = 'underline';
       }
@@ -365,10 +353,8 @@ export class DomRendererRowFactory {
         bgColorMode = temp2;
       }
 
-      /*
-       * Apply any decoration foreground/background overrides, this must happen after inverse has
-       * been applied
-       */
+      // Apply any decoration foreground/background overrides, this must happen after inverse has
+      // been applied
       let bgOverride: IColor | undefined;
       let fgOverride: IColor | undefined;
       let isTop = false;
@@ -391,19 +377,15 @@ export class DomRendererRowFactory {
 
       // Apply selection
       if (!isTop && isInSelection) {
-        /*
-         * If in the selection, force the element to be above the selection to improve contrast and
-         * support opaque selections. The applies background is not actually needed here as
-         * selection is drawn in a seperate container, the main purpose of this to ensuring minimum
-         * contrast ratio
-         */
+        // If in the selection, force the element to be above the selection to improve contrast and
+        // support opaque selections. The applies background is not actually needed here as
+        // selection is drawn in a seperate container, the main purpose of this to ensuring minimum
+        // contrast ratio
         bgOverride = this._coreBrowserService.isFocused ? colors.selectionBackgroundOpaque : colors.selectionInactiveBackgroundOpaque;
         bg = bgOverride.rgba >> 8 & 0xFFFFFF;
         bgColorMode = Attributes.CM_RGB;
-        /*
-         * Since an opaque selection is being rendered, the selection pretends to be a decoration to
-         * ensure text is drawn above the selection.
-         */
+        // Since an opaque selection is being rendered, the selection pretends to be a decoration to
+        // ensure text is drawn above the selection.
         isTop = true;
         // Apply selection foreground if applicable
         if (colors.selectionForeground) {
@@ -477,11 +459,9 @@ export class DomRendererRowFactory {
           }
       }
 
-      /*
-       * apply CSS classes
-       * slightly faster than using classList by omitting
-       * checks for doubled entries (code above should not have doublets)
-       */
+      // apply CSS classes
+      // slightly faster than using classList by omitting
+      // checks for doubled entries (code above should not have doublets)
       if (classes.length) {
         charElement.className = classes.join(' ');
         classes.length = 0;
@@ -524,10 +504,8 @@ export class DomRendererRowFactory {
 
     // Calculate and store in cache
     if (adjustedColor === undefined) {
-      /*
-       * Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
-       * non-dim cells
-       */
+      // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
+      // non-dim cells
       const ratio = this._optionsService.rawOptions.minimumContrastRatio / (cell.isDim() ? 2 : 1);
       adjustedColor = color.ensureContrastRatio(bgOverride ?? bg, fgOverride ?? fg, ratio);
       cache.setColor((bgOverride ?? bg).rgba, (fgOverride ?? fg).rgba, adjustedColor ?? null);

@@ -359,10 +359,8 @@ describe('DomRendererRowFactory', () => {
   });
 
   describe('createRow with merged spans', () => {
-    /*
-     * for test purpose assume all in codepoints 0..255 are merging
-     * const ALL_MERGING = new Uint8Array(FontMetrics.MAX);
-     */
+    // for test purpose assume all in codepoints 0..255 are merging
+    // const ALL_MERGING = new Uint8Array(FontMetrics.MAX);
 
     beforeEach(() => {
       lineData = createEmptyLineData(10);

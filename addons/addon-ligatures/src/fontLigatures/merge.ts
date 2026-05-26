@@ -32,11 +32,9 @@ export default function mergeTrees(trees: ILookupTree[]): ILookupTree {
 function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree, mergedEntries: WeakMap<ILookupTreeEntry, Set<ILookupTreeEntry>>): void {
   // Need to fix this recursively (and handle lookups)
   for (const [glyphId, value] of Object.entries(mergeTree.individual)) {
-    /*
-     * The main tree is guaranteed to have no overlaps between the
-     * individual and range values, so if we match an invididual, there
-     * must not be a range
-     */
+    // The main tree is guaranteed to have no overlaps between the
+    // individual and range values, so if we match an invididual, there
+    // must not be a range
     if (mainTree.individual[glyphId]) {
       mergeTreeEntry(mainTree.individual[glyphId], value, mergedEntries);
     } else {
@@ -51,17 +49,13 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree, mergedEntri
 
         matched = true;
 
-        /*
-         * If they overlap, we have to split the range and then
-         * merge the overlap
-         */
+        // If they overlap, we have to split the range and then
+        // merge the overlap
         mainTree.individual[glyphId] = value;
         mergeTreeEntry(mainTree.individual[glyphId], cloneEntry(entry), mergedEntries);
 
-        /*
-         * When there's an overlap, we also have to fix up the range
-         * that we had already processed
-         */
+        // When there's an overlap, we also have to fix up the range
+        // that we had already processed
         mainTree.range.splice(index, 1);
         for (const glyph of overlap.second) {
           if (Array.isArray(glyph)) {
@@ -82,11 +76,9 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree, mergedEntri
   }
 
   for (const { range, entry } of mergeTree.range) {
-    /*
-     * Ranges are more complicated, because they can overlap with
-     * multiple things, individual and range alike. We start by
-     * eliminating ranges that are already present in another range
-     */
+    // Ranges are more complicated, because they can overlap with
+    // multiple things, individual and range alike. We start by
+    // eliminating ranges that are already present in another range
     let remainingRanges: (number | [number, number])[] = [range];
 
     for (let index = 0; index < mainTree.range.length; index++) {
@@ -131,17 +123,13 @@ function mergeSubtree(mainTree: ILookupTree, mergeTree: ILookupTree, mergedEntri
             continue;
           }
 
-          /*
-           * If they overlap, we have to split the range and then
-           * merge the overlap
-           */
+          // If they overlap, we have to split the range and then
+          // merge the overlap
           mainTree.individual[remainingRange] = cloneEntry(entry);
           mergeTreeEntry(mainTree.individual[remainingRange], cloneEntry(resultEntry), mergedEntries);
 
-          /*
-           * When there's an overlap, we also have to fix up the range
-           * that we had already processed
-           */
+          // When there's an overlap, we also have to fix up the range
+          // that we had already processed
           mainTree.range.splice(index, 1);
           index--;
 

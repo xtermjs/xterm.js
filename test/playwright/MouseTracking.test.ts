@@ -12,17 +12,13 @@ test.beforeAll(async ({ browser }) => {
 });
 test.afterAll(async () => await ctx.page.close());
 
-/*
- * adjusted to work inside devcontainer
- * see https://github.com/xtermjs/xterm.js/issues/2379
- */
+// adjusted to work inside devcontainer
+// see https://github.com/xtermjs/xterm.js/issues/2379
 const width = 1280;
 const height = 960;
 
-/*
- * adjust terminal row/col size so we can test
- * >80 up to 223 and >255
- */
+// adjust terminal row/col size so we can test
+// >80 up to 223 and >255
 const fontSize = 6;
 const cols = 260;
 const rows = 50;
@@ -44,11 +40,9 @@ async function getReports(encoding: string): Promise<any[]> {
   return reports.map((report: number[]) => parseReport(encoding, report));
 }
 
-/*
- * translate cell positions into pixel offset
- * always adds +2 in each direction so we dont end up in the wrong cell
- * due to rounding issues
- */
+// translate cell positions into pixel offset
+// always adds +2 in each direction so we dont end up in the wrong cell
+// due to rounding issues
 async function cellPos(col: number, row: number): Promise<number[]> {
   const coords: any = await ctx.page.evaluate(`
     (function() {
@@ -171,12 +165,10 @@ function parseReport(encoding: string, msg: number[]): { state: any, row: number
 test.describe('Mouse Tracking Tests', () => {
   test.beforeAll(async () => {
     await ctx.page.setViewportSize({ width, height });
-    /*
-     * patch terminal to get the onData calls
-     * we encode the msg here to an array of codes to not lose bytes
-     * (transmission strips non utf8 bytes)
-     * also resize so we can properly test the edge cases
-     */
+    // patch terminal to get the onData calls
+    // we encode the msg here to an array of codes to not lose bytes
+    // (transmission strips non utf8 bytes)
+    // also resize so we can properly test the edge cases
     await ctx.page.evaluate(`
       window.term.onData(e => window.calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
       window.term.onBinary(e => window.calls.push( Array.from(e).map(el => el.charCodeAt(0)) ));
@@ -222,10 +214,8 @@ test.describe('Mouse Tracking Tests', () => {
       await mouseUp('left');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: 51, row: 11, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * test at max rows/cols
-       * capped at 223 (1-based)
-       */
+      // test at max rows/cols
+      // capped at 223 (1-based)
       await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
@@ -237,28 +227,24 @@ test.describe('Mouse Tracking Tests', () => {
       await mouseUp('left');
       await pollFor(ctx.page, () => getReports(encoding), []);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('right');
@@ -266,20 +252,16 @@ test.describe('Mouse Tracking Tests', () => {
       await mouseUp('right');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'right', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), []);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), []);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), []);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), []);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -302,12 +284,10 @@ test.describe('Mouse Tracking Tests', () => {
       await ctx.page.keyboard.up('Alt');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * SHIFT
-       * note: caught by selection manager
-       * bug? Why not caught by selection manger on macos?
-       * bug: no modifier reported
-       */
+      // SHIFT
+      // note: caught by selection manager
+      // bug? Why not caught by selection manger on macos?
+      // bug: no modifier reported
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
@@ -324,10 +304,8 @@ test.describe('Mouse Tracking Tests', () => {
         ]);
       }
 
-      /*
-       * all modifiers
-       * bug: Shift not working - reporting totally wrong coords and modifiers - selection manager again?
-       */
+      // all modifiers
+      // bug: Shift not working - reporting totally wrong coords and modifiers - selection manager again?
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -373,28 +351,24 @@ test.describe('Mouse Tracking Tests', () => {
       await mouseUp('left');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: cols, row: rows, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
       await mouseMove(44, 24);
       await mouseUp('left');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('right');
@@ -402,20 +376,16 @@ test.describe('Mouse Tracking Tests', () => {
       await mouseUp('right');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'right', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), []);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), []);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), []);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), []);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -438,10 +408,8 @@ test.describe('Mouse Tracking Tests', () => {
       await ctx.page.keyboard.up('Alt');
       await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * SHIFT
-       * note: caught by selection manager
-       */
+      // SHIFT
+      // note: caught by selection manager
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
@@ -458,10 +426,8 @@ test.describe('Mouse Tracking Tests', () => {
         ]);
       }
 
-      /*
-       * all modifiers
-       * bug: Shift not working - reporting totally wrong coords and modifiers - selection manager again?
-       */
+      // all modifiers
+      // bug: Shift not working - reporting totally wrong coords and modifiers - selection manager again?
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -517,10 +483,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 51, row: 11, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * test at max rows/cols
-       * capped at 223 (1-based)
-       */
+      // test at max rows/cols
+      // capped at 223 (1-based)
       await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
@@ -529,10 +493,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 223, row: rows, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
@@ -542,18 +504,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } },
         { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('right');
@@ -564,20 +524,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -607,35 +563,31 @@ test.describe('Mouse Tracking Tests', () => {
         // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: true } } }
       ]);
 
-      /*
-       * SHIFT
-       * note: press/release caught by selection manager
-       * bug: modifier not reported for passed events
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
-       * await mouseDown('left');
-       * await mouseMove(44, 24);
-       * await mouseUp('left');
-       * // await wheelDown();
-       * await ctx.page.keyboard.up('Shift');
-       * // if (noShift) {
-       * //  await pollFor(ctx.page, () => getReports(encoding), [
-       * //    // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       * //  ]);
-       * // } else {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
-       *     // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * // }
-       */
+      // SHIFT
+      // note: press/release caught by selection manager
+      // bug: modifier not reported for passed events
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // // await wheelDown();
+      // await ctx.page.keyboard.up('Shift');
+      // // if (noShift) {
+      // //  await pollFor(ctx.page, () => getReports(encoding), [
+      // //    // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      // //  ]);
+      // // } else {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
+      //     // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // // }
 
-      /*
-       * all modifiers
-       * bug: Shift not working - selection manager?
-       */
+      // all modifiers
+      // bug: Shift not working - selection manager?
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -695,10 +647,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: cols, row: rows, state: { action: 'release', button: 'left', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
@@ -708,18 +658,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } },
         { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: false, meta: false } } }
       ]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('right');
@@ -730,20 +678,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'release', button: 'right', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -773,34 +717,30 @@ test.describe('Mouse Tracking Tests', () => {
         // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: true } } }
       ]);
 
-      /*
-       * SHIFT
-       * note: press/release caught by selection manager
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
-       * await mouseDown('left');
-       * await mouseMove(44, 24);
-       * await mouseUp('left');
-       * await wheelDown();
-       * await ctx.page.keyboard.up('Shift');
-       * if (noShift) {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * } else {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * }
-       */
+      // SHIFT
+      // note: press/release caught by selection manager
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // await wheelDown();
+      // await ctx.page.keyboard.up('Shift');
+      // if (noShift) {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // } else {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // }
 
-      /*
-       * all modifiers
-       * bug: Shift not working - selection manager?
-       */
+      // all modifiers
+      // bug: Shift not working - selection manager?
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -860,10 +800,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 51, row: 11, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * test at max rows/cols
-       * capped at 223 (1-based)
-       */
+      // test at max rows/cols
+      // capped at 223 (1-based)
       await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
@@ -872,10 +810,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 223, row: rows, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
@@ -886,18 +822,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: false, meta: false } } },
         { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('right');
@@ -909,20 +843,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -954,35 +884,31 @@ test.describe('Mouse Tracking Tests', () => {
         // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: true } } }
       ]);
 
-      /*
-       * SHIFT
-       * note: press/release/drag caught by selection manager
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
-       * await mouseDown('left');
-       * await mouseMove(44, 24);
-       * await mouseUp('left');
-       * await wheelDown();
-       * await ctx.page.keyboard.up('Shift');
-       * if (noShift) {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * } else {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * }
-       */
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // await wheelDown();
+      // await ctx.page.keyboard.up('Shift');
+      // if (noShift) {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // } else {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // }
 
-      /*
-       * all modifiers
-       * bug: Shift not working
-       */
+      // all modifiers
+      // bug: Shift not working
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -1012,10 +938,8 @@ test.describe('Mouse Tracking Tests', () => {
       await mouseMove(0, 0);
       await ctx.proxy.write('\x1b[?1002h\x1b[?1006h');
 
-      /*
-       * test at 0,0
-       * bug: release is fired immediately
-       */
+      // test at 0,0
+      // bug: release is fired immediately
       await mouseDown('left');
       await pollFor(ctx.page, () => getReports(encoding), [
         { col: 1, row: 1, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }
@@ -1046,10 +970,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: cols, row: rows, state: { action: 'release', button: 'left', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('left');
@@ -1060,18 +982,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: false, meta: false } } },
         { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: false, meta: false } } }
       ]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await mouseDown('right');
@@ -1083,20 +1003,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'release', button: 'right', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -1128,35 +1044,31 @@ test.describe('Mouse Tracking Tests', () => {
         // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: true } } }
       ]);
 
-      /*
-       * SHIFT
-       * note: press/release/drag caught by selection manager
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
-       * await mouseDown('left');
-       * await mouseMove(44, 24);
-       * await mouseUp('left');
-       * await wheelDown();
-       * await ctx.page.keyboard.up('Shift');
-       * if (noShift) {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * } else {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * }
-       */
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await ctx.page.keyboard.down('Shift');  // defaults to ShiftLeft
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // await wheelDown();
+      // await ctx.page.keyboard.up('Shift');
+      // if (noShift) {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // } else {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // }
 
-      /*
-       * all modifiers
-       * bug: this is totally broken with wrong coords and messed up modifiers
-       */
+      // all modifiers
+      // bug: this is totally broken with wrong coords and messed up modifiers
       await mouseMove(43, 24);
       await getReports(encoding); // clear reports
       await ctx.page.keyboard.down('Control');
@@ -1216,10 +1128,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 51, row: 11, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * test at max rows/cols
-       * capped at 223 (1-based)
-       */
+      // test at max rows/cols
+      // capped at 223 (1-based)
       await mouseMove(223 - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
@@ -1229,10 +1139,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 223, row: rows, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await mouseDown('left');
       await mouseMove(44, 24);
@@ -1243,18 +1151,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: false, meta: false } } },
         { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await mouseDown('right');
       await mouseMove(44, 24);
@@ -1266,20 +1172,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await ctx.page.keyboard.down('Control');
       await mouseMove(43, 24);
       await mouseDown('left');
@@ -1311,36 +1213,32 @@ test.describe('Mouse Tracking Tests', () => {
         // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: true } } }
       ]);
 
-      /*
-       * SHIFT
-       * note: press/release/drag caught by selection manager
-       * await ctx.page.keyboard.down('Shift');
-       * await mouseMove(43, 24);
-       * await mouseDown('left');
-       * await mouseMove(44, 24);
-       * await mouseUp('left');
-       * await wheelDown();
-       * await ctx.page.keyboard.up('Shift');
-       * if (noShift) {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * } else {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * }
-       */
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // await ctx.page.keyboard.down('Shift');
+      // await mouseMove(43, 24);
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // await wheelDown();
+      // await ctx.page.keyboard.up('Shift');
+      // if (noShift) {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // } else {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'release', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // }
 
-      /*
-       * all modifiers
-       * bug: Shift not working
-       */
+      // all modifiers
+      // bug: Shift not working
       await ctx.page.keyboard.down('Control');
       await ctx.page.keyboard.down('Alt');
       // await ctx.page.keyboard.down('Shift');
@@ -1394,11 +1292,9 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 51, row: 11, state: { action: 'release', button: 'left', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * test at max rows/cols
-       * bug: we are capped at col 95 currently
-       * fix: allow values up to 223, any bigger should drop to 0
-       */
+      // test at max rows/cols
+      // bug: we are capped at col 95 currently
+      // fix: allow values up to 223, any bigger should drop to 0
       await mouseMove(cols - 1, rows - 1);
       await mouseDown('left');
       await mouseUp('left');
@@ -1408,10 +1304,8 @@ test.describe('Mouse Tracking Tests', () => {
         { col: cols, row: rows, state: { action: 'release', button: 'left', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * button press/move/release tests
-       * left button
-       */
+      // button press/move/release tests
+      // left button
       await mouseMove(43, 24);
       await mouseDown('left');
       await mouseMove(44, 24);
@@ -1422,18 +1316,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: false, meta: false } } },
         { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: false, meta: false } } }
       ]);
-      /*
-       * middle button
-       * bug: default action not cancelled (adds data to getReports from clipboard under X11)
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await mouseDown('middle');
-       * await mouseMove(44, 24);
-       * await mouseUp('middle');
-       * await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
-       * right button
-       * bug: default action not cancelled (popup shown)
-       */
+      // middle button
+      // bug: default action not cancelled (adds data to getReports from clipboard under X11)
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await mouseDown('middle');
+      // await mouseMove(44, 24);
+      // await mouseUp('middle');
+      // await pollFor(ctx.page, () => getReports(encoding), [{col: 44, row: 25, state: {action: 'press', button: 'middle', modifier: {control: false, shift: false, meta: false}}}]);
+      // right button
+      // bug: default action not cancelled (popup shown)
       await mouseMove(43, 24);
       await mouseDown('right');
       await mouseMove(44, 24);
@@ -1445,20 +1337,16 @@ test.describe('Mouse Tracking Tests', () => {
         { col: 45, row: 25, state: { action: 'release', button: 'right', modifier: { control: false, shift: false, meta: false } } }
       ]);
 
-      /*
-       * wheel
-       * await mouseMove(43, 24);
-       * await getReports(encoding); // clear reports
-       * await wheelUp();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       * await wheelDown();
-       * await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
-       */
+      // wheel
+      // await mouseMove(43, 24);
+      // await getReports(encoding); // clear reports
+      // await wheelUp();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'up', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
+      // await wheelDown();
+      // await pollFor(ctx.page, () => getReports(encoding), [{ col: 44, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }]);
 
-      /*
-       * modifiers
-       * CTRL
-       */
+      // modifiers
+      // CTRL
       await ctx.page.keyboard.down('Control');
       await mouseMove(43, 24);
       await mouseDown('left');
@@ -1490,36 +1378,32 @@ test.describe('Mouse Tracking Tests', () => {
         // { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: false, meta: true } } }
       ]);
 
-      /*
-       * SHIFT
-       * note: press/release/drag caught by selection manager
-       * await ctx.page.keyboard.down('Shift');
-       * await mouseMove(43, 24);
-       * await mouseDown('left');
-       * await mouseMove(44, 24);
-       * await mouseUp('left');
-       * await wheelDown();
-       * await ctx.page.keyboard.up('Shift');
-       * if (noShift) {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * } else {
-       *   await pollFor(ctx.page, () => getReports(encoding), [
-       *     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: true, meta: false } } },
-       *     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
-       *   ]);
-       * }
-       */
+      // SHIFT
+      // note: press/release/drag caught by selection manager
+      // await ctx.page.keyboard.down('Shift');
+      // await mouseMove(43, 24);
+      // await mouseDown('left');
+      // await mouseMove(44, 24);
+      // await mouseUp('left');
+      // await wheelDown();
+      // await ctx.page.keyboard.up('Shift');
+      // if (noShift) {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // } else {
+      //   await pollFor(ctx.page, () => getReports(encoding), [
+      //     { col: 44, row: 25, state: { action: 'move', button: '<none>', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 44, row: 25, state: { action: 'press', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'move', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'release', button: 'left', modifier: { control: false, shift: true, meta: false } } },
+      //     { col: 45, row: 25, state: { action: 'down', button: 'wheel', modifier: { control: false, shift: true, meta: false } } }
+      //   ]);
+      // }
 
-      /*
-       * all modifiers
-       * bug: Shift not working
-       */
+      // all modifiers
+      // bug: Shift not working
       await ctx.page.keyboard.down('Control');
       await ctx.page.keyboard.down('Alt');
       // await ctx.page.keyboard.down('Shift');

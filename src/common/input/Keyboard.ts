@@ -43,10 +43,8 @@ export function evaluateKeyboardEvent(
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
-    /*
-     * Whether to cancel event propagation (NOTE: this may not be needed since the event is
-     * canceled at the end of keyDown
-     */
+    // Whether to cancel event propagation (NOTE: this may not be needed since the event is
+    // canceled at the end of keyDown
     cancel: false,
     // The new key even to emit
     key: undefined
@@ -102,10 +100,8 @@ export function evaluateKeyboardEvent(
     case 13:
       // return/enter
       if (ev.key === 'c' && ev.ctrlKey) {
-        /*
-         * HACK: Safari on iPad, iOS, AppleVisionPro sends key 13 when typing ctrl-c on hardware
-         * keyboard
-         */
+        // HACK: Safari on iPad, iOS, AppleVisionPro sends key 13 when typing ctrl-c on hardware
+        // keyboard
         result.key = C0.ETX;
       } else {
         result.key = ev.altKey ? C0.ESC + C0.CR : C0.CR;
@@ -175,10 +171,8 @@ export function evaluateKeyboardEvent(
     case 45:
       // insert
       if (!ev.shiftKey && !ev.ctrlKey) {
-        /*
-         * <Ctrl> or <Shift> + <Insert> are used to
-         * copy-paste on some systems.
-         */
+        // <Ctrl> or <Shift> + <Insert> are used to
+        // copy-paste on some systems.
         result.key = C0.ESC + '[2~';
       }
       break;
@@ -352,13 +346,11 @@ export function evaluateKeyboardEvent(
         } else if (ev.keyCode === 32) {
           result.key = C0.ESC + (ev.ctrlKey ? C0.NUL : ' ');
         } else if (ev.key === 'Dead' && ev.code.startsWith('Key')) {
-          /*
-           * Reference: https://github.com/xtermjs/xterm.js/issues/3725
-           * Alt will produce a "dead key" (initate composition) with some
-           * of the letters in US layout (e.g. N/E/U).
-           * It's safe to match against Key* since no other `code` values begin with "Key".
-           * https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values#code_values_on_mac
-           */
+          // Reference: https://github.com/xtermjs/xterm.js/issues/3725
+          // Alt will produce a "dead key" (initate composition) with some
+          // of the letters in US layout (e.g. N/E/U).
+          // It's safe to match against Key* since no other `code` values begin with "Key".
+          // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values#code_values_on_mac
           let keyString = ev.code.slice(3, 4);
           if (!ev.shiftKey) {
             keyString = keyString.toLowerCase();
@@ -371,10 +363,8 @@ export function evaluateKeyboardEvent(
           result.type = KeyboardResultType.SELECT_ALL;
         }
       } else if (ev.key && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.keyCode >= 48 && ev.key.length === 1) {
-        /*
-         * Include only keys that that result in a _single_ character; don't include num lock,
-         * volume up, etc.
-         */
+        // Include only keys that that result in a _single_ character; don't include num lock,
+        // volume up, etc.
         result.key = ev.key;
       } else if (ev.key && ev.ctrlKey && ev.shiftKey) {
         switch (ev.code) {

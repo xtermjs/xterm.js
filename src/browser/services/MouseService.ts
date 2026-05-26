@@ -147,10 +147,8 @@ export class MouseService implements IMouseService {
         return false;
     }
 
-    /*
-     * exit if we cannot determine valid button/action values
-     * do nothing for higher buttons than wheel
-     */
+    // exit if we cannot determine valid button/action values
+    // do nothing for higher buttons than wheel
     if (action === undefined || but === undefined || but > CoreMouseButton.WHEEL) {
       return false;
     }
@@ -206,23 +204,19 @@ export class MouseService implements IMouseService {
     ev.preventDefault();
     ctx.focus();
 
-    /*
-     * Don't send the mouse button to the pty if mouse events are disabled or
-     * if the selection manager is having selection forced (ie. a modifier is
-     * held).
-     */
+    // Don't send the mouse button to the pty if mouse events are disabled or
+    // if the selection manager is having selection forced (ie. a modifier is
+    // held).
     if (!this._mouseStateService.areMouseEventsActive || this._selectionService.shouldForceSelection(ev)) {
       return;
     }
 
     this._sendEvent(ctx, ev);
 
-    /*
-     * Register additional global handlers which should keep reporting outside
-     * of the terminal element.
-     * Note: Other emulators also do this for 'mousedown' while a button
-     * is held, we currently limit 'mousedown' to the terminal only.
-     */
+    // Register additional global handlers which should keep reporting outside
+    // of the terminal element.
+    // Note: Other emulators also do this for 'mousedown' while a button
+    // is held, we currently limit 'mousedown' to the terminal only.
     if (ctx.requestedEvents.mouseup) {
       ctx.target.document.addEventListener('mouseup', ctx.requestedEvents.mouseup);
     }
@@ -242,14 +236,12 @@ export class MouseService implements IMouseService {
     }
 
     if (!this._bufferService.buffer.hasScrollback) {
-      /*
-       * Convert wheel events into up/down events when the buffer does not have scrollback, this
-       * enables scrolling in apps hosted in the alt buffer such as vim or tmux even when mouse
-       * events are not enabled.
-       * This used implementation used get the actual lines/partial lines scrolled from the
-       * viewport but since moving to the new viewport implementation has been simplified to
-       * simply send a single up or down sequence.
-       */
+      // Convert wheel events into up/down events when the buffer does not have scrollback, this
+      // enables scrolling in apps hosted in the alt buffer such as vim or tmux even when mouse
+      // events are not enabled.
+      // This used implementation used get the actual lines/partial lines scrolled from the
+      // viewport but since moving to the new viewport implementation has been simplified to
+      // simply send a single up or down sequence.
 
       // Do nothing if there's no vertical scroll
       const deltaY = ev.deltaY;

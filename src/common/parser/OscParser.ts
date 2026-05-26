@@ -133,11 +133,9 @@ export class OscParser implements IOscParser {
     }
     // do nothing if command was faulty
     if (this._state !== OscState.ABORT) {
-      /*
-       * if we are still in ID state and get an early end
-       * means that the command has no payload thus we still have
-       * to announce START and send END right after
-       */
+      // if we are still in ID state and get an early end
+      // means that the command has no payload thus we still have
+      // to announce START and send END right after
       if (this._state === OscState.ID) {
         this._start();
       }
@@ -168,11 +166,9 @@ export class OscParser implements IOscParser {
           }
           j--;
         }
-        /*
-         * cleanup left over handlers
-         * we always have to call .end for proper cleanup,
-         * here we use `success` to indicate whether a handler should execute
-         */
+        // cleanup left over handlers
+        // we always have to call .end for proper cleanup,
+        // here we use `success` to indicate whether a handler should execute
         for (; j >= 0; j--) {
           handlerResult = this._active[j].end(false);
           if (handlerResult instanceof Promise) {
@@ -226,10 +222,8 @@ export class OscHandler implements IOscHandler {
     } else if (success) {
       ret = this._handler(this._data);
       if (ret instanceof Promise) {
-        /*
-         * need to hold data until `ret` got resolved
-         * dont care for errors, data will be freed anyway on next start
-         */
+        // need to hold data until `ret` got resolved
+        // dont care for errors, data will be freed anyway on next start
         return ret.then(res => {
           this._data = '';
           this._hitLimit = false;

@@ -64,10 +64,8 @@ const TESTDATA: ITestData = (() => {
   };
 })();
 const SIXEL_SEQ_0 = introducer(0) + TESTDATA.sixel + FINALIZER;
-/*
- * const SIXEL_SEQ_1 = introducer(1) + TESTDATA.sixel + FINALIZER;
- * const SIXEL_SEQ_2 = introducer(2) + TESTDATA.sixel + FINALIZER;
- */
+// const SIXEL_SEQ_1 = introducer(1) + TESTDATA.sixel + FINALIZER;
+// const SIXEL_SEQ_2 = introducer(2) + TESTDATA.sixel + FINALIZER;
 
 // NOTE: the data is loaded as string for easier transport through playwright
 const TESTDATA_IIP: [string, [number, number]][] = [

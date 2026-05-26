@@ -7,10 +7,8 @@
 
 import type Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 
-/*
- * Kitty graphics protocol action types.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'a'.
- */
+// Kitty graphics protocol action types.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'a'.
 export const enum KittyAction {
   TRANSMIT = 't',
   TRANSMIT_DISPLAY = 'T',
@@ -19,29 +17,23 @@ export const enum KittyAction {
   DELETE = 'd'
 }
 
-/*
- * Kitty graphics protocol format types.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
- */
+// Kitty graphics protocol format types.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
 export const enum KittyFormat {
   RGB = 24,
   RGBA = 32,
   PNG = 100
 }
 
-/*
- * Kitty graphics protocol compression types.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'o'.
- */
+// Kitty graphics protocol compression types.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference under key 'o'.
 export const enum KittyCompression {
   NONE = '',
   ZLIB = 'z'
 }
 
-/*
- * Kitty graphics protocol control data keys.
- * See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
- */
+// Kitty graphics protocol control data keys.
+// See: https://sw.kovidgoyal.net/kitty/graphics-protocol/#control-data-reference
 export const enum KittyKey {
   // Action to perform (t=transmit, T=transmit+display, q=query, p=placement, d=delete)
   ACTION = 'a',
@@ -123,10 +115,8 @@ export interface IKittyCommand {
   payload?: string;
 }
 
-/*
- * Pending chunked transmission state.
- * Stores metadata from the first chunk while accumulating decoded payload data.
- */
+// Pending chunked transmission state.
+// Stores metadata from the first chunk while accumulating decoded payload data.
 export interface IPendingTransmission {
   // The parsed command from the first chunk (contains action, format, dimensions, etc.)
   cmd: IKittyCommand;

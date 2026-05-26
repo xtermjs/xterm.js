@@ -15,22 +15,20 @@ import { ApcParser } from 'common/parser/ApcParser';
 /**
  * VT commands done by the parser
  */
-/*
- * @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
- * @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
- * @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
- * @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
- * @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
- * @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
- * @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
- * @vt: #Y   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
- * @vt: #Y   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
- * @vt: #Y   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
- * @vt: #Y   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
- * @vt: #Y   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
- * @vt: #Y   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
- * @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
- */
+// @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
+// @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
+// @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
+// @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
+// @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
+// @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
+// @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
+// @vt: #Y   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
+// @vt: #Y   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
+// @vt: #Y   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
+// @vt: #Y   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
+// @vt: #Y   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
+// @vt: #Y   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
+// @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
 
 /**
  * Table values are generated like this:
@@ -97,10 +95,8 @@ const NON_ASCII_PRINTABLE = 0xA0;
  * Taken from https://vt100.net/emu/dec_ansi_parser.
  */
 export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
-  /*
-   * table size:
-   * (ParserState.STATE_LENGTH - 1) << TableAccess.INDEX_STATE_SHIFT | NON_ASCII_PRINTABLE + 1
-   */
+  // table size:
+  // (ParserState.STATE_LENGTH - 1) << TableAccess.INDEX_STATE_SHIFT | NON_ASCII_PRINTABLE + 1
   const table: TransitionTable = new TransitionTable(4257);
 
   // range macro for byte
@@ -504,11 +500,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._params.resetZdm();
     this._collect = 0;
     this.precedingJoinState = 0;
-    /*
-     * abort pending continuation from async handler
-     * Here the RESET type indicates, that the next parse call will
-     * ignore any saved stack, instead continues sync with next codepoint from GROUND
-     */
+    // abort pending continuation from async handler
+    // Here the RESET type indicates, that the next parse call will
+    // ignore any saved stack, instead continues sync with next codepoint from GROUND
     if (this._parseStack.state !== ParserStackType.NONE) {
       this._parseStack.state = ParserStackType.RESET;
       this._parseStack.handlers = []; // also release handlers ref
@@ -585,10 +579,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
     // resume from async handler
     if (this._parseStack.state) {
-      /*
-       * allow sync parser reset even in continuation mode
-       * Note: can be used to recover parser from improper continuation error below
-       */
+      // allow sync parser reset even in continuation mode
+      // Note: can be used to recover parser from improper continuation error below
       if (this._parseStack.state === ParserStackType.RESET) {
         this._parseStack.state = ParserStackType.NONE;
         start = this._parseStack.chunkPos + 1; // continue with next codepoint in GROUND
@@ -613,11 +605,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           throw new Error('improper continuation due to previous async handler, giving up parsing');
         }
 
-        /*
-         * we have to resume the old handler loop if:
-         * - return value of the promise was `false`
-         * - handlers are not exhausted yet
-         */
+        // we have to resume the old handler loop if:
+        // - return value of the promise was `false`
+        // - handlers are not exhausted yet
         const handlers = this._parseStack.handlers;
         let handlerPos = this._parseStack.handlerPos - 1;
         switch (this._parseStack.state) {
@@ -804,10 +794,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           const handlers = this._csiHandlers[this._collect << 8 | code];
           let j = handlers ? handlers.length - 1 : -1;
           for (; j >= 0; j--) {
-            /*
-             * true means success and to stop bubbling
-             * a promise indicates an async handler that needs to finish before progressing
-             */
+            // true means success and to stop bubbling
+            // a promise indicates an async handler that needs to finish before progressing
             handlerResult = handlers[j](this._params);
             if (handlerResult === true) {
               break;
@@ -845,10 +833,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           const handlersEsc = this._escHandlers[this._collect << 8 | code];
           let jj = handlersEsc ? handlersEsc.length - 1 : -1;
           for (; jj >= 0; jj--) {
-            /*
-             * true means success and to stop bubbling
-             * a promise indicates an async handler that needs to finish before progressing
-             */
+            // true means success and to stop bubbling
+            // a promise indicates an async handler that needs to finish before progressing
             handlerResult = handlersEsc[jj]();
             if (handlerResult === true) {
               break;
@@ -870,10 +856,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._dcsParser.hook(this._collect << 8 | code, this._params);
           break;
         case ParserAction.DCS_PUT:
-          /*
-           * inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f
-           * unhook triggered by: 0x1b, 0x9c (success) and 0x18, 0x1a (abort)
-           */
+          // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f
+          // unhook triggered by: 0x1b, 0x9c (success) and 0x18, 0x1a (abort)
           for (let j = i + 1; ; ++j) {
             if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
               this._dcsParser.put(data, i, j);
@@ -921,10 +905,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this._apcParser.start(this._collect << 8 | code);
           break;
         case ParserAction.APC_PUT:
-          /*
-           * inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
-           * allowed: 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
-           */
+          // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
+          // allowed: 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
           for (let j = i + 1; ; ++j) {
             if (j < length && (
               (data[j] >= 0x20 && data[j] < 0x7f) || (data[j] >= 0x08 && data[j] < 0x0e) || data[j] >= NON_ASCII_PRINTABLE

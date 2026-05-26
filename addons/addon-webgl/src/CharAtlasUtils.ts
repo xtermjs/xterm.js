@@ -25,10 +25,8 @@ export function generateConfig(deviceCellWidth: number, deviceCellHeight: number
     scrollbarSliderBackground: NULL_COLOR,
     scrollbarSliderHoverBackground: NULL_COLOR,
     scrollbarSliderActiveBackground: NULL_COLOR,
-    /*
-     * For the static char atlas, we only use the first 16 colors, but we need all 256 for the
-     * dynamic character atlas.
-     */
+    // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
+    // dynamic character atlas.
     ansi: colors.ansi.slice(),
     contrastCache: colors.contrastCache,
     halfContrastCache: colors.halfContrastCache

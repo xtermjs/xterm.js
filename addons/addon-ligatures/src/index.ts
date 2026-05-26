@@ -15,10 +15,8 @@ const enum LoadingState {
   FAILED
 }
 
-/*
- * Caches 100K characters worth of ligatures. In practice this works out to
- * about 650 KB worth of cache, when a moderate number of ligatures are present.
- */
+// Caches 100K characters worth of ligatures. In practice this works out to
+// about 650 KB worth of cache, when a moderate number of ligatures are present.
 const CACHE_SIZE = 100000;
 
 /**
@@ -48,10 +46,8 @@ export function enableLigatures(term: Terminal, fallbackLigatures: string[] = []
 
       load(currentCallFontName, CACHE_SIZE)
         .then(f => {
-          /*
-           * Another request may have come in while we were waiting, so make
-           * sure our font is still vaild.
-           */
+          // Another request may have come in while we were waiting, so make
+          // sure our font is still vaild.
           if (currentCallFontName === term.options.fontFamily) {
             loadingState = LoadingState.LOADED;
             font = f;
@@ -63,10 +59,8 @@ export function enableLigatures(term: Terminal, fallbackLigatures: string[] = []
           }
         })
         .catch(e => {
-          /*
-           * Another request may have come in while we were waiting, so make
-           * sure our font is still vaild.
-           */
+          // Another request may have come in while we were waiting, so make
+          // sure our font is still vaild.
           if (currentCallFontName === term.options.fontFamily) {
             loadingState = LoadingState.FAILED;
             if (term.options.logLevel === 'debug') {
@@ -79,10 +73,8 @@ export function enableLigatures(term: Terminal, fallbackLigatures: string[] = []
     }
 
     if (font && loadingState === LoadingState.LOADED) {
-      /*
-       * We clone the entries to avoid the internal cache of the ligature finder
-       * getting messed up.
-       */
+      // We clone the entries to avoid the internal cache of the ligature finder
+      // getting messed up.
       return font.findLigatureRanges(text).map<[number, number]>(
         range => [range[0], range[1]]
       );

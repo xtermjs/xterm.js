@@ -7,19 +7,17 @@ import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { WebLinksAddon as IWebLinksApi } from '@xterm/addon-web-links';
 import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 
-/*
- * consider everthing starting with http:// or https://
- * up to first whitespace, `"` or `'` as url
- * NOTE: The repeated end clause is needed to not match a dangling `:`
- * resembling the old (...)*([^:"\'\\s]) final path clause
- * additionally exclude early + final:
- * - unsafe from rfc3986: !*'()
- * - unsafe chars from rfc1738: {}|\^~[]` (minus [] as we need them for ipv6 adresses, also allow ~)
- * also exclude as finals:
- * - final interpunction like ,.!?
- * - any sort of brackets <>()[]{} (not spec conform, but often used to enclose urls)
- * - unsafe chars from rfc1738: {}|\^~[]`
- */
+// consider everthing starting with http:// or https://
+// up to first whitespace, `"` or `'` as url
+// NOTE: The repeated end clause is needed to not match a dangling `:`
+// resembling the old (...)*([^:"\'\\s]) final path clause
+// additionally exclude early + final:
+// - unsafe from rfc3986: !*'()
+// - unsafe chars from rfc1738: {}|\^~[]` (minus [] as we need them for ipv6 adresses, also allow ~)
+// also exclude as finals:
+// - final interpunction like ,.!?
+// - any sort of brackets <>()[]{} (not spec conform, but often used to enclose urls)
+// - unsafe chars from rfc1738: {}|\^~[]`
 const strictUrlRegex = /(https?|HTTPS?):[/]{2}[^\s"'!*(){}|\\\^<>`]*[^\s"':,.!?{}|\\\^~\[\]`()<>]/;
 
 

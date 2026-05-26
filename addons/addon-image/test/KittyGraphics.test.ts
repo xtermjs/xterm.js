@@ -101,14 +101,12 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => await ctx.page.close());
 
 test.describe('Kitty Graphics Protocol', () => {
-  /*
-   * TODO: Add tests for larger images with various dimensions
-   * TODO: Add tests for virtual placement (U=1)
-   * TODO: Add tests for animation frames
-   * TODO: Add performance tests for streaming large images
-   * TODO: Implement cursor movement per Kitty spec - cursor should move by cols/rows after placement (unless C=1)
-   * TODO: Distinguish lowercase delete selectors (placement only) from uppercase (placement + free data)
-   */
+  // TODO: Add tests for larger images with various dimensions
+  // TODO: Add tests for virtual placement (U=1)
+  // TODO: Add tests for animation frames
+  // TODO: Add performance tests for streaming large images
+  // TODO: Implement cursor movement per Kitty spec - cursor should move by cols/rows after placement (unless C=1)
+  // TODO: Distinguish lowercase delete selectors (placement only) from uppercase (placement + free data)
 
   test.beforeEach(async ({}, testInfo) => {
     await ctx.page.evaluate(`
@@ -211,10 +209,8 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('enforces size limit across chunked transmissions', async () => {
-      /*
-       * Create a custom addon with very small size limit (100 bytes)
-       * The 1x1 PNG is ~164 bytes base64, so 2 chunks should exceed 100
-       */
+      // Create a custom addon with very small size limit (100 bytes)
+      // The 1x1 PNG is ~164 bytes base64, so 2 chunks should exceed 100
       await ctx.page.evaluate(() => {
         (window as any).smallLimitAddon = new ImageAddon({
           kittySupport: true,
@@ -1283,10 +1279,8 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('only c specified computes r from aspect ratio', async () => {
-      /*
-       * 200x100 image (2:1 aspect) with c=10.
-       * Per spec: r = ceil((h/w) * c * cw / ch) = ceil(0.5 * 10 * cw / ch)
-       */
+      // 200x100 image (2:1 aspect) with c=10.
+      // Per spec: r = ceil((h/w) * c * cw / ch) = ceil(0.5 * 10 * cw / ch)
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=225;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
       await timeout(100);
 
@@ -1303,10 +1297,8 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('only r specified computes c from aspect ratio', async () => {
-      /*
-       * 200x100 image (2:1 aspect) with r=5.
-       * Per spec: c = ceil((w/h) * r * ch / cw) = ceil(2 * 5 * ch / cw)
-       */
+      // 200x100 image (2:1 aspect) with r=5.
+      // Per spec: c = ceil((w/h) * r * ch / cw) = ceil(2 * 5 * ch / cw)
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=226;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
       await timeout(100);
 
@@ -1324,11 +1316,9 @@ test.describe('Kitty Graphics Protocol', () => {
   });
 
   test.describe('Cursor positioning', () => {
-    /*
-     * NOTE: Current tests document ACTUAL behavior (MVP - cursor doesn't move)
-     * Per Kitty spec: cursor placed at first column after last image column,
-     * on the last row of the image. C=1 means don't move cursor.
-     */
+    // NOTE: Current tests document ACTUAL behavior (MVP - cursor doesn't move)
+    // Per Kitty spec: cursor placed at first column after last image column,
+    // on the last row of the image. C=1 means don't move cursor.
 
     test('cursor advances past 1x1 image', async () => {
       const cursorBefore = await getCursor();
@@ -1386,10 +1376,8 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('cursor should move right by cols when c specified', async () => {
-      /*
-       * c=5, r computed from 1x1 aspect ratio: r = ceil((1/1) * (5*cw) / ch)
-       * With 1:1 aspect, image height in pixels = 5*cw, so r = ceil(5*cw/ch)
-       */
+      // c=5, r computed from 1x1 aspect ratio: r = ceil((1/1) * (5*cw) / ch)
+      // With 1:1 aspect, image height in pixels = 5*cw, so r = ceil(5*cw/ch)
       await ctx.proxy.write(`\x1b_Ga=T,f=100,c=5;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
@@ -1646,12 +1634,10 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test.describe('Pixel verification', () => {
-      /*
-       * The 200x100 image has 20 colored rectangles in a 10x2 grid.
-       * Each rectangle is 20px wide x 50px tall.
-       * Top row (y=0..49):  Red, Orange, Yellow, Lime, Green, Cyan, SkyBlue, Blue, Purple, Magenta
-       * Bottom row (y=50..99): Pink, Brown, Maroon, Olive, Teal, Navy, Gray, DarkGray, LightGray, White
-       */
+      // The 200x100 image has 20 colored rectangles in a 10x2 grid.
+      // Each rectangle is 20px wide x 50px tall.
+      // Top row (y=0..49):  Red, Orange, Yellow, Lime, Green, Cyan, SkyBlue, Blue, Purple, Magenta
+      // Bottom row (y=50..99): Pink, Brown, Maroon, Olive, Teal, Navy, Gray, DarkGray, LightGray, White
 
       test('renders red rectangle at top-left origin (0,0)', async () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
@@ -1664,11 +1650,9 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
         await timeout(200);
 
-        /*
-         * Sample center of each top-row rectangle (y=25, x=10,30,50,...,190)
-         * All within the first cell row, so we read from the canvas at cell (0,0)
-         * Red at x=10
-         */
+        // Sample center of each top-row rectangle (y=25, x=10,30,50,...,190)
+        // All within the first cell row, so we read from the canvas at cell (0,0)
+        // Red at x=10
         deepStrictEqual(await getPixel(0, 0, 10, 25), [255, 0, 0, 255]);
         // Orange at x=30
         deepStrictEqual(await getPixel(0, 0, 30, 25), [255, 128, 0, 255]);
@@ -1684,10 +1668,8 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
         await timeout(200);
 
-        /*
-         * Bottom row starts at y=50. Center at y=75.
-         * Pink at x=10
-         */
+        // Bottom row starts at y=50. Center at y=75.
+        // Pink at x=10
         deepStrictEqual(await getPixel(0, 0, 10, 75), [255, 192, 203, 255]);
         // Brown at x=30
         deepStrictEqual(await getPixel(0, 0, 30, 75), [165, 42, 42, 255]);
@@ -1743,10 +1725,8 @@ test.describe('Kitty Graphics Protocol', () => {
       });
 
       test('scales cropped source region to c/r placement rectangle', async () => {
-        /*
-         * Firefox's createImageBitmap uses different resize sampling, producing
-         * slightly off pixel values compared to Chromium, so skip on Firefox.
-         */
+        // Firefox's createImageBitmap uses different resize sampling, producing
+        // slightly off pixel values compared to Chromium, so skip on Firefox.
         if (ctx.browser.browserType().name() === 'firefox') {
           test.skip();
         }
@@ -2157,10 +2137,8 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('memory limit eviction cleans Kitty handler maps', async () => {
-      /*
-       * Resize terminal to fit 7 non-overlapping 200x100 images without scrolling.
-       * Each image ≈ 29 cols × 8 rows at default cell size.
-       */
+      // Resize terminal to fit 7 non-overlapping 200x100 images without scrolling.
+      // Each image ≈ 29 cols × 8 rows at default cell size.
       await ctx.page.evaluate(`
         window.term.reset();
         window.imageAddon?.dispose();
@@ -2169,11 +2147,9 @@ test.describe('Kitty Graphics Protocol', () => {
         window.term.loadAddon(window.imageAddon);
       `);
 
-      /*
-       * storageLimit 0.5 MB = 125,000 pixels. Each 200x100 image = 20,000 pixels.
-       * 6 images = 120K pixels (under limit). 7th triggers eviction (140K > 125K).
-       * Place non-overlapping so tile-count eviction doesn't interfere.
-       */
+      // storageLimit 0.5 MB = 125,000 pixels. Each 200x100 image = 20,000 pixels.
+      // 6 images = 120K pixels (under limit). 7th triggers eviction (140K > 125K).
+      // Place non-overlapping so tile-count eviction doesn't interfere.
       const positions = [[1, 1], [30, 1], [1, 9], [30, 9], [1, 17], [30, 17]];
       for (let n = 0; n < 6; n++) {
         const [c, r] = positions[n];

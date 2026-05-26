@@ -114,10 +114,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._register(toDisposable(() => {
       this._element.classList.remove(Constants.TERMINAL_CLASS_PREFIX + this._terminalClass);
 
-      /*
-       * Outside influences such as React unmounts may manipulate the DOM before our disposal.
-       * https://github.com/xtermjs/xterm.js/issues/2960
-       */
+      // Outside influences such as React unmounts may manipulate the DOM before our disposal.
+      // https://github.com/xtermjs/xterm.js/issues/2960
       this._rowContainer.remove();
       this._selectionContainer.remove();
       this._widthCache.dispose();
@@ -186,11 +184,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Base CSS
     let styles =
       `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} {` +
-      /*
-       * Disabling pointer events circumvents a browser behavior that prevents `click` events from
-       * being delivered if the target element is replaced during the click. This happened due to
-       * refresh() being called during the mousedown handler to start a selection.
-       */
+      // Disabling pointer events circumvents a browser behavior that prevents `click` events from
+      // being delivered if the target element is replaced during the click. This happened due to
+      // refresh() being called during the mousedown handler to start a selection.
       ` pointer-events: none;` +
       ` color: ${colors.foreground.css};` +
       `}`;
@@ -261,11 +257,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS}.${Constants.CURSOR_BLINK_IDLE_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_BLINK_CLASS} {` +
       ` animation: none !important;` +
       `}` +
-      /*
-       * !important helps fix an issue where the cursor will not render on top of the selection,
-       * however it's very hard to fix this issue and retain the blink animation without the use of
-       * !important. So this edge case fails when cursor blink is on.
-       */
+      // !important helps fix an issue where the cursor will not render on top of the selection,
+      // however it's very hard to fix this issue and retain the blink animation without the use of
+      // !important. So this edge case fails when cursor blink is on.
       `${this._terminalSelector} .${Constants.ROW_CONTAINER_CLASS} .${RowCss.CURSOR_CLASS}.${RowCss.CURSOR_STYLE_BLOCK_CLASS} {` +
       ` background-color: ${colors.cursor.css};` +
       ` color: ${colors.cursorAccent.css};` +

@@ -236,11 +236,9 @@ describe('CompositionHelper', () => {
 
     it('Should insert middle composition and subsequent input without appending existing trailing text', (done) => {
       textarea.value = '一二';
-      /*
-       * screenReaderMode keeps textarea content/selection for assistive technologies (eg. screen
-       * readers), so the caret can be moved within the textarea (eg. via arrow keys) before
-       * starting composition.
-       */
+      // screenReaderMode keeps textarea content/selection for assistive technologies (eg. screen
+      // readers), so the caret can be moved within the textarea (eg. via arrow keys) before
+      // starting composition.
       textarea.selectionStart = 1;
       textarea.selectionEnd = 1;
 

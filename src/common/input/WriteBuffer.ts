@@ -90,16 +90,12 @@ export class WriteBuffer extends Disposable {
    * @deprecated Unreliable, to be removed soon.
    */
   public writeSync(data: string | Uint8Array, maxSubsequentCalls?: number): void {
-    /*
-     * stop writeSync recursions with maxSubsequentCalls argument
-     * This is dangerous to use as it will lose the current data chunk
-     * and return immediately.
-     */
+    // stop writeSync recursions with maxSubsequentCalls argument
+    // This is dangerous to use as it will lose the current data chunk
+    // and return immediately.
     if (maxSubsequentCalls !== undefined && this._syncCalls > maxSubsequentCalls) {
-      /*
-       * comment next line if a whole loop block should only contain x `writeSync` calls
-       * (total flat vs. deep nested limit)
-       */
+      // comment next line if a whole loop block should only contain x `writeSync` calls
+      // (total flat vs. deep nested limit)
       this._syncCalls = 0;
       return;
     }
@@ -116,22 +112,18 @@ export class WriteBuffer extends Disposable {
     }
     this._isSyncWriting = true;
 
-    /*
-     * force sync processing on pending data chunks to avoid in-band data scrambling
-     * does the same as innerWrite but without event loop
-     * we have to do it here as single loop steps to not corrupt loop subject
-     * by another writeSync call triggered from _action
-     */
+    // force sync processing on pending data chunks to avoid in-band data scrambling
+    // does the same as innerWrite but without event loop
+    // we have to do it here as single loop steps to not corrupt loop subject
+    // by another writeSync call triggered from _action
     let chunk: string | Uint8Array | undefined;
     while (chunk = this._writeBuffer.shift()) {
       this._action(chunk);
       const cb = this._callbacks.shift();
       if (cb) cb();
     }
-    /*
-     * reset to avoid reprocessing of chunks with scheduled innerWrite call
-     * stopping scheduled innerWrite by offset > length condition
-     */
+    // reset to avoid reprocessing of chunks with scheduled innerWrite call
+    // stopping scheduled innerWrite by offset > length condition
     this._pendingData = 0;
     this._bufferOffset = 0x7FFFFFFF;
 
@@ -149,11 +141,9 @@ export class WriteBuffer extends Disposable {
     if (!this._writeBuffer.length) {
       this._bufferOffset = 0;
 
-      /*
-       * If this is the first write call after the user has done some input,
-       * parse it immediately to minimize input latency,
-       * otherwise schedule for the next event
-       */
+      // If this is the first write call after the user has done some input,
+      // parse it immediately to minimize input latency,
+      // otherwise schedule for the next event
       if (this._didUserInput) {
         this._didUserInput = false;
         this._pendingData += data.length;
@@ -244,19 +234,15 @@ export class WriteBuffer extends Disposable {
          * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
          * current microtask queue (executed before setTimeout).
          */
-        /*
-         * const continuation: (r: boolean) => void = performance.now() - startTime >=
-         *     Constants.WRITE_TIMEOUT_MS
-         *   ? r => setTimeout(() => this._innerWrite(0, r))
-         *   : r => this._innerWrite(startTime, r);
-         */
+        // const continuation: (r: boolean) => void = performance.now() - startTime >=
+        //     Constants.WRITE_TIMEOUT_MS
+        //   ? r => setTimeout(() => this._innerWrite(0, r))
+        //   : r => this._innerWrite(startTime, r);
 
-        /*
-         * Handle exceptions synchronously to current band position, idea:
-         * 1. spawn a single microtask which we allow to throw hard
-         * 2. spawn a promise immediately resolving to `true`
-         * (executed on the same queue, thus properly aligned before continuation happens)
-         */
+        // Handle exceptions synchronously to current band position, idea:
+        // 1. spawn a single microtask which we allow to throw hard
+        // 2. spawn a promise immediately resolving to `true`
+        // (executed on the same queue, thus properly aligned before continuation happens)
         result.catch(err => {
           queueMicrotask(() => {throw err;});
           return Promise.resolve(false);
@@ -274,10 +260,8 @@ export class WriteBuffer extends Disposable {
       }
     }
     if (this._writeBuffer.length > this._bufferOffset) {
-      /*
-       * Allow renderer to catch up before processing the next batch
-       * trim already processed chunks if we are above threshold
-       */
+      // Allow renderer to catch up before processing the next batch
+      // trim already processed chunks if we are above threshold
       if (this._bufferOffset > Constants.WRITE_BUFFER_LENGTH_THRESHOLD) {
         this._writeBuffer = this._writeBuffer.slice(this._bufferOffset);
         this._callbacks = this._callbacks.slice(this._bufferOffset);

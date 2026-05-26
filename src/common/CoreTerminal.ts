@@ -176,10 +176,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     x = Math.max(x, BufferServiceConstants.MINIMUM_COLS);
     y = Math.max(y, BufferServiceConstants.MINIMUM_ROWS);
 
-    /*
-     * Flush pending writes before resize to avoid race conditions where async
-     * writes are processed with incorrect dimensions
-     */
+    // Flush pending writes before resize to avoid race conditions where async
+    // writes are processed with incorrect dimensions
     this._writeBuffer.flushSync();
 
     this._bufferService.resize(x, y);

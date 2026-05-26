@@ -57,10 +57,8 @@ export function processLookaheadPosition(
       range: []
     };
 
-    /*
-     * All glyphs at this position share ONE entry - lookahead just needs to match,
-     * all paths lead to the same result
-     */
+    // All glyphs at this position share ONE entry - lookahead just needs to match,
+    // all paths lead to the same result
     const sharedEntry: ILookupTreeEntry = {};
 
     for (const glyph of glyphs) {
@@ -102,10 +100,8 @@ export function processBacktrackPosition(
       range: []
     };
 
-    /*
-     * All glyphs at this position share ONE entry - backtrack just needs to match,
-     * all paths lead to the same result
-     */
+    // All glyphs at this position share ONE entry - backtrack just needs to match,
+    // all paths lead to the same result
     const sharedEntry: ILookupTreeEntry = {};
 
     for (const glyph of glyphs) {

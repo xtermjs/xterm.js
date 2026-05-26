@@ -47,10 +47,8 @@ export class CellColorResolver {
     this.result.bg = cell.bg;
     this.result.fg = cell.fg;
     this.result.ext = cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0;
-    /*
-     * Get any foreground/background overrides, this happens on the model to avoid spreading
-     * override logic throughout the different sub-renderers
-     */
+    // Get any foreground/background overrides, this happens on the model to avoid spreading
+    // override logic throughout the different sub-renderers
 
     // Reset overrides work variables
     $bg = 0;
@@ -188,10 +186,8 @@ export class CellColorResolver {
       }
     });
 
-    /*
-     * Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
-     * ahead of time in order to use the correct cache key
-     */
+    // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
+    // ahead of time in order to use the correct cache key
     if ($hasBg) {
       if ($isSelected) {
         // Non-RGB attributes from model + force non-dim + override + force RGB color mode
@@ -206,10 +202,8 @@ export class CellColorResolver {
       $fg = (cell.fg & ~Attributes.RGB_MASK & ~FgFlags.INVERSE) | $fg | Attributes.CM_RGB;
     }
 
-    /*
-     * Handle case where inverse was specified by only one of bg override or fg override was set,
-     * resolving the other inverse color and setting the inverse flag if needed.
-     */
+    // Handle case where inverse was specified by only one of bg override or fg override was set,
+    // resolving the other inverse color and setting the inverse flag if needed.
     if (this.result.fg & FgFlags.INVERSE) {
       if ($hasBg && !$hasFg) {
         // Resolve bg color type (default color has a different meaning in fg vs bg)

@@ -2065,10 +2065,8 @@ async function throwsAsync(fn: () => Promise<any>, message?: string | undefined)
 }
 
 describe('EscapeSequenceParser - async', () => {
-  /*
-   * sequences: SGR 1;31 | hello SP | ESC %G | wor | ESC E | ld! | SGR 0 | EXE \r\n | $> | DCS 1;2 a [xyz] ST | OSC 1;foo=bar ST | APC X abc ST | FIN
-   * needed handlers: CSI m, PRINT, ESC %G, ESC E, EXE \r, EXE \n, OSC 1, APC X
-   */
+  // sequences: SGR 1;31 | hello SP | ESC %G | wor | ESC E | ld! | SGR 0 | EXE \r\n | $> | DCS 1;2 a [xyz] ST | OSC 1;foo=bar ST | APC X abc ST | FIN
+  // needed handlers: CSI m, PRINT, ESC %G, ESC E, EXE \r, EXE \n, OSC 1, APC X
   const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1bP1;2axyz\x1b\\\x1b]1;foo=bar\x1b\\\x1b_Xabc\x1b\\FIN';
   let RESULT: any[];
   let parser: TestEscapeSequenceParser;
@@ -2157,10 +2155,8 @@ describe('EscapeSequenceParser - async', () => {
     it('sync parse call does not work anymore', () => {
       assert.notEqual(!parseSync(parser, INPUT), true);
       assert.notDeepEqual(callstack, RESULT);
-      /*
-       * due to sync calling we should save exactly one saved stack
-       * proper continuation is not possible anymore, as we lost the promise resolve value
-       */
+      // due to sync calling we should save exactly one saved stack
+      // proper continuation is not possible anymore, as we lost the promise resolve value
       assert.equal(parser.trackedStack.length, 1);
     });
     it('improper continuation should throw', async () => {
@@ -2226,10 +2222,8 @@ describe('EscapeSequenceParser - async', () => {
 
       // split to single char input
       for (let i = 0; i < INPUT.length; ++i) {
-        /*
-         * Note: a single fully awaited parse call always ends in sync mode,
-         * which re-enables faster sync processing in the higher up callstack
-         */
+        // Note: a single fully awaited parse call always ends in sync mode,
+        // which re-enables faster sync processing in the higher up callstack
         await parseP(parser, INPUT[i]);
       }
       assert.deepEqual(callstack, RESULT);

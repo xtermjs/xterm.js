@@ -21,10 +21,8 @@ test.describe('WebFontsAddon', () => {
     deepStrictEqual(empty, []);
   });
   test.afterEach(async () => {
-    /*
-     * for font loading tests to work, we have to remove added rules and fonts
-     * to work around the quite aggressive font caching done by the browsers
-     */
+    // for font loading tests to work, we have to remove added rules and fonts
+    // to work around the quite aggressive font caching done by the browsers
     await ctx.page.evaluate(`
       document.styleSheets[0].deleteRule(1);
       document.styleSheets[0].deleteRule(0);
@@ -75,10 +73,8 @@ test.describe('WebFontsAddon', () => {
     });
 
     test('autoload & relayout from ctor', async ({ browser }) => {
-      /*
-       * to make this test work, we exclude the default measurement char W (x57) by restricting unicode-range
-       * now the browser will postpone font loading until codepoint is hit --> wrong glyph metrics on first usage
-       */
+      // to make this test work, we exclude the default measurement char W (x57) by restricting unicode-range
+      // now the browser will postpone font loading until codepoint is hit --> wrong glyph metrics on first usage
       const data = await ctx.page.evaluate(`
           document.styleSheets[0].insertRule("@font-face {font-family: Kongtext; src: url(/fonts/kongtext.regular.ttf) format('truetype'); unicode-range: U+00A0-00FF}", 0);
         `);
@@ -101,10 +97,8 @@ test.describe('WebFontsAddon', () => {
         deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'unloaded' }]);
       }
 
-      /*
-       * good case: addon fixes layout for webfont in ctor
-       * the relayout happens async, so wait a bit with a promise
-       */
+      // good case: addon fixes layout for webfont in ctor
+      // the relayout happens async, so wait a bit with a promise
       await ctx.page.evaluate(`
           window.helperTerm.dispose();
           window.helperTerm = new Terminal({fontFamily: '"Kongtext", ' + term.options.fontFamily});
