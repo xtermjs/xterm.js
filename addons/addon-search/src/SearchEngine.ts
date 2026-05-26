@@ -251,6 +251,78 @@ export class SearchEngine {
   }
 
   /**
+   * Finds a regex match in a line in a single pass, optionally enforcing whole-word boundaries.
+   */
+  private _findRegexMatch(
+    searchStringLine: string,
+    searchRegex: RegExp,
+    offset: number,
+    isReverseSearch: boolean,
+    wholeWord: boolean
+  ): { resultIndex: number; term: string } | undefined {
+    let resultIndex = -1;
+    let matchedTerm = '';
+
+    if (!isReverseSearch && !wholeWord) {
+      searchRegex.lastIndex = offset;
+      const foundTerm = searchRegex.exec(searchStringLine);
+      if (foundTerm && foundTerm[0].length > 0) {
+        return {
+          resultIndex: searchRegex.lastIndex - foundTerm[0].length,
+          term: foundTerm[0]
+        };
+      }
+      return undefined;
+    }
+
+    searchRegex.lastIndex = 0;
+    if (isReverseSearch) {
+      let foundTerm: RegExpExecArray | null;
+      while (foundTerm = searchRegex.exec(searchStringLine)) {
+        if (foundTerm[0].length === 0) {
+          if (searchRegex.lastIndex >= searchStringLine.length) {
+            break;
+          }
+          searchRegex.lastIndex++;
+          continue;
+        }
+        const candidateIndex = searchRegex.lastIndex - foundTerm[0].length;
+        if (candidateIndex + foundTerm[0].length > offset) {
+          break;
+        }
+        if (!wholeWord || this._isWholeWord(candidateIndex, searchStringLine, foundTerm[0])) {
+          resultIndex = candidateIndex;
+          matchedTerm = foundTerm[0];
+        }
+        searchRegex.lastIndex -= (foundTerm[0].length - 1);
+      }
+    } else {
+      searchRegex.lastIndex = offset;
+      let foundTerm: RegExpExecArray | null;
+      while (foundTerm = searchRegex.exec(searchStringLine)) {
+        if (foundTerm[0].length === 0) {
+          if (searchRegex.lastIndex >= searchStringLine.length) {
+            break;
+          }
+          searchRegex.lastIndex++;
+          continue;
+        }
+        const candidateIndex = searchRegex.lastIndex - foundTerm[0].length;
+        if (this._isWholeWord(candidateIndex, searchStringLine, foundTerm[0])) {
+          resultIndex = candidateIndex;
+          matchedTerm = foundTerm[0];
+          break;
+        }
+      }
+    }
+
+    if (resultIndex < 0) {
+      return undefined;
+    }
+    return { resultIndex, term: matchedTerm };
+  }
+
+  /**
    * Searches a line for a search term. Takes the provided terminal line and searches the text line,
    * which may contain subsequent terminal lines if the text is wrapped. If the provided line number
    * is part of a wrapped text line that started on an earlier line then it is skipped since it will
@@ -308,29 +380,16 @@ export class SearchEngine {
     let resultIndex = -1;
     if (searchOptions.regex) {
       const searchRegex = lineSearchRegex ?? RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
-      searchRegex.lastIndex = 0;
-      let foundTerm: RegExpExecArray | null;
-      if (isReverseSearch) {
-        // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
-        const searchSubstring = searchStringLine.slice(0, offset);
-        while (foundTerm = searchRegex.exec(searchSubstring)) {
-          if (foundTerm[0].length === 0) {
-            if (searchRegex.lastIndex >= searchSubstring.length) {
-              break;
-            }
-            searchRegex.lastIndex++;
-            continue;
-          }
-          resultIndex = searchRegex.lastIndex - foundTerm[0].length;
-          term = foundTerm[0];
-          searchRegex.lastIndex -= (term.length - 1);
-        }
-      } else {
-        foundTerm = searchRegex.exec(searchStringLine.slice(offset));
-        if (foundTerm && foundTerm[0].length > 0) {
-          resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
-          term = foundTerm[0];
-        }
+      const regexMatch = this._findRegexMatch(
+        searchStringLine,
+        searchRegex,
+        offset,
+        isReverseSearch,
+        !!searchOptions.wholeWord
+      );
+      if (regexMatch) {
+        resultIndex = regexMatch.resultIndex;
+        term = regexMatch.term;
       }
     } else if (isReverseSearch) {
       let searchEnd = offset - searchTerm.length;
@@ -361,52 +420,6 @@ export class SearchEngine {
     }
 
     if (resultIndex >= 0) {
-      if (searchOptions.regex) {
-        if (searchOptions.wholeWord) {
-          const searchRegex = lineSearchRegex ?? RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
-          searchRegex.lastIndex = 0;
-          let foundTerm: RegExpExecArray | null;
-          if (isReverseSearch) {
-            resultIndex = -1;
-            const wholeWordSubstring = searchStringLine.slice(0, offset);
-            while (foundTerm = searchRegex.exec(wholeWordSubstring)) {
-              if (foundTerm[0].length === 0) {
-                if (searchRegex.lastIndex >= wholeWordSubstring.length) {
-                  break;
-                }
-                searchRegex.lastIndex++;
-                continue;
-              }
-              const candidateIndex = searchRegex.lastIndex - foundTerm[0].length;
-              const candidateTerm = foundTerm[0];
-              if (this._isWholeWord(candidateIndex, searchStringLine, candidateTerm)) {
-                resultIndex = candidateIndex;
-                term = candidateTerm;
-              }
-              searchRegex.lastIndex -= (candidateTerm.length - 1);
-            }
-          } else {
-            resultIndex = -1;
-            searchRegex.lastIndex = offset;
-            while (foundTerm = searchRegex.exec(searchStringLine)) {
-              if (foundTerm[0].length === 0) {
-                break;
-              }
-              const candidateIndex = searchRegex.lastIndex - foundTerm[0].length;
-              const candidateTerm = foundTerm[0];
-              if (this._isWholeWord(candidateIndex, searchStringLine, candidateTerm)) {
-                resultIndex = candidateIndex;
-                term = candidateTerm;
-                break;
-              }
-            }
-          }
-          if (resultIndex < 0) {
-            return;
-          }
-        }
-      }
-
       // Adjust the row number and search index if needed since a "line" of text can span multiple
       // rows
       let startRowOffset = 0;
