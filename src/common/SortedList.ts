@@ -191,8 +191,10 @@ export class SortedList<T> {
         return mid;
       }
     }
-    // key not in list
-    // still return closest min (also used as insert position)
+    /*
+     * key not in list
+     * still return closest min (also used as insert position)
+     */
     return min;
   }
 }

@@ -227,9 +227,11 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[2S');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['3', '4', '5', '', '']);
     });
-    // This is intentionally not implemented here are image support lives within an addon
-    // test.skip('CSI ? Pi ; Pa ; Pv S - XTSMGRAPHICS: Set or request graphics attribute, xterm', async () => {
-    // });
+    /*
+     * This is intentionally not implemented here are image support lives within an addon
+     * test.skip('CSI ? Pi ; Pa ; Pv S - XTSMGRAPHICS: Set or request graphics attribute, xterm', async () => {
+     * });
+     */
     test('CSI Ps T - SD: Scroll down Ps lines (default = 1), VT420', async () => {
       await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
@@ -349,8 +351,10 @@ test.describe('InputHandler Integration Tests', () => {
       await pollFor(ctx.page, () => getLinesAsArray(3), ['aoo', '', '  b']);
     });
     test('CSI Ps g - TBC: Tab Clear (default = 0)', async () => {
-      // Default: Clear tab stop at cursor position
-      // Move to column 9 (first tab stop), clear it, go back to column 1, tab should skip to column 17
+      /*
+       * Default: Clear tab stop at cursor position
+       * Move to column 9 (first tab stop), clear it, go back to column 1, tab should skip to column 17
+       */
       await ctx.proxy.write('\x1b[9G\x1b[g\x1b[1G\ta');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['                a']);
       // Ps=3: Clear all tab stops
@@ -523,8 +527,10 @@ test.describe('InputHandler Integration Tests', () => {
       test('Ps = 6 9 - Enable left and right margin mode (DECLRMM), VT420 and up', async () => {
         await assertNoModeChange('\x1b[?69h');
       });
-      // test.skip('Ps = 8 0 - Enable Sixel Display Mode (DECSDM), VT330, VT340, VT382', async () => {
-      // });
+      /*
+       * test.skip('Ps = 8 0 - Enable Sixel Display Mode (DECSDM), VT330, VT340, VT382', async () => {
+       * });
+       */
       test('Ps = 9 5 - Do not clear screen when DECCOLM is set/reset (DECNCSM), VT510 and up', async () => {
         await assertNoModeChange('\x1b[?95h');
       });
@@ -881,9 +887,11 @@ test.describe('InputHandler Integration Tests', () => {
       test('Ps = 6 9 - Disable left and right margin mode (DECLRMM), VT420 and up.', async () => {
         await assertNoModeChange('\x1b[?69l');
       });
-      // This is intentionally not implemented here are image support lives within an addon
-      // test.skip('Ps = 8 0 - Disable Sixel Display Mode (DECSDM), VT330, VT340, VT382.  Turns on "Sixel Scrolling".  See the section Sixel Graphics and mode 8 4 5 2 .', async () => {
-      // });
+      /*
+       * This is intentionally not implemented here are image support lives within an addon
+       * test.skip('Ps = 8 0 - Disable Sixel Display Mode (DECSDM), VT330, VT340, VT382.  Turns on "Sixel Scrolling".  See the section Sixel Graphics and mode 8 4 5 2 .', async () => {
+       * });
+       */
       test('Ps = 9 5 - Clear screen when DECCOLM is set/reset (DECNCSM), VT510 and up.', async () => {
         await assertNoModeChange('\x1b[?95l');
       });

@@ -88,6 +88,7 @@ export default tseslint.config(
       'jsdoc/check-param-names': 'warn',
       'jsdoc/no-multi-asterisks': 'warn',
       'keyword-spacing': 'warn',
+      'multiline-comment-style': ['warn', 'starred-block'],
       'max-len': ['warn', {
         code: 1000,
         comments: 100,

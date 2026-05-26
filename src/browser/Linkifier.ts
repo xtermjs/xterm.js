@@ -87,9 +87,11 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   }
 
   private _handleHover(position: IBufferCellPosition): void {
-    // TODO: This currently does not cache link provider results across wrapped lines, activeLine
-    //       should be something like `activeRange: {startY, endY}`
-    // Check if we need to clear the link
+    /*
+     * TODO: This currently does not cache link provider results across wrapped lines, activeLine
+     *       should be something like `activeRange: {startY, endY}`
+     * Check if we need to clear the link
+     */
     if (this._activeLine !== position.y || this._wasResized) {
       this._clearCurrentLink();
       this._askForLink(position, false);
@@ -125,9 +127,11 @@ export class Linkifier extends Disposable implements ILinkifier2 {
         const existingReply = this._activeProviderReplies?.get(i);
         // If there isn't a reply, the provider hasn't responded yet.
 
-        // TODO: If there isn't a reply yet it means that the provider is still resolving. Ensuring
-        // provideLinks isn't triggered again saves ILink.hover firing twice though. This probably
-        // needs promises to get fixed
+        /*
+         * TODO: If there isn't a reply yet it means that the provider is still resolving. Ensuring
+         * provideLinks isn't triggered again saves ILink.hover firing twice though. This probably
+         * needs promises to get fixed
+         */
         if (existingReply) {
           linkProvided = this._checkLinkProviderResult(i, position, linkProvided);
         }
@@ -140,8 +144,10 @@ export class Linkifier extends Disposable implements ILinkifier2 {
           this._activeProviderReplies?.set(i, linksWithState);
           linkProvided = this._checkLinkProviderResult(i, position, linkProvided);
 
-          // If all providers have responded, remove lower priority links that intersect ranges of
-          // higher priority links
+          /*
+           * If all providers have responded, remove lower priority links that intersect ranges of
+           * higher priority links
+           */
           if (this._activeProviderReplies?.size === this._linkProviderService.linkProviders.length) {
             this._removeIntersectingLinks(position.y, this._activeProviderReplies);
           }
@@ -187,8 +193,10 @@ export class Linkifier extends Disposable implements ILinkifier2 {
       }
     }
 
-    // If all providers with higher priority came back undefined, then this provider's link for
-    // the position should be used
+    /*
+     * If all providers with higher priority came back undefined, then this provider's link for
+     * the position should be used
+     */
     if (!hasLinkBefore && links) {
       const linkAtPosition = links.find(link => this._linkAtPosition(link.link, position));
       if (linkAtPosition) {
@@ -296,15 +304,19 @@ export class Linkifier extends Disposable implements ILinkifier2 {
         }
       });
 
-      // Listen to viewport changes to re-render the link under the cursor (only when the line the
-      // link is on changes)
+      /*
+       * Listen to viewport changes to re-render the link under the cursor (only when the line the
+       * link is on changes)
+       */
       this._linkCacheDisposables.push(this._renderService.onRenderedViewportChange(e => {
         // Sanity check, this shouldn't happen in practice as this listener would be disposed
         if (!this._currentLink) {
           return;
         }
-        // When start is 0 a scroll most likely occurred, make sure links above the fold also get
-        // cleared.
+        /*
+         * When start is 0 a scroll most likely occurred, make sure links above the fold also get
+         * cleared.
+         */
         const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
         const end = this._bufferService.buffer.ydisp + 1 + e.end;
         // Only clear the link if the viewport change happened on this line

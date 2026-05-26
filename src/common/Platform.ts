@@ -9,14 +9,18 @@ interface INavigator {
   platform: string;
 }
 
-// We're declaring a navigator global here as we expect it in all runtimes (node and browser), but
-// we want this module to live in common.
+/*
+ * We're declaring a navigator global here as we expect it in all runtimes (node and browser), but
+ * we want this module to live in common.
+ */
 declare const navigator: INavigator;
 declare const process: unknown;
 
-// navigator.userAgent is also checked here because bundling with the process module can cause
-// issues otherwise. Note that navigator exists in Node.js 21+ but the userAgent is
-// "Node.js/<version>".
+/*
+ * navigator.userAgent is also checked here because bundling with the process module can cause
+ * issues otherwise. Note that navigator exists in Node.js 21+ but the userAgent is
+ * "Node.js/<version>".
+ */
 export const isNode = (typeof process !== 'undefined' && 'title' in (process as any) && (typeof navigator === 'undefined' || navigator.userAgent.startsWith('Node.js/'))) ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
@@ -44,9 +48,11 @@ export function getSafariVersion(): number {
   return parseInt(majorVersion[1]);
 }
 
-// Find the users platform. We use this to interpret the meta key
-// and ISO third level shifts.
-// http://stackoverflow.com/q/19877924/577598
+/*
+ * Find the users platform. We use this to interpret the meta key
+ * and ISO third level shifts.
+ * http://stackoverflow.com/q/19877924/577598
+ */
 export const isMac = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'].includes(platform);
 export const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].includes(platform);
 export const isLinux = platform.indexOf('Linux') >= 0;

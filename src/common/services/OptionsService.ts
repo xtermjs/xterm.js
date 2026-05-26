@@ -90,8 +90,10 @@ export class OptionsService extends Disposable implements IOptionsService {
     this.options = { ... defaultOptions };
     this._setupOptions();
 
-    // Clear out options that could link outside xterm.js as they could easily cause an embedder
-    // memory leak
+    /*
+     * Clear out options that could link outside xterm.js as they could easily cause an embedder
+     * memory leak
+     */
     this._register(toDisposable(() => {
       this.rawOptions.linkHandler = null;
       this.rawOptions.documentOverride = null;

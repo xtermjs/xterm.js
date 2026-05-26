@@ -147,10 +147,12 @@ export class DcsHandler implements IDcsHandler {
   constructor(private _handler: (data: string, params: IParams) => boolean | Promise<boolean>) { }
 
   public hook(params: IParams): void {
-    // since we need to preserve params until `unhook`, we have to clone it
-    // (only borrowed from parser and spans multiple parser states)
-    // perf optimization:
-    // clone only, if we have non empty params, otherwise stick with default
+    /*
+     * since we need to preserve params until `unhook`, we have to clone it
+     * (only borrowed from parser and spans multiple parser states)
+     * perf optimization:
+     * clone only, if we have non empty params, otherwise stick with default
+     */
     this._params = (params.length > 1 || params.params[0]) ? params.clone() : EMPTY_PARAMS;
     this._data = '';
     this._hitLimit = false;
@@ -174,8 +176,10 @@ export class DcsHandler implements IDcsHandler {
     } else if (success) {
       ret = this._handler(this._data, this._params);
       if (ret instanceof Promise) {
-        // need to hold data and params until `ret` got resolved
-        // dont care for errors, data will be freed anyway on next start
+        /*
+         * need to hold data and params until `ret` got resolved
+         * dont care for errors, data will be freed anyway on next start
+         */
         return ret.then(res => {
           this._params = EMPTY_PARAMS;
           this._data = '';

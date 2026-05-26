@@ -54,9 +54,11 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
 
   private _checkReadonlyOptions(propName: string): void {
-    // Throw an error if any constructor only option is modified
-    // from terminal.options
-    // Modifications from anywhere else are allowed
+    /*
+     * Throw an error if any constructor only option is modified
+     * from terminal.options
+     * Modifications from anywhere else are allowed
+     */
     if (CONSTRUCTOR_ONLY_OPTIONS.includes(propName)) {
       throw new Error(`Option "${propName}" can only be set in the constructor`);
     }

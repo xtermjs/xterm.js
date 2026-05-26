@@ -62,9 +62,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
   // Storage related states
 
   private _pendingTransmissions: Map<number, IPendingTransmission> = new Map();
-  // Tracks the pending key of the most recently started chunked upload.
-  // Per spec, subsequent chunks only need m= (and optionally q=), without i=.
-  // When a chunk arrives with no i=, this key is used to find the pending upload.
+  /*
+   * Tracks the pending key of the most recently started chunked upload.
+   * Per spec, subsequent chunks only need m= (and optionally q=), without i=.
+   * When a chunk arrives with no i=, this key is used to find the pending upload.
+   */
   private _lastPendingKey: number | undefined;
 
   constructor(
@@ -173,9 +175,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
   private _streamPayload(data: Uint32Array, start: number, end: number): void {
     if (this._aborted) return;
 
-    // Check size limit (compare encoded bytes against pre-calculated limit)
-    // Include cumulative size from pending transmission for multi-chunk images.
-    // Per spec, subsequent chunks may omit i=, so fall back to _lastPendingKey.
+    /*
+     * Check size limit (compare encoded bytes against pre-calculated limit)
+     * Include cumulative size from pending transmission for multi-chunk images.
+     * Per spec, subsequent chunks may omit i=, so fall back to _lastPendingKey.
+     */
     const pendingKey = this._parsedCommand?.id ?? this._lastPendingKey ?? 0;
     const pending = this._pendingTransmissions.get(pendingKey);
     const previousEncodedSize = pending?.totalEncodedSize ?? 0;
@@ -285,9 +289,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     }
     this._activeDecoder = null;
 
-    // Handle command first — handlers create Blob/ImageData from imageBytes,
-    // which copies the data. Only then is it safe to release the decoder's
-    // wasm memory that imageBytes points into.
+    /*
+     * Handle command first — handlers create Blob/ImageData from imageBytes,
+     * which copies the data. Only then is it safe to release the decoder's
+     * wasm memory that imageBytes points into.
+     */
     const result = this._handleCommandWithBytesAndCmd(finalCmd, imageBytes, decodeError);
     if (decoder) {
       decoder.release();
@@ -325,10 +331,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       case KittyAction.PLACEMENT:
         return this._handlePlacement(cmd);
       default:
-        // TODO: Implement remaining actions when needed:
-        // - a=f (frame): animation frame operations
-        // - a=a (animation): animation control
-        // - a=c (compose): compose images
+        /*
+         * TODO: Implement remaining actions when needed:
+         * - a=f (frame): animation frame operations
+         * - a=a (animation): animation control
+         * - a=c (compose): compose images
+         */
         if (cmd.id !== undefined) {
           this._sendResponse(cmd.id, 'EINVAL:unsupported action', cmd.quiet ?? 0);
         }
@@ -342,8 +350,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     switch (action) {
       case KittyAction.TRANSMIT: {
         const result = this._handleTransmit(cmd, bytes, decodeError);
-        // Only send response when _handleTransmit didn't already respond
-        // (it handles unsupported transmission medium responses internally)
+        /*
+         * Only send response when _handleTransmit didn't already respond
+         * (it handles unsupported transmission medium responses internally)
+         */
         if ((cmd.transmission ?? 'd') === 'd' && cmd.id !== undefined) {
           if (decodeError) {
             this._sendResponse(cmd.id, 'EINVAL:invalid base64 data', cmd.quiet ?? 0);
@@ -361,10 +371,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         // a=p ignores any payload — image data was already transmitted
         return this._handlePlacement(cmd);
       default:
-        // TODO: Implement remaining actions when needed:
-        // - a=f (frame): animation frame operations
-        // - a=a (animation): animation control
-        // - a=c (compose): compose images
+        /*
+         * TODO: Implement remaining actions when needed:
+         * - a=f (frame): animation frame operations
+         * - a=a (animation): animation control
+         * - a=c (compose): compose images
+         */
         if (cmd.id !== undefined) {
           this._sendResponse(cmd.id, 'EINVAL:unsupported action', cmd.quiet ?? 0);
         }
@@ -390,16 +402,18 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
   }
 
   private _handleTransmit(cmd: IKittyCommand, bytes: Uint8Array, decodeError: boolean): boolean {
-    // TODO: Support file-based transmission modes (t=f, t=t, t=s)
-    // Currently only supports direct transmission (t=d, the default).
-    // - t=f (file): Payload is base64-encoded file path. Terminal reads image from that path.
-    // - t=t (temp file): Payload is base64-encoded path in temp directory. Terminal reads, deletes.
-    // - t=s: Payload is base64-encoded POSIX shm name. Terminal reads from shared memory.
-    // These modes require filesystem/IPC access not available in browsers. For Node.js/Electron:
-    // 1. Check cmd.transmission (t key) before treating bytes as image data
-    // 2. For t=f/t/s: decode bytes as UTF-8 string (the path/name), then read file contents
-    // 3. For t=d: treat bytes as image data (current behavior)
-    // When implementing, also update _handleQuery to accept these transmission mediums.
+    /*
+     * TODO: Support file-based transmission modes (t=f, t=t, t=s)
+     * Currently only supports direct transmission (t=d, the default).
+     * - t=f (file): Payload is base64-encoded file path. Terminal reads image from that path.
+     * - t=t (temp file): Payload is base64-encoded path in temp directory. Terminal reads, deletes.
+     * - t=s: Payload is base64-encoded POSIX shm name. Terminal reads from shared memory.
+     * These modes require filesystem/IPC access not available in browsers. For Node.js/Electron:
+     * 1. Check cmd.transmission (t key) before treating bytes as image data
+     * 2. For t=f/t/s: decode bytes as UTF-8 string (the path/name), then read file contents
+     * 3. For t=d: treat bytes as image data (current behavior)
+     * When implementing, also update _handleQuery to accept these transmission mediums.
+     */
     const transmission = cmd.transmission ?? 'd';
     if (transmission !== 'd') {
       if (cmd.id !== undefined) {
@@ -449,9 +463,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const id = cmd.id ?? 0;
     const quiet = cmd.quiet ?? 0;
 
-    // Per spec: reject unsupported transmission mediums (only t=d is supported atm)
-    // TODO: When filesystem support is added (Node.js/Electron), update this to accept
-    // t=f (file), t=t (temp file), and t=s (shared memory) and respond OK for queries.
+    /*
+     * Per spec: reject unsupported transmission mediums (only t=d is supported atm)
+     * TODO: When filesystem support is added (Node.js/Electron), update this to accept
+     * t=f (file), t=t (temp file), and t=s (shared memory) and respond OK for queries.
+     */
     const transmission = cmd.transmission ?? 'd';
     if (transmission !== 'd') {
       this._sendResponse(id, 'EINVAL:unsupported transmission medium', quiet);
@@ -500,9 +516,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     // Per spec: default delete selector is 'a' (delete all visible placements)
     const selector = cmd.deleteSelector ?? 'a';
 
-    // TODO: Distinguish lowercase (delete placements only) from uppercase
-    // (delete placements + free stored image data). Currently both variants
-    // free everything since we don't separate stored data from placements.
+    /*
+     * TODO: Distinguish lowercase (delete placements only) from uppercase
+     * (delete placements + free stored image data). Currently both variants
+     * free everything since we don't separate stored data from placements.
+     */
     switch (selector) {
       case 'a':
       case 'A':
@@ -511,10 +529,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         break;
       case 'i':
       case 'I':
-        // TODO: When placement id tracking is implemented (see TODO in
-        // KittyImageStorage), d=i with p=<pid> should delete only that
-        // specific placement, while d=i without p should delete all
-        // placements for the image.
+        /*
+         * TODO: When placement id tracking is implemented (see TODO in
+         * KittyImageStorage), d=i with p=<pid> should delete only that
+         * specific placement, while d=i without p should delete all
+         * placements for the image.
+         */
         if (cmd.id !== undefined) {
           const pending = this._pendingTransmissions.get(cmd.id);
           if (pending) {
@@ -576,8 +596,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
       const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
 
-      // Per spec: c/r default to image's natural cell dimensions.
-      // If only one of c/r is specified, compute the other from image aspect ratio.
+      /*
+       * Per spec: c/r default to image's natural cell dimensions.
+       * If only one of c/r is specified, compute the other from image aspect ratio.
+       */
       let imgCols: number;
       let imgRows: number;
       if (cmd.columns !== undefined && cmd.rows !== undefined) {
@@ -613,10 +635,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       const savedY = buffer.y;
       const savedYbase = buffer.ybase;
 
-      // Determine layer based on z-index: negative = behind text, 0+ = on top.
-      // When z<0 we always use the bottom layer even without allowTransparency —
-      // the image will simply be hidden behind the opaque text background, which
-      // is the correct behavior (client asked for "behind text").
+      /*
+       * Determine layer based on z-index: negative = behind text, 0+ = on top.
+       * When z<0 we always use the bottom layer even without allowTransparency —
+       * the image will simply be hidden behind the opaque text background, which
+       * is the correct behavior (client asked for "behind text").
+       */
       const wantsBottom = cmd.zIndex !== undefined && cmd.zIndex < 0;
       const layer: ImageLayer = wantsBottom ? 'bottom' : 'top';
 
@@ -630,10 +654,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       const xOffset = Math.min(Math.max(0, cmd.xOffset ?? 0), cw - 1);
       const yOffset = Math.min(Math.max(0, cmd.yOffset ?? 0), ch - 1);
       if (xOffset !== 0 || yOffset !== 0) {
-        // Per spec: X/Y is not added to c/r area. When c/r are explicit, the
-        // total placement area remains c*cw × r*ch pixels and the offset image
-        // is clipped to fit. When c/r are unset, the padded canvas determines
-        // the natural cell dimensions.
+        /*
+         * Per spec: X/Y is not added to c/r area. When c/r are explicit, the
+         * total placement area remains c*cw × r*ch pixels and the offset image
+         * is clipped to fit. When c/r are unset, the padded canvas determines
+         * the natural cell dimensions.
+         */
         const canvasW = (cmd.columns !== undefined) ? Math.round(imgCols * cw) : bitmap.width + xOffset;
         const canvasH = (cmd.rows !== undefined) ? Math.round(imgRows * ch) : bitmap.height + yOffset;
         const offsetCanvas = ImageRenderer.createCanvas(window.document, canvasW, canvasH);
@@ -664,9 +690,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       this._kittyStorage.addImage(image.id, bitmap, true, layer, zIndex);
       bitmap = undefined;  // ownership transferred to storage
 
-      // Kitty cursor movement
-      // Per spec: cursor placed at first column after last image column,
-      // on the last row of the image. C=1 means don't move cursor.
+      /*
+       * Kitty cursor movement
+       * Per spec: cursor placed at first column after last image column,
+       * on the last row of the image. C=1 means don't move cursor.
+       */
       if (cmd.cursorMovement === 1) {
         // C=1: restore cursor to position before image was placed
         const scrolled = buffer.ybase - savedYbase;
@@ -674,8 +702,10 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         // Can't restore cursor to scrollback?
         buffer.y = Math.max(savedY - scrolled, 0);
       } else {
-        // Default (C=0): advance cursor horizontally past the image
-        // addImage already positioned cursor on the last row via lineFeeds
+        /*
+         * Default (C=0): advance cursor horizontally past the image
+         * addImage already positioned cursor on the last row via lineFeeds
+         */
         buffer.x = Math.min(savedX + imgCols, this._coreTerminal.cols);
       }
     } catch (e) {
@@ -736,9 +766,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       return createImageBitmap(new ImageData(new Uint8ClampedArray(bytes.buffer as ArrayBuffer, bytes.byteOffset, pixelCount * KittyPixelConstants.BYTES_PER_PIXEL_RGBA), width, height));
     }
 
-    // RGB→RGBA: interleave alpha using uint32 block processing (4 pixels per iteration).
-    // 3 uint32 reads + 4 uint32 writes per 4 pixels vs 28 byte reads/writes — ~6x faster.
-    // Assumes little-endian (all modern browsers/Node.js).
+    /*
+     * RGB→RGBA: interleave alpha using uint32 block processing (4 pixels per iteration).
+     * 3 uint32 reads + 4 uint32 writes per 4 pixels vs 28 byte reads/writes — ~6x faster.
+     * Assumes little-endian (all modern browsers/Node.js).
+     */
     const data = new Uint8ClampedArray(pixelCount * KittyPixelConstants.BYTES_PER_PIXEL_RGBA);
     const src32 = new Uint32Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 4));
     const dst32 = new Uint32Array(data.buffer);

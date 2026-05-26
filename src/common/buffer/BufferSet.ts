@@ -43,8 +43,10 @@ export class BufferSet extends Disposable implements IBufferSet {
     this._normalBuffer.value = this._normal;
     this._normal.fillViewportRows();
 
-    // The alt buffer should never have scrollback.
-    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
+    /*
+     * The alt buffer should never have scrollback.
+     * See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
+     */
     this._alt = new Buffer(false, this._optionsService, this._bufferService, this._logService);
     this._altBuffer.value = this._alt;
     this._activeBuffer = this._normal;
@@ -86,9 +88,11 @@ export class BufferSet extends Disposable implements IBufferSet {
     }
     this._normal.x = this._alt.x;
     this._normal.y = this._alt.y;
-    // The alt buffer should always be cleared when we switch to the normal
-    // buffer. This frees up memory since the alt buffer should always be new
-    // when activated.
+    /*
+     * The alt buffer should always be cleared when we switch to the normal
+     * buffer. This frees up memory since the alt buffer should always be new
+     * when activated.
+     */
     this._alt.clearAllMarkers();
     this._alt.clear();
     this._activeBuffer = this._normal;
@@ -105,8 +109,10 @@ export class BufferSet extends Disposable implements IBufferSet {
     if (this._activeBuffer === this._alt) {
       return;
     }
-    // Since the alt buffer is always cleared when the normal buffer is
-    // activated, we want to fill it when switching to it.
+    /*
+     * Since the alt buffer is always cleared when the normal buffer is
+     * activated, we want to fill it when switching to it.
+     */
     this._alt.fillViewportRows(fillAttr);
     this._alt.x = this._normal.x;
     this._alt.y = this._normal.y;

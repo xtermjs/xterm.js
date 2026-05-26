@@ -12,8 +12,10 @@ it('wcwidth should match all values from the old implementation', function(): vo
 
   // old implementation
   const wcwidthOld = (function(opts: {nul: number, control: number}): (ucs: number) => number {
-    // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
-    // combining characters
+    /*
+     * extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
+     * combining characters
+     */
     const COMBINING_BMP = [
       [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
       [0x0591, 0x05BD], [0x05BF, 0x05BF], [0x05C1, 0x05C2],
@@ -149,18 +151,20 @@ it('wcwidth should match all values from the old implementation', function(): vo
       }
       return table;
     }
-    // get width from lookup table
-    //   position in container   : num / CODEPOINTS_PER_ITEM
-    //     ==> n = table[Math.floor(num / 16)]
-    //     ==> n = table[num >> 4]
-    //   16 codepoints per number:       FFEEDDCCBBAA99887766554433221100
-    //   position in number      : (num % CODEPOINTS_PER_ITEM) * BITWIDTH
-    //     ==> m = (n % 16) * 2
-    //     ==> m = (num & 15) << 1
-    //   right shift to position m
-    //     ==> n = n >> m     e.g. m=12  000000000000FFEEDDCCBBAA99887766
-    //   we are only interested in 2 LSBs, cut off higher bits
-    //     ==> n = n & 3      e.g.       000000000000000000000000000000XX
+    /*
+     * get width from lookup table
+     *   position in container   : num / CODEPOINTS_PER_ITEM
+     *     ==> n = table[Math.floor(num / 16)]
+     *     ==> n = table[num >> 4]
+     *   16 codepoints per number:       FFEEDDCCBBAA99887766554433221100
+     *   position in number      : (num % CODEPOINTS_PER_ITEM) * BITWIDTH
+     *     ==> m = (n % 16) * 2
+     *     ==> m = (num & 15) << 1
+     *   right shift to position m
+     *     ==> n = n >> m     e.g. m=12  000000000000FFEEDDCCBBAA99887766
+     *   we are only interested in 2 LSBs, cut off higher bits
+     *     ==> n = n & 3      e.g.       000000000000000000000000000000XX
+     */
     return (num: number): number => {
       num |= 0;  // get asm.js like optimization under V8
       if (num < 32) {

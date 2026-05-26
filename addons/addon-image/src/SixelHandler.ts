@@ -113,13 +113,17 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
  * Some helpers to extract current terminal colors.
  */
 
-// get currently active background color from terminal
-// also respect INVERSE setting
+/*
+ * get currently active background color from terminal
+ * also respect INVERSE setting
+ */
 function extractActiveBg(attr: AttributeData, colors: ReadonlyColorSet | undefined): RGBA8888 {
   let bg = 0;
   if (!colors) {
-    // FIXME: theme service is prolly not available yet,
-    // happens if .open() was not called yet (bug in core?)
+    /*
+     * FIXME: theme service is prolly not available yet,
+     * happens if .open() was not called yet (bug in core?)
+     */
     return bg;
   }
   if (attr.isInverse()) {

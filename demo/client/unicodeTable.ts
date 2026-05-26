@@ -220,8 +220,10 @@ export function writeUnicodeTable(term: Terminal, name: string, start: number, e
 
     term.write('\n\r');
 
-    // Render reserved labels that appear after the first label (below the row)
-    // Show one label per non-contiguous reserved range
+    /*
+     * Render reserved labels that appear after the first label (below the row)
+     * Show one label per non-contiguous reserved range
+     */
     const lateReserved = rowLabels.length > 0
       ? rowReserved.filter(r => r.col >= rowLabels[0].col)
       : rowReserved;

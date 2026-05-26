@@ -61,8 +61,10 @@ abstract class BaseMeasureStategy extends Disposable implements IMeasureStrategy
   protected _result: IMeasureResult = { width: 0, height: 0 };
 
   protected _validateAndSet(width: number | undefined, height: number | undefined): void {
-    // If values are 0 then the element is likely currently display:none, in which case we should
-    // retain the previous value.
+    /*
+     * If values are 0 then the element is likely currently display:none, in which case we should
+     * retain the previous value.
+     */
     if (width !== undefined && width > 0 && height !== undefined && height > 0) {
       this._result.width = width;
       this._result.height = height;

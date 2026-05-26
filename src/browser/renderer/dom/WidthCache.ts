@@ -31,16 +31,20 @@ export interface IWidthCacheFontVariantCanvas {
 }
 
 export class WidthCache implements IDisposable {
-  // flat cache for regular variant up to CacheSettings.FLAT_SIZE
-  // NOTE: ~4x faster access than holey (serving >>80% of terminal content)
-  //       It has a small memory footprint (only 1MB for full BMP caching),
-  //       still the sweet spot is not reached before touching 32k different codepoints,
-  //       thus we store the remaining <<20% of terminal data in a holey structure.
+  /*
+   * flat cache for regular variant up to CacheSettings.FLAT_SIZE
+   * NOTE: ~4x faster access than holey (serving >>80% of terminal content)
+   *       It has a small memory footprint (only 1MB for full BMP caching),
+   *       still the sweet spot is not reached before touching 32k different codepoints,
+   *       thus we store the remaining <<20% of terminal data in a holey structure.
+   */
   protected _flat = new Float32Array(WidthCacheSettings.FLAT_SIZE);
 
-  // holey cache for bold, italic and bold&italic for any string
-  // FIXME: can grow really big over time (~8.5 MB for full BMP caching),
-  //        so a shared API across terminals is needed
+  /*
+   * holey cache for bold, italic and bold&italic for any string
+   * FIXME: can grow really big over time (~8.5 MB for full BMP caching),
+   *        so a shared API across terminals is needed
+   */
   protected _holey: Map<string, number> | undefined;
 
   private _font = '';

@@ -99,16 +99,20 @@ export class Viewport extends Disposable {
 
     this._register(this._bufferService.onResize(() => this.queueSync()));
     this._register(this._bufferService.buffers.onBufferActivate(() => {
-      // Reset _latestYDisp when switching buffers to prevent stale scroll position
-      // from alt buffer contaminating normal buffer scroll position
+      /*
+       * Reset _latestYDisp when switching buffers to prevent stale scroll position
+       * from alt buffer contaminating normal buffer scroll position
+       */
       this._latestYDisp = undefined;
       this.queueSync();
     }));
     this._register(this._bufferService.onScroll(() => this._sync()));
 
-    // Flush deferred viewport sync after a render completes (e.g. after ESU ends
-    // synchronized output mode). This ensures DOM scroll position updates atomically
-    // with the canvas render.
+    /*
+     * Flush deferred viewport sync after a render completes (e.g. after ESU ends
+     * synchronized output mode). This ensures DOM scroll position updates atomically
+     * with the canvas render.
+     */
     this._register(this._renderService.onRender(() => {
       if (this._needsSyncOnRender) {
         this._needsSyncOnRender = false;
@@ -173,16 +177,20 @@ export class Viewport extends Disposable {
     if (!this._renderService || this._isSyncing) {
       return;
     }
-    // Defer DOM scroll updates during synchronized output to prevent visible
-    // scroll position flickering while the canvas content is frozen.
+    /*
+     * Defer DOM scroll updates during synchronized output to prevent visible
+     * scroll position flickering while the canvas content is frozen.
+     */
     if (this._coreService.decPrivateModes.synchronizedOutput) {
       this._needsSyncOnRender = true;
       return;
     }
     this._isSyncing = true;
 
-    // Ignore any onScroll event that happens as a result of dimensions changing as this should
-    // never cause a scrollLines call, only setScrollPosition can do that.
+    /*
+     * Ignore any onScroll event that happens as a result of dimensions changing as this should
+     * never cause a scrollLines call, only setScrollPosition can do that.
+     */
     this._suppressOnScrollHandler = true;
     this._scrollableElement.setScrollDimensions({
       height: this._renderService.dimensions.css.canvas.height,
@@ -190,8 +198,10 @@ export class Viewport extends Disposable {
     });
     this._suppressOnScrollHandler = false;
 
-    // If ydisp has been changed by some other component (input/buffer), then stop animating smooth
-    // scroll and scroll there immediately.
+    /*
+     * If ydisp has been changed by some other component (input/buffer), then stop animating smooth
+     * scroll and scroll there immediately.
+     */
     if (ydisp !== this._latestYDisp) {
       this._scrollableElement.setScrollPosition({
         scrollTop: ydisp * this._renderService.dimensions.css.cell.height

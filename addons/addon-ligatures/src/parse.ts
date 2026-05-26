@@ -27,8 +27,10 @@ export default function parse(family: string): string[] {
   const families = [];
   let currentFamily = '';
 
-  // Work through the input character by character until there are none left.
-  // This lexing and parsing in one pass.
+  /*
+   * Work through the input character by character until there are none left.
+   * This lexing and parsing in one pass.
+   */
   while (context.offset < context.input.length) {
     const char = context.input[context.offset++];
     switch (char) {
@@ -152,13 +154,17 @@ function parseUnicode(context: IParseContext): string {
   while (context.offset < context.input.length) {
     const char = context.input[context.offset++];
     if (/\s/.test(char)) {
-      // The first whitespace character after a unicode escape indicates the end
-      // of the escape and is swallowed.
+      /*
+       * The first whitespace character after a unicode escape indicates the end
+       * of the escape and is swallowed.
+       */
       return unicodeToString(str);
     }
     if (str.length >= 6 || !/[\dA-Fa-f]/.test(char)) {
-      // If the next character is not a valid hex digit or we have reached the
-      // maximum of 6 digits in the escape, terminate the escape.
+      /*
+       * If the next character is not a valid hex digit or we have reached the
+       * maximum of 6 digits in the escape, terminate the escape.
+       */
       context.offset--;
       return unicodeToString(str);
     }

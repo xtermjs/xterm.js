@@ -181,8 +181,10 @@ export class ApcHandler implements IApcHandler {
     } else if (success) {
       ret = this._handler(this._data);
       if (ret instanceof Promise) {
-        // need to hold data until `ret` got resolved
-        // dont care for errors, data will be freed anyway on next start
+        /*
+         * need to hold data until `ret` got resolved
+         * dont care for errors, data will be freed anyway on next start
+         */
         return ret.then(res => {
           this._data = '';
           this._hitLimit = false;

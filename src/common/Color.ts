@@ -27,9 +27,11 @@ export namespace channels {
   }
 
   export function toRgba(r: number, g: number, b: number, a: number = 0xFF): number {
-    // Note: The aggregated number is RGBA32 (BE), thus needs to be converted to ABGR32
-    // on LE systems, before it can be used for direct 32-bit buffer writes.
-    // >>> 0 forces an unsigned int
+    /*
+     * Note: The aggregated number is RGBA32 (BE), thus needs to be converted to ABGR32
+     * on LE systems, before it can be used for direct 32-bit buffer writes.
+     * >>> 0 forces an unsigned int
+     */
     return (r << 24 | g << 16 | b << 8 | a) >>> 0;
   }
 
@@ -197,8 +199,10 @@ export namespace css {
       throw new Error('css.toColor: Unsupported css format');
     }
 
-    // Validate the color using canvas fillStyle
-    // See https://html.spec.whatwg.org/multipage/canvas.html#fill-and-stroke-styles
+    /*
+     * Validate the color using canvas fillStyle
+     * See https://html.spec.whatwg.org/multipage/canvas.html#fill-and-stroke-styles
+     */
     $ctx.fillStyle = $litmusColor;
     $ctx.fillStyle = css;
     if (typeof $ctx.fillStyle !== 'string') {
@@ -213,9 +217,11 @@ export namespace css {
       throw new Error('css.toColor: Unsupported css format');
     }
 
-    // Extract the color from the canvas' fillStyle property which exposes the color value in rgba()
-    // format
-    // See https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+    /*
+     * Extract the color from the canvas' fillStyle property which exposes the color value in rgba()
+     * format
+     * See https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
+     */
     return {
       rgba: channels.toRgba($r, $g, $b, $a),
       css
@@ -321,8 +327,10 @@ export namespace rgba {
   }
 
   export function reduceLuminance(bgRgba: number, fgRgba: number, ratio: number): number {
-    // This is a naive but fast approach to reducing luminance as converting to
-    // HSL and back is expensive
+    /*
+     * This is a naive but fast approach to reducing luminance as converting to
+     * HSL and back is expensive
+     */
     const bgR = (bgRgba >> 24) & 0xFF;
     const bgG = (bgRgba >> 16) & 0xFF;
     const bgB = (bgRgba >>  8) & 0xFF;
@@ -341,8 +349,10 @@ export namespace rgba {
   }
 
   export function increaseLuminance(bgRgba: number, fgRgba: number, ratio: number): number {
-    // This is a naive but fast approach to increasing luminance as converting to
-    // HSL and back is expensive
+    /*
+     * This is a naive but fast approach to increasing luminance as converting to
+     * HSL and back is expensive
+     */
     const bgR = (bgRgba >> 24) & 0xFF;
     const bgG = (bgRgba >> 16) & 0xFF;
     const bgB = (bgRgba >>  8) & 0xFF;

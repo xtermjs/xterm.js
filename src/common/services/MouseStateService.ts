@@ -105,8 +105,10 @@ function eventCode(e: ICoreMouseEvent, isSGR: boolean): number {
     if (e.action === CoreMouseAction.MOVE) {
       code |= CoreMouseAction.MOVE;
     } else if (e.action === CoreMouseAction.UP && !isSGR) {
-      // special case - only SGR can report button on release
-      // all others have to go with NONE
+      /*
+       * special case - only SGR can report button on release
+       * all others have to go with NONE
+       */
       code |= CoreMouseButton.NONE;
     }
   }
@@ -126,10 +128,12 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
    */
   DEFAULT: (e: ICoreMouseEvent) => {
     const params = [eventCode(e, false) + 32, e.col + 32, e.row + 32];
-    // supress mouse report if we exceed addressible range
-    // Note this is handled differently by emulators
-    // - xterm:         sends 0;0 coords instead
-    // - vte, konsole:  no report
+    /*
+     * supress mouse report if we exceed addressible range
+     * Note this is handled differently by emulators
+     * - xterm:         sends 0;0 coords instead
+     * - vte, konsole:  no report
+     */
     if (params[0] > 255 || params[1] > 255 || params[2] > 255) {
       return '';
     }

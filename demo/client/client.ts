@@ -173,9 +173,11 @@ const createNewWindowButtonHandler: () => void = () => {
   terminalContainer.id = 'terminal-container';
   win.document.body.appendChild(terminalContainer);
 
-  // Stylesheets are needed to get the terminal in the popout window to render
-  // correctly. We also need to wait for them to load before creating the
-  // terminal, otherwise we will not compute the correct metrics when rendering.
+  /*
+   * Stylesheets are needed to get the terminal in the popout window to render
+   * correctly. We also need to wait for them to load before creating the
+   * terminal, otherwise we will not compute the correct metrics when rendering.
+   */
   let pendingStylesheets = 0;
   for (const linkNode of document.querySelectorAll('head link[rel=stylesheet]')) {
     const newLink = document.createElement('link');
@@ -359,8 +361,10 @@ function createTerminal(): Terminal {
 
   const resizeObserver = new ResizeObserver(entries => {
     if (optionsWindow.autoResize) {
-      // In general this should be debounced to avoid excessive work on the main
-      // thread by firing the expensive resize action repeatedly
+      /*
+       * In general this should be debounced to avoid excessive work on the main
+       * thread by firing the expensive resize action repeatedly
+       */
       addons.fit.instance!.fit();
     }
   });
@@ -547,8 +551,10 @@ function initAddons(term: Terminal): void {
         addon.instance = undefined;
       }
       if (name === 'ligatures') {
-        // Recreate webgl when ligatures are toggled so texture atlas picks up any font feature
-        // settings changes
+        /*
+         * Recreate webgl when ligatures are toggled so texture atlas picks up any font feature
+         * settings changes
+         */
         if (addons.webgl.instance) {
           preDisposeWebgl();
           addons.webgl.instance.dispose();

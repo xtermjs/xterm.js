@@ -123,8 +123,10 @@ describe('Keyboard', () => {
     });
 
     describe('On non-macOS platforms', () => {
-      // Evalueate alt + arrow key movement, which is a feature of terminal emulators but not VT100
-      // http://unix.stackexchange.com/a/108106
+      /*
+       * Evalueate alt + arrow key movement, which is a feature of terminal emulators but not VT100
+       * http://unix.stackexchange.com/a/108106
+       */
       it('should return \\x1b[1;3D for alt+left', () => {
         assert.equal(testEvaluateKeyboardEvent({ altKey: true, keyCode: 37 }, { isMac: false }).key, '\x1b[1;3D'); // CSI 1;3 D
       });

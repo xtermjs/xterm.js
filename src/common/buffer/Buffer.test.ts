@@ -348,8 +348,10 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(4)!.translateToString(), '          ');
       });
       it('should remove the correct amount of rows when reflowing larger', () => {
-        // This is a regression test to ensure that successive wrapped lines that are getting
-        // 3+ lines removed on a reflow actually remove the right lines
+        /*
+         * This is a regression test to ensure that successive wrapped lines that are getting
+         * 3+ lines removed on a reflow actually remove the right lines
+         */
         buffer.fillViewportRows();
         buffer.resize(10, 10);
         buffer.y = 2;
@@ -429,10 +431,12 @@ describe('Buffer', () => {
           buffer.lines.get(2)!.set(i, [0, char, 1, code]);
         }
         buffer.y = 3;
-        // Buffer:
-        // abcdefghij
-        // 0123456789
-        // abcdefghij
+        /*
+         * Buffer:
+         * abcdefghij
+         * 0123456789
+         * abcdefghij
+         */
         const firstMarker = buffer.addMarker(0);
         const secondMarker = buffer.addMarker(1);
         const thirdMarker = buffer.addMarker(2);
@@ -492,10 +496,12 @@ describe('Buffer', () => {
           buffer.lines.get(2)!.set(i, [0, char, 1, code]);
         }
         buffer.y = 10;
-        // Buffer:
-        // abcdefghij
-        // 0123456789
-        // abcdefghij
+        /*
+         * Buffer:
+         * abcdefghij
+         * 0123456789
+         * abcdefghij
+         */
         const firstMarker = buffer.addMarker(0);
         const secondMarker = buffer.addMarker(1);
         const thirdMarker = buffer.addMarker(2);
@@ -539,9 +545,11 @@ describe('Buffer', () => {
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
         buffer.lines.get(1)!.isWrapped = true;
-        // Buffer:
-        // "ab  " (wrapped)
-        // "cd"
+        /*
+         * Buffer:
+         * "ab  " (wrapped)
+         * "cd"
+         */
         buffer.resize(5, 10);
         assert.equal(buffer.ybase, 0);
         assert.equal(buffer.lines.length, 10);
@@ -570,9 +578,11 @@ describe('Buffer', () => {
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
         buffer.lines.get(1)!.isWrapped = true;
-        // Buffer:
-        // 汉语汉语汉语 (wrapped)
-        // 汉语汉语汉语
+        /*
+         * Buffer:
+         * 汉语汉语汉语 (wrapped)
+         * 汉语汉语汉语
+         */
         assert.equal(buffer.lines.get(0)!.translateToString(true), '汉语汉语汉语');
         assert.equal(buffer.lines.get(1)!.translateToString(true), '汉语汉语汉语');
         buffer.resize(13, 10);
@@ -597,9 +607,11 @@ describe('Buffer', () => {
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
         buffer.lines.get(1)!.isWrapped = true;
-        // Buffer:
-        // "ab  " (wrapped)
-        // "cd"
+        /*
+         * Buffer:
+         * "ab  " (wrapped)
+         * "cd"
+         */
         buffer.resize(3, 10);
         assert.equal(buffer.y, 2);
         assert.equal(buffer.ybase, 0);
@@ -631,9 +643,11 @@ describe('Buffer', () => {
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
         buffer.lines.get(1)!.isWrapped = true;
-        // Buffer:
-        // 汉语汉语汉语 (wrapped)
-        // 汉语汉语汉语
+        /*
+         * Buffer:
+         * 汉语汉语汉语 (wrapped)
+         * 汉语汉语汉语
+         */
         assert.equal(buffer.lines.get(0)!.translateToString(true), '汉语汉语汉语');
         assert.equal(buffer.lines.get(1)!.translateToString(true), '汉语汉语汉语');
         buffer.resize(11, 10);
@@ -668,17 +682,19 @@ describe('Buffer', () => {
 
       describe('reflowLarger cases', () => {
         beforeEach(() => {
-          // Setup buffer state:
-          // 'ab'
-          // 'cd' (wrapped)
-          // 'ef'
-          // 'gh' (wrapped)
-          // 'ij'
-          // 'kl' (wrapped)
-          // '  '
-          // '  '
-          // '  '
-          // '  '
+          /*
+           * Setup buffer state:
+           * 'ab'
+           * 'cd' (wrapped)
+           * 'ef'
+           * 'gh' (wrapped)
+           * 'ij'
+           * 'kl' (wrapped)
+           * '  '
+           * '  '
+           * '  '
+           * '  '
+           */
           buffer.fillViewportRows();
           buffer.resize(2, 10);
           buffer.lines.get(0)!.set(0, [0, 'a', 1, 'a'.charCodeAt(0)]);
@@ -859,17 +875,19 @@ describe('Buffer', () => {
       });
       describe('reflowSmaller cases', () => {
         beforeEach(() => {
-          // Setup buffer state:
-          // 'abcd'
-          // 'efgh' (wrapped)
-          // 'ijkl'
-          // '    '
-          // '    '
-          // '    '
-          // '    '
-          // '    '
-          // '    '
-          // '    '
+          /*
+           * Setup buffer state:
+           * 'abcd'
+           * 'efgh' (wrapped)
+           * 'ijkl'
+           * '    '
+           * '    '
+           * '    '
+           * '    '
+           * '    '
+           * '    '
+           * '    '
+           */
           buffer.fillViewportRows();
           buffer.resize(4, 10);
           buffer.lines.get(0)!.set(0, [0, 'a', 1, 'a'.charCodeAt(0)]);
@@ -1301,8 +1319,10 @@ describe('Buffer', () => {
         assert.equal(line.length, INIT_COLS / 2 - 1);
       }
 
-      // wait for a bit to give IdleTaskQueue a chance to kick in
-      // and finish memory cleaning
+      /*
+       * wait for a bit to give IdleTaskQueue a chance to kick in
+       * and finish memory cleaning
+       */
       await new Promise(r => setTimeout(r, 30));
 
       // cleanup should have realigned memory with exact bytelength

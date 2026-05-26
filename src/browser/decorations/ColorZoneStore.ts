@@ -1,7 +1,9 @@
-/*---------------------------------------------------------------------------------------------
+/*
+ *---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+ *--------------------------------------------------------------------------------------------
+ */
 
 import { IInternalDecoration } from 'common/services/Services';
 
@@ -32,9 +34,11 @@ interface IMinimalDecorationForColorZone {
 export class ColorZoneStore implements IColorZoneStore {
   private _zones: IColorZone[] = [];
 
-  // The zone pool is used to keep zone objects from being freed between clearing the color zone
-  // store and fetching the zones. This helps reduce GC pressure since the color zones are
-  // accumulated on potentially every scroll event.
+  /*
+   * The zone pool is used to keep zone objects from being freed between clearing the color zone
+   * store and fetching the zones. This helps reduce GC pressure since the color zones are
+   * accumulated on potentially every scroll event.
+   */
   private _zonePool: IColorZone[] = [];
   private _zonePoolIndex = 0;
 

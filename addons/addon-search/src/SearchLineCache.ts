@@ -38,8 +38,10 @@ export class SearchLineCache extends Disposable {
   private _linesCache: LineCacheEntry[] | undefined;
   private _linesCacheTimeout = this._register(new MutableDisposable());
   private _linesCacheDisposables = this._register(new MutableDisposable());
-  // Track access to avoid recreating a timeout on every init call which occurs once per search
-  // result (findNext/findPrevious -> _highlightAllMatches -> find loop).
+  /*
+   * Track access to avoid recreating a timeout on every init call which occurs once per search
+   * result (findNext/findPrevious -> _highlightAllMatches -> find loop).
+   */
   private _lastAccessTimestamp = 0;
 
   constructor(private readonly _terminal: Terminal) {

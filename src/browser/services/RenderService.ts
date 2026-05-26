@@ -88,9 +88,11 @@ export class RenderService extends Disposable implements IRenderService {
     this._register(this._optionsService.onOptionChange(() => this._handleOptionsChanged()));
     this._register(this._charSizeService.onCharSizeChange(() => this.handleCharSizeChanged()));
 
-    // Do a full refresh whenever any decoration is added or removed. This may not actually result
-    // in changes but since decorations should be used sparingly or added/removed all in the same
-    // frame this should have minimal performance impact.
+    /*
+     * Do a full refresh whenever any decoration is added or removed. This may not actually result
+     * in changes but since decorations should be used sparingly or added/removed all in the same
+     * frame this should have minimal performance impact.
+     */
     this._register(decorationService.onDecorationRegistered(() => this._fullRefresh()));
     this._register(decorationService.onDecorationRemoved(() => this._fullRefresh()));
 
@@ -124,8 +126,10 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   private _registerIntersectionObserver(w: Window & typeof globalThis, screenElement: HTMLElement): void {
-    // Detect whether IntersectionObserver is detected and enable renderer pause
-    // and resume based on terminal visibility if so
+    /*
+     * Detect whether IntersectionObserver is detected and enable renderer pause
+     * and resume based on terminal visibility if so
+     */
     if ('IntersectionObserver' in w) {
       const observer = new w.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
       this._observerDisposable.value = toDisposable(() => {
@@ -186,16 +190,20 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
 
-    // Skip rendering if synchronized output mode is enabled. This check must happen here
-    // (in addition to refreshRows) to handle renders that were queued before the mode was enabled.
+    /*
+     * Skip rendering if synchronized output mode is enabled. This check must happen here
+     * (in addition to refreshRows) to handle renders that were queued before the mode was enabled.
+     */
     if (this._coreService.decPrivateModes.synchronizedOutput) {
       this._syncOutputHandler.bufferRows(start, end);
       return;
     }
 
-    // Since this is debounced, a resize event could have happened between the time a refresh was
-    // requested and when this triggers. Clamp the values of start and end to ensure they're valid
-    // given the current viewport state.
+    /*
+     * Since this is debounced, a resize event could have happened between the time a refresh was
+     * requested and when this triggers. Clamp the values of start and end to ensure they're valid
+     * given the current viewport state.
+     */
     start = Math.min(start, this._rowCount - 1);
     end = Math.min(end, this._rowCount - 1);
 
@@ -277,8 +285,10 @@ export class RenderService extends Disposable implements IRenderService {
   }
 
   public handleDevicePixelRatioChange(): void {
-    // Force char size measurement as DomMeasureStrategy(getBoundingClientRect) is not stable
-    // when devicePixelRatio changes
+    /*
+     * Force char size measurement as DomMeasureStrategy(getBoundingClientRect) is not stable
+     * when devicePixelRatio changes
+     */
     this._charSizeService.measure();
 
     if (!this._renderer.value) {

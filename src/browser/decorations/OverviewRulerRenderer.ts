@@ -1,7 +1,9 @@
-/*---------------------------------------------------------------------------------------------
+/*
+ *---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+ *--------------------------------------------------------------------------------------------
+ */
 
 import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
 import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
@@ -12,8 +14,10 @@ const enum Constants {
   OVERVIEW_RULER_BORDER_WIDTH = 1
 }
 
-// Helper objects to avoid excessive calculation and garbage collection during rendering. These are
-// static values for each render and can be accessed using the decoration position as the key.
+/*
+ * Helper objects to avoid excessive calculation and garbage collection during rendering. These are
+ * static values for each render and can be accessed using the decoration position as the key.
+ */
 const drawHeight = {
   full: 0,
   left: 0,

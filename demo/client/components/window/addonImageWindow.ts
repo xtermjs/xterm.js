@@ -165,16 +165,18 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     this._terminal.element!.addEventListener('click', (ev: MouseEvent) => {
       if (!ev.ctrlKey || !imageAddon) return;
 
-      // TODO...
-      // if (ev.altKey) {
-      //   const sel = term.getSelectionPosition();
-      //   if (sel) {
-      //     addons.image.instance
-      //       .extractCanvasAtBufferRange(term.getSelectionPosition())
-      //       ?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
-      //     return;
-      //   }
-      // }
+      /*
+       * TODO...
+       * if (ev.altKey) {
+       *   const sel = term.getSelectionPosition();
+       *   if (sel) {
+       *     addons.image.instance
+       *       .extractCanvasAtBufferRange(term.getSelectionPosition())
+       *       ?.toBlob(data => window.open(URL.createObjectURL(data), '_blank'));
+       *     return;
+       *   }
+       * }
+       */
 
       const pos = (this._terminal as any)._core._mouseService!.getCoords(ev, (this._terminal as any)._core.screenElement!, this._terminal.cols, this._terminal.rows);
       const x = pos[0] - 1;

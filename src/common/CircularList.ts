@@ -52,8 +52,10 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
       return;
     }
 
-    // Reconstruct array, starting at index 0. Only transfer values from the
-    // indexes 0 to length.
+    /*
+     * Reconstruct array, starting at index 0. Only transfer values from the
+     * indexes 0 to length.
+     */
     const newArray = new Array<T | undefined>(newMaxLength);
     for (let i = 0; i < Math.min(newMaxLength, this.length); i++) {
       newArray[i] = this._array[this._getCyclicIndex(i)];

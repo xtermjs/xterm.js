@@ -21,8 +21,10 @@ const enum BoundaryPosition {
   BOTTOM
 }
 
-// Turn this on to unhide the accessibility tree and display it under
-// (instead of overlapping with) the terminal.
+/*
+ * Turn this on to unhide the accessibility tree and display it under
+ * (instead of overlapping with) the terminal.
+ */
 const DEBUG = false;
 
 export class AccessibilityManager extends Disposable {
@@ -223,8 +225,10 @@ export class AccessibilityManager extends Disposable {
       return;
     }
 
-    // Don't scroll when the last focused item was not the second row (focus is going the other
-    // direction)
+    /*
+     * Don't scroll when the last focused item was not the second row (focus is going the other
+     * direction)
+     */
     if (e.relatedTarget !== beforeBoundaryElement) {
       return;
     }
@@ -283,9 +287,11 @@ export class AccessibilityManager extends Disposable {
     }
 
     if (selection.isCollapsed) {
-      // Only do something when the anchorNode is inside the row container. This
-      // behavior mirrors what we do with mouse --- if the mouse clicks
-      // somewhere outside of the terminal, we don't clear the selection.
+      /*
+       * Only do something when the anchorNode is inside the row container. This
+       * behavior mirrors what we do with mouse --- if the mouse clicks
+       * somewhere outside of the terminal, we don't clear the selection.
+       */
       if (this._rowContainer.contains(selection.anchorNode)) {
         this._terminal.clearSelection();
       }

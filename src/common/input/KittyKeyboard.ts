@@ -437,10 +437,12 @@ export class KittyKeyboard {
       return result;
     }
 
-    // Spec § "Report all keys as escape codes": "Additionally, with this mode,
-    // events for pressing modifier keys are reported." — i.e. *without* this
-    // mode, modifier-key press events are suppressed. Kitty's is_modifier_key()
-    // treats CapsLock/NumLock/ScrollLock as modifier keys for this rule.
+    /*
+     * Spec § "Report all keys as escape codes": "Additionally, with this mode,
+     * events for pressing modifier keys are reported." — i.e. *without* this
+     * mode, modifier-key press events are suppressed. Kitty's is_modifier_key()
+     * treats CapsLock/NumLock/ScrollLock as modifier keys for this rule.
+     */
     if (this._isLockKey(ev) && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
       return result;
     }
@@ -474,8 +476,10 @@ export class KittyKeyboard {
     // Special handling for Enter/Tab/Backspace.
     const specialKey = keyCode === 13 || keyCode === 9 || keyCode === 127;
 
-    // Per spec, Enter/Tab/Backspace will not have release events unless "Report all keys as escape
-    // codes" is also set.
+    /*
+     * Per spec, Enter/Tab/Backspace will not have release events unless "Report all keys as escape
+     * codes" is also set.
+     */
     if (specialKey && eventType === KittyKeyboardEventType.RELEASE && !(flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES)) {
       return result;
     }
@@ -485,14 +489,18 @@ export class KittyKeyboard {
     const useCsiU = !!(
       flags & KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES ||
       (reportEventTypes && eventType === KittyKeyboardEventType.RELEASE) ||
-      // Enabling REPORT_EVENT_TYPES without DISAMBIGUATE_ESCAPE_CODES doesn't really make sense, so
-      // just make REPORT_EVENT_TYPES imply DISAMBIGUATE_ESCAPE_CODES here for simplicity.
-      // See: https://github.com/kovidgoyal/kitty/issues/9999
+      /*
+       * Enabling REPORT_EVENT_TYPES without DISAMBIGUATE_ESCAPE_CODES doesn't really make sense, so
+       * just make REPORT_EVENT_TYPES imply DISAMBIGUATE_ESCAPE_CODES here for simplicity.
+       * See: https://github.com/kovidgoyal/kitty/issues/9999
+       */
       ((flags & KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES || reportEventTypes) &&
         (
-          // Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy mode" and
-          // consider space to be a text-generating key, so these skip the isFunc fast-path and only
-          // get CSI u when modifiers are present (handled below).
+          /*
+           * Per spec, Enter/Tab/Backspace "still generate the same bytes as in legacy mode" and
+           * consider space to be a text-generating key, so these skip the isFunc fast-path and only
+           * get CSI u when modifiers are present (handled below).
+           */
           (isFunc && !specialKey) ||
           (
             (modifiers > 0 && ev.key.length !== 1) ||

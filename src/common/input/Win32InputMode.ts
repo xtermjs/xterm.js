@@ -198,8 +198,10 @@ export class Win32InputMode {
    * Returns 0 for non-character keys.
    */
   private _getUnicodeChar(ev: IKeyboardEvent): number {
-    // Handle special keys that produce control characters
-    // Ctrl modifies some of these: Ctrl+Enter=LF, Ctrl+Backspace=DEL
+    /*
+     * Handle special keys that produce control characters
+     * Ctrl modifies some of these: Ctrl+Enter=LF, Ctrl+Backspace=DEL
+     */
     if (ev.ctrlKey && !ev.altKey && !ev.metaKey) {
       if (ev.key === 'Enter') {
         return 0x0A; // Line feed (Ctrl+Enter)
@@ -245,9 +247,11 @@ export class Win32InputMode {
       state |= Win32ControlKeyState.SHIFT_PRESSED;
     }
 
-    // Note: We can't distinguish left/right for ctrl/alt in standard browser events,
-    // so we use the generic pressed flags. The right-side flags are used when
-    // we can detect them (e.g., via code property).
+    /*
+     * Note: We can't distinguish left/right for ctrl/alt in standard browser events,
+     * so we use the generic pressed flags. The right-side flags are used when
+     * we can detect them (e.g., via code property).
+     */
     if (ev.ctrlKey) {
       if (ev.code === 'ControlRight') {
         state |= Win32ControlKeyState.RIGHT_CTRL_PRESSED;

@@ -148,9 +148,11 @@ export class GlyphRenderer extends Disposable {
     gl.enableVertexAttribArray(VertexAttribLocations.UNIT_QUAD);
     gl.vertexAttribPointer(VertexAttribLocations.UNIT_QUAD, 2, this._gl.FLOAT, false, 0, 0);
 
-    // Setup the unit quad element array buffer, this points to indices in
-    // unitQuadVertices to allow is to draw 2 triangles from the vertices via a
-    // triangle strip
+    /*
+     * Setup the unit quad element array buffer, this points to indices in
+     * unitQuadVertices to allow is to draw 2 triangles from the vertices via a
+     * triangle strip
+     */
     const unitQuadElementIndices = new Uint8Array([0, 1, 2, 3]);
     const elementIndicesBuffer = gl.createBuffer();
     this._register(toDisposable(() => gl.deleteBuffer(elementIndicesBuffer)));
@@ -189,8 +191,10 @@ export class GlyphRenderer extends Disposable {
     gl.uniform1iv(this._textureLocation, textureUnits);
     gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
 
-    // Setup 1x1 red pixel textures for all potential atlas pages, if one of these invalid textures
-    // is ever drawn it will show characters as red rectangles.
+    /*
+     * Setup 1x1 red pixel textures for all potential atlas pages, if one of these invalid textures
+     * is ever drawn it will show characters as red rectangles.
+     */
     this._atlasTextures = [];
     for (let i = 0; i < TextureAtlas.maxAtlasPages; i++) {
       const glTexture = new GLTexture(throwIfFalsy(gl.createTexture()));
@@ -216,18 +220,22 @@ export class GlyphRenderer extends Disposable {
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
-    // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
-    // should not instantiate any variables unless a new glyph is drawn to the cache where the
-    // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
-    // each glyph.
+    /*
+     * Since this function is called for every cell (`rows*cols`), it must be very optimized. It
+     * should not instantiate any variables unless a new glyph is drawn to the cache where the
+     * slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
+     * each glyph.
+     */
     this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, width, lastBg);
   }
 
   private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
     $i = (y * this._terminal.cols + x) * Constants.INDICES_PER_CELL;
 
-    // Exit early if this is a null character, allow space character to continue as it may have
-    // underline/strikethrough styles
+    /*
+     * Exit early if this is a null character, allow space character to continue as it may have
+     * underline/strikethrough styles
+     */
     if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
       array.fill(0, $i, $i + Constants.INDICES_PER_CELL - 1 - Constants.CELL_POSITION_INDICES);
       return;
@@ -279,8 +287,10 @@ export class GlyphRenderer extends Disposable {
     }
     // a_cellpos only changes on resize
 
-    // Reduce scale horizontally for wide glyphs printed in cells that would overlap with the
-    // following cell (ie. the width is not 2).
+    /*
+     * Reduce scale horizontally for wide glyphs printed in cells that would overlap with the
+     * following cell (ie. the width is not 2).
+     */
     if (this._optionsService.rawOptions.rescaleOverlappingGlyphs) {
       if (allowRescaling(code, width, $glyph.size.x, this._dimensions.device.cell.width)) {
         array[$i + 2] = (this._dimensions.device.cell.width - 1) / this._dimensions.device.canvas.width; // - 1 to improve readability
@@ -339,13 +349,15 @@ export class GlyphRenderer extends Disposable {
     this._activeBuffer = (this._activeBuffer + 1) % 2;
     const activeBuffer = this._vertices.attributesBuffers[this._activeBuffer];
 
-    // Copy data for each cell of each line up to its line length (the last non-whitespace cell)
-    // from the attributes buffer into activeBuffer, which is the one that gets bound to the GPU.
-    // The reasons for this are as follows:
-    // - So the active buffer can be alternated so we don't get blocked on rendering finishing
-    // - To copy either the normal attributes buffer or the selection attributes buffer when there
-    //   is a selection
-    // - So we don't send vertices for all the line-ending whitespace to the GPU
+    /*
+     * Copy data for each cell of each line up to its line length (the last non-whitespace cell)
+     * from the attributes buffer into activeBuffer, which is the one that gets bound to the GPU.
+     * The reasons for this are as follows:
+     * - So the active buffer can be alternated so we don't get blocked on rendering finishing
+     * - To copy either the normal attributes buffer or the selection attributes buffer when there
+     *   is a selection
+     * - So we don't send vertices for all the line-ending whitespace to the GPU
+     */
     let bufferLength = 0;
     for (let y = 0; y < renderModel.lineLengths.length; y++) {
       const si = y * this._terminal.cols * Constants.INDICES_PER_CELL;
@@ -358,9 +370,11 @@ export class GlyphRenderer extends Disposable {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(0, bufferLength), gl.STREAM_DRAW);
 
-    // Bind the atlas page texture if they have changed. AtlasPage.version is globally
-    // monotonic, so a page object swap at the same index (which happens after a page merge)
-    // is detected by the same comparison.
+    /*
+     * Bind the atlas page texture if they have changed. AtlasPage.version is globally
+     * monotonic, so a page object swap at the same index (which happens after a page merge)
+     * is detected by the same comparison.
+     */
     for (let i = 0; i < this._atlas.pages.length; i++) {
       if (this._atlas.pages[i].version !== this._atlasTextures[i].version) {
         this._bindAtlasPageTexture(gl, this._atlas, i);

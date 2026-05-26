@@ -9,11 +9,13 @@ import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 
-// Buffer memory layout:
-//
-// [0]: content `uint32_t` - wcwidth(2) comb(1) codepoint(21)
-// [1]: fg      `uint32_t` - flags(8) r(8) g(8) b(8)
-// [2]: bg      `uint32_t` - flags(8) r(8) g(8) b(8)
+/*
+ * Buffer memory layout:
+ *
+ * [0]: content `uint32_t` - wcwidth(2) comb(1) codepoint(21)
+ * [1]: fg      `uint32_t` - flags(8) r(8) g(8) b(8)
+ * [2]: bg      `uint32_t` - flags(8) r(8) g(8) b(8)
+ */
 
 const enum Constants {
   /** The number of 32 bit array indices taken by one cell. */
@@ -255,15 +257,19 @@ export class BufferLine implements IBufferLine {
       this._combined[index] += stringFromCodePoint(codePoint);
     } else {
       if (content & Content.CODEPOINT_MASK) {
-        // normal case for combining chars:
-        //  - move current leading char + new one into combined string
-        //  - set combined flag
+        /*
+         * normal case for combining chars:
+         *  - move current leading char + new one into combined string
+         *  - set combined flag
+         */
         this._combined[index] = stringFromCodePoint(content & Content.CODEPOINT_MASK) + stringFromCodePoint(codePoint);
         content &= ~Content.CODEPOINT_MASK; // set codepoint in buffer to 0
         content |= Content.IS_COMBINED_MASK;
       } else {
-        // should not happen - we actually have no data in the cell yet
-        // simply set the data in the cell buffer with a width of 1
+        /*
+         * should not happen - we actually have no data in the cell yet
+         * simply set the data in the cell buffer with a width of 1
+         */
         content = codePoint | (1 << Content.WIDTH_SHIFT);
       }
     }
@@ -318,9 +324,11 @@ export class BufferLine implements IBufferLine {
       }
     }
 
-    // handle fullwidth at pos:
-    // - reset pos-1 if wide char
-    // - reset pos if width==0 (previous second cell of a wide char)
+    /*
+     * handle fullwidth at pos:
+     * - reset pos-1 if wide char
+     * - reset pos if width==0 (previous second cell of a wide char)
+     */
     if (pos && this.getWidth(pos - 1) === 2) {
       this.setCellFromCodepoint(pos - 1, 0, 1, fillCellData);
     }

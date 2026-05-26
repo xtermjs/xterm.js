@@ -40,8 +40,10 @@ describe('KittyKeyboard', () => {
       const flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES;
 
       it('shift+letter sends plain character in DISAMBIGUATE mode', () => {
-        // Kitty spec: DISAMBIGUATE only encodes keys ambiguous in legacy encoding
-        // Shift+a → "A" is not ambiguous, so send plain "A"
+        /*
+         * Kitty spec: DISAMBIGUATE only encodes keys ambiguous in legacy encoding
+         * Shift+a → "A" is not ambiguous, so send plain "A"
+         */
         const result = kitty.evaluate(createEvent({ key: 'A', shiftKey: true }), flags);
         assert.strictEqual(result.key, 'A');
       });
@@ -554,8 +556,10 @@ describe('KittyKeyboard', () => {
       });
     });
 
-    // Enabling REPORT_EVENT_TYPES without DISAMBIGUATE_ESCAPE_CODES doesn't really make sense and
-    // isn't specified in the spec, but press and repeat events shouldn't get swallowed.
+    /*
+     * Enabling REPORT_EVENT_TYPES without DISAMBIGUATE_ESCAPE_CODES doesn't really make sense and
+     * isn't specified in the spec, but press and repeat events shouldn't get swallowed.
+     */
     describe('REPORT_EVENT_TYPES flag without DISAMBIGUATE_ESCAPE_CODES', () => {
       const flags = KittyKeyboardFlags.REPORT_EVENT_TYPES;
 

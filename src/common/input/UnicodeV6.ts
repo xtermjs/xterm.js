@@ -94,8 +94,10 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
       table.fill(0, 1, 32);
       table.fill(0, 0x7f, 0xa0);
 
-      // apply wide char rules first
-      // wide chars
+      /*
+       * apply wide char rules first
+       * wide chars
+       */
       table.fill(2, 0x1100, 0x1160);
       table[0x2329] = 2;
       table[0x232a] = 2;
@@ -109,11 +111,13 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
       table.fill(2, 0xff00, 0xff61);
       table.fill(2, 0xffe0, 0xffe7);
 
-      // apply combining last to ensure we overwrite
-      // wrongly wide set chars:
-      //    the original algo evals combining first and falls
-      //    through to wide check so we simply do here the opposite
-      // combining 0
+      /*
+       * apply combining last to ensure we overwrite
+       * wrongly wide set chars:
+       *    the original algo evals combining first and falls
+       *    through to wide check so we simply do here the opposite
+       * combining 0
+       */
       for (let r = 0; r < BMP_COMBINING.length; ++r) {
         table.fill(0, BMP_COMBINING[r][0], BMP_COMBINING[r][1] + 1);
       }

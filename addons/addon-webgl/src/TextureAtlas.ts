@@ -151,13 +151,17 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _createNewPage(): AtlasPage {
-    // Try merge the set of the 4 most used pages of the largest size. This is is deferred to a
-    // microtask to ensure it does not interrupt textures that will be rendered in the current
-    // animation frame which would result in blank rendered areas. This is actually not that
-    // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
+    /*
+     * Try merge the set of the 4 most used pages of the largest size. This is is deferred to a
+     * microtask to ensure it does not interrupt textures that will be rendered in the current
+     * animation frame which would result in blank rendered areas. This is actually not that
+     * expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
+     */
     if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages)) {
-      // Find the set of the largest 4 images, below the maximum size, with the highest
-      // percentages used
+      /*
+       * Find the set of the largest 4 images, below the maximum size, with the highest
+       * percentages used
+       */
       const pagesBySize = this._pages.filter(e => {
         return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
       }).sort((a, b) => {
@@ -180,8 +184,10 @@ export class TextureAtlas implements ITextureAtlas {
       // Gather details of the merge
       const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
 
-      // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
-      // effectively reduce page count and merging would cause issues.
+      /*
+       * Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
+       * effectively reduce page count and merging would cause issues.
+       */
       if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
         const newPage = new AtlasPage(this._document, this._textureSize);
         this._pages.push(newPage);
@@ -294,9 +300,11 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _getBackgroundColor(bgColorMode: number, bgColor: number, inverse: boolean, dim: boolean): IColor {
     if (this._config.allowTransparency) {
-      // The background color might have some transparency, so we need to render it as fully
-      // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
-      // around the anti-aliased edges of the glyph, and it would look too dark.
+      /*
+       * The background color might have some transparency, so we need to render it as fully
+       * transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
+       * around the anti-aliased edges of the glyph, and it would look too dark.
+       */
       return NULL_COLOR;
     }
 
@@ -418,8 +426,10 @@ export class TextureAtlas implements ITextureAtlas {
 
     const bgRgba = this._resolveBackgroundRgba(bgColorMode, bgColor, inverse);
     const fgRgba = this._resolveForegroundRgba(fgColorMode, fgColor, inverse, bold);
-    // Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
-    // non-dim cells
+    /*
+     * Dim cells only require half the contrast, otherwise they wouldn't be distinguishable from
+     * non-dim cells
+     */
     const result = rgba.ensureContrastRatio(bgRgba, fgRgba, this._config.minimumContrastRatio / (dim ? 2 : 1));
 
     if (!result) {
@@ -447,20 +457,26 @@ export class TextureAtlas implements ITextureAtlas {
   private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
-    // Uncomment for debugging
-    // console.log(`draw to cache "${chars}"`, bg, fg, ext);
+    /*
+     * Uncomment for debugging
+     * console.log(`draw to cache "${chars}"`, bg, fg, ext);
+     */
 
-    // Attach the canvas to the DOM in order to inherit font-feature-settings
-    // from the parent elements. This is necessary for ligatures and variants to
-    // work.
+    /*
+     * Attach the canvas to the DOM in order to inherit font-feature-settings
+     * from the parent elements. This is necessary for ligatures and variants to
+     * work.
+     */
     if (domContainer && this._tmpCanvas.parentElement !== domContainer) {
       this._tmpCanvas.style.display = 'none';
       domContainer.append(this._tmpCanvas);
     }
 
-    // Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
-    // to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
-    // giant ligatures (eg. =====>) don't impact overall performance.
+    /*
+     * Allow 1 cell width per character, with a minimum of 2 (CJK), plus some padding. This is used
+     * to draw the glyph to the canvas as well as to restrict the bounding box search to ensure
+     * giant ligatures (eg. =====>) don't impact overall performance.
+     */
     const allowedWidth = Math.min(this._config.deviceCellWidth * Math.max(chars.length, 2) + TMP_CANVAS_GLYPH_PADDING * 2, this._config.deviceMaxTextureSize);
     if (this._tmpCanvas.width < allowedWidth) {
       this._tmpCanvas.width = allowedWidth;
@@ -503,8 +519,10 @@ export class TextureAtlas implements ITextureAtlas {
 
     // draw the background
     const backgroundColor = this._getBackgroundColor(bgColorMode, bgColor, inverse, dim);
-    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha,
-    // regardless of transparency in backgroundColor
+    /*
+     * Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha,
+     * regardless of transparency in backgroundColor
+     */
     this._tmpCtx.globalCompositeOperation = 'copy';
     this._tmpCtx.fillStyle = backgroundColor.css;
     this._tmpCtx.fillRect(0, 0, this._tmpCanvas.width, this._tmpCanvas.height);
@@ -532,9 +550,11 @@ export class TextureAtlas implements ITextureAtlas {
       customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.deviceCharWidth, this._config.deviceCharHeight, this._config.fontSize, this._config.devicePixelRatio, backgroundColor.css, variantOffset);
     }
 
-    // Whether to clear pixels based on a threshold difference between the glyph color and the
-    // background color. This should be disabled when the glyph contains multiple colors such as
-    // underline colors to prevent important colors could get cleared.
+    /*
+     * Whether to clear pixels based on a threshold difference between the glyph color and the
+     * background color. This should be disabled when the glyph contains multiple colors such as
+     * underline colors to prevent important colors could get cleared.
+     */
     let enableClearThresholdCheck = !powerlineGlyph;
 
     let chWidth: number;
@@ -599,8 +619,10 @@ export class TextureAtlas implements ITextureAtlas {
             clipRegion.rect(xChLeft, yTop, this._config.deviceCellWidth, yBot - yTop);
             this._tmpCtx.clip(clipRegion);
 
-            // Draw a zigzag pattern, this is derived from the SVG used in monaco for the same
-            // style. The viewbox is 6x3 so scale it using that.
+            /*
+             * Draw a zigzag pattern, this is derived from the SVG used in monaco for the same
+             * style. The viewbox is 6x3 so scale it using that.
+             */
             const cellW = this._config.deviceCellWidth;
             const curlyH = (yBot - yTop);
             const scaleX = cellW / 6;
@@ -671,15 +693,21 @@ export class TextureAtlas implements ITextureAtlas {
       }
       this._tmpCtx.restore();
 
-      // Draw stroke in the background color for non custom characters in order to give an outline
-      // between the text and the underline. Only do this when font size is >= 12 as the underline
-      // looks odd when the font size is too small
+      /*
+       * Draw stroke in the background color for non custom characters in order to give an outline
+       * between the text and the underline. Only do this when font size is >= 12 as the underline
+       * looks odd when the font size is too small
+       */
       if (!customGlyph && this._config.fontSize >= 12) {
-        // This only works when transparency is disabled because it's not clear how to clear stroked
-        // text
+        /*
+         * This only works when transparency is disabled because it's not clear how to clear stroked
+         * text
+         */
         if (!this._config.allowTransparency && chars !== ' ') {
-          // Measure the text, only draw the stroke if there is a descent beyond an alphabetic text
-          // baseline
+          /*
+           * Measure the text, only draw the stroke if there is a descent beyond an alphabetic text
+           * baseline
+           */
           this._tmpCtx.save();
           this._tmpCtx.textBaseline = 'alphabetic';
           const metrics = this._tmpCtx.measureText(chars);
@@ -687,9 +715,11 @@ export class TextureAtlas implements ITextureAtlas {
           if ('actualBoundingBoxDescent' in metrics && metrics.actualBoundingBoxDescent > 0) {
             // This translates to 1/2 the line width in either direction
             this._tmpCtx.save();
-            // Clip the region to only draw in valid pixels near the underline to avoid a slight
-            // outline around the whole glyph, as well as additional pixels in the glyph at the top
-            // which would increase GPU memory demands
+            /*
+             * Clip the region to only draw in valid pixels near the underline to avoid a slight
+             * outline around the whole glyph, as well as additional pixels in the glyph at the top
+             * which would increase GPU memory demands
+             */
             const clipRegion = new Path2D();
             clipRegion.rect(xLeft, yTop - Math.ceil(lineWidth / 2), this._config.deviceCellWidth * chWidth, yBot - yTop + Math.ceil(lineWidth / 2));
             this._tmpCtx.clip(clipRegion);
@@ -719,8 +749,10 @@ export class TextureAtlas implements ITextureAtlas {
       this._tmpCtx.fillText(chars, padding, padding + this._config.deviceCharHeight);
     }
 
-    // If this character is underscore and beyond the cell bounds, shift it up until it is visible
-    // even on the bottom row, try for a maximum of 5 pixels.
+    /*
+     * If this character is underscore and beyond the cell bounds, shift it up until it is visible
+     * even on the bottom row, try for a maximum of 5 pixels.
+     */
     if (chars === '_' && !this._config.allowTransparency) {
       let isBeyondCellBounds = clearColor(this._tmpCtx.getImageData(padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight), backgroundColor, foregroundColor, enableClearThresholdCheck);
       if (isBeyondCellBounds) {
@@ -752,8 +784,10 @@ export class TextureAtlas implements ITextureAtlas {
 
     this._tmpCtx.restore();
 
-    // clear the background from the character to avoid issues with drawing over the previous
-    // character if it extends past it's bounds
+    /*
+     * clear the background from the character to avoid issues with drawing over the previous
+     * character if it extends past it's bounds
+     */
     const imageData = this._tmpCtx.getImageData(
       0, 0, this._tmpCanvas.width, this._tmpCanvas.height
     );
@@ -796,12 +830,16 @@ export class TextureAtlas implements ITextureAtlas {
         }
       }
 
-      // TODO: This algorithm could be simplified:
-      // - Search for the page with ROW_PIXEL_THRESHOLD in mind
-      // - Keep track of current/fixed rows in a Map
+      /*
+       * TODO: This algorithm could be simplified:
+       * - Search for the page with ROW_PIXEL_THRESHOLD in mind
+       * - Keep track of current/fixed rows in a Map
+       */
 
-      // Replace the best current row with a fixed row if there is one at least as good as the
-      // current row. Search in reverse to prioritize filling in older pages.
+      /*
+       * Replace the best current row with a fixed row if there is one at least as good as the
+       * current row. Search in reverse to prioritize filling in older pages.
+       */
       for (let i = this._activePages.length - 1; i >= 0; i--) {
         for (const row of this._activePages[i].fixedRows) {
           if (row.height <= activeRow.height && rasterizedGlyph.size.y <= row.height) {
@@ -832,12 +870,16 @@ export class TextureAtlas implements ITextureAtlas {
         break;
       }
 
-      // Create a new page if too much vertical space would be wasted or there is not enough room
-      // left in the page. The previous active row will become fixed in the process as it now has a
-      // fixed height
+      /*
+       * Create a new page if too much vertical space would be wasted or there is not enough room
+       * left in the page. The previous active row will become fixed in the process as it now has a
+       * fixed height
+       */
       if (activeRow.y + rasterizedGlyph.size.y >= activePage.canvas.height || activeRow.height > rasterizedGlyph.size.y + Constants.ROW_PIXEL_THRESHOLD) {
-        // Create the new fixed height row, creating a new page if there isn't enough room on the
-        // current page
+        /*
+         * Create the new fixed height row, creating a new page if there isn't enough room on the
+         * current page
+         */
         let wasPageAndRowFound = false;
         if (activePage.currentRow.y + activePage.currentRow.height + rasterizedGlyph.size.y >= activePage.canvas.height) {
           // Find the first page with room to create the new row on
@@ -852,10 +894,12 @@ export class TextureAtlas implements ITextureAtlas {
           if (candidatePage) {
             activePage = candidatePage;
           } else {
-            // Before creating a new atlas page that would trigger a page merge, check if the
-            // current active row is sufficient when ignoring the ROW_PIXEL_THRESHOLD. This will
-            // improve texture utilization by using the available space before the page is merged
-            // and becomes static.
+            /*
+             * Before creating a new atlas page that would trigger a page merge, check if the
+             * current active row is sufficient when ignoring the ROW_PIXEL_THRESHOLD. This will
+             * improve texture utilization by using the available space before the page is merged
+             * and becomes static.
+             */
             if (
               TextureAtlas.maxAtlasPages &&
               this._pages.length >= TextureAtlas.maxAtlasPages &&
@@ -923,8 +967,10 @@ export class TextureAtlas implements ITextureAtlas {
     rasterizedGlyph.sizeClipSpace.x /= activePage.canvas.width;
     rasterizedGlyph.sizeClipSpace.y /= activePage.canvas.height;
 
-    // Update atlas current row, for fixed rows the glyph height will never be larger than the row
-    // height
+    /*
+     * Update atlas current row, for fixed rows the glyph height will never be larger than the row
+     * height
+     */
     activeRow.height = Math.max(activeRow.height, rasterizedGlyph.size.y);
     activeRow.x += rasterizedGlyph.size.x;
 
@@ -1057,16 +1103,18 @@ class AtlasPage {
   public static nextVersion: number = 0;
   public version = ++AtlasPage.nextVersion;
 
-  // Texture atlas current positioning data. The texture packing strategy used is to fill from
-  // left-to-right and top-to-bottom. When the glyph being written is less than half of the current
-  // row's height, the following happens:
-  //
-  // - The current row becomes the fixed height row A
-  // - A new fixed height row B the exact size of the glyph is created below the current row
-  // - A new dynamic height current row is created below B
-  //
-  // This strategy does a good job preventing space being wasted for very short glyphs such as
-  // underscores, hyphens etc. or those with underlines rendered.
+  /*
+   * Texture atlas current positioning data. The texture packing strategy used is to fill from
+   * left-to-right and top-to-bottom. When the glyph being written is less than half of the current
+   * row's height, the following happens:
+   *
+   * - The current row becomes the fixed height row A
+   * - A new fixed height row B the exact size of the glyph is created below the current row
+   * - A new dynamic height current row is created below B
+   *
+   * This strategy does a good job preventing space being wasted for very short glyphs such as
+   * underscores, hyphens etc. or those with underlines rendered.
+   */
   public currentRow: ICharAtlasActiveRow = {
     x: 0,
     y: 0,
@@ -1086,9 +1134,11 @@ class AtlasPage {
       }
     }
     this.canvas = createCanvas(document, size, size);
-    // The canvas needs alpha because we use clearColor to convert the background color to alpha.
-    // It might also contain some characters with transparent backgrounds if allowTransparency is
-    // set.
+    /*
+     * The canvas needs alpha because we use clearColor to convert the background color to alpha.
+     * It might also contain some characters with transparent backgrounds if allowTransparency is
+     * set.
+     */
     this.ctx = throwIfFalsy(this.canvas.getContext('2d', { alpha: true }));
   }
 
@@ -1116,12 +1166,14 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   const fgG = fg.rgba >>> 16 & 0xFF;
   const fgB = fg.rgba >>> 8 & 0xFF;
 
-  // Calculate a threshold that when below a color will be treated as transpart when the sum of
-  // channel value differs. This helps improve rendering when glyphs overlap with others. This
-  // threshold is calculated relative to the difference between the background and foreground to
-  // ensure important details of the glyph are always shown, even when the contrast ratio is low.
-  // The number 12 is largely arbitrary to ensure the pixels that escape the cell in the test case
-  // were covered (fg=#8ae234, bg=#c4a000).
+  /*
+   * Calculate a threshold that when below a color will be treated as transpart when the sum of
+   * channel value differs. This helps improve rendering when glyphs overlap with others. This
+   * threshold is calculated relative to the difference between the background and foreground to
+   * ensure important details of the glyph are always shown, even when the contrast ratio is low.
+   * The number 12 is largely arbitrary to ensure the pixels that escape the cell in the test case
+   * were covered (fg=#8ae234, bg=#c4a000).
+   */
   const threshold = Math.floor((Math.abs(r - fgR) + Math.abs(g - fgG) + Math.abs(b - fgB)) / 12);
 
   // Set alpha channel of relevent pixels to 0

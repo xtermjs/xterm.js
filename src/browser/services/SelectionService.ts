@@ -152,8 +152,10 @@ export class SelectionService extends Disposable implements ISelectionService {
       this._removeMouseDownListeners();
     }));
 
-    // Clear selection when resizing vertically. This experience could be improved, this is the
-    // simple option to fix the buggy behavior. https://github.com/xtermjs/xterm.js/issues/5300
+    /*
+     * Clear selection when resizing vertically. This experience could be improved, this is the
+     * simple option to fix the buggy behavior. https://github.com/xtermjs/xterm.js/issues/5300
+     */
     this._register(this._bufferService.onResize(e => {
       if (e.rowsChanged) {
         this.clearSelection();
@@ -215,8 +217,10 @@ export class SelectionService extends Disposable implements ISelectionService {
         return '';
       }
 
-      // For column selection it's not enough to rely on final selection's swapping of reversed
-      // values, it also needs the x coordinates to swap independently of the y coordinate is needed
+      /*
+       * For column selection it's not enough to rely on final selection's swapping of reversed
+       * values, it also needs the x coordinates to swap independently of the y coordinate is needed
+       */
       const startCol = start[0] < end[0] ? start[0] : end[0];
       const endCol = start[0] < end[0] ? end[0] : start[0];
       for (let i = start[1]; i <= end[1]; i++) {
@@ -251,8 +255,10 @@ export class SelectionService extends Disposable implements ISelectionService {
       }
     }
 
-    // Format string by replacing non-breaking space chars with regular spaces
-    // and joining the array into a multi-line string.
+    /*
+     * Format string by replacing non-breaking space chars with regular spaces
+     * and joining the array into a multi-line string.
+     */
     const formattedResult = result.map(line => {
       return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
     }).join(Browser.isWindows ? '\r\n' : '\n');
@@ -281,8 +287,10 @@ export class SelectionService extends Disposable implements ISelectionService {
       this._refreshAnimationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._refresh());
     }
 
-    // If the platform is Linux and the refresh call comes from a mouse event,
-    // we need to update the selection for middle click to paste selection.
+    /*
+     * If the platform is Linux and the refresh call comes from a mouse event,
+     * we need to update the selection for middle click to paste selection.
+     */
     if (Browser.isLinux && isLinuxMouseSelection) {
       const selectionText = this.selectionText;
       if (selectionText.length) {
@@ -447,8 +455,10 @@ export class SelectionService extends Disposable implements ISelectionService {
    */
   public handleMouseDown(event: MouseEvent): void {
     this._mouseDownTimeStamp = event.timeStamp;
-    // If we have selection, we want the context menu on right click even if the
-    // terminal is in mouse mode.
+    /*
+     * If we have selection, we want the context menu on right click even if the
+     * terminal is in mouse mode.
+     */
     if (event.button === 2 && this.hasSelection) {
       return;
     }
@@ -561,8 +571,10 @@ export class SelectionService extends Disposable implements ISelectionService {
       return;
     }
 
-    // If the mouse is over the second half of a wide character, adjust the
-    // selection to cover the whole character
+    /*
+     * If the mouse is over the second half of a wide character, adjust the
+     * selection to cover the whole character
+     */
     if (line.hasWidth(this._model.selectionStart[0]) === 0) {
       this._model.selectionStart[0]++;
     }
@@ -605,19 +617,25 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mousemove event.
    */
   private _handleMouseMove(event: MouseEvent): void {
-    // If the mousemove listener is active it means that a selection is
-    // currently being made, we should stop propagation to prevent mouse events
-    // to be sent to the pty.
+    /*
+     * If the mousemove listener is active it means that a selection is
+     * currently being made, we should stop propagation to prevent mouse events
+     * to be sent to the pty.
+     */
     event.stopImmediatePropagation();
 
-    // Do nothing if there is no selection start, this can happen if the first
-    // click in the terminal is an incremental click
+    /*
+     * Do nothing if there is no selection start, this can happen if the first
+     * click in the terminal is an incremental click
+     */
     if (!this._model.selectionStart) {
       return;
     }
 
-    // Record the previous position so we know whether to redraw the selection
-    // at the end.
+    /*
+     * Record the previous position so we know whether to redraw the selection
+     * at the end.
+     */
     const previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
 
     // Set the initial selection end based on the mouse coordinates
@@ -641,9 +659,11 @@ export class SelectionService extends Disposable implements ISelectionService {
     // Determine the amount of scrolling that will happen.
     this._dragScrollAmount = this._getMouseEventScrollAmount(event);
 
-    // If the cursor was above or below the viewport, make sure it's at the
-    // start or end of the viewport respectively. This should only happen when
-    // NOT in column select mode.
+    /*
+     * If the cursor was above or below the viewport, make sure it's at the
+     * start or end of the viewport respectively. This should only happen when
+     * NOT in column select mode.
+     */
     if (this._activeSelectionMode !== SelectionMode.COLUMN) {
       if (this._dragScrollAmount > 0) {
         this._model.selectionEnd[0] = this._bufferService.cols;
@@ -652,9 +672,11 @@ export class SelectionService extends Disposable implements ISelectionService {
       }
     }
 
-    // If the character is a wide character include the cell to the right in the
-    // selection. Note that selections at the very end of the line will never
-    // have a character.
+    /*
+     * If the character is a wide character include the cell to the right in the
+     * selection. Note that selections at the very end of the line will never
+     * have a character.
+     */
     const buffer = this._bufferService.buffer;
     if (this._model.selectionEnd[1] < buffer.lines.length) {
       const line = buffer.lines.get(this._model.selectionEnd[1]);
@@ -683,10 +705,12 @@ export class SelectionService extends Disposable implements ISelectionService {
     }
     if (this._dragScrollAmount) {
       this._onRequestScrollLines.fire({ amount: this._dragScrollAmount, suppressScrollEvent: false });
-      // Re-evaluate selection
-      // If the cursor was above or below the viewport, make sure it's at the
-      // start or end of the viewport respectively. This should only happen when
-      // NOT in column select mode.
+      /*
+       * Re-evaluate selection
+       * If the cursor was above or below the viewport, make sure it's at the
+       * start or end of the viewport respectively. This should only happen when
+       * NOT in column select mode.
+       */
       const buffer = this._bufferService.buffer;
       if (this._dragScrollAmount > 0) {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
@@ -765,10 +789,12 @@ export class SelectionService extends Disposable implements ISelectionService {
 
   private _handleBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
     this.clearSelection();
-    // Only adjust the selection on trim, shiftElements is rarely used (only in
-    // reverseIndex) and delete in a splice is only ever used when the same
-    // number of elements was just added. Given this is could actually be
-    // beneficial to leave the selection as is for these cases.
+    /*
+     * Only adjust the selection on trim, shiftElements is rarely used (only in
+     * reverseIndex) and delete in a splice is only ever used when the same
+     * number of elements was just added. Given this is could actually be
+     * beneficial to leave the selection as is for these cases.
+     */
     this._trimListener.dispose();
     this._trimListener = e.activeBuffer.lines.onTrim(amount => this._handleTrim(amount));
   }
@@ -784,13 +810,17 @@ export class SelectionService extends Disposable implements ISelectionService {
     for (let i = 0; x >= i; i++) {
       const length = bufferLine.loadCell(i, this._workCell).getChars().length;
       if (this._workCell.getWidth() === 0) {
-        // Wide characters aren't included in the line string so decrement the
-        // index so the index is back on the wide character.
+        /*
+         * Wide characters aren't included in the line string so decrement the
+         * index so the index is back on the wide character.
+         */
         charIndex--;
       } else if (length > 1 && x !== i) {
-        // Emojis take up multiple characters, so adjust accordingly. For these
-        // we don't want ot include the character at the column as we're
-        // returning the start index in the string, not the end index.
+        /*
+         * Emojis take up multiple characters, so adjust accordingly. For these
+         * we don't want ot include the character at the column as we're
+         * returning the start index in the string, not the end index.
+         */
         charIndex += length - 1;
       }
     }
@@ -853,15 +883,19 @@ export class SelectionService extends Disposable implements ISelectionService {
         endIndex++;
       }
     } else {
-      // Expand until whitespace is hit. This algorithm works by scanning left
-      // and right from the starting position, keeping both the index format
-      // (line) and the column format (bufferLine) in sync. When a wide
-      // character is hit, it is recorded and the column index is adjusted.
+      /*
+       * Expand until whitespace is hit. This algorithm works by scanning left
+       * and right from the starting position, keeping both the index format
+       * (line) and the column format (bufferLine) in sync. When a wide
+       * character is hit, it is recorded and the column index is adjusted.
+       */
       let startCol = coords[0];
       let endCol = coords[0];
 
-      // Consider the initial position, skip it and increment the wide char
-      // variable
+      /*
+       * Consider the initial position, skip it and increment the wide char
+       * variable
+       */
       if (bufferLine.getWidth(startCol) === 0) {
         leftWideCharCount++;
         startCol--;
@@ -887,8 +921,10 @@ export class SelectionService extends Disposable implements ISelectionService {
           leftWideCharCount++;
           startCol--;
         } else if (length > 1) {
-          // If the next character's string is longer than 1 char (eg. emoji),
-          // adjust the index
+          /*
+           * If the next character's string is longer than 1 char (eg. emoji),
+           * adjust the index
+           */
           leftLongCharOffset += length - 1;
           startIndex -= length - 1;
         }
@@ -903,8 +939,10 @@ export class SelectionService extends Disposable implements ISelectionService {
           rightWideCharCount++;
           endCol++;
         } else if (length > 1) {
-          // If the next character's string is longer than 1 char (eg. emoji),
-          // adjust the index
+          /*
+           * If the next character's string is longer than 1 char (eg. emoji),
+           * adjust the index
+           */
           rightLongCharOffset += length - 1;
           endIndex += length - 1;
         }
@@ -916,16 +954,20 @@ export class SelectionService extends Disposable implements ISelectionService {
     // Incremenet the end index so it is at the start of the next character
     endIndex++;
 
-    // Calculate the start _column_, converting the the string indexes back to
-    // column coordinates.
+    /*
+     * Calculate the start _column_, converting the the string indexes back to
+     * column coordinates.
+     */
     let start =
         startIndex // The index of the selection's start char in the line string
         + charOffset // The difference between the initial char's column and index
         - leftWideCharCount // The number of wide chars left of the initial char
         + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
 
-    // Calculate the length in _columns_, converting the the string indexes back
-    // to column coordinates.
+    /*
+     * Calculate the length in _columns_, converting the the string indexes back
+     * to column coordinates.
+     */
     let length = Math.min(this._bufferService.cols, // Disallow lengths larger than the terminal cols
       endIndex // The index of the selection's end char in the line string
       - startIndex // The index of the selection's start char in the line string
@@ -1002,8 +1044,10 @@ export class SelectionService extends Disposable implements ISelectionService {
         endRow--;
       }
 
-      // Adjust wrapped length value, this only needs to happen when values are reversed as in that
-      // case we're interested in the start of the word, not the end
+      /*
+       * Adjust wrapped length value, this only needs to happen when values are reversed as in that
+       * case we're interested in the start of the word, not the end
+       */
       if (!this._model.areSelectionValuesReversed()) {
         while (wordPosition.start + wordPosition.length > this._bufferService.cols) {
           wordPosition.length -= this._bufferService.cols;
@@ -1021,8 +1065,10 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param cell The cell to check.
    */
   private _isCharWordSeparator(cell: ICellData): boolean {
-    // Zero width characters are never separators as they are always to the
-    // right of wide characters
+    /*
+     * Zero width characters are never separators as they are always to the
+     * right of wide characters
+     */
     if (cell.getWidth() === 0) {
       return false;
     }

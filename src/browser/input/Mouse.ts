@@ -44,9 +44,11 @@ export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<
   coords[0] = Math.ceil((coords[0] + (isSelection ? cssCellWidth / 2 : 0)) / cssCellWidth);
   coords[1] = Math.ceil(coords[1] / cssCellHeight);
 
-  // Ensure coordinates are within the terminal viewport. Note that selections
-  // need an addition point of precision to cover the end point (as characters
-  // cover half of one char and half of the next).
+  /*
+   * Ensure coordinates are within the terminal viewport. Note that selections
+   * need an addition point of precision to cover the end point (as characters
+   * cover half of one char and half of the next).
+   */
   coords[0] = Math.min(Math.max(coords[0], 1), colCount + (isSelection ? 1 : 0));
   coords[1] = Math.min(Math.max(coords[1], 1), rowCount);
 

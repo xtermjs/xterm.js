@@ -378,8 +378,10 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
         const r = parseInt(cssColor.slice(1, 3), 16);
         const g = parseInt(cssColor.slice(3, 5), 16);
         const b = parseInt(cssColor.slice(5, 7), 16);
-        // It's difficult to assert the exact color due to rounding, just ensure the color differs
-        // to the regular color
+        /*
+         * It's difficult to assert the exact color due to rounding, just ensure the color differs
+         * to the regular color
+         */
         await pollFor(ctx.value.page, async () => {
           const c = await getCellColor(ctx.value, x + 1, y + 1);
           return (
@@ -783,9 +785,11 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 2), [0xad, 0x7f, 0xa8, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 2), [0x34, 0xe2, 0xe2, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 2), [0xee, 0xee, 0xec, 255]);
-      // Setting and check for minimum contrast values, note that these are not
-      // exact to the contrast ratio, if the increase luminance algorithm
-      // changes then these will probably fail
+      /*
+       * Setting and check for minimum contrast values, note that these are not
+       * exact to the contrast ratio, if the increase luminance algorithm
+       * changes then these will probably fail
+       */
       await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       frameDetails = undefined;
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [176, 180, 180, 255]);
@@ -852,9 +856,11 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 6, 2), [0xad, 0x7f, 0xa8, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 7, 2), [0x34, 0xe2, 0xe2, 255]);
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 8, 2), [0xee, 0xee, 0xec, 255]);
-      // Setting and check for minimum contrast values, note that these are not
-      // exact to the contrast ratio, if the increase luminance algorithm
-      // changes then these will probably fail
+      /*
+       * Setting and check for minimum contrast values, note that these are not
+       * exact to the contrast ratio, if the increase luminance algorithm
+       * changes then these will probably fail
+       */
       await ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`);
       frameDetails = undefined;
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [46, 52, 54, 255]);
@@ -935,9 +941,11 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(6, 2), [Math.floor((255 + 0xad) / 2), Math.floor((255 + 0x7f) / 2), Math.floor((255 + 0xa8) / 2), 255]);
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(7, 2), [Math.floor((255 + 0x34) / 2), Math.floor((255 + 0xe2) / 2), Math.floor((255 + 0xe2) / 2), 255]);
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(8, 2), [Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xee) / 2), Math.floor((255 + 0xec) / 2), 255]);
-      // Setting and check for minimum contrast values, note that these are not
-      // exact to the contrast ratio, if the increase luminance algorithm
-      // changes then these will probably fail
+      /*
+       * Setting and check for minimum contrast values, note that these are not
+       * exact to the contrast ratio, if the increase luminance algorithm
+       * changes then these will probably fail
+       */
       await waitForRenderAfter(ctx.value, () => ctx.value.page.evaluate(`window.term.options.minimumContrastRatio = 10;`));
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(1, 1), [150, 153, 154, 255]);
       await pollForApproximate(ctx.value.page, marginOfError, () => getFgColor(2, 1), [229, 127, 127, 255]);

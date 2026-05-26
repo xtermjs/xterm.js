@@ -16,8 +16,10 @@ interface IConsole {
   warn: LogType;
 }
 
-// console is available on both node.js and browser contexts but the common
-// module doesn't depend on them so we need to explicitly declare it.
+/*
+ * console is available on both node.js and browser contexts but the common
+ * module doesn't depend on them so we need to explicitly declare it.
+ */
 declare const console: IConsole;
 
 const optionsKeyToLogLevel: { [key: string]: LogLevelEnum } = {

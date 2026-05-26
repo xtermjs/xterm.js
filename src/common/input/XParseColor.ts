@@ -50,9 +50,11 @@ export function parseColor(data: string): [number, number, number] | undefined {
     }
   }
 
-  // Named colors are currently not supported due to the large addition to the xterm.js bundle size
-  // they would add. In order to support named colors, we would need some way of optionally loading
-  // additional payloads so startup/download time is not bloated (see #3530).
+  /*
+   * Named colors are currently not supported due to the large addition to the xterm.js bundle size
+   * they would add. In order to support named colors, we would need some way of optionally loading
+   * additional payloads so startup/download time is not bloated (see #3530).
+   */
 }
 
 // pad hex output to requested bit width

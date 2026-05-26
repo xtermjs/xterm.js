@@ -288,9 +288,11 @@ describe('BufferLine', function(): void {
     assert.equal(line2.isWrapped, line.isWrapped);
   });
   it('should support combining chars', function(): void {
-    // CHAR_DATA_CODE_INDEX resembles current behavior in InputHandler.print
-    // --> set code to the last charCodeAt value of the string
-    // Note: needs to be fixed once the string pointer is in place
+    /*
+     * CHAR_DATA_CODE_INDEX resembles current behavior in InputHandler.print
+     * --> set code to the last charCodeAt value of the string
+     * Note: needs to be fixed once the string pointer is in place
+     */
     const line = new TestBufferLine(2, createCellData(1, 'e\u0301', 1));
     assert.deepEqual(line.toArray(), [[1, 'e\u0301', 1, '\u0301'.charCodeAt(0)], [1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]]);
     const line2 = new TestBufferLine(5, createCellData(1, 'a', 1), true);
@@ -478,9 +480,11 @@ describe('BufferLine', function(): void {
     });
     it('should always return some sane value', function(): void {
       const columns: number[] = [];
-      // sanity check - broken line with invalid out of bound null width cells
-      // this can atm happen with deleting/inserting chars in inputhandler by "breaking"
-      // fullwidth pairs --> needs to be fixed after settling BufferLine impl
+      /*
+       * sanity check - broken line with invalid out of bound null width cells
+       * this can atm happen with deleting/inserting chars in inputhandler by "breaking"
+       * fullwidth pairs --> needs to be fixed after settling BufferLine impl
+       */
       const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       assert.equal(line.translateToString(false, undefined, undefined, columns), '          ');
       assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -500,8 +504,10 @@ describe('BufferLine', function(): void {
       const line = new TestBufferLine(3, NULL_CELL_DATA, false);
       line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);
       const cell = line.loadCell(0, new CellData());
-      // chars contains single combining char
-      // width is set to 1
+      /*
+       * chars contains single combining char
+       * width is set to 1
+       */
       assert.deepEqual(cell.getAsCharData(), [DEFAULT_ATTR, '\u0301', 1, 0x0301]);
       // do not account a single combining char as combined
       assert.equal(cell.isCombined(), 0);
@@ -513,8 +519,10 @@ describe('BufferLine', function(): void {
       line.setCell(0, cell);
       line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);
       line.loadCell(0, cell);
-      // chars contains 3 chars
-      // width is set to 1
+      /*
+       * chars contains 3 chars
+       * width is set to 1
+       */
       assert.deepEqual(cell.getAsCharData(), [123, 'e\u0301\u0301', 1, 0x0301]);
       // do not account a single combining char as combined
       assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
@@ -526,8 +534,10 @@ describe('BufferLine', function(): void {
       line.setCell(0, cell);
       line.addCodepointToCell(0, '\u0301'.charCodeAt(0), 0);
       line.loadCell(0, cell);
-      // chars contains 2 chars
-      // width is set to 1
+      /*
+       * chars contains 2 chars
+       * width is set to 1
+       */
       assert.deepEqual(cell.getAsCharData(), [123, 'e\u0301', 1, 0x0301]);
       // do not account a single combining char as combined
       assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);

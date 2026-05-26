@@ -103,22 +103,28 @@ export class BufferService extends Disposable implements IBufferService {
           buffer.ydisp++;
         }
       } else {
-        // When the buffer is full and the user has scrolled up, keep the text
-        // stable unless ydisp is right at the top
+        /*
+         * When the buffer is full and the user has scrolled up, keep the text
+         * stable unless ydisp is right at the top
+         */
         if (this.isUserScrolling) {
           buffer.ydisp = Math.max(buffer.ydisp - 1, 0);
         }
       }
     } else {
-      // scrollTop is non-zero which means no line will be going to the
-      // scrollback, instead we can just shift them in-place.
+      /*
+       * scrollTop is non-zero which means no line will be going to the
+       * scrollback, instead we can just shift them in-place.
+       */
       const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
       buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
       buffer.lines.set(bottomRow, newLine.clone());
     }
 
-    // Move the viewport to the bottom of the buffer unless the user is
-    // scrolling.
+    /*
+     * Move the viewport to the bottom of the buffer unless the user is
+     * scrolling.
+     */
     if (!this.isUserScrolling) {
       buffer.ydisp = buffer.ybase;
     }
