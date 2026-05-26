@@ -72,19 +72,63 @@ export class SearchEngine {
     }
 
     this._lineCache.initLinesCache();
+    const lineSearchRegex = this._createLineSearchRegex(term, searchOptions);
+    return this._findFromPosition(term, startRow, startCol, searchOptions, lineSearchRegex);
+  }
 
+  /**
+   * Collect up to `maxResults` matches from the start of the buffer in a single search session.
+   */
+  public collectMatches(term: string, searchOptions?: ISearchOptions, maxResults: number = Number.MAX_SAFE_INTEGER): ISearchResult[] {
+    if (!term || term.length === 0) {
+      return [];
+    }
+
+    this._lineCache.initLinesCache();
+    const lineSearchRegex = this._createLineSearchRegex(term, searchOptions);
+    const results: ISearchResult[] = [];
+    let startRow = 0;
+    let startCol = 0;
+    const cols = this._terminal.cols;
+
+    while (results.length < maxResults) {
+      const result = this._findFromPosition(term, startRow, startCol, searchOptions, lineSearchRegex);
+      if (!result) {
+        break;
+      }
+      const prevResult = results[results.length - 1];
+      if (prevResult && prevResult.row === result.row && prevResult.col === result.col) {
+        break;
+      }
+      results.push(result);
+      if (result.col + result.term.length >= cols) {
+        startRow = result.row + 1;
+        startCol = 0;
+      } else {
+        startRow = result.row;
+        startCol = result.col + 1;
+      }
+    }
+
+    return results;
+  }
+
+  private _findFromPosition(
+    term: string,
+    startRow: number,
+    startCol: number,
+    searchOptions: ISearchOptions | undefined,
+    lineSearchRegex: RegExp | undefined
+  ): ISearchResult | undefined {
     const searchPosition: ISearchPosition = {
       startRow,
       startCol
     };
 
-    const lineSearchRegex = this._createLineSearchRegex(term, searchOptions);
-
-    // Search startRow
     let result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
-    // Search from startRow + 1 to end
     if (!result) {
-      for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
+      const bufferEnd = this._terminal.buffer.active.baseY + this._terminal.rows;
+      for (let y = startRow + 1; y < bufferEnd; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
         result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);

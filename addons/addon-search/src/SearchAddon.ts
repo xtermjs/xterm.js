@@ -133,23 +133,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     // new search, clear out the old decorations
     this.clearDecorations(true);
 
-    const results: ISearchResult[] = [];
-    let prevResult: ISearchResult | undefined = undefined;
-    let result = this._engine.find(term, 0, 0, searchOptions);
-
-    while (result && (prevResult?.row !== result.row || prevResult?.col !== result.col)) {
-      if (results.length >= this._highlightLimit) {
-        break;
-      }
-      prevResult = result;
-      results.push(prevResult);
-      result = this._engine.find(
-        term,
-        prevResult.col + prevResult.term.length >= this._terminal.cols ? prevResult.row + 1 : prevResult.row,
-        prevResult.col + prevResult.term.length >= this._terminal.cols ? 0 : prevResult.col + 1,
-        searchOptions
-      );
-    }
+    const results = this._engine.collectMatches(term, searchOptions, this._highlightLimit);
 
     this._resultTracker.updateResults(results, this._highlightLimit);
     if (searchOptions.decorations) {
