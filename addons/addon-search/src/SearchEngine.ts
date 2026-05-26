@@ -289,6 +289,9 @@ export class SearchEngine {
       if (isReverseSearch) {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
         while (foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
+          if (foundTerm[0].length === 0) {
+            continue;
+          }
           resultIndex = searchRegex.lastIndex - foundTerm[0].length;
           term = foundTerm[0];
           searchRegex.lastIndex -= (term.length - 1);
