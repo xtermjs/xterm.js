@@ -146,6 +146,17 @@ describe('SearchEngine', () => {
         assert.strictEqual(searchEngine.find('world', 0, 0, { wholeWord: true }), undefined);
       });
 
+      it('should find later whole word after partial match on same line', async () => {
+        await writeP(terminal, 'foobar foo');
+
+        assert.deepStrictEqual(searchEngine.find('foo', 0, 0, { wholeWord: true }), {
+          term: 'foo',
+          col: 7,
+          row: 0,
+          size: 3
+        });
+      });
+
       it('should find word at beginning of line with wholeWord', async () => {
         await writeP(terminal, 'world is great');
 

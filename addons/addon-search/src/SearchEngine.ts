@@ -300,19 +300,73 @@ export class SearchEngine {
           term = foundTerm[0];
         }
       }
-    } else {
-      if (isReverseSearch) {
-        if (offset - searchTerm.length >= 0) {
-          resultIndex = searchStringLine.lastIndexOf(searchTerm, offset - searchTerm.length);
+    } else if (isReverseSearch) {
+      let searchEnd = offset - searchTerm.length;
+      while (searchEnd >= 0) {
+        resultIndex = searchStringLine.lastIndexOf(searchTerm, searchEnd);
+        if (resultIndex < 0) {
+          break;
         }
-      } else {
-        resultIndex = searchStringLine.indexOf(searchTerm, offset);
+        if (!searchOptions.wholeWord || this._isWholeWord(resultIndex, searchStringLine, searchTerm)) {
+          break;
+        }
+        searchEnd = resultIndex - 1;
+        resultIndex = -1;
+      }
+    } else {
+      let searchStart = offset;
+      while (searchStart <= searchStringLine.length - searchTerm.length) {
+        resultIndex = searchStringLine.indexOf(searchTerm, searchStart);
+        if (resultIndex < 0) {
+          break;
+        }
+        if (!searchOptions.wholeWord || this._isWholeWord(resultIndex, searchStringLine, searchTerm)) {
+          break;
+        }
+        searchStart = resultIndex + 1;
+        resultIndex = -1;
       }
     }
 
     if (resultIndex >= 0) {
-      if (searchOptions.wholeWord && !this._isWholeWord(resultIndex, searchStringLine, term)) {
-        return;
+      if (searchOptions.regex) {
+        if (searchOptions.wholeWord) {
+          const searchRegex = RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
+          let foundTerm: RegExpExecArray | null;
+          if (isReverseSearch) {
+            resultIndex = -1;
+            while (foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
+              if (foundTerm[0].length === 0) {
+                continue;
+              }
+              const candidateIndex = searchRegex.lastIndex - foundTerm[0].length;
+              const candidateTerm = foundTerm[0];
+              if (this._isWholeWord(candidateIndex, searchStringLine, candidateTerm)) {
+                resultIndex = candidateIndex;
+                term = candidateTerm;
+              }
+              searchRegex.lastIndex -= (candidateTerm.length - 1);
+            }
+          } else {
+            resultIndex = -1;
+            searchRegex.lastIndex = offset;
+            while (foundTerm = searchRegex.exec(searchStringLine)) {
+              if (foundTerm[0].length === 0) {
+                break;
+              }
+              const candidateIndex = searchRegex.lastIndex - foundTerm[0].length;
+              const candidateTerm = foundTerm[0];
+              if (this._isWholeWord(candidateIndex, searchStringLine, candidateTerm)) {
+                resultIndex = candidateIndex;
+                term = candidateTerm;
+                break;
+              }
+            }
+          }
+          if (resultIndex < 0) {
+            return;
+          }
+        }
       }
 
       // Adjust the row number and search index if needed since a "line" of text can span multiple
