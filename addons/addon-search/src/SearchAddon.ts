@@ -34,6 +34,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _lastSearchTerm: string | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _lastSearchKey: string | undefined;
+  private _lastSuccessfulNonDecoratedSearchKey: string | undefined;
   private _resultCount = 0;
   private _resultIndex = -1;
   private _pendingResultRefresh = false;
@@ -88,8 +89,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         this._clearStateOnFailedSearch(term, searchOptions, direction);
         return false;
       }
+      const currentSearchKey = this._createSearchKey(term, searchOptions, direction);
 
-      if (!searchOptions?.decorations && !searchOptions?.incremental && direction === 'next' && !this._logicalLineCache) {
+      if (!searchOptions?.decorations && !searchOptions?.incremental && direction === 'next' && !this._logicalLineCache && this._lastSuccessfulNonDecoratedSearchKey === currentSearchKey) {
         const activeMatch = this._findSingleMatchForNext(term, searchOptions);
         if (!activeMatch) {
           this._clearStateOnFailedSearch(term, searchOptions, direction);
@@ -97,6 +99,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         }
         terminal.select(activeMatch.startX, activeMatch.startY, activeMatch.cellLength);
         this._revealResult(activeMatch);
+        this._lastSuccessfulNonDecoratedSearchKey = currentSearchKey;
         this._clearSearchState();
         return true;
       }
@@ -107,7 +110,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         return false;
       }
 
-      const searchKey = this._createSearchKey(term, searchOptions, direction);
+      const searchKey = currentSearchKey;
       const nextIndex = this._resolveResultIndex(matches, searchOptions, direction, searchKey);
       const activeMatch = matches[nextIndex];
       terminal.select(activeMatch.startX, activeMatch.startY, activeMatch.cellLength);
@@ -126,6 +129,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         this._refreshDecorations(matches, searchOptions.decorations, activeMatch);
         this._onDidChangeResults.fire({ resultCount: this._resultCount, resultIndex: this._resultIndex });
       } else {
+        this._lastSuccessfulNonDecoratedSearchKey = searchKey;
         this._clearSearchState();
       }
 
@@ -136,6 +140,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   }
 
   private _clearStateOnFailedSearch(term: string, searchOptions: ISearchOptions | undefined, direction: SearchDirection): void {
+    this._lastSuccessfulNonDecoratedSearchKey = undefined;
     this._lastResolvedNavigation = undefined;
     if (searchOptions?.decorations) {
       this._setDecoratedSearchState(term, searchOptions, this._createSearchKey(term, searchOptions, direction), 0, -1);
@@ -299,10 +304,25 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const normalizedTerm = searchOptions?.caseSensitive ? term : term.toLowerCase();
     const wholeWord = !!searchOptions?.wholeWord;
     const cols = terminal.cols;
-    const logicalLines = this._getLogicalLines(cols);
     let firstMatch: IMatch | undefined;
     let selectionMatched = !selectionStart;
-    for (const logicalLine of logicalLines) {
+    const buffer = terminal.buffer.active;
+    for (let row = 0; row < buffer.length; row++) {
+      const firstLine = buffer.getLine(row);
+      if (!firstLine || firstLine.isWrapped) {
+        continue;
+      }
+      const rows: number[] = [row];
+      let nextRow = row + 1;
+      while (nextRow < buffer.length) {
+        const wrappedLine = buffer.getLine(nextRow);
+        if (!wrappedLine?.isWrapped) {
+          break;
+        }
+        rows.push(nextRow);
+        nextRow++;
+      }
+      const logicalLine: ILogicalLineCacheEntry = { rows, text: this._buildLogicalLineText(rows, cols) };
       if (isRegex) {
         regex!.lastIndex = 0;
         while (true) {
@@ -363,6 +383,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
           }
         }
       }
+      row = rows[rows.length - 1];
     }
     return firstMatch;
   }
