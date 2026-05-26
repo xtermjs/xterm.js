@@ -46,7 +46,9 @@ describe('LigaturesAddon', () => {
   });
 
   beforeEach(() => {
-    onRefresh = Object.assign((..._args: any[]) => { onRefresh.called = true; onRefresh.callCount++; }, { called: false, callCount: 0 });
+    onRefresh = Object.assign((..._args: any[]) => {
+      onRefresh.called = true; onRefresh.callCount++;
+    }, { called: false, callCount: 0 });
     term = new MockTerminal(onRefresh);
     ligatureSupport.enableLigatures(term as any);
   });
@@ -127,7 +129,9 @@ class MockTerminal {
   public deregisterCharacterJoiner(id: number): void {
     this.joiner = undefined;
   }
-  public get options(): { [name: string]: string | number } { return this._options; }
+  public get options(): { [name: string]: string | number } {
+    return this._options;
+  }
   public set options(options: { [name: string]: string | number }) {
     for (const key in this._options) {
       this._options[key] = options[key];

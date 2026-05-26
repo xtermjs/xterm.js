@@ -21,7 +21,9 @@ const enum Constants {
  */
 export class ImageRenderer extends Disposable implements IDisposable {
   /** @deprecated Kept for backward compat — points to top layer canvas. */
-  public get canvas(): HTMLCanvasElement | undefined { return this._layers.get('top')?.canvas; }
+  public get canvas(): HTMLCanvasElement | undefined {
+    return this._layers.get('top')?.canvas;
+  }
   private _layers = new Map<ImageLayer, CanvasRenderingContext2D>();
   private _placeholder: HTMLCanvasElement | undefined;
   private _placeholderBitmap: ImageBitmap | undefined;

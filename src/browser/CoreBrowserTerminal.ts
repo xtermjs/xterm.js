@@ -71,7 +71,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _compositionView: HTMLElement | undefined;
 
   private readonly _linkifier: MutableDisposable<ILinkifier2> = this._register(new MutableDisposable());
-  public get linkifier(): ILinkifier2 | undefined { return this._linkifier.value; }
+  public get linkifier(): ILinkifier2 | undefined {
+    return this._linkifier.value;
+  }
   private _overviewRulerRenderer: OverviewRulerRenderer | undefined;
   private _viewport: Viewport | undefined;
 
@@ -136,15 +138,25 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public readonly onBell = this._onBell.event;
 
   private _onFocus = this._register(new Emitter<void>());
-  public get onFocus(): IEvent<void> { return this._onFocus.event; }
+  public get onFocus(): IEvent<void> {
+    return this._onFocus.event;
+  }
   private _onBlur = this._register(new Emitter<void>());
-  public get onBlur(): IEvent<void> { return this._onBlur.event; }
+  public get onBlur(): IEvent<void> {
+    return this._onBlur.event;
+  }
   private _onA11yCharEmitter = this._register(new Emitter<string>());
-  public get onA11yChar(): IEvent<string> { return this._onA11yCharEmitter.event; }
+  public get onA11yChar(): IEvent<string> {
+    return this._onA11yCharEmitter.event;
+  }
   private _onA11yTabEmitter = this._register(new Emitter<number>());
-  public get onA11yTab(): IEvent<number> { return this._onA11yTabEmitter.event; }
+  public get onA11yTab(): IEvent<number> {
+    return this._onA11yTabEmitter.event;
+  }
   private _onWillOpen = this._register(new Emitter<HTMLElement>());
-  public get onWillOpen(): IEvent<HTMLElement> { return this._onWillOpen.event; }
+  public get onWillOpen(): IEvent<HTMLElement> {
+    return this._onWillOpen.event;
+  }
   private readonly _onDimensionsChange = this._register(new Emitter<IRenderDimensionsApi>());
   public readonly onDimensionsChange = this._onDimensionsChange.event;
 

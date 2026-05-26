@@ -15,14 +15,18 @@ describe('Emitter', () => {
   it('should fire with 1 listener', () => {
     const emitter = new Emitter<number>();
     let received: number | undefined;
-    emitter.event(e => { received = e; });
+    emitter.event(e => {
+      received = e;
+    });
     emitter.fire(42);
     assert.strictEqual(received, 42);
   });
 
   it('should fire with 1 listener using thisArgs', () => {
     const emitter = new Emitter<number>();
-    const obj = { value: 0, handler(e: number) { this.value = e; } };
+    const obj = { value: 0, handler(e: number) {
+      this.value = e;
+    } };
     emitter.event(obj.handler, obj);
     emitter.fire(42);
     assert.strictEqual(obj.value, 42);
@@ -54,7 +58,9 @@ describe('Emitter', () => {
   it('should not fire after dispose', () => {
     const emitter = new Emitter<number>();
     let called = false;
-    emitter.event(() => { called = true; });
+    emitter.event(() => {
+      called = true;
+    });
     emitter.dispose();
     emitter.fire(42);
     assert.strictEqual(called, false);
@@ -63,7 +69,9 @@ describe('Emitter', () => {
   it('should allow disposing a listener', () => {
     const emitter = new Emitter<number>();
     let count = 0;
-    const disposable = emitter.event(() => { count++; });
+    const disposable = emitter.event(() => {
+      count++;
+    });
     emitter.fire(1);
     disposable.dispose();
     emitter.fire(2);

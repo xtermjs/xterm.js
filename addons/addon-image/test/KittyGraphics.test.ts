@@ -322,7 +322,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('chunked transfer responds OK on final chunk when i= on first only', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
@@ -542,7 +544,9 @@ test.describe('Kitty Graphics Protocol', () => {
       let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=31,a=q;\x1b\\');
@@ -556,7 +560,9 @@ test.describe('Kitty Graphics Protocol', () => {
       let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=42,a=q,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -581,7 +587,9 @@ test.describe('Kitty Graphics Protocol', () => {
       let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=60,a=q,f=100;!!!invalid!!!\x1b\\');
@@ -595,7 +603,9 @@ test.describe('Kitty Graphics Protocol', () => {
       let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=70,a=q,f=24;AAAA\x1b\\');
@@ -608,7 +618,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('suppresses OK response when q=1', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=80,a=q,q=1,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -620,7 +632,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('suppresses OK response when q=2', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=81,a=q,q=2,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -632,7 +646,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('suppresses error response when q=2', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=90,a=q,q=2,f=100;!!!invalid!!!\x1b\\');
@@ -645,7 +661,9 @@ test.describe('Kitty Graphics Protocol', () => {
       let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       // Per spec: "Specifying both i and I keys in any command is an error"
@@ -660,7 +678,9 @@ test.describe('Kitty Graphics Protocol', () => {
       let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       // Delete command with both i and I (no payload case)
@@ -676,7 +696,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=t sends EINVAL on decode error when id is specified', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=110,a=t,f=100;!!!invalid!!!\x1b\\');
@@ -689,7 +711,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=t sends no response on decode error without id', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write('\x1b_Ga=t,f=100;!!!invalid!!!\x1b\\');
@@ -701,7 +725,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=T sends EINVAL on decode error when id is specified', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=120,a=T,f=100;!!!invalid!!!\x1b\\');
@@ -714,7 +740,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=T sends no response on decode error without id', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write('\x1b_Ga=T,f=100;!!!invalid!!!\x1b\\');
@@ -726,7 +754,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=T sends EINVAL when raw pixel render fails (missing dimensions)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=130,a=T,f=24;${RAW_RGB_1X1_BLACK}\x1b\\`);
@@ -739,7 +769,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=T sends OK on successful render with id', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=140,a=T,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -752,7 +784,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=t sends OK on successful transmit with id', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=150,a=t,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -765,7 +799,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=t EINVAL suppressed by q=2', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=160,a=t,q=2,f=100;!!!invalid!!!\x1b\\');
@@ -777,7 +813,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=T EINVAL suppressed by q=2', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write('\x1b_Gi=170,a=T,q=2,f=100;!!!invalid!!!\x1b\\');
@@ -789,7 +827,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=t OK suppressed by q=1', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=180,a=t,q=1,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -801,7 +841,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=T OK suppressed by q=1', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=190,a=T,q=1,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -813,7 +855,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=t OK suppressed by q=2', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=181,a=t,q=2,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -825,7 +869,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('a=T OK suppressed by q=2', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=191,a=T,q=2,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -839,7 +885,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('query rejects t=f (file transmission)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=200,a=q,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -852,7 +900,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('query rejects t=s (shared memory)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=201,a=q,t=s,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -865,7 +915,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('query rejects t=t (temp file)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=202,a=q,t=t,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -878,7 +930,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('query accepts t=d (direct transmission)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=203,a=q,t=d,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -891,7 +945,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('query without t key defaults to direct (OK)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=204,a=q,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -904,7 +960,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit rejects t=f with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=300,a=t,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -917,7 +975,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit rejects t=s with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=301,a=t,t=s,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -930,7 +990,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit rejects t=t with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=302,a=t,t=t,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -943,7 +1005,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit rejects t=f without id (no response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=t,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -956,7 +1020,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit+display rejects t=f with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=310,a=T,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -969,7 +1035,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit+display rejects t=s with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=311,a=T,t=s,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -982,7 +1050,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit+display rejects t=t with id (EINVAL response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Gi=312,a=T,t=t,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -995,7 +1065,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('transmit+display rejects t=f without id (no response)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=T,t=f,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
@@ -1026,7 +1098,9 @@ test.describe('Kitty Graphics Protocol', () => {
 
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p,i=211\x1b\\`);
@@ -1039,7 +1113,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('responds ENOENT for non-existent image id', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p,i=9999\x1b\\`);
@@ -1052,7 +1128,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('without id sends no response', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p\x1b\\`);
@@ -1172,7 +1250,9 @@ test.describe('Kitty Graphics Protocol', () => {
 
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p,i=220,q=1\x1b\\`);
@@ -1188,7 +1268,9 @@ test.describe('Kitty Graphics Protocol', () => {
 
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p,i=221,q=2\x1b\\`);
@@ -1201,7 +1283,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('ENOENT error suppressed by q=2', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyGotResponse = false;
-        (window as any).term.onData(() => { (window as any).kittyGotResponse = true; });
+        (window as any).term.onData(() => {
+          (window as any).kittyGotResponse = true;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p,i=9998,q=2\x1b\\`);
@@ -1213,7 +1297,9 @@ test.describe('Kitty Graphics Protocol', () => {
     test('ENOENT still reported when q=1 (only suppresses OK)', async () => {
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p,i=9997,q=1\x1b\\`);
@@ -1268,7 +1354,9 @@ test.describe('Kitty Graphics Protocol', () => {
 
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
-        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+        (window as any).term.onData((data: string) => {
+          (window as any).kittyResponse = data;
+        });
       });
 
       await ctx.proxy.write(`\x1b_Ga=p,i=224,p=42\x1b\\`);
@@ -1803,7 +1891,9 @@ test.describe('Kitty Graphics Protocol', () => {
       test('responds with OK for valid 200x100 PNG query', async () => {
         await ctx.page.evaluate(() => {
           (window as any).kittyResponse = '';
-          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+          (window as any).term.onData((data: string) => {
+            (window as any).kittyResponse = data;
+          });
         });
 
         await ctx.proxy.write(`\x1b_Gi=600,a=q,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
@@ -1952,7 +2042,9 @@ test.describe('Kitty Graphics Protocol', () => {
       test('query returns EINVAL without dimensions', async () => {
         await ctx.page.evaluate(() => {
           (window as any).kittyResponse = '';
-          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+          (window as any).term.onData((data: string) => {
+            (window as any).kittyResponse = data;
+          });
         });
         await ctx.proxy.write(`\x1b_Gi=200,a=q,f=24;${RAW_RGB_1X1_BLACK}\x1b\\`);
         await timeout(100);
@@ -1963,7 +2055,9 @@ test.describe('Kitty Graphics Protocol', () => {
       test('query returns EINVAL for insufficient pixel data', async () => {
         await ctx.page.evaluate(() => {
           (window as any).kittyResponse = '';
-          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+          (window as any).term.onData((data: string) => {
+            (window as any).kittyResponse = data;
+          });
         });
         await ctx.proxy.write(`\x1b_Gi=201,a=q,f=24,s=2,v=2;${RAW_RGB_1X1_BLACK}\x1b\\`);
         await timeout(100);
@@ -1974,7 +2068,9 @@ test.describe('Kitty Graphics Protocol', () => {
       test('query returns OK for valid RGB data with correct dimensions', async () => {
         await ctx.page.evaluate(() => {
           (window as any).kittyResponse = '';
-          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+          (window as any).term.onData((data: string) => {
+            (window as any).kittyResponse = data;
+          });
         });
         await ctx.proxy.write(`\x1b_Gi=202,a=q,f=24,s=1,v=1;${RAW_RGB_1X1_RED}\x1b\\`);
         await timeout(100);
@@ -2086,7 +2182,9 @@ test.describe('Kitty Graphics Protocol', () => {
       test('query returns EINVAL without dimensions', async () => {
         await ctx.page.evaluate(() => {
           (window as any).kittyResponse = '';
-          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+          (window as any).term.onData((data: string) => {
+            (window as any).kittyResponse = data;
+          });
         });
         await ctx.proxy.write(`\x1b_Gi=300,a=q,f=32;${RAW_RGBA_1X1_RED}\x1b\\`);
         await timeout(100);
@@ -2097,7 +2195,9 @@ test.describe('Kitty Graphics Protocol', () => {
       test('query returns EINVAL for insufficient pixel data', async () => {
         await ctx.page.evaluate(() => {
           (window as any).kittyResponse = '';
-          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+          (window as any).term.onData((data: string) => {
+            (window as any).kittyResponse = data;
+          });
         });
         await ctx.proxy.write(`\x1b_Gi=301,a=q,f=32,s=2,v=2;${RAW_RGBA_1X1_RED}\x1b\\`);
         await timeout(100);
@@ -2108,7 +2208,9 @@ test.describe('Kitty Graphics Protocol', () => {
       test('query returns OK for valid RGBA data with correct dimensions', async () => {
         await ctx.page.evaluate(() => {
           (window as any).kittyResponse = '';
-          (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+          (window as any).term.onData((data: string) => {
+            (window as any).kittyResponse = data;
+          });
         });
         await ctx.proxy.write(`\x1b_Gi=302,a=q,f=32,s=1,v=1;${RAW_RGBA_1X1_RED}\x1b\\`);
         await timeout(100);

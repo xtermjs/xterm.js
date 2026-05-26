@@ -40,7 +40,9 @@ export class CursorBlinkStateManager {
     }
   }
 
-  public get isPaused(): boolean { return !(this._blinkStartTimeout || this._blinkInterval); }
+  public get isPaused(): boolean {
+    return !(this._blinkStartTimeout || this._blinkInterval);
+  }
 
   public dispose(): void {
     if (this._blinkInterval) {

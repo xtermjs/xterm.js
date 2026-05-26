@@ -244,7 +244,9 @@ export class WriteBuffer extends Disposable {
         // 2. spawn a promise immediately resolving to `true`
         // (executed on the same queue, thus properly aligned before continuation happens)
         result.catch(err => {
-          queueMicrotask(() => {throw err;});
+          queueMicrotask(() => {
+            throw err;
+          });
           return Promise.resolve(false);
         }).then(continuation);
         return;

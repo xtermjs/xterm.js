@@ -40,8 +40,12 @@ describe('MouseStateService', () => {
     cms.reset();
     assert.equal(cms.activeEncoding, 'DEFAULT');
     assert.equal(cms.activeProtocol, 'NONE');
-    assert.throws(() => { cms.activeEncoding = 'xyz'; }, 'unknown encoding "xyz"');
-    assert.throws(() => { cms.activeProtocol = 'xyz'; }, 'unknown protocol "xyz"');
+    assert.throws(() => {
+      cms.activeEncoding = 'xyz';
+    }, 'unknown encoding "xyz"');
+    assert.throws(() => {
+      cms.activeProtocol = 'xyz';
+    }, 'unknown protocol "xyz"');
   });
   it('addEncoding', () => {
     const cms = new MouseStateService();

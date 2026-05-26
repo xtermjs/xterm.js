@@ -15,7 +15,9 @@ export class CharSizeService extends Disposable implements ICharSizeService {
   public height: number = 0;
   private _measureStrategy: IMeasureStrategy;
 
-  public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
+  public get hasValidSize(): boolean {
+    return this.width > 0 && this.height > 0;
+  }
 
   private readonly _onCharSizeChange = this._register(new Emitter<void>());
   public readonly onCharSizeChange = this._onCharSizeChange.event;

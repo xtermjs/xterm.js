@@ -128,7 +128,7 @@ export default tseslint.config(
       'no-fallthrough': 'off',
       'prefer-spread': 'off',
       'object-curly-spacing': ['warn', 'always'],
-      'brace-style': ['warn', '1tbs', { allowSingleLine: true }],
+      'brace-style': ['warn', '1tbs', { allowSingleLine: false }],
       'prefer-const': 'warn',
       'spaced-comment': ['warn', 'always', { markers: ['/'], exceptions: ['-'] }]
     }

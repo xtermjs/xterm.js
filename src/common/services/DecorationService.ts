@@ -32,7 +32,9 @@ export class DecorationService extends Disposable implements IDecorationService 
   private readonly _onDecorationRemoved = this._register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRemoved = this._onDecorationRemoved.event;
 
-  public get decorations(): IterableIterator<IInternalDecoration> { return this._decorations.values(); }
+  public get decorations(): IterableIterator<IInternalDecoration> {
+    return this._decorations.values();
+  }
 
   constructor(@ILogService private readonly _logService: ILogService) {
     super();

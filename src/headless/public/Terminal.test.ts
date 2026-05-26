@@ -35,8 +35,12 @@ describe('Headless API Tests', function (): void {
   it('write with callback', async () => {
     let result: string | undefined;
     await new Promise<void>(r => {
-      term.write('foo', () => { result = 'a'; });
-      term.write('bar', () => { result += 'b'; });
+      term.write('foo', () => {
+        result = 'a';
+      });
+      term.write('bar', () => {
+        result += 'b';
+      });
       term.write('文', () => {
         result += 'c';
         r();
@@ -56,8 +60,12 @@ describe('Headless API Tests', function (): void {
   it('write - bytes (UTF8) with callback', async () => {
     let result: string | undefined;
     await new Promise<void>(r => {
-      term.write(new Uint8Array([102, 111, 111]), () => { result = 'A'; }); // foo
-      term.write(new Uint8Array([98, 97, 114]), () => { result += 'B'; }); // bar
+      term.write(new Uint8Array([102, 111, 111]), () => {
+        result = 'A';
+      }); // foo
+      term.write(new Uint8Array([98, 97, 114]), () => {
+        result += 'B';
+      }); // bar
       term.write(new Uint8Array([230, 150, 135]), () => { // 文
         result += 'C';
         r();
@@ -79,8 +87,12 @@ describe('Headless API Tests', function (): void {
   it('writeln with callback', async () => {
     let result: string | undefined;
     await new Promise<void>(r => {
-      term.writeln('foo', () => { result = '1'; });
-      term.writeln('bar', () => { result += '2'; });
+      term.writeln('foo', () => {
+        result = '1';
+      });
+      term.writeln('bar', () => {
+        result += '2';
+      });
       term.writeln('文', () => {
         result += '3';
         r();

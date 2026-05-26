@@ -23,8 +23,12 @@ export class BufferNamespaceApi extends Disposable implements IBufferNamespaceAp
     this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
   }
   public get active(): IBufferApi {
-    if (this._core.buffers.active === this._core.buffers.normal) { return this.normal; }
-    if (this._core.buffers.active === this._core.buffers.alt) { return this.alternate; }
+    if (this._core.buffers.active === this._core.buffers.normal) {
+      return this.normal;
+    }
+    if (this._core.buffers.active === this._core.buffers.alt) {
+      return this.alternate;
+    }
     throw new Error('Active buffer is neither normal nor alternate');
   }
   public get normal(): IBufferApi {

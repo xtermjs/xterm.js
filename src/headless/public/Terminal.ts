@@ -72,16 +72,36 @@ export class Terminal extends Disposable implements ITerminalApi {
     }
   }
 
-  public get onBell(): IEvent<void> { return this._core.onBell; }
-  public get onBinary(): IEvent<string> { return this._core.onBinary; }
-  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
-  public get onData(): IEvent<string> { return this._core.onData; }
-  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
-  public get onScroll(): IEvent<number> { return this._core.onScroll; }
-  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
-  public get onWriteParsed(): IEvent<void> { return this._core.onWriteParsed; }
+  public get onBell(): IEvent<void> {
+    return this._core.onBell;
+  }
+  public get onBinary(): IEvent<string> {
+    return this._core.onBinary;
+  }
+  public get onCursorMove(): IEvent<void> {
+    return this._core.onCursorMove;
+  }
+  public get onData(): IEvent<string> {
+    return this._core.onData;
+  }
+  public get onLineFeed(): IEvent<void> {
+    return this._core.onLineFeed;
+  }
+  public get onRender(): IEvent<{ start: number, end: number }> {
+    return this._core.onRender;
+  }
+  public get onResize(): IEvent<{ cols: number, rows: number }> {
+    return this._core.onResize;
+  }
+  public get onScroll(): IEvent<number> {
+    return this._core.onScroll;
+  }
+  public get onTitleChange(): IEvent<string> {
+    return this._core.onTitleChange;
+  }
+  public get onWriteParsed(): IEvent<void> {
+    return this._core.onWriteParsed;
+  }
 
   public get parser(): IParser {
     this._parser ??= new ParserApi(this._core);
@@ -91,8 +111,12 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._checkProposedApi();
     return new UnicodeApi(this._core);
   }
-  public get rows(): number { return this._core.rows; }
-  public get cols(): number { return this._core.cols; }
+  public get rows(): number {
+    return this._core.rows;
+  }
+  public get cols(): number {
+    return this._core.cols;
+  }
   public get buffer(): IBufferNamespaceApi {
     this._buffer ??= this._register(new BufferNamespaceApi(this._core));
     return this._buffer;

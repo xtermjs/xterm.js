@@ -39,9 +39,15 @@ function getLines(bufferService: IBufferService, limit: number = bufferService.r
 }
 
 class TestInputHandler extends InputHandler {
-  public get curAttrData(): IAttributeData { return (this as any)._curAttrData; }
-  public get windowTitleStack(): string[] { return this._windowTitleStack; }
-  public get iconNameStack(): string[] { return this._iconNameStack; }
+  public get curAttrData(): IAttributeData {
+    return (this as any)._curAttrData;
+  }
+  public get windowTitleStack(): string[] {
+    return this._windowTitleStack;
+  }
+  public get iconNameStack(): string[] {
+    return this._iconNameStack;
+  }
 
   /**
    * Promise based parse call to await the full resolve of given input data.
@@ -2511,7 +2517,9 @@ describe('InputHandler', () => {
       bufferService = new BufferService(optionsService, new MockLogService());
       bufferService.resize(80, 30);
       coreService = new CoreService(bufferService, new MockLogService(), optionsService);
-      coreService.onData(data => { console.log(data); });
+      coreService.onData(data => {
+        console.log(data);
+      });
 
       inputHandler = new TestInputHandler(bufferService, new MockCharsetService(), coreService, new MockLogService(), optionsService, new MockOscLinkService(), new MockMouseStateService(), new MockUnicodeService());
     });

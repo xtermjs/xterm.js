@@ -12,7 +12,9 @@ import { Emitter } from 'common/Event';
 import { addDisposableListener } from 'browser/Dom';
 
 export class Linkifier extends Disposable implements ILinkifier2 {
-  public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
+  public get currentLink(): ILinkWithState | undefined {
+    return this._currentLink;
+  }
   protected _currentLink: ILinkWithState | undefined;
   private _mouseDownLink: ILinkWithState | undefined;
   private _lastMouseEvent: MouseEvent | undefined;

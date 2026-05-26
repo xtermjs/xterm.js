@@ -70,7 +70,9 @@ abstract class BaseSerializeHandler {
   protected _rowEnd(row: number, isLastRow: boolean): void { }
   protected _beforeSerialize(rows: number, startRow: number, endRow: number): void { }
   protected _afterSerialize(): void { }
-  protected _serializeString(excludeFinalCursorPosition?: boolean): string { return ''; }
+  protected _serializeString(excludeFinalCursorPosition?: boolean): string {
+    return '';
+  }
 }
 
 function equalFg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
@@ -291,19 +293,39 @@ class StringSerializeHandler extends BaseSerializeHandler {
       } else {
         if (fgChanged) {
           const color = cell.getFgColor();
-          if (cell.isFgRGB()) { sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); } else if (cell.isFgPalette()) {
-            if (color >= 16) { sgrSeq.push(38, 5, color); } else { sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7)); }
-          } else { sgrSeq.push(39); }
+          if (cell.isFgRGB()) {
+            sgrSeq.push(38, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
+          } else if (cell.isFgPalette()) {
+            if (color >= 16) {
+              sgrSeq.push(38, 5, color);
+            } else {
+              sgrSeq.push(color & 8 ? 90 + (color & 7) : 30 + (color & 7));
+            }
+          } else {
+            sgrSeq.push(39);
+          }
         }
         if (bgChanged) {
           const color = cell.getBgColor();
-          if (cell.isBgRGB()) { sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF); } else if (cell.isBgPalette()) {
-            if (color >= 16) { sgrSeq.push(48, 5, color); } else { sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7)); }
-          } else { sgrSeq.push(49); }
+          if (cell.isBgRGB()) {
+            sgrSeq.push(48, 2, (color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
+          } else if (cell.isBgPalette()) {
+            if (color >= 16) {
+              sgrSeq.push(48, 5, color);
+            } else {
+              sgrSeq.push(color & 8 ? 100 + (color & 7) : 40 + (color & 7));
+            }
+          } else {
+            sgrSeq.push(49);
+          }
         }
         if (flagsChanged) {
-          if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
-          if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
+          if (cell.isInverse() !== oldCell.isInverse()) {
+            sgrSeq.push(cell.isInverse() ? 7 : 27);
+          }
+          if (cell.isBold() !== oldCell.isBold()) {
+            sgrSeq.push(cell.isBold() ? 1 : 22);
+          }
           if (!equalUnderline(cell, oldCell)) {
             const style = cell.getUnderlineStyle();
             if (style === UnderlineStyle.NONE) {
@@ -326,12 +348,24 @@ class StringSerializeHandler extends BaseSerializeHandler {
           } else if (cell.isUnderline() !== oldCell.isUnderline()) {
             sgrSeq.push(cell.isUnderline() ? 4 : 24);
           }
-          if (cell.isOverline() !== oldCell.isOverline()) { sgrSeq.push(cell.isOverline() ? 53 : 55); }
-          if (cell.isBlink() !== oldCell.isBlink()) { sgrSeq.push(cell.isBlink() ? 5 : 25); }
-          if (cell.isInvisible() !== oldCell.isInvisible()) { sgrSeq.push(cell.isInvisible() ? 8 : 28); }
-          if (cell.isItalic() !== oldCell.isItalic()) { sgrSeq.push(cell.isItalic() ? 3 : 23); }
-          if (cell.isDim() !== oldCell.isDim()) { sgrSeq.push(cell.isDim() ? 2 : 22); }
-          if (cell.isStrikethrough() !== oldCell.isStrikethrough()) { sgrSeq.push(cell.isStrikethrough() ? 9 : 29); }
+          if (cell.isOverline() !== oldCell.isOverline()) {
+            sgrSeq.push(cell.isOverline() ? 53 : 55);
+          }
+          if (cell.isBlink() !== oldCell.isBlink()) {
+            sgrSeq.push(cell.isBlink() ? 5 : 25);
+          }
+          if (cell.isInvisible() !== oldCell.isInvisible()) {
+            sgrSeq.push(cell.isInvisible() ? 8 : 28);
+          }
+          if (cell.isItalic() !== oldCell.isItalic()) {
+            sgrSeq.push(cell.isItalic() ? 3 : 23);
+          }
+          if (cell.isDim() !== oldCell.isDim()) {
+            sgrSeq.push(cell.isDim() ? 2 : 22);
+          }
+          if (cell.isStrikethrough() !== oldCell.isStrikethrough()) {
+            sgrSeq.push(cell.isStrikethrough() ? 9 : 29);
+          }
         }
       }
     }
@@ -745,8 +779,12 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
         content.push('background-color: ' + bgHexColor + ';');
       }
 
-      if (cell.isInverse()) { content.push('color: #000000; background-color: #BFBFBF;'); }
-      if (cell.isBold()) { content.push('font-weight: bold;'); }
+      if (cell.isInverse()) {
+        content.push('color: #000000; background-color: #BFBFBF;');
+      }
+      if (cell.isBold()) {
+        content.push('font-weight: bold;');
+      }
 
       // Handle text-decoration (underline, overline, strikethrough, blink)
       const decorations: string[] = [];
@@ -774,9 +812,15 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
         }
       }
 
-      if (cell.isInvisible()) { content.push('visibility: hidden;'); }
-      if (cell.isItalic()) { content.push('font-style: italic;'); }
-      if (cell.isDim()) { content.push('opacity: 0.5;'); }
+      if (cell.isInvisible()) {
+        content.push('visibility: hidden;');
+      }
+      if (cell.isItalic()) {
+        content.push('font-style: italic;');
+      }
+      if (cell.isDim()) {
+        content.push('opacity: 0.5;');
+      }
 
       return content;
     }

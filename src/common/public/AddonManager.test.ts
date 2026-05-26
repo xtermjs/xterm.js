@@ -40,7 +40,9 @@ describe('AddonManager', () => {
       let called = 0;
       class Addon implements ITerminalAddon {
         public activate(): void {}
-        public dispose(): void { called++; }
+        public dispose(): void {
+          called++;
+        }
       }
       manager.loadAddon(null!, new Addon());
       manager.loadAddon(null!, new Addon());

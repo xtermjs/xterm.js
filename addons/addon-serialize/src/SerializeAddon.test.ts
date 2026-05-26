@@ -29,12 +29,20 @@ class TestSelectionService {
     this._model = new SelectionModel(bufferService);
   }
 
-  public get model(): SelectionModel { return this._model; }
+  public get model(): SelectionModel {
+    return this._model;
+  }
 
-  public get hasSelection(): boolean { return this._hasSelection; }
+  public get hasSelection(): boolean {
+    return this._hasSelection;
+  }
 
-  public get selectionStart(): [number, number] | undefined { return this._model.finalSelectionStart; }
-  public get selectionEnd(): [number, number] | undefined { return this._model.finalSelectionEnd; }
+  public get selectionStart(): [number, number] | undefined {
+    return this._model.finalSelectionStart;
+  }
+  public get selectionEnd(): [number, number] | undefined {
+    return this._model.finalSelectionEnd;
+  }
 
   public setSelection(col: number, row: number, length: number): void {
     this._model.selectionStart = [col, row];

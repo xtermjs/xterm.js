@@ -29,7 +29,9 @@ export class BufferService extends Disposable implements IBufferService {
   private readonly _onScroll = this._register(new Emitter<number>());
   public readonly onScroll = this._onScroll.event;
 
-  public get buffer(): IBuffer { return this.buffers.active; }
+  public get buffer(): IBuffer {
+    return this.buffers.active;
+  }
 
   /** An IBufferline to clone/copy from for new blank lines */
   private _cachedBlankLine: IBufferLine | undefined;

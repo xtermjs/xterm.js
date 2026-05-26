@@ -107,7 +107,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   protected _iconNameStack: string[] = [];
 
   private _curAttrData: IAttributeData = DEFAULT_ATTR_DATA.clone();
-  public getAttrData(): IAttributeData { return this._curAttrData; }
+  public getAttrData(): IAttributeData {
+    return this._curAttrData;
+  }
   private _eraseAttrDataInternal: IAttributeData = DEFAULT_ATTR_DATA.clone();
 
   private _activeBuffer: IBuffer;
@@ -283,7 +285,9 @@ export class InputHandler extends Disposable implements IInputHandler {
      * OSC handler
      */
     //   0 - icon name + title
-    this._parser.registerOscHandler(0, new OscHandler(data => { this.setTitle(data); this.setIconName(data); return true; }));
+    this._parser.registerOscHandler(0, new OscHandler(data => {
+      this.setTitle(data); this.setIconName(data); return true;
+    }));
     //   1 - icon name
     this._parser.registerOscHandler(1, new OscHandler(data => this.setIconName(data)));
     //   2 - title

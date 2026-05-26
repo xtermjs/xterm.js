@@ -24,14 +24,20 @@ describe('WriteBuffer', () => {
   beforeEach(() => {
     stack = [];
     cbStack = [];
-    wb = new WriteBuffer(data => { stack.push(data); });
+    wb = new WriteBuffer(data => {
+      stack.push(data);
+    });
   });
   describe('write input', () => {
     it('string', done => {
       wb.write('a._');
-      wb.write('b.x', () => { cbStack.push('b'); });
+      wb.write('b.x', () => {
+        cbStack.push('b');
+      });
       wb.write('c._');
-      wb.write('d.x', () => { cbStack.push('d'); });
+      wb.write('d.x', () => {
+        cbStack.push('d');
+      });
       wb.write('e', () => {
         assert.deepEqual(stack, ['a._', 'b.x', 'c._', 'd.x', 'e']);
         assert.deepEqual(cbStack, ['b', 'd']);
@@ -40,9 +46,13 @@ describe('WriteBuffer', () => {
     });
     it('bytes', done => {
       wb.write(toBytes('a._'));
-      wb.write(toBytes('b.x'), () => { cbStack.push('b'); });
+      wb.write(toBytes('b.x'), () => {
+        cbStack.push('b');
+      });
       wb.write(toBytes('c._'));
-      wb.write(toBytes('d.x'), () => { cbStack.push('d'); });
+      wb.write(toBytes('d.x'), () => {
+        cbStack.push('d');
+      });
       wb.write(toBytes('e'), () => {
         assert.deepEqual(stack.map(val => typeof val === 'string' ? '' :  fromBytes(val)), ['a._', 'b.x', 'c._', 'd.x', 'e']);
         assert.deepEqual(cbStack, ['b', 'd']);
@@ -51,9 +61,13 @@ describe('WriteBuffer', () => {
     });
     it('string/bytes mixed', done => {
       wb.write('a._');
-      wb.write('b.x', () => { cbStack.push('b'); });
+      wb.write('b.x', () => {
+        cbStack.push('b');
+      });
       wb.write(toBytes('c._'));
-      wb.write(toBytes('d.x'), () => { cbStack.push('d'); });
+      wb.write(toBytes('d.x'), () => {
+        cbStack.push('d');
+      });
       wb.write(toBytes('e'), () => {
         assert.deepEqual(stack.map(val => typeof val === 'string' ? val :  fromBytes(val)), ['a._', 'b.x', 'c._', 'd.x', 'e']);
         assert.deepEqual(cbStack, ['b', 'd']);
@@ -61,10 +75,18 @@ describe('WriteBuffer', () => {
       });
     });
     it('write callback works for empty chunks', done => {
-      wb.write('a', () => { cbStack.push('a'); });
-      wb.write('', () => { cbStack.push('b'); });
-      wb.write(toBytes('c'), () => { cbStack.push('c'); });
-      wb.write(new Uint8Array(0), () => { cbStack.push('d'); });
+      wb.write('a', () => {
+        cbStack.push('a');
+      });
+      wb.write('', () => {
+        cbStack.push('b');
+      });
+      wb.write(toBytes('c'), () => {
+        cbStack.push('c');
+      });
+      wb.write(new Uint8Array(0), () => {
+        cbStack.push('d');
+      });
       wb.write('e', () => {
         assert.deepEqual(stack.map(val => typeof val === 'string' ? val :  fromBytes(val)), ['a', '', 'c', '', 'e']);
         assert.deepEqual(cbStack, ['a', 'b', 'c', 'd']);
@@ -72,13 +94,21 @@ describe('WriteBuffer', () => {
       });
     });
     it('writeSync', done => {
-      wb.write('a', () => { cbStack.push('a'); });
-      wb.write('b', () => { cbStack.push('b'); });
-      wb.write('c', () => { cbStack.push('c'); });
+      wb.write('a', () => {
+        cbStack.push('a');
+      });
+      wb.write('b', () => {
+        cbStack.push('b');
+      });
+      wb.write('c', () => {
+        cbStack.push('c');
+      });
       wb.writeSync('d');
       assert.deepEqual(stack, ['a', 'b', 'c', 'd']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
-      wb.write('x', () => { cbStack.push('x'); });
+      wb.write('x', () => {
+        cbStack.push('x');
+      });
       wb.write('', () => {
         assert.deepEqual(stack, ['a', 'b', 'c', 'd', 'x', '']);
         assert.deepEqual(cbStack, ['a', 'b', 'c', 'x']);
@@ -107,13 +137,21 @@ describe('WriteBuffer', () => {
       assert.equal(last, '11'); // 1 + 10 sub calls = 11
     });
     it('flushSync processes all pending writes', done => {
-      wb.write('a', () => { cbStack.push('a'); });
-      wb.write('b', () => { cbStack.push('b'); });
-      wb.write('c', () => { cbStack.push('c'); });
+      wb.write('a', () => {
+        cbStack.push('a');
+      });
+      wb.write('b', () => {
+        cbStack.push('b');
+      });
+      wb.write('c', () => {
+        cbStack.push('c');
+      });
       wb.flushSync();
       assert.deepEqual(stack, ['a', 'b', 'c']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
-      wb.write('x', () => { cbStack.push('x'); });
+      wb.write('x', () => {
+        cbStack.push('x');
+      });
       wb.write('', () => {
         assert.deepEqual(stack, ['a', 'b', 'c', 'x', '']);
         assert.deepEqual(cbStack, ['a', 'b', 'c', 'x']);

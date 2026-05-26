@@ -25,7 +25,9 @@ export class SearchResultTracker extends Disposable {
   private _selectedDecoration: ISelectedDecoration | undefined;
 
   private readonly _onDidChangeResults = this._register(new Emitter<ISearchResultChangeEvent>());
-  public get onDidChangeResults(): IEvent<ISearchResultChangeEvent> { return this._onDidChangeResults.event; }
+  public get onDidChangeResults(): IEvent<ISearchResultChangeEvent> {
+    return this._onDidChangeResults.event;
+  }
 
   /**
    * Gets the current search results.

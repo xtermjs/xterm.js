@@ -202,76 +202,156 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
 
   // #region Events
   private _onBell = new EventEmitter<void>();
-  public get onBell(): IEvent<void> { return this._onBell.event; }
+  public get onBell(): IEvent<void> {
+    return this._onBell.event;
+  }
   private _onBinary = new EventEmitter<string>();
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  public get onBinary(): IEvent<string> {
+    return this._onBinary.event;
+  }
   private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  public get onCursorMove(): IEvent<void> {
+    return this._onCursorMove.event;
+  }
   private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
+  public get onData(): IEvent<string> {
+    return this._onData.event;
+  }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
-  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> {
+    return this._onKey.event;
+  }
   private _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  public get onLineFeed(): IEvent<void> {
+    return this._onLineFeed.event;
+  }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  public get onRender(): IEvent<{ start: number, end: number }> {
+    return this._onRender.event;
+  }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+  public get onResize(): IEvent<{ cols: number, rows: number }> {
+    return this._onResize.event;
+  }
   private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  public get onScroll(): IEvent<number> {
+    return this._onScroll.event;
+  }
   private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
-  public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
+  public get onDimensionsChange(): IEvent<IRenderDimensions> {
+    return this._onDimensionsChange.event;
+  }
   private _onSelectionChange = new EventEmitter<void>();
-  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  public get onSelectionChange(): IEvent<void> {
+    return this._onSelectionChange.event;
+  }
   private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
+  public get onTitleChange(): IEvent<string> {
+    return this._onTitleChange.event;
+  }
   private _onWriteParsed = new EventEmitter<void>();
-  public get onWriteParsed(): IEvent<void> { return this._onWriteParsed.event; }
+  public get onWriteParsed(): IEvent<void> {
+    return this._onWriteParsed.event;
+  }
   // #endregion
 
   // #region Simple properties
-  public get cols(): Promise<number> { return this.evaluate(([term]) => term.cols); }
-  public get rows(): Promise<number> { return this.evaluate(([term]) => term.rows); }
-  public get modes(): Promise<IModes> { return this.evaluate(([term]) => term.modes); }
-  public get dimensions(): Promise<IRenderDimensions | undefined> { return this.evaluate(([term]) => term.dimensions); }
+  public get cols(): Promise<number> {
+    return this.evaluate(([term]) => term.cols);
+  }
+  public get rows(): Promise<number> {
+    return this.evaluate(([term]) => term.rows);
+  }
+  public get modes(): Promise<IModes> {
+    return this.evaluate(([term]) => term.modes);
+  }
+  public get dimensions(): Promise<IRenderDimensions | undefined> {
+    return this.evaluate(([term]) => term.dimensions);
+  }
   // #endregion
 
   // #region Complex properties
-  public get buffer(): TerminalBufferNamespaceProxy { return new TerminalBufferNamespaceProxy(this._page, this); }
+  public get buffer(): TerminalBufferNamespaceProxy {
+    return new TerminalBufferNamespaceProxy(this._page, this);
+  }
   /**
    * Exposes somewhat unsafe access to internals for testing things difficult to do with the regular
    * API
    */
-  public get core(): TerminalCoreProxy { return new TerminalCoreProxy(this._page, this); }
+  public get core(): TerminalCoreProxy {
+    return new TerminalCoreProxy(this._page, this);
+  }
   // #endregion
 
   // #region Proxied methods
-  public async dispose(): Promise<void> { return this.evaluate(([term]) => term.dispose()); }
-  public async reset(): Promise<void> { return this.evaluate(([term]) => term.reset()); }
-  public async clear(): Promise<void> { return this.evaluate(([term]) => term.clear()); }
-  public async focus(): Promise<void> { return this.evaluate(([term]) => term.focus()); }
-  public async blur(): Promise<void> { return this.evaluate(([term]) => term.blur()); }
-  public async hasSelection(): Promise<boolean> { return this.evaluate(([term]) => term.hasSelection()); }
-  public async getSelection(): Promise<string> { return this.evaluate(([term]) => term.getSelection()); }
-  public async getSelectionPosition(): Promise<IBufferRange | undefined> { return this.evaluate(([term]) => term.getSelectionPosition()); }
-  public async selectAll(): Promise<void> { return this.evaluate(([term]) => term.selectAll()); }
-  public async selectLines(start: number, end: number): Promise<void> { return this._page.evaluate(([term, start, end]) => term.selectLines(start, end), [await this.getHandle(), start, end] as const); }
-  public async clearSelection(): Promise<void> { return this.evaluate(([term]) => term.clearSelection()); }
-  public async select(column: number, row: number, length: number): Promise<void> { return this._page.evaluate(([term, column, row, length]) => term.select(column, row, length), [await this.getHandle(), column, row, length] as const); }
-  public async paste(data: string): Promise<void> { return this._page.evaluate(([term, data]) => term.paste(data), [await this.getHandle(), data] as const); }
-  public async refresh(start: number, end: number): Promise<void> { return this._page.evaluate(([term, start, end]) => term.refresh(start, end), [await this.getHandle(), start, end] as const); }
-  public async getOption<T extends keyof ITerminalOptions>(key: T): Promise<ITerminalOptions[T]> { return this._page.evaluate(([term, key]) => term.options[key as T], [await this.getHandle(), key] as const); }
-  public async setOption<T extends keyof ITerminalOptions>(key: T, value: ITerminalOptions[T]): Promise<any> { return this._page.evaluate(([term, key, value]) => term.options[key as T] = (value as ITerminalOptions[T]), [await this.getHandle(), key, value] as const); }
+  public async dispose(): Promise<void> {
+    return this.evaluate(([term]) => term.dispose());
+  }
+  public async reset(): Promise<void> {
+    return this.evaluate(([term]) => term.reset());
+  }
+  public async clear(): Promise<void> {
+    return this.evaluate(([term]) => term.clear());
+  }
+  public async focus(): Promise<void> {
+    return this.evaluate(([term]) => term.focus());
+  }
+  public async blur(): Promise<void> {
+    return this.evaluate(([term]) => term.blur());
+  }
+  public async hasSelection(): Promise<boolean> {
+    return this.evaluate(([term]) => term.hasSelection());
+  }
+  public async getSelection(): Promise<string> {
+    return this.evaluate(([term]) => term.getSelection());
+  }
+  public async getSelectionPosition(): Promise<IBufferRange | undefined> {
+    return this.evaluate(([term]) => term.getSelectionPosition());
+  }
+  public async selectAll(): Promise<void> {
+    return this.evaluate(([term]) => term.selectAll());
+  }
+  public async selectLines(start: number, end: number): Promise<void> {
+    return this._page.evaluate(([term, start, end]) => term.selectLines(start, end), [await this.getHandle(), start, end] as const);
+  }
+  public async clearSelection(): Promise<void> {
+    return this.evaluate(([term]) => term.clearSelection());
+  }
+  public async select(column: number, row: number, length: number): Promise<void> {
+    return this._page.evaluate(([term, column, row, length]) => term.select(column, row, length), [await this.getHandle(), column, row, length] as const);
+  }
+  public async paste(data: string): Promise<void> {
+    return this._page.evaluate(([term, data]) => term.paste(data), [await this.getHandle(), data] as const);
+  }
+  public async refresh(start: number, end: number): Promise<void> {
+    return this._page.evaluate(([term, start, end]) => term.refresh(start, end), [await this.getHandle(), start, end] as const);
+  }
+  public async getOption<T extends keyof ITerminalOptions>(key: T): Promise<ITerminalOptions[T]> {
+    return this._page.evaluate(([term, key]) => term.options[key as T], [await this.getHandle(), key] as const);
+  }
+  public async setOption<T extends keyof ITerminalOptions>(key: T, value: ITerminalOptions[T]): Promise<any> {
+    return this._page.evaluate(([term, key, value]) => term.options[key as T] = (value as ITerminalOptions[T]), [await this.getHandle(), key, value] as const);
+  }
   public async setOptions(value: Partial<ITerminalOptions>): Promise<any> {
     return this._page.evaluate(([term, value]) => {
       term.options = value;
     }, [await this.getHandle(), value] as const);
   }
-  public async scrollToTop(): Promise<void> { return this.evaluate(([term]) => term.scrollToTop()); }
-  public async scrollToBottom(): Promise<void> { return this.evaluate(([term]) => term.scrollToBottom()); }
-  public async scrollPages(pageCount: number): Promise<void> { return this._page.evaluate(([term, pageCount]) => term.scrollPages(pageCount), [await this.getHandle(), pageCount] as const); }
-  public async scrollToLine(line: number): Promise<void> { return this._page.evaluate(([term, line]) => term.scrollToLine(line), [await this.getHandle(), line] as const); }
-  public async scrollLines(amount: number): Promise<void> { return this._page.evaluate(([term, amount]) => term.scrollLines(amount), [await this.getHandle(), amount] as const); }
+  public async scrollToTop(): Promise<void> {
+    return this.evaluate(([term]) => term.scrollToTop());
+  }
+  public async scrollToBottom(): Promise<void> {
+    return this.evaluate(([term]) => term.scrollToBottom());
+  }
+  public async scrollPages(pageCount: number): Promise<void> {
+    return this._page.evaluate(([term, pageCount]) => term.scrollPages(pageCount), [await this.getHandle(), pageCount] as const);
+  }
+  public async scrollToLine(line: number): Promise<void> {
+    return this._page.evaluate(([term, line]) => term.scrollToLine(line), [await this.getHandle(), line] as const);
+  }
+  public async scrollLines(amount: number): Promise<void> {
+    return this._page.evaluate(([term, amount]) => term.scrollLines(amount), [await this.getHandle(), amount] as const);
+  }
   public async write(data: string | Uint8Array): Promise<void> {
     return this._page.evaluate(([term, data]) => {
       return new Promise(r => term.write(typeof data === 'string' ? data : new Uint8Array(data), r));
@@ -282,11 +362,21 @@ export class TerminalProxy implements ITerminalProxyCustomMethods, PlaywrightApi
       return new Promise(r => term.writeln(typeof data === 'string' ? data : new Uint8Array(data), r));
     }, [await this.getHandle(), typeof data === 'string' ? data : Array.from(data)] as const);
   }
-  public async input(data: string, wasUserInput: boolean = true): Promise<void> { return this.evaluate(([term]) => term.input(data, wasUserInput)); }
-  public async resize(cols: number, rows: number): Promise<void> { return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const); }
-  public async registerMarker(y?: number | undefined): Promise<IMarker> { return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const); }
-  public async registerDecoration(decorationOptions: IDecorationOptions): Promise<IDecoration | undefined> { return this._page.evaluate(([term, decorationOptions]) => term.registerDecoration(decorationOptions), [await this.getHandle(), decorationOptions] as const); }
-  public async clearTextureAtlas(): Promise<void> { return this.evaluate(([term]) => term.clearTextureAtlas()); }
+  public async input(data: string, wasUserInput: boolean = true): Promise<void> {
+    return this.evaluate(([term]) => term.input(data, wasUserInput));
+  }
+  public async resize(cols: number, rows: number): Promise<void> {
+    return this._page.evaluate(([term, cols, rows]) => term.resize(cols, rows), [await this.getHandle(), cols, rows] as const);
+  }
+  public async registerMarker(y?: number | undefined): Promise<IMarker> {
+    return this._page.evaluate(([term, y]) => term.registerMarker(y), [await this.getHandle(), y] as const);
+  }
+  public async registerDecoration(decorationOptions: IDecorationOptions): Promise<IDecoration | undefined> {
+    return this._page.evaluate(([term, decorationOptions]) => term.registerDecoration(decorationOptions), [await this.getHandle(), decorationOptions] as const);
+  }
+  public async clearTextureAtlas(): Promise<void> {
+    return this.evaluate(([term]) => term.clearTextureAtlas());
+  }
   // #endregion
 
   public async evaluate<T>(pageFunction: PageFunction<Terminal[], T>): Promise<T> {
@@ -314,9 +404,15 @@ class TerminalBufferNamespaceProxy implements PlaywrightApiProxy<IBufferNamespac
 
   }
 
-  public get active(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.active)); }
-  public get normal(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.normal)); }
-  public get alternate(): TerminalBufferProxy { return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.alternate)); }
+  public get active(): TerminalBufferProxy {
+    return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.active));
+  }
+  public get normal(): TerminalBufferProxy {
+    return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.normal));
+  }
+  public get alternate(): TerminalBufferProxy {
+    return new TerminalBufferProxy(this._page, this._proxy, this._proxy.evaluateHandle(([term]) => term.buffer.alternate));
+  }
 }
 
 // TODO: Adopt PlaywrightApiProxy
@@ -328,12 +424,24 @@ class TerminalBufferProxy /* implements EnsureAsyncProperties<IBuffer>*/ {
   ) {
   }
 
-  public get type(): Promise<'normal' | 'alternate'> { return this.evaluate(([buffer]) => buffer.type); }
-  public get cursorY(): Promise<number> { return this.evaluate(([buffer]) => buffer.cursorY); }
-  public get cursorX(): Promise<number> { return this.evaluate(([buffer]) => buffer.cursorX); }
-  public get viewportY(): Promise<number> { return this.evaluate(([buffer]) => buffer.viewportY); }
-  public get baseY(): Promise<number> { return this.evaluate(([buffer]) => buffer.baseY); }
-  public get length(): Promise<number> { return this.evaluate(([buffer]) => buffer.length); }
+  public get type(): Promise<'normal' | 'alternate'> {
+    return this.evaluate(([buffer]) => buffer.type);
+  }
+  public get cursorY(): Promise<number> {
+    return this.evaluate(([buffer]) => buffer.cursorY);
+  }
+  public get cursorX(): Promise<number> {
+    return this.evaluate(([buffer]) => buffer.cursorX);
+  }
+  public get viewportY(): Promise<number> {
+    return this.evaluate(([buffer]) => buffer.viewportY);
+  }
+  public get baseY(): Promise<number> {
+    return this.evaluate(([buffer]) => buffer.baseY);
+  }
+  public get length(): Promise<number> {
+    return this.evaluate(([buffer]) => buffer.length);
+  }
   public async getLine(y: number): Promise<TerminalBufferLine | undefined> {
     const lineHandle = await this._page.evaluateHandle(([buffer, y]) => buffer.getLine(y), [await this._handle, y] as const);
     const value = await lineHandle.jsonValue();
@@ -356,8 +464,12 @@ class TerminalBufferLine {
   ) {
   }
 
-  public get length(): Promise<number> { return this.evaluate(([bufferLine]) => bufferLine.length); }
-  public get isWrapped(): Promise<boolean> { return this.evaluate(([bufferLine]) => bufferLine.isWrapped); }
+  public get length(): Promise<number> {
+    return this.evaluate(([bufferLine]) => bufferLine.length);
+  }
+  public get isWrapped(): Promise<boolean> {
+    return this.evaluate(([bufferLine]) => bufferLine.isWrapped);
+  }
 
   public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): Promise<string> {
     return this._page.evaluate(([bufferLine, trimRight, startColumn, endColumn]) => {
@@ -387,33 +499,79 @@ class TerminalBufferCell {
   ) {
   }
 
-  public getWidth(): Promise<number> { return this.evaluate(([cell]) => cell.getWidth()); }
-  public getChars(): Promise<string> { return this.evaluate(([cell]) => cell.getChars()); }
-  public getCode(): Promise<number> { return this.evaluate(([cell]) => cell.getCode()); }
+  public getWidth(): Promise<number> {
+    return this.evaluate(([cell]) => cell.getWidth());
+  }
+  public getChars(): Promise<string> {
+    return this.evaluate(([cell]) => cell.getChars());
+  }
+  public getCode(): Promise<number> {
+    return this.evaluate(([cell]) => cell.getCode());
+  }
 
-  public getFgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColorMode()); }
-  public getBgColorMode(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColorMode()); }
-  public getFgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getFgColor()); }
-  public getBgColor(): Promise<number> { return this.evaluate(([cell]) => cell.getBgColor()); }
+  public getFgColorMode(): Promise<number> {
+    return this.evaluate(([cell]) => cell.getFgColorMode());
+  }
+  public getBgColorMode(): Promise<number> {
+    return this.evaluate(([cell]) => cell.getBgColorMode());
+  }
+  public getFgColor(): Promise<number> {
+    return this.evaluate(([cell]) => cell.getFgColor());
+  }
+  public getBgColor(): Promise<number> {
+    return this.evaluate(([cell]) => cell.getBgColor());
+  }
 
-  public isBold(): Promise<number> { return this.evaluate(([cell]) => cell.isBold()); }
-  public isItalic(): Promise<number> { return this.evaluate(([cell]) => cell.isItalic()); }
-  public isDim(): Promise<number> { return this.evaluate(([cell]) => cell.isDim()); }
-  public isUnderline(): Promise<number> { return this.evaluate(([cell]) => cell.isUnderline()); }
-  public isBlink(): Promise<number> { return this.evaluate(([cell]) => cell.isBlink()); }
-  public isInverse(): Promise<number> { return this.evaluate(([cell]) => cell.isInverse()); }
-  public isInvisible(): Promise<number> { return this.evaluate(([cell]) => cell.isInvisible()); }
-  public isStrikethrough(): Promise<number> { return this.evaluate(([cell]) => cell.isStrikethrough()); }
-  public isOverline(): Promise<number> { return this.evaluate(([cell]) => cell.isOverline()); }
+  public isBold(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isBold());
+  }
+  public isItalic(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isItalic());
+  }
+  public isDim(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isDim());
+  }
+  public isUnderline(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isUnderline());
+  }
+  public isBlink(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isBlink());
+  }
+  public isInverse(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isInverse());
+  }
+  public isInvisible(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isInvisible());
+  }
+  public isStrikethrough(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isStrikethrough());
+  }
+  public isOverline(): Promise<number> {
+    return this.evaluate(([cell]) => cell.isOverline());
+  }
 
-  public isFgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgRGB()); }
-  public isBgRGB(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgRGB()); }
-  public isFgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgPalette()); }
-  public isBgPalette(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgPalette()); }
-  public isFgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isFgDefault()); }
-  public isBgDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isBgDefault()); }
+  public isFgRGB(): Promise<boolean> {
+    return this.evaluate(([cell]) => cell.isFgRGB());
+  }
+  public isBgRGB(): Promise<boolean> {
+    return this.evaluate(([cell]) => cell.isBgRGB());
+  }
+  public isFgPalette(): Promise<boolean> {
+    return this.evaluate(([cell]) => cell.isFgPalette());
+  }
+  public isBgPalette(): Promise<boolean> {
+    return this.evaluate(([cell]) => cell.isBgPalette());
+  }
+  public isFgDefault(): Promise<boolean> {
+    return this.evaluate(([cell]) => cell.isFgDefault());
+  }
+  public isBgDefault(): Promise<boolean> {
+    return this.evaluate(([cell]) => cell.isBgDefault());
+  }
 
-  public isAttributeDefault(): Promise<boolean> { return this.evaluate(([cell]) => cell.isAttributeDefault()); }
+  public isAttributeDefault(): Promise<boolean> {
+    return this.evaluate(([cell]) => cell.isAttributeDefault());
+  }
 
   public async evaluate<T>(pageFunction: PageFunction<IBufferCell[], T>): Promise<T> {
     return this._page.evaluate(pageFunction, [this._handle]);
@@ -427,8 +585,12 @@ class TerminalCoreProxy {
   ) {
   }
 
-  public get isDisposed(): Promise<boolean> { return this.evaluate(([core]) => (core as any)._isDisposed); }
-  public get renderDimensions(): Promise<IRenderDimensionsInternal> { return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions); }
+  public get isDisposed(): Promise<boolean> {
+    return this.evaluate(([core]) => (core as any)._isDisposed);
+  }
+  public get renderDimensions(): Promise<IRenderDimensionsInternal> {
+    return this.evaluate(([core]) => ((core as any)._renderService as IRenderService).dimensions);
+  }
 
   public async triggerBinaryEvent(data: string): Promise<void> {
     return this._page.evaluate(([core, data]) => core.coreService.triggerBinaryEvent(data), [await this._getCoreHandle(), data] as const);

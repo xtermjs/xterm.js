@@ -27,13 +27,23 @@ class TestSelectionService extends SelectionService {
     super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService, new MockCoreBrowserService());
   }
 
-  public get model(): SelectionModel { return this._model; }
+  public get model(): SelectionModel {
+    return this._model;
+  }
 
-  public set selectionMode(mode: SelectionMode) { this._activeSelectionMode = mode; }
+  public set selectionMode(mode: SelectionMode) {
+    this._activeSelectionMode = mode;
+  }
 
-  public selectLineAt(line: number): void { this._selectLineAt(line); }
-  public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords, true); }
-  public areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean { return this._areCoordsInSelection(coords, start, end); }
+  public selectLineAt(line: number): void {
+    this._selectLineAt(line);
+  }
+  public selectWordAt(coords: [number, number]): void {
+    this._selectWordAt(coords, true);
+  }
+  public areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean {
+    return this._areCoordsInSelection(coords, start, end);
+  }
 
   // Disable DOM interaction
   public enable(): void {}

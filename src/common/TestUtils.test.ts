@@ -30,7 +30,9 @@ export const NULL_CELL_DATA = Object.freeze(createCellData(DEFAULT_ATTR, NULL_CE
 
 export class MockBufferService implements IBufferService {
   public serviceBrand: any;
-  public get buffer(): IBuffer { return this.buffers.active; }
+  public get buffer(): IBuffer {
+    return this.buffers.active;
+  }
   public buffers: IBufferSet = {} as any;
   public onResize: IEvent<IBufferResizeEvent> = new Emitter<IBufferResizeEvent>().event;
   public onScroll: IEvent<number> = new Emitter<number>().event;
@@ -83,10 +85,16 @@ export class MockMouseStateService implements IMouseStateService {
   public addProtocol(name: string): void { }
   public reset(): void { }
   public onProtocolChange: IEvent<CoreMouseEventType> = new Emitter<CoreMouseEventType>().event;
-  public restrictMouseEvent(event: ICoreMouseEvent): boolean { return true; }
-  public encodeMouseEvent(event: ICoreMouseEvent): string { return ''; }
+  public restrictMouseEvent(event: ICoreMouseEvent): boolean {
+    return true;
+  }
+  public encodeMouseEvent(event: ICoreMouseEvent): string {
+    return '';
+  }
   public setCustomWheelEventHandler(customWheelEventHandler: ((event: WheelEvent) => boolean) | undefined): void { }
-  public allowCustomWheelEvent(ev: WheelEvent): boolean { return true; }
+  public allowCustomWheelEvent(ev: WheelEvent): boolean {
+    return true;
+  }
 }
 
 export class MockCharsetService implements ICharsetService {
@@ -233,10 +241,14 @@ export class MockUnicodeService implements IUnicodeService {
 
 export class MockDecorationService implements IDecorationService {
   public serviceBrand: any;
-  public get decorations(): IterableIterator<IInternalDecoration> { return [].values(); }
+  public get decorations(): IterableIterator<IInternalDecoration> {
+    return [].values();
+  }
   public onDecorationRegistered = new Emitter<IInternalDecoration>().event;
   public onDecorationRemoved = new Emitter<IInternalDecoration>().event;
-  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined { return undefined; }
+  public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {
+    return undefined;
+  }
   public reset(): void { }
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void { }
   public dispose(): void { }

@@ -185,7 +185,9 @@ describe('OscParser', () => {
     });
 
     it('should be called once on end(true)', () => {
-      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
+      parser.registerHandler(1234, new OscHandler(data => {
+        reports.push([1234, data]); return true;
+      }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -195,7 +197,9 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [[1234, 'Here comes the mouse!']]);
     });
     it('should not be called on end(false)', () => {
-      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
+      parser.registerHandler(1234, new OscHandler(data => {
+        reports.push([1234, data]); return true;
+      }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -205,8 +209,12 @@ describe('OscParser', () => {
       assert.deepEqual(reports, []);
     });
     it('should be disposable', () => {
-      parser.registerHandler(1234, new OscHandler(data => { reports.push(['one', data]); return true; }));
-      const dispo = parser.registerHandler(1234, new OscHandler(data => { reports.push(['two', data]); return true; }));
+      parser.registerHandler(1234, new OscHandler(data => {
+        reports.push(['one', data]); return true;
+      }));
+      const dispo = parser.registerHandler(1234, new OscHandler(data => {
+        reports.push(['two', data]); return true;
+      }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -224,8 +232,12 @@ describe('OscParser', () => {
       assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
     });
     it('should respect return false', () => {
-      parser.registerHandler(1234, new OscHandler(data => { reports.push(['one', data]); return true; }));
-      parser.registerHandler(1234, new OscHandler(data => { reports.push(['two', data]); return false; }));
+      parser.registerHandler(1234, new OscHandler(data => {
+        reports.push(['one', data]); return true;
+      }));
+      parser.registerHandler(1234, new OscHandler(data => {
+        reports.push(['two', data]); return false;
+      }));
       parser.start();
       let data = toUtf32('1234;Here comes');
       parser.put(data, 0, data.length);
@@ -236,7 +248,9 @@ describe('OscParser', () => {
     });
     it('should work up to payload limit', function(): void {
       this.timeout(30000);
-      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
+      parser.registerHandler(1234, new OscHandler(data => {
+        reports.push([1234, data]); return true;
+      }));
       parser.start();
       let data = toUtf32('1234;');
       parser.put(data, 0, data.length);
@@ -249,7 +263,9 @@ describe('OscParser', () => {
     });
     it('should abort for payload limit +1', function(): void {
       this.timeout(30000);
-      parser.registerHandler(1234, new OscHandler(data => { reports.push([1234, data]); return true; }));
+      parser.registerHandler(1234, new OscHandler(data => {
+        reports.push([1234, data]); return true;
+      }));
       parser.start();
       let data = toUtf32('1234;');
       parser.put(data, 0, data.length);
@@ -412,7 +428,9 @@ describe('OscParser - async tests', () => {
     });
     describe('OscHandlerFactory', () => {
       it('should be called once on end(true)', async () => {
-        parser.registerHandler(1234, new OscHandler(async data => { reports.push([1234, data]); return true; }));
+        parser.registerHandler(1234, new OscHandler(async data => {
+          reports.push([1234, data]); return true;
+        }));
         parser.start();
         let data = toUtf32('1234;Here comes');
         parser.put(data, 0, data.length);
@@ -423,7 +441,9 @@ describe('OscParser - async tests', () => {
         assert.deepEqual(reports, [[1234, 'Here comes the mouse!']]);
       });
       it('should not be called on end(false)', async () => {
-        parser.registerHandler(1234, new OscHandler(async data => { reports.push([1234, data]); return true; }));
+        parser.registerHandler(1234, new OscHandler(async data => {
+          reports.push([1234, data]); return true;
+        }));
         parser.start();
         let data = toUtf32('1234;Here comes');
         parser.put(data, 0, data.length);
@@ -433,8 +453,12 @@ describe('OscParser - async tests', () => {
         assert.deepEqual(reports, []);
       });
       it('should be disposable', async () => {
-        parser.registerHandler(1234, new OscHandler(async data => { reports.push(['one', data]); return true; }));
-        const dispo = parser.registerHandler(1234, new OscHandler(async data => { reports.push(['two', data]); return true; }));
+        parser.registerHandler(1234, new OscHandler(async data => {
+          reports.push(['one', data]); return true;
+        }));
+        const dispo = parser.registerHandler(1234, new OscHandler(async data => {
+          reports.push(['two', data]); return true;
+        }));
         parser.start();
         let data = toUtf32('1234;Here comes');
         parser.put(data, 0, data.length);
@@ -452,8 +476,12 @@ describe('OscParser - async tests', () => {
         assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
       });
       it('should respect return false', async () => {
-        parser.registerHandler(1234, new OscHandler(async data => { reports.push(['one', data]); return true; }));
-        parser.registerHandler(1234, new OscHandler(async data => { reports.push(['two', data]); return false; }));
+        parser.registerHandler(1234, new OscHandler(async data => {
+          reports.push(['one', data]); return true;
+        }));
+        parser.registerHandler(1234, new OscHandler(async data => {
+          reports.push(['two', data]); return false;
+        }));
         parser.start();
         let data = toUtf32('1234;Here comes');
         parser.put(data, 0, data.length);

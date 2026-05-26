@@ -35,7 +35,9 @@ export class LogService extends Disposable implements ILogService {
   public serviceBrand: any;
 
   private _logLevel: LogLevelEnum = LogLevelEnum.OFF;
-  public get logLevel(): LogLevelEnum { return this._logLevel; }
+  public get logLevel(): LogLevelEnum {
+    return this._logLevel;
+  }
 
   constructor(
     @IOptionsService private readonly _optionsService: IOptionsService

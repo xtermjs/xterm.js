@@ -64,7 +64,9 @@ export class DecorationManager extends Disposable {
   public createActiveDecoration(result: ISearchResult, options: ISearchDecorationOptions): IMultiHighlight | undefined {
     const decorations = this._createResultDecorations(result, options, true);
     if (decorations) {
-      return { decorations, match: result, dispose() { dispose(decorations); } };
+      return { decorations, match: result, dispose() {
+        dispose(decorations);
+      } };
     }
     return undefined;
   }
@@ -85,7 +87,9 @@ export class DecorationManager extends Disposable {
    */
   private _storeDecoration(decoration: IDecoration, match: ISearchResult): void {
     this._highlightedLines.add(decoration.marker.line);
-    this._highlightDecorations.push({ decoration, match, dispose() { decoration.dispose(); } });
+    this._highlightDecorations.push({ decoration, match, dispose() {
+      decoration.dispose();
+    } });
   }
 
   /**

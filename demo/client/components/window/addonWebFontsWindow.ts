@@ -30,7 +30,9 @@ export class AddonWebFontsWindow extends BaseWindow implements IControlWindow {
       this._terminal.options.lineHeight = 1.3;
       this._addons.fit.instance?.fit();
       setTimeout(() => this._terminal.write('\x1b[?12h\x1b]12;#776CF9\x07\x1b[38;2;119;108;249;48;2;21;8;150m\x1b[2J\x1b[2;5H**** COMMODORE 64 BASIC V2 ****\r\n\r\n 64K RAM SYSTEM  38911 BASIC BYTES FREE\r\n\r\nREADY.\r\nLOAD '), 1000);
-      setTimeout(() => { this._terminal.write('🤣\x1b[m\x1b[99;1H'); this._terminal.input('\r'); }, 5000);
+      setTimeout(() => {
+        this._terminal.write('🤣\x1b[m\x1b[99;1H'); this._terminal.input('\r');
+      }, 5000);
     });
     ddKongtext.appendChild(btnKongtext);
     dl.appendChild(ddKongtext);

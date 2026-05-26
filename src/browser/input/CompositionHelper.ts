@@ -23,7 +23,9 @@ export class CompositionHelper {
    * IME. This variable determines whether the compositionText should be displayed on the UI.
    */
   private _isComposing: boolean;
-  public get isComposing(): boolean { return this._isComposing; }
+  public get isComposing(): boolean {
+    return this._isComposing;
+  }
 
   /**
    * The position within the input textarea's value of the current composition.

@@ -8,7 +8,9 @@ import type { IControlWindow } from '../controlBar';
 import type { Terminal } from '@xterm/xterm';
 
 export abstract class BaseWindow implements IControlWindow {
-  protected get _terminal(): Terminal { return this._terminalPrivate; }
+  protected get _terminal(): Terminal {
+    return this._terminalPrivate;
+  }
 
   constructor(
     private _terminalPrivate: Terminal,

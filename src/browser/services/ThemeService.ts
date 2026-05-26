@@ -38,7 +38,9 @@ export class ThemeService extends Disposable implements IThemeService {
   private _halfContrastCache: IColorContrastCache = new ColorContrastCache();
   private _restoreColors!: IRestoreColorSet;
 
-  public get colors(): ReadonlyColorSet { return this._colors; }
+  public get colors(): ReadonlyColorSet {
+    return this._colors;
+  }
 
   private readonly _onChangeColors = this._register(new Emitter<ReadonlyColorSet>());
   public readonly onChangeColors = this._onChangeColors.event;

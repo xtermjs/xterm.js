@@ -25,11 +25,15 @@ describe('unicode provider', () => {
   it('default to V6', () => {
     assert.equal(us.activeVersion, '6');
     assert.deepEqual(us.versions, ['6']);
-    assert.doesNotThrow(() => { us.activeVersion = '6'; }, `unknown Unicode version "6"`);
+    assert.doesNotThrow(() => {
+      us.activeVersion = '6';
+    }, `unknown Unicode version "6"`);
     assert.equal(us.getStringCellWidth('hello'), 5);
   });
   it('activate should throw for unknown version', () => {
-    assert.throws(() => { us.activeVersion = '55'; }, 'unknown Unicode version "55"');
+    assert.throws(() => {
+      us.activeVersion = '55';
+    }, 'unknown Unicode version "55"');
   });
   it('should notify about version change', () => {
     const notes: string[] = [];

@@ -33,32 +33,68 @@ export class AttributeData implements IAttributeData {
   public extended: IExtendedAttrs = new ExtendedAttrs();
 
   // flags
-  public isInverse(): number       { return this.fg & FgFlags.INVERSE; }
-  public isBold(): number          { return this.fg & FgFlags.BOLD; }
+  public isInverse(): number       {
+    return this.fg & FgFlags.INVERSE;
+  }
+  public isBold(): number          {
+    return this.fg & FgFlags.BOLD;
+  }
   public isUnderline(): number     {
     if (this.hasExtendedAttrs() && this.extended.underlineStyle !== UnderlineStyle.NONE) {
       return 1;
     }
     return this.fg & FgFlags.UNDERLINE;
   }
-  public isBlink(): number         { return this.fg & FgFlags.BLINK; }
-  public isInvisible(): number     { return this.fg & FgFlags.INVISIBLE; }
-  public isItalic(): number        { return this.bg & BgFlags.ITALIC; }
-  public isDim(): number           { return this.bg & BgFlags.DIM; }
-  public isStrikethrough(): number { return this.fg & FgFlags.STRIKETHROUGH; }
-  public isProtected(): number     { return this.bg & BgFlags.PROTECTED; }
-  public isOverline(): number      { return this.bg & BgFlags.OVERLINE; }
+  public isBlink(): number         {
+    return this.fg & FgFlags.BLINK;
+  }
+  public isInvisible(): number     {
+    return this.fg & FgFlags.INVISIBLE;
+  }
+  public isItalic(): number        {
+    return this.bg & BgFlags.ITALIC;
+  }
+  public isDim(): number           {
+    return this.bg & BgFlags.DIM;
+  }
+  public isStrikethrough(): number {
+    return this.fg & FgFlags.STRIKETHROUGH;
+  }
+  public isProtected(): number     {
+    return this.bg & BgFlags.PROTECTED;
+  }
+  public isOverline(): number      {
+    return this.bg & BgFlags.OVERLINE;
+  }
 
   // color modes
-  public getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }
-  public getBgColorMode(): number { return this.bg & Attributes.CM_MASK; }
-  public isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isBgPalette(): boolean   { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isFgDefault(): boolean   { return (this.fg & Attributes.CM_MASK) === 0; }
-  public isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
-  public isAttributeDefault(): boolean { return this.fg === 0 && this.bg === 0; }
+  public getFgColorMode(): number {
+    return this.fg & Attributes.CM_MASK;
+  }
+  public getBgColorMode(): number {
+    return this.bg & Attributes.CM_MASK;
+  }
+  public isFgRGB(): boolean       {
+    return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB;
+  }
+  public isBgRGB(): boolean       {
+    return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB;
+  }
+  public isFgPalette(): boolean   {
+    return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256;
+  }
+  public isBgPalette(): boolean   {
+    return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256;
+  }
+  public isFgDefault(): boolean   {
+    return (this.fg & Attributes.CM_MASK) === 0;
+  }
+  public isBgDefault(): boolean   {
+    return (this.bg & Attributes.CM_MASK) === 0;
+  }
+  public isAttributeDefault(): boolean {
+    return this.fg === 0 && this.bg === 0;
+  }
 
   // colors
   public getFgColor(): number {
@@ -147,7 +183,9 @@ export class ExtendedAttrs implements IExtendedAttrs {
     }
     return this._ext;
   }
-  public set ext(value: number) { this._ext = value; }
+  public set ext(value: number) {
+    this._ext = value;
+  }
 
   public get underlineStyle(): UnderlineStyle {
     // Always return the URL style if it has one

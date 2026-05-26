@@ -24,19 +24,25 @@ function toUtf32(s: string): Uint32Array {
 class FastDcsHandler implements IDcsHandler {
   public hook(params: IParams): void {}
   public put(data: Uint32Array, start: number, end: number): void {}
-  public unhook(success: boolean): boolean { return true; }
+  public unhook(success: boolean): boolean {
+    return true;
+  }
 }
 
 class FastOscHandler implements IOscHandler {
   public start(): void {}
   public put(data: Uint32Array, start: number, end: number): void {}
-  public end(success: boolean): boolean { return true; }
+  public end(success: boolean): boolean {
+    return true;
+  }
 }
 
 class FastApcHandler implements IApcHandler {
   public start(): void {}
   public put(data: Uint32Array, start: number, end: number): void {}
-  public end(success: boolean): boolean { return true; }
+  public end(success: boolean): boolean {
+    return true;
+  }
 }
 
 

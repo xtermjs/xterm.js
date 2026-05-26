@@ -27,7 +27,9 @@ perfContext('Emitter.fire()', () => {
     let sum = 0;
     before(() => {
       emitter = new Emitter<number>();
-      emitter.event(e => { sum += e; });
+      emitter.event(e => {
+        sum += e;
+      });
     });
     new RuntimeCase('', () => {
       for (let i = 0; i < ITERATIONS; i++) {
@@ -42,8 +44,12 @@ perfContext('Emitter.fire()', () => {
     let sum = 0;
     before(() => {
       emitter = new Emitter<number>();
-      emitter.event(e => { sum += e; });
-      emitter.event(e => { sum += e * 2; });
+      emitter.event(e => {
+        sum += e;
+      });
+      emitter.event(e => {
+        sum += e * 2;
+      });
     });
     new RuntimeCase('', () => {
       for (let i = 0; i < ITERATIONS; i++) {
@@ -59,7 +65,9 @@ perfContext('Emitter.fire()', () => {
     before(() => {
       emitter = new Emitter<number>();
       for (let j = 0; j < 5; j++) {
-        emitter.event(e => { sum += e; });
+        emitter.event(e => {
+          sum += e;
+        });
       }
     });
     new RuntimeCase('', () => {

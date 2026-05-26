@@ -31,7 +31,9 @@ class ExtendedAttrsImage implements IExtendedAttrsImage {
     }
     return this._ext;
   }
-  public set ext(value: number) { this._ext = value; }
+  public set ext(value: number) {
+    this._ext = value;
+  }
 
   public get underlineStyle(): UnderlineStyle {
     // Always return the URL style if it has one

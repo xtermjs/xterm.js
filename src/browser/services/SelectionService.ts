@@ -181,8 +181,12 @@ export class SelectionService extends Disposable implements ISelectionService {
     this._enabled = true;
   }
 
-  public get selectionStart(): [number, number] | undefined { return this._model.finalSelectionStart; }
-  public get selectionEnd(): [number, number] | undefined { return this._model.finalSelectionEnd; }
+  public get selectionStart(): [number, number] | undefined {
+    return this._model.finalSelectionStart;
+  }
+  public get selectionEnd(): [number, number] | undefined {
+    return this._model.finalSelectionEnd;
+  }
 
   /**
    * Gets whether there is an active text selection.

@@ -21,9 +21,15 @@ import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { Emitter, type IEvent } from 'common/Event';
 
 export class TestTerminal extends CoreBrowserTerminal {
-  public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
-  public keyDown(ev: any): boolean | undefined { return this._keyDown(ev); }
-  public keyPress(ev: any): boolean { return this._keyPress(ev); }
+  public get curAttrData(): IAttributeData {
+    return (this as any)._inputHandler._curAttrData;
+  }
+  public keyDown(ev: any): boolean | undefined {
+    return this._keyDown(ev);
+  }
+  public keyPress(ev: any): boolean {
+    return this._keyPress(ev);
+  }
   public writeP(data: string | Uint8Array): Promise<void> {
     return new Promise(r => this.write(data, r));
   }
@@ -213,7 +219,9 @@ export class MockTerminal implements ITerminal {
   public refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
+  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+    return 0;
+  }
   public deregisterCharacterJoiner(joinerId: number): void { }
 }
 
@@ -377,7 +385,9 @@ export class MockCoreBrowserService implements ICoreBrowserService {
 
 export class MockCharSizeService implements ICharSizeService {
   public serviceBrand: undefined;
-  public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
+  public get hasValidSize(): boolean {
+    return this.width > 0 && this.height > 0;
+  }
   public onCharSizeChange: IEvent<void> = new Emitter<void>().event;
   constructor(public width: number, public height: number) {}
   public measure(): void {}

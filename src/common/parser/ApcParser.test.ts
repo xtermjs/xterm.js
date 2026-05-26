@@ -185,7 +185,9 @@ describe('ApcParser', () => {
     });
 
     it('should be called once on end(true)', () => {
-      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(data); return true;
+      }));
       parser.start(identifier({intermediates: '+', final: 'p'}));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -195,7 +197,9 @@ describe('ApcParser', () => {
       assert.deepEqual(reports, ['Here comes the mouse!']);
     });
     it('should not be called on end(false)', () => {
-      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(data); return true;
+      }));
       parser.start(identifier({intermediates: '+', final: 'p'}));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -205,8 +209,12 @@ describe('ApcParser', () => {
       assert.deepEqual(reports, []);
     });
     it('should be disposable', () => {
-      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['one', data]); return true; }));
-      const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['two', data]); return true; }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(['one', data]); return true;
+      }));
+      const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(['two', data]); return true;
+      }));
       parser.start(identifier({intermediates: '+', final: 'p'}));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -224,8 +232,12 @@ describe('ApcParser', () => {
       assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
     });
     it('should respect return false', () => {
-      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['one', data]); return true; }));
-      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(['two', data]); return false; }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(['one', data]); return true;
+      }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(['two', data]); return false;
+      }));
       parser.start(identifier({intermediates: '+', final: 'p'}));
       let data = toUtf32('Here comes');
       parser.put(data, 0, data.length);
@@ -236,7 +248,9 @@ describe('ApcParser', () => {
     });
     it('should work up to payload limit', function(): void {
       this.timeout(30000);
-      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(data); return true;
+      }));
       parser.start(identifier({intermediates: '+', final: 'p'}));
       const data = toUtf32('A'.repeat(CHUNK_SIZE));
       for (let i = 0; i < TEST_PAYLOAD_LIMIT; i += CHUNK_SIZE) {
@@ -247,7 +261,9 @@ describe('ApcParser', () => {
     });
     it('should abort for payload limit +1', function(): void {
       this.timeout(30000);
-      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => { reports.push(data); return true; }));
+      parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(data => {
+        reports.push(data); return true;
+      }));
       parser.start(identifier({intermediates: '+', final: 'p'}));
       let data = toUtf32('A'.repeat(CHUNK_SIZE));
       for (let i = 0; i < TEST_PAYLOAD_LIMIT; i += CHUNK_SIZE) {
@@ -408,7 +424,9 @@ describe('ApcParser - async tests', () => {
     });
     describe('ApcHandlerFactory', () => {
       it('should be called once on end(true)', async () => {
-        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(data); return true; }));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => {
+          reports.push(data); return true;
+        }));
         parser.start(identifier({intermediates: '+', final: 'p'}));
         let data = toUtf32('Here comes');
         parser.put(data, 0, data.length);
@@ -418,7 +436,9 @@ describe('ApcParser - async tests', () => {
         assert.deepEqual(reports, ['Here comes the mouse!']);
       });
       it('should not be called on end(false)', async () => {
-        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(data); return true; }));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => {
+          reports.push(data); return true;
+        }));
         parser.start(identifier({intermediates: '+', final: 'p'}));
         let data = toUtf32('Here comes');
         parser.put(data, 0, data.length);
@@ -428,8 +448,12 @@ describe('ApcParser - async tests', () => {
         assert.deepEqual(reports, []);
       });
       it('should be disposable', async () => {
-        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['one', data]); return true; }));
-        const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['two', data]); return true; }));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => {
+          reports.push(['one', data]); return true;
+        }));
+        const dispo = parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => {
+          reports.push(['two', data]); return true;
+        }));
         parser.start(identifier({intermediates: '+', final: 'p'}));
         let data = toUtf32('Here comes');
         parser.put(data, 0, data.length);
@@ -447,8 +471,12 @@ describe('ApcParser - async tests', () => {
         assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'some other data']]);
       });
       it('should respect return false', async () => {
-        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['one', data]); return true; }));
-        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => { reports.push(['two', data]); return false; }));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => {
+          reports.push(['one', data]); return true;
+        }));
+        parser.registerHandler(identifier({intermediates: '+', final: 'p'}), new ApcHandler(async data => {
+          reports.push(['two', data]); return false;
+        }));
         parser.start(identifier({intermediates: '+', final: 'p'}));
         let data = toUtf32('Here comes');
         parser.put(data, 0, data.length);

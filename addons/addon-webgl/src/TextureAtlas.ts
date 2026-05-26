@@ -62,7 +62,9 @@ export class TextureAtlas implements ITextureAtlas {
 
   // The texture that the atlas is drawn to
   private _pages: AtlasPage[] = [];
-  public get pages(): { canvas: HTMLCanvasElement, version: number }[] { return this._pages; }
+  public get pages(): { canvas: HTMLCanvasElement, version: number }[] {
+    return this._pages;
+  }
 
   // The set of atlas pages that can be written to
   private _activePages: AtlasPage[] = [];
@@ -1039,10 +1041,14 @@ class AtlasPage {
   public readonly ctx: CanvasRenderingContext2D;
 
   private _usedPixels: number = 0;
-  public get percentageUsed(): number { return this._usedPixels / (this.canvas.width * this.canvas.height); }
+  public get percentageUsed(): number {
+    return this._usedPixels / (this.canvas.width * this.canvas.height);
+  }
 
   private readonly _glyphs: IRasterizedGlyph[] = [];
-  public get glyphs(): ReadonlyArray<IRasterizedGlyph> { return this._glyphs; }
+  public get glyphs(): ReadonlyArray<IRasterizedGlyph> {
+    return this._glyphs;
+  }
   public addGlyph(glyph: IRasterizedGlyph): void {
     this._glyphs.push(glyph);
     this._usedPixels += glyph.size.x * glyph.size.y;
