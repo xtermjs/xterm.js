@@ -3,14 +3,14 @@
  * @license MIT
  */
 
+import type { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { css } from 'common/Color';
 import { Disposable, DisposableStore, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { SortedList } from 'common/SortedList';
-import { IColor } from 'common/Types';
+import { IColor, ICircularList } from 'common/Types';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/Event';
-import type { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 
 // Work variables to avoid garbage collection
 let $xmin = 0;
@@ -26,13 +26,7 @@ export class DecorationService extends Disposable implements IDecorationService 
    */
   private readonly _decorations: SortedList<IInternalDecoration>;
 
-  /**
-   * Decorations indexed by buffer line. Multi-line decorations are present in every line bucket
-   * they span so cell lookup only iterates decorations relevant to that line.
-   */
-  private readonly _decorationsByLine: Map<number, IInternalDecoration[]> = new Map();
-
-  private readonly _bufferLineListeners = this._register(new MutableDisposable<DisposableStore>());
+  private readonly _lineCache = this._register(new DecorationLineCache());
 
   private readonly _onDecorationRegistered = this._register(new Emitter<IInternalDecoration>());
   public readonly onDecorationRegistered = this._onDecorationRegistered.event;
@@ -50,8 +44,10 @@ export class DecorationService extends Disposable implements IDecorationService 
     this._decorations = new SortedList(e => e?.marker.line, this._logService);
 
     this._register(toDisposable(() => this.reset()));
-    this._register(this._bufferService.buffers.onBufferActivate(() => this._attachBufferLineListeners()));
-    this._attachBufferLineListeners();
+    this._register(this._bufferService.buffers.onBufferActivate(() => {
+      this._lineCache.attachToBufferLines(this._bufferService.buffer.lines);
+    }));
+    this._lineCache.attachToBufferLines(this._bufferService.buffer.lines);
   }
 
   public registerDecoration(options: IDecorationOptions): IDecoration | undefined {
@@ -65,14 +61,14 @@ export class DecorationService extends Disposable implements IDecorationService 
         listener.dispose();
         if (decoration) {
           if (this._decorations.delete(decoration)) {
-            this._removeFromLineIndex(decoration);
+            this._lineCache.remove(decoration);
             this._onDecorationRemoved.fire(decoration);
           }
           markerDispose.dispose();
         }
       });
       this._decorations.insert(decoration);
-      this._addToLineIndex(decoration);
+      this._lineCache.add(decoration);
       this._onDecorationRegistered.fire(decoration);
     }
     return decoration;
@@ -83,11 +79,11 @@ export class DecorationService extends Disposable implements IDecorationService 
       d.dispose();
     }
     this._decorations.clear();
-    this._decorationsByLine.clear();
+    this._lineCache.clear();
   }
 
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
-    const bucket = this._decorationsByLine.get(line);
+    const bucket = this._lineCache.getDecorationsOnLine(line);
     if (!bucket) {
       return;
     }
@@ -103,7 +99,7 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
-    const bucket = this._decorationsByLine.get(line);
+    const bucket = this._lineCache.getDecorationsOnLine(line);
     if (!bucket) {
       return;
     }
@@ -115,11 +111,44 @@ export class DecorationService extends Disposable implements IDecorationService 
       }
     }
   }
+}
 
-  private _attachBufferLineListeners(): void {
+/**
+ * Per-logical-line index of decorations for fast cell lookup.
+ *
+ * Keys are marker.line coordinates (logical buffer lines), not CircularList ring slots.
+ * Multi-line decorations appear in every line bucket they span. The index is kept aligned
+ * with marker.line updates via buffer line trim/insert/delete events.
+ */
+export class DecorationLineCache extends Disposable {
+  private readonly _decorationsByLine: Map<number, IInternalDecoration[]> = new Map();
+  private readonly _decorations = new Set<IInternalDecoration>();
+  private readonly _bufferLineListeners = this._register(new MutableDisposable<DisposableStore>());
+
+  private _lineIndexSyncCallbacks: (() => void)[] = [];
+
+  public clear(): void {
+    this._decorationsByLine.clear();
+    this._decorations.clear();
+  }
+
+  public add(decoration: IInternalDecoration): void {
+    this._decorations.add(decoration);
+    this._addToLineBuckets(decoration);
+  }
+
+  public remove(decoration: IInternalDecoration): void {
+    this._decorations.delete(decoration);
+    this._removeFromLineBuckets(decoration);
+  }
+
+  public getDecorationsOnLine(line: number): ReadonlyArray<IInternalDecoration> | undefined {
+    return this._decorationsByLine.get(line);
+  }
+
+  public attachToBufferLines(lines: ICircularList<unknown>): void {
     const store = new DisposableStore();
     this._bufferLineListeners.value = store;
-    const lines = this._bufferService.buffer.lines;
     store.add(lines.onTrim(amount => this._handleBufferLinesTrim(amount)));
     store.add(lines.onInsert(event => this._handleBufferLinesInsert(event)));
     store.add(lines.onDelete(event => this._handleBufferLinesDelete(event)));
@@ -129,7 +158,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     return decoration.options.height ?? 1;
   }
 
-  private _addToLineIndex(decoration: IInternalDecoration): void {
+  private _addToLineBuckets(decoration: IInternalDecoration): void {
     const start = decoration.marker.line;
     if (start < 0) {
       return;
@@ -146,7 +175,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
   }
 
-  private _removeFromLineIndex(decoration: IInternalDecoration): void {
+  private _removeFromLineBuckets(decoration: IInternalDecoration): void {
     const start = decoration._indexedStartLine;
     const height = this._getDecorationHeight(decoration);
     for (let line = start; line < start + height; line++) {
@@ -165,13 +194,11 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   private _reindexDecoration(decoration: IInternalDecoration): void {
-    this._removeFromLineIndex(decoration);
+    this._removeFromLineBuckets(decoration);
     if (!decoration.marker.isDisposed && decoration.marker.line >= 0) {
-      this._addToLineIndex(decoration);
+      this._addToLineBuckets(decoration);
     }
   }
-
-  private _lineIndexSyncCallbacks: (() => void)[] = [];
 
   /** Re-index after marker line updates (buffer listeners may run before markers). */
   private _scheduleLineIndexSync(callback: () => void): void {
@@ -209,7 +236,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     for (const [line, bucket] of newMap) {
       this._decorationsByLine.set(line, bucket);
     }
-    for (const d of this._decorations.values()) {
+    for (const d of this._decorations) {
       if (!d.marker.isDisposed) {
         d._indexedStartLine -= amount;
       }
@@ -217,35 +244,95 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
 
   private _handleBufferLinesInsert(event: IInsertEvent): void {
-    this._scheduleLineIndexSync(() => {
-      for (const d of this._decorations.values()) {
-        if (d.marker.isDisposed) {
-          continue;
-        }
-        const height = this._getDecorationHeight(d);
-        if (d.marker.line + height > event.index) {
-          this._reindexDecoration(d);
-        }
-      }
-    });
+    this._scheduleLineIndexSync(() => this._applyBufferLinesInsert(event));
   }
 
   private _handleBufferLinesDelete(event: IDeleteEvent): void {
-    const deleteEnd = event.index + event.amount;
-    this._scheduleLineIndexSync(() => {
-      for (const d of this._decorations.values()) {
-        if (d.marker.isDisposed) {
-          continue;
-        }
-        const start = d.marker.line;
-        const end = start + this._getDecorationHeight(d);
-        if (start >= deleteEnd) {
-          this._reindexDecoration(d);
-        } else if (start < event.index && end > event.index) {
-          this._reindexDecoration(d);
-        }
+    this._scheduleLineIndexSync(() => this._applyBufferLinesDelete(event));
+  }
+
+  private _mergeLineBucket(newMap: Map<number, IInternalDecoration[]>, line: number, bucket: IInternalDecoration[]): void {
+    const existing = newMap.get(line);
+    if (existing) {
+      existing.push(...bucket);
+    } else {
+      newMap.set(line, bucket.slice());
+    }
+  }
+
+  /**
+   * Shift indexed line keys and sync start lines. O(unique indexed lines), not O(decoration count).
+   * Decorations that span the insert point are re-indexed individually (rare vs single-line hits).
+   */
+  private _applyBufferLinesInsert(event: IInsertEvent): void {
+    const { index, amount } = event;
+    const spanCrossers: IInternalDecoration[] = [];
+    for (const d of this._decorations) {
+      if (d.marker.isDisposed) {
+        continue;
       }
-    });
+      const start = d._indexedStartLine;
+      if (start < index && start + this._getDecorationHeight(d) > index) {
+        spanCrossers.push(d);
+        this._removeFromLineBuckets(d);
+      }
+    }
+    const newMap = new Map<number, IInternalDecoration[]>();
+    for (const [line, bucket] of this._decorationsByLine) {
+      const newLine = line >= index ? line + amount : line;
+      this._mergeLineBucket(newMap, newLine, bucket);
+    }
+    this._decorationsByLine.clear();
+    for (const [line, bucket] of newMap) {
+      this._decorationsByLine.set(line, bucket);
+    }
+    for (const d of this._decorations) {
+      if (d.marker.isDisposed) {
+        continue;
+      }
+      if (d._indexedStartLine >= index) {
+        d._indexedStartLine = d.marker.line;
+      }
+    }
+    for (const d of spanCrossers) {
+      this._addToLineBuckets(d);
+    }
+  }
+
+  /**
+   * Drop deleted line keys, shift keys below, sync start lines. Full re-index only when a
+   * multi-line decoration spans across the deleted range but survives.
+   */
+  private _applyBufferLinesDelete(event: IDeleteEvent): void {
+    const deleteEnd = event.index + event.amount;
+    const newMap = new Map<number, IInternalDecoration[]>();
+    for (const [line, bucket] of this._decorationsByLine) {
+      if (line >= event.index && line < deleteEnd) {
+        continue;
+      }
+      const newLine = line >= deleteEnd ? line - event.amount : line;
+      this._mergeLineBucket(newMap, newLine, bucket);
+    }
+    this._decorationsByLine.clear();
+    for (const [line, bucket] of newMap) {
+      this._decorationsByLine.set(line, bucket);
+    }
+    const toReindex: IInternalDecoration[] = [];
+    for (const d of this._decorations) {
+      if (d.marker.isDisposed) {
+        continue;
+      }
+      const start = d._indexedStartLine;
+      const height = this._getDecorationHeight(d);
+      if (start >= deleteEnd) {
+        d._indexedStartLine = d.marker.line;
+      } else if (start < event.index && start + height > deleteEnd) {
+        toReindex.push(d);
+      }
+    }
+    for (const d of toReindex) {
+      this._reindexDecoration(d);
+    }
   }
 }
 
