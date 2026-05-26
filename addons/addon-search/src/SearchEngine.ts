@@ -315,6 +315,10 @@ export class SearchEngine {
         const searchSubstring = searchStringLine.slice(0, offset);
         while (foundTerm = searchRegex.exec(searchSubstring)) {
           if (foundTerm[0].length === 0) {
+            if (searchRegex.lastIndex >= searchSubstring.length) {
+              break;
+            }
+            searchRegex.lastIndex++;
             continue;
           }
           resultIndex = searchRegex.lastIndex - foundTerm[0].length;
@@ -364,8 +368,13 @@ export class SearchEngine {
           let foundTerm: RegExpExecArray | null;
           if (isReverseSearch) {
             resultIndex = -1;
-            while (foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
+            const wholeWordSubstring = searchStringLine.slice(0, offset);
+            while (foundTerm = searchRegex.exec(wholeWordSubstring)) {
               if (foundTerm[0].length === 0) {
+                if (searchRegex.lastIndex >= wholeWordSubstring.length) {
+                  break;
+                }
+                searchRegex.lastIndex++;
                 continue;
               }
               const candidateIndex = searchRegex.lastIndex - foundTerm[0].length;
