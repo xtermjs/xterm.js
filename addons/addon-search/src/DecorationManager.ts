@@ -94,6 +94,20 @@ export class DecorationManager extends Disposable {
    * @param borderColor The border color to apply.
    * @param isActiveResult Whether the element is part of the active search result.
    */
+  private _getOverviewRulerOptions(line: number, isActiveResult: boolean, options: ISearchDecorationOptions) {
+    if (this._highlightedLines.has(line)) {
+      return undefined;
+    }
+    const color = isActiveResult ? options.activeMatchColorOverviewRuler : options.matchOverviewRuler;
+    if (!color) {
+      return undefined;
+    }
+    return {
+      color,
+      position: 'center' as const
+    };
+  }
+
   private _applyStyles(element: HTMLElement, borderColor: string | undefined, isActiveResult: boolean): void {
     if (!element.classList.contains('xterm-find-result-decoration')) {
       element.classList.add('xterm-find-result-decoration');
@@ -137,10 +151,7 @@ export class DecorationManager extends Disposable {
         width: range[2],
         layer: isActiveResult ? 'top' : 'bottom',
         backgroundColor: isActiveResult ? options.activeMatchBackground : options.matchBackground,
-        overviewRulerOptions: this._highlightedLines.has(marker.line) ? undefined : {
-          color: isActiveResult ? options.activeMatchColorOverviewRuler : options.matchOverviewRuler,
-          position: 'center'
-        }
+        overviewRulerOptions: this._getOverviewRulerOptions(marker.line, isActiveResult, options)
       });
       if (decoration) {
         const disposables: IDisposable[] = [];
