@@ -13,7 +13,6 @@ import type { ISearchResult } from './SearchEngine';
  */
 interface IHighlight extends IDisposable {
   decoration: IDecoration;
-  match: ISearchResult;
 }
 
 /**
@@ -49,7 +48,7 @@ export class DecorationManager extends Disposable {
       const decorations = this._createResultDecorations(match, options, false);
       if (decorations) {
         for (const decoration of decorations) {
-          this._storeDecoration(decoration, match);
+          this._storeDecoration(decoration);
         }
       }
     }
@@ -83,9 +82,9 @@ export class DecorationManager extends Disposable {
    * @param decoration The decoration to store.
    * @param match The search result this decoration represents.
    */
-  private _storeDecoration(decoration: IDecoration, match: ISearchResult): void {
+  private _storeDecoration(decoration: IDecoration): void {
     this._highlightedLines.add(decoration.marker.line);
-    this._highlightDecorations.push({ decoration, match, dispose() { decoration.dispose(); } });
+    this._highlightDecorations.push({ decoration, dispose() { decoration.dispose(); } });
   }
 
   /**
@@ -128,38 +127,38 @@ export class DecorationManager extends Disposable {
    * @returns the decorations or undefined if the marker has already been disposed of
    */
   private _createResultDecorations(result: ISearchResult, options: ISearchDecorationOptions, isActiveResult: boolean): IDecoration[] | undefined {
-    // Gather decoration ranges for this match as it could wrap
-    const decorationRanges: [number, number, number][] = [];
+    const decorations: IDecoration[] = [];
+    const cols = this._terminal.cols;
+    const layer = isActiveResult ? 'top' : 'bottom';
+    const backgroundColor = isActiveResult ? options.activeMatchBackground : options.matchBackground;
+    const borderColor = isActiveResult ? options.activeMatchBorder : options.matchBorder;
     let currentCol = result.col;
     let remainingSize = result.size;
     let markerOffset = -this._terminal.buffer.active.baseY - this._terminal.buffer.active.cursorY + result.row;
     while (remainingSize > 0) {
-      const amountThisRow = Math.min(this._terminal.cols - currentCol, remainingSize);
-      decorationRanges.push([markerOffset, currentCol, amountThisRow]);
-      currentCol = 0;
-      remainingSize -= amountThisRow;
-      markerOffset++;
-    }
-
-    // Create the decorations
-    const decorations: IDecoration[] = [];
-    for (const range of decorationRanges) {
-      const marker = this._terminal.registerMarker(range[0]);
+      const amountThisRow = Math.min(cols - currentCol, remainingSize);
+      const marker = this._terminal.registerMarker(markerOffset);
       const decoration = this._terminal.registerDecoration({
         marker,
-        x: range[1],
-        width: range[2],
-        layer: isActiveResult ? 'top' : 'bottom',
-        backgroundColor: isActiveResult ? options.activeMatchBackground : options.matchBackground,
+        x: currentCol,
+        width: amountThisRow,
+        layer,
+        backgroundColor,
         overviewRulerOptions: this._getOverviewRulerOptions(marker.line, isActiveResult, options)
       });
       if (decoration) {
-        const disposables: IDisposable[] = [];
-        disposables.push(marker);
-        disposables.push(decoration.onRender((e) => this._applyStyles(e, isActiveResult ? options.activeMatchBorder : options.matchBorder, isActiveResult)));
-        disposables.push(decoration.onDispose(() => dispose(disposables)));
+        const renderDisposable = decoration.onRender((e) => this._applyStyles(e, borderColor, isActiveResult));
+        decoration.onDispose(() => {
+          marker.dispose();
+          renderDisposable.dispose();
+        });
         decorations.push(decoration);
+      } else {
+        marker.dispose();
       }
+      currentCol = 0;
+      remainingSize -= amountThisRow;
+      markerOffset++;
     }
 
     return decorations.length === 0 ? undefined : decorations;
