@@ -619,7 +619,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
       set.decorations.push(decoration);
       set.disposables.push(decoration);
-      set.disposables.push(this._registerMatchDecorationRender(decoration, set, decorationOptions.matchBackground, matchBorder));
+      set.disposables.push(this._registerMatchDecorationRender(decoration, set, matchBorder));
     }
     return set;
   }
@@ -628,22 +628,24 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (!set || set.isActive === isActive) {
       return;
     }
+    if (!isActive) {
+      this._disposeMatchDecorationSet(set);
+      return;
+    }
     set.isActive = isActive;
     const overviewRulerOptions = isActive && set.options.matchOverviewRuler ? { color: set.options.matchOverviewRuler } : undefined;
     for (const decoration of set.decorations) {
       decoration.options.overviewRulerOptions = overviewRulerOptions;
       if (decoration.element) {
-        this._applyMatchDecorationStyle(decoration.element, isActive, set.options.matchBackground, set.options.matchBorder);
+        this._applyMatchDecorationStyle(decoration.element, isActive, set.options.matchBorder);
       }
     }
   }
 
-  private _applyMatchDecorationStyle(element: HTMLElement, isActive: boolean, background: string | undefined, border: string | undefined): void {
+  private _applyMatchDecorationStyle(element: HTMLElement, isActive: boolean, border: string | undefined): void {
     if (isActive) {
-      element.style.backgroundColor = background || '';
       element.style.outline = border ? `1px solid ${border}` : '';
     } else {
-      element.style.backgroundColor = '';
       element.style.outline = '';
     }
   }
@@ -655,11 +657,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _registerMatchDecorationRender(
     decoration: IDecoration,
     set: IMatchDecorationSet,
-    background: string | undefined,
     border: string | undefined
   ): IDisposable {
     return decoration.onRender(element => {
-      this._applyMatchDecorationStyle(element, set.isActive, background, border);
+      this._applyMatchDecorationStyle(element, set.isActive, border);
     });
   }
 
