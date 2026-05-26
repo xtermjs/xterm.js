@@ -70,22 +70,38 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
   private _updateMatches(): void {
     this._highlightTimeout.clear();
-    if (this._state.cachedSearchTerm && this._state.lastSearchOptions?.decorations) {
+    const lastOptions = this._state.lastSearchOptions;
+    if (this._state.cachedSearchTerm && lastOptions?.decorations) {
       this._highlightTimeout.value = disposableTimeout(() => {
-        const term = this._state.cachedSearchTerm;
-        this._state.clearCachedTerm();
-        this.findPrevious(term!, { ...this._state.lastSearchOptions, incremental: true }, { noScroll: true });
+        const term = this._state.cachedSearchTerm!;
+        this._refreshHighlights(term, lastOptions);
       }, 200);
     }
   }
 
+  private _refreshHighlights(term: string, searchOptions: ISearchOptions): void {
+    if (!this._terminal || !this._engine || !this._decorationManager) {
+      return;
+    }
+    if (!this._state.isValidSearchTerm(term) || !searchOptions.decorations) {
+      return;
+    }
+    this._highlightAllMatches(term, searchOptions);
+    this._fireResults(searchOptions);
+  }
+
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
     this._highlightTimeout.clear();
+    const hadResults = this._resultTracker.searchResults.length > 0;
     this._resultTracker.clearSelectedDecoration();
     this._decorationManager?.clearHighlightDecorations();
     this._resultTracker.clearResults();
     if (!retainCachedSearchTerm) {
       this._state.clearCachedTerm();
+      this._state.lastSearchOptions = undefined;
+    }
+    if (hadResults && this._state.hadDecorations) {
+      this._resultTracker.fireResultsChanged(true);
     }
   }
 
@@ -105,18 +121,24 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       throw new Error('Cannot use addon until it has been loaded');
     }
 
+    this._highlightTimeout.clear();
     this._onBeforeSearch.fire();
+    let found = false;
+    try {
+      if (this._state.shouldClearDecorations(searchOptions)) {
+        this.clearDecorations(true);
+      }
+      if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
+        this._highlightAllMatches(term, searchOptions!);
+      }
 
-    if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
-      this._highlightAllMatches(term, searchOptions!);
+      found = this._findNextAndSelect(term, searchOptions, internalSearchOptions);
+      this._state.cachedSearchTerm = term;
+      this._state.lastSearchOptions = searchOptions;
+      this._fireResults(searchOptions);
+    } finally {
+      this._onAfterSearch.fire();
     }
-
-    const found = this._findNextAndSelect(term, searchOptions, internalSearchOptions);
-    this._fireResults(searchOptions);
-    this._state.cachedSearchTerm = term;
-    this._state.lastSearchOptions = searchOptions;
-
-    this._onAfterSearch.fire();
 
     return found;
   }
@@ -167,18 +189,24 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       throw new Error('Cannot use addon until it has been loaded');
     }
 
+    this._highlightTimeout.clear();
     this._onBeforeSearch.fire();
+    let found = false;
+    try {
+      if (this._state.shouldClearDecorations(searchOptions)) {
+        this.clearDecorations(true);
+      }
+      if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
+        this._highlightAllMatches(term, searchOptions!);
+      }
 
-    if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
-      this._highlightAllMatches(term, searchOptions!);
+      found = this._findPreviousAndSelect(term, searchOptions, internalSearchOptions);
+      this._state.cachedSearchTerm = term;
+      this._state.lastSearchOptions = searchOptions;
+      this._fireResults(searchOptions);
+    } finally {
+      this._onAfterSearch.fire();
     }
-
-    const found = this._findPreviousAndSelect(term, searchOptions, internalSearchOptions);
-    this._fireResults(searchOptions);
-    this._state.cachedSearchTerm = term;
-    this._state.lastSearchOptions = searchOptions;
-
-    this._onAfterSearch.fire();
 
     return found;
   }

@@ -43,6 +43,23 @@ describe('SearchState', () => {
       state.lastSearchOptions = options;
       assert.strictEqual(state.didOptionsChange({ caseSensitive: false, regex: false, wholeWord: false }), false);
     });
+
+    it('should treat omitted flags as equivalent to false', () => {
+      state.lastSearchOptions = { caseSensitive: false, regex: false, wholeWord: false };
+      assert.strictEqual(state.didOptionsChange({}), false);
+    });
+  });
+
+  describe('shouldClearDecorations', () => {
+    it('should clear when decorations are disabled after being enabled', () => {
+      state.lastSearchOptions = DECORATIONS_A;
+      assert.strictEqual(state.shouldClearDecorations({ caseSensitive: false }), true);
+    });
+
+    it('should not clear when decorations remain enabled', () => {
+      state.lastSearchOptions = DECORATIONS_A;
+      assert.strictEqual(state.shouldClearDecorations(DECORATIONS_A), false);
+    });
   });
 
   describe('shouldUpdateHighlighting', () => {

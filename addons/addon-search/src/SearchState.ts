@@ -5,13 +5,22 @@
 
 import type { ISearchDecorationOptions, ISearchOptions } from '@xterm/addon-search';
 
+interface INormalizedSearchOptions {
+  caseSensitive: boolean;
+  regex: boolean;
+  wholeWord: boolean;
+  incremental: boolean;
+  decorations?: ISearchDecorationOptions;
+}
+
 /**
  * Manages search state including cached search terms, options tracking, and validation.
  * This class provides a centralized way to handle search state consistency and option changes.
  */
 export class SearchState {
   private _cachedSearchTerm: string | undefined;
-  private _lastSearchOptions: ISearchOptions | undefined;
+  private _lastSearchOptions: INormalizedSearchOptions | undefined;
+  private _hadDecorations: boolean = false;
 
   /**
    * Gets the currently cached search term.
@@ -31,14 +40,22 @@ export class SearchState {
    * Gets the last search options used.
    */
   public get lastSearchOptions(): ISearchOptions | undefined {
-    return this._lastSearchOptions;
+    return this._toPublicOptions(this._lastSearchOptions);
   }
 
   /**
    * Sets the last search options used.
    */
   public set lastSearchOptions(options: ISearchOptions | undefined) {
-    this._lastSearchOptions = options;
+    this._lastSearchOptions = options ? this._normalizeOptions(options) : undefined;
+    this._hadDecorations = !!this._lastSearchOptions?.decorations;
+  }
+
+  /**
+   * Whether the previous search used decorations.
+   */
+  public get hadDecorations(): boolean {
+    return this._hadDecorations;
   }
 
   /**
@@ -62,19 +79,43 @@ export class SearchState {
     if (!newOptions) {
       return false;
     }
-    if (this._lastSearchOptions.caseSensitive !== newOptions.caseSensitive) {
+    const normalized = this._normalizeOptions(newOptions);
+    if (this._lastSearchOptions.caseSensitive !== normalized.caseSensitive) {
       return true;
     }
-    if (this._lastSearchOptions.regex !== newOptions.regex) {
+    if (this._lastSearchOptions.regex !== normalized.regex) {
       return true;
     }
-    if (this._lastSearchOptions.wholeWord !== newOptions.wholeWord) {
+    if (this._lastSearchOptions.wholeWord !== normalized.wholeWord) {
       return true;
     }
-    if (this._didDecorationOptionsChange(this._lastSearchOptions.decorations, newOptions.decorations)) {
+    if (this._didDecorationOptionsChange(this._lastSearchOptions.decorations, normalized.decorations)) {
       return true;
     }
     return false;
+  }
+
+  private _normalizeOptions(options: ISearchOptions): INormalizedSearchOptions {
+    return {
+      caseSensitive: !!options.caseSensitive,
+      regex: !!options.regex,
+      wholeWord: !!options.wholeWord,
+      incremental: !!options.incremental,
+      decorations: options.decorations ? { ...options.decorations } : undefined
+    };
+  }
+
+  private _toPublicOptions(options?: INormalizedSearchOptions): ISearchOptions | undefined {
+    if (!options) {
+      return undefined;
+    }
+    return {
+      caseSensitive: options.caseSensitive,
+      regex: options.regex,
+      wholeWord: options.wholeWord,
+      incremental: options.incremental,
+      decorations: options.decorations ? { ...options.decorations } : undefined
+    };
   }
 
   private _didDecorationOptionsChange(previous?: ISearchDecorationOptions, current?: ISearchDecorationOptions): boolean {
@@ -108,6 +149,13 @@ export class SearchState {
   }
 
   /**
+   * Whether decorations were disabled after previously being enabled.
+   */
+  public shouldClearDecorations(options?: ISearchOptions): boolean {
+    return this._hadDecorations && !options?.decorations;
+  }
+
+  /**
    * Clears the cached search term.
    */
   public clearCachedTerm(): void {
@@ -120,5 +168,6 @@ export class SearchState {
   public reset(): void {
     this._cachedSearchTerm = undefined;
     this._lastSearchOptions = undefined;
+    this._hadDecorations = false;
   }
 }
