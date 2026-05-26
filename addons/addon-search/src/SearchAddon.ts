@@ -79,6 +79,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   }
 
   public clearDecorations(retainCachedSearchTerm?: boolean): void {
+    this._highlightTimeout.clear();
     this._resultTracker.clearSelectedDecoration();
     this._decorationManager?.clearHighlightDecorations();
     this._resultTracker.clearResults();
