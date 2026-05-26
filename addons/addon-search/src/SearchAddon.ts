@@ -559,10 +559,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return;
     }
     this._disposeDecorations();
-    if (!terminal.element) {
-      return;
-    }
-    const canRenderDomBorders = !!terminal.element;
     const matchBorder = decorationOptions.matchBorder;
     const activeMatchBorder = decorationOptions.activeMatchBorder;
 
@@ -581,7 +577,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       if (!decoration) {
         continue;
       }
-      if (matchBorder && canRenderDomBorders) {
+      if (matchBorder) {
         this._matchDecorations.push(decoration.onRender(element => {
           element.style.outline = `1px solid ${matchBorder}`;
         }));
@@ -608,7 +604,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return;
     }
     const disposables: IDisposable[] = [activeDecoration];
-    if (activeMatchBorder && canRenderDomBorders) {
+    if (activeMatchBorder) {
       disposables.push(activeDecoration.onRender(element => {
         element.style.outline = `1px solid ${activeMatchBorder}`;
       }));
