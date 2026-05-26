@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { ISearchOptions } from '@xterm/addon-search';
+import type { ISearchDecorationOptions, ISearchOptions } from '@xterm/addon-search';
 
 /**
  * Manages search state including cached search terms, options tracking, and validation.
@@ -71,7 +71,25 @@ export class SearchState {
     if (this._lastSearchOptions.wholeWord !== newOptions.wholeWord) {
       return true;
     }
+    if (this._didDecorationOptionsChange(this._lastSearchOptions.decorations, newOptions.decorations)) {
+      return true;
+    }
     return false;
+  }
+
+  private _didDecorationOptionsChange(previous?: ISearchDecorationOptions, current?: ISearchDecorationOptions): boolean {
+    if (!previous && !current) {
+      return false;
+    }
+    if (!previous || !current) {
+      return true;
+    }
+    return previous.matchBackground !== current.matchBackground ||
+      previous.matchBorder !== current.matchBorder ||
+      previous.matchOverviewRuler !== current.matchOverviewRuler ||
+      previous.activeMatchBackground !== current.activeMatchBackground ||
+      previous.activeMatchBorder !== current.activeMatchBorder ||
+      previous.activeMatchColorOverviewRuler !== current.activeMatchColorOverviewRuler;
   }
 
   /**
