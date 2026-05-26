@@ -376,17 +376,10 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       return '';
     }
     const textParts: string[] = [];
-    const cell = terminal.buffer.active.getNullCell();
+    const blankLine = ' '.repeat(cols);
     for (const row of rows) {
       const line = terminal.buffer.active.getLine(row);
-      for (let x = 0; x < cols; x++) {
-        const loadedCell = line?.getCell(x, cell);
-        const width = loadedCell ? loadedCell.getWidth() : 1;
-        if (width === 0) {
-          continue;
-        }
-        textParts.push(loadedCell?.getChars() || ' ');
-      }
+      textParts.push(line ? line.translateToString(false, 0, cols) : blankLine);
     }
     return textParts.join('');
   }
