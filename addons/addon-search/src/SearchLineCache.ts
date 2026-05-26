@@ -15,7 +15,11 @@ export type LineCacheEntry = [
   /**
    * The offsets where each line starts when the entry describes a wrapped line.
    */
-  lineOffsets: number[]
+  lineOffsets: number[],
+  /**
+   * Lowercased line text for case-insensitive searches, lazily populated.
+   */
+  lineAsLower?: string
 ];
 
 /**

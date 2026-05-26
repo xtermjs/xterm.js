@@ -292,7 +292,17 @@ export class SearchEngine {
     let searchStringLine = stringLine;
     if (!searchOptions.regex) {
       searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
-      searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
+      if (searchOptions.caseSensitive) {
+        searchStringLine = stringLine;
+      } else {
+        let lowerLine = cache[2];
+        if (!lowerLine) {
+          lowerLine = stringLine.toLowerCase();
+          cache[2] = lowerLine;
+          this._lineCache.setLineInCache(row, cache);
+        }
+        searchStringLine = lowerLine;
+      }
     }
 
     let resultIndex = -1;
