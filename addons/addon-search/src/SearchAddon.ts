@@ -99,7 +99,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       const nextIndex = this._resolveResultIndex(matches, term, searchOptions, direction, searchKey);
       const activeMatch = matches[nextIndex];
       terminal.select(activeMatch.startX, activeMatch.startY, activeMatch.cellLength);
-      terminal.scrollToLine(activeMatch.startY);
+      this._revealResult(activeMatch);
       this._lastResolvedNavigation = {
         searchKey,
         matches,
@@ -537,6 +537,20 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       this._selectionIndexCache.set(matches, byRow);
     }
     return byRow.get(selection.start.y)?.get(selection.start.x) ?? -1;
+  }
+
+  private _revealResult(match: IMatch): void {
+    const terminal = this._terminal;
+    if (!terminal) {
+      return;
+    }
+    const viewportTop = terminal.buffer.active.viewportY;
+    const viewportBottom = viewportTop + terminal.rows - 1;
+    if (match.startY >= viewportTop && match.endY <= viewportBottom) {
+      return;
+    }
+    const middleY = Math.floor((match.startY + match.endY) / 2);
+    terminal.scrollToLine(Math.max(0, middleY - Math.floor(terminal.rows / 2)));
   }
 
   private _refreshDecorations(matches: IMatch[], decorationOptions: ISearchDecorationOptions, activeMatch: IMatch | undefined): void {

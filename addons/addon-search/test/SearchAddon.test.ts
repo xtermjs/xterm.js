@@ -45,6 +45,53 @@ test.describe('Search Tests', () => {
     deepStrictEqual(await ctx.page.evaluate(`window.search.findNext('$^1_3{}test$#')`), true);
     deepStrictEqual(await ctx.proxy.getSelection(), '$^1_3{}test$#');
   });
+  test('Search should not scroll when match is already in viewport', async () => {
+    let dataString = '';
+    for (let i = 0; i < 100; i++) {
+      if (i === 40) {
+        dataString += `line ${i} needle-in-view`;
+      } else {
+        dataString += `line ${i}`;
+      }
+      dataString += '\n\r';
+    }
+    await ctx.proxy.write(dataString);
+    await ctx.page.evaluate('window.term.scrollToLine(35)');
+    strictEqual(await ctx.page.evaluate('window.term.buffer.active.viewportY'), 35);
+
+    strictEqual(await ctx.page.evaluate(`window.search.findNext('needle-in-view')`), true);
+    deepStrictEqual(await ctx.proxy.getSelection(), 'needle-in-view');
+    strictEqual(await ctx.page.evaluate('window.term.buffer.active.viewportY'), 35);
+  });
+  test('Search should center the match when it is outside the viewport', async () => {
+    let dataString = '';
+    for (let i = 0; i < 100; i++) {
+      if (i === 60) {
+        dataString += `line ${i} needle-center`;
+      } else {
+        dataString += `line ${i}`;
+      }
+      dataString += '\n\r';
+    }
+    await ctx.proxy.write(dataString);
+    await ctx.page.evaluate('window.term.scrollToLine(0)');
+    strictEqual(await ctx.page.evaluate('window.term.buffer.active.viewportY'), 0);
+
+    strictEqual(await ctx.page.evaluate(`window.search.findNext('needle-center')`), true);
+    deepStrictEqual(await ctx.proxy.getSelection(), 'needle-center');
+    deepStrictEqual(await ctx.page.evaluate(`
+      const viewportY = window.term.buffer.active.viewportY;
+      const rows = window.term.rows;
+      const selection = window.term.getSelectionPosition();
+      return {
+        viewportY,
+        expectedViewportY: selection.start.y - Math.floor(rows / 2)
+      };
+    `), {
+      viewportY: 48,
+      expectedViewportY: 48
+    });
+  });
   test('Incremental Find Previous', async () => {
     await ctx.proxy.writeln(`package.jsonc\n`);
     await ctx.proxy.write('package.json pack package.lock');
