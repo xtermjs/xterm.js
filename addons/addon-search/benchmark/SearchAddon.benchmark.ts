@@ -87,6 +87,55 @@ perfContext('SearchAddon API on real-world terminal content', () => {
           foundCount++;
         }
       }
+      if (foundCount !== Constants.NAVIGATION_ITERATIONS) {
+        throw new Error(`Expected ${Constants.NAVIGATION_ITERATIONS} matches, got ${foundCount}`);
+      }
+      return { payloadSize: Constants.NAVIGATION_ITERATIONS, foundCount };
+    }, { fork: false }).showAverageRuntime();
+  });
+
+  perfContext('findNext/no match full scan', () => {
+    let terminal: TestTerminal;
+    let search: SearchAddon;
+    before(() => {
+      terminal = new TestTerminal({ cols: Constants.COLS, rows: Constants.ROWS, scrollback: Constants.SCROLLBACK });
+      search = new SearchAddon();
+      search.activate(terminal);
+      terminal.writeSync(bufferContent);
+    });
+    new RuntimeCase('', () => {
+      let foundCount = 0;
+      for (let i = 0; i < Constants.NAVIGATION_ITERATIONS; i++) {
+        if (search.findNext('zzzznotfoundzzzz')) {
+          foundCount++;
+        }
+      }
+      if (foundCount !== 0) {
+        throw new Error(`Expected 0 matches, got ${foundCount}`);
+      }
+      return { payloadSize: Constants.NAVIGATION_ITERATIONS, foundCount };
+    }, { fork: false }).showAverageRuntime();
+  });
+
+  perfContext('findNext/case insensitive navigation', () => {
+    let terminal: TestTerminal;
+    let search: SearchAddon;
+    before(() => {
+      terminal = new TestTerminal({ cols: Constants.COLS, rows: Constants.ROWS, scrollback: Constants.SCROLLBACK });
+      search = new SearchAddon();
+      search.activate(terminal);
+      terminal.writeSync(bufferContent);
+    });
+    new RuntimeCase('', () => {
+      let foundCount = 0;
+      for (let i = 0; i < Constants.NAVIGATION_ITERATIONS; i++) {
+        if (search.findNext('OPENCV', { caseSensitive: false })) {
+          foundCount++;
+        }
+      }
+      if (foundCount !== Constants.NAVIGATION_ITERATIONS) {
+        throw new Error(`Expected ${Constants.NAVIGATION_ITERATIONS} matches, got ${foundCount}`);
+      }
       return { payloadSize: Constants.NAVIGATION_ITERATIONS, foundCount };
     }, { fork: false }).showAverageRuntime();
   });
@@ -106,6 +155,9 @@ perfContext('SearchAddon API on real-world terminal content', () => {
         if (search.findNext('https://example\\.internal/run/\\d+/details\\?source=terminal-search', { regex: true })) {
           foundCount++;
         }
+      }
+      if (foundCount !== Constants.NAVIGATION_ITERATIONS) {
+        throw new Error(`Expected ${Constants.NAVIGATION_ITERATIONS} matches, got ${foundCount}`);
       }
       return { payloadSize: Constants.NAVIGATION_ITERATIONS, foundCount };
     }, { fork: false }).showAverageRuntime();
@@ -146,11 +198,13 @@ perfContext('SearchAddon API on real-world terminal content', () => {
     new RuntimeCase('', () => {
       let foundCount = 0;
       for (let i = 0; i < Constants.DECORATION_REFRESH_ITERATIONS; i++) {
-        search.clearDecorations();
         const term = i % 2 === 0 ? 'WARN' : 'ERROR';
         if (search.findNext(term, DECORATION_OPTIONS)) {
           foundCount++;
         }
+      }
+      if (foundCount !== Constants.DECORATION_REFRESH_ITERATIONS) {
+        throw new Error(`Expected ${Constants.DECORATION_REFRESH_ITERATIONS} matches, got ${foundCount}`);
       }
       return { payloadSize: Constants.DECORATION_REFRESH_ITERATIONS, foundCount };
     }, { fork: false }).showAverageRuntime();
