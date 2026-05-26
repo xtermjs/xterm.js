@@ -105,8 +105,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
     this._onBeforeSearch.fire();
 
-    this._state.lastSearchOptions = searchOptions;
-
     if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
       this._highlightAllMatches(term, searchOptions!);
     }
@@ -114,6 +112,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const found = this._findNextAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._state.cachedSearchTerm = term;
+    this._state.lastSearchOptions = searchOptions;
 
     this._onAfterSearch.fire();
 
@@ -184,8 +183,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
     this._onBeforeSearch.fire();
 
-    this._state.lastSearchOptions = searchOptions;
-
     if (this._state.shouldUpdateHighlighting(term, searchOptions)) {
       this._highlightAllMatches(term, searchOptions!);
     }
@@ -193,6 +190,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const found = this._findPreviousAndSelect(term, searchOptions, internalSearchOptions);
     this._fireResults(searchOptions);
     this._state.cachedSearchTerm = term;
+    this._state.lastSearchOptions = searchOptions;
 
     this._onAfterSearch.fire();
 
