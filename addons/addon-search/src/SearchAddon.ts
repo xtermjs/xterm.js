@@ -10,6 +10,7 @@ import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 export class SearchAddon extends Disposable implements ITerminalAddon, ISearchApi {
   private static readonly _defaultHighlightLimit = 1000;
+  private static readonly _maxMatchCacheEntries = 16;
 
   private _terminal: Terminal | undefined;
 
@@ -22,6 +23,8 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private readonly _onDidChangeResults = this._register(new Emitter<ISearchResultChangeEvent>());
   public readonly onDidChangeResults: IEvent<ISearchResultChangeEvent> = this._onDidChangeResults.event;
 
+  private readonly _bufferUpdateListener = this._register(new MutableDisposable<IDisposable>());
+  private readonly _resizeListener = this._register(new MutableDisposable<IDisposable>());
   private readonly _resultsUpdateListener = this._register(new MutableDisposable<IDisposable>());
 
   private readonly _matchDecorations: IDisposable[] = [];
@@ -34,6 +37,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _lastSearchKey: string | undefined;
   private _resultCount = 0;
   private _resultIndex = -1;
+  private readonly _matchCache = new Map<string, IMatch[] | undefined>();
+  private _logicalLineCache: ILogicalLineCache | undefined;
+  private readonly _selectionIndexCache = new WeakMap<IMatch[], Map<string, number>>();
 
   constructor(options?: Partial<ISearchAddonOptions>) {
     super();
@@ -44,6 +50,13 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
+    this._clearMatchCache();
+    this._bufferUpdateListener.value = terminal.onWriteParsed(() => {
+      this._clearMatchCache();
+    });
+    this._resizeListener.value = terminal.onResize(() => {
+      this._clearMatchCache();
+    });
   }
 
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
@@ -74,7 +87,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         return false;
       }
 
-      const matches = this._findAllMatches(term, searchOptions);
+      const matches = this._getMatches(term, searchOptions);
       if (matches === undefined || matches.length === 0) {
         this._clearStateOnFailedSearch(term, searchOptions, direction);
         return false;
@@ -124,6 +137,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       this._onDidChangeResults.fire({ resultCount: 0, resultIndex: -1 });
       return;
     }
+    if (
+      this._resultCount === 0 &&
+      this._resultIndex === -1 &&
+      this._lastSearchTerm === undefined &&
+      this._lastSearchOptions === undefined &&
+      this._lastSearchKey === undefined &&
+      this._matchDecorations.length === 0 &&
+      !this._activeDecoration.value &&
+      !this._resultsUpdateListener.value
+    ) {
+      return;
+    }
     this._disposeDecorations();
     this._resultsUpdateListener.clear();
     this._resultCount = 0;
@@ -151,7 +176,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (!terminal || !this._lastSearchTerm || !this._lastSearchOptions?.decorations) {
       return;
     }
-    const matches = this._findAllMatches(this._lastSearchTerm, this._lastSearchOptions);
+    const matches = this._getMatches(this._lastSearchTerm, this._lastSearchOptions);
     if (!matches || matches.length === 0) {
       this._disposeDecorations();
       this._resultCount = 0;
@@ -172,67 +197,107 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (!terminal) {
       return undefined;
     }
-    const regex = this._buildRegex(term, searchOptions);
-    if (!regex) {
+    const isRegex = !!searchOptions?.regex;
+    const regex = isRegex ? this._buildRegex(term, searchOptions) : undefined;
+    if (isRegex && !regex) {
       return undefined;
     }
+    const normalizedTerm = searchOptions?.caseSensitive ? term : term.toLowerCase();
     const matches: IMatch[] = [];
-    const buffer = terminal.buffer.active;
     const cols = terminal.cols;
-
-    for (let row = 0; row < buffer.length; row++) {
-      const firstLine = buffer.getLine(row);
-      if (!firstLine || firstLine.isWrapped) {
-        continue;
-      }
-
-      const lineRows: number[] = [row];
-      let nextRow = row + 1;
-      while (nextRow < buffer.length) {
-        const wrappedLine = buffer.getLine(nextRow);
-        if (!wrappedLine?.isWrapped) {
-          break;
+    const logicalLines = this._getLogicalLines(cols);
+    for (const logicalLine of logicalLines) {
+      let matchedOffsets: number[] | undefined;
+      if (isRegex) {
+        regex!.lastIndex = 0;
+        while (true) {
+          const match = regex!.exec(logicalLine.text);
+          if (!match) {
+            break;
+          }
+          if (match[0].length === 0) {
+            regex!.lastIndex++;
+            continue;
+          }
+          const startOffset = match.index;
+          const endOffset = startOffset + match[0].length;
+          if (!this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, searchOptions)) {
+            continue;
+          }
+          matchedOffsets ??= [];
+          matchedOffsets.push(startOffset, endOffset);
         }
-        lineRows.push(nextRow);
-        nextRow++;
-      }
-
-      const logicalLine = this._buildLogicalLine(lineRows, cols);
-      regex.lastIndex = 0;
-      while (true) {
-        const match = regex.exec(logicalLine.text);
-        if (!match) {
-          break;
-        }
-        if (match[0].length === 0) {
-          regex.lastIndex++;
-          continue;
-        }
-        const startOffset = match.index;
-        const endOffset = startOffset + match[0].length;
-        if (!this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, searchOptions)) {
-          continue;
-        }
-        const start = logicalLine.offsetToPoint[startOffset];
-        const end = logicalLine.offsetToPoint[endOffset];
-        const startLinear = logicalLine.offsetToLinear[startOffset];
-        const endLinear = logicalLine.offsetToLinear[endOffset];
-        matches.push({
-          startX: start.x,
-          startY: start.y,
-          endX: end.x,
-          endY: end.y,
-          cellLength: Math.max(1, endLinear - startLinear)
-        });
-        if (matches.length >= this._highlightLimit) {
-          return matches;
+      } else {
+        const haystack = searchOptions?.caseSensitive ? logicalLine.text : logicalLine.text.toLowerCase();
+        let searchIndex = 0;
+        while (searchIndex < haystack.length) {
+          const startOffset = haystack.indexOf(normalizedTerm, searchIndex);
+          if (startOffset === -1) {
+            break;
+          }
+          const endOffset = startOffset + term.length;
+          if (this._isWholeWordMatch(logicalLine.text, startOffset, endOffset, searchOptions)) {
+            matchedOffsets ??= [];
+            matchedOffsets.push(startOffset, endOffset);
+          }
+          searchIndex = startOffset + 1;
         }
       }
-
-      row = lineRows[lineRows.length - 1];
+      if (matchedOffsets && matchedOffsets.length > 0) {
+        if (!logicalLine.offsetToPoint || !logicalLine.offsetToLinear) {
+          const offsets = this._buildLogicalLineOffsets(logicalLine.rows, cols);
+          logicalLine.offsetToPoint = offsets.offsetToPoint;
+          logicalLine.offsetToLinear = offsets.offsetToLinear;
+        }
+        const offsetToPoint = logicalLine.offsetToPoint;
+        const offsetToLinear = logicalLine.offsetToLinear;
+        for (let i = 0; i < matchedOffsets.length; i += 2) {
+          const startOffset = matchedOffsets[i];
+          const endOffset = matchedOffsets[i + 1];
+          const start = offsetToPoint[startOffset];
+          const end = offsetToPoint[endOffset];
+          const startLinear = offsetToLinear[startOffset];
+          const endLinear = offsetToLinear[endOffset];
+          matches.push({
+            startX: start.x,
+            startY: start.y,
+            endX: end.x,
+            endY: end.y,
+            cellLength: Math.max(1, endLinear - startLinear)
+          });
+          if (matches.length >= this._highlightLimit) {
+            return matches;
+          }
+        }
+      }
     }
 
     return matches;
+  }
+
+  private _getMatches(term: string, searchOptions?: ISearchOptions): IMatch[] | undefined {
+    const terminal = this._terminal;
+    if (!terminal) {
+      return undefined;
+    }
+    const key = `${terminal.cols}|${this._createMatchKey(term, searchOptions)}`;
+    if (this._matchCache.has(key)) {
+      return this._matchCache.get(key);
+    }
+    const matches = this._findAllMatches(term, searchOptions);
+    if (!this._matchCache.has(key) && this._matchCache.size >= SearchAddon._maxMatchCacheEntries) {
+      const firstKey = this._matchCache.keys().next().value;
+      if (firstKey !== undefined) {
+        this._matchCache.delete(firstKey);
+      }
+    }
+    this._matchCache.set(key, matches);
+    return matches;
+  }
+
+  private _clearMatchCache(): void {
+    this._matchCache.clear();
+    this._logicalLineCache = undefined;
   }
 
   private _buildRegex(term: string, searchOptions?: ISearchOptions): RegExp | undefined {
@@ -247,17 +312,71 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return new RegExp(escapeRegExp(term), flags);
   }
 
-  private _buildLogicalLine(rows: number[], cols: number): ILogicalLine {
+  private _getLogicalLines(cols: number): ILogicalLineCacheEntry[] {
+    if (this._logicalLineCache && this._logicalLineCache.cols === cols) {
+      return this._logicalLineCache.entries;
+    }
+    const terminal = this._terminal;
+    if (!terminal) {
+      return [];
+    }
+    const entries: ILogicalLineCacheEntry[] = [];
+    const buffer = terminal.buffer.active;
+    for (let row = 0; row < buffer.length; row++) {
+      const firstLine = buffer.getLine(row);
+      if (!firstLine || firstLine.isWrapped) {
+        continue;
+      }
+      const rows: number[] = [row];
+      let nextRow = row + 1;
+      while (nextRow < buffer.length) {
+        const wrappedLine = buffer.getLine(nextRow);
+        if (!wrappedLine?.isWrapped) {
+          break;
+        }
+        rows.push(nextRow);
+        nextRow++;
+      }
+      entries.push({
+        rows,
+        text: this._buildLogicalLineText(rows, cols)
+      });
+      row = rows[rows.length - 1];
+    }
+    this._logicalLineCache = { cols, entries };
+    return entries;
+  }
+
+  private _buildLogicalLineText(rows: number[], cols: number): string {
+    const terminal = this._terminal;
+    if (!terminal) {
+      return '';
+    }
+    const textParts: string[] = [];
+    const cell = terminal.buffer.active.getNullCell();
+    for (const row of rows) {
+      const line = terminal.buffer.active.getLine(row);
+      for (let x = 0; x < cols; x++) {
+        const loadedCell = line?.getCell(x, cell);
+        const width = loadedCell ? loadedCell.getWidth() : 1;
+        if (width === 0) {
+          continue;
+        }
+        textParts.push(loadedCell?.getChars() || ' ');
+      }
+    }
+    return textParts.join('');
+  }
+
+  private _buildLogicalLineOffsets(rows: number[], cols: number): ILogicalLineOffsets {
     const terminal = this._terminal;
     if (!terminal) {
       return {
-        text: '',
         offsetToPoint: [{ x: 0, y: rows[0] ?? 0 }],
         offsetToLinear: [0]
       };
     }
 
-    const textParts: string[] = [];
     const offsetToPoint: IPoint[] = [];
     const offsetToLinear: number[] = [];
     let currentOffset = 0;
@@ -275,21 +394,19 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
           continue;
         }
         const chars = loadedCell?.getChars() || ' ';
-        textParts.push(chars);
         const codeUnitCount = chars.length;
         for (let i = 1; i < codeUnitCount; i++) {
           offsetToPoint[currentOffset + i] = this._linearToPoint(rows, cols, linearOffset);
           offsetToLinear[currentOffset + i] = linearOffset;
         }
         currentOffset += codeUnitCount;
-        linearOffset += Math.max(1, width);
+        linearOffset += width;
         offsetToPoint[currentOffset] = this._linearToPoint(rows, cols, linearOffset);
         offsetToLinear[currentOffset] = linearOffset;
       }
     }
 
     return {
-      text: textParts.join(''),
       offsetToPoint,
       offsetToLinear
     };
@@ -344,14 +461,15 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (!selection) {
       return -1;
     }
-    const x = selection.start.x;
-    const y = selection.start.y;
-    for (let i = 0; i < matches.length; i++) {
-      if (matches[i].startX === x && matches[i].startY === y) {
-        return i;
+    let indexMap = this._selectionIndexCache.get(matches);
+    if (!indexMap) {
+      indexMap = new Map<string, number>();
+      for (let i = 0; i < matches.length; i++) {
+        indexMap.set(`${matches[i].startY}:${matches[i].startX}`, i);
       }
+      this._selectionIndexCache.set(matches, indexMap);
     }
-    return -1;
+    return indexMap.get(`${selection.start.y}:${selection.start.x}`) ?? -1;
   }
 
   private _refreshDecorations(matches: IMatch[], decorationOptions: ISearchDecorationOptions, activeMatch: IMatch | undefined): void {
@@ -425,18 +543,31 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   }
 
   private _createSearchKey(term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous'): string {
-    return JSON.stringify({
-      term,
-      direction,
-      caseSensitive: !!searchOptions?.caseSensitive,
-      regex: !!searchOptions?.regex,
-      wholeWord: !!searchOptions?.wholeWord
-    });
+    return `${this._createMatchKey(term, searchOptions)}|${direction}`;
+  }
+
+  private _createMatchKey(term: string, searchOptions: ISearchOptions | undefined): string {
+    const flags =
+      (searchOptions?.caseSensitive ? 1 : 0) |
+      (searchOptions?.regex ? 2 : 0) |
+      (searchOptions?.wholeWord ? 4 : 0);
+    return `${term}|${flags}`;
   }
 }
 
-interface ILogicalLine {
+interface ILogicalLineCacheEntry {
+  rows: number[];
   text: string;
+  offsetToPoint?: IPoint[];
+  offsetToLinear?: number[];
+}
+
+interface ILogicalLineCache {
+  cols: number;
+  entries: ILogicalLineCacheEntry[];
+}
+
+interface ILogicalLineOffsets {
   offsetToPoint: IPoint[];
   offsetToLinear: number[];
 }
@@ -459,5 +590,14 @@ function escapeRegExp(value: string): string {
 }
 
 function isWordChar(value: string): boolean {
-  return /^[0-9A-Za-z_]$/.test(value);
+  if (value.length === 0) {
+    return false;
+  }
+  const code = value.charCodeAt(0);
+  return (
+    (code >= 48 && code <= 57) || // 0-9
+    (code >= 65 && code <= 90) || // A-Z
+    (code >= 97 && code <= 122) || // a-z
+    code === 95 // _
+  );
 }
