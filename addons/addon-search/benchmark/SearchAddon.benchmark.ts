@@ -186,6 +186,52 @@ perfContext('SearchAddon API on real-world terminal content', () => {
     }, { fork: false }).showAverageRuntime();
   });
 
+  perfContext('findNext/wholeWord dense-punctuation', () => {
+    let terminal: TestTerminal;
+    let search: SearchAddon;
+    before(() => {
+      terminal = new TestTerminal({ cols: Constants.COLS, rows: Constants.ROWS, scrollback: Constants.SCROLLBACK });
+      search = new SearchAddon();
+      search.activate(terminal);
+      terminal.writeSync(bufferContent);
+    });
+    new RuntimeCase('', () => {
+      let foundCount = 0;
+      for (let i = 0; i < Constants.NAVIGATION_ITERATIONS; i++) {
+        if (search.findNext('error', { wholeWord: true })) {
+          foundCount++;
+        }
+      }
+      if (foundCount !== Constants.NAVIGATION_ITERATIONS) {
+        throw new Error(`Expected ${Constants.NAVIGATION_ITERATIONS} matches, got ${foundCount}`);
+      }
+      return { payloadSize: Constants.NAVIGATION_ITERATIONS, foundCount };
+    }, { fork: false }).showAverageRuntime();
+  });
+
+  perfContext('findPrevious/regex wholeWord reverse', () => {
+    let terminal: TestTerminal;
+    let search: SearchAddon;
+    before(() => {
+      terminal = new TestTerminal({ cols: Constants.COLS, rows: Constants.ROWS, scrollback: Constants.SCROLLBACK });
+      search = new SearchAddon();
+      search.activate(terminal);
+      terminal.writeSync(bufferContent);
+    });
+    new RuntimeCase('', () => {
+      let foundCount = 0;
+      for (let i = 0; i < Constants.NAVIGATION_ITERATIONS; i++) {
+        if (search.findPrevious('error', { regex: true, wholeWord: true })) {
+          foundCount++;
+        }
+      }
+      if (foundCount !== Constants.NAVIGATION_ITERATIONS) {
+        throw new Error(`Expected ${Constants.NAVIGATION_ITERATIONS} matches, got ${foundCount}`);
+      }
+      return { payloadSize: Constants.NAVIGATION_ITERATIONS, foundCount };
+    }, { fork: false }).showAverageRuntime();
+  });
+
   perfContext('findNext/decorations refresh', () => {
     let terminal: TestTerminal;
     let search: SearchAddon;
