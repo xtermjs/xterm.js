@@ -17,7 +17,8 @@ declare module '@xterm/addon-search' {
 
     /**
      * Whether to search for a whole word, the result is only valid if it's
-     * surrounded in "non-word" characters such as `_`, `(`, `)` or space.
+     * surrounded by start/end of line or non-word separators such as whitespace
+     * and punctuation (for example `(`, `)`, or space).
      */
     wholeWord?: boolean;
 
@@ -42,7 +43,7 @@ declare module '@xterm/addon-search' {
   /**
    * Options for showing decorations when searching.
    */
-  interface ISearchDecorationOptions {
+  export interface ISearchDecorationOptions {
     /**
      * The background color of a match, this must use #RRGGBB format.
      */
@@ -162,7 +163,8 @@ declare module '@xterm/addon-search' {
     readonly onBeforeSearch: IEvent<void>;
 
     /**
-     * When decorations are enabled, fires when the search results change.
+     * When decorations are enabled, fires after `findNext`/`findPrevious` when tracked
+     * search results change. Does not fire from `clearDecorations()`.
      */
     readonly onDidChangeResults: IEvent<ISearchResultChangeEvent>;
   }
