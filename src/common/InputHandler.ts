@@ -2924,17 +2924,19 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 10 | Full-screen mode | fullscreenWin | #P[No default implementation.] |
    * | 11 | Report window state | getWinState | #P[No default implementation.] |
    * | 13 | Report window position | getWinPosition | #P[No default implementation.] |
-   * | 14 | Report text area size in pixels (`CSI 4 ; height ; width t`) | getWinSizePixels | #Y |
+   * | 14 | Report text area size in pixels (`CSI 4 ; height ; width t`) | getWinSizePixels | #P[Browser only; requires render service.] |
    * | 14 ; 2 | Report window size in pixels | getWinSizePixels | #N |
    * | 15 | Report screen size in pixels | getScreenSizePixels | #P[No default implementation.] |
-   * | 16 | Report cell size in pixels (`CSI 6 ; height ; width t`) | getCellSizePixels | #Y |
+   * | 16 | Report cell size in pixels (`CSI 6 ; height ; width t`) | getCellSizePixels | #P[Browser only; requires render service.] |
    * | 18 | Report text area size in characters (`CSI 8 ; height ; width t`) | getWinSizeChars | #Y |
    * | 19 | Report screen size in characters | getScreenSizeChars | #P[No default implementation.] |
    * | 20 | Report icon title (OSC) | getIconTitle | #P[No default implementation.] |
    * | 21 | Report window title (OSC) | getWinTitle | #P[No default implementation.] |
    * | 22 | Push title(s) on stack | pushTitle | #Y |
    * | 23 | Pop title(s) from stack | popTitle | #Y |
-   * | >= 24 | DECSLPP / DECCOLM gate | setWinLines | #P[Enables DECCOLM (mode 3) only; DECSLPP not implemented.] |
+   * | >= 24 | Resize to Ps lines (DECSLPP) | setWinLines | #N |
+   *
+   * Note: `setWinLines` also gates DECCOLM (`CSI ? 3 h/l`), see DECSET mode 3.
    */
   public windowOptions(params: IParams): boolean {
     if (!paramToWindowOption(params.params[0], this._optionsService.rawOptions.windowOptions)) {
