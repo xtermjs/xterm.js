@@ -43,6 +43,7 @@ export default tseslint.config(
         singleline: { delimiter: 'comma', requireLast: false }
       }],
       '@stylistic/type-annotation-spacing': 'warn',
+      '@stylistic/space-unary-ops': 'warn',
 
       '@typescript-eslint/array-type': ['warn', { default: 'array', readonly: 'generic' }],
       '@typescript-eslint/consistent-type-assertions': 'warn',
