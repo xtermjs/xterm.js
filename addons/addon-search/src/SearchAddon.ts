@@ -379,7 +379,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     const blankLine = ' '.repeat(cols);
     for (const row of rows) {
       const line = terminal.buffer.active.getLine(row);
-      textParts.push(line ? line.translateToString(false, 0, cols) : blankLine);
+      textParts.push(line ? line.translateToString() : blankLine);
     }
     return textParts.join('');
   }
