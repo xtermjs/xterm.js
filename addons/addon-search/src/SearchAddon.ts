@@ -474,14 +474,19 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
   private _resolveResultIndex(matches: IMatch[], term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous', currentSearchKey: string): number {
     const previousNavigation = this._lastResolvedNavigation;
+    const selection = this._terminal?.getSelectionPosition();
     if (
       previousNavigation &&
       previousNavigation.searchKey === currentSearchKey &&
       previousNavigation.matches === matches
     ) {
-      const selection = this._terminal?.getSelectionPosition();
+      if (!selection) {
+        if (direction === 'next') {
+          return (previousNavigation.index + 1) % matches.length;
+        }
+        return (previousNavigation.index + matches.length - 1) % matches.length;
+      }
       if (
-        selection &&
         selection.start.x === previousNavigation.selectionStartX &&
         selection.start.y === previousNavigation.selectionStartY &&
         previousNavigation.index >= 0 &&
@@ -493,7 +498,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
         return (previousNavigation.index + matches.length - 1) % matches.length;
       }
     }
-    const currentSelectionIndex = this._findIndexFromSelection(matches);
+    const currentSelectionIndex = this._findIndexFromSelection(matches, selection);
     let isIncrementalUpdate = false;
     if (searchOptions?.incremental && this._lastSearchKey !== undefined) {
       isIncrementalUpdate = this._lastSearchKey !== currentSearchKey;
@@ -516,9 +521,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     return matches.length - 1;
   }
 
-  private _findIndexFromSelection(matches: IMatch[]): number {
-    const terminal = this._terminal;
-    const selection = terminal?.getSelectionPosition();
+  private _findIndexFromSelection(matches: IMatch[], selection: ReturnType<Terminal['getSelectionPosition']> | undefined = this._terminal?.getSelectionPosition()): number {
     if (!selection) {
       return -1;
     }
