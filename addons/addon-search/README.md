@@ -20,4 +20,11 @@ terminal.loadAddon(searchAddon);
 searchAddon.findNext('foo');
 ```
 
+### Search options
+
+- `decorations`: Highlight all matches and fire `onDidChangeResults` with result counts.
+- `highlightLimit` (constructor option): Caps how many matches are tracked/highlighted (default `1000`).
+- `incremental`: Expands the current selection when the term still matches.
+- `wholeWord`, `regex`, `caseSensitive`: Control match semantics.
+
 See the full [API](https://github.com/xtermjs/xterm.js/blob/master/addons/addon-search/typings/addon-search.d.ts) for more advanced usage.
