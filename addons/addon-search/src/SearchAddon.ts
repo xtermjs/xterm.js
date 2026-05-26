@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { Terminal, IDisposable, ITerminalAddon } from '@xterm/xterm';
+import type { Terminal, IDisposable, ITerminalAddon, IDecoration } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi, ISearchOptions, ISearchAddonOptions, ISearchResultChangeEvent, ISearchDecorationOptions } from '@xterm/addon-search';
 import { Emitter, type IEvent } from 'common/Event';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
@@ -11,6 +11,7 @@ import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 export class SearchAddon extends Disposable implements ITerminalAddon, ISearchApi {
   private static readonly _defaultHighlightLimit = 1000;
   private static readonly _maxMatchCacheEntries = 16;
+  private static readonly _maxDecorationCacheEntries = 2;
 
   private _terminal: Terminal | undefined;
 
@@ -27,7 +28,9 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private readonly _resizeListener = this._register(new MutableDisposable<IDisposable>());
   private readonly _resultsUpdateListener = this._register(new MutableDisposable<IDisposable>());
 
-  private readonly _matchDecorations: IDisposable[] = [];
+  private readonly _matchDecorationSetByMatches = new WeakMap<IMatch[], IMatchDecorationSet>();
+  private readonly _matchDecorationSetOrder: IMatchDecorationSet[] = [];
+  private _activeMatchDecorationSet: IMatchDecorationSet | undefined;
   private readonly _activeDecoration = this._register(new MutableDisposable<IDisposable>());
 
   private _highlightLimit = SearchAddon._defaultHighlightLimit;
@@ -154,7 +157,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       this._lastSearchTerm === undefined &&
       this._lastSearchOptions === undefined &&
       this._lastSearchKey === undefined &&
-      this._matchDecorations.length === 0 &&
+      this._matchDecorationSetOrder.length === 0 &&
       !this._activeDecoration.value &&
       !this._resultsUpdateListener.value
     ) {
@@ -335,6 +338,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     this._matchCacheOrder.length = 0;
     this._logicalLineCache = undefined;
     this._lastResolvedNavigation = undefined;
+    this._disposeMatchDecorationSets();
   }
 
   private _buildRegex(term: string, searchOptions?: ISearchOptions): RegExp | undefined {
@@ -561,37 +565,18 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     if (!terminal) {
       return;
     }
-    this._disposeDecorations();
-    const matchBorder = decorationOptions.matchBorder;
-    const activeMatchBorder = decorationOptions.activeMatchBorder;
-
-    const cursorLine = terminal.buffer.active.baseY + terminal.buffer.active.cursorY;
-    for (const match of matches) {
-      const marker = terminal.registerMarker(match.startY - cursorLine);
-      const width = Math.max(1, Math.min(match.cellLength, terminal.cols - match.startX));
-      const decoration = terminal.registerDecoration({
-        marker,
-        x: match.startX,
-        width,
-        backgroundColor: decorationOptions.matchBackground,
-        layer: 'bottom',
-        overviewRulerOptions: decorationOptions.matchOverviewRuler ? { color: decorationOptions.matchOverviewRuler } : undefined
-      });
-      if (!decoration) {
-        continue;
-      }
-      if (matchBorder) {
-        this._matchDecorations.push(decoration.onRender(element => {
-          element.style.outline = `1px solid ${matchBorder}`;
-        }));
-      }
-      this._matchDecorations.push(decoration);
+    const decorationSet = this._getOrCreateMatchDecorationSet(matches, decorationOptions, terminal);
+    if (this._activeMatchDecorationSet !== decorationSet) {
+      this._setMatchDecorationSetActive(this._activeMatchDecorationSet, false);
+      this._activeMatchDecorationSet = decorationSet;
+      this._setMatchDecorationSetActive(decorationSet, true);
     }
-
+    this._activeDecoration.clear();
+    const activeMatchBorder = decorationOptions.activeMatchBorder;
     if (!activeMatch) {
-      this._activeDecoration.clear();
       return;
     }
+    const cursorLine = terminal.buffer.active.baseY + terminal.buffer.active.cursorY;
     const marker = terminal.registerMarker(activeMatch.startY - cursorLine);
     const width = Math.max(1, Math.min(activeMatch.cellLength, terminal.cols - activeMatch.startX));
     const activeDecoration = terminal.registerDecoration({
@@ -619,11 +604,144 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
     });
   }
 
+  private _getOrCreateMatchDecorationSet(matches: IMatch[], decorationOptions: ISearchDecorationOptions, terminal: Terminal): IMatchDecorationSet {
+    const optionsKey = this._createDecorationOptionsKey(decorationOptions);
+    const existing = this._matchDecorationSetByMatches.get(matches);
+    if (existing && existing.optionsKey === optionsKey) {
+      this._touchMatchDecorationSet(existing);
+      return existing;
+    }
+    if (existing) {
+      this._disposeMatchDecorationSet(existing);
+    }
+    const created = this._createMatchDecorationSet(matches, decorationOptions, terminal, optionsKey);
+    this._matchDecorationSetByMatches.set(matches, created);
+    this._matchDecorationSetOrder.push(created);
+    this._trimMatchDecorationSetCache();
+    return created;
+  }
+
+  private _createMatchDecorationSet(matches: IMatch[], decorationOptions: ISearchDecorationOptions, terminal: Terminal, optionsKey: string): IMatchDecorationSet {
+    const set: IMatchDecorationSet = {
+      matches,
+      options: decorationOptions,
+      optionsKey,
+      decorations: [],
+      disposables: [],
+      isActive: false
+    };
+    const matchBorder = decorationOptions.matchBorder;
+    const cursorLine = terminal.buffer.active.baseY + terminal.buffer.active.cursorY;
+    const inactiveOverviewRulerOptions = undefined;
+    for (const match of matches) {
+      const marker = terminal.registerMarker(match.startY - cursorLine);
+      const width = Math.max(1, Math.min(match.cellLength, terminal.cols - match.startX));
+      const decoration = terminal.registerDecoration({
+        marker,
+        x: match.startX,
+        width,
+        backgroundColor: decorationOptions.matchBackground,
+        layer: 'bottom',
+        overviewRulerOptions: inactiveOverviewRulerOptions
+      });
+      if (!decoration) {
+        continue;
+      }
+      set.decorations.push(decoration);
+      set.disposables.push(decoration);
+      if (matchBorder) {
+        set.disposables.push(decoration.onRender(element => {
+          this._applyMatchDecorationStyle(element, set.isActive, decorationOptions.matchBackground, matchBorder);
+        }));
+      } else {
+        set.disposables.push(decoration.onRender(element => {
+          this._applyMatchDecorationStyle(element, set.isActive, decorationOptions.matchBackground, undefined);
+        }));
+      }
+    }
+    return set;
+  }
+
+  private _setMatchDecorationSetActive(set: IMatchDecorationSet | undefined, isActive: boolean): void {
+    if (!set || set.isActive === isActive) {
+      return;
+    }
+    set.isActive = isActive;
+    const overviewRulerOptions = isActive && set.options.matchOverviewRuler ? { color: set.options.matchOverviewRuler } : undefined;
+    for (const decoration of set.decorations) {
+      decoration.options.overviewRulerOptions = overviewRulerOptions;
+      if (decoration.element) {
+        this._applyMatchDecorationStyle(decoration.element, isActive, set.options.matchBackground, set.options.matchBorder);
+      }
+    }
+  }
+
+  private _applyMatchDecorationStyle(element: HTMLElement, isActive: boolean, background: string | undefined, border: string | undefined): void {
+    if (isActive) {
+      element.style.backgroundColor = background || '';
+      element.style.outline = border ? `1px solid ${border}` : '';
+    } else {
+      element.style.backgroundColor = '';
+      element.style.outline = '';
+    }
+  }
+
+  private _createDecorationOptionsKey(decorationOptions: ISearchDecorationOptions): string {
+    return [
+      decorationOptions.matchBackground,
+      decorationOptions.matchBorder,
+      decorationOptions.matchOverviewRuler,
+      decorationOptions.activeMatchBackground,
+      decorationOptions.activeMatchBorder,
+      decorationOptions.activeMatchColorOverviewRuler
+    ].join('|');
+  }
+
+  private _touchMatchDecorationSet(set: IMatchDecorationSet): void {
+    const index = this._matchDecorationSetOrder.indexOf(set);
+    if (index !== -1) {
+      this._matchDecorationSetOrder.splice(index, 1);
+      this._matchDecorationSetOrder.push(set);
+    }
+  }
+
+  private _trimMatchDecorationSetCache(): void {
+    while (this._matchDecorationSetOrder.length > SearchAddon._maxDecorationCacheEntries) {
+      const candidate = this._matchDecorationSetOrder[0];
+      if (candidate === this._activeMatchDecorationSet && this._matchDecorationSetOrder.length > 1) {
+        this._matchDecorationSetOrder.push(this._matchDecorationSetOrder.shift()!);
+        continue;
+      }
+      this._disposeMatchDecorationSet(this._matchDecorationSetOrder.shift()!);
+    }
+  }
+
+  private _disposeMatchDecorationSet(set: IMatchDecorationSet): void {
+    for (const disposable of set.disposables) {
+      disposable.dispose();
+    }
+    set.disposables.length = 0;
+    set.decorations.length = 0;
+    this._matchDecorationSetByMatches.delete(set.matches);
+    const index = this._matchDecorationSetOrder.indexOf(set);
+    if (index !== -1) {
+      this._matchDecorationSetOrder.splice(index, 1);
+    }
+    if (this._activeMatchDecorationSet === set) {
+      this._activeMatchDecorationSet = undefined;
+    }
+  }
+
+  private _disposeMatchDecorationSets(): void {
+    while (this._matchDecorationSetOrder.length > 0) {
+      this._disposeMatchDecorationSet(this._matchDecorationSetOrder[0]);
+    }
+    this._activeMatchDecorationSet = undefined;
+  }
+
   private _disposeDecorations(): void {
     this._activeDecoration.clear();
-    while (this._matchDecorations.length > 0) {
-      this._matchDecorations.pop()!.dispose();
-    }
+    this._disposeMatchDecorationSets();
   }
 
   private _createSearchKey(term: string, searchOptions: ISearchOptions | undefined, direction: 'next' | 'previous'): string {
@@ -681,6 +799,15 @@ interface IResolvedNavigation {
   index: number;
   selectionStartX: number;
   selectionStartY: number;
+}
+
+interface IMatchDecorationSet {
+  matches: IMatch[];
+  options: ISearchDecorationOptions;
+  optionsKey: string;
+  decorations: IDecoration[];
+  disposables: IDisposable[];
+  isActive: boolean;
 }
 
 interface IMatchCacheKey {
