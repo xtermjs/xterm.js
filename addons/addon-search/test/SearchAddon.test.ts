@@ -277,8 +277,7 @@ test.describe('Search Tests', () => {
           { resultCount: 1, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 }
         ]);
-        await timeout(2000);
-        strictEqual(await ctx.page.evaluate(`debugger; window.search.findPrevious('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
+        strictEqual(await ctx.page.evaluate(`window.search.findPrevious('d', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), false);
         deepStrictEqual(await ctx.page.evaluate('window.calls'), [
           { resultCount: 1, resultIndex: 0 },
           { resultCount: 2, resultIndex: 1 },
