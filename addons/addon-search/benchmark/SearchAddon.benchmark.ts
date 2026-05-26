@@ -15,6 +15,7 @@ const enum Constants {
   ROWS = 40,
   SCROLLBACK = 8000,
   NAVIGATION_ITERATIONS = 250,
+  COLD_CACHE_ITERATIONS = 75,
   INCREMENTAL_ITERATIONS = 75,
   DECORATION_REFRESH_ITERATIONS = 25
 }
@@ -183,6 +184,31 @@ perfContext('SearchAddon API on real-world terminal content', () => {
         }
       }
       return { payloadSize: Constants.INCREMENTAL_ITERATIONS * terms.length, foundCount };
+    }, { fork: false }).showAverageRuntime();
+  });
+
+  perfContext('findNext/cold cache', () => {
+    let terminal: TestTerminal;
+    let search: SearchAddon;
+    before(() => {
+      terminal = new TestTerminal({ cols: Constants.COLS, rows: Constants.ROWS, scrollback: Constants.SCROLLBACK });
+      search = new SearchAddon();
+      search.activate(terminal);
+      terminal.writeSync(bufferContent);
+    });
+    new RuntimeCase('', () => {
+      let foundCount = 0;
+      for (let i = 0; i < Constants.COLD_CACHE_ITERATIONS; i++) {
+        // Force a fresh logical-line reconstruction and match scan each search.
+        (search as any)._clearMatchCache();
+        if (search.findNext('opencv')) {
+          foundCount++;
+        }
+      }
+      if (foundCount !== Constants.COLD_CACHE_ITERATIONS) {
+        throw new Error(`Expected ${Constants.COLD_CACHE_ITERATIONS} matches, got ${foundCount}`);
+      }
+      return { payloadSize: Constants.COLD_CACHE_ITERATIONS, foundCount };
     }, { fork: false }).showAverageRuntime();
   });
 
