@@ -4,6 +4,7 @@
  */
 
 import type { IDeleteEvent, IInsertEvent } from 'common/CircularList';
+import { MicrotaskTimer } from 'common/Async';
 import { css } from 'common/Color';
 import { Disposable, DisposableStore, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
@@ -124,10 +125,12 @@ export class DecorationLineCache extends Disposable {
   private readonly _decorationsByLine: Map<number, IInternalDecoration[]> = new Map();
   private readonly _decorations = new Set<IInternalDecoration>();
   private readonly _bufferLineListeners = this._register(new MutableDisposable<DisposableStore>());
-
+  private readonly _lineIndexSyncTimer = this._register(new MicrotaskTimer());
   private _lineIndexSyncCallbacks: (() => void)[] = [];
 
   public clear(): void {
+    this._lineIndexSyncCallbacks.length = 0;
+    this._lineIndexSyncTimer.cancel();
     this._decorationsByLine.clear();
     this._decorations.clear();
   }
@@ -203,10 +206,7 @@ export class DecorationLineCache extends Disposable {
   /** Re-index after marker line updates (buffer listeners may run before markers). */
   private _scheduleLineIndexSync(callback: () => void): void {
     this._lineIndexSyncCallbacks.push(callback);
-    if (this._lineIndexSyncCallbacks.length > 1) {
-      return;
-    }
-    queueMicrotask(() => {
+    this._lineIndexSyncTimer.set(() => {
       const callbacks = this._lineIndexSyncCallbacks;
       this._lineIndexSyncCallbacks = [];
       for (const cb of callbacks) {
