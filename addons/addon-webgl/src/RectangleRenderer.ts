@@ -10,7 +10,7 @@ import { Attributes, FgFlags } from 'common/buffer/Constants';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IColor } from 'common/Types';
 import { Terminal } from '@xterm/xterm';
-import { RENDER_MODEL_BG_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL } from './RenderModel';
+import { RenderModelConstants } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
@@ -217,9 +217,9 @@ export class RectangleRenderer extends Disposable {
       currentFg = 0;
       currentInverse = false;
       for (x = 0; x < terminal.cols; x++) {
-        modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
-        bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
-        fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
+        modelIndex = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
+        bg = model.cells[modelIndex + RenderModelConstants.BG_OFFSET];
+        fg = model.cells[modelIndex + RenderModelConstants.FG_OFFSET];
         inverse = !!(fg & FgFlags.INVERSE);
         if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {
           // A rectangle needs to be drawn if going from non-default to another color
@@ -336,8 +336,9 @@ export class RectangleRenderer extends Disposable {
       }
     }
 
-    if (vertices.attributes.length < offset + 4) {
-      vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
+    if (vertices.attributes.length < offset + INDICES_PER_RECTANGLE) {
+      // +1 for the viewport-clear rectangle at offset 0.
+      vertices.attributes = expandFloat32Array(vertices.attributes, (this._terminal.rows * this._terminal.cols + 1) * INDICES_PER_RECTANGLE);
     }
     $x1 = startX * this._dimensions.device.cell.width;
     $y1 = y * this._dimensions.device.cell.height;

@@ -396,4 +396,6 @@ export interface IInternalDecoration extends IDecoration {
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
   readonly onRenderEmitter: Emitter<HTMLElement>;
+  /** @internal Start line for line-index removal; kept in sync on buffer line shifts. */
+  _indexedStartLine: number;
 }

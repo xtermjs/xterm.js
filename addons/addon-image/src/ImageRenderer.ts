@@ -8,8 +8,10 @@ import { IDisposable } from '@xterm/xterm';
 import { ICellSize, ImageLayer, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
-const PLACEHOLDER_LENGTH = 4096;
-const PLACEHOLDER_HEIGHT = 24;
+const enum Constants {
+  PLACEHOLDER_LENGTH = 4096,
+  PLACEHOLDER_HEIGHT = 24
+}
 
 /**
  * ImageRenderer - terminal frontend extension:
@@ -110,7 +112,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
   public showPlaceholder(value: boolean): void {
     if (value) {
       if (!this._placeholder && this.cellSize.height !== -1) {
-        this._createPlaceHolder(Math.max(this.cellSize.height + 1, PLACEHOLDER_HEIGHT));
+        this._createPlaceHolder(Math.max(this.cellSize.height + 1, Constants.PLACEHOLDER_HEIGHT));
       }
     } else {
       this._placeholderBitmap?.close();
@@ -249,7 +251,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
       }
 
       if (!this._placeholder) {
-        this._createPlaceHolder(Math.max(height + 1, PLACEHOLDER_HEIGHT));
+        this._createPlaceHolder(Math.max(height + 1, Constants.PLACEHOLDER_HEIGHT));
       } else if (height >= this._placeholder!.height) {
         this._createPlaceHolder(height + 1);
       }
@@ -358,7 +360,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
       canvas.style.zIndex = '0';
       screenElement.appendChild(canvas);
     }
-    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) {
       canvas.remove();
       return;
@@ -379,7 +381,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
     return this._layers.has(layer);
   }
 
-  private _createPlaceHolder(height: number = PLACEHOLDER_HEIGHT): void {
+  private _createPlaceHolder(height: number = Constants.PLACEHOLDER_HEIGHT): void {
     this._placeholderBitmap?.close();
     this._placeholderBitmap = undefined;
 
@@ -403,7 +405,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
     ctx.putImageData(imgData, 0, 0);
 
     // create placeholder line, width aligned to blueprint width
-    const width = (screen.width + bWidth - 1) & ~(bWidth - 1) || PLACEHOLDER_LENGTH;
+    const width = (screen.width + bWidth - 1) & ~(bWidth - 1) || Constants.PLACEHOLDER_LENGTH;
     this._placeholder = ImageRenderer.createCanvas(this.document, width, height);
     const ctx2 = this._placeholder.getContext('2d', { alpha: false });
     if (!ctx2) {

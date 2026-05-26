@@ -49,7 +49,14 @@ test.describe('SerializeAddon', () => {
         for (let i = 0; i < buffer.length; i++) {
           // Do this intentionally to get content of underlining source
           const bufferLine = buffer.getLine(i)._line;
-          lines.push(JSON.stringify(bufferLine));
+          lines.push(JSON.stringify(bufferLine, (key, value) => {
+            // BufferLine caches are internal/transient and can legitimately differ
+            // across equivalent terminal states.
+            if (key === '_stringCache' || key === '_stringCacheEntryRef') {
+              return undefined;
+            }
+            return value;
+          }));
         }
         return {
           x: buffer.cursorX,

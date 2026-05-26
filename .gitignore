@@ -22,6 +22,9 @@ build/
 yarn.lock
 test-results/
 
+# Tracing/debug files
+.cursor/nal-trace/
+
 # Keep bundled code out of Git
 dist/
 demo/dist/

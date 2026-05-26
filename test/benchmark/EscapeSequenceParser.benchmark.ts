@@ -6,9 +6,10 @@ import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-be
 
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { C0, C1 } from 'common/data/EscapeSequences';
-import { IDcsHandler, IOscHandler, IParams } from 'common/parser/Types';
+import { IDcsHandler, IOscHandler, IApcHandler, IParams } from 'common/parser/Types';
 import { OscHandler } from 'common/parser/OscParser';
-import { DcsHandler } from '../../out/common/parser/DcsParser';
+import { DcsHandler } from 'common/parser/DcsParser';
+import { ApcHandler } from 'common/parser/ApcParser';
 
 const SIZE = 5000000;
 
@@ -27,6 +28,12 @@ class FastDcsHandler implements IDcsHandler {
 }
 
 class FastOscHandler implements IOscHandler {
+  public start(): void {}
+  public put(data: Uint32Array, start: number, end: number): void {}
+  public end(success: boolean): boolean { return true; }
+}
+
+class FastApcHandler implements IApcHandler {
   public start(): void {}
   public put(data: Uint32Array, start: number, end: number): void {}
   public end(success: boolean): boolean { return true; }
@@ -108,6 +115,8 @@ perfContext('Parser throughput - 50MB data', () => {
     parser.registerEscHandler({ intermediates: '%', final: 'G' }, () => true);
     parser.registerDcsHandler({ final: 'p' }, new DcsHandler(data => true));
     parser.registerDcsHandler({ final: 'q' }, new FastDcsHandler());
+    parser.registerApcHandler({ final: 'X' }, new ApcHandler(data => true));
+    parser.registerApcHandler({ final: 'Y' }, new FastApcHandler());
   });
 
   perfContext('PRINT - a', () => {
@@ -338,6 +347,66 @@ perfContext('Parser throughput - 50MB data', () => {
   perfContext('DCS class interface (long seq)', () => {
     before(() => {
       const data = '\x1bPqLorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
+  });
+
+  perfContext('APC string interface (short seq)', () => {
+    before(() => {
+      const data = '\x1b_Xhi\x1b\\\x1b_Xhi\x1b\\\x1b_Xhi\x1b\\\x1b_Xhi\x1b\\\x1b_Xhi\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
+  });
+
+  perfContext('APC string interface (long seq)', () => {
+    before(() => {
+      const data = '\x1b_XLorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
+  });
+
+  perfContext('APC class interface (short seq)', () => {
+    before(() => {
+      const data = '\x1b_Yhi\x1b\\\x1b_Yhi\x1b\\\x1b_Yhi\x1b\\\x1b_Yhi\x1b\\\x1b_Yhi\x1b\\';
+      let content = '';
+      while (content.length < SIZE) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return { payloadSize: parsed.length };
+    }, { fork: true }).showAverageThroughput();
+  });
+
+  perfContext('APC class interface (long seq)', () => {
+    before(() => {
+      const data = '\x1b_YLorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
       let content = '';
       while (content.length < SIZE) {
         content += data;

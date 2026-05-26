@@ -4,8 +4,7 @@
  */
 
 import type { IDisposable, ITerminalAddon, Terminal } from '@xterm/xterm';
-import { type IClipboardProvider, ClipboardSelectionType, type IBase64 } from '@xterm/addon-clipboard';
-import { Base64 as JSBase64 } from 'js-base64';
+import { type IClipboardProvider, type IBase64 } from '@xterm/addon-clipboard';
 
 export class ClipboardAddon implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -25,7 +24,7 @@ export class ClipboardAddon implements ITerminalAddon {
     return this._disposable?.dispose();
   }
 
-  private _readText(sel: ClipboardSelectionType, data: string): void {
+  private _readText(sel: string, data: string): void {
     const b64 = this._base64.encodeText(data);
     this._terminal?.input(`\x1b]52;${sel};${b64}\x07`, false);
   }
@@ -36,7 +35,7 @@ export class ClipboardAddon implements ITerminalAddon {
       return true;
     }
 
-    const pc = args[0] as ClipboardSelectionType;
+    const pc = args[0];
     const pd = args[1];
     if (pd === '?') {
       const text = this._provider.readText(pc);
@@ -70,30 +69,23 @@ export class ClipboardAddon implements ITerminalAddon {
 }
 
 export class BrowserClipboardProvider implements IClipboardProvider {
-  public async readText(selection: ClipboardSelectionType): Promise<string> {
-    if (selection !== 'c') {
-      return Promise.resolve('');
-    }
+  public readText(selection: string): Promise<string> {
     return navigator.clipboard.readText();
   }
 
-  public async writeText(selection: ClipboardSelectionType, text: string): Promise<void> {
-    if (selection !== 'c') {
-      return Promise.resolve();
-    }
+  public writeText(selection: string, text: string): Promise<void> {
     return navigator.clipboard.writeText(text);
   }
 }
 
 export class Base64 implements IBase64 {
   public encodeText(data: string): string {
-    return JSBase64.encode(data);
+    return btoa(data);
   }
   public decodeText(data: string): string {
-    const text = JSBase64.decode(data);
-    if (!JSBase64.isValid(data) || JSBase64.encode(text) !== data) {
-      return '';
-    }
-    return text;
+    try {
+      return atob(data);
+    } catch {}
+    return '';
   }
 }

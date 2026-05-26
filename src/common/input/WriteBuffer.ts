@@ -9,30 +9,30 @@ import { Emitter } from 'common/Event';
 
 declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
-/**
- * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
- * Enable flow control to avoid this limit and make sure that your backend correctly
- * propagates this to the underlying pty. (see docs for further instructions)
- * Since this limit is meant as a safety parachute to prevent browser crashs,
- * it is set to a very high number. Typically xterm.js gets unresponsive with
- * a 100 times lower number (>500 kB).
- */
-const DISCARD_WATERMARK = 50000000; // ~50 MB
-
-/**
- * The max number of ms to spend on writes before allowing the renderer to
- * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
- * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
- * depends on the time it takes for the renderer to draw the frame.
- */
-const WRITE_TIMEOUT_MS = 12;
-
-/**
- * Threshold of max held chunks in the write buffer, that were already processed.
- * This is a tradeoff between extensive write buffer shifts (bad runtime) and high
- * memory consumption by data thats not used anymore.
- */
-const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
+const enum Constants {
+  /**
+   * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
+   * Enable flow control to avoid this limit and make sure that your backend correctly
+   * propagates this to the underlying pty. (see docs for further instructions)
+   * Since this limit is meant as a safety parachute to prevent browser crashs,
+   * it is set to a very high number. Typically xterm.js gets unresponsive with
+   * a 100 times lower number (>500 kB).
+   */
+  DISCARD_WATERMARK = 50000000, // ~50 MB
+  /**
+   * The max number of ms to spend on writes before allowing the renderer to
+   * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
+   * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
+   * depends on the time it takes for the renderer to draw the frame.
+   */
+  WRITE_TIMEOUT_MS = 12,
+  /**
+   * Threshold of max held chunks in the write buffer, that were already processed.
+   * This is a tradeoff between extensive write buffer shifts (bad runtime) and high
+   * memory consumption by data thats not used anymore.
+   */
+  WRITE_BUFFER_LENGTH_THRESHOLD = 50
+}
 
 export class WriteBuffer extends Disposable {
   private _writeBuffer: (string | Uint8Array)[] = [];
@@ -133,7 +133,7 @@ export class WriteBuffer extends Disposable {
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
-    if (this._pendingData > DISCARD_WATERMARK) {
+    if (this._pendingData > Constants.DISCARD_WATERMARK) {
       throw new Error('write data discarded, use flow control to avoid losing data');
     }
 
@@ -169,7 +169,7 @@ export class WriteBuffer extends Disposable {
    * effectively lowering the redrawing needs, schematically:
    *
    *   macroTask _innerWrite:
-   *     if (performance.now() - (lastTime | 0) < WRITE_TIMEOUT_MS):
+   *     if (performance.now() - (lastTime | 0) < Constants.WRITE_TIMEOUT_MS):
    *        schedule microTask _innerWrite(lastTime)
    *     else:
    *        schedule macroTask _innerWrite(0)
@@ -218,7 +218,7 @@ export class WriteBuffer extends Disposable {
          * responsibility to slice hard work), but we can at least schedule a screen update as we
          * gain control.
          */
-        const continuation: (r: boolean) => void = (r: boolean) => performance.now() - startTime >= WRITE_TIMEOUT_MS
+        const continuation: (r: boolean) => void = (r: boolean) => performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS
           ? setTimeout(() => this._innerWrite(0, r))
           : this._innerWrite(startTime, r);
 
@@ -235,7 +235,7 @@ export class WriteBuffer extends Disposable {
          * current microtask queue (executed before setTimeout).
          */
         // const continuation: (r: boolean) => void = performance.now() - startTime >=
-        //     WRITE_TIMEOUT_MS
+        //     Constants.WRITE_TIMEOUT_MS
         //   ? r => setTimeout(() => this._innerWrite(0, r))
         //   : r => this._innerWrite(startTime, r);
 
@@ -255,14 +255,14 @@ export class WriteBuffer extends Disposable {
       this._bufferOffset++;
       this._pendingData -= data.length;
 
-      if (performance.now() - startTime >= WRITE_TIMEOUT_MS) {
+      if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
         break;
       }
     }
     if (this._writeBuffer.length > this._bufferOffset) {
       // Allow renderer to catch up before processing the next batch
       // trim already processed chunks if we are above threshold
-      if (this._bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
+      if (this._bufferOffset > Constants.WRITE_BUFFER_LENGTH_THRESHOLD) {
         this._writeBuffer = this._writeBuffer.slice(this._bufferOffset);
         this._callbacks = this._callbacks.slice(this._bufferOffset);
         this._bufferOffset = 0;

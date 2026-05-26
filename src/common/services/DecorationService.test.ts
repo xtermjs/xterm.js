@@ -4,11 +4,13 @@
  */
 
 import { assert } from 'chai';
-import { DecorationService } from './DecorationService';
+import { DecorationLineCache, DecorationService } from './DecorationService';
 import { IMarker } from 'common/Types';
 import { Disposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
-import { MockLogService } from 'common/TestUtils.test';
+import { MockLogService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { Buffer } from 'common/buffer/Buffer';
+import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 
 function createFakeMarker(line: number): IMarker {
   return Object.freeze(new class extends Disposable {
@@ -19,11 +21,16 @@ function createFakeMarker(line: number): IMarker {
   }());
 }
 
+function createDecorationService(): DecorationService {
+  const bufferService = new MockBufferService(80, 24, new MockOptionsService());
+  return new DecorationService(new MockLogService(), bufferService);
+}
+
 const fakeMarker: IMarker = createFakeMarker(1);
 
 describe('DecorationService', () => {
   it('should set isDisposed to true after dispose', () => {
-    const service = new DecorationService(new MockLogService());
+    const service = createDecorationService();
     const decoration = service.registerDecoration({
       marker: fakeMarker
     });
@@ -35,7 +42,7 @@ describe('DecorationService', () => {
 
   describe('forEachDecorationAtCell', () => {
     it('should find decoration at its marker line', () => {
-      const service = new DecorationService(new MockLogService());
+      const service = createDecorationService();
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         width: 10
@@ -48,7 +55,7 @@ describe('DecorationService', () => {
     });
 
     it('should find decoration with height > 1 on subsequent lines', () => {
-      const service = new DecorationService(new MockLogService());
+      const service = createDecorationService();
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         width: 10,
@@ -74,7 +81,7 @@ describe('DecorationService', () => {
     });
 
     it('should not find decoration outside its x range', () => {
-      const service = new DecorationService(new MockLogService());
+      const service = createDecorationService();
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         x: 5,
@@ -99,11 +106,35 @@ describe('DecorationService', () => {
       service.forEachDecorationAtCell(8, 5, undefined, d => foundAtX8.push(d));
       assert.strictEqual(foundAtX8.length, 0);
     });
+
+    it('should find multi-line decoration when single-line decorations exist on other lines', () => {
+      const bufferService = new MockBufferService(80, 24, new MockOptionsService());
+      const serviceWithBuffer = new DecorationService(new MockLogService(), bufferService);
+      const buffer = bufferService.buffer;
+      (buffer as Buffer).fillViewportRows();
+
+      for (let i = 0; i < 100; i++) {
+        serviceWithBuffer.registerDecoration({
+          marker: buffer.addMarker(i),
+          width: 5
+        });
+      }
+      const multiLine = serviceWithBuffer.registerDecoration({
+        marker: buffer.addMarker(10),
+        width: 10,
+        height: 3
+      });
+      assert.ok(multiLine);
+
+      const found: typeof multiLine[] = [];
+      serviceWithBuffer.forEachDecorationAtCell(0, 11, undefined, d => found.push(d));
+      assert.include(found, multiLine);
+    });
   });
 
   describe('getDecorationsAtCell', () => {
     it('should find decoration with height > 1 on subsequent lines', () => {
-      const service = new DecorationService(new MockLogService());
+      const service = createDecorationService();
       const decoration = service.registerDecoration({
         marker: createFakeMarker(5),
         width: 10,
@@ -115,6 +146,75 @@ describe('DecorationService', () => {
       assert.strictEqual([...service.getDecorationsAtCell(0, 6)].length, 1);
       assert.strictEqual([...service.getDecorationsAtCell(0, 7)].length, 1);
       assert.strictEqual([...service.getDecorationsAtCell(0, 8)].length, 0);
+    });
+  });
+
+  describe('DecorationLineCache', () => {
+    it('should return undefined for lines with no indexed decorations', () => {
+      const cache = new DecorationLineCache();
+      assert.isUndefined(cache.getDecorationsOnLine(0));
+    });
+  });
+
+  describe('line index maintenance', () => {
+    it('should keep lookups correct after buffer trim', () => {
+      const bufferService = new MockBufferService(80, 5, new MockOptionsService({ scrollback: 0 }));
+      const service = new DecorationService(new MockLogService(), bufferService);
+      const buffer = bufferService.buffer;
+      (buffer as Buffer).fillViewportRows();
+
+      const marker = buffer.addMarker(buffer.lines.length - 1);
+      const decoration = service.registerDecoration({ marker, width: 10 });
+      assert.ok(decoration);
+
+      buffer.lines.onTrimEmitter.fire(1);
+
+      const found: typeof decoration[] = [];
+      service.forEachDecorationAtCell(0, marker.line, undefined, d => found.push(d));
+      assert.strictEqual(found.length, 1);
+    });
+
+    it('should remove decoration from line index when marker is trimmed off buffer', () => {
+      const bufferService = new MockBufferService(80, 5, new MockOptionsService({ scrollback: 0 }));
+      const service = new DecorationService(new MockLogService(), bufferService);
+      const buffer = bufferService.buffer;
+      (buffer as Buffer).fillViewportRows();
+
+      const marker = buffer.addMarker(0);
+      const decoration = service.registerDecoration({ marker, width: 10 });
+      assert.ok(decoration);
+
+      buffer.lines.onTrimEmitter.fire(1);
+      assert.isTrue(marker.isDisposed);
+      assert.isTrue(decoration!.isDisposed);
+
+      const found: typeof decoration[] = [];
+      service.forEachDecorationAtCell(0, 0, undefined, d => found.push(d));
+      assert.strictEqual(found.length, 0);
+    });
+
+    it('should keep multi-line decoration indexed after line insert', async () => {
+      const bufferService = new MockBufferService(80, 10, new MockOptionsService({ scrollback: 100 }));
+      const service = new DecorationService(new MockLogService(), bufferService);
+      const buffer = bufferService.buffer;
+      (buffer as Buffer).fillViewportRows();
+
+      const marker = buffer.addMarker(3);
+      const decoration = service.registerDecoration({ marker, width: 10, height: 3 });
+      assert.ok(decoration);
+
+      buffer.lines.splice(5, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
+      await new Promise<void>(resolve => queueMicrotask(resolve));
+
+      const foundOnSpan: typeof decoration[] = [];
+      for (let line = marker.line; line < marker.line + 3; line++) {
+        service.forEachDecorationAtCell(0, line, undefined, d => foundOnSpan.push(d));
+      }
+      assert.include(foundOnSpan, decoration);
+
+      const foundOutsideSpan: typeof decoration[] = [];
+      service.forEachDecorationAtCell(0, marker.line + 3, undefined, d => foundOutsideSpan.push(d));
+      assert.strictEqual(foundOutsideSpan.length, 0);
     });
   });
 });

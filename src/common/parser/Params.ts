@@ -4,10 +4,16 @@
  */
 import { IParams, ParamsArray } from 'common/parser/Types';
 
-// max value supported for a single param/subparam (clamped to positive int32 range)
-const MAX_VALUE = 0x7FFFFFFF;
-// max allowed subparams for a single sequence (hardcoded limitation)
-const MAX_SUBPARAMS = 256;
+const enum Constants {
+  /**
+   * Max value supported for a single param/subparam (clamped to positive int32 range)
+   */
+  MAX_VALUE = 0x7FFFFFFF,
+  /**
+   * Max allowed subparams for a single sequence (hardcoded limitation)
+   */
+  MAX_SUBPARAMS = 256
+}
 
 /**
  * Params storage class.
@@ -70,7 +76,7 @@ export class Params implements IParams {
    * @param maxSubParamsLength max length of storable sub parameters
    */
   constructor(public maxLength: number = 32, public maxSubParamsLength: number = 32) {
-    if (maxSubParamsLength > MAX_SUBPARAMS) {
+    if (maxSubParamsLength > Constants.MAX_SUBPARAMS) {
       throw new Error('maxSubParamsLength must not be greater than 256');
     }
     this.params = new Int32Array(maxLength);
@@ -130,6 +136,19 @@ export class Params implements IParams {
   }
 
   /**
+   * Reset and add 0 as first param (ZDM).
+   */
+  public resetZdm(): void {
+    this.length = 1;
+    this._subParamsLength = 0;
+    this._rejectDigits = false;
+    this._rejectSubDigits = false;
+    this._digitIsSub = false;
+    this._subParamsIdx[0] = 0;
+    this.params[0] = 0;
+  }
+
+  /**
    * Add a parameter value.
    * `Params` only stores up to `maxLength` parameters, any later
    * parameter will be ignored.
@@ -146,7 +165,7 @@ export class Params implements IParams {
       throw new Error('values lesser than -1 are not allowed');
     }
     this._subParamsIdx[this.length] = this._subParamsLength << 8 | this._subParamsLength;
-    this.params[this.length++] = value > MAX_VALUE ? MAX_VALUE : value;
+    this.params[this.length++] = value > Constants.MAX_VALUE ? Constants.MAX_VALUE : value;
   }
 
   /**
@@ -168,7 +187,7 @@ export class Params implements IParams {
     if (value < -1) {
       throw new Error('values lesser than -1 are not allowed');
     }
-    this._subParams[this._subParamsLength++] = value > MAX_VALUE ? MAX_VALUE : value;
+    this._subParams[this._subParamsLength++] = value > Constants.MAX_VALUE ? Constants.MAX_VALUE : value;
     this._subParamsIdx[this.length - 1]++;
   }
 
@@ -224,6 +243,6 @@ export class Params implements IParams {
 
     const store = this._digitIsSub ? this._subParams : this.params;
     const cur = store[length - 1];
-    store[length - 1] = ~cur ? Math.min(cur * 10 + value, MAX_VALUE) : value;
+    store[length - 1] = ~cur ? Math.min(cur * 10 + value, Constants.MAX_VALUE) : value;
   }
 }

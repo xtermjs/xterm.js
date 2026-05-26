@@ -44,7 +44,7 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     }
   });
 
-  perfContext('write/string/async', () => {
+  perfContext('write/string', () => {
     let terminal: CoreBrowserTerminal;
     before(() => {
       terminal = new CoreBrowserTerminal({ cols: 80, rows: 25, scrollback: 1000 });
@@ -55,13 +55,13 @@ perfContext('Terminal: ls -lR /usr/lib', () => {
     }, { fork: false }).showAverageThroughput();
   });
 
-  perfContext('write/Utf8/async', () => {
+  perfContext('write/utf8', () => {
     let terminal: CoreBrowserTerminal;
     before(() => {
       terminal = new CoreBrowserTerminal({ cols: 80, rows: 25, scrollback: 1000 });
     });
     new ThroughputRuntimeCase('', async () => {
-      await new Promise<void>(res => terminal.write(content, res));
+      await new Promise<void>(res => terminal.write(contentUtf8, res));
       return { payloadSize: contentUtf8.length };
     }, { fork: false }).showAverageThroughput();
   });

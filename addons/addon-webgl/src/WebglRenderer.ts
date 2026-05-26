@@ -19,7 +19,7 @@ import { ICoreService, IDecorationService, IOptionsService } from 'common/servic
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
-import { COMBINED_CHAR_BIT_MASK, RENDER_MODEL_BG_OFFSET, RENDER_MODEL_EXT_OFFSET, RENDER_MODEL_FG_OFFSET, RENDER_MODEL_INDICIES_PER_CELL, RenderModel } from './RenderModel';
+import { COMBINED_CHAR_BIT_MASK, RenderModel, RenderModelConstants } from './RenderModel';
 import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
@@ -27,6 +27,10 @@ import { Emitter, EventUtils } from 'common/Event';
 import { addDisposableListener } from 'browser/Dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+
+const enum Constants {
+  MERGE_RETRY_LIMIT = 32
+}
 
 export class WebglRenderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -375,6 +379,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._updateModel(start, end);
     }
 
+    // A mid-update atlas page merge invalidates vertex data and may not bump the host
+    // page's version, so re-run the update and force a full texture rebind.
+    let merged = false;
+    let mergeRetries = 0;
+    while (this._charAtlas && this._glyphRenderer.value.beginFrame() && mergeRetries++ < Constants.MERGE_RETRY_LIMIT) {
+      merged = true;
+      this._clearModel(true);
+      this._updateModel(0, this._terminal.rows - 1);
+    }
+    if (merged) {
+      this._glyphRenderer.value.invalidateAtlasTextures();
+    }
+
     // Render
     this._rectangleRenderer.value.renderBackgrounds();
     this._glyphRenderer.value.render(this._model);
@@ -493,7 +510,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         chars = cell.getChars();
         code = cell.getCode();
-        i = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+        i = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
 
         if (!rowHasBlinkingCells && cell.isBlink()) {
           rowHasBlinkingCells = true;
@@ -538,9 +555,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code &&
-            this._model.cells[i + RENDER_MODEL_BG_OFFSET] === this._cellColorResolver.result.bg &&
-            this._model.cells[i + RENDER_MODEL_FG_OFFSET] === this._cellColorResolver.result.fg &&
-            this._model.cells[i + RENDER_MODEL_EXT_OFFSET] === this._cellColorResolver.result.ext) {
+            this._model.cells[i + RenderModelConstants.BG_OFFSET] === this._cellColorResolver.result.bg &&
+            this._model.cells[i + RenderModelConstants.FG_OFFSET] === this._cellColorResolver.result.fg &&
+            this._model.cells[i + RenderModelConstants.EXT_OFFSET] === this._cellColorResolver.result.ext) {
           continue;
         }
 
@@ -553,9 +570,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Cache the results in the model
         this._model.cells[i] = code;
-        this._model.cells[i + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
-        this._model.cells[i + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
-        this._model.cells[i + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
+        this._model.cells[i + RenderModelConstants.BG_OFFSET] = this._cellColorResolver.result.bg;
+        this._model.cells[i + RenderModelConstants.FG_OFFSET] = this._cellColorResolver.result.fg;
+        this._model.cells[i + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
 
         width = cell.getWidth();
         this._glyphRenderer.value!.updateCell(x, y, code, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext, chars, width, lastBg);
@@ -566,14 +583,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
           // Null out non-first cells
           for (x++; x <= lastCharX; x++) {
-            j = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+            j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
             this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
             this._model.cells[j] = NULL_CELL_CODE;
             // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
             // supported
-            this._model.cells[j + RENDER_MODEL_BG_OFFSET] = this._cellColorResolver.result.bg;
-            this._model.cells[j + RENDER_MODEL_FG_OFFSET] = this._cellColorResolver.result.fg;
-            this._model.cells[j + RENDER_MODEL_EXT_OFFSET] = this._cellColorResolver.result.ext;
+            this._model.cells[j + RenderModelConstants.BG_OFFSET] = this._cellColorResolver.result.bg;
+            this._model.cells[j + RenderModelConstants.FG_OFFSET] = this._cellColorResolver.result.fg;
+            this._model.cells[j + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
           }
           x--; // Go back to the previous update cell for next iteration
         }
