@@ -288,7 +288,8 @@ export class SearchEngine {
       let foundTerm: RegExpExecArray | null;
       if (isReverseSearch) {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
-        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
+        const searchSubstring = searchStringLine.slice(0, offset);
+        while (foundTerm = searchRegex.exec(searchSubstring)) {
           if (foundTerm[0].length === 0) {
             continue;
           }
