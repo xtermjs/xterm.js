@@ -47,6 +47,13 @@ export class SearchEngine {
     private readonly _lineCache: SearchLineCache
   ) {}
 
+  private _createLineSearchRegex(term: string, searchOptions?: ISearchOptions): RegExp | undefined {
+    if (!searchOptions?.regex) {
+      return undefined;
+    }
+    return RegExp(term, searchOptions.caseSensitive ? 'g' : 'gi');
+  }
+
   /**
    * Find the first occurrence of a term starting from a specific position.
    * @param term The search term.
@@ -71,14 +78,16 @@ export class SearchEngine {
       startCol
     };
 
+    const lineSearchRegex = this._createLineSearchRegex(term, searchOptions);
+
     // Search startRow
-    let result = this._findInLine(term, searchPosition, searchOptions);
+    let result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
     // Search from startRow + 1 to end
     if (!result) {
       for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
-        result = this._findInLine(term, searchPosition, searchOptions);
+        result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
         if (result) {
           break;
         }
@@ -122,14 +131,16 @@ export class SearchEngine {
       startCol
     };
 
+    const lineSearchRegex = this._createLineSearchRegex(term, searchOptions);
+
     // Search startRow
-    let result = this._findInLine(term, searchPosition, searchOptions);
+    let result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
     // Search from startRow + 1 to end
     if (!result) {
       for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
-        result = this._findInLine(term, searchPosition, searchOptions);
+        result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
         if (result) {
           break;
         }
@@ -140,7 +151,7 @@ export class SearchEngine {
       for (let y = 0; y < startRow; y++) {
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
-        result = this._findInLine(term, searchPosition, searchOptions);
+        result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
         if (result) {
           break;
         }
@@ -151,7 +162,7 @@ export class SearchEngine {
     if (!result && prevSelectedPos) {
       searchPosition.startRow = prevSelectedPos.start.y;
       searchPosition.startCol = 0;
-      result = this._findInLine(term, searchPosition, searchOptions);
+      result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
     }
 
     return result;
@@ -183,13 +194,15 @@ export class SearchEngine {
       startCol
     };
 
+    const lineSearchRegex = this._createLineSearchRegex(term, searchOptions);
+
     let result: ISearchResult | undefined;
     if (prevSelectedPos) {
       searchPosition.startRow = startRow = prevSelectedPos.start.y;
       searchPosition.startCol = startCol = prevSelectedPos.start.x;
       if (cachedSearchTerm !== term) {
         // Try to expand selection to right first.
-        result = this._findInLine(term, searchPosition, searchOptions, false);
+        result = this._findInLine(term, searchPosition, searchOptions, false, lineSearchRegex);
         if (!result) {
           // If selection was not able to be expanded to the right, then try reverse search
           searchPosition.startRow = startRow = prevSelectedPos.end.y;
@@ -198,14 +211,14 @@ export class SearchEngine {
       }
     }
 
-    result ??= this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+    result ??= this._findInLine(term, searchPosition, searchOptions, isReverseSearch, lineSearchRegex);
 
     // Search from startRow - 1 to top
     if (!result) {
       searchPosition.startCol = Math.max(searchPosition.startCol, this._terminal.cols);
       for (let y = startRow - 1; y >= 0; y--) {
         searchPosition.startRow = y;
-        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch, lineSearchRegex);
         if (result) {
           break;
         }
@@ -215,7 +228,7 @@ export class SearchEngine {
     if (!result && startRow !== (this._terminal.buffer.active.baseY + this._terminal.rows - 1)) {
       for (let y = (this._terminal.buffer.active.baseY + this._terminal.rows - 1); y >= startRow; y--) {
         searchPosition.startRow = y;
-        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch);
+        result = this._findInLine(term, searchPosition, searchOptions, isReverseSearch, lineSearchRegex);
         if (result) {
           break;
         }
@@ -249,7 +262,7 @@ export class SearchEngine {
    * search to the left.
    * @returns The search result if it was found.
    */
-  private _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
+  private _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false, lineSearchRegex?: RegExp): ISearchResult | undefined {
     const row = searchPosition.startRow;
     const col = searchPosition.startCol;
 
@@ -265,7 +278,7 @@ export class SearchEngine {
       // When we find it, we will search using the calculated start column.
       searchPosition.startRow--;
       searchPosition.startCol += this._terminal.cols;
-      return this._findInLine(term, searchPosition, searchOptions);
+      return this._findInLine(term, searchPosition, searchOptions, isReverseSearch, lineSearchRegex);
     }
     let cache = this._lineCache.getLineFromCache(row);
     if (!cache) {
@@ -284,7 +297,8 @@ export class SearchEngine {
 
     let resultIndex = -1;
     if (searchOptions.regex) {
-      const searchRegex = RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
+      const searchRegex = lineSearchRegex ?? RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
+      searchRegex.lastIndex = 0;
       let foundTerm: RegExpExecArray | null;
       if (isReverseSearch) {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
@@ -335,7 +349,8 @@ export class SearchEngine {
     if (resultIndex >= 0) {
       if (searchOptions.regex) {
         if (searchOptions.wholeWord) {
-          const searchRegex = RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
+          const searchRegex = lineSearchRegex ?? RegExp(searchTerm, searchOptions.caseSensitive ? 'g' : 'gi');
+          searchRegex.lastIndex = 0;
           let foundTerm: RegExpExecArray | null;
           if (isReverseSearch) {
             resultIndex = -1;
