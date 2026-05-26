@@ -9,9 +9,7 @@ import { Emitter, type IEvent } from 'common/Event';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 export class SearchAddon extends Disposable implements ITerminalAddon, ISearchApi {
-  private static readonly _defaultHighlightLimit = 1000;
-  private static readonly _maxMatchCacheEntries = 16;
-  private static readonly _maxDecorationCacheEntries = 2;
+  private _highlightLimit = SearchAddonConstants.DEFAULT_HIGHLIGHT_LIMIT;
 
   private _terminal: Terminal | undefined;
 
@@ -33,7 +31,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _activeMatchDecorationSet: IMatchDecorationSet | undefined;
   private readonly _activeDecoration = this._register(new MutableDisposable<IDisposable>());
 
-  private _highlightLimit = SearchAddon._defaultHighlightLimit;
   private _lastSearchTerm: string | undefined;
   private _lastSearchOptions: ISearchOptions | undefined;
   private _lastDirection: SearchDirection = 'next';
@@ -299,7 +296,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       byCols.set(flags, writableByFlags);
     }
     if (!writableByFlags.has(term)) {
-      if (this._matchCacheOrder.length >= SearchAddon._maxMatchCacheEntries) {
+      if (this._matchCacheOrder.length >= SearchAddonConstants.MAX_MATCH_CACHE_ENTRIES) {
         const oldest = this._matchCacheOrder.shift();
         if (oldest) {
           const oldestByCols = this._matchCache.get(oldest.cols);
@@ -687,7 +684,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   }
 
   private _trimMatchDecorationSetCache(): void {
-    while (this._matchDecorationSetOrder.length > SearchAddon._maxDecorationCacheEntries) {
+    while (this._matchDecorationSetOrder.length > SearchAddonConstants.MAX_DECORATION_CACHE_ENTRIES) {
       const candidate = this._matchDecorationSetOrder[0];
       if (candidate === this._activeMatchDecorationSet && this._matchDecorationSetOrder.length > 1) {
         this._matchDecorationSetOrder.push(this._matchDecorationSetOrder.shift()!);
@@ -834,6 +831,15 @@ interface IMatchCacheKey {
   cols: number;
   flags: MatchFlags;
   term: string;
+}
+
+const enum SearchAddonConstants {
+  /** Default maximum number of matches to highlight during search. */
+  DEFAULT_HIGHLIGHT_LIMIT = 1000,
+  /** Maximum number of cached match-result entries across search keys. */
+  MAX_MATCH_CACHE_ENTRIES = 16,
+  /** Maximum number of cached decoration sets retained for reuse. */
+  MAX_DECORATION_CACHE_ENTRIES = 2
 }
 
 const enum MatchFlags {
