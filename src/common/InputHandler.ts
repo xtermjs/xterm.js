@@ -531,8 +531,6 @@ export class InputHandler extends Disposable implements IInputHandler {
       return;
     }
 
-    const linkId = this._getCurrentLinkId();
-
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
 
     // handle wide chars: reset start_cell-1 if we would overwrite the second cell of a wide char
@@ -569,6 +567,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
+      const linkId = this._getCurrentLinkId();
       if (linkId) {
         this._oscLinkService.addLineToLink(linkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
