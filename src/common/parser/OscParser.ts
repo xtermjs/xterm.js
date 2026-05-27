@@ -7,6 +7,7 @@ import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, IS
 import { OscState, ParserConstants } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
+import { PayloadStringBuffer } from 'common/parser/PayloadStringBuffer';
 
 const EMPTY_HANDLERS: IOscHandler[] = [];
 
@@ -194,13 +195,13 @@ export class OscParser implements IOscParser {
 export class OscHandler implements IOscHandler {
   private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
-  private _data = '';
+  private _data = new PayloadStringBuffer();
   private _hitLimit: boolean = false;
 
   constructor(private _handler: (data: string) => boolean | Promise<boolean>) { }
 
   public start(): void {
-    this._data = '';
+    this._data.reset();
     this._hitLimit = false;
   }
 
@@ -208,9 +209,7 @@ export class OscHandler implements IOscHandler {
     if (this._hitLimit) {
       return;
     }
-    this._data += utf32ToString(data, start, end);
-    if (this._data.length > OscHandler._payloadLimit) {
-      this._data = '';
+    if (this._data.add(utf32ToString(data, start, end), OscHandler._payloadLimit)) {
       this._hitLimit = true;
     }
   }
@@ -220,18 +219,18 @@ export class OscHandler implements IOscHandler {
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data);
+      ret = this._handler(this._data.toString());
       if (ret instanceof Promise) {
         // need to hold data until `ret` got resolved
         // dont care for errors, data will be freed anyway on next start
         return ret.then(res => {
-          this._data = '';
+          this._data.reset();
           this._hitLimit = false;
           return res;
         });
       }
     }
-    this._data = '';
+    this._data.reset();
     this._hitLimit = false;
     return ret;
   }
