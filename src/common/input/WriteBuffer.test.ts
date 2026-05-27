@@ -140,5 +140,34 @@ describe('WriteBuffer', () => {
       wb.flushSync();
       assert.equal(parsed, 0);
     });
+    it('dispose cancels scheduled innerWrite', done => {
+      wb.write('a');
+      wb.dispose();
+      setTimeout(() => {
+        assert.deepEqual(stack, []);
+        done();
+      }, 20);
+    });
+    it('dispose does not fire onWriteParsed for pending writes', done => {
+      let parsed = 0;
+      wb.onWriteParsed(() => parsed++);
+      wb.write('a');
+      wb.dispose();
+      setTimeout(() => {
+        assert.equal(parsed, 0);
+        done();
+      }, 20);
+    });
+    it('write after dispose is a no-op', done => {
+      wb.dispose();
+      wb.write('a', () => {
+        assert.deepEqual(stack, []);
+        done();
+      });
+      setTimeout(() => {
+        assert.deepEqual(stack, []);
+        done();
+      }, 20);
+    });
   });
 });
