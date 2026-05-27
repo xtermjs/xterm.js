@@ -653,7 +653,8 @@ declare module '@xterm/headless' {
     readonly buffer: IBufferNamespace;
 
     /**
-     * Get all markers registered against the active buffer.
+     * Get all markers registered against the buffer. If the alt buffer is
+     * active this will always return [].
      */
     readonly markers: ReadonlyArray<IMarker>;
 
@@ -824,8 +825,9 @@ declare module '@xterm/headless' {
     resize(columns: number, rows: number): void;
 
     /**
-     * Adds a marker to the active buffer and returns it.
+     * Adds a marker to the normal buffer and returns it.
      * @param cursorYOffset The y position offset of the marker from the cursor.
+     * @returns The new marker or undefined.
      */
     registerMarker(cursorYOffset?: number): IMarker;
 
