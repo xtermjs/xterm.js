@@ -132,7 +132,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   }
   public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
     this._verifyIntegers(cursorYOffset);
-    return this._core.addMarker(cursorYOffset);
+    return this._core.registerMarker(cursorYOffset);
   }
   public addMarker(cursorYOffset: number): IMarker | undefined {
     return this.registerMarker(cursorYOffset);

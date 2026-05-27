@@ -69,7 +69,7 @@ export class Terminal extends CoreTerminal {
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker | undefined {
+  public registerMarker(cursorYOffset: number): IMarker | undefined {
     // Disallow markers on the alt buffer
     if (this.buffer !== this.buffers.normal) {
       return;
