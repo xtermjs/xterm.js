@@ -66,6 +66,9 @@ export class MouseService implements IMouseService {
     register(this._mouseStateService.onProtocolChange(events => {
       this._handleProtocolChange(ctx, eventListeners, events);
     }));
+    register(this._optionsService.onSpecificOptionChange('mouseEventsRequireAlt', () => {
+      this._syncMouseModeState(element);
+    }));
     // force initial onProtocolChange so we dont miss early mouse requests
     this._mouseStateService.activeProtocol = this._mouseStateService.activeProtocol;
 
@@ -360,6 +363,21 @@ export class MouseService implements IMouseService {
     this._touchScrollAccumulator = 0;
   }
 
+  private _syncMouseModeState(element: HTMLElement): void {
+    if (this._mouseStateService.areMouseEventsActive) {
+      if (this._optionsService.rawOptions.mouseEventsRequireAlt) {
+        element.classList.remove('enable-mouse-events');
+        this._selectionService.enable();
+      } else {
+        element.classList.add('enable-mouse-events');
+        this._selectionService.disable();
+      }
+    } else {
+      element.classList.remove('enable-mouse-events');
+      this._selectionService.enable();
+    }
+  }
+
   private _handleProtocolChange(ctx: IMouseBindContext, eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener>, events: CoreMouseEventType): void {
     const { element, document } = ctx.target;
     const { requestedEvents } = ctx;
@@ -368,17 +386,10 @@ export class MouseService implements IMouseService {
       if (this._optionsService.rawOptions.logLevel === 'debug') {
         this._logService.debug('Binding to mouse events:', this._explainEvents(events));
       }
-      if (this._optionsService.rawOptions.mouseEventsRequireAlt) {
-        this._selectionService.enable();
-      } else {
-        element.classList.add('enable-mouse-events');
-        this._selectionService.disable();
-      }
     } else {
       this._logService.debug('Unbinding from mouse events.');
-      element.classList.remove('enable-mouse-events');
-      this._selectionService.enable();
     }
+    this._syncMouseModeState(element);
 
     // add/remove handlers from requestedEvents
     if (!(events & CoreMouseEventType.MOVE)) {

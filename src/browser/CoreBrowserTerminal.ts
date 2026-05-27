@@ -623,6 +623,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.element.classList.add('enable-mouse-events');
     } else {
       this._selectionService.enable();
+      this.element.classList.remove('enable-mouse-events');
     }
 
     if (this.options.screenReaderMode) {

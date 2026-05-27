@@ -7,6 +7,7 @@ import { MouseService } from 'browser/services/MouseService';
 import { MouseStateService } from 'common/services/MouseStateService';
 import { CoreMouseAction, CoreMouseButton } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
+import { OptionsService } from 'common/services/OptionsService';
 import { MockCoreBrowserService, MockRenderService, MockSelectionService } from 'browser/TestUtils.test';
 
 function toBytes(s: string | undefined): number[] {
@@ -41,6 +42,36 @@ const logService: ILogService = {
   warn: () => {},
   error: () => {}
 } as any;
+
+class TestSelectionService extends MockSelectionService {
+  public enableCount = 0;
+  public disableCount = 0;
+
+  public override enable(): void {
+    this.enableCount++;
+  }
+
+  public override disable(): void {
+    this.disableCount++;
+  }
+
+  public override shouldForceSelection(): boolean {
+    return false;
+  }
+}
+
+function createTestMouseTargetElement(): HTMLElement {
+  const classes = new Set<string>();
+  return {
+    classList: {
+      add: (className: string) => classes.add(className),
+      remove: (className: string) => classes.delete(className),
+      contains: (className: string) => classes.has(className)
+    },
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  } as any;
+}
 
 describe('MouseService _triggerMouseEvent', () => {
   let mouseService: MouseService;
@@ -209,5 +240,54 @@ describe('MouseService _triggerMouseEvent', () => {
     assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.NONE, action: CoreMouseAction.MOVE, ctrl: true, alt: true, shift: true }), true);
     assert.deepEqual(reports, ['\x1b[MS!!', '\x1b[MK!!', '\x1b[MG!!', '\x1b[M[!!', '\x1b[MO!!', '\x1b[M_!!']);
     reports = [];
+  });
+});
+
+describe('MouseService mouseEventsRequireAlt', () => {
+  it('should update selection state and cursor class when toggled while mouse events are active', () => {
+    const mouseStateService = new MouseStateService();
+    const optionsService = new OptionsService({});
+    const selectionService = new TestSelectionService();
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: (_ev: MouseEvent, _el: HTMLElement) => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: () => {},
+        triggerBinaryEvent: () => {},
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      optionsService,
+      selectionService,
+      logService,
+      new MockCoreBrowserService()
+    );
+    const element = createTestMouseTargetElement();
+    const screenElement = createTestMouseTargetElement();
+    const document = {
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    } as any;
+
+    mouseService.bindMouse({
+      element,
+      screenElement,
+      document
+    }, disposable => disposable, () => {});
+
+    mouseStateService.activeProtocol = 'ANY';
+    assert.isTrue(element.classList.contains('enable-mouse-events'));
+    assert.equal(selectionService.disableCount, 1);
+
+    optionsService.options.mouseEventsRequireAlt = true;
+    assert.isFalse(element.classList.contains('enable-mouse-events'));
+    assert.equal(selectionService.enableCount, 2);
+
+    optionsService.options.mouseEventsRequireAlt = false;
+    assert.isTrue(element.classList.contains('enable-mouse-events'));
+    assert.equal(selectionService.disableCount, 2);
   });
 });
