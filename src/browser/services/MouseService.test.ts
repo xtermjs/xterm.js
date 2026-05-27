@@ -290,4 +290,46 @@ describe('MouseService mouseEventsRequireAlt', () => {
     assert.isTrue(element.classList.contains('enable-mouse-events'));
     assert.equal(selectionService.disableCount, 2);
   });
+
+  it('should strip alt modifier from forwarded mouse reports', () => {
+    const mouseStateService = new MouseStateService();
+    mouseStateService.activeProtocol = 'ANY';
+    mouseStateService.activeEncoding = 'SGR';
+    const optionsService = new OptionsService({ mouseEventsRequireAlt: true });
+    const reports: string[] = [];
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: () => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: (data: string) => reports.push(data),
+        triggerBinaryEvent: () => {},
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      optionsService,
+      new TestSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+    const ctx = {
+      target: {
+        screenElement: createTestMouseTargetElement()
+      },
+      requestedEvents: {}
+    } as any;
+
+    const sent = (mouseService as any)._sendEvent(ctx, {
+      type: 'mousedown',
+      button: 0,
+      altKey: true,
+      ctrlKey: false,
+      shiftKey: false
+    } as MouseEvent);
+
+    assert.isTrue(sent);
+    assert.deepEqual(reports, ['\x1b[<0;1;1M']);
+  });
 });

@@ -163,6 +163,12 @@ export class MouseService implements IMouseService {
       return false;
     }
 
+    // Alt is only used locally to gate mouse passthrough; do not forward it to the
+    // application (e.g. tmux ignores alt-modified mouse reports).
+    const stripAltFromReport = but !== CoreMouseButton.WHEEL
+      && this._optionsService.rawOptions.mouseEventsRequireAlt
+      && this._mouseStateService.areMouseEventsActive;
+
     return this._triggerMouseEvent({
       col: pos.col,
       row: pos.row,
@@ -171,7 +177,7 @@ export class MouseService implements IMouseService {
       button: but,
       action,
       ctrl: ev.ctrlKey,
-      alt: ev.altKey,
+      alt: stripAltFromReport ? false : ev.altKey,
       shift: ev.shiftKey
     });
   }
