@@ -114,6 +114,29 @@ describe('Headless API Tests', function (): void {
     }
   });
 
+  it('clear disposes markers', async () => {
+    term = new Terminal({ rows: 5, allowProposedApi: true });
+    for (let i = 0; i < 10; i++) {
+      await writeSync('\n\rtest' + i);
+    }
+    const markers = [
+      term.registerMarker(1)!,
+      term.registerMarker(2)!,
+      term.registerMarker(3)!,
+      term.registerMarker(4)!
+    ];
+    let disposeCount = 0;
+    for (const marker of markers) {
+      marker.onDispose(() => disposeCount++);
+    }
+    term.clear();
+    strictEqual(disposeCount, markers.length);
+    for (const marker of markers) {
+      strictEqual(marker.isDisposed, true);
+    }
+    strictEqual(term.markers.length, 0);
+  });
+
   describe('options', () => {
     const termOptions = {
       cols: 80,
