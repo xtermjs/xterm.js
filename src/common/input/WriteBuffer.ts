@@ -5,7 +5,7 @@
  */
 
 import { TimeoutTimer } from 'common/Async';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
 
 const enum Constants {
@@ -48,17 +48,12 @@ export class WriteBuffer extends Disposable {
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) {
     super();
-  }
-
-  public override dispose(): void {
-    if (this._store.isDisposed) {
-      return;
-    }
-    this._writeBuffer.length = 0;
-    this._callbacks.length = 0;
-    this._pendingData = 0;
-    this._bufferOffset = 0;
-    super.dispose();
+    this._register(toDisposable(() => {
+      this._writeBuffer.length = 0;
+      this._callbacks.length = 0;
+      this._pendingData = 0;
+      this._bufferOffset = 0;
+    }));
   }
 
   public handleUserInput(): void {
