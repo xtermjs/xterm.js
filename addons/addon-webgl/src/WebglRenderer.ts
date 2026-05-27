@@ -158,6 +158,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._isAttached = this._core.screenElement!.isConnected;
 
     this._register(toDisposable(() => {
+      clearTimeout(this._contextRestorationTimeout);
+      this._contextRestorationTimeout = undefined;
       for (const l of this._renderLayers) {
         l.dispose();
       }
