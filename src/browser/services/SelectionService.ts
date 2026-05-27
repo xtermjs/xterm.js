@@ -435,7 +435,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   public shouldForceSelection(event: MouseEvent): boolean {
-    if (this._optionsService.rawOptions.altClickForMouseEvents && this._mouseStateService.areMouseEventsActive) {
+    if (this._optionsService.rawOptions.mouseEventsRequireAlt && this._mouseStateService.areMouseEventsActive) {
       return !event.altKey;
     }
 
@@ -463,7 +463,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       return;
     }
 
-    if (this._optionsService.rawOptions.altClickForMouseEvents && this._mouseStateService.areMouseEventsActive && event.altKey) {
+    if (this._optionsService.rawOptions.mouseEventsRequireAlt && this._mouseStateService.areMouseEventsActive && event.altKey) {
       return;
     }
 
@@ -605,7 +605,7 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event the mouse or keyboard event
    */
   public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
-    if (this._optionsService.rawOptions.altClickForMouseEvents && this._mouseStateService.areMouseEventsActive) {
+    if (this._optionsService.rawOptions.mouseEventsRequireAlt && this._mouseStateService.areMouseEventsActive) {
       return false;
     }
     return event.altKey && !(Browser.isMac && this._optionsService.rawOptions.macOptionClickForcesSelection);

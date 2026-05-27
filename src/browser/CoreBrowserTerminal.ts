@@ -618,7 +618,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
-    if (this.mouseStateService.areMouseEventsActive && !this.options.altClickForMouseEvents) {
+    if (this.mouseStateService.areMouseEventsActive && !this.options.mouseEventsRequireAlt) {
       this._selectionService.disable();
       this.element.classList.add('enable-mouse-events');
     } else {

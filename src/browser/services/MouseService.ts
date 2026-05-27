@@ -154,7 +154,7 @@ export class MouseService implements IMouseService {
     }
 
     if (but !== CoreMouseButton.WHEEL
-      && this._optionsService.rawOptions.altClickForMouseEvents
+      && this._optionsService.rawOptions.mouseEventsRequireAlt
       && this._mouseStateService.areMouseEventsActive
       && !ev.altKey) {
       return false;
@@ -368,7 +368,7 @@ export class MouseService implements IMouseService {
       if (this._optionsService.rawOptions.logLevel === 'debug') {
         this._logService.debug('Binding to mouse events:', this._explainEvents(events));
       }
-      if (this._optionsService.rawOptions.altClickForMouseEvents) {
+      if (this._optionsService.rawOptions.mouseEventsRequireAlt) {
         this._selectionService.enable();
       } else {
         element.classList.add('enable-mouse-events');

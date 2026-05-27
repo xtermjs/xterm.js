@@ -504,15 +504,15 @@ describe('SelectionService', () => {
   });
 
   describe('shouldForceSelection', () => {
-    it('should force selection without alt when altClickForMouseEvents is enabled', () => {
-      optionsService.options.altClickForMouseEvents = true;
+    it('should force selection without alt when mouseEventsRequireAlt is enabled', () => {
+      optionsService.options.mouseEventsRequireAlt = true;
       mouseStateService.areMouseEventsActive = true;
       assert.isTrue(selectionService.shouldForceSelection({ altKey: false } as MouseEvent));
       assert.isFalse(selectionService.shouldForceSelection({ altKey: true } as MouseEvent));
     });
 
     it('should take precedence over macOptionClickForcesSelection', () => {
-      optionsService.options.altClickForMouseEvents = true;
+      optionsService.options.mouseEventsRequireAlt = true;
       optionsService.options.macOptionClickForcesSelection = true;
       mouseStateService.areMouseEventsActive = true;
       assert.isFalse(selectionService.shouldForceSelection({ altKey: true } as MouseEvent));
