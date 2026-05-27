@@ -14,6 +14,7 @@ import { RenderModelConstants } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import type { ILogService } from 'common/services/Services';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -89,13 +90,14 @@ export class RectangleRenderer extends Disposable {
     private _terminal: Terminal,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions,
-    private readonly _themeService: IThemeService
+    private readonly _themeService: IThemeService,
+    private readonly _logService: ILogService
   ) {
     super();
 
     const gl = this._gl;
 
-    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource, this._logService));
     this._register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations

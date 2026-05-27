@@ -15,7 +15,7 @@ import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
@@ -77,6 +77,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _coreBrowserService: ICoreBrowserService,
     private readonly _coreService: ICoreService,
     private readonly _decorationService: IDecorationService,
+    private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
     private readonly _themeService: IThemeService,
     private readonly _customGlyphs: boolean = true,
@@ -122,19 +123,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
     this._register(addDisposableListener(this._canvas, 'webglcontextlost', (e) => {
-      console.log('webglcontextlost event received');
+      this._logService.debug('webglcontextlost event received');
       // Prevent the default behavior in order to enable WebGL context restoration.
       e.preventDefault();
       // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
       // If not, dispatch the onContextLoss notification to observers.
       this._contextRestorationTimeout = setTimeout(() => {
         this._contextRestorationTimeout = undefined;
-        console.warn('webgl context not restored; firing onContextLoss');
+        this._logService.warn('webgl context not restored; firing onContextLoss');
         this._onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
     this._register(addDisposableListener(this._canvas, 'webglcontextrestored', (e) => {
-      console.warn('webglcontextrestored event received');
+      this._logService.warn('webglcontextrestored event received');
       clearTimeout(this._contextRestorationTimeout);
       this._contextRestorationTimeout = undefined;
       // The texture atlas and glyph renderer must be fully reinitialized
@@ -274,8 +275,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Initializes members dependent on WebGL context state.
    */
   private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
-    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService);
-    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._optionsService);
+    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService, this._logService);
+    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._optionsService, this._logService);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
