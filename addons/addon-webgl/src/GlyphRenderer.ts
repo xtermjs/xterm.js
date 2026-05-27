@@ -137,6 +137,7 @@ export class GlyphRenderer extends Disposable {
 
     // Create and set the vertex array object
     this._vertexArrayObject = gl.createVertexArray();
+    this._register(toDisposable(() => gl.deleteVertexArray(this._vertexArrayObject)));
     gl.bindVertexArray(this._vertexArrayObject);
 
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
