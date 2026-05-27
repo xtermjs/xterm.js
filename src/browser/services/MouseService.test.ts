@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { MouseService } from 'browser/services/MouseService';
+import { AltMouseCursorController, MouseService } from 'browser/services/MouseService';
 import { MouseStateService } from 'common/services/MouseStateService';
 import { CoreMouseAction, CoreMouseButton } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
@@ -331,5 +331,23 @@ describe('MouseService mouseEventsRequireAlt', () => {
 
     assert.isTrue(sent);
     assert.deepEqual(reports, ['\x1b[<0;1;1M']);
+  });
+
+  it('should toggle enable-mouse-events class when alt modifier changes', () => {
+    const element = createTestMouseTargetElement();
+    const altMouseCursor = new AltMouseCursorController(element, {
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    } as any, () => true);
+
+    const sync = (altHeld: boolean) => altMouseCursor.syncFromModifier({
+      getModifierState: (key: string) => key === 'Alt' && altHeld
+    } as KeyboardEvent);
+
+    assert.isFalse(element.classList.contains('enable-mouse-events'));
+    sync(true);
+    assert.isTrue(element.classList.contains('enable-mouse-events'));
+    sync(false);
+    assert.isFalse(element.classList.contains('enable-mouse-events'));
   });
 });
