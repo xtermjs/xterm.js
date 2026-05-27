@@ -567,8 +567,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-      if (this._getCurrentLinkId()) {
-        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
+      const linkId = this._getCurrentLinkId();
+      if (linkId) {
+        this._oscLinkService.addLineToLink(linkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // goto next line if ch would overflow
