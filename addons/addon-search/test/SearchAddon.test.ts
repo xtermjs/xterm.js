@@ -79,15 +79,7 @@ test.describe('Search Tests', () => {
 
     strictEqual(await ctx.page.evaluate(`window.search.findNext('needle-center')`), true);
     deepStrictEqual(await ctx.proxy.getSelection(), 'needle-center');
-    deepStrictEqual(await ctx.page.evaluate(`
-      const viewportY = window.term.buffer.active.viewportY;
-      const rows = window.term.rows;
-      const selection = window.term.getSelectionPosition();
-      return {
-        viewportY,
-        expectedViewportY: selection.start.y - Math.floor(rows / 2)
-      };
-    `), {
+    deepStrictEqual(await ctx.page.evaluate('(() => { const viewportY = window.term.buffer.active.viewportY; const rows = window.term.rows; const selection = window.term.getSelectionPosition(); return { viewportY: viewportY, expectedViewportY: selection.start.y - Math.floor(rows / 2) }; })()'), {
       viewportY: 48,
       expectedViewportY: 48
     });
