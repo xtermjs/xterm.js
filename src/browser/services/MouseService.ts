@@ -606,7 +606,7 @@ export class AltMouseCursorController implements IDisposable {
     }
 
     const store = new DisposableStore();
-    const syncFromModifier = (ev: KeyboardEvent | MouseEvent) => this.syncFromModifier(ev);
+    const syncFromModifier = (ev: KeyboardEvent | MouseEvent): void => this.syncFromModifier(ev);
     store.add(addDisposableListener(this._document, 'keydown', syncFromModifier));
     store.add(addDisposableListener(this._document, 'keyup', syncFromModifier));
     store.add(addDisposableListener(this._element, 'mousemove', syncFromModifier));
