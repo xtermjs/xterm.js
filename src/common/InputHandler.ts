@@ -2590,10 +2590,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 3      | CMY color.                                                    | #N      |
    * | 4      | CMYK color.                                                   | #N      |
    * | 5      | Indexed (256 colors) as `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | #Y      |
-   *
-   *
-   * FIXME: blinking is implemented in attrs, but not working in renderers?
-   * FIXME: remove dead branch for p=100
    */
   public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
