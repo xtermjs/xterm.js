@@ -20,7 +20,7 @@ export class BufferNamespaceApi extends Disposable implements IBufferNamespaceAp
     super();
     this._normal = new BufferApiView(this._core.buffers.normal, 'normal');
     this._alternate = new BufferApiView(this._core.buffers.alt, 'alternate');
-    this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
+    this._register(this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active)));
   }
   public get active(): IBufferApi {
     if (this._core.buffers.active === this._core.buffers.normal) { return this.normal; }
