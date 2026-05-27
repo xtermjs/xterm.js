@@ -86,6 +86,7 @@ export default tseslint.config(
       'eqeqeq': ['warn', 'always'],
       'jsdoc/check-alignment': 'warn',
       'jsdoc/check-param-names': 'warn',
+      'jsdoc/multiline-blocks': 'warn',
       'jsdoc/no-multi-asterisks': 'warn',
       'keyword-spacing': 'warn',
       'max-len': ['warn', {
