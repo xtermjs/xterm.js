@@ -41,7 +41,6 @@ export class WriteBuffer extends Disposable {
   private _isSyncWriting = false;
   private _syncCalls = 0;
   private _didUserInput = false;
-  private _isDisposed = false;
 
   private readonly _innerWriteTimer = this._register(new TimeoutTimer());
   private readonly _onWriteParsed = this._register(new Emitter<void>());
@@ -52,10 +51,9 @@ export class WriteBuffer extends Disposable {
   }
 
   public override dispose(): void {
-    if (this._isDisposed) {
+    if (this._store.isDisposed) {
       return;
     }
-    this._isDisposed = true;
     this._writeBuffer.length = 0;
     this._callbacks.length = 0;
     this._pendingData = 0;
@@ -76,7 +74,7 @@ export class WriteBuffer extends Disposable {
    * promises to resolve.
    */
   public flushSync(): void {
-    if (this._isDisposed) {
+    if (this._store.isDisposed) {
       return;
     }
     // exit early if another sync write loop is active
@@ -111,7 +109,7 @@ export class WriteBuffer extends Disposable {
    * @deprecated Unreliable, to be removed soon.
    */
   public writeSync(data: string | Uint8Array, maxSubsequentCalls?: number): void {
-    if (this._isDisposed) {
+    if (this._store.isDisposed) {
       return;
     }
     // stop writeSync recursions with maxSubsequentCalls argument
@@ -157,7 +155,7 @@ export class WriteBuffer extends Disposable {
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
-    if (this._isDisposed) {
+    if (this._store.isDisposed) {
       return;
     }
     if (this._pendingData > Constants.DISCARD_WATERMARK) {
@@ -217,14 +215,14 @@ export class WriteBuffer extends Disposable {
    * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
    */
   private _scheduleInnerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
-    if (this._isDisposed) {
+    if (this._store.isDisposed) {
       return;
     }
     this._innerWriteTimer.cancelAndSet(() => this._innerWrite(lastTime, promiseResult), 0);
   }
 
   protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
-    if (this._isDisposed) {
+    if (this._store.isDisposed) {
       return;
     }
     const startTime = lastTime || performance.now();
@@ -256,7 +254,7 @@ export class WriteBuffer extends Disposable {
          * gain control.
          */
         const continuation: (r: boolean) => void = (r: boolean) => {
-          if (this._isDisposed) {
+          if (this._store.isDisposed) {
             return;
           }
           if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
