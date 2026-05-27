@@ -225,12 +225,7 @@ export class DecorationLineCache extends Disposable {
       if (newLine < 0) {
         continue;
       }
-      const existing = newMap.get(newLine);
-      if (existing) {
-        existing.push(...bucket);
-      } else {
-        newMap.set(newLine, bucket.slice());
-      }
+      this._mergeLineBucket(newMap, newLine, bucket);
     }
     this._decorationsByLine.clear();
     for (const [line, bucket] of newMap) {
@@ -254,7 +249,9 @@ export class DecorationLineCache extends Disposable {
   private _mergeLineBucket(newMap: Map<number, IInternalDecoration[]>, line: number, bucket: IInternalDecoration[]): void {
     const existing = newMap.get(line);
     if (existing) {
-      existing.push(...bucket);
+      for (let i = 0, len = bucket.length; i < len; i++) {
+        existing.push(bucket[i]);
+      }
     } else {
       newMap.set(line, bucket.slice());
     }
