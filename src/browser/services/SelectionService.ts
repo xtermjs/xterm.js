@@ -9,7 +9,7 @@ import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import * as Browser from 'common/Platform';
 import { IBufferLine, ICellData, IDisposable } from 'common/Types';
 import { getRangeLength } from 'common/buffer/BufferRange';
@@ -102,7 +102,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
-  private _trimListener: IDisposable;
+  private readonly _trimListener = this._register(new MutableDisposable<IDisposable>());
   private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number = 0;
@@ -140,7 +140,7 @@ export class SelectionService extends Disposable implements ISelectionService {
         this.clearSelection();
       }
     });
-    this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._handleTrim(amount));
+    this._trimListener.value = this._bufferService.buffer.lines.onTrim(amount => this._handleTrim(amount));
     this._register(this._bufferService.buffers.onBufferActivate(e => this._handleBufferActivate(e)));
 
     this.enable();
@@ -769,8 +769,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    this._trimListener.dispose();
-    this._trimListener = e.activeBuffer.lines.onTrim(amount => this._handleTrim(amount));
+    this._trimListener.value = e.activeBuffer.lines.onTrim(amount => this._handleTrim(amount));
   }
 
   /**

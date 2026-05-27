@@ -71,7 +71,9 @@ export class WriteBuffer extends Disposable {
 
     // Process all pending chunks synchronously
     let chunk: string | Uint8Array | undefined;
+    let didProcess = false;
     while (chunk = this._writeBuffer.shift()) {
+      didProcess = true;
       this._action(chunk);
       const cb = this._callbacks.shift();
       if (cb) cb();
@@ -84,6 +86,9 @@ export class WriteBuffer extends Disposable {
     this._callbacks.length = 0;
 
     this._isSyncWriting = false;
+    if (didProcess) {
+      this._onWriteParsed.fire();
+    }
   }
 
   /**

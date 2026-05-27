@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { clone } from 'common/Clone';
 import { Disposable } from 'common/Lifecycle';
 import { IDecPrivateModes, IKittyKeyboardState, IModes } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
@@ -61,14 +60,14 @@ export class CoreService extends Disposable implements ICoreService {
   ) {
     super();
     this.isCursorInitialized = _optionsService.rawOptions.showCursorImmediately ?? false;
-    this.modes = clone(DEFAULT_MODES);
-    this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
+    this.modes = structuredClone(DEFAULT_MODES);
+    this.decPrivateModes = structuredClone(DEFAULT_DEC_PRIVATE_MODES);
     this.kittyKeyboard = DEFAULT_KITTY_KEYBOARD_STATE();
   }
 
   public reset(): void {
-    this.modes = clone(DEFAULT_MODES);
-    this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
+    this.modes = structuredClone(DEFAULT_MODES);
+    this.decPrivateModes = structuredClone(DEFAULT_DEC_PRIVATE_MODES);
     this.kittyKeyboard = DEFAULT_KITTY_KEYBOARD_STATE();
   }
 

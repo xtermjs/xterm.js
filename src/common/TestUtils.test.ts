@@ -5,7 +5,6 @@
 
 import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
 import { UnicodeService } from 'common/services/UnicodeService';
-import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
@@ -157,7 +156,7 @@ export class MockLogService implements ILogService {
 
 export class MockOptionsService implements IOptionsService {
   public serviceBrand: any;
-  public readonly rawOptions: Required<ITerminalOptions> = clone(DEFAULT_OPTIONS);
+  public readonly rawOptions: Required<ITerminalOptions> = structuredClone(DEFAULT_OPTIONS);
   public options: Required<ITerminalOptions> = this.rawOptions;
   public onOptionChange: IEvent<keyof ITerminalOptions> = new Emitter<keyof ITerminalOptions>().event;
   constructor(testOptions?: Partial<ITerminalOptions>) {
