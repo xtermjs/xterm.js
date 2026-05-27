@@ -79,18 +79,11 @@ test.describe('Search Tests', () => {
 
     strictEqual(await ctx.page.evaluate(`window.search.findNext('needle-center')`), true);
     deepStrictEqual(await ctx.proxy.getSelection(), 'needle-center');
-    deepStrictEqual(await ctx.page.evaluate(`
-      const viewportY = window.term.buffer.active.viewportY;
-      const rows = window.term.rows;
-      const selection = window.term.getSelectionPosition();
-      return {
-        viewportY,
-        expectedViewportY: selection.start.y - Math.floor(rows / 2)
-      };
-    `), {
-      viewportY: 48,
-      expectedViewportY: 48
-    });
+    const viewportY = await ctx.page.evaluate('window.term.buffer.active.viewportY');
+    const selectionPosition = await ctx.proxy.getSelectionPosition();
+    const rows = await ctx.proxy.rows;
+    deepStrictEqual(viewportY, 48);
+    deepStrictEqual(selectionPosition!.start.y - Math.floor(rows / 2), 48);
   });
   test('Incremental Find Previous', async () => {
     await ctx.proxy.writeln(`package.jsonc\n`);
