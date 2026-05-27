@@ -109,6 +109,7 @@ export class TextureAtlas implements ITextureAtlas {
       page.canvas.remove();
     }
     this._onAddTextureAtlasCanvas.dispose();
+    this._onRemoveTextureAtlasCanvas.dispose();
   }
 
   public warmUp(): void {
