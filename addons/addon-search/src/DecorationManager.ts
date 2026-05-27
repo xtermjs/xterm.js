@@ -131,6 +131,9 @@ export class DecorationManager extends Disposable {
     const decorations: IDecoration[] = [];
     for (const range of decorationRanges) {
       const marker = this._terminal.registerMarker(range[0]);
+      if (!marker) {
+        continue;
+      }
       const decoration = this._terminal.registerDecoration({
         marker,
         x: range[1],

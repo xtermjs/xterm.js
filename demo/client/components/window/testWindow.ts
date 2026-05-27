@@ -753,7 +753,7 @@ async function loadTestLongLines(term: Terminal, addons: AddonCollection): Promi
 
 function addDecoration(term: Terminal, dim: number = 1): void {
   term.options.scrollbar = { ...(term.options.scrollbar ?? {}), width: 14, overviewRuler: term.options.scrollbar?.overviewRuler ?? {} };
-  const marker = term.registerMarker(1);
+  const marker = term.registerMarker(1)!;
   const decoration = term.registerDecoration({
     marker,
     height: dim,
@@ -770,14 +770,14 @@ function addDecoration(term: Terminal, dim: number = 1): void {
 
 function addOverviewRuler(term: Terminal): void {
   term.options.scrollbar = { ...(term.options.scrollbar ?? {}), width: 14, overviewRuler: term.options.scrollbar?.overviewRuler ?? {} };
-  term.registerDecoration({ marker: term.registerMarker(1), overviewRulerOptions: { color: '#ef2929' } });
-  term.registerDecoration({ marker: term.registerMarker(3), overviewRulerOptions: { color: '#8ae234' } });
-  term.registerDecoration({ marker: term.registerMarker(5), overviewRulerOptions: { color: '#729fcf' } });
-  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#ef2929', position: 'left' } });
-  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
-  term.registerDecoration({ marker: term.registerMarker(7), overviewRulerOptions: { color: '#729fcf', position: 'right' } });
-  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#8ae234', position: 'center' } });
-  term.registerDecoration({ marker: term.registerMarker(10), overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
+  term.registerDecoration({ marker: term.registerMarker(1)!, overviewRulerOptions: { color: '#ef2929' } });
+  term.registerDecoration({ marker: term.registerMarker(3)!, overviewRulerOptions: { color: '#8ae234' } });
+  term.registerDecoration({ marker: term.registerMarker(5)!, overviewRulerOptions: { color: '#729fcf' } });
+  term.registerDecoration({ marker: term.registerMarker(7)!, overviewRulerOptions: { color: '#ef2929', position: 'left' } });
+  term.registerDecoration({ marker: term.registerMarker(7)!, overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(7)!, overviewRulerOptions: { color: '#729fcf', position: 'right' } });
+  term.registerDecoration({ marker: term.registerMarker(10)!, overviewRulerOptions: { color: '#8ae234', position: 'center' } });
+  term.registerDecoration({ marker: term.registerMarker(10)!, overviewRulerOptions: { color: '#ffffff80', position: 'full' } });
 }
 
 let decorationStressTestDecorations: IDisposable[] | undefined;
@@ -795,7 +795,7 @@ function decorationStressTest(term: Terminal): void {
       for (let y = 0; y < term.buffer.active.length; y++) {
         const cursorOffsetY = y - cursorY;
         const decoration = term.registerDecoration({
-          marker: term.registerMarker(cursorOffsetY),
+          marker: term.registerMarker(cursorOffsetY)!,
           x,
           width: 4,
           backgroundColor: '#FF0000',

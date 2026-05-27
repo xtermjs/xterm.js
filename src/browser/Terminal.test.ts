@@ -1146,6 +1146,16 @@ describe('Terminal', () => {
     assert.equal(termConverting.buffer.lines.get(1)!.translateToString(true), 'World');
   });
 
+  describe('registerMarker', () => {
+    it('should return undefined on the alt buffer', async () => {
+      assert.isDefined(term.registerMarker(0));
+      await term.writeP('\x1b[?47h');
+      assert.isUndefined(term.registerMarker(0));
+      await term.writeP('\x1b[?47l');
+      assert.isDefined(term.registerMarker(0));
+    });
+  });
+
   // FIXME: move to common/CoreTerminal.test once the trimming is moved over
   describe('marker lifecycle', () => {
     // create a 10x5 terminal with markers on every line

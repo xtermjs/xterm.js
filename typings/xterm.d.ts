@@ -1257,11 +1257,12 @@ declare module '@xterm/xterm' {
     deregisterCharacterJoiner(joinerId: number): void;
 
     /**
-     * Adds a marker to the normal buffer and returns it.
+     * Adds a marker to the normal buffer and returns it. If the alt buffer is
+     * active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      * @returns The new marker or undefined.
      */
-    registerMarker(cursorYOffset?: number): IMarker;
+    registerMarker(cursorYOffset?: number): IMarker | undefined;
 
     /**
      * Registers a decoration to the terminal.

@@ -419,6 +419,18 @@ describe('Headless API Tests', function (): void {
       strictEqual(term.buffer.normal.getLine(0)!.translateToString(), 'norm ');
       strictEqual(term.buffer.alternate.getLine(0), undefined);
     });
+
+    it('registerMarker returns undefined on the alt buffer', async () => {
+      term = new Terminal({ cols: 5, allowProposedApi: true });
+      strictEqual(term.buffer.active.type, 'normal');
+      strictEqual(term.registerMarker(0)!.line, 0);
+      await writeSync('\x1b[?47h');
+      strictEqual(term.buffer.active.type, 'alternate');
+      strictEqual(term.registerMarker(0), undefined);
+      await writeSync('\x1b[?47l');
+      strictEqual(term.buffer.active.type, 'normal');
+      strictEqual(term.registerMarker(0)!.line, 0);
+    });
   });
 
   describe('modes', () => {

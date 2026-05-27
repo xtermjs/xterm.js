@@ -166,7 +166,7 @@ export class Terminal extends Disposable implements ITerminalApi {
   public deregisterCharacterJoiner(joinerId: number): void {
     this._core.deregisterCharacterJoiner(joinerId);
   }
-  public registerMarker(cursorYOffset: number = 0): IMarker {
+  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
     this._verifyIntegers(cursorYOffset);
     return this._core.registerMarker(cursorYOffset);
   }
