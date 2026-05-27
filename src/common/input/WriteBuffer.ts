@@ -4,10 +4,9 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
+import { TimeoutTimer } from 'common/Async';
+import { Disposable, toDisposable } from 'common/Lifecycle';
 import { Emitter } from 'common/Event';
-
-declare const setTimeout: (handler: () => void, timeout?: number) => void;
 
 const enum Constants {
   /**
@@ -43,11 +42,18 @@ export class WriteBuffer extends Disposable {
   private _syncCalls = 0;
   private _didUserInput = false;
 
+  private readonly _innerWriteTimer = this._register(new TimeoutTimer());
   private readonly _onWriteParsed = this._register(new Emitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
   constructor(private _action: (data: string | Uint8Array, promiseResult?: boolean) => void | Promise<boolean>) {
     super();
+    this._register(toDisposable(() => {
+      this._writeBuffer.length = 0;
+      this._callbacks.length = 0;
+      this._pendingData = 0;
+      this._bufferOffset = 0;
+    }));
   }
 
   public handleUserInput(): void {
@@ -63,6 +69,9 @@ export class WriteBuffer extends Disposable {
    * promises to resolve.
    */
   public flushSync(): void {
+    if (this._store.isDisposed) {
+      return;
+    }
     // exit early if another sync write loop is active
     if (this._isSyncWriting) {
       return;
@@ -95,6 +104,9 @@ export class WriteBuffer extends Disposable {
    * @deprecated Unreliable, to be removed soon.
    */
   public writeSync(data: string | Uint8Array, maxSubsequentCalls?: number): void {
+    if (this._store.isDisposed) {
+      return;
+    }
     // stop writeSync recursions with maxSubsequentCalls argument
     // This is dangerous to use as it will lose the current data chunk
     // and return immediately.
@@ -138,6 +150,9 @@ export class WriteBuffer extends Disposable {
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {
+    if (this._store.isDisposed) {
+      return;
+    }
     if (this._pendingData > Constants.DISCARD_WATERMARK) {
       throw new Error('write data discarded, use flow control to avoid losing data');
     }
@@ -158,7 +173,7 @@ export class WriteBuffer extends Disposable {
         return;
       }
 
-      setTimeout(() => this._innerWrite());
+      this._scheduleInnerWrite();
     }
 
     this._pendingData += data.length;
@@ -194,7 +209,17 @@ export class WriteBuffer extends Disposable {
    *
    * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
    */
+  private _scheduleInnerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
+    if (this._store.isDisposed) {
+      return;
+    }
+    this._innerWriteTimer.cancelAndSet(() => this._innerWrite(lastTime, promiseResult), 0);
+  }
+
   protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
+    if (this._store.isDisposed) {
+      return;
+    }
     const startTime = lastTime || performance.now();
     while (this._writeBuffer.length > this._bufferOffset) {
       const data = this._writeBuffer[this._bufferOffset];
@@ -223,9 +248,16 @@ export class WriteBuffer extends Disposable {
          * responsibility to slice hard work), but we can at least schedule a screen update as we
          * gain control.
          */
-        const continuation: (r: boolean) => void = (r: boolean) => performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS
-          ? setTimeout(() => this._innerWrite(0, r))
-          : this._innerWrite(startTime, r);
+        const continuation: (r: boolean) => void = (r: boolean) => {
+          if (this._store.isDisposed) {
+            return;
+          }
+          if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
+            this._scheduleInnerWrite(0, r);
+          } else {
+            this._innerWrite(startTime, r);
+          }
+        };
 
         /**
          * Optimization considerations:
@@ -272,7 +304,7 @@ export class WriteBuffer extends Disposable {
         this._callbacks = this._callbacks.slice(this._bufferOffset);
         this._bufferOffset = 0;
       }
-      setTimeout(() => this._innerWrite());
+      this._scheduleInnerWrite();
     } else {
       this._writeBuffer.length = 0;
       this._callbacks.length = 0;

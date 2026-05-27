@@ -140,5 +140,71 @@ describe('WriteBuffer', () => {
       wb.flushSync();
       assert.equal(parsed, 0);
     });
+    it('dispose cancels scheduled innerWrite', done => {
+      wb.write('a');
+      wb.dispose();
+      setTimeout(() => {
+        assert.deepEqual(stack, []);
+        done();
+      }, 20);
+    });
+    it('dispose does not fire onWriteParsed for pending writes', done => {
+      let parsed = 0;
+      wb.onWriteParsed(() => parsed++);
+      wb.write('a');
+      wb.dispose();
+      setTimeout(() => {
+        assert.equal(parsed, 0);
+        done();
+      }, 20);
+    });
+    it('write after dispose is a no-op', done => {
+      wb.dispose();
+      wb.write('a');
+      setTimeout(() => {
+        assert.deepEqual(stack, []);
+        done();
+      }, 20);
+    });
+    it('dispose is idempotent', done => {
+      wb.write('a');
+      wb.dispose();
+      wb.dispose();
+      setTimeout(() => {
+        assert.deepEqual(stack, []);
+        done();
+      }, 20);
+    });
+    it('async handler continuation is skipped after dispose', done => {
+      let resolve!: (value: boolean) => void;
+      const pending = new Promise<boolean>(r => { resolve = r; });
+      wb = new WriteBuffer(() => pending);
+      wb.write('a');
+      wb.dispose();
+      resolve(true);
+      setTimeout(() => {
+        assert.deepEqual(stack, []);
+        done();
+      }, 20);
+    });
+    it('handleUserInput still processes first chunk synchronously', () => {
+      wb.handleUserInput();
+      wb.write('a');
+      assert.deepEqual(stack, ['a']);
+    });
+    it('flushSync after dispose is a no-op', done => {
+      wb.write('a');
+      wb.dispose();
+      wb.flushSync();
+      setTimeout(() => {
+        assert.deepEqual(stack, []);
+        done();
+      }, 20);
+    });
+    it('writeSync after dispose is a no-op', () => {
+      wb.dispose();
+      wb.writeSync('a');
+      assert.deepEqual(stack, []);
+    });
   });
 });
