@@ -125,5 +125,20 @@ describe('WriteBuffer', () => {
       assert.deepEqual(stack, []);
       assert.deepEqual(cbStack, []);
     });
+    it('flushSync fires onWriteParsed', () => {
+      let parsed = 0;
+      wb.onWriteParsed(() => parsed++);
+      wb.write('a');
+      wb.write('b');
+      assert.equal(parsed, 0);
+      wb.flushSync();
+      assert.equal(parsed, 1);
+    });
+    it('flushSync with no pending writes does not fire onWriteParsed', () => {
+      let parsed = 0;
+      wb.onWriteParsed(() => parsed++);
+      wb.flushSync();
+      assert.equal(parsed, 0);
+    });
   });
 });
